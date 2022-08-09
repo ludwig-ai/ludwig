@@ -21,6 +21,7 @@ import torch
 from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
 from ludwig.utils.torch_utils import Dense, get_activation
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,10 @@ class PassthroughDecoder(Decoder):
     def forward(self, inputs, **kwargs):
         return inputs
 
+    @staticmethod
+    def get_schema_cls():
+        return PassthroughDecoderConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
@@ -46,7 +51,7 @@ class PassthroughDecoder(Decoder):
         return self.input_shape
 
 
-@register_decoder("regressor", [BINARY, NUMBER], default=True)
+@register_decoder("regressor", [BINARY, NUMBER])
 class Regressor(Decoder):
     def __init__(
         self,
@@ -70,6 +75,10 @@ class Regressor(Decoder):
             bias_initializer=bias_initializer,
         )
 
+    @staticmethod
+    def get_schema_cls():
+        return RegressorConfig
+
     @property
     def input_shape(self):
         return self.dense.input_shape
@@ -78,7 +87,7 @@ class Regressor(Decoder):
         return self.dense(inputs)
 
 
-@register_decoder("projector", [VECTOR], default=True)
+@register_decoder("projector", [VECTOR])
 class Projector(Decoder):
     def __init__(
         self,
@@ -116,6 +125,10 @@ class Projector(Decoder):
         else:
             self.clip = None
 
+    @staticmethod
+    def get_schema_cls():
+        return ProjectorConfig
+
     @property
     def input_shape(self):
         return self.dense.input_shape
@@ -127,7 +140,7 @@ class Projector(Decoder):
         return values
 
 
-@register_decoder("classifier", [CATEGORY, SET], default=True)
+@register_decoder("classifier", [CATEGORY, SET])
 class Classifier(Decoder):
     def __init__(
         self,
@@ -159,6 +172,10 @@ class Classifier(Decoder):
         # so the first time we need to compute the full dense,
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
+
+    @staticmethod
+    def get_schema_cls():
+        return ClassifierConfig
 
     @property
     def input_shape(self):

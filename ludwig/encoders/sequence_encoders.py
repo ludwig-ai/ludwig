@@ -28,11 +28,21 @@ from ludwig.modules.embedding_modules import EmbedSequence, TokenAndPositionEmbe
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.sequence_encoders import (
+    ParallelCNNConfig,
+    SequenceEmbedConfig,
+    SequencePassthroughConfig,
+    StackedCNNConfig,
+    StackedCNNRNNConfig,
+    StackedParallelCNNConfig,
+    StackedRNNConfig,
+    StackedTransformerConfig,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", [AUDIO, SEQUENCE, TEXT, TIMESERIES], default=True)
+@register_encoder("passthrough", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class SequencePassthroughEncoder(Encoder):
     def __init__(self, reduce_output: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
         """
@@ -72,6 +82,10 @@ class SequencePassthroughEncoder(Encoder):
         hidden = self.reduce_sequence(input_sequence)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return SequencePassthroughConfig
 
 
 @register_encoder("embed", [SEQUENCE, TEXT])
@@ -194,6 +208,10 @@ class SequenceEmbedEncoder(Encoder):
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceEmbedConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -485,6 +503,10 @@ class ParallelCNN(Encoder):
             hidden = self.fc_stack(hidden, mask=mask)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return ParallelCNNConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -784,6 +806,10 @@ class StackedCNN(Encoder):
                 default_activation=activation,
                 default_dropout=dropout,
             )
+
+    @staticmethod
+    def get_schema_cls():
+        return StackedCNNConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1090,6 +1116,10 @@ class StackedParallelCNN(Encoder):
                 default_dropout=dropout,
             )
 
+    @staticmethod
+    def get_schema_cls():
+        return StackedParallelCNNConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1354,6 +1384,10 @@ class StackedRNN(Encoder):
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
+
+    @staticmethod
+    def get_schema_cls():
+        return StackedRNNConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1633,6 +1667,10 @@ class StackedCNNRNN(Encoder):
                 default_dropout=fc_dropout,
             )
 
+    @staticmethod
+    def get_schema_cls():
+        return StackedCNNRNNConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1895,6 +1933,10 @@ class StackedTransformer(Encoder):
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
+
+    @staticmethod
+    def get_schema_cls():
+        return StackedTransformerConfig
 
     @property
     def input_shape(self) -> torch.Size:

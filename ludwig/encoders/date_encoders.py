@@ -23,6 +23,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.schema.encoders.date_encoders import DateEmbedConfig, DateWaveConfig
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
@@ -258,6 +259,10 @@ class DateEmbed(Encoder):
         hidden = self.fc_stack(hidden)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return DateEmbedConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([DATE_INPUT_SIZE])
@@ -382,6 +387,10 @@ class DateWave(Encoder):
 
         hidden = self.fc_stack(hidden)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return DateWaveConfig
 
     @property
     def input_shape(self) -> torch.Size:

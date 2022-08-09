@@ -7,6 +7,7 @@ from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.modules.attention_modules import MultiHeadSelfAttention
+from ludwig.schema.decoders.sequence_decoders import SequenceTaggerDecoderConfig
 from ludwig.utils.torch_utils import Dense
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,10 @@ class SequenceTaggerDecoder(Decoder):
 
     def get_prediction_set(self):
         return {LOGITS}
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceTaggerDecoderConfig
 
     @property
     def input_shape(self):

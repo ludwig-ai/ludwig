@@ -8,7 +8,8 @@ import torch
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BACKFILL, PROC_COLUMN
-from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
+from ludwig.features.audio_feature import AudioFeatureMixin
+from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 
@@ -33,13 +34,17 @@ def test_audio_input_feature(encoder: str) -> None:
             "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
-        "should_embed": False,
-        "vocab": VOCAB,
-        "max_sequence_length": SEQ_SIZE,
-        "embedding_size": AUDIO_W_SIZE,
-        "encoder": encoder,
+        "encoder": {
+            "type": encoder,
+            "should_embed": False,
+            "vocab": VOCAB,
+            "max_sequence_length": SEQ_SIZE,
+            "embedding_size": AUDIO_W_SIZE,
+        },
     }
-    audio_input_feature = AudioInputFeature(audio_config).to(DEVICE)
+
+    audio_input_feature = ECD.build_single_input(audio_config, None)
+
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = audio_input_feature(audio_tensor)
     assert encoder_output["encoder_output"].shape[1:] == audio_input_feature.output_shape

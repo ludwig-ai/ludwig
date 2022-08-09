@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,12 +18,12 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, FILL_WITH_CONST, H3, PROC_COLUMN, TIED
+from ludwig.constants import COLUMN, ENCODER, FILL_WITH_CONST, H3, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -74,11 +73,7 @@ class H3FeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": 576495936675512319
-            # mode 1 edge 0 resolution 0 base_cell 0
-        }
+        return H3InputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -116,15 +111,16 @@ class H3FeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
-    encoder = "embed"
+    # encoder = {TYPE: "embed"}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: H3InputFeatureConfig, encoder_obj=None, **kwargs):
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -153,7 +149,9 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = H3InputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

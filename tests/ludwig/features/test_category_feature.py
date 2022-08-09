@@ -4,6 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
+from ludwig.constants import ENCODER, TYPE
 from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import get_torch_device
@@ -18,13 +19,15 @@ def category_config():
         "name": "category_column_name",
         "type": "category",
         "tied": None,
-        "embedding_size": 256,
-        "embeddings_on_cpu": False,
-        "pretrained_embeddings": None,
-        "embeddings_trainable": True,
-        "dropout": 0.0,
-        "vocab": ["a", "b", "c"],
-        "embedding_initializer": None,
+        "encoder": {
+            "embedding_size": 256,
+            "embeddings_on_cpu": False,
+            "pretrained_embeddings": None,
+            "embeddings_trainable": True,
+            "dropout": 0.0,
+            "vocab": ["a", "b", "c"],
+            "embedding_initializer": None,
+        },
     }
 
 
@@ -35,7 +38,7 @@ def test_category_input_feature(
 ) -> None:
     # setup image input feature definition
     category_def = deepcopy(category_config)
-    category_def["encoder"] = encoder
+    category_def[ENCODER][TYPE] = encoder
 
     # pickup any other missing parameters
     CategoryInputFeature.populate_defaults(category_def)

@@ -23,6 +23,26 @@ from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.text_encoders import (
+    ALBERTConfig,
+    AutoTransformerConfig,
+    BERTConfig,
+    CamemBERTConfig,
+    CTRLConfig,
+    DistilBERTConfig,
+    ELECTRAConfig,
+    FlauBERTConfig,
+    GPT2Config,
+    GPTConfig,
+    LongformerConfig,
+    MT5Config,
+    RoBERTaConfig,
+    T5Config,
+    TransformerXLConfig,
+    XLMConfig,
+    XLMRoBERTaConfig,
+    XLNetConfig,
+)
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
@@ -134,6 +154,10 @@ class ALBERTEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return ALBERTConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -260,6 +284,10 @@ class MT5Encoder(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return MT5Config
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -356,6 +384,10 @@ class XLMRoBERTaEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return XLMRoBERTaConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -479,6 +511,10 @@ class BERTEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return BERTConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -619,6 +655,10 @@ class XLMEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return XLMConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -727,6 +767,10 @@ class GPTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return GPTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -831,6 +875,10 @@ class GPT2Encoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return GPT2Config
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -916,6 +964,10 @@ class RoBERTaEncoder(Encoder):
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return RoBERTaConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1038,6 +1090,10 @@ class TransformerXLEncoder(Encoder):
 
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return TransformerXLConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1170,6 +1226,10 @@ class XLNetEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return XLNetConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1274,6 +1334,10 @@ class DistilBERTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return DistilBERTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1377,6 +1441,10 @@ class CTRLEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return CTRLConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1407,7 +1475,7 @@ class CamemBERTEncoder(Encoder):
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "ctrl",
+        pretrained_model_name_or_path: str = "jplu/camembert-base",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = False,
@@ -1490,6 +1558,10 @@ class CamemBERTEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return CamemBERTConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1597,6 +1669,10 @@ class T5Encoder(Encoder):
         hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return T5Config
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1733,6 +1809,10 @@ class FlauBERTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return FlauBERTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1846,6 +1926,10 @@ class ELECTRAEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ELECTRAConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1934,6 +2018,10 @@ class LongformerEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return LongformerConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -2013,6 +2101,10 @@ class AutoTransformerEncoder(Encoder):
             hidden = transformer_outputs["last_hidden_state"]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return AutoTransformerConfig
 
     @property
     def input_shape(self) -> torch.Size:

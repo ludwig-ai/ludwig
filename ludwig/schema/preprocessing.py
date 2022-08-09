@@ -94,7 +94,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     padding_symbol: str = schema_utils.String(
-        default="<PAD>",
+        default=strings_utils.PADDING_SYMBOL,
         allow_none=False,
         description="The string used as the padding symbol for sequence features. Ignored for features using "
         "huggingface encoders, which have their own vocabulary.",
@@ -115,7 +115,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     lowercase: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="If true, converts the string to lowercase before tokenizing.",
     )
 
@@ -335,7 +335,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     padding_symbol: str = schema_utils.String(
-        default="<PAD>",
+        default=strings_utils.PADDING_SYMBOL,
         allow_none=False,
         description="The string used as a padding symbol. This special token is mapped to the integer ID 0 in the "
         "vocabulary.",

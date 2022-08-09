@@ -24,7 +24,9 @@ from ludwig.constants import (
     BINARY,
     BINARY_WEIGHTED_CROSS_ENTROPY,
     COLUMN,
-    FILL_WITH_FALSE,
+    DECODER,
+    DEPENDENCIES,
+    ENCODER,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -33,8 +35,10 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     ROC_AUC,
-    SUM,
+    THRESHOLD,
     TIED,
     TYPE,
 )
@@ -132,9 +136,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults() -> Dict[str, Any]:
-        return {
-            "missing_value_strategy": FILL_WITH_FALSE,
-        }
+        return BinaryInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -214,17 +216,16 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    encoder = "passthrough"
-    norm = None
-    dropout = False
+    # encoder = {TYPE: "passthrough", "norm": None, "dropout": None}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
+        super().__init__(input_feature_config, **kwargs)
+        # self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder()
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -254,7 +255,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = BinaryInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -274,16 +277,14 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 @register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    decoder = "regressor"
-    loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC
-    threshold = 0.5
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+    def __init__(
+        self, output_feature_config: BinaryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -310,7 +311,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
+        return _BinaryPredict(self.decoder_config.threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -399,25 +400,22 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
+        defaults = BinaryOutputFeatureConfig()
+
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(
-            output_feature[LOSS],
-            {
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-                "positive_class_weight": None,  # Weight for each label.
-                "weight": 1,  # Weight across output features.
-            },
-        )
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,
             {
-                "threshold": 0.5,
-                "dependencies": [],
-                "reduce_input": SUM,
-                "reduce_dependencies": SUM,
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                    THRESHOLD: defaults.decoder.threshold,
+                },
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
             },
         )
 

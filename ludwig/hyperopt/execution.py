@@ -30,7 +30,9 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     COLUMN,
     COMBINER,
+    DECODER,
     DEFAULTS,
+    ENCODER,
     INPUT_FEATURES,
     MAXIMIZE,
     OUTPUT_FEATURES,
@@ -964,6 +966,17 @@ def update_features_with_shared_params(
         return
 
     sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
+    shared_params_copy = copy.deepcopy(sampled_default_shared_params)
+
+    # Remove encoder/decoder from output/input features
+    if config_feature_group == INPUT_FEATURES:
+        if DECODER in sampled_default_shared_params:
+            del shared_params_copy[DECODER]
+    else:
+        if ENCODER in sampled_default_shared_params:
+            del shared_params_copy[ENCODER]
+    sampled_default_shared_params = shared_params_copy
+
     set_values(sampled_default_shared_params, section_dict)
 
 

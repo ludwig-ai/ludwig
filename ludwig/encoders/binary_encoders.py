@@ -20,11 +20,12 @@ import torch
 from ludwig.constants import BINARY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
+from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", BINARY, default=True)
+@register_encoder("passthrough", BINARY)
 class BinaryPassthroughEncoder(Encoder):
     def __init__(self, **kwargs):
         super().__init__()
@@ -39,6 +40,10 @@ class BinaryPassthroughEncoder(Encoder):
             inputs = inputs.to(torch.float32)
 
         return inputs
+
+    @staticmethod
+    def get_schema_cls():
+        return BinaryPassthroughEncoderConfig
 
     @property
     def output_shape(self) -> torch.Size:

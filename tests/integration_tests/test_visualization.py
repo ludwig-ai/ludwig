@@ -27,7 +27,7 @@ import subprocess
 import numpy as np
 import pytest
 
-from ludwig.constants import TRAINER
+from ludwig.constants import ENCODER, TRAINER, TYPE
 from ludwig.experiment import experiment_cli
 from ludwig.globals import DESCRIPTION_FILE_NAME, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import get_split_path
@@ -94,12 +94,12 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(encoder="parallel_cnn")]
+    input_features = [text_feature(encoder={"type": "parallel_cnn"})]
     output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]["encoder"] = "parallel_cnn"
+    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
 
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
@@ -137,12 +137,12 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(encoder="parallel_cnn")]
+    input_features = [text_feature(encoder={"type": "parallel_cnn"})]
     output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]["encoder"] = "parallel_cnn"
+    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -183,12 +183,12 @@ def test_visualization_compare_performance_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(encoder="parallel_cnn")]
+    input_features = [text_feature(encoder={"type": "parallel_cnn"})]
     output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]["encoder"] = "parallel_cnn"
+    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -229,8 +229,8 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(csv_filena
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -286,8 +286,8 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(csv_filena
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -343,8 +343,8 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(csv_filena
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -400,8 +400,8 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(csv_filena
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -456,8 +456,8 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -509,8 +509,8 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
 
 def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     """It should be possible to save figures as pdf in the specified directory."""
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -566,8 +566,8 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(c
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -614,8 +614,8 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(csv_file
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -670,8 +670,8 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(csv_file
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -725,8 +725,8 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(csv
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -780,8 +780,8 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -835,8 +835,8 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(csv_file
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -890,8 +890,8 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(c
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -947,8 +947,8 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(c
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -1007,19 +1007,19 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
+        text_feature(encoder={"vocab_size": 10, "min_len": 1, "type": "stacked_cnn"}),
         number_feature(),
-        category_feature(vocab_size=10, embedding_size=5),
+        category_feature(encoder={"vocab_size": 10, "embedding_size": 5}),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(encoder={"vocab_size": 10, "max_len": 10, "type": "embed"}),
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]["encoder"] = "parallel_cnn"
+    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -1073,19 +1073,19 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
+        text_feature(encoder={"vocab_size": 10, "min_len": 1, "type": "stacked_cnn"}),
         number_feature(),
-        category_feature(vocab_size=10, embedding_size=5),
+        category_feature(encoder={"vocab_size": 10, "embedding_size": 5}),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(encoder={"vocab_size": 10, "max_len": 10, "type": "embed"}),
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]["encoder"] = "parallel_cnn"
+    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -1138,21 +1138,21 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
+        text_feature(encoder={"vocab_size": 10, "min_len": 1, "type": "stacked_cnn"}),
         number_feature(),
-        category_feature(vocab_size=10, embedding_size=5),
+        category_feature(encoder={"vocab_size": 10, "embedding_size": 5}),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(encoder={"vocab_size": 10, "max_len": 10, "type": "embed"}),
     ]
     if binary_output_type:
         output_features = [binary_feature()]
     else:
-        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+        output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     random.seed(1919)
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]["encoder"] = "parallel_cnn"
+    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")
     vis_output_pattern_png = os.path.join(exp_dir_name, "*.png")
@@ -1211,11 +1211,11 @@ def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type)
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
     if binary_output_type:
         output_features = [binary_feature()]
     else:
-        output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+        output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -1317,8 +1317,8 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -1376,8 +1376,8 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -1431,8 +1431,8 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -1511,8 +1511,8 @@ def test_load_ground_truth_split_from_file(csv_filename):
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
-    input_features = [category_feature(vocab_size=10)]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 10})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

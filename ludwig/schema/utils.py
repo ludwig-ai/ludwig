@@ -1,8 +1,5 @@
 from dataclasses import field
-from typing import Any as TAny
-from typing import Dict as TDict
-from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Any, Dict, List, Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
@@ -13,14 +10,14 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
-def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs):  # noqa 0821
+def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     return schema.load(kwargs)
 
 
-def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
+def load_trainer_with_kwargs(model_type: str, kwargs) -> Tuple["BaseMarshmallowConfig", Dict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
@@ -43,8 +40,11 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
 
 def load_config_with_kwargs(
     cls: Type["BaseMarshmallowConfig"], kwargs_overrides
-) -> "BaseMarshmallowConfig":  # noqa 0821
-    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
+) -> Tuple["BaseMarshmallowConfig", Dict[str, Any]]:  # noqa 0821
+    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
+
+    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are no present in config.
+    """
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     fields = schema.fields.keys()
@@ -53,7 +53,7 @@ def load_config_with_kwargs(
     }
 
 
-def create_cond(if_pred: TDict, then_pred: TDict):
+def create_cond(if_pred: Dict, then_pred: Dict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
@@ -84,7 +84,7 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass) -> Dict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
@@ -143,7 +143,7 @@ def String(
 
 
 def StringOptions(
-    options: TList[str],
+    options: List[str],
     default: Union[None, str] = None,
     allow_none: bool = True,
     description: str = "",
@@ -411,7 +411,7 @@ def FloatRange(
     )
 
 
-def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
+def Dict(default: Union[None, Dict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
         try:
@@ -437,7 +437,7 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def DictList(
-    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Union[None, List[Dict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -581,11 +581,11 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1, description=""):
-    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
-    range.
+    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
-    In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
-    The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
+    tuple with all values in given range. In particular, inputs must be N-dimensional tuples of purely numeric values
+    within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
+    representation of a Python tuple.
     """
     if N != len(default):
         raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
@@ -637,10 +637,10 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 
 def OneOfOptionsField(
-    default: TAny,
+    default: Any,
     description: str,
     allow_none: bool,
-    field_options: TList,
+    field_options: List,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
@@ -687,7 +687,7 @@ def OneOfOptionsField(
 
                     @m_dataclass
                     class DummyClass:
-                        tmp: TAny = option
+                        tmp: Any = option
 
                     dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
                     tmp_json_schema = dummy_schema["properties"]["tmp"]

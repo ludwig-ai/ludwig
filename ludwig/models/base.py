@@ -7,14 +7,17 @@ import numpy as np
 import torch
 
 from ludwig.combiners.combiners import Combiner
-from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.constants import COMBINED, DECODER, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import DEVICE, LudwigModule, reg_loss
 from ludwig.utils.types import TorchDevice
+
+logger = logging.getLogger(__name__)
 
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
@@ -54,7 +57,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
-        logging.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
+        logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
 
         encoder_obj = None
         if input_feature_def.get(TIED, None) is not None:
@@ -63,7 +66,11 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
                 encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
         input_feature_class = get_from_registry(input_feature_def[TYPE], input_type_registry)
-        input_feature_obj = input_feature_class(input_feature_def, encoder_obj)
+        config, kwargs = load_config_with_kwargs(
+            input_feature_class.get_schema_cls(),
+            input_feature_def,
+        )
+        input_feature_obj = input_feature_class(input_feature_config=config, encoder_obj=encoder_obj, **kwargs)
 
         return input_feature_obj
 
@@ -76,7 +83,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
-            output_feature_def["input_size"] = combiner.output_shape[-1]
+            output_feature_def[DECODER]["input_size"] = combiner.output_shape[-1]
             output_feature = cls.build_single_output(output_feature_def, output_features)
             output_features[output_feature_def[NAME]] = output_feature
 
@@ -87,10 +94,16 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
-        logging.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
+        logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
 
         output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-        output_feature_obj = output_feature_class(output_feature_def, output_features)
+        config, kwargs = load_config_with_kwargs(
+            output_feature_class.get_schema_cls(),
+            output_feature_def,
+        )
+        output_feature_obj = output_feature_class(
+            output_feature_config=config, output_features=output_features, **kwargs
+        )
 
         return output_feature_obj
 

@@ -34,7 +34,7 @@ from PIL import Image
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER, VECTOR
+from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -45,7 +45,6 @@ try:
     import ray
 except ImportError:
     ray = None
-
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +73,6 @@ HF_ENCODERS = [
     "electra",
     "mt5",
 ]
-
 
 RAY_BACKEND_CONFIG = {
     "type": "ray",
@@ -198,6 +196,7 @@ def generate_data(
     :param input_features: schema
     :param output_features: schema
     :param filename: path to the file where data is stored
+    :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
     features = input_features + output_features
@@ -212,21 +211,38 @@ def generate_data(
     return filename
 
 
+def recursive_update(dictionary, values):
+    for k, v in values.items():
+        if isinstance(v, dict):
+            dictionary[k] = recursive_update(dictionary.get(k, {}), v)
+        else:
+            dictionary[k] = v
+    return dictionary
+
+
 def random_string(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
 def number_feature(normalization=None, **kwargs):
-    feature = {"name": "num_" + random_string(), "type": "number", "preprocessing": {"normalization": normalization}}
-    feature.update(kwargs)
+    feature = {
+        "name": "num_" + random_string(),
+        "type": "number",
+        "preprocessing": {"normalization": normalization},
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def category_feature(**kwargs):
-    feature = {"type": "category", "name": "category_" + random_string(), "vocab_size": 10, "embedding_size": 5}
-    feature.update(kwargs)
+    feature = {
+        "type": "category",
+        "name": "category_" + random_string(),
+        ENCODER: {"vocab_size": 10, "embedding_size": 5},
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -236,21 +252,27 @@ def text_feature(**kwargs):
     feature = {
         "name": "text_" + random_string(),
         "type": "text",
-        "vocab_size": 5,
-        "min_len": 7,
-        "max_len": 7,
-        "embedding_size": 8,
-        "state_size": 8,
+        ENCODER: {
+            "vocab_size": 5,
+            "min_len": 7,
+            "max_len": 7,
+            "embedding_size": 8,
+            "state_size": 8,
+        },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def set_feature(**kwargs):
-    feature = {"type": "set", "name": "set_" + random_string(), "vocab_size": 10, "max_len": 5, "embedding_size": 5}
-    feature.update(kwargs)
+    feature = {
+        "type": "set",
+        "name": "set_" + random_string(),
+        ENCODER: {"vocab_size": 10, "max_len": 5, "embedding_size": 5},
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -260,16 +282,18 @@ def sequence_feature(**kwargs):
     feature = {
         "type": "sequence",
         "name": "sequence_" + random_string(),
-        "vocab_size": 10,
-        "max_len": 7,
-        "encoder": "embed",
-        "embedding_size": 8,
-        "output_size": 8,
-        "state_size": 8,
-        "num_filters": 8,
-        "hidden_size": 8,
+        ENCODER: {
+            "type": "embed",
+            "vocab_size": 10,
+            "max_len": 7,
+            "embedding_size": 8,
+            "output_size": 8,
+            "state_size": 8,
+            "num_filters": 8,
+            "hidden_size": 8,
+        },
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -279,14 +303,16 @@ def image_feature(folder, **kwargs):
     feature = {
         "type": "image",
         "name": "image_" + random_string(),
-        "encoder": "resnet",
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
-        "resnet_size": 8,
+        ENCODER: {
+            "type": "resnet",
+            "resnet_size": 8,
+            "num_filters": 8,
+            "output_size": 8,
+        },
         "destination_folder": folder,
-        "output_size": 8,
-        "num_filters": 8,
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -303,40 +329,53 @@ def audio_feature(folder, **kwargs):
             "num_filter_bands": 80,
             "audio_file_length_limit_in_s": 3.0,
         },
-        "encoder": "stacked_cnn",
-        "should_embed": False,
-        "conv_layers": [
-            {"filter_size": 400, "pool_size": 16, "num_filters": 32},
-            {"filter_size": 40, "pool_size": 10, "num_filters": 64},
-        ],
-        "output_size": 16,
+        ENCODER: {
+            "type": "stacked_cnn",
+            "should_embed": False,
+            "conv_layers": [
+                {"filter_size": 400, "pool_size": 16, "num_filters": 32},
+                {"filter_size": 40, "pool_size": 10, "num_filters": 64},
+            ],
+            "output_size": 16,
+        },
         "destination_folder": folder,
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def timeseries_feature(**kwargs):
-    feature = {"name": "timeseries_" + random_string(), "type": "timeseries", "max_len": 7}
-    feature.update(kwargs)
+    feature = {
+        "name": "timeseries_" + random_string(),
+        "type": "timeseries",
+        ENCODER: {"max_len": 7},
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def binary_feature(**kwargs):
-    feature = {"name": "binary_" + random_string(), "type": "binary"}
-    feature.update(kwargs)
+    feature = {
+        "name": "binary_" + random_string(),
+        "type": "binary",
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def bag_feature(**kwargs):
-    feature = {"name": "bag_" + random_string(), "type": "bag", "max_len": 5, "vocab_size": 10, "embedding_size": 5}
-    feature.update(kwargs)
+    feature = {
+        "name": "bag_" + random_string(),
+        "type": "bag",
+        ENCODER: {"max_len": 5, "vocab_size": 10, "embedding_size": 5},
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -347,24 +386,31 @@ def date_feature(**kwargs):
         "name": "date_" + random_string(),
         "type": "date",
         "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
+        ENCODER: {},
     }
-    feature.update(kwargs)
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def h3_feature(**kwargs):
-    feature = {"name": "h3_" + random_string(), "type": "h3"}
-    feature.update(kwargs)
+    feature = {"name": "h3_" + random_string(), "type": "h3", ENCODER: {}}
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
 def vector_feature(**kwargs):
-    feature = {"type": VECTOR, "vector_size": 5, "name": "vector_" + random_string()}
-    feature.update(kwargs)
+    feature = {
+        "type": VECTOR,
+        "name": "vector_" + random_string(),
+        "preprocessing": {
+            "vector_size": 5,
+        },
+    }
+    recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
@@ -427,8 +473,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
-        sequence_feature(vocab_size=10, max_len=5),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        sequence_feature(decoder={"vocab_size": 10, "max_len": 5}),
         number_feature(),
     ]
 
@@ -453,12 +499,12 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 def generate_output_features_with_dependencies_complex():
     """Generates multiple output features specifications with dependencies."""
 
-    tf = text_feature(vocab_size=4, max_len=5, decoder="generator")
-    sf = sequence_feature(vocab_size=4, max_len=5, decoder="generator", dependencies=[tf["name"]])
+    tf = text_feature(decoder={"vocab_size": 4, "max_len": 5, "type": "generator"})
+    sf = sequence_feature(decoder={"vocab_size": 4, "max_len": 5, "type": "generator"}, dependencies=[tf["name"]])
     nf = number_feature(dependencies=[tf["name"]])
     vf = vector_feature(dependencies=[sf["name"], nf["name"]])
-    set_f = set_feature(vocab_size=4, dependencies=[tf["name"], vf["name"]])
-    cf = category_feature(vocab_size=4, dependencies=[sf["name"], nf["name"], set_f["name"]])
+    set_f = set_feature(decoder={"vocab_size": 4}, dependencies=[tf["name"], vf["name"]])
+    cf = category_feature(decoder={"vocab_size": 4}, dependencies=[sf["name"], nf["name"], set_f["name"]])
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
     # # shuffling it to test the robustness of the topological sort
