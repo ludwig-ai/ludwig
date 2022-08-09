@@ -57,7 +57,7 @@ class GeneratedInferenceModule(torch.nn.Module):
     def forward(self, {input_signature}):
         with torch.no_grad():
             inputs: Dict[str, {input_type}] = {input_dict}
-            results = self.inference_module.forward(inputs, batch=True)
+            results = self.inference_module.forward(inputs)
             return {output_tuple}
 """
 

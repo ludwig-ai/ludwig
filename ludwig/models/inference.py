@@ -158,7 +158,7 @@ class _InferencePreprocessor(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
 
-    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput], batch: bool = False) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: Dict[str, TorchscriptPreprocessingInput]) -> Dict[str, torch.Tensor]:
         preproc_inputs = {}
         for module_dict_key, preproc in self.preproc_modules.items():
             feature_name = get_name_from_module_dict_key(module_dict_key)
@@ -185,11 +185,7 @@ class _InferencePredictor(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.predict_modules[module_dict_key] = feature.prediction_module.to(device=self.device)
 
-    def forward(self, preproc_inputs: Dict[str, torch.Tensor], batch: bool = False) -> Dict[str, torch.Tensor]:
-        if batch:
-            for key, value in preproc_inputs.items():
-                preproc_inputs[key] = torch.squeeze(value, 1)
-
+    def forward(self, preproc_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         model_outputs = self.model(preproc_inputs)
         predictions_flattened: Dict[str, torch.Tensor] = {}
         for module_dict_key, predict in self.predict_modules.items():
@@ -219,7 +215,7 @@ class _InferencePostprocessor(nn.Module):
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.postproc_modules[module_dict_key] = feature.create_postproc_module(training_set_metadata[feature_name])
 
-    def forward(self, predictions_flattened: Dict[str, torch.Tensor], batch: bool = False) -> Dict[str, Any]:
+    def forward(self, predictions_flattened: Dict[str, torch.Tensor]) -> Dict[str, Any]:
         postproc_outputs_flattened: Dict[str, Any] = {}
         for module_dict_key, postproc in self.postproc_modules.items():
             feature_name = get_name_from_module_dict_key(module_dict_key)
