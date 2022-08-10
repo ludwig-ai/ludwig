@@ -6,7 +6,6 @@ import torch
 
 from ludwig.constants import CROP_OR_PAD, ENCODER, INTERPOLATE, TYPE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
-from ludwig.models.base import BaseModel
 
 BATCH_SIZE = 2
 
@@ -78,7 +77,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     ImageInputFeature.populate_defaults(image_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = BaseModel.build_single_input(image_def, None)
+    input_feature_obj = ImageInputFeature.load_from_dictionary(image_def)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 256, size=(BATCH_SIZE, num_channels, height, width), dtype=torch.uint8)

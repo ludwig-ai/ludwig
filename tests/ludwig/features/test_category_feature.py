@@ -6,7 +6,6 @@ import torch
 
 from ludwig.constants import ENCODER, TYPE
 from ludwig.features.category_feature import CategoryInputFeature
-from ludwig.models.base import BaseModel
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
@@ -44,7 +43,7 @@ def test_category_input_feature(
     CategoryInputFeature.populate_defaults(category_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = BaseModel.build_single_input(category_def, None).to(DEVICE)
+    input_feature_obj = CategoryInputFeature.load_from_dictionary(category_def).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 3, size=(BATCH_SIZE,), dtype=torch.int32).to(DEVICE)

@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from ludwig.constants import ENCODER
-from ludwig.models.base import BaseModel
+from ludwig.features.bag_feature import BagInputFeature
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
@@ -36,7 +36,7 @@ def bag_config():
 @pytest.mark.parametrize("encoder", ["embed"])
 def test_bag_input_feature(bag_config: Dict, encoder: str) -> None:
     bag_config[ENCODER].update({"type": encoder})
-    bag_input_feature = BaseModel.build_single_input(bag_config, None)
+    bag_input_feature = BagInputFeature.load_from_dictionary(bag_config)
     bag_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, BAG_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = bag_input_feature(bag_tensor)
     assert encoder_output["encoder_output"].shape[1:][1:] == bag_input_feature.output_shape

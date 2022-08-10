@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from ludwig.constants import ENCODER
-from ludwig.models.base import BaseModel
+from ludwig.features.binary_feature import BinaryInputFeature, BinaryOutputFeature
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
@@ -23,7 +23,7 @@ def binary_config():
 @pytest.mark.parametrize("encoder", ["passthrough"])
 def test_binary_input_feature(binary_config: Dict, encoder: str):
     binary_config.update({ENCODER: {"type": encoder}})
-    binary_input_feature = BaseModel.build_single_input(binary_config, None).to(DEVICE)
+    binary_input_feature = BinaryInputFeature.load_from_dictionary(binary_config).to(DEVICE)
     binary_tensor = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
     encoder_output = binary_input_feature(binary_tensor)
@@ -46,7 +46,7 @@ def test_binary_output_feature():
             "confidence_penalty": 0,
         },
     }
-    binary_output_feature = BaseModel.build_single_output(binary_output_config, None).to(DEVICE)
+    binary_output_feature = BinaryOutputFeature.load_from_dictionary(binary_output_config).to(DEVICE)
     combiner_outputs = dict()
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
@@ -72,7 +72,7 @@ def test_binary_output_feature_without_positive_class_weight():
             "confidence_penalty": 0,
         },
     }
-    binary_output_feature = BaseModel.build_single_output(binary_output_config, None).to(DEVICE)
+    binary_output_feature = BinaryOutputFeature.load_from_dictionary(binary_output_config).to(DEVICE)
     combiner_outputs = {}
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
