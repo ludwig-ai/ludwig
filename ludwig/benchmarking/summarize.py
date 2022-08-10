@@ -6,9 +6,11 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple, Union
 
 import fsspec
+import traceback
+from summary_dataclasses import build_experiments_diff, ExperimentsDiff
 
-from ludwig.benchmarking.summary_dataclasses import ExperimentsDiff
-from ludwig.globals import CONFIG_YAML, REPORT_JSON
+from ludwig.globals import REPORT_JSON
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.fs_utils import get_fs_and_path
 
@@ -60,11 +62,12 @@ async def download_one(
     local_experiment_dir = os.path.join(local_dir, dataset_name, experiment_name)
     os.makedirs(local_experiment_dir, exist_ok=True)
     with ThreadPoolExecutor() as pool:
-        for f_name in [CONFIG_YAML, REPORT_JSON]:
+        remote_files = [file_dict["Key"] for file_dict in fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))]
+        for remote_file in remote_files:
             func = functools.partial(
                 fs.get,
-                os.path.join(download_base_path, dataset_name, experiment_name, f_name),
-                os.path.join(local_experiment_dir, f_name),
+                remote_file,
+                os.path.join(local_experiment_dir, remote_file.split("/")[-1]),
                 recursive=True,
             )
             await loop.run_in_executor(pool, func)
@@ -85,13 +88,17 @@ def build_summary(
     """
     config = load_yaml(bench_config_path)
     downloaded_names = set(download_artifacts(config, base_experiment, experimental_experiment, download_base_path))
+    # print(downloaded_names)
     experiment_diffs = []
     for n in downloaded_names:
         if isinstance(n, tuple) and len(n) == 2:
             (dataset_name, local_dir) = n
-            e = ExperimentsDiff(dataset_name, base_experiment, experimental_experiment, local_dir)
-            if not e.empty:
+            try:
+                e = build_experiments_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
                 experiment_diffs.append(e)
+            except Exception as e:
+                print("Exception encountered while creating diff summary for", dataset_name)
+                print(traceback.format_exc())
     return experiment_diffs
 
 
@@ -167,8 +174,8 @@ def export_summary(experiment_diffs: List[ExperimentsDiff]) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment-one", type=str, help="Name of first experiment", default="0.5.2")
-    parser.add_argument("--experiment-two", type=str, help="Name of first experiment", default="0.5.3")
+    parser.add_argument("--experiment-one", type=str, help="Name of first experiment", default="0.5.3")
+    parser.add_argument("--experiment-two", type=str, help="Name of first experiment", default="0.5.4")
     parser.add_argument(
         "--download-base-path",
         type=str,
@@ -178,9 +185,10 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    os.chdir("bench")
+    # os.chdir("bench")
 
     summary = build_summary(
         "./configs/temp.yaml", args.experiment_one, args.experiment_two, download_base_path=args.download_base_path
     )
+    print(summary)
     export_summary(summary)
