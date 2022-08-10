@@ -438,18 +438,14 @@ class ViTEncoderConfig(BaseEncoderConfig):
         description="Width of the input image.",
     )
 
-    use_pretrained: bool = (
-        schema_utils.Boolean(
-            default=True,
-            description="Use pre-trained model weights from Hugging Face.",
-        ),
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Use pre-trained model weights from Hugging Face.",
     )
 
-    pretrained_model: str = (
-        schema_utils.String(  # Internal Only
-            default="google/vit-base-patch16-224",
-            description="The name of the pre-trained model to use.",
-        ),
+    pretrained_model: str = schema_utils.String(
+        default="google/vit-base-patch16-224",
+        description="The name of the pre-trained model to use.",
     )
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
