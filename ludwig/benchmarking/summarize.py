@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, '/Users/waelabid/projects/predibase/ludwig/')
+
 import argparse
 import asyncio
 import functools
@@ -63,6 +66,7 @@ async def download_one(
     os.makedirs(local_experiment_dir, exist_ok=True)
     with ThreadPoolExecutor() as pool:
         remote_files = [file_dict["Key"] for file_dict in fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))]
+        remote_files = [remote_file for remote_file in remote_files if remote_file.endswith(".json")]
         for remote_file in remote_files:
             func = functools.partial(
                 fs.get,
@@ -190,5 +194,4 @@ if __name__ == "__main__":
     summary = build_summary(
         "./configs/temp.yaml", args.experiment_one, args.experiment_two, download_base_path=args.download_base_path
     )
-    print(summary)
     export_summary(summary)
