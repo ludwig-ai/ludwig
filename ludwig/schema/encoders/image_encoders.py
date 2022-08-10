@@ -372,6 +372,11 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
         description="Width of the input image.",
     )
 
+    num_channels: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Number of channels to use in the encoder. ",
+    )
+
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
