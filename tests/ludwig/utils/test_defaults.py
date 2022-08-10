@@ -283,8 +283,6 @@ def test_set_default_values():
     }
 
     assert TIED not in config[INPUT_FEATURES][0]
-    assert TYPE not in config[OUTPUT_FEATURES][0][ENCODER]
-    assert TYPE not in config[OUTPUT_FEATURES][0][DECODER]
     assert TOP_K not in config[OUTPUT_FEATURES][0]
     assert DEPENDENCIES not in config[OUTPUT_FEATURES][0]
     assert REDUCE_INPUT not in config[OUTPUT_FEATURES][0]
@@ -397,10 +395,12 @@ def test_merge_with_defaults():
                 "type": "number",
                 "name": "number_output_feature",
                 "column": "number_output_feature",
-                "decoder": {"type": "regressor"},
+                "decoder": {
+                    "type": "regressor",
+                    "clip": None,
+                },
                 "proc_column": "number_output_feature_mZFLky",
                 "loss": {"type": "mean_squared_error", "weight": 1},
-                "clip": None,
                 "dependencies": [],
                 "reduce_input": "sum",
                 "reduce_dependencies": "sum",
@@ -474,6 +474,7 @@ def test_merge_with_defaults():
                     "lowercase": True,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "category": {
@@ -482,6 +483,7 @@ def test_merge_with_defaults():
                     "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "set": {
@@ -491,6 +493,7 @@ def test_merge_with_defaults():
                     "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "bag": {
@@ -500,11 +503,24 @@ def test_merge_with_defaults():
                     "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
-            "binary": {PREPROCESSING: {"missing_value_strategy": "fill_with_false"}},
+            "binary": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_false",
+                    "computed_fill_value": None,
+                    "fallback_true_label": None,
+                    "fill_value": None,
+                }
+            },
             "number": {
-                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None}
+                PREPROCESSING: {
+                    "computed_fill_value": 0.0,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": 0.0,
+                    "normalization": None,
+                }
             },
             "sequence": {
                 PREPROCESSING: {
@@ -518,20 +534,27 @@ def test_merge_with_defaults():
                     "vocab_file": None,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "timeseries": {
                 PREPROCESSING: {
                     "timeseries_length_limit": 256,
-                    "padding_value": 0,
+                    "padding_value": 0.0,
                     "padding": "right",
                     "tokenizer": "space",
                     "missing_value_strategy": "fill_with_const",
+                    "computed_fill_value": "",
                     "fill_value": "",
                 }
             },
             "image": {
                 PREPROCESSING: {
+                    "computed_fill_value": None,
+                    "fill_value": None,
+                    "height": None,
+                    "width": None,
+                    "num_channels": None,
                     "missing_value_strategy": "backfill",
                     "in_memory": True,
                     "resize_method": "interpolate",
@@ -549,7 +572,7 @@ def test_merge_with_defaults():
                     "audio_file_length_limit_in_s": 7.5,
                     "missing_value_strategy": "backfill",
                     "in_memory": True,
-                    "padding_value": 0,
+                    "padding_value": 0.0,
                     "norm": None,
                     "type": "fbank",
                     "window_length_in_s": 0.04,
@@ -557,13 +580,33 @@ def test_merge_with_defaults():
                     "num_fft_points": None,
                     "window_type": "hamming",
                     "num_filter_bands": 80,
+                    "computed_fill_value": None,
+                    "fill_value": None,
                 }
             },
-            "h3": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319}},
-            "date": {
-                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None}
+            "h3": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": 576495936675512319,
+                    "computed_fill_value": 576495936675512319,
+                }
             },
-            "vector": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": ""}},
+            "date": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_const",
+                    "computed_fill_value": "",
+                    "fill_value": "",
+                    "datetime_format": None,
+                }
+            },
+            "vector": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_const",
+                    "computed_fill_value": "",
+                    "fill_value": "",
+                    "vector_size": None,
+                }
+            },
         },
         "combiner": {
             "type": "concat",
