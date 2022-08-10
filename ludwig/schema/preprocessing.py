@@ -192,20 +192,20 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
         field_options=[
-            schema_utils.FloatRange(default=None, allow_none=True, min=0, max=1),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default=None),
+            schema_utils.FloatRange(allow_none=False, default=0, min=0, max=1),
+            schema_utils.StringOptions(allow_none=True, options=strings_utils.all_bool_strs()),
         ],
     )
 
     computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=False,
+        allow_none=True,
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
         field_options=[
-            schema_utils.FloatRange(default=None, allow_none=True, min=0, max=1),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default=None),
+            schema_utils.FloatRange(allow_none=False, default=0, min=0, max=1),
+            schema_utils.StringOptions(allow_none=True, options=strings_utils.all_bool_strs()),
         ],
     )
 

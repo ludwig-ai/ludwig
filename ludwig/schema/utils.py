@@ -825,13 +825,10 @@ def FloatRangeTupleDataclassField(
 
 
 def OneOfOptionsField(
-    default: Any,
-    description: str,
-    allow_none: bool,
-    field_options: TList,
-    parameter_metadata: ParameterMetadata = None,
+    default: Any, description: str, allow_none: bool, field_options: TList, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
+    field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
@@ -881,10 +878,10 @@ def OneOfOptionsField(
                     tmp_json_schema = dummy_schema["properties"]["tmp"]
                     oneOf["oneOf"].append(tmp_json_schema)
 
-            # Add null as an option if applicable:
+            # Add null as an option if none of the field options allow none:
             oneOf["oneOf"] += (
                 [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none
+                if allow_none and not field_options_allow_none
                 else []
             )
 
