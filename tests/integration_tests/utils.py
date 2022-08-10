@@ -240,7 +240,7 @@ def category_feature(**kwargs):
     feature = {
         "type": "category",
         "name": "category_" + random_string(),
-        ENCODER: {"vocab_size": 10, "embedding_size": 5},
+        ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -253,6 +253,7 @@ def text_feature(**kwargs):
         "name": "text_" + random_string(),
         "type": "text",
         ENCODER: {
+            "type": "parallel_cnn",
             "vocab_size": 5,
             "min_len": 7,
             "max_len": 7,
@@ -270,7 +271,7 @@ def set_feature(**kwargs):
     feature = {
         "type": "set",
         "name": "set_" + random_string(),
-        ENCODER: {"vocab_size": 10, "max_len": 5, "embedding_size": 5},
+        ENCODER: {"type": "embed", "vocab_size": 10, "max_len": 5, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -350,7 +351,7 @@ def timeseries_feature(**kwargs):
     feature = {
         "name": "timeseries_" + random_string(),
         "type": "timeseries",
-        ENCODER: {"max_len": 7},
+        ENCODER: {"type": "parallel_cnn", "max_len": 7},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -373,7 +374,7 @@ def bag_feature(**kwargs):
     feature = {
         "name": "bag_" + random_string(),
         "type": "bag",
-        ENCODER: {"max_len": 5, "vocab_size": 10, "embedding_size": 5},
+        ENCODER: {"type": "dense", "max_len": 5, "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -386,7 +387,6 @@ def date_feature(**kwargs):
         "name": "date_" + random_string(),
         "type": "date",
         "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
-        ENCODER: {},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -395,7 +395,7 @@ def date_feature(**kwargs):
 
 
 def h3_feature(**kwargs):
-    feature = {"name": "h3_" + random_string(), "type": "h3", ENCODER: {}}
+    feature = {"name": "h3_" + random_string(), "type": "h3"}
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -473,8 +473,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
-        sequence_feature(decoder={"vocab_size": 10, "max_len": 5}),
+        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum"),
+        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}),
         number_feature(),
     ]
 
@@ -503,8 +503,10 @@ def generate_output_features_with_dependencies_complex():
     sf = sequence_feature(decoder={"vocab_size": 4, "max_len": 5, "type": "generator"}, dependencies=[tf["name"]])
     nf = number_feature(dependencies=[tf["name"]])
     vf = vector_feature(dependencies=[sf["name"], nf["name"]])
-    set_f = set_feature(decoder={"vocab_size": 4}, dependencies=[tf["name"], vf["name"]])
-    cf = category_feature(decoder={"vocab_size": 4}, dependencies=[sf["name"], nf["name"], set_f["name"]])
+    set_f = set_feature(decoder={"type": "classifier", "vocab_size": 4}, dependencies=[tf["name"], vf["name"]])
+    cf = category_feature(
+        decoder={"type": "classifier", "vocab_size": 4}, dependencies=[sf["name"], nf["name"], set_f["name"]]
+    )
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
     # # shuffling it to test the robustness of the topological sort
