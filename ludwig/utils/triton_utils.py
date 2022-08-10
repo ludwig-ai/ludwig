@@ -550,13 +550,13 @@ class TritonModel:
 def export_triton(
     model: LudwigModel,
     data_example: pd.DataFrame,
-    predictor_max_batch_size: int = 64,
-    max_queue_delay_microseconds: int = 100,
     output_path: str = "model_repository",
     model_name: str = "ludwig_model",
     model_version: Union[int, str] = 1,
     device: str = "cpu",
     device_count: int = 1,
+    predictor_max_batch_size: int = 64,
+    max_queue_delay_microseconds: int = 100,
 ) -> Dict[str, Tuple[str, str]]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
