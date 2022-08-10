@@ -4,9 +4,9 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import CROP_OR_PAD, ENCODER, INTERPOLATE
+from ludwig.constants import CROP_OR_PAD, ENCODER, INTERPOLATE, TYPE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
-from ludwig.models.ecd import ECD
+from ludwig.models.base import BaseModel
 
 BATCH_SIZE = 2
 
@@ -66,10 +66,10 @@ def image_config():
         ("vit", 224, 224, 3),
     ],
 )
-def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels) -> None:
+def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels: int) -> None:
     # setup image input feature definition
     image_def = deepcopy(image_config)
-    image_def[ENCODER]["type"] = encoder
+    image_def[ENCODER][TYPE] = encoder
     image_def[ENCODER]["height"] = height
     image_def[ENCODER]["width"] = width
     image_def[ENCODER]["num_channels"] = num_channels
@@ -78,7 +78,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     ImageInputFeature.populate_defaults(image_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = ECD.build_single_input(image_def, None)
+    input_feature_obj = BaseModel.build_single_input(image_def, None)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 256, size=(BATCH_SIZE, num_channels, height, width), dtype=torch.uint8)
@@ -106,6 +106,10 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     #         raise RuntimeError(
     #             f'no parameter update for {a[0]}'
     #         )
+
+
+if __name__ == "__main__":
+    test_image_input_feature(image_config(), "vit", 224, 224, 3)
 
 
 def test_image_preproc_module_bad_num_channels():

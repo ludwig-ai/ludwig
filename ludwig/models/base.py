@@ -54,7 +54,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_input(
-        input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature]
+        input_feature_def: Dict[str, Any], other_input_features: Optional[Dict[str, InputFeature]]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
         logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
@@ -91,7 +91,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_output(
-        output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]
+        output_feature_def: Dict[str, Any], output_features: Optional[Dict[str, OutputFeature]]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
         logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
