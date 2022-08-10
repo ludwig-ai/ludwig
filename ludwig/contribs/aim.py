@@ -1,6 +1,8 @@
+import json
 import logging
 
 from ludwig.callbacks import Callback
+from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.package_utils import LazyLoader
 
 aim = LazyLoader("aim", globals(), "aim")
@@ -10,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 class AimCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
+
+    def __init__(self, repo=None):
+        self.repo = repo
 
     def on_train_init(
         self,
@@ -22,19 +27,18 @@ class AimCallback(Callback):
     ):
         logger.info("aim.on_train_init() called...")
 
-        self.aim_run = aim.Run(repo=experiment_directory, experiment=experiment_name, run_hash=None)
-        self.aim_run["base_config"] = base_config
+        self.aim_run = aim.Run(repo=self.repo, experiment=experiment_name, run_hash=model_name)
+        self.aim_run["base_config"] = self.normalize_config(base_config)
 
-        params = dict(name=model_name, dir=output_directory)
+        params = dict(name=model_name, dir=experiment_directory)
         self.aim_run["params"] = params
 
     def aim_track(self, progress_tracker):
+        logger.info(f"aim.aim_track() called for epoch {progress_tracker.epoch}, step: {progress_tracker.steps}")
 
         if self.aim_run:
-            train_config = self.aim_run["train_config"]
             for key, value in progress_tracker.log_metrics().items():
                 if "metrics" in key:
-                    print(key)
                     metrics_dict_name, feature_name, metric_name = key.split(".")
 
                     self.aim_run.track(
@@ -44,10 +48,6 @@ class AimCallback(Callback):
                         epoch=progress_tracker.epoch,
                         step=progress_tracker.steps,
                     )
-                else:
-                    train_config[key] = value
-
-            self.aim_run["train_config"] = train_config
 
     def on_trainer_train_teardown(self, trainer, progress_tracker, save_path, is_coordinator: bool):
         pass
@@ -59,8 +59,7 @@ class AimCallback(Callback):
         del config["input_features"]
         del config["output_features"]
 
-        print(config)
-        self.aim_run["train_config"] = config
+        self.aim_run["train_config"] = self.normalize_config(config)
 
     def on_train_end(self, output_directory, *args, **kwargs):
         pass
@@ -72,7 +71,7 @@ class AimCallback(Callback):
                 if "param" not in key:
                     optimizer_config[f"param_group_{index}_{key}"] = group[key]
 
-        self.aim_run["optimizer_config"] = optimizer_config
+        self.aim_run["optimizer_config"] = self.normalize_config(optimizer_config)
 
         self.aim_track(progress_tracker)
 
@@ -84,6 +83,11 @@ class AimCallback(Callback):
         logger.info("aim.on_visualize_figure() called...")
         if self.aim_run:
             self.aim_run.track(aim.Figure(fig), name="Figure", context={"type": "Training Figure"})
+
+    @staticmethod
+    def normalize_config(config):
+        """Convert to json string and back again to remove numpy types."""
+        return json.loads(json.dumps(config, cls=NumpyEncoder))
 
     @staticmethod
     def preload():
