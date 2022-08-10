@@ -9,7 +9,7 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
 
 
 @dataclass
-class ExperimentSummary:
+class ExperimentMetricsSummary:
     """Summary of metrics from one experiment.
 
     experiment_local_directory: path containing the artifacts for the experiment.
@@ -44,7 +44,7 @@ class MetricDiff:
 
 
 @dataclass
-class ExperimentsDiff:
+class ExperimentsMetricsDiff:
     """Store diffs for two experiments.
 
     dataset_name: dataset the two experiments are being compared on.
@@ -59,12 +59,12 @@ class ExperimentsDiff:
     base_experiment_name: str
     experimental_experiment_name: str
     local_directory: str
-    base_summary: ExperimentSummary
-    experimental_summary: ExperimentSummary
+    base_summary: ExperimentMetricsSummary
+    experimental_summary: ExperimentMetricsSummary
     metrics: List[MetricDiff]
 
 
-def build_experiment_summary(experiment_local_directory: str) -> ExperimentSummary:
+def build_experiment_metrics_summary(experiment_local_directory: str) -> ExperimentMetricsSummary:
     config = load_json(os.path.join(experiment_local_directory, MODEL_HYPERPARAMETERS_FILE_NAME))
     report = load_json(os.path.join(experiment_local_directory, REPORT_JSON))
     performance_metrics = report["evaluate"]["performance_metrics"]
@@ -76,13 +76,13 @@ def build_experiment_summary(experiment_local_directory: str) -> ExperimentSumma
                               metric_name in metric_dict}
     metric_names: set = set(metric_to_values.keys())
 
-    return ExperimentSummary(experiment_local_directory=experiment_local_directory,
-                             config=config,
-                             output_feature_name=output_feature_name,
-                             output_feature_type=output_feature_type,
-                             metric_to_values=metric_to_values,
-                             metric_names=metric_names,
-                             )
+    return ExperimentMetricsSummary(experiment_local_directory=experiment_local_directory,
+                                    config=config,
+                                    output_feature_name=output_feature_name,
+                                    output_feature_type=output_feature_type,
+                                    metric_to_values=metric_to_values,
+                                    metric_names=metric_names,
+                                    )
 
 
 def build_metric_diff(name: str, base_value: float, experimental_value: float) -> MetricDiff:
@@ -97,10 +97,11 @@ def build_metric_diff(name: str, base_value: float, experimental_value: float) -
                       )
 
 
-def build_experiments_diff(dataset_name, base_experiment_name, experimental_experiment_name, local_directory):
-    base_summary: ExperimentSummary = build_experiment_summary(
+def build_experiments_metrics_diff(dataset_name: str, base_experiment_name: str, experimental_experiment_name: str,
+                                   local_directory: str) -> ExperimentsMetricsDiff:
+    base_summary: ExperimentMetricsSummary = build_experiment_metrics_summary(
         os.path.join(local_directory, dataset_name, base_experiment_name))
-    experimental_summary: ExperimentSummary = build_experiment_summary(
+    experimental_summary: ExperimentMetricsSummary = build_experiment_metrics_summary(
         os.path.join(local_directory, dataset_name, experimental_experiment_name))
 
     shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
@@ -109,11 +110,11 @@ def build_experiments_diff(dataset_name, base_experiment_name, experimental_expe
         build_metric_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name]) for
         name in shared_metrics]
 
-    return ExperimentsDiff(dataset_name=dataset_name,
-                           base_experiment_name=base_experiment_name,
-                           experimental_experiment_name=experimental_experiment_name,
-                           local_directory=local_directory,
-                           base_summary=base_summary,
-                           experimental_summary=experimental_summary,
-                           metrics=metrics,
-                           )
+    return ExperimentsMetricsDiff(dataset_name=dataset_name,
+                                  base_experiment_name=base_experiment_name,
+                                  experimental_experiment_name=experimental_experiment_name,
+                                  local_directory=local_directory,
+                                  base_summary=base_summary,
+                                  experimental_summary=experimental_summary,
+                                  metrics=metrics,
+                                  )

@@ -10,14 +10,15 @@ from typing import Any, Dict, List, Tuple, Union
 
 import fsspec
 import traceback
-from summary_dataclasses import build_experiments_diff, ExperimentsDiff
+from summary_dataclasses import build_experiments_metrics_diff, ExperimentsMetricsDiff
 
-from ludwig.globals import REPORT_JSON
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.fs_utils import get_fs_and_path
 
-# todo (Wael): to update once summary dataclasses PR is merged.
+
+
+
+
 
 
 def download_artifacts(
@@ -78,9 +79,9 @@ async def download_one(
     return dataset_name, local_dir
 
 
-def build_summary(
+def build_metrics_summary(
     bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
-) -> List[ExperimentsDiff]:
+) -> List[ExperimentsMetricsDiff]:
     """Build summary and diffs of artifacts.
 
     bench_config_path: bench config file path. Can be the same one that was used to run
@@ -92,13 +93,13 @@ def build_summary(
     """
     config = load_yaml(bench_config_path)
     downloaded_names = set(download_artifacts(config, base_experiment, experimental_experiment, download_base_path))
-    # print(downloaded_names)
+    print(downloaded_names)
     experiment_diffs = []
     for n in downloaded_names:
         if isinstance(n, tuple) and len(n) == 2:
             (dataset_name, local_dir) = n
             try:
-                e = build_experiments_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
+                e = build_experiments_metrics_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
                 experiment_diffs.append(e)
             except Exception as e:
                 print("Exception encountered while creating diff summary for", dataset_name)
@@ -106,7 +107,7 @@ def build_summary(
     return experiment_diffs
 
 
-def export_summary(experiment_diffs: List[ExperimentsDiff]) -> None:
+def export_metrics_summary(experiment_diffs: List[ExperimentsMetricsDiff]) -> None:
     """Print and export to .csv the summary of metrics and their diffs.
 
     experiment_diffs: list of `ExperimentsDiff` dataclass, containing summary
@@ -191,7 +192,7 @@ if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     # os.chdir("bench")
 
-    summary = build_summary(
+    summary = build_metrics_summary(
         "./configs/temp.yaml", args.experiment_one, args.experiment_two, download_base_path=args.download_base_path
     )
-    export_summary(summary)
+    export_metrics_summary(summary)
