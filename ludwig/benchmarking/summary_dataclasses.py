@@ -2,6 +2,7 @@ import os
 
 from typing import Union, List, Dict, Any
 from dataclasses import dataclass
+from statistics import mean
 import ludwig.modules.metric_modules
 from ludwig.utils.data_utils import load_json
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry
@@ -118,3 +119,95 @@ def build_experiments_metrics_diff(dataset_name: str, base_experiment_name: str,
                                   experimental_summary=experimental_summary,
                                   metrics=metrics,
                                   )
+
+
+@dataclass
+class ResourceUsageSummary:
+    """Summary of metrics from one experiment.
+
+    experiment_local_directory: path containing the artifacts for the experiment.
+    output_feature_type: LudwigModel output feature type.
+    output_feature_name: LudwigModel output feature name.
+    metric_to_values: dictionary that maps from metric name to their values.
+    metric_names: names of metrics for the output feature.
+    """
+    path: str
+    code_block_tag: str
+    metric_to_values: Dict[str, Union[float, int]]
+    metric_names: set
+
+
+def build_resource_usage_summary(path):
+    report = load_json(path)
+    code_block_tag = report["code_block_tag"]
+    # num_runs = report["num_runs"]
+    runs = report["runs"]
+
+    def average_runs(runs):
+        average_run = {"num_runs": len(runs)}
+        for metric in runs[0].keys():
+            average_run[metric] = mean([run[metric] for run in runs])
+        return average_run
+
+    average_run = average_runs(runs)
+    metric_names = set(average_run.keys())
+    return ResourceUsageSummary(path=path,
+                                code_block_tag=code_block_tag,
+                                metric_to_values=average_run,
+                                metric_names=metric_names)
+
+
+@dataclass
+class ResourceUsageDiff:
+    """Store diffs for two experiments.
+
+    dataset_name: dataset the two experiments are being compared on.
+    base_experiment_name: name of the base experiment (the one we benchmark against).
+    experimental_experiment_name: name of the experimental experiment.
+    local_directory: path under which all artifacts live on the local machine.
+    base_summary: `ExperimentSummary` of the base_experiment.
+    experimental_summary: `ExperimentSummary` of the experimental_experiment.
+    metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
+    """
+    dataset_name: str
+    code_block_tag: str
+    base_experiment_name: str
+    experimental_experiment_name: str
+    local_directory: str
+    base_summary: ResourceUsageSummary
+    experimental_summary: ResourceUsageSummary
+    metrics: List[MetricDiff]
+
+
+def build_experiments_resource_usage_diff(dataset_name: str, base_experiment_name: str,
+                                          experimental_experiment_name: str, local_directory: str):
+    base_dir = os.path.join(local_directory, dataset_name, base_experiment_name)
+    experimental_dir = os.path.join(local_directory, dataset_name, experimental_experiment_name)
+
+    base_experiment_reports = set(os.listdir(base_dir))
+    experimental_experiment_reports = set(os.listdir(experimental_dir))
+    shared_reports = base_experiment_reports.intersection(experimental_experiment_reports)
+
+    diffs = []
+    for report in shared_reports:
+        base_path = os.path.join(base_dir, report)
+        experimental_path = os.path.join(experimental_dir, report)
+        base_summary = build_resource_usage_summary(base_path)
+        experimental_summary = build_resource_usage_summary(experimental_path)
+
+        shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+        metrics: List[MetricDiff] = [
+            build_metric_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
+            for
+            name in shared_metrics]
+        diff = ResourceUsageDiff(dataset_name=dataset_name,
+                                 code_block_tag=base_summary.code_block_tag,
+                                 base_experiment_name=base_experiment_name,
+                                 experimental_experiment_name=experimental_experiment_name,
+                                 local_directory=local_directory,
+                                 base_summary=base_summary,
+                                 experimental_summary=experimental_summary,
+                                 metrics=metrics,
+                                 )
+        diffs.append(diff)
+    return diffs
