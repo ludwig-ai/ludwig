@@ -492,11 +492,11 @@ UNEMBEDDABLE_LAYER_NORM_PARAMETERS = 2
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_binary_and_number_without_category(
-        features_to_test: tuple,
-        embed_input_feature_name: Optional[Union[int, str]],
-        fc_layers: Optional[list],
-        reduce_output: str,
-        num_layers: int,
+    features_to_test: tuple,
+    embed_input_feature_name: Optional[Union[int, str]],
+    fc_layers: Optional[list],
+    reduce_output: str,
+    num_layers: int,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -536,7 +536,7 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
     # instantiate the TabTransformerCombiner object.
 
     assert upc == (
-            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+        tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -563,11 +563,11 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_number_and_binary_with_category(
-        features_to_test: tuple,
-        embed_input_feature_name: Optional[Union[int, str]],
-        fc_layers: Optional[list],
-        reduce_output: str,
-        num_layers: int,
+    features_to_test: tuple,
+    embed_input_feature_name: Optional[Union[int, str]],
+    fc_layers: Optional[list],
+    reduce_output: str,
+    num_layers: int,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -607,11 +607,11 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
     # instantiate the TabTransformerCombiner object.
 
     # determine number of categorical features
-    number_category_features = sum([input_features[i_f].type() == CATEGORY for i_f in input_features])
+    number_category_features = sum(input_features[i_f].type() == CATEGORY for i_f in input_features)
     adjustment_for_single_category = 1 if number_category_features == 1 else 0
 
     assert upc == (
-            tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
+        tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -639,11 +639,11 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_number_or_binary_without_category(
-        features_to_test: tuple,
-        embed_input_feature_name: Optional[Union[int, str]],
-        fc_layers: Optional[list],
-        reduce_output: str,
-        num_layers: int,
+    features_to_test: tuple,
+    embed_input_feature_name: Optional[Union[int, str]],
+    fc_layers: Optional[list],
+    reduce_output: str,
+    num_layers: int,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -683,17 +683,14 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
     # instantiate the TabTransformerCombiner object.
 
     assert upc == (
-            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+        tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
 @pytest.mark.parametrize(
     "feature_list",  # defines parameter for fixture features_to_test()
     [
-        [
-            ("binary", [BATCH_SIZE, 1]),
-            ("category", [BATCH_SIZE, 16])
-        ],
+        [("binary", [BATCH_SIZE, 1]), ("category", [BATCH_SIZE, 16])],
         [
             ("binary", [BATCH_SIZE, 1]),
             ("category", [BATCH_SIZE, 16]),
@@ -715,11 +712,11 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
 def test_tabtransformer_combiner_number_or_binary_with_category(
-        features_to_test: tuple,
-        embed_input_feature_name: Optional[Union[int, str]],
-        fc_layers: Optional[list],
-        reduce_output: str,
-        num_layers: int,
+    features_to_test: tuple,
+    embed_input_feature_name: Optional[Union[int, str]],
+    fc_layers: Optional[list],
+    reduce_output: str,
+    num_layers: int,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -759,5 +756,5 @@ def test_tabtransformer_combiner_number_or_binary_with_category(
     # instantiate the TabTransformerCombiner object.
 
     assert upc == (
-            tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+        tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
