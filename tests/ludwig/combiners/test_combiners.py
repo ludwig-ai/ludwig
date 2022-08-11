@@ -535,8 +535,11 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
+    # The entire transformer stack is by-passed because there is no categorical input features.  Subtract the
+    # number for parameters in the transformer stack to account for this situation.
+
     assert upc == (
-        tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -606,12 +609,13 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
-    # determine number of categorical features
+    # make adjustment for case with a single categorical input feature
+    # in the situation of a one categorical input feature, the query and key parameters are not updated
     number_category_features = sum(input_features[i_f].type() == CATEGORY for i_f in input_features)
     adjustment_for_single_category = 1 if number_category_features == 1 else 0
 
     assert upc == (
-        tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
+            tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -682,8 +686,11 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
+    # The entire transformer stack is by-passed because there is no categorical input features.  Subtract the
+    # number for parameters in the transformer stack to account for this situation.
+
     assert upc == (
-        tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -704,6 +711,7 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
             ("number", [BATCH_SIZE, 1]),
             ("category", [BATCH_SIZE, 16]),
             ("number", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 32]),
         ],
     ],
 )
@@ -755,6 +763,11 @@ def test_tabtransformer_combiner_number_or_binary_with_category(
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
+    # make adjustment for case with a single categorical input feature
+    # in the situation of a one categorical input feature, the query and key parameters are not updated
+    number_category_features = sum(input_features[i_f].type() == CATEGORY for i_f in input_features)
+    adjustment_for_single_category = 1 if number_category_features == 1 else 0
+
     assert upc == (
-        tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+            tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
