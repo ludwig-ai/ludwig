@@ -134,7 +134,7 @@ class BaseFeature:
         self.column = feature.column
 
         if not feature.proc_column:
-            feature.proc_column = compute_feature_hash(feature.cls.Schema().dump(feature))
+            feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
         self.proc_column = feature.proc_column
 
     @classmethod
