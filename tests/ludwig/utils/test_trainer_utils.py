@@ -18,6 +18,7 @@ def test_progress_tracker_empty():
                 "num_classes": 3,
             },
         },
+        {},
     )
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
@@ -53,6 +54,7 @@ def test_progress_tracker():
                 "num_classes": 3,
             },
         },
+        {},
     )
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
