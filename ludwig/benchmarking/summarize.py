@@ -1,8 +1,3 @@
-import sys
-
-sys.path.insert(0, "/Users/waelabid/projects/predibase/ludwig/")
-
-import argparse
 import asyncio
 import functools
 import os
@@ -100,27 +95,7 @@ def build_metrics_summary(
             try:
                 e = build_metrics_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
                 experiment_diffs.append(e)
-            except Exception as e:
+            except Exception:
                 print("Exception encountered while creating diff summary for", dataset_name)
                 print(traceback.format_exc())
     return experiment_diffs
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment-one", type=str, help="Name of first experiment", default="0.5.3")
-    parser.add_argument("--experiment-two", type=str, help="Name of first experiment", default="0.5.4")
-    parser.add_argument(
-        "--download-base-path",
-        type=str,
-        help="Base path under which benchmarking experiment artifacts (config.yaml, report.json, " "etc.) are saved",
-        default="s3://benchmarking.us-west-2.predibase.com/bench/",
-    )
-    args, unknown = parser.parse_known_args()
-
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    # os.chdir("bench")
-
-    summary = build_metrics_summary(
-        "./configs/temp.yaml", args.experiment_one, args.experiment_two, download_base_path=args.download_base_path
-    )
