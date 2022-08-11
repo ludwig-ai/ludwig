@@ -365,14 +365,14 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if self.decoder_config.clip is not None and not (
+        if getattr(self.decoder_config, "clip", None) and not (
             isinstance(self.decoder_config.clip, (list, tuple)) and len(self.decoder_config.clip) == 2
         ):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumberPredict(self.decoder_config.clip)
+        return _NumberPredict(getattr(self.decoder_config, "clip", None))
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
