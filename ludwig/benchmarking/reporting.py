@@ -63,7 +63,7 @@ def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
     memory_so_far = defaultdict(int)
     memory_lists = defaultdict(list)
     for mem_record in mem_records_acc.in_interval(
-        kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
+            kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
     ):
         device, nbytes = get_memory_details(mem_record[0])
         memory_so_far[device] += nbytes
@@ -86,14 +86,12 @@ def get_device_timing(function_event, run_usage_info):
     return run_usage_info
 
 
-def get_resource_usage_report(kineto_events, function_events, info):
+def get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info):
     """Get relevant information from Kineto events and function events exported by the profiler."""
-    mem_records = [[evt, False] for evt in kineto_events if evt.name() == "[memory]"]
-    mem_records_acc = MemRecordsAcc(mem_records)
-    main_kineto_events = sorted(
-        (evt for evt in kineto_events if "ludwig" in evt.name()), key=lambda x: x.correlation_id()
-    )
-    main_function_events = sorted((evt for evt in function_events if "ludwig" in evt.name), key=lambda x: x.id)
+    mem_records_acc = MemRecordsAcc(memory_events)
+    main_kineto_events = sorted((evt for evt in main_kineto_events if "ludwig" in evt.name()),
+                                key=lambda x: x.correlation_id())
+    main_function_events = sorted((evt for evt in main_function_events if "ludwig" in evt.name), key=lambda x: x.id)
     assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
     assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
     for kineto_event, function_event in zip(main_kineto_events, main_function_events):
@@ -104,16 +102,25 @@ def get_resource_usage_report(kineto_events, function_events, info):
     return info
 
 
+def get_all_events(kineto_events, function_events):
+    main_function_events = [evt for evt in function_events if "ludwig" in evt.name]
+    main_kineto_events = [event for event in kineto_events if "ludwig" in event.name()]
+    memory_events = [[event, False] for event in kineto_events if "[memory]" in event.name()]
+    return main_kineto_events, main_function_events, memory_events
+
+
 def export_metrics_from_torch_profiler(p: profile, experiment_name: str):
     """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler."""
     # events in both of these lists are in chronological order.
     kineto_events = p.profiler.kineto_results.events()
     function_events = p.profiler.function_events
-    assert Counter([evt.name for evt in function_events if "ludwig" in evt.name]) == Counter(
-        [evt.name() for evt in kineto_events if "ludwig" in evt.name()]
-    )
+    main_kineto_events, main_function_events, memory_events = get_all_events(kineto_events, function_events)
+
+    assert Counter([event.name for event in main_function_events]) == Counter(
+        [event.name() for event in main_kineto_events])
+
     info = initialize_stats_dict(function_events)
-    info = get_resource_usage_report(kineto_events, function_events, info)
+    info = get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info)
     for code_block_tag, report in info.items():
         os.makedirs(os.path.join(os.getcwd(), experiment_name, "metrics_report"), exist_ok=True)
         file_path = os.path.join(
