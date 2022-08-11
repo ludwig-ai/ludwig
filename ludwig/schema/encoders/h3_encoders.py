@@ -79,6 +79,12 @@ class H3EmbedConfig(BaseEncoderConfig):
         description="Dropout probability for the embedding.",
     )
 
+    reduce_output: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
+        "tensor is greater than 2.",
+    )
+
 
 @dataclass
 class H3WeightedSumConfig(BaseEncoderConfig):
