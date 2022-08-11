@@ -10,7 +10,7 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
 
 
 @dataclass
-class ExperimentMetricsSummary:
+class MetricsSummary:
     """Summary of metrics from one experiment.
 
     experiment_local_directory: path containing the artifacts for the experiment.
@@ -28,7 +28,7 @@ class ExperimentMetricsSummary:
 
 
 @dataclass
-class MetricDiff:
+class Diff:
     """Diffs for a metric.
 
     name: name of the metric.
@@ -41,11 +41,11 @@ class MetricDiff:
     base_value: float
     experimental_value: float
     diff: float
-    diff_percentage: float
+    diff_percentage: Union[float, str]
 
 
 @dataclass
-class ExperimentsMetricsDiff:
+class MetricsDiff:
     """Store diffs for two experiments.
 
     dataset_name: dataset the two experiments are being compared on.
@@ -60,65 +60,88 @@ class ExperimentsMetricsDiff:
     base_experiment_name: str
     experimental_experiment_name: str
     local_directory: str
-    base_summary: ExperimentMetricsSummary
-    experimental_summary: ExperimentMetricsSummary
-    metrics: List[MetricDiff]
+    base_summary: MetricsSummary
+    experimental_summary: MetricsSummary
+    metrics: List[Diff]
 
+    def to_csv(self):
+        csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
 
-def build_experiment_metrics_summary(experiment_local_directory: str) -> ExperimentMetricsSummary:
-    config = load_json(os.path.join(experiment_local_directory, MODEL_HYPERPARAMETERS_FILE_NAME))
-    report = load_json(os.path.join(experiment_local_directory, REPORT_JSON))
-    performance_metrics = report["evaluate"]["performance_metrics"]
-    output_feature_type: str = config["output_features"][0]["type"]
-    output_feature_name: str = config["output_features"][0]["name"]
-    metric_dict = performance_metrics[output_feature_name]
-    full_metric_names = get_metric_classes(output_feature_type)
-    metric_to_values: dict = {metric_name: metric_dict[metric_name] for metric_name in full_metric_names if
-                              metric_name in metric_dict}
-    metric_names: set = set(metric_to_values.keys())
+        with open(f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv",
+                  "w") as f:
+            f.write(
+                csv_str.format(
+                    "Dataset Name",
+                    "Output Feature Name",
+                    "Metric Name",
+                    self.base_experiment_name,
+                    self.experimental_experiment_name,
+                    "Diff",
+                    "Diff Percentage",
+                )
+            )
+            for metric in sorted(self.metrics, key=lambda m: m.name):
+                output_feature_name = self.base_summary.output_feature_name
+                metric_name = metric.name
+                experiment1_val = round(metric.base_value, 3)
+                experiment2_val = round(metric.experimental_value, 3)
+                diff = round(metric.diff, 3)
+                diff_percentage = metric.diff_percentage
+                if isinstance(diff_percentage, float):
+                    diff_percentage = round(metric.diff_percentage, 3)
 
-    return ExperimentMetricsSummary(experiment_local_directory=experiment_local_directory,
-                                    config=config,
-                                    output_feature_name=output_feature_name,
-                                    output_feature_type=output_feature_type,
-                                    metric_to_values=metric_to_values,
-                                    metric_names=metric_names,
-                                    )
+                f.write(
+                    csv_str.format(
+                        self.dataset_name,
+                        output_feature_name,
+                        metric_name,
+                        experiment1_val,
+                        experiment2_val,
+                        diff,
+                        diff_percentage,
+                    )
+                )
 
+        print(
+            "Exported report to",
+            f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv",
+        )
 
-def build_metric_diff(name: str, base_value: float, experimental_value: float) -> MetricDiff:
-    diff = experimental_value - base_value
-    diff_percentage = 100 * diff / base_value if base_value != 0 else None
+    def __str__(self):
+        ret = []
+        spacing_str = "{:<20} {:<23} {:<13} {:<13} {:<13} {:<5}"
+        ret.append(f"Metrics for dataset: {self.dataset_name}\n")
+        ret.append(
+            spacing_str.format(
+                "Output Feature Name",
+                "Metric Name",
+                self.base_experiment_name,
+                self.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            )
+        )
 
-    return MetricDiff(name=name,
-                      base_value=base_value,
-                      experimental_value=experimental_value,
-                      diff=diff,
-                      diff_percentage=diff_percentage,
-                      )
-
-
-def build_experiments_metrics_diff(dataset_name: str, base_experiment_name: str, experimental_experiment_name: str,
-                                   local_directory: str) -> ExperimentsMetricsDiff:
-    base_summary: ExperimentMetricsSummary = build_experiment_metrics_summary(
-        os.path.join(local_directory, dataset_name, base_experiment_name))
-    experimental_summary: ExperimentMetricsSummary = build_experiment_metrics_summary(
-        os.path.join(local_directory, dataset_name, experimental_experiment_name))
-
-    shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-
-    metrics: List[MetricDiff] = [
-        build_metric_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name]) for
-        name in shared_metrics]
-
-    return ExperimentsMetricsDiff(dataset_name=dataset_name,
-                                  base_experiment_name=base_experiment_name,
-                                  experimental_experiment_name=experimental_experiment_name,
-                                  local_directory=local_directory,
-                                  base_summary=base_summary,
-                                  experimental_summary=experimental_summary,
-                                  metrics=metrics,
-                                  )
+        for metric in sorted(self.metrics, key=lambda m: m.name):
+            output_feature_name = self.base_summary.output_feature_name
+            metric_name = metric.name
+            experiment1_val = round(metric.base_value, 3)
+            experiment2_val = round(metric.experimental_value, 3)
+            diff = round(metric.diff, 3)
+            diff_percentage = metric.diff_percentage
+            if isinstance(diff_percentage, float):
+                diff_percentage = round(metric.diff_percentage, 3)
+            ret.append(
+                spacing_str.format(
+                    output_feature_name,
+                    metric_name,
+                    experiment1_val,
+                    experiment2_val,
+                    diff,
+                    diff_percentage,
+                )
+            )
+        return "\n".join(ret)
 
 
 @dataclass
@@ -135,6 +158,109 @@ class ResourceUsageSummary:
     code_block_tag: str
     metric_to_values: Dict[str, Union[float, int]]
     metric_names: set
+
+
+@dataclass
+class ResourceUsageDiff:
+    """Store diffs for two experiments.
+
+    dataset_name: dataset the two experiments are being compared on.
+    base_experiment_name: name of the base experiment (the one we benchmark against).
+    experimental_experiment_name: name of the experimental experiment.
+    local_directory: path under which all artifacts live on the local machine.
+    base_summary: `ExperimentSummary` of the base_experiment.
+    experimental_summary: `ExperimentSummary` of the experimental_experiment.
+    metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
+    """
+    code_block_tag: str
+    base_experiment_name: str
+    experimental_experiment_name: str
+    metrics: List[Diff]
+
+    def __str__(self):
+        ret = []
+        spacing_str = "{:<30} {:<13} {:<13} {:<13} {:<5}"
+        ret.append(f"Resource usage for: {self.code_block_tag}\n")
+        ret.append(
+            spacing_str.format(
+                "Metric Name",
+                self.base_experiment_name,
+                self.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            )
+        )
+
+        for metric in sorted(self.metrics, key=lambda m: m.name):
+            diff_percentage = metric.diff_percentage
+            if isinstance(metric.diff_percentage, float):
+                diff_percentage = round(metric.diff_percentage, 3)
+            ret.append(
+                spacing_str.format(
+                    metric.name,
+                    metric.base_value,
+                    metric.experimental_value,
+                    metric.diff,
+                    diff_percentage,
+                )
+            )
+        return "\n".join(ret)
+
+
+def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
+    config = load_json(os.path.join(experiment_local_directory, MODEL_HYPERPARAMETERS_FILE_NAME))
+    report = load_json(os.path.join(experiment_local_directory, REPORT_JSON))
+    performance_metrics = report["evaluate"]["performance_metrics"]
+    output_feature_type: str = config["output_features"][0]["type"]
+    output_feature_name: str = config["output_features"][0]["name"]
+    metric_dict = performance_metrics[output_feature_name]
+    full_metric_names = get_metric_classes(output_feature_type)
+    metric_to_values: dict = {metric_name: metric_dict[metric_name] for metric_name in full_metric_names if
+                              metric_name in metric_dict}
+    metric_names: set = set(metric_to_values.keys())
+
+    return MetricsSummary(experiment_local_directory=experiment_local_directory,
+                          config=config,
+                          output_feature_name=output_feature_name,
+                          output_feature_type=output_feature_type,
+                          metric_to_values=metric_to_values,
+                          metric_names=metric_names,
+                          )
+
+
+def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
+    diff = experimental_value - base_value
+    diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
+
+    return Diff(name=name,
+                base_value=base_value,
+                experimental_value=experimental_value,
+                diff=diff,
+                diff_percentage=diff_percentage,
+                )
+
+
+def build_metrics_diff(dataset_name: str, base_experiment_name: str, experimental_experiment_name: str,
+                       local_directory: str) -> MetricsDiff:
+    base_summary: MetricsSummary = build_metrics_summary(
+        os.path.join(local_directory, dataset_name, base_experiment_name))
+    experimental_summary: MetricsSummary = build_metrics_summary(
+        os.path.join(local_directory, dataset_name, experimental_experiment_name))
+
+    shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+
+    metrics: List[Diff] = [
+        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name]) for
+        name in shared_metrics]
+
+    return MetricsDiff(dataset_name=dataset_name,
+                       base_experiment_name=base_experiment_name,
+                       experimental_experiment_name=experimental_experiment_name,
+                       local_directory=local_directory,
+                       base_summary=base_summary,
+                       experimental_summary=experimental_summary,
+                       metrics=metrics,
+                       )
 
 
 def build_resource_usage_summary(path):
@@ -157,33 +283,16 @@ def build_resource_usage_summary(path):
                                 metric_names=metric_names)
 
 
-@dataclass
-class ResourceUsageDiff:
-    """Store diffs for two experiments.
-
-    dataset_name: dataset the two experiments are being compared on.
-    base_experiment_name: name of the base experiment (the one we benchmark against).
-    experimental_experiment_name: name of the experimental experiment.
-    local_directory: path under which all artifacts live on the local machine.
-    base_summary: `ExperimentSummary` of the base_experiment.
-    experimental_summary: `ExperimentSummary` of the experimental_experiment.
-    metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
-    """
-    dataset_name: str
-    code_block_tag: str
-    base_experiment_name: str
-    experimental_experiment_name: str
-    local_directory: str
-    base_summary: ResourceUsageSummary
-    experimental_summary: ResourceUsageSummary
-    metrics: List[MetricDiff]
-
-
-def build_experiments_resource_usage_diff(dataset_name: str, base_experiment_name: str,
-                                          experimental_experiment_name: str, local_directory: str):
+def build_resource_usage_diff(dataset_name: str, base_experiment_name: str,
+                              experimental_experiment_name: str, local_directory: str):
     base_dir = os.path.join(local_directory, dataset_name, base_experiment_name)
     experimental_dir = os.path.join(local_directory, dataset_name, experimental_experiment_name)
+    return build_resource_usage_diff_from_path(base_dir, experimental_dir, base_experiment_name,
+                                               experimental_experiment_name)
 
+
+def build_resource_usage_diff_from_path(base_dir, experimental_dir, base_experiment_name="",
+                                        experimental_experiment_name=""):
     base_experiment_reports = set(os.listdir(base_dir))
     experimental_experiment_reports = set(os.listdir(experimental_dir))
     shared_reports = base_experiment_reports.intersection(experimental_experiment_reports)
@@ -196,18 +305,15 @@ def build_experiments_resource_usage_diff(dataset_name: str, base_experiment_nam
         experimental_summary = build_resource_usage_summary(experimental_path)
 
         shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-        metrics: List[MetricDiff] = [
-            build_metric_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
+        metrics: List[Diff] = [
+            build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
             for
             name in shared_metrics]
-        diff = ResourceUsageDiff(dataset_name=dataset_name,
-                                 code_block_tag=base_summary.code_block_tag,
-                                 base_experiment_name=base_experiment_name,
-                                 experimental_experiment_name=experimental_experiment_name,
-                                 local_directory=local_directory,
-                                 base_summary=base_summary,
-                                 experimental_summary=experimental_summary,
-                                 metrics=metrics,
-                                 )
+        diff = ResourceUsageDiff(
+            code_block_tag=base_summary.code_block_tag,
+            base_experiment_name=base_experiment_name,
+            experimental_experiment_name=experimental_experiment_name,
+            metrics=metrics,
+        )
         diffs.append(diff)
     return diffs

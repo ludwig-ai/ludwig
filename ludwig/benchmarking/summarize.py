@@ -10,19 +10,14 @@ from typing import Any, Dict, List, Tuple, Union
 
 import fsspec
 import traceback
-from summary_dataclasses import build_experiments_metrics_diff, ExperimentsMetricsDiff
+from summary_dataclasses import build_metrics_diff, MetricsDiff
 
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.fs_utils import get_fs_and_path
 
 
-
-
-
-
-
 def download_artifacts(
-    bench_config: Dict[str, Any], base_experiment: str, experimental_experiment: str, download_base_path: str
+        bench_config: Dict[str, Any], base_experiment: str, experimental_experiment: str, download_base_path: str
 ) -> List[Union[Tuple[str, str], Any]]:
     """Download benchmarking artifacts for two experiments.
 
@@ -51,7 +46,7 @@ def download_artifacts(
 
 
 async def download_one(
-    fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
+        fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
 ) -> Tuple[str, str]:
     """Download `config.yaml` and `report.json` for an experiment.
 
@@ -66,7 +61,8 @@ async def download_one(
     local_experiment_dir = os.path.join(local_dir, dataset_name, experiment_name)
     os.makedirs(local_experiment_dir, exist_ok=True)
     with ThreadPoolExecutor() as pool:
-        remote_files = [file_dict["Key"] for file_dict in fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))]
+        remote_files = [file_dict["Key"] for file_dict in
+                        fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))]
         remote_files = [remote_file for remote_file in remote_files if remote_file.endswith(".json")]
         for remote_file in remote_files:
             func = functools.partial(
@@ -80,8 +76,8 @@ async def download_one(
 
 
 def build_metrics_summary(
-    bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
-) -> List[ExperimentsMetricsDiff]:
+        bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
+) -> List[MetricsDiff]:
     """Build summary and diffs of artifacts.
 
     bench_config_path: bench config file path. Can be the same one that was used to run
@@ -99,82 +95,12 @@ def build_metrics_summary(
         if isinstance(n, tuple) and len(n) == 2:
             (dataset_name, local_dir) = n
             try:
-                e = build_experiments_metrics_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
+                e = build_metrics_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
                 experiment_diffs.append(e)
             except Exception as e:
                 print("Exception encountered while creating diff summary for", dataset_name)
                 print(traceback.format_exc())
     return experiment_diffs
-
-
-def export_metrics_summary(experiment_diffs: List[ExperimentsMetricsDiff]) -> None:
-    """Print and export to .csv the summary of metrics and their diffs.
-
-    experiment_diffs: list of `ExperimentsDiff` dataclass, containing summary
-        of metrics.
-    """
-    example_diff = experiment_diffs[0]
-    spacing_str = "{:<33} {:<20} {:<23} {:<13} {:<13} {:<13} {:<5}"
-    csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
-    print(
-        spacing_str.format(
-            "Dataset Name",
-            "Output Feature Name",
-            "Metric Name",
-            example_diff.base_experiment_name,
-            example_diff.experimental_experiment_name,
-            "Diff",
-            "Diff Percentage",
-        )
-    )
-
-    with open(f"report_{example_diff.base_experiment_name}_{example_diff.experimental_experiment_name}.csv", "w") as f:
-        f.write(
-            csv_str.format(
-                "Dataset Name",
-                "Output Feature Name",
-                "Metric Name",
-                example_diff.base_experiment_name,
-                example_diff.experimental_experiment_name,
-                "Diff",
-                "Diff Percentage",
-            )
-        )
-        for experiment_diff in experiment_diffs:
-            for metric in experiment_diff.metrics:
-                output_feature_name = experiment_diff.base_summary.output_feature_name
-                metric_name = metric.name
-                experiment1_val = round(metric.base_value, 3)
-                experiment2_val = round(metric.experimental_value, 3)
-                diff = round(metric.diff, 3)
-                diff_percentage = round(metric.diff_percentage, 3)
-                print(
-                    spacing_str.format(
-                        experiment_diff.dataset_name,
-                        output_feature_name,
-                        metric_name,
-                        experiment1_val,
-                        experiment2_val,
-                        diff,
-                        diff_percentage,
-                    )
-                )
-                f.write(
-                    csv_str.format(
-                        experiment_diff.dataset_name,
-                        output_feature_name,
-                        metric_name,
-                        experiment1_val,
-                        experiment2_val,
-                        diff,
-                        diff_percentage,
-                    )
-                )
-
-    print(
-        "Exported report to",
-        f"report_{example_diff.base_experiment_name}_{example_diff.experimental_experiment_name}.csv",
-    )
 
 
 if __name__ == "__main__":
@@ -195,4 +121,3 @@ if __name__ == "__main__":
     summary = build_metrics_summary(
         "./configs/temp.yaml", args.experiment_one, args.experiment_two, download_base_path=args.download_base_path
     )
-    export_metrics_summary(summary)
