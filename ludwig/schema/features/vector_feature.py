@@ -59,7 +59,7 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default="projector",
     )
 
-    dependencies: list = schema_utils.List(
+    dependencies: List = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
     )
