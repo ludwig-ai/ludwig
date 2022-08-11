@@ -63,7 +63,7 @@ def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
     memory_so_far = defaultdict(int)
     memory_lists = defaultdict(list)
     for mem_record in mem_records_acc.in_interval(
-            kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
+        kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
     ):
         device, nbytes = get_memory_details(mem_record[0])
         memory_so_far[device] += nbytes
@@ -89,8 +89,9 @@ def get_device_timing(function_event, run_usage_info):
 def get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info):
     """Get relevant information from Kineto events and function events exported by the profiler."""
     mem_records_acc = MemRecordsAcc(memory_events)
-    main_kineto_events = sorted((evt for evt in main_kineto_events if "ludwig" in evt.name()),
-                                key=lambda x: x.correlation_id())
+    main_kineto_events = sorted(
+        (evt for evt in main_kineto_events if "ludwig" in evt.name()), key=lambda x: x.correlation_id()
+    )
     main_function_events = sorted((evt for evt in main_function_events if "ludwig" in evt.name), key=lambda x: x.id)
     assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
     assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
@@ -117,7 +118,8 @@ def export_metrics_from_torch_profiler(p: profile, experiment_name: str):
     main_kineto_events, main_function_events, memory_events = get_all_events(kineto_events, function_events)
 
     assert Counter([event.name for event in main_function_events]) == Counter(
-        [event.name() for event in main_kineto_events])
+        [event.name() for event in main_kineto_events]
+    )
 
     info = initialize_stats_dict(function_events)
     info = get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info)
