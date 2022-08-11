@@ -437,15 +437,13 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    # encoder = {TYPE: "parallel_cnn", "max_sequence_length": None, "embedding_size": None}
-
     def __init__(self, input_feature_config: AudioInputFeatureConfig, encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
         self.encoder_config = input_feature_config.encoder
-        if not self.encoder_config.embedding_size:
+        if not getattr(self.encoder_config, "embedding_size", None):
             raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
-        if not self.encoder_config.max_sequence_length:
+        if not getattr(self.encoder_config, "max_sequence_length", None):
             raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):

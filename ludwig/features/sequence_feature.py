@@ -266,7 +266,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         super().__init__(input_feature_config, **kwargs)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
         self.encoder_config = input_feature_config.encoder
-        if self.encoder_config.vocab:
+        if getattr(self.encoder_config, "vocab", None):
             self.encoder_config.vocab_size = len(self.encoder_config.vocab)
         if encoder_obj:
             self.encoder_obj = encoder_obj
