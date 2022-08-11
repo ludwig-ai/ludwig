@@ -72,25 +72,17 @@ def get_devices_usage(kineto_event, mem_records_acc, run_usage_info):
         memory_lists[device].append(0)  # just in case we have an empty list
         run_usage_info[f"average_{device}_memory_usage"] = mean(memory_lists[device])
         run_usage_info[f"max_{device}_memory_usage"] = max(memory_lists[device])
-        run_usage_info[f"average_{device}_memory_usage_str"] = _format_memory(mean(memory_lists[device]))
-        run_usage_info[f"max_{device}_memory_usage_str"] = _format_memory(max(memory_lists[device]))
     return run_usage_info
 
 
 def get_device_timing(function_event, run_usage_info):
     """Get CPU and CUDA run durations for an event."""
     run_usage_info["self_cpu_time_total"] = function_event.self_cpu_time_total
-    run_usage_info["self_cpu_time_total_str"] = function_event.self_cpu_time_total_str
     run_usage_info["cuda_time_total"] = function_event.cuda_time_total
-    run_usage_info["cuda_time_total_str"] = function_event.cuda_time_total_str
     run_usage_info["self_cuda_time_total"] = function_event.self_cuda_time_total
-    run_usage_info["self_cuda_time_total_str"] = function_event.self_cuda_time_total_str
     run_usage_info["cpu_time_total"] = function_event.cpu_time_total
-    run_usage_info["cpu_time_total_str"] = function_event.cpu_time_total_str
     run_usage_info["cpu_time"] = function_event.cpu_time
-    run_usage_info["cpu_time_str"] = function_event.cpu_time_str
     run_usage_info["cuda_time"] = function_event.cuda_time
-    run_usage_info["cuda_time_str"] = function_event.cuda_time_str
     return run_usage_info
 
 
