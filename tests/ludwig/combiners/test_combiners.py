@@ -539,7 +539,7 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
     # number for parameters in the transformer stack to account for this situation.
 
     assert upc == (
-            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+        tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -615,7 +615,7 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
     adjustment_for_single_category = 1 if number_category_features == 1 else 0
 
     assert upc == (
-            tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
+        tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -690,7 +690,7 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
     # number for parameters in the transformer stack to account for this situation.
 
     assert upc == (
-            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+        tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
 
@@ -769,5 +769,5 @@ def test_tabtransformer_combiner_number_or_binary_with_category(
     adjustment_for_single_category = 1 if number_category_features == 1 else 0
 
     assert upc == (
-            tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
+        tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
     ), f"Failed to update parameters.  Parameters not update: {not_updated}"

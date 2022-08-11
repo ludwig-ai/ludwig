@@ -71,7 +71,7 @@ def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, in
     # not updated
     single_sequence_token_adjustment = 4 if input_seq_size == 1 else 0
     assert upc == (
-            tpc - single_sequence_token_adjustment
+        tpc - single_sequence_token_adjustment
     ), f"Some parameters not updated.  These parameters not updated: {not_updated}"
 
 
