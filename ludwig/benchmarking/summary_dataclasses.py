@@ -1,5 +1,6 @@
 import os
 
+from torch.autograd.profiler_util import _format_memory, _format_time
 from typing import Union, List, Dict, Any
 from dataclasses import dataclass
 from statistics import mean
@@ -42,6 +43,20 @@ class Diff:
     experimental_value: float
     diff: float
     diff_percentage: Union[float, str]
+
+    def __post_init__(self):
+        if "memory" in self.name:
+            self.base_value_str = _format_memory(self.base_value)
+            self.experimental_value_str = _format_memory(self.experimental_value)
+            self.diff_str = _format_memory(self.diff)
+        elif "time" in self.name:
+            self.base_value_str = _format_time(self.base_value)
+            self.experimental_value_str = _format_time(self.experimental_value)
+            self.diff_str = _format_time(self.diff)
+        else:
+            self.base_value_str = str(self.base_value)
+            self.experimental_value_str = str(self.experimental_value)
+            self.diff_str = str(self.diff)
 
 
 @dataclass
@@ -195,9 +210,9 @@ class ResourceUsageDiff:
                     csv_str.format(
                         self.code_block_tag,
                         metric.name,
-                        metric.base_value,
-                        metric.experimental_value,
-                        metric.diff,
+                        metric.base_value_str,
+                        metric.experimental_value_str,
+                        metric.diff_str,
                         diff_percentage,
                     )
                 )
@@ -224,9 +239,9 @@ class ResourceUsageDiff:
             ret.append(
                 spacing_str.format(
                     metric.name,
-                    metric.base_value,
-                    metric.experimental_value,
-                    metric.diff,
+                    metric.base_value_str,
+                    metric.experimental_value_str,
+                    metric.diff_str,
                     diff_percentage,
                 )
             )
