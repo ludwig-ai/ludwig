@@ -722,13 +722,6 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
             initializers = list(initializer_registry.keys())
             return {
                 "oneOf": [
-                    {
-                        "type": "string",
-                        "enum": initializers,
-                        "default": default,
-                        "title": "initializer_preconfigured_option",
-                        "description": "Pick a preconfigured initializer.",
-                    },
                     # Note: default not provided in the custom dict option:
                     {
                         "type": "object",
@@ -739,6 +732,13 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
                         "title": "initializer_custom_option",
                         "additionalProperties": True,
                         "description": "Customize an existing initializer.",
+                    },
+                    {
+                        "type": "string",
+                        "enum": initializers,
+                        "default": default,
+                        "title": "initializer_preconfigured_option",
+                        "description": "Pick a preconfigured initializer.",
                     },
                 ],
                 "title": self.name,
