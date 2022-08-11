@@ -15,7 +15,7 @@ from ludwig.combiners.combiners import (
     TabTransformerCombiner,
     TransformerCombiner,
 )
-from ludwig.constants import BINARY, CATEGORY, NUMBER
+from ludwig.constants import CATEGORY
 from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.schema.combiners import (
     ComparatorCombinerConfig,
@@ -471,43 +471,32 @@ UNEMBEDDABLE_LAYER_NORM_PARAMETERS = 2
 @pytest.mark.parametrize(
     "feature_list",  # defines parameter for fixture features_to_test()
     [
-        [  # single numeric, single categorical
-            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("category", [BATCH_SIZE, 64]),
-        ],
-        [  # single binary and single categorical
-            ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("category", [BATCH_SIZE, 64]),  # passthrough encoder
-        ],
-        [  # multiple numeric, multiple categorical
-            ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("category", [BATCH_SIZE, 16]),
-            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
-            ("category", [BATCH_SIZE, 48]),
-            ("number", [BATCH_SIZE, 32]),  # dense encoder
-        ],
-        [  # only numeric features
+        [
             ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
             ("number", [BATCH_SIZE, 1]),  # passthrough encoder
         ],
         [
-            ("category", [BATCH_SIZE, 16]),
-            ("category", [BATCH_SIZE, 8]),
-        ],  # only category features
-        [("number", [BATCH_SIZE, 1])],  # only single numeric feature  # passthrough encoder
-        [("category", [BATCH_SIZE, 8])],  # only single category feature
+            ("number", [BATCH_SIZE, 1]),
+            ("binary", [BATCH_SIZE, 1]),
+            ("number", [BATCH_SIZE, 1]),
+        ],
+        [
+            ("binary", [BATCH_SIZE, 1]),
+            ("number", [BATCH_SIZE, 1]),
+            ("binary", [BATCH_SIZE, 1]),
+        ],
     ],
 )
 @pytest.mark.parametrize("num_layers", [1, 2])
 @pytest.mark.parametrize("reduce_output", ["concat", "sum"])
 @pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
 @pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
-def test_tabtransformer_combiner(
-    features_to_test: tuple,
-    embed_input_feature_name: Optional[Union[int, str]],
-    fc_layers: Optional[list],
-    reduce_output: str,
-    num_layers: int,
+def test_tabtransformer_combiner_binary_and_number_without_category(
+        features_to_test: tuple,
+        embed_input_feature_name: Optional[Union[int, str]],
+        fc_layers: Optional[list],
+        reduce_output: str,
+        num_layers: int,
 ) -> None:
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -540,49 +529,235 @@ def test_tabtransformer_combiner(
         (encoder_outputs,),
         target,
     )
-    # Determine type of input features present
-    categorical_input_features_present = number_input_feature_present = binary_input_feature_present = False
-    for i_f in input_features:
-        if input_features[i_f].type() == CATEGORY:
-            categorical_input_features_present = True
-        elif input_features[i_f].type() == NUMBER:
-            number_input_feature_present = True
-        elif input_features[i_f].type() == BINARY:
-            binary_input_feature_present = True
-        else:
-            raise ValueError(f"Unsupported input feature type {input_features[i_f].type()}")
 
     # Adjustments to the trainable parameter count (tpc) in the following assertion checks is needed
     # to account for the different code paths taken in the TabTransformerCombiner forward() method due to the
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
-    if number_input_feature_present and binary_input_feature_present and categorical_input_features_present:
-        # with all feature types, updated parameters should equal the number of trainable parameters
-        assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
-
-    elif categorical_input_features_present and (number_input_feature_present or binary_input_feature_present):
-        assert upc == (
-            tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
-        ), f"Failed to update parameters.  Parameters not update: {not_updated}"
-
-    elif (number_input_feature_present or binary_input_feature_present) and not categorical_input_features_present:
-        # with no categorical features, need to reduce trainable parameter count that is used only for categorical
-        # features, i.e., the transformer stack and embedding option
-        assert upc == (
+    assert upc == (
             tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
-        ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
-    elif categorical_input_features_present and not number_input_feature_present and not binary_input_feature_present:
-        # with only categorical features, reduce trainable parameter count for number/binary specific parameters
-        if len(input_features) == 1:
-            parameter_adjustment = num_layers * PARAMETERS_IN_SELF_ATTENTION + UNEMBEDDABLE_LAYER_NORM_PARAMETERS
-        else:
-            # more than one categorical features
-            parameter_adjustment = UNEMBEDDABLE_LAYER_NORM_PARAMETERS
-        assert upc == (
-            tpc - parameter_adjustment
-        ), f"Failed to update parameters.  Parameters not update: {not_updated}"
 
-    else:
-        raise RuntimeError("Unexpected combination of input Features")
+@pytest.mark.parametrize(
+    "feature_list",  # defines parameter for fixture features_to_test()
+    [
+        [
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("category", [BATCH_SIZE, 64]),
+            ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
+        ],
+        [
+            ("binary", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("category", [BATCH_SIZE, 16]),
+            ("number", [BATCH_SIZE, 1]),  # passthrough encoder
+            ("category", [BATCH_SIZE, 48]),
+            ("number", [BATCH_SIZE, 32]),
+            ("binary", [BATCH_SIZE, 1]),
+        ],
+    ],
+)
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
+@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
+@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+def test_tabtransformer_combiner_number_and_binary_with_category(
+        features_to_test: tuple,
+        embed_input_feature_name: Optional[Union[int, str]],
+        fc_layers: Optional[list],
+        reduce_output: str,
+        num_layers: int,
+) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    # retrieve simulated encoder outputs and input features for the test
+    encoder_outputs, input_features = features_to_test
+
+    # setup combiner to test
+    combiner = TabTransformerCombiner(
+        input_features=input_features,
+        config=load_config(
+            TabTransformerCombinerConfig,
+            embed_input_feature_name=embed_input_feature_name,
+            # emulates parameters passed from combiner def
+            num_layers=num_layers,  # number of transformer layers
+            fc_layers=fc_layers,  # fully_connected layer definition
+            reduce_output=reduce_output,  # sequence reducer
+        ),
+    ).to(DEVICE)
+
+    # concatenate encoder outputs
+    combiner_output = combiner(encoder_outputs)
+
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
+
+    # check for parameter updating
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        combiner,
+        (encoder_outputs,),
+        target,
+    )
+
+    # Adjustments to the trainable parameter count (tpc) in the following assertion checks is needed
+    # to account for the different code paths taken in the TabTransformerCombiner forward() method due to the
+    # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
+    # instantiate the TabTransformerCombiner object.
+
+    # determine number of categorical features
+    number_category_features = sum([input_features[i_f].type() == CATEGORY for i_f in input_features])
+    adjustment_for_single_category = 1 if number_category_features == 1 else 0
+
+    assert upc == (
+            tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
+    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+
+
+@pytest.mark.parametrize(
+    "feature_list",  # defines parameter for fixture features_to_test()
+    [
+        [
+            ("binary", [BATCH_SIZE, 1]),
+        ],
+        [
+            ("binary", [BATCH_SIZE, 1]),
+            ("binary", [BATCH_SIZE, 1]),
+        ],
+        [
+            ("number", [BATCH_SIZE, 1]),
+        ],
+        [
+            ("number", [BATCH_SIZE, 1]),
+            ("number", [BATCH_SIZE, 1]),
+        ],
+    ],
+)
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
+@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
+@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+def test_tabtransformer_combiner_number_or_binary_without_category(
+        features_to_test: tuple,
+        embed_input_feature_name: Optional[Union[int, str]],
+        fc_layers: Optional[list],
+        reduce_output: str,
+        num_layers: int,
+) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    # retrieve simulated encoder outputs and input features for the test
+    encoder_outputs, input_features = features_to_test
+
+    # setup combiner to test
+    combiner = TabTransformerCombiner(
+        input_features=input_features,
+        config=load_config(
+            TabTransformerCombinerConfig,
+            embed_input_feature_name=embed_input_feature_name,
+            # emulates parameters passed from combiner def
+            num_layers=num_layers,  # number of transformer layers
+            fc_layers=fc_layers,  # fully_connected layer definition
+            reduce_output=reduce_output,  # sequence reducer
+        ),
+    ).to(DEVICE)
+
+    # concatenate encoder outputs
+    combiner_output = combiner(encoder_outputs)
+
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
+
+    # check for parameter updating
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        combiner,
+        (encoder_outputs,),
+        target,
+    )
+
+    # Adjustments to the trainable parameter count (tpc) in the following assertion checks is needed
+    # to account for the different code paths taken in the TabTransformerCombiner forward() method due to the
+    # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
+    # instantiate the TabTransformerCombiner object.
+
+    assert upc == (
+            tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
+    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+
+
+@pytest.mark.parametrize(
+    "feature_list",  # defines parameter for fixture features_to_test()
+    [
+        [
+            ("binary", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 16])
+        ],
+        [
+            ("binary", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 16]),
+            ("binary", [BATCH_SIZE, 1]),
+        ],
+        [
+            ("number", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 16]),
+        ],
+        [
+            ("number", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 16]),
+            ("number", [BATCH_SIZE, 1]),
+        ],
+    ],
+)
+@pytest.mark.parametrize("num_layers", [1, 2])
+@pytest.mark.parametrize("reduce_output", ["concat", "sum"])
+@pytest.mark.parametrize("fc_layers", [None, [{"output_size": 256}]])
+@pytest.mark.parametrize("embed_input_feature_name", [None, 64, "add"])
+def test_tabtransformer_combiner_number_or_binary_with_category(
+        features_to_test: tuple,
+        embed_input_feature_name: Optional[Union[int, str]],
+        fc_layers: Optional[list],
+        reduce_output: str,
+        num_layers: int,
+) -> None:
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    # retrieve simulated encoder outputs and input features for the test
+    encoder_outputs, input_features = features_to_test
+
+    # setup combiner to test
+    combiner = TabTransformerCombiner(
+        input_features=input_features,
+        config=load_config(
+            TabTransformerCombinerConfig,
+            embed_input_feature_name=embed_input_feature_name,
+            # emulates parameters passed from combiner def
+            num_layers=num_layers,  # number of transformer layers
+            fc_layers=fc_layers,  # fully_connected layer definition
+            reduce_output=reduce_output,  # sequence reducer
+        ),
+    ).to(DEVICE)
+
+    # concatenate encoder outputs
+    combiner_output = combiner(encoder_outputs)
+
+    check_combiner_output(combiner, combiner_output, BATCH_SIZE)
+
+    # check for parameter updating
+    target = torch.randn(combiner_output["combiner_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(
+        combiner,
+        (encoder_outputs,),
+        target,
+    )
+
+    # Adjustments to the trainable parameter count (tpc) in the following assertion checks is needed
+    # to account for the different code paths taken in the TabTransformerCombiner forward() method due to the
+    # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
+    # instantiate the TabTransformerCombiner object.
+
+    assert upc == (
+            tpc - num_layers * PARAMETERS_IN_SELF_ATTENTION
+    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
