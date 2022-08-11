@@ -1,10 +1,54 @@
 from typing import List
 
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    DATE,
+    H3,
+    IMAGE,
+    NUMBER,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
-class BaseInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
+    """Base class for feature configs."""
+
+    name: str = schema_utils.String(
+        allow_none=True,
+        description="Name of the feature.",
+    )
+
+    type: str = schema_utils.StringOptions(
+        allow_none=True,
+        options=[AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR],
+        description="Type of the feature.",
+    )
+
+    column: str = schema_utils.String(
+        allow_none=True,
+        default=None,
+        description="The column name of this feature. Defaults to name if not specified.",
+    )
+
+    proc_column: str = schema_utils.String(
+        allow_none=True,
+        default=None,
+        description="The name of the preprocessed column name of this feature. Internal only.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
+    )
+
+
+class BaseInputFeatureConfig(BaseFeatureConfig):
     """Base input feature config class."""
 
     tied: str = schema_utils.String(
@@ -15,7 +59,7 @@ class BaseInputFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-class BaseOutputFeatureConfig(schema_utils.BaseMarshmallowConfig):
+class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
 
     decoder: BaseDecoderConfig

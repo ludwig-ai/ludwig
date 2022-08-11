@@ -148,10 +148,8 @@ class VectorFeatureMixin:
 
 @register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
-    # encoder = {TYPE: "dense"}
-    # vector_size = 0
-
     def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
         self.encoder_config.input_size = self.encoder_config.vector_size
@@ -199,15 +197,13 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 @register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    # decoder = {TYPE: "projector"}
-    # loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
     default_validation_metric = MEAN_SQUARED_ERROR
-    # vector_size = 0
 
     def __init__(
         self, output_feature_config: VectorOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
+        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_config.output_size = self.decoder_config.vector_size
         self.decoder_obj = self.initialize_decoder()

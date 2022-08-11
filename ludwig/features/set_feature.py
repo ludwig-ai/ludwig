@@ -212,9 +212,8 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    # encoder = {TYPE: "embed", "vocab": []}
-
     def __init__(self, input_feature_config: SetInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:
@@ -263,14 +262,13 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 @register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    # decoder = {TYPE: "classifier", "num_classes": 0, "threshold": 0.5}
-    # loss = {TYPE: SIGMOID_CROSS_ENTROPY}
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
 
     def __init__(
         self, output_feature_config: SetOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
+        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()

@@ -43,7 +43,7 @@ def test_category_input_feature(
     CategoryInputFeature.populate_defaults(category_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = CategoryInputFeature.load_from_dictionary(category_def).to(DEVICE)
+    input_feature_obj = CategoryInputFeature(category_def).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 3, size=(BATCH_SIZE,), dtype=torch.int32).to(DEVICE)

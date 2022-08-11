@@ -26,7 +26,7 @@ def test_number_input_feature(
     NumberInputFeature.populate_defaults(number_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = NumberInputFeature.load_from_dictionary(number_def).to(DEVICE)
+    input_feature_obj = NumberInputFeature(number_def).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = torch.rand(2, dtype=torch.float32).to(DEVICE)

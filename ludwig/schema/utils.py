@@ -20,7 +20,9 @@ def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallo
     return schema.load(kwargs)
 
 
-def load_trainer_with_kwargs(model_type: str, kwargs) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
+def load_trainer_with_kwargs(
+    model_type: str, kwargs: dict
+) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but

@@ -10,7 +10,6 @@ from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, DECODER, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
@@ -66,12 +65,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
                 encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
         input_feature_class = get_from_registry(input_feature_def[TYPE], input_type_registry)
-        config, kwargs = load_config_with_kwargs(
-            input_feature_class.get_schema_cls(),
-            input_feature_def,
-        )
-        input_feature_obj = input_feature_class(input_feature_config=config, encoder_obj=encoder_obj, **kwargs)
-
+        input_feature_obj = input_feature_class(input_feature_def, encoder_obj=encoder_obj)
         return input_feature_obj
 
     @classmethod
@@ -95,16 +89,8 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
         logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
-
         output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-        config, kwargs = load_config_with_kwargs(
-            output_feature_class.get_schema_cls(),
-            output_feature_def,
-        )
-        output_feature_obj = output_feature_class(
-            output_feature_config=config, output_features=output_features, **kwargs
-        )
-
+        output_feature_obj = output_feature_class(output_feature_def, output_features=output_features)
         return output_feature_obj
 
     def get_model_inputs(self):

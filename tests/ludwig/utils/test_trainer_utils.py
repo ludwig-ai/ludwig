@@ -9,7 +9,7 @@ from ludwig.utils.metric_utils import TrainerMetric
 
 def test_progress_tracker_empty():
     output_features = LudwigFeatureDict()
-    output_features["category_feature"] = CategoryOutputFeature.load_from_dictionary(
+    output_features["category_feature"] = CategoryOutputFeature(
         {
             "name": "category_feature",
             "decoder": {
@@ -44,7 +44,7 @@ def test_progress_tracker_empty():
 
 def test_progress_tracker():
     output_features = LudwigFeatureDict()
-    output_features["category_feature"] = CategoryOutputFeature.load_from_dictionary(
+    output_features["category_feature"] = CategoryOutputFeature(
         {
             "name": "category_feature",
             "decoder": {

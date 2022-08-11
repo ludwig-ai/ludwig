@@ -283,10 +283,8 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
-    # encoder = {TYPE: "passthrough"}
-
     def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
-        # Required for certain encoders, maybe pass into initialize_encoder
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
         self.encoder_config.input_size = self.input_shape[-1]
@@ -343,8 +341,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
 @register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
-    # decoder = {TYPE: "regressor"}
-    # loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {
         LOSS: None,
         MEAN_SQUARED_ERROR: None,
@@ -354,11 +350,11 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         R2: None,
     }
     default_validation_metric = MEAN_SQUARED_ERROR
-    # clip = None
 
     def __init__(
         self, output_feature_config: NumberOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
+        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()

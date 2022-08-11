@@ -481,15 +481,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
-    # scaling = "pixel_normalization"
-    # encoder = {
-    #     TYPE: "stacked_cnn",
-    #     "num_channels": 0,
-    #     "height": 0,
-    #     "width": 0,
-    # }
-
     def __init__(self, input_feature_config: ImageInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:

@@ -114,9 +114,8 @@ class DateFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
-    # encoder = {TYPE: "embed"}
-
     def __init__(self, input_feature_config: DateInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:

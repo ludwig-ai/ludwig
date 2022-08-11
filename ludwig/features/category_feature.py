@@ -162,6 +162,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     # encoder = {TYPE: "dense"}
 
     def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:
@@ -227,6 +228,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def __init__(
         self, output_feature_config: CategoryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
+        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.top_k = output_feature_config.top_k
         self.decoder_obj = self.initialize_decoder()

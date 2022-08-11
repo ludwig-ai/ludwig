@@ -20,14 +20,14 @@ from typing import Any, Dict
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, ENCODER, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import BAG, COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -88,11 +88,9 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    # encoder = {TYPE: "embed", "vocab": []}
-
     def __init__(self, input_feature_config: BagInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        # self.overwrite_defaults(feature)
         self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj

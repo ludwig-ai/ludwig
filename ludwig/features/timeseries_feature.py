@@ -176,16 +176,14 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    # encoder = {TYPE: "parallel_cnn"}
-    # max_sequence_length = None
-
     def __init__(self, input_feature_config: TimeseriesInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         # add required sequence encoder parameters for time series
         self.encoder_config = input_feature_config.encoder
         self.encoder_config.embedding_size = 1
         self.encoder_config.should_embed = False
 
-        # initialize encoder for time series
+        # SequenceInputFeauture's constructor initializes the encoder.
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):

@@ -261,9 +261,8 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    # encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
-
     def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
         self.encoder_config = input_feature_config.encoder
@@ -319,8 +318,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    # decoder = {TYPE: "generator", "max_sequence_length": 0, "num_classes": 0}
-    # loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -334,6 +331,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def __init__(
         self, output_feature_config: SequenceOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
     ):
+        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
