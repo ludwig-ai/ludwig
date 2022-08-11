@@ -1,5 +1,7 @@
 from typing import List
 
+from marshmallow_dataclass import dataclass
+
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -16,10 +18,10 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
+@dataclass
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -48,6 +50,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
+@dataclass
 class BaseInputFeatureConfig(BaseFeatureConfig):
     """Base input feature config class."""
 
@@ -59,12 +62,9 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
     )
 
 
+@dataclass
 class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
-
-    decoder: BaseDecoderConfig
-
-    loss: dict
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
