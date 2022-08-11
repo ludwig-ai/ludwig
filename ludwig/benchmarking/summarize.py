@@ -1,15 +1,16 @@
 import sys
-sys.path.insert(0, '/Users/waelabid/projects/predibase/ludwig/')
+
+sys.path.insert(0, "/Users/waelabid/projects/predibase/ludwig/")
 
 import argparse
 import asyncio
 import functools
 import os
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple, Union
 
 import fsspec
-import traceback
 from summary_dataclasses import build_metrics_diff, MetricsDiff
 
 from ludwig.utils.data_utils import load_yaml
@@ -17,7 +18,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def download_artifacts(
-        bench_config: Dict[str, Any], base_experiment: str, experimental_experiment: str, download_base_path: str
+    bench_config: Dict[str, Any], base_experiment: str, experimental_experiment: str, download_base_path: str
 ) -> List[Union[Tuple[str, str], Any]]:
     """Download benchmarking artifacts for two experiments.
 
@@ -46,7 +47,7 @@ def download_artifacts(
 
 
 async def download_one(
-        fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
+    fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
 ) -> Tuple[str, str]:
     """Download `config.yaml` and `report.json` for an experiment.
 
@@ -61,8 +62,10 @@ async def download_one(
     local_experiment_dir = os.path.join(local_dir, dataset_name, experiment_name)
     os.makedirs(local_experiment_dir, exist_ok=True)
     with ThreadPoolExecutor() as pool:
-        remote_files = [file_dict["Key"] for file_dict in
-                        fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))]
+        remote_files = [
+            file_dict["Key"]
+            for file_dict in fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))
+        ]
         remote_files = [remote_file for remote_file in remote_files if remote_file.endswith(".json")]
         for remote_file in remote_files:
             func = functools.partial(
@@ -76,7 +79,7 @@ async def download_one(
 
 
 def build_metrics_summary(
-        bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
+    bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
 ) -> List[MetricsDiff]:
     """Build summary and diffs of artifacts.
 

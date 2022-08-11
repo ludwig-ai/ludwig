@@ -1,13 +1,14 @@
 import os
-
-from torch.autograd.profiler_util import _format_memory, _format_time
-from typing import Union, List, Dict, Any
 from dataclasses import dataclass
 from statistics import mean
+from typing import Any, Dict, List, Union
+
+from torch.autograd.profiler_util import _format_memory, _format_time
+
 import ludwig.modules.metric_modules
-from ludwig.utils.data_utils import load_json
-from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
+from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry
+from ludwig.utils.data_utils import load_json
 
 
 @dataclass
@@ -20,6 +21,7 @@ class MetricsSummary:
     metric_to_values: dictionary that maps from metric name to their values.
     metric_names: names of metrics for the output feature.
     """
+
     experiment_local_directory: str
     config: Dict[str, Any]
     output_feature_type: str
@@ -38,6 +40,7 @@ class Diff:
     diff: experimental_value - base_value.
     diff_percentage: percentage of change the metric with respect to base_value.
     """
+
     name: str
     base_value: float
     experimental_value: float
@@ -71,6 +74,7 @@ class MetricsDiff:
     experimental_summary: `ExperimentSummary` of the experimental_experiment.
     metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
     """
+
     dataset_name: str
     base_experiment_name: str
     experimental_experiment_name: str
@@ -165,6 +169,7 @@ class ResourceUsageSummary:
     metric_to_values: dictionary that maps from metric name to their values.
     metric_names: names of metrics for the output feature.
     """
+
     path: str
     code_block_tag: str
     metric_to_values: Dict[str, Union[float, int]]
@@ -183,6 +188,7 @@ class ResourceUsageDiff:
     experimental_summary: `ExperimentSummary` of the experimental_experiment.
     metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
     """
+
     code_block_tag: str
     base_experiment_name: str
     experimental_experiment_name: str
@@ -256,52 +262,60 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     output_feature_name: str = config["output_features"][0]["name"]
     metric_dict = performance_metrics[output_feature_name]
     full_metric_names = get_metric_classes(output_feature_type)
-    metric_to_values: dict = {metric_name: metric_dict[metric_name] for metric_name in full_metric_names if
-                              metric_name in metric_dict}
+    metric_to_values: dict = {
+        metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict
+    }
     metric_names: set = set(metric_to_values.keys())
 
-    return MetricsSummary(experiment_local_directory=experiment_local_directory,
-                          config=config,
-                          output_feature_name=output_feature_name,
-                          output_feature_type=output_feature_type,
-                          metric_to_values=metric_to_values,
-                          metric_names=metric_names,
-                          )
+    return MetricsSummary(
+        experiment_local_directory=experiment_local_directory,
+        config=config,
+        output_feature_name=output_feature_name,
+        output_feature_type=output_feature_type,
+        metric_to_values=metric_to_values,
+        metric_names=metric_names,
+    )
 
 
 def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
     diff = experimental_value - base_value
     diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
 
-    return Diff(name=name,
-                base_value=base_value,
-                experimental_value=experimental_value,
-                diff=diff,
-                diff_percentage=diff_percentage,
-                )
+    return Diff(
+        name=name,
+        base_value=base_value,
+        experimental_value=experimental_value,
+        diff=diff,
+        diff_percentage=diff_percentage,
+    )
 
 
-def build_metrics_diff(dataset_name: str, base_experiment_name: str, experimental_experiment_name: str,
-                       local_directory: str) -> MetricsDiff:
+def build_metrics_diff(
+    dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
+) -> MetricsDiff:
     base_summary: MetricsSummary = build_metrics_summary(
-        os.path.join(local_directory, dataset_name, base_experiment_name))
+        os.path.join(local_directory, dataset_name, base_experiment_name)
+    )
     experimental_summary: MetricsSummary = build_metrics_summary(
-        os.path.join(local_directory, dataset_name, experimental_experiment_name))
+        os.path.join(local_directory, dataset_name, experimental_experiment_name)
+    )
 
     shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
 
     metrics: List[Diff] = [
-        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name]) for
-        name in shared_metrics]
+        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
+        for name in shared_metrics
+    ]
 
-    return MetricsDiff(dataset_name=dataset_name,
-                       base_experiment_name=base_experiment_name,
-                       experimental_experiment_name=experimental_experiment_name,
-                       local_directory=local_directory,
-                       base_summary=base_summary,
-                       experimental_summary=experimental_summary,
-                       metrics=metrics,
-                       )
+    return MetricsDiff(
+        dataset_name=dataset_name,
+        base_experiment_name=base_experiment_name,
+        experimental_experiment_name=experimental_experiment_name,
+        local_directory=local_directory,
+        base_summary=base_summary,
+        experimental_summary=experimental_summary,
+        metrics=metrics,
+    )
 
 
 def build_resource_usage_summary(path):
@@ -318,22 +332,24 @@ def build_resource_usage_summary(path):
 
     average_run = average_runs(runs)
     metric_names = set(average_run.keys())
-    return ResourceUsageSummary(path=path,
-                                code_block_tag=code_block_tag,
-                                metric_to_values=average_run,
-                                metric_names=metric_names)
+    return ResourceUsageSummary(
+        path=path, code_block_tag=code_block_tag, metric_to_values=average_run, metric_names=metric_names
+    )
 
 
-def build_resource_usage_diff(dataset_name: str, base_experiment_name: str,
-                              experimental_experiment_name: str, local_directory: str):
+def build_resource_usage_diff(
+    dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
+):
     base_dir = os.path.join(local_directory, dataset_name, base_experiment_name)
     experimental_dir = os.path.join(local_directory, dataset_name, experimental_experiment_name)
-    return build_resource_usage_diff_from_path(base_dir, experimental_dir, base_experiment_name,
-                                               experimental_experiment_name)
+    return build_resource_usage_diff_from_path(
+        base_dir, experimental_dir, base_experiment_name, experimental_experiment_name
+    )
 
 
-def build_resource_usage_diff_from_path(base_dir, experimental_dir, base_experiment_name="",
-                                        experimental_experiment_name=""):
+def build_resource_usage_diff_from_path(
+    base_dir, experimental_dir, base_experiment_name="", experimental_experiment_name=""
+):
     base_experiment_reports = set(os.listdir(base_dir))
     experimental_experiment_reports = set(os.listdir(experimental_dir))
     shared_reports = base_experiment_reports.intersection(experimental_experiment_reports)
@@ -348,8 +364,8 @@ def build_resource_usage_diff_from_path(base_dir, experimental_dir, base_experim
         shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
         metrics: List[Diff] = [
             build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
-            for
-            name in shared_metrics]
+            for name in shared_metrics
+        ]
         diff = ResourceUsageDiff(
             code_block_tag=base_summary.code_block_tag,
             base_experiment_name=base_experiment_name,
