@@ -3,8 +3,7 @@ from collections import Counter, defaultdict
 from statistics import mean
 from typing import Any, Dict, Tuple
 
-from torch.autograd import DeviceType
-from torch.autograd.profiler_util import _format_memory, MemRecordsAcc
+from torch.autograd import DeviceType, profiler_util
 from torch.profiler.profiler import profile
 
 from ludwig.constants import CACHE, EVAL_TAG, EXPERIMENT_RUN, TRAIN_TAG
@@ -88,7 +87,7 @@ def get_device_timing(function_event, run_usage_info):
 
 def get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info):
     """Get relevant information from Kineto events and function events exported by the profiler."""
-    mem_records_acc = MemRecordsAcc(memory_events)
+    mem_records_acc = profiler_util.MemRecordsAcc(memory_events)
     main_kineto_events = sorted(
         (evt for evt in main_kineto_events if "ludwig" in evt.name()), key=lambda x: x.correlation_id()
     )
