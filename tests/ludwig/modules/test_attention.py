@@ -42,7 +42,7 @@ def test_feed_forward_attention_reducer(input_batch_size: int, input_seq_size: i
 
 
 @pytest.mark.parametrize("input_hidden_size", [128, 256, 512])
-@pytest.mark.parametrize("input_seq_size", [10, 20])
+@pytest.mark.parametrize("input_seq_size", [1, 10, 20])
 @pytest.mark.parametrize("input_batch_size", [16, 32])
 def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, input_hidden_size: int):
     # make repeatable
@@ -66,7 +66,13 @@ def test_multihead_self_attention(input_batch_size: int, input_seq_size: int, in
         (current_inputs,),
         target,
     )
-    assert upc == tpc, f"Some parameters not updated.  These parameters not updated: {not_updated}"
+
+    # adjustment required for single token sequence because self attention query and key parameters are
+    # not updated
+    single_sequence_token_adjustment = 4 if input_seq_size == 1 else 0
+    assert upc == (
+            tpc - single_sequence_token_adjustment
+    ), f"Some parameters not updated.  These parameters not updated: {not_updated}"
 
 
 # heads must be a divisor of input_hidden_size
