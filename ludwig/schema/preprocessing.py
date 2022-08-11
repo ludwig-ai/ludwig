@@ -801,6 +801,14 @@ def PreprocessingDataclassField(feature_type: str):
                 )
             raise ValidationError("Field should be None or dict")
 
+        def _serialize(self, value, attr, data, **kwargs):
+            if value is None:
+                return None
+            if feature_type in preprocessing_registry:
+                pre = preprocessing_registry[feature_type]
+                return pre.Schema().dump(value)
+            raise ValidationError(f"Invalid preprocessing feature type {feature_type}")
+
         @staticmethod
         def _jsonschema_type_mapping():
             preprocessor_cls = preprocessing_registry[feature_type]
