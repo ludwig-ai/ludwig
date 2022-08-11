@@ -66,9 +66,8 @@ class MetricsDiff:
 
     def to_csv(self):
         csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
-
-        with open(f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv",
-                  "w") as f:
+        file_name = f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv"
+        with open(file_name, "w") as f:
             f.write(
                 csv_str.format(
                     "Dataset Name",
@@ -102,10 +101,7 @@ class MetricsDiff:
                     )
                 )
 
-        print(
-            "Exported report to",
-            f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv",
-        )
+        print("Exported report to", file_name)
 
     def __str__(self):
         ret = []
@@ -177,10 +173,40 @@ class ResourceUsageDiff:
     experimental_experiment_name: str
     metrics: List[Diff]
 
+    def to_csv(self):
+        csv_str = "{}, {}, {}, {}, {}, {}\n"
+        file_name = f"report_{self.code_block_tag}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv"
+        with open(file_name, "w") as f:
+            f.write(
+                csv_str.format(
+                    "Code Block Tag",
+                    "Metric Name",
+                    self.base_experiment_name,
+                    self.experimental_experiment_name,
+                    "Diff",
+                    "Diff Percentage",
+                )
+            )
+            for metric in sorted(self.metrics, key=lambda m: m.name):
+                diff_percentage = metric.diff_percentage
+                if isinstance(metric.diff_percentage, float):
+                    diff_percentage = round(metric.diff_percentage, 3)
+                f.write(
+                    csv_str.format(
+                        self.code_block_tag,
+                        metric.name,
+                        metric.base_value,
+                        metric.experimental_value,
+                        metric.diff,
+                        diff_percentage,
+                    )
+                )
+        print("Exported report to", file_name)
+
     def __str__(self):
         ret = []
-        spacing_str = "{:<30} {:<13} {:<13} {:<13} {:<5}"
-        ret.append(f"Resource usage for: {self.code_block_tag}\n")
+        spacing_str = "{:<30} {:<20} {:<20} {:<20} {:<5}"
+        ret.append(f"\nResource usage for: {self.code_block_tag}")
         ret.append(
             spacing_str.format(
                 "Metric Name",
