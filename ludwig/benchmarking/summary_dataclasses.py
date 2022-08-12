@@ -13,41 +13,49 @@ from ludwig.utils.data_utils import load_json
 
 @dataclass
 class MetricsSummary:
-    """Summary of metrics from one experiment.
+    """Summary of metrics from one experiment."""
 
-    experiment_local_directory: path containing the artifacts for the experiment.
-    output_feature_type: LudwigModel output feature type.
-    output_feature_name: LudwigModel output feature name.
-    metric_to_values: dictionary that maps from metric name to their values.
-    metric_names: names of metrics for the output feature.
-    """
-
+    # Path containing the artifacts for the experiment.
     experiment_local_directory: str
+
+    # Full Ludwig config.
     config: Dict[str, Any]
+
+    # LudwigModel output feature type.
     output_feature_type: str
+
+    # LudwigModel output feature name.
     output_feature_name: str
+
+    # Dictionary that maps from metric name to their values.
     metric_to_values: Dict[str, Union[float, int]]
+
+    # Names of metrics for the output feature.
     metric_names: set
 
 
 @dataclass
 class Diff:
-    """Diffs for a metric.
+    """Diffs for a metric."""
 
-    name: name of the metric.
-    base_value: value of the metric in base experiment (the one we benchmark against).
-    experimental_value: value of the metric in the experimental experiment.
-    diff: experimental_value - base_value.
-    diff_percentage: percentage of change the metric with respect to base_value.
-    """
-
+    # Name of the metric.
     name: str
+
+    # Value of the metric in base experiment (the one we benchmark against).
     base_value: float
+
+    # Value of the metric in the experimental experiment.
     experimental_value: float
+
+    # experimental_value - base_value.
     diff: float
+
+    # Percentage of change the metric with respect to base_value.
     diff_percentage: Union[float, str]
 
     def __post_init__(self):
+        """Add human-readable string representations to the field"""
+
         if "memory" in self.name:
             self.base_value_str = _format_memory(self.base_value)
             self.experimental_value_str = _format_memory(self.experimental_value)
@@ -64,23 +72,27 @@ class Diff:
 
 @dataclass
 class MetricsDiff:
-    """Store diffs for two experiments.
+    """Store diffs for two experiments."""
 
-    dataset_name: dataset the two experiments are being compared on.
-    base_experiment_name: name of the base experiment (the one we benchmark against).
-    experimental_experiment_name: name of the experimental experiment.
-    local_directory: path under which all artifacts live on the local machine.
-    base_summary: `MetricsSummary` of the base_experiment.
-    experimental_summary: `MetricsSummary` of the experimental_experiment.
-    metrics: `List[Diff]` containing diffs for metric of the two experiments.
-    """
-
+    # Dataset the two experiments are being compared on.
     dataset_name: str
+
+    # Name of the base experiment (the one we benchmark against).
     base_experiment_name: str
+
+    # Name of the experimental experiment.
     experimental_experiment_name: str
+
+    # Path under which all artifacts live on the local machine.
     local_directory: str
+
+    # `MetricsSummary` of the base_experiment.
     base_summary: MetricsSummary
+
+    # `MetricsSummary` of the experimental_experiment.
     experimental_summary: MetricsSummary
+
+    # `List[Diff]` containing diffs for metric of the two experiments.
     metrics: List[Diff]
 
     def to_csv(self, path):
@@ -160,33 +172,34 @@ class MetricsDiff:
 
 @dataclass
 class ResourceUsageSummary:
-    """Summary of resource usage metrics from one experiment.
-
-    path: path containing the JSON that stores resource usage metrics for the experiment.
-    code_block_tag: The tag with which the code block/function is labeled.
-    metric_to_values: dictionary that maps from metric name to their values.
-    metric_names: names of metrics for the output feature.
-    """
-
+    """Summary of resource usage metrics from one experiment."""
+    # Path containing the JSON that stores resource usage metrics for the experiment.
     path: str
+
+    # The tag with which the code block/function is labeled.
     code_block_tag: str
+
+    # Dictionary that maps from metric name to their values.
     metric_to_values: Dict[str, Union[float, int]]
+
+    # Names of metrics for the output feature.
     metric_names: set
 
 
 @dataclass
 class ResourceUsageDiff:
-    """Store resource usage diffs for two experiments.
+    """Store resource usage diffs for two experiments."""
 
-    code_block_tag: The tag with which the code block/function is labeled.
-    base_experiment_name: name of the base experiment (the one we benchmark against).
-    experimental_experiment_name: name of the experimental experiment.
-    metrics: `List[Diff]` containing diffs for metric of the two experiments.
-    """
-
+    # The tag with which the code block/function is labeled.
     code_block_tag: str
+
+    # Name of the base experiment (the one we benchmark against).
     base_experiment_name: str
+
+    # Name of the experimental experiment.
     experimental_experiment_name: str
+
+    # `List[Diff]` containing diffs for metric of the two experiments.
     metrics: List[Diff]
 
     def to_csv(self, path):
