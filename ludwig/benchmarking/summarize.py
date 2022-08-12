@@ -73,7 +73,7 @@ async def download_one(
     return dataset_name, local_dir
 
 
-def build_metrics_summary(
+def summarize_metrics(
     bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
 ) -> List[MetricsDiff]:
     """Build summary and diffs of artifacts.

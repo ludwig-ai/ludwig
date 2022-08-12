@@ -70,9 +70,9 @@ class MetricsDiff:
     base_experiment_name: name of the base experiment (the one we benchmark against).
     experimental_experiment_name: name of the experimental experiment.
     local_directory: path under which all artifacts live on the local machine.
-    base_summary: `ExperimentSummary` of the base_experiment.
-    experimental_summary: `ExperimentSummary` of the experimental_experiment.
-    metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
+    base_summary: `MetricsSummary` of the base_experiment.
+    experimental_summary: `MetricsSummary` of the experimental_experiment.
+    metrics: `List[Diff]` containing diffs for metric of the two experiments.
     """
 
     dataset_name: str
@@ -83,10 +83,11 @@ class MetricsDiff:
     experimental_summary: MetricsSummary
     metrics: List[Diff]
 
-    def to_csv(self):
+    def to_csv(self, path):
         csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
         file_name = f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv"
-        with open(file_name, "w") as f:
+        full_path = os.path.join(path, file_name)
+        with open(full_path, "w") as f:
             f.write(
                 csv_str.format(
                     "Dataset Name",
@@ -119,8 +120,7 @@ class MetricsDiff:
                         diff_percentage,
                     )
                 )
-
-        print("Exported report to", file_name)
+        print("Exported report to", full_path)
 
     def __str__(self):
         ret = []
@@ -136,7 +136,6 @@ class MetricsDiff:
                 "Diff Percentage",
             )
         )
-
         for metric in sorted(self.metrics, key=lambda m: m.name):
             output_feature_name = self.base_summary.output_feature_name
             metric_name = metric.name
@@ -161,11 +160,10 @@ class MetricsDiff:
 
 @dataclass
 class ResourceUsageSummary:
-    """Summary of metrics from one experiment.
+    """Summary of resource usage metrics from one experiment.
 
-    experiment_local_directory: path containing the artifacts for the experiment.
-    output_feature_type: LudwigModel output feature type.
-    output_feature_name: LudwigModel output feature name.
+    path: path containing the JSON that stores resource usage metrics for the experiment.
+    code_block_tag: The tag with which the code block/function is labeled.
     metric_to_values: dictionary that maps from metric name to their values.
     metric_names: names of metrics for the output feature.
     """
@@ -178,15 +176,12 @@ class ResourceUsageSummary:
 
 @dataclass
 class ResourceUsageDiff:
-    """Store diffs for two experiments.
+    """Store resource usage diffs for two experiments.
 
-    dataset_name: dataset the two experiments are being compared on.
+    code_block_tag: The tag with which the code block/function is labeled.
     base_experiment_name: name of the base experiment (the one we benchmark against).
     experimental_experiment_name: name of the experimental experiment.
-    local_directory: path under which all artifacts live on the local machine.
-    base_summary: `ExperimentSummary` of the base_experiment.
-    experimental_summary: `ExperimentSummary` of the experimental_experiment.
-    metrics: `List[MetricDiff]` containing diffs for metric of the two experiments.
+    metrics: `List[Diff]` containing diffs for metric of the two experiments.
     """
 
     code_block_tag: str
@@ -194,10 +189,11 @@ class ResourceUsageDiff:
     experimental_experiment_name: str
     metrics: List[Diff]
 
-    def to_csv(self):
+    def to_csv(self, path):
         csv_str = "{}, {}, {}, {}, {}, {}\n"
         file_name = f"report_{self.code_block_tag}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv"
-        with open(file_name, "w") as f:
+        full_path = os.path.join(path, file_name)
+        with open(full_path, "w") as f:
             f.write(
                 csv_str.format(
                     "Code Block Tag",
@@ -222,7 +218,7 @@ class ResourceUsageDiff:
                         diff_percentage,
                     )
                 )
-        print("Exported report to", file_name)
+        print("Exported report to", full_path)
 
     def __str__(self):
         ret = []
@@ -237,7 +233,6 @@ class ResourceUsageDiff:
                 "Diff Percentage",
             )
         )
-
         for metric in sorted(self.metrics, key=lambda m: m.name):
             diff_percentage = metric.diff_percentage
             if isinstance(metric.diff_percentage, float):
@@ -252,6 +247,19 @@ class ResourceUsageDiff:
                 )
             )
         return "\n".join(ret)
+
+
+def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
+    diff = experimental_value - base_value
+    diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
+
+    return Diff(
+        name=name,
+        base_value=base_value,
+        experimental_value=experimental_value,
+        diff=diff,
+        diff_percentage=diff_percentage,
+    )
 
 
 def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
@@ -274,19 +282,6 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
         output_feature_type=output_feature_type,
         metric_to_values=metric_to_values,
         metric_names=metric_names,
-    )
-
-
-def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
-    diff = experimental_value - base_value
-    diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
-
-    return Diff(
-        name=name,
-        base_value=base_value,
-        experimental_value=experimental_value,
-        diff=diff,
-        diff_percentage=diff_percentage,
     )
 
 
@@ -321,7 +316,6 @@ def build_metrics_diff(
 def build_resource_usage_summary(path):
     report = load_json(path)
     code_block_tag = report["code_block_tag"]
-    # num_runs = report["num_runs"]
     runs = report["runs"]
 
     def average_runs(runs):
