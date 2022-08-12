@@ -33,7 +33,7 @@ STOP_MESSAGE = "stop"
 
 
 def monitor(
-    queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
+        queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
 ) -> None:
     """Monitors hardware resource use.
 
@@ -52,16 +52,27 @@ def monitor(
             info["system"][key]["memory_used"] = []
     info["system"]["cpu_utilization"] = []
     info["system"]["ram_utilization"] = []
+
+    # get the pid of the parent process.
     tracked_process = psutil.Process(os.getpid())
 
     # will return a meaningless 0 value on the first call because `interval` arg is set to None.
     tracked_process.cpu_percent(interval=logging_interval)
+
+    # start timer once we started the thread so that we don't count the time taken to launching.
+    info["start_time"] = time.perf_counter()
     while True:
         time.sleep(logging_interval)
         try:
             message = queue.get(block=False)
             if isinstance(message, str):
                 if message == STOP_MESSAGE:
+                    # synchronize CUDA to get accurate timing for GPU jobs.
+                    if cuda_is_available:
+                        torch.cuda.synchronize()
+
+                    # record end time here so that we don't include the time it takes to join the thread.
+                    info["end_time"] = time.perf_counter()
                     save_json(os.path.join(output_dir, info["tag"] + "_temp.json"), info)
                     return
             else:
@@ -86,15 +97,14 @@ class ResourceUsageTracker:
         tag: a string tag about the process that we're tracking. Examples: train, evaluate, preprocess, etc.
         output_dir: path where metrics are saved.
         logging_interval: time interval in seconds at which system is polled for resource usage.
-        num_examples: number of examples of training or evaluation process.
     """
 
     def __init__(
-        self,
-        tag: str,
-        output_dir: str,
-        logging_interval: float = 1.0,
-        num_examples: Optional[int] = None,
+            self,
+            tag: str,
+            use_torch_profiler: bool,
+            output_dir: str,
+            logging_interval: float = 1.0,
     ) -> None:
         if tag not in ["train", "evaluate", "preprocess"]:
             raise ValueError(
@@ -104,11 +114,17 @@ class ResourceUsageTracker:
         self.output_dir = output_dir
         self.tag = tag
         self.info = {"tag": self.tag, "system": {}}
-        self.num_examples = num_examples
         self.logging_interval = logging_interval
         self.launched = False
         self.cuda_is_available = torch.cuda.is_available()
         os.makedirs(os.path.join(self.output_dir), exist_ok=True)
+        self.use_torch_profiler = use_torch_profiler
+
+        if self.use_torch_profiler:
+            activities = [torch.profiler.ProfilerActivity.CPU]
+            if self.cuda_is_available:
+                activities.append(torch.profiler.ProfilerActivity.CUDA)
+            self.torch_profiler = torch.profiler.profile(activities=activities, profile_memory=True)
 
     def populate_static_information(self) -> None:
         """Populates the report with static software and hardware information."""
@@ -137,15 +153,13 @@ class ResourceUsageTracker:
                 self.info["system"][gpu_key]["driver_version"] = gpu_info["driver_version"]
                 self.info["system"][gpu_key]["cuda_version"] = gpu_info["cuda_version"]
 
-        self.info["start_time"] = time.time()
-        self.info["num_examples"] = self.num_examples
-
     def __enter__(self):
         """Populates static information and monitors resource usage."""
         if self.launched:
             raise ValueError("Tracker already launched.")
 
         self.populate_static_information()
+        self.torch_profiler = self.torch_profiler.__enter__()
         try:
             self.queue = Queue()
             self.t = threading.Thread(
@@ -163,7 +177,7 @@ class ResourceUsageTracker:
         except Exception:
             self.launched = False
             ex_type, ex_value, tb = sys.exc_info()
-            print("Encountered exception when launching tracker.")
+            print("Encountered exception when launching tracker thread.")
             print("".join(traceback.format_tb(tb)))
             raise
 
@@ -174,19 +188,21 @@ class ResourceUsageTracker:
 
         Computes and postprocesses more metrics. Saves report.
         """
-        self.queue.put(STOP_MESSAGE)
-        if self.cuda_is_available:
-            torch.cuda.synchronize()
-        self.t.join()
+        try:
+            self.queue.put(STOP_MESSAGE)
+            self.t.join()
+            self.launched = False
+        except Exception:
+            ex_type, ex_value, tb = sys.exc_info()
+            print("Encountered exception when joining tracker thread.")
+            print("".join(traceback.format_tb(tb)))
+        finally:
+            self.torch_profiler.__exit__(exc_type, exc_val, exc_tb)
 
         self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
         os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
 
-        self.info["end_time"] = time.time()
         self.info[f"{self.tag}_total_duration"] = self.info["end_time"] - self.info["start_time"]
-
-        if self.num_examples:
-            self.info["examples_per_second"] = self.num_examples / self.info[f"{self.tag}_total_duration"]
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info["end_disk_usage"] - self.info["start_disk_usage"]
 
