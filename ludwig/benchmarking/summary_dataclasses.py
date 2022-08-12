@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Union
 
 from torch.autograd.profiler_util import _format_memory, _format_time
 
-import ludwig.modules.metric_modules
+import ludwig.modules.metric_modules # noqa: F401
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
-from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry
+from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry # noqa: F401
 from ludwig.utils.data_utils import load_json
 
 
