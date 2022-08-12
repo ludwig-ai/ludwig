@@ -1277,7 +1277,7 @@ def build_preprocessing_parameters(
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
         if fill_value is not None:
-            preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
+            preprocessing_parameters.update({"computed_fill_value": fill_value})
 
         feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
 
