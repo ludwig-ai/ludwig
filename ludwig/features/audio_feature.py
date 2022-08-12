@@ -232,7 +232,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_feature_dict: Dict[str, Union[float, int, str]],
         feature_dim: int,
         max_length: int,
-        padding_value: int,
+        padding_value: float,
         normalization_type: Optional[str] = None,
         type_key: str = TYPE,
     ):
