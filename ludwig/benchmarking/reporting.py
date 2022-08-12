@@ -1,4 +1,5 @@
 import os
+import logging
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Tuple
 
@@ -191,5 +192,5 @@ def export_metrics_from_torch_profiler(tags: list, profile: torch.profiler.profi
         os.makedirs(output_dir, exist_ok=True)
         file_path = os.path.join(output_dir, f"{code_block_tag}_resource_usage.json")
         save_json(file_path, report)
-        print("exported to", file_path)
+        logging.info(f"exported to {file_path}")
     return info
