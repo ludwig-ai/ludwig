@@ -151,7 +151,8 @@ def get_all_events(
     """
     main_function_events = [evt for evt in function_events if "ludwig" in evt.name]
     main_kineto_events = [event for event in kineto_events if "ludwig" in event.name()]
-    memory_events = [[event, False] for event in kineto_events if "[memory]" in event.name()]
+    memory_events = [[event, False] for event in kineto_events if profiler_util.MEMORY_EVENT_NAME in event.name()]
+    # profiler_util.OUT_OF_MEMORY_EVENT_NAME seems to only be in newer versions of torch.
     out_of_memory_events = [event for event in kineto_events if "[OutOfMemory]" in event.name()]
     return main_kineto_events, main_function_events, memory_events, out_of_memory_events
 
