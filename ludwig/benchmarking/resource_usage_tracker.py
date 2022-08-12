@@ -92,7 +92,7 @@ def monitor(
             info["system"]["ram_utilization"].append(tracked_process.memory_full_info().uss // 1.0e6)
 
 
-class ResourceUsageTracker:
+class ResourceUsageTracker(contextlib.ContextDecorator):
     """Track system resource (hardware and software) usage.
 
     Attributes:
