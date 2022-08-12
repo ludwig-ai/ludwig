@@ -17,7 +17,7 @@ import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
-from ludwig.benchmarking.reporting import export_metrics_from_torch_profiler
+from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json, save_json
 
@@ -218,9 +218,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             self.info["average_cpu_memory_utilization"] = mean(self.info.pop("cpu_memory_usage"))
 
         # todo (Wael) clean up
-        torch_usage_metrics = export_metrics_from_torch_profiler([self.tag], self.torch_profiler, self.output_dir)[
-            self.tag
-        ]["runs"][0]
+        torch_usage_metrics = get_metrics_from_torch_profiler([self.tag], self.torch_profiler)[self.tag]["runs"][0]
         for key, value in torch_usage_metrics.items():
             self.info[key] = value
 
