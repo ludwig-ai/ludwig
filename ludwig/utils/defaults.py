@@ -46,7 +46,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.data.split import get_splitter, DEFAULT_PROBABILITIES
+from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
@@ -64,10 +64,7 @@ logger = logging.getLogger(__name__)
 default_random_seed = 42
 
 base_preprocessing_parameters = {
-    "split": {
-        "type": "random",
-        "probabilities": list(DEFAULT_PROBABILITIES)
-    },
+    "split": {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)},
     "undersample_majority": None,
     "oversample_minority": None,
     "sample_ratio": 1.0,
