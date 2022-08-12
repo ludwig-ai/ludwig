@@ -635,10 +635,6 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
     run_experiment(config=config, dataset=rel_path)
 
 
-if __name__ == "__main__":
-    test_experiment_sequence_combiner("rnn", "/tmp/test.csv")
-
-
 def test_experiment_model_resume(tmpdir):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
