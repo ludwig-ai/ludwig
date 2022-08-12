@@ -39,7 +39,7 @@ def monitor(
 ) -> None:
     """Monitors hardware resource use.
 
-    Populate `info` with system specific metrics (GPU, CPU, RAM) at a `logging_interval` interval and saves the output
+    Populate `info` with system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval and saves the output
     in `output_dir`.
 
     Args:
@@ -49,11 +49,11 @@ def monitor(
         logging_interval: time interval at which we will poll the system for usage metrics.
         cuda_is_available: stores torch.cuda.is_available().
     """
-    for key in info["system"]:
-        if "gpu_" in key:
-            info["system"][key]["memory_used"] = []
-    info["system"]["cpu_utilization"] = []
-    info["system"]["ram_utilization"] = []
+    for key in info:
+        if "cuda_" in key:
+            info[key]["memory_used"] = []
+    info["cpu_utilization"] = []
+    info["cpu_memory_usage"] = []
 
     # get the pid of the parent process.
     tracked_process = psutil.Process(os.getpid())
@@ -69,7 +69,7 @@ def monitor(
             message = queue.get(block=False)
             if isinstance(message, str):
                 if message == STOP_MESSAGE:
-                    # synchronize CUDA to get accurate timing for GPU jobs.
+                    # synchronize CUDA to get accurate timing for jobs running on GPU.
                     if cuda_is_available:
                         torch.cuda.synchronize()
 
@@ -84,12 +84,11 @@ def monitor(
         if cuda_is_available:
             gpu_infos = GPUStatCollection.new_query()
             for i, gpu_info in enumerate(gpu_infos):
-                gpu_key = f"gpu_{i}"
-                info["system"][gpu_key]["memory_used"].append(gpu_info.memory_used)
+                gpu_key = f"cuda_{i}"
+                info[gpu_key]["memory_used"].append(gpu_info.memory_used)
         with tracked_process.oneshot():
-            info["system"]["cpu_utilization"].append(tracked_process.cpu_percent())
-            # divide by 1.0e6 to convert bytes to megabytes.
-            info["system"]["ram_utilization"].append(tracked_process.memory_full_info().uss // 1.0e6)
+            info["cpu_utilization"].append(tracked_process.cpu_percent())
+            info["cpu_memory_usage"].append(tracked_process.memory_full_info().uss)
 
 
 class ResourceUsageTracker(contextlib.ContextDecorator):
@@ -110,7 +109,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
     ) -> None:
         self.output_dir = output_dir
         self.tag = tag
-        self.info = {"tag": self.tag, "system": {}}
+        self.info = {"tag": self.tag}
         self.logging_interval = logging_interval
         self.launched = False
         self.cuda_is_available = torch.cuda.is_available()
@@ -130,26 +129,25 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         self.info["start_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
 
         # CPU information
-        # self.info["system"]["python_packages_and_versions"] = [
+        # self.info["python_packages_and_versions"] = [
         #     str(package) for package in get_python_packages_and_versions()
         # ]
         cpu_info = get_my_cpu_info()
-        self.info["system"]["cpu_architecture"] = cpu_info["arch"]
-        self.info["system"]["num_cpu"] = cpu_info["count"]
-        self.info["system"]["cpu_name"] = cpu_info["brand_raw"]
-        # divide by 1.0e6 to convert bytes to megabytes.
-        self.info["system"]["ram_available"] = psutil.virtual_memory().available // 1.0e6
+        self.info["cpu_architecture"] = cpu_info["arch"]
+        self.info["num_cpu"] = cpu_info["count"]
+        self.info["cpu_name"] = cpu_info["brand_raw"]
+        self.info["cpu_memory_available"] = psutil.virtual_memory().available
 
         # GPU information
         if self.cuda_is_available:
             gpu_infos = get_gpu_info()
             for i, gpu_info in enumerate(gpu_infos):
-                gpu_key = f"gpu_{i}"
-                self.info["system"][gpu_key] = {}
-                self.info["system"][gpu_key]["name"] = gpu_info["name"]
-                self.info["system"][gpu_key]["total_memory"] = gpu_info["total_memory"]
-                self.info["system"][gpu_key]["driver_version"] = gpu_info["driver_version"]
-                self.info["system"][gpu_key]["cuda_version"] = gpu_info["cuda_version"]
+                gpu_key = f"cuda_{i}"
+                self.info[gpu_key] = {}
+                self.info[gpu_key]["name"] = gpu_info["name"]
+                self.info[gpu_key]["total_memory"] = gpu_info["total_memory"]
+                self.info[gpu_key]["driver_version"] = gpu_info["driver_version"]
+                self.info[gpu_key]["cuda_version"] = gpu_info["cuda_version"]
 
     def __enter__(self):
         """Populates static information and monitors resource usage."""
@@ -206,20 +204,25 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
         os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
 
-        self.info["torch_usage_metrics"] = export_metrics_from_torch_profiler([self.tag], self.torch_profiler, self.output_dir)
-        self.info[f"{self.tag}_total_duration"] = self.info["end_time"] - self.info["start_time"]
+        self.info["total_duration"] = self.info.pop("end_time") - self.info.pop("start_time")
+
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
-        self.info["disk_footprint"] = self.info["end_disk_usage"] - self.info["start_disk_usage"]
+        self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
 
-        for key in self.info["system"]:
-            if "gpu_" in key:
-                self.info["system"][key]["max_memory_used"] = max(self.info["system"][key]["memory_used"])
-        self.info["system"]["max_cpu_utilization"] = max(self.info["system"]["cpu_utilization"], default=None)
-        self.info["system"]["max_ram_utilization"] = max(self.info["system"]["ram_utilization"], default=None)
+        for key in self.info:
+            if "cuda_" in key:
+                self.info[key]["max_memory_used"] = max(self.info[key]["memory_used"])
+        self.info["max_cpu_utilization"] = max(self.info["cpu_utilization"], default=None)
+        self.info["max_cpu_memory_utilization"] = max(self.info["cpu_memory_usage"], default=None)
 
-        if self.info["system"]["cpu_utilization"]:
-            self.info["system"]["average_cpu_utilization"] = mean(self.info["system"]["cpu_utilization"])
-        if self.info["system"]["ram_utilization"]:
-            self.info["system"]["average_ram_utilization"] = mean(self.info["system"]["ram_utilization"])
+        if self.info["cpu_utilization"]:
+            self.info["average_cpu_utilization"] = mean(self.info.pop("cpu_utilization"))
+        if self.info["cpu_memory_usage"]:
+            self.info["average_cpu_memory_utilization"] = mean(self.info.pop("cpu_memory_usage"))
+
+        # todo (Wael) clean up
+        torch_usage_metrics = export_metrics_from_torch_profiler([self.tag], self.torch_profiler, self.output_dir)[self.tag]["runs"][0]
+        for key, value in torch_usage_metrics.items():
+            self.info[key] = value
 
         save_json(os.path.join(self.output_dir, self.info["tag"] + "_resource_usage_metrics.json"), self.info)
