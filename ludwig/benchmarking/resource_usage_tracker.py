@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import traceback
+import contextlib
 from queue import Empty as EmptyQueueException
 from queue import Queue
 from statistics import mean
@@ -157,8 +158,11 @@ class ResourceUsageTracker:
 
         self.populate_static_information()
         if self.use_torch_profiler:
-            self.torch_profiler = self.torch_profiler.__enter__()
-            self.torch_record_function = self.torch_record_function.__enter__()
+            # contextlib.ExitStack gracefully handles situations where __enter__ or __exit__ calls throw exceptions.
+            with contextlib.ExitStack() as ctx_exit_stack:
+                ctx_exit_stack.enter_context(self.torch_profiler)
+                ctx_exit_stack.enter_context(self.torch_record_function)
+                self._ctx_exit_stack = ctx_exit_stack.pop_all()
         try:
             self.queue = Queue()
             self.t = threading.Thread(
@@ -197,9 +201,7 @@ class ResourceUsageTracker:
             print("".join(traceback.format_tb(tb)))
         finally:
             if self.use_torch_profiler:
-                self.torch_record_function.__exit__(exc_type, exc_val, exc_tb)
-                self.torch_profiler.__exit__(exc_type, exc_val, exc_tb)
-
+                self._ctx_exit_stack.close()
 
         self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
         os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
