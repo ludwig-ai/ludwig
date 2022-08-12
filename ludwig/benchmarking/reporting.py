@@ -91,8 +91,8 @@ def get_device_memory_usage(
         )
         count_so_far[device] += 1
     for device in count_so_far:
-        run_usage_info[f"average_{device}_memory_usage"] = average_so_far[device]
-        run_usage_info[f"max_{device}_memory_usage"] = max_so_far[device]
+        run_usage_info[f"torch_average_{device}_memory_usage"] = average_so_far[device]
+        run_usage_info[f"torch_max_{device}_memory_usage"] = max_so_far[device]
     return run_usage_info
 
 
@@ -104,12 +104,12 @@ def get_device_run_durations(
     :param function_event: a function event instance.
     :param run_usage_info: usage info for one execution of the tagged code block.
     """
-    run_usage_info["self_cpu_time_total"] = function_event.self_cpu_time_total
-    run_usage_info["cuda_time_total"] = function_event.cuda_time_total
-    run_usage_info["self_cuda_time_total"] = function_event.self_cuda_time_total
-    run_usage_info["cpu_time_total"] = function_event.cpu_time_total
-    run_usage_info["cpu_time"] = function_event.cpu_time
-    run_usage_info["cuda_time"] = function_event.cuda_time
+    run_usage_info["torch_self_cpu_time_total"] = function_event.self_cpu_time_total
+    run_usage_info["torch_cuda_time_total"] = function_event.cuda_time_total
+    run_usage_info["torch_self_cuda_time_total"] = function_event.self_cuda_time_total
+    run_usage_info["torch_cpu_time_total"] = function_event.cpu_time_total
+    run_usage_info["torch_cpu_time"] = function_event.cpu_time
+    run_usage_info["torch_cuda_time"] = function_event.cuda_time
     return run_usage_info
 
 
@@ -160,7 +160,7 @@ def get_all_events(
 def export_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile, output_dir: str):
     """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler.
 
-    The profiler keeps track of torch operations being executed in C++. It keeps track
+    The profiler keeps track of *torch operations* being executed in C++. It keeps track
     of what device they're executed on, their execution time, and memory usage.
     We only track the aforementioned metrics, but the torch profiler can keep track of
     the stack trace, FLOPs, and torch modules. Tracking each additional item adds overhead.
