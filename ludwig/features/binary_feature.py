@@ -309,7 +309,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.decoder_config.threshold, calibration_module=self.calibration_module)
+        # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
+        # decoder is specified here which has no threshold.
+        threshold = getattr(self.decoder_config, "threshold", 0.5)
+        return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
