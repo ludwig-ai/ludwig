@@ -1444,11 +1444,14 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
     # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get("computed_fill_value")
 
-    if computed_fill_value is not None:
+    if (
+        missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE}
+        and computed_fill_value is not None
+    ):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
+    elif missing_value_strategy in {BACKFILL, BFILL, PAD, FFILL}:
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
@@ -1458,7 +1461,7 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         # result in the removal of the rows.
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
     else:
-        raise ValueError("Invalid missing value strategy")
+        raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
