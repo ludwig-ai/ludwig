@@ -1,13 +1,13 @@
 """some parts are inspired from https://github.com/Breakend/experiment-impact-
 tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
 
+import contextlib
 import os
 import shutil
 import sys
 import threading
 import time
 import traceback
-import contextlib
 from queue import Empty as EmptyQueueException
 from queue import Queue
 from statistics import mean
@@ -17,9 +17,9 @@ import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
+from ludwig.benchmarking.reporting import export_metrics_from_torch_profiler
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json, save_json
-from ludwig.benchmarking.reporting import export_metrics_from_torch_profiler
 
 # disabling print because the following imports are verbose
 f = open(os.devnull, "w")
@@ -35,7 +35,7 @@ STOP_MESSAGE = "stop"
 
 
 def monitor(
-        queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
+    queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
 ) -> None:
     """Monitors hardware resource use.
 
@@ -101,11 +101,11 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
     """
 
     def __init__(
-            self,
-            tag: str,
-            use_torch_profiler: bool,
-            output_dir: str,
-            logging_interval: float = 0.1,
+        self,
+        tag: str,
+        use_torch_profiler: bool,
+        output_dir: str,
+        logging_interval: float = 0.1,
     ) -> None:
         self.output_dir = output_dir
         self.tag = tag
@@ -221,7 +221,9 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             self.info["average_cpu_memory_utilization"] = mean(self.info.pop("cpu_memory_usage"))
 
         # todo (Wael) clean up
-        torch_usage_metrics = export_metrics_from_torch_profiler([self.tag], self.torch_profiler, self.output_dir)[self.tag]["runs"][0]
+        torch_usage_metrics = export_metrics_from_torch_profiler([self.tag], self.torch_profiler, self.output_dir)[
+            self.tag
+        ]["runs"][0]
         for key, value in torch_usage_metrics.items():
             self.info[key] = value
 
