@@ -152,7 +152,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
-        self.encoder_config.input_size = self.encoder_config.vector_size
+        # self.encoder_config.input_size = self.encoder_config.vector_size
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -177,7 +177,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vector_size"] = feature_metadata["vector_size"]
+        input_feature[ENCODER]["input_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def populate_defaults(input_feature):
