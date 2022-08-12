@@ -202,7 +202,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
 
-        self.info["total_duration"] = self.info.pop("end_time") - self.info.pop("start_time")
+        self.info["total_execution_time"] = self.info.pop("end_time") - self.info.pop("start_time")
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
 
