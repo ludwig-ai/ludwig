@@ -374,7 +374,7 @@ def bag_feature(**kwargs):
     feature = {
         "name": "bag_" + random_string(),
         "type": "bag",
-        ENCODER: {"type": "dense", "max_len": 5, "vocab_size": 10, "embedding_size": 5},
+        ENCODER: {"type": "embed", "max_len": 5, "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
