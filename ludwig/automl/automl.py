@@ -40,6 +40,7 @@ from ludwig.utils.automl.utils import (
     set_output_feature_metric,
 )
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
 
@@ -338,7 +339,7 @@ def init_config(
     if output is None:
         print(yaml.safe_dump(config, None, sort_keys=False))
     else:
-        with open(output, "w") as f:
+        with open_file(output, "w") as f:
             yaml.safe_dump(config, f, sort_keys=False)
 
 
