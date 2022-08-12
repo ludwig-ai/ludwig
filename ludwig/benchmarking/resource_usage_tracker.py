@@ -71,7 +71,6 @@ def monitor(
                     if cuda_is_available:
                         torch.cuda.synchronize()
                     queue.put(info)
-                    save_json(os.path.join(output_dir, info["tag"] + "_temp.json"), info)
                     return
             else:
                 queue.put(message)

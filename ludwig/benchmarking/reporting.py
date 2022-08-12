@@ -160,7 +160,7 @@ def get_all_events(
     return main_kineto_events, main_function_events, memory_events, out_of_memory_events
 
 
-def export_metrics_from_torch_profiler(tags: list, profile: torch.profiler.profiler.profile, output_dir: str):
+def get_metrics_from_torch_profiler(tags: list, profile: torch.profiler.profiler.profile):
     """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler.
 
     The profiler keeps track of *torch operations* being executed in C++. It keeps track
@@ -185,12 +185,6 @@ def export_metrics_from_torch_profiler(tags: list, profile: torch.profiler.profi
     assert Counter([event.name for event in main_function_events]) == Counter(
         [event.name() for event in main_kineto_events]
     )
-
     info = initialize_stats_dict(main_function_events)
     info = get_resource_usage_report(tags, main_kineto_events, main_function_events, memory_events, info)
-    for code_block_tag, report in info.items():
-        os.makedirs(output_dir, exist_ok=True)
-        file_path = os.path.join(output_dir, f"{code_block_tag}_resource_usage.json")
-        save_json(file_path, report)
-        logging.info(f"exported to {file_path}")
     return info
