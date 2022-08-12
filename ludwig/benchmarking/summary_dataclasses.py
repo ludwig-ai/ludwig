@@ -345,28 +345,19 @@ def build_resource_usage_diff(
     return build_resource_usage_diff_from_path(base_dir, experimental_dir)
 
 
-def build_resource_usage_diff_from_path(base_dir, experimental_dir):
-    base_experiment_reports = set(os.listdir(base_dir))
-    experimental_experiment_reports = set(os.listdir(experimental_dir))
-    shared_reports = base_experiment_reports.intersection(experimental_experiment_reports)
+def build_resource_usage_diff_from_path(base_path, experimental_path):
+    base_summary = build_resource_usage_summary(base_path)
+    experimental_summary = build_resource_usage_summary(experimental_path)
 
-    diffs = []
-    for report in shared_reports:
-        base_path = os.path.join(base_dir, report)
-        experimental_path = os.path.join(experimental_dir, report)
-        base_summary = build_resource_usage_summary(base_path)
-        experimental_summary = build_resource_usage_summary(experimental_path)
-
-        shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-        metrics: List[Diff] = [
-            build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
-            for name in shared_metrics
-        ]
-        diff = ResourceUsageDiff(
-            code_block_tag=base_summary.code_block_tag,
-            base_experiment_name=base_summary.code_block_tag,
-            experimental_experiment_name=experimental_summary.code_block_tag,
-            metrics=metrics,
-        )
-        diffs.append(diff)
-    return diffs
+    shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+    metrics: List[Diff] = [
+        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
+        for name in shared_metrics
+    ]
+    diff = ResourceUsageDiff(
+        code_block_tag=base_summary.code_block_tag,
+        base_experiment_name=base_summary.code_block_tag,
+        experimental_experiment_name=experimental_summary.code_block_tag,
+        metrics=metrics,
+    )
+    return diff
