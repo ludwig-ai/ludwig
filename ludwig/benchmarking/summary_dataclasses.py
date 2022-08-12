@@ -330,18 +330,10 @@ def build_metrics_diff(
 def build_resource_usage_summary(path):
     report = load_json(path)
     code_block_tag = report["code_block_tag"]
-    runs = report["runs"]
-
-    def average_runs(runs):
-        average_run = {"num_runs": len(runs)}
-        for metric in runs[0].keys():
-            average_run[metric] = mean([run[metric] for run in runs])
-        return average_run
-
-    average_run = average_runs(runs)
-    metric_names = set(average_run.keys())
+    report = {key: value for key, value in report.items() if isinstance(value, (int, float))}
+    metric_names = set(report.keys())
     return ResourceUsageSummary(
-        path=path, code_block_tag=code_block_tag, metric_to_values=average_run, metric_names=metric_names
+        path=path, code_block_tag=code_block_tag, metric_to_values=report, metric_names=metric_names
     )
 
 
@@ -350,14 +342,10 @@ def build_resource_usage_diff(
 ):
     base_dir = os.path.join(local_directory, dataset_name, base_experiment_name)
     experimental_dir = os.path.join(local_directory, dataset_name, experimental_experiment_name)
-    return build_resource_usage_diff_from_path(
-        base_dir, experimental_dir, base_experiment_name, experimental_experiment_name
-    )
+    return build_resource_usage_diff_from_path(base_dir, experimental_dir)
 
 
-def build_resource_usage_diff_from_path(
-    base_dir, experimental_dir, base_experiment_name="", experimental_experiment_name=""
-):
+def build_resource_usage_diff_from_path(base_dir, experimental_dir):
     base_experiment_reports = set(os.listdir(base_dir))
     experimental_experiment_reports = set(os.listdir(experimental_dir))
     shared_reports = base_experiment_reports.intersection(experimental_experiment_reports)
@@ -376,8 +364,8 @@ def build_resource_usage_diff_from_path(
         ]
         diff = ResourceUsageDiff(
             code_block_tag=base_summary.code_block_tag,
-            base_experiment_name=base_experiment_name,
-            experimental_experiment_name=experimental_experiment_name,
+            base_experiment_name=base_summary.code_block_tag,
+            experimental_experiment_name=experimental_summary.code_block_tag,
             metrics=metrics,
         )
         diffs.append(diff)
