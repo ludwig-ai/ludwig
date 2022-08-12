@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Union
 
 from torch.autograd.profiler_util import _format_memory, _format_time
 
-import ludwig.modules.metric_modules # noqa: F401
+import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
-from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry # noqa: F401
+from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
 from ludwig.utils.data_utils import load_json
 
 
@@ -54,7 +54,7 @@ class Diff:
     diff_percentage: Union[float, str]
 
     def __post_init__(self):
-        """Add human-readable string representations to the field"""
+        """Add human-readable string representations to the field."""
 
         if "memory" in self.name:
             self.base_value_str = _format_memory(self.base_value)
@@ -173,6 +173,7 @@ class MetricsDiff:
 @dataclass
 class ResourceUsageSummary:
     """Summary of resource usage metrics from one experiment."""
+
     # Path containing the JSON that stores resource usage metrics for the experiment.
     path: str
 
