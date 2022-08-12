@@ -114,6 +114,7 @@ def get_device_run_durations(
 
 
 def get_resource_usage_report(
+    tags: set,
     main_kineto_events: List[_KinetoEvent],
     main_function_events: List[profiler_util.FunctionEvent],
     memory_events: List[Any],
@@ -128,9 +129,9 @@ def get_resource_usage_report(
     """
     mem_records_acc = profiler_util.MemRecordsAcc(memory_events)
     main_kineto_events = sorted(
-        (evt for evt in main_kineto_events if "ludwig" in evt.name()), key=lambda x: x.correlation_id()
+        (evt for evt in main_kineto_events if evt.name() in tags), key=lambda x: x.correlation_id()
     )
-    main_function_events = sorted((evt for evt in main_function_events if "ludwig" in evt.name), key=lambda x: x.id)
+    main_function_events = sorted((evt for evt in main_function_events if evt.name in tags), key=lambda x: x.id)
     assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
     assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
     for kineto_event, function_event in zip(main_kineto_events, main_function_events):
@@ -141,23 +142,24 @@ def get_resource_usage_report(
     return info
 
 
-def get_all_events(
+def get_all_events(tags: set,
     kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
 ) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
     """Return main Kineto and function events (tagged with "ludwig.*"), memory and out of memory events.
 
+    :param tags: set of code block/function tags we report resource usage metrics for.
     :param kineto_events: list of Kineto Events.
     :param function_events: list of function events.
     """
-    main_function_events = [evt for evt in function_events if "ludwig" in evt.name]
-    main_kineto_events = [event for event in kineto_events if "ludwig" in event.name()]
+    main_function_events = [evt for evt in function_events if evt.name in tags]
+    main_kineto_events = [event for event in kineto_events if event.name() in tags]
     memory_events = [[event, False] for event in kineto_events if profiler_util.MEMORY_EVENT_NAME in event.name()]
     # profiler_util.OUT_OF_MEMORY_EVENT_NAME seems to only be in newer versions of torch.
     out_of_memory_events = [event for event in kineto_events if "[OutOfMemory]" in event.name()]
     return main_kineto_events, main_function_events, memory_events, out_of_memory_events
 
 
-def export_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile, output_dir: str):
+def export_metrics_from_torch_profiler(tags: list, profile: torch.profiler.profiler.profile, output_dir: str):
     """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler.
 
     The profiler keeps track of *torch operations* being executed in C++. It keeps track
@@ -168,6 +170,7 @@ def export_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile,
     The torch profiler surfaces these metrics that are tracked under the hood by `libkineto`.
     More on the Kineto project: https://github.com/pytorch/kineto
 
+    :param tags: list of code block/function tags we report resource usage metrics for.
     :param profile: profiler object that contains all the events that
         were registered during the execution of the wrapped code block.
     :param output_dir: a tag for the experiment.
@@ -175,16 +178,18 @@ def export_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile,
     # events in both of these lists are in chronological order.
     kineto_events = profile.profiler.kineto_results.events()
     function_events = profile.profiler.function_events
-    main_kineto_events, main_function_events, memory_events, _ = get_all_events(kineto_events, function_events)
+    tags = set(tags)
+    main_kineto_events, main_function_events, memory_events, _ = get_all_events(tags, kineto_events, function_events)
 
     assert Counter([event.name for event in main_function_events]) == Counter(
         [event.name() for event in main_kineto_events]
     )
 
     info = initialize_stats_dict(main_function_events)
-    info = get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info)
+    info = get_resource_usage_report(tags, main_kineto_events, main_function_events, memory_events, info)
     for code_block_tag, report in info.items():
         os.makedirs(output_dir, exist_ok=True)
         file_path = os.path.join(output_dir, f"{code_block_tag}_resource_usage.json")
         save_json(file_path, report)
         print("exported to", file_path)
+    return info

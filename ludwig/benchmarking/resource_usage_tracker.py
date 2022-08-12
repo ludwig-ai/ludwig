@@ -18,6 +18,7 @@ from gpustat.core import GPUStatCollection
 
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json, save_json
+from ludwig.benchmarking.reporting import export_metrics_from_torch_profiler
 
 # disabling print because the following imports are verbose
 f = open(os.devnull, "w")
@@ -104,13 +105,8 @@ class ResourceUsageTracker:
             tag: str,
             use_torch_profiler: bool,
             output_dir: str,
-            logging_interval: float = 1.0,
+            logging_interval: float = 0.1,
     ) -> None:
-        if tag not in ["train", "evaluate", "preprocess"]:
-            raise ValueError(
-                f"{self.__class__.__name__} tag unrecognized. Please choose one from [train, evaluate, " f"preprocess]"
-            )
-
         self.output_dir = output_dir
         self.tag = tag
         self.info = {"tag": self.tag, "system": {}}
@@ -125,6 +121,7 @@ class ResourceUsageTracker:
             if self.cuda_is_available:
                 activities.append(torch.profiler.ProfilerActivity.CUDA)
             self.torch_profiler = torch.profiler.profile(activities=activities, profile_memory=True)
+            self.torch_record_function = torch.profiler.record_function(self.tag)
 
     def populate_static_information(self) -> None:
         """Populates the report with static software and hardware information."""
@@ -132,9 +129,9 @@ class ResourceUsageTracker:
         self.info["start_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
 
         # CPU information
-        self.info["system"]["python_packages_and_versions"] = [
-            str(package) for package in get_python_packages_and_versions()
-        ]
+        # self.info["system"]["python_packages_and_versions"] = [
+        #     str(package) for package in get_python_packages_and_versions()
+        # ]
         cpu_info = get_my_cpu_info()
         self.info["system"]["cpu_architecture"] = cpu_info["arch"]
         self.info["system"]["num_cpu"] = cpu_info["count"]
@@ -159,7 +156,9 @@ class ResourceUsageTracker:
             raise ValueError("Tracker already launched.")
 
         self.populate_static_information()
-        self.torch_profiler = self.torch_profiler.__enter__()
+        if self.use_torch_profiler:
+            self.torch_profiler = self.torch_profiler.__enter__()
+            self.torch_record_function = self.torch_record_function.__enter__()
         try:
             self.queue = Queue()
             self.t = threading.Thread(
@@ -197,11 +196,15 @@ class ResourceUsageTracker:
             print("Encountered exception when joining tracker thread.")
             print("".join(traceback.format_tb(tb)))
         finally:
-            self.torch_profiler.__exit__(exc_type, exc_val, exc_tb)
+            if self.use_torch_profiler:
+                self.torch_record_function.__exit__(exc_type, exc_val, exc_tb)
+                self.torch_profiler.__exit__(exc_type, exc_val, exc_tb)
+
 
         self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
         os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
 
+        self.info["torch_usage_metrics"] = export_metrics_from_torch_profiler([self.tag], self.torch_profiler, self.output_dir)
         self.info[f"{self.tag}_total_duration"] = self.info["end_time"] - self.info["start_time"]
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info["end_disk_usage"] - self.info["start_disk_usage"]
