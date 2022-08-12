@@ -16,6 +16,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
     "Name corresponding to a decoder."
 
+    input_size: int = None
+
     fc_layers: List[dict] = None
 
     num_fc_layers: int = 0
