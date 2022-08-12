@@ -200,8 +200,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         self.decoder_config = feature.decoder
         self.loss = feature.loss
-        self.reduce_input = None
-        self.reduce_dependencies = None
+        self.reduce_input = feature.reduce_input
+        self.reduce_dependencies = feature.reduce_dependencies
 
         # List of feature names that this output feature is dependent on.
         self.dependencies = []
