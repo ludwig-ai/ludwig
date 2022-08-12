@@ -18,6 +18,8 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     input_size: int = None
 
+    num_classes: int = None
+
     fc_layers: List[dict] = None
 
     num_fc_layers: int = 0
