@@ -104,7 +104,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
     ) -> None:
         self.output_dir = output_dir
         self.tag = tag
-        self.info = {"tag": self.tag}
+        self.info = {"code_block_tag": self.tag}
         self.logging_interval = logging_interval
         self.launched = False
         self.cuda_is_available = torch.cuda.is_available()
@@ -222,4 +222,4 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         for key, value in torch_usage_metrics.items():
             self.info[key] = value
 
-        save_json(os.path.join(self.output_dir, self.info["tag"] + "_resource_usage_metrics.json"), self.info)
+        save_json(os.path.join(self.output_dir, self.info["code_block_tag"] + "_resource_usage_metrics.json"), self.info)
