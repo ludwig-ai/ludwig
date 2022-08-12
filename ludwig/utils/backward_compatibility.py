@@ -149,7 +149,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         module_type = DECODER
 
     module = feature.get(module_type, {})
-    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else OUTPUT_FEATURE_KEYS
+    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else OUTPUT_FEATURE_KEYS + [ENCODER, DECODER]
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module
