@@ -40,6 +40,11 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    input_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the input to the dense encoder.",
+    )
+
     fc_layers: List[dict] = schema_utils.DictList(
         default=None,
         description="List of fully connected layers to use in the encoder.",
