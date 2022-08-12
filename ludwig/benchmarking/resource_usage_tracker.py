@@ -61,8 +61,6 @@ def monitor(
     # will return a meaningless 0 value on the first call because `interval` arg is set to None.
     tracked_process.cpu_percent(interval=logging_interval)
 
-    # start timer once we started the thread so that we don't count the time taken to launching.
-    info["start_time"] = time.perf_counter()
     while True:
         time.sleep(logging_interval)
         try:
@@ -72,9 +70,7 @@ def monitor(
                     # synchronize CUDA to get accurate timing for jobs running on GPU.
                     if cuda_is_available:
                         torch.cuda.synchronize()
-
-                    # record end time here so that we don't include the time it takes to join the thread.
-                    info["end_time"] = time.perf_counter()
+                    queue.put(info)
                     save_json(os.path.join(output_dir, info["tag"] + "_temp.json"), info)
                     return
             else:
@@ -149,6 +145,9 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
                 self.info[gpu_key]["driver_version"] = gpu_info["driver_version"]
                 self.info[gpu_key]["cuda_version"] = gpu_info["cuda_version"]
 
+        # recording in microseconds to be in line with torch profiler time recording.
+        self.info["start_time"] = time.perf_counter_ns() / 1000
+
     def __enter__(self):
         """Populates static information and monitors resource usage."""
         if self.launched:
@@ -192,6 +191,9 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         try:
             self.queue.put(STOP_MESSAGE)
             self.t.join()
+            self.info = self.queue.get()
+            # recording in microseconds to be in line with torch profiler time recording.
+            self.info["end_time"] = time.perf_counter_ns() / 1000
             self.launched = False
         except Exception:
             ex_type, ex_value, tb = sys.exc_info()
@@ -201,11 +203,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
 
-        self.info = load_json(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
-        os.remove(os.path.join(self.output_dir, self.info["tag"] + "_temp.json"))
-
         self.info["total_duration"] = self.info.pop("end_time") - self.info.pop("start_time")
-
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
 
