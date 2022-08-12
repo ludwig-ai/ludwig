@@ -1007,7 +1007,8 @@ def update_features_with_shared_params(
     if config_feature_group == INPUT_FEATURES:
         update_subsection_parameters(sampled_default_shared_params, section_dict, PREPROCESSING)
         update_subsection_parameters(sampled_default_shared_params, section_dict, ENCODER)
-    else:
+
+    if config_feature_group == OUTPUT_FEATURES:
         update_subsection_parameters(sampled_default_shared_params, section_dict, DECODER)
         update_subsection_parameters(sampled_default_shared_params, section_dict, LOSS)
 

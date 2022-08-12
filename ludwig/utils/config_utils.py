@@ -16,11 +16,12 @@ def get_feature_type_parameter_values_from_section(
     parameter_name."""
     parameter_values = set()
     for feature in config[features_section]:
-        if feature[TYPE] == feature_type:
-            if parameter_subsection_name:
-                parameter_values.add(feature[parameter_name][parameter_subsection_name])
-            else:
-                parameter_values.add(feature[parameter_name])
+        if feature[TYPE] != feature_type:
+            continue
+        if parameter_subsection_name:
+            parameter_values.add(feature[parameter_name][parameter_subsection_name])
+        else:
+            parameter_values.add(feature[parameter_name])
     return parameter_values
 
 
