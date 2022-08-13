@@ -97,9 +97,7 @@ class MetricsDiff:
 
     def to_csv(self, path):
         csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
-        file_name = f"report_{self.dataset_name}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv"
-        full_path = os.path.join(path, file_name)
-        with open(full_path, "w") as f:
+        with open(path, "w") as f:
             f.write(
                 csv_str.format(
                     "Dataset Name",
@@ -132,9 +130,9 @@ class MetricsDiff:
                         diff_percentage,
                     )
                 )
-        print("Exported report to", full_path)
+        print("Exported report to", path)
 
-    def __str__(self):
+    def to_string(self):
         ret = []
         spacing_str = "{:<20} {:<23} {:<13} {:<13} {:<13} {:<5}"
         ret.append(f"Metrics for dataset: {self.dataset_name}\n")
@@ -205,9 +203,7 @@ class ResourceUsageDiff:
 
     def to_csv(self, path):
         csv_str = "{}, {}, {}, {}, {}, {}\n"
-        file_name = f"report_{self.code_block_tag}_{self.base_experiment_name}_{self.experimental_experiment_name}.csv"
-        full_path = os.path.join(path, file_name)
-        with open(full_path, "w") as f:
+        with open(path, "w") as f:
             f.write(
                 csv_str.format(
                     "Code Block Tag",
@@ -232,9 +228,9 @@ class ResourceUsageDiff:
                         diff_percentage,
                     )
                 )
-        print("Exported report to", full_path)
+        print("Exported report to", path)
 
-    def __str__(self):
+    def to_string(self):
         ret = []
         spacing_str = "{:<30} {:<20} {:<20} {:<20} {:<5}"
         ret.append(f"\nResource usage for: {self.code_block_tag}")
