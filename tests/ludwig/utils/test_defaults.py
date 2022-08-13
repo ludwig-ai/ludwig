@@ -405,12 +405,13 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         PREPROCESSING: {
-            "split": {},
+            "split": {"type": "random", "probabilities": [0.7, 0.1, 0.2]},
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,
         },
         DEFAULTS: {
+            "split": {"type": "random", "probabilities": [0.7, 0.1, 0.2]},
             "text": {
                 PREPROCESSING: {
                     "tokenizer": "space_punct",

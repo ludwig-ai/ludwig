@@ -63,8 +63,9 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
+base_preprocessing_split = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
 base_preprocessing_parameters = {
-    "split": {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)},
+    "split": base_preprocessing_split,
     "undersample_majority": None,
     "oversample_minority": None,
     "sample_ratio": 1.0,
@@ -254,6 +255,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         config[DEFAULTS] = dict()
 
     # Update defaults with the default feature specific preprocessing parameters
+    config[DEFAULTS][PREPROCESSING][SPLIT] = base_preprocessing_split
     for feature_type, preprocessing_defaults in default_feature_specific_preprocessing_parameters.items():
         # Create a new key with feature type if defaults is empty
         if feature_type not in config.get(DEFAULTS):
