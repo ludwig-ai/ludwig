@@ -25,7 +25,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.defaults import merge_with_defaults, base_preprocessing_split
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     binary_feature,
@@ -405,13 +405,12 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         PREPROCESSING: {
-            "split": {"type": "random", "probabilities": [0.7, 0.1, 0.2]},
+            "split": base_preprocessing_split,
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,
         },
         DEFAULTS: {
-            "split": {"type": "random", "probabilities": [0.7, 0.1, 0.2]},
             "text": {
                 PREPROCESSING: {
                     "tokenizer": "space_punct",

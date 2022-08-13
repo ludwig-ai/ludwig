@@ -255,7 +255,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         config[DEFAULTS] = dict()
 
     # Update defaults with the default feature specific preprocessing parameters
-    config[DEFAULTS][PREPROCESSING][SPLIT] = base_preprocessing_split
     for feature_type, preprocessing_defaults in default_feature_specific_preprocessing_parameters.items():
         # Create a new key with feature type if defaults is empty
         if feature_type not in config.get(DEFAULTS):
@@ -263,7 +262,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
                 config[DEFAULTS][feature_type] = preprocessing_defaults
             else:
                 config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
-        # Feature type exists but preprocessing hasn't be specified
+        # Feature type exists but preprocessing hasn't been specified
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_defaults
         # Preprocessing parameters exist for feature type, update defaults with parameters from config
@@ -325,7 +324,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Hyperpot =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
-
     return config
 
 
