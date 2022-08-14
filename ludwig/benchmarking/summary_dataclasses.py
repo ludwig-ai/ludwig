@@ -173,9 +173,6 @@ class MetricsDiff:
 class ResourceUsageSummary:
     """Summary of resource usage metrics from one experiment."""
 
-    # Path containing the JSON that stores resource usage metrics for the experiment.
-    path: str
-
     # The tag with which the code block/function is labeled.
     code_block_tag: str
 
@@ -297,7 +294,7 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
 
 
 def build_metrics_diff(
-    dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
+        dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
 ) -> MetricsDiff:
     base_summary: MetricsSummary = build_metrics_summary(
         os.path.join(local_directory, dataset_name, base_experiment_name)
@@ -329,9 +326,7 @@ def build_resource_usage_summary(path):
     code_block_tag = report["code_block_tag"]
     report = {key: value for key, value in report.items() if isinstance(value, (int, float))}
     metric_names = set(report.keys())
-    return ResourceUsageSummary(
-        path=path, code_block_tag=code_block_tag, metric_to_values=report, metric_names=metric_names
-    )
+    return ResourceUsageSummary(code_block_tag=code_block_tag, metric_to_values=report, metric_names=metric_names)
 
 
 def build_resource_usage_diff_from_path(base_path, experimental_path):
@@ -357,13 +352,9 @@ def average_runs(path_to_runs_dir):
 
     Metrics for code blocks/functions that were executed exactly once will be returned as is.
     """
-    print(path_to_runs_dir)
     runs = [load_json(os.path.join(path_to_runs_dir, run)) for run in os.listdir(path_to_runs_dir)]
-    pprint(runs)
-    print([runs[i].keys() == runs[i+1].keys() for i in range(len(runs)-1)])
-    print()
     # asserting that keys to each of the dictionaries are consistent throughout the runs.
-    assert len(runs) == 1 or all(runs[i].keys() == runs[i+1].keys() for i in range(len(runs)-1))
+    assert len(runs) == 1 or all(runs[i].keys() == runs[i + 1].keys() for i in range(len(runs) - 1))
     runs_average = {"num_runs": len(runs)}
     for key in runs[0].keys():
         if isinstance(runs[0][key], (int, float)):
@@ -371,18 +362,31 @@ def average_runs(path_to_runs_dir):
     return runs_average
 
 
-def summarize_resource_usage(path):
+def summarize_resource_usage(path, tags=None) -> List[ResourceUsageSummary]:
     summary = dict()
     # metric types: system_resource_usage, torch_ops_resource_usage.
     for metric_type in os.listdir(path):
         metric_type_path = os.path.join(path, metric_type)
         # code block tags correspond to the `tag` argument in ResourceUsageTracker.
         for code_block_tag in os.listdir(metric_type_path):
-            summary[code_block_tag] = {}
+            if tags and code_block_tag not in tags:
+                continue
+            if code_block_tag not in summary:
+                summary[code_block_tag] = {}
             run_path = os.path.join(metric_type_path, code_block_tag)
             runs_average = average_runs(run_path)
             summary[code_block_tag][metric_type] = runs_average
-    return flatten_dict(summary)
+
+    summary_list = []
+    for code_block_tag, metric_type_dicts in summary.items():
+        merged_summary = {}
+        for metrics in metric_type_dicts.values():
+            assert "num_runs" in metrics
+            assert "num_runs" not in merged_summary or metrics["num_runs"] == merged_summary["num_runs"]
+            merged_summary.update(metrics)
+        summary_list.append(ResourceUsageSummary(code_block_tag=code_block_tag, metric_to_values=merged_summary,
+                                                 metric_names=set(merged_summary)))
+    return summary_list
 
 
 def build_resource_usage_diff(base_path, experimental_path):
@@ -391,30 +395,27 @@ def build_resource_usage_diff(base_path, experimental_path):
     base_path and experimental_path corresponds to the output_dir argument in
     ResourceUsageTracker for two different experiments
     """
-    base_summary = summarize_resource_usage(base_path)
-    experimental_summary = summarize_resource_usage(base_path)
+    base_summary_list = summarize_resource_usage(base_path)
+    experimental_summary_list = summarize_resource_usage(experimental_path)
 
+    summaries_list = []
+    for base_summary in base_summary_list:
+        for experimental_summary in experimental_summary_list:
+            if base_summary.code_block_tag == experimental_summary.code_block_tag:
+                summaries_list.append((base_summary, experimental_summary))
 
-    summaries = dict()
-    base_metric_types = set(os.listdir(base_path))
-    experimental_metric_types = set(os.listdir(experimental_path))
-    metric_types_in_common = base_metric_types.intersection(experimental_metric_types)
-    # metric types: system_resource_usage, torch_ops_resource_usage.
-    for metric_type in metric_types_in_common:
-        base_metric_type_path = os.path.join(base_path, metric_type)
-        experimental_metric_type_path = os.path.join(experimental_path, metric_type)
-        # code block tags correspond to the `tag` argument in ResourceUsageTracker.
-        base_code_block_tags = set(os.listdir(base_metric_type_path))
-        experimental_code_block_tags = set(os.listdir(experimental_metric_type_path))
-        code_block_tags_in_common = base_code_block_tags.intersection(experimental_code_block_tags)
-
-        for code_block_tag in code_block_tags_in_common:
-            summaries[code_block_tag] = {}
-            base_run_path = os.path.join(base_metric_type_path, code_block_tag)
-            experimental_run_path = os.path.join(experimental_metric_type_path, code_block_tag)
-            base_runs_average = average_runs(base_run_path)
-            experimental_runs_average = average_runs(experimental_run_path)
-            summaries[code_block_tag][metric_type]["base"] = base_runs_average
-            summaries[code_block_tag][metric_type]["experimental"] = experimental_runs_average
-
-
+    diffs = []
+    for base_summary, experimental_summary in summaries_list:
+        metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+        metrics: List[Diff] = [
+            build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
+            for name in metrics_in_common
+        ]
+        diff = ResourceUsageDiff(
+            code_block_tag=base_summary.code_block_tag,
+            base_experiment_name=base_summary.code_block_tag,
+            experimental_experiment_name=experimental_summary.code_block_tag,
+            metrics=metrics,
+        )
+        diffs.append(diff)
+    return diffs
