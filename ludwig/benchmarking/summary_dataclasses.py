@@ -2,13 +2,14 @@ import os
 from dataclasses import dataclass
 from statistics import mean
 from typing import Any, Dict, List, Union
+from pprint import pprint
 
 from torch.autograd.profiler_util import _format_memory, _format_time
 
 import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, flatten_dict
 
 
 @dataclass
@@ -305,11 +306,11 @@ def build_metrics_diff(
         os.path.join(local_directory, dataset_name, experimental_experiment_name)
     )
 
-    shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+    metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
 
     metrics: List[Diff] = [
         build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
-        for name in shared_metrics
+        for name in metrics_in_common
     ]
 
     return MetricsDiff(
@@ -333,22 +334,14 @@ def build_resource_usage_summary(path):
     )
 
 
-def build_resource_usage_diff(
-    dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
-):
-    base_dir = os.path.join(local_directory, dataset_name, base_experiment_name)
-    experimental_dir = os.path.join(local_directory, dataset_name, experimental_experiment_name)
-    return build_resource_usage_diff_from_path(base_dir, experimental_dir)
-
-
 def build_resource_usage_diff_from_path(base_path, experimental_path):
     base_summary = build_resource_usage_summary(base_path)
     experimental_summary = build_resource_usage_summary(experimental_path)
 
-    shared_metrics = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+    metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
     metrics: List[Diff] = [
         build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
-        for name in shared_metrics
+        for name in metrics_in_common
     ]
     diff = ResourceUsageDiff(
         code_block_tag=base_summary.code_block_tag,
@@ -357,3 +350,71 @@ def build_resource_usage_diff_from_path(base_path, experimental_path):
         metrics=metrics,
     )
     return diff
+
+
+def average_runs(path_to_runs_dir):
+    """Return average metrics from code blocks/function that ran more than once.
+
+    Metrics for code blocks/functions that were executed exactly once will be returned as is.
+    """
+    print(path_to_runs_dir)
+    runs = [load_json(os.path.join(path_to_runs_dir, run)) for run in os.listdir(path_to_runs_dir)]
+    pprint(runs)
+    print([runs[i].keys() == runs[i+1].keys() for i in range(len(runs)-1)])
+    print()
+    # asserting that keys to each of the dictionaries are consistent throughout the runs.
+    assert len(runs) == 1 or all(runs[i].keys() == runs[i+1].keys() for i in range(len(runs)-1))
+    runs_average = {"num_runs": len(runs)}
+    for key in runs[0].keys():
+        if isinstance(runs[0][key], (int, float)):
+            runs_average[key] = mean([run[key] for run in runs])
+    return runs_average
+
+
+def summarize_resource_usage(path):
+    summary = dict()
+    # metric types: system_resource_usage, torch_ops_resource_usage.
+    for metric_type in os.listdir(path):
+        metric_type_path = os.path.join(path, metric_type)
+        # code block tags correspond to the `tag` argument in ResourceUsageTracker.
+        for code_block_tag in os.listdir(metric_type_path):
+            summary[code_block_tag] = {}
+            run_path = os.path.join(metric_type_path, code_block_tag)
+            runs_average = average_runs(run_path)
+            summary[code_block_tag][metric_type] = runs_average
+    return flatten_dict(summary)
+
+
+def build_resource_usage_diff(base_path, experimental_path):
+    """Build and return a ResourceUsageDiff object to diff resource usage metrics between two experiments.
+
+    base_path and experimental_path corresponds to the output_dir argument in
+    ResourceUsageTracker for two different experiments
+    """
+    base_summary = summarize_resource_usage(base_path)
+    experimental_summary = summarize_resource_usage(base_path)
+
+
+    summaries = dict()
+    base_metric_types = set(os.listdir(base_path))
+    experimental_metric_types = set(os.listdir(experimental_path))
+    metric_types_in_common = base_metric_types.intersection(experimental_metric_types)
+    # metric types: system_resource_usage, torch_ops_resource_usage.
+    for metric_type in metric_types_in_common:
+        base_metric_type_path = os.path.join(base_path, metric_type)
+        experimental_metric_type_path = os.path.join(experimental_path, metric_type)
+        # code block tags correspond to the `tag` argument in ResourceUsageTracker.
+        base_code_block_tags = set(os.listdir(base_metric_type_path))
+        experimental_code_block_tags = set(os.listdir(experimental_metric_type_path))
+        code_block_tags_in_common = base_code_block_tags.intersection(experimental_code_block_tags)
+
+        for code_block_tag in code_block_tags_in_common:
+            summaries[code_block_tag] = {}
+            base_run_path = os.path.join(base_metric_type_path, code_block_tag)
+            experimental_run_path = os.path.join(experimental_metric_type_path, code_block_tag)
+            base_runs_average = average_runs(base_run_path)
+            experimental_runs_average = average_runs(experimental_run_path)
+            summaries[code_block_tag][metric_type]["base"] = base_runs_average
+            summaries[code_block_tag][metric_type]["experimental"] = experimental_runs_average
+
+
