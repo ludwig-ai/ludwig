@@ -112,6 +112,11 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         os.makedirs(os.path.join(self.output_dir), exist_ok=True)
 
     def _init_tracker_info(self):
+        """Initialize new self.info, self.torch_profiler, and self.torch_record_function instances.
+
+        Important to call this in __enter__ if the user decides not to create a new class instance
+        and therefore __init__ wouldn't be called.
+        """
         self.info = {"code_block_tag": self.tag}
         if self.use_torch_profiler:
             self.torch_profiler = torch.profiler.profile(activities=self.profiler_activities, profile_memory=True)
@@ -153,10 +158,12 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
 
         self._init_tracker_info()
         self.populate_static_information()
+
         if self.use_torch_profiler:
             # contextlib.ExitStack gracefully handles situations where __enter__ or __exit__ calls throw exceptions.
             with contextlib.ExitStack() as ctx_exit_stack:
                 try:
+                    # Launch torch.profiler to track PyTorch operators.
                     ctx_exit_stack.enter_context(self.torch_profiler)
                 except RuntimeError:
                     # PyTorch profiler is already enabled on this thread.
@@ -166,6 +173,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
                 ctx_exit_stack.enter_context(self.torch_record_function)
                 self._ctx_exit_stack = ctx_exit_stack.pop_all()
         try:
+            # Starting thread to monitor system resource usage.
             self.queue = Queue()
             self.t = threading.Thread(
                 target=monitor,
@@ -188,10 +196,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Joins monitoring thread and stops the PyTorch profiler.
-
-        Computes and postprocesses more metrics. Saves report.
-        """
+        """Stop profiling, postprocess and export resource usage metrics."""
         try:
             self.queue.put(STOP_MESSAGE)
             self.t.join()
@@ -206,10 +211,11 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
-        self._export_temp_system_metrics()
-        self._export_temp_torch_metrics()
+        self._export_system_metrics()
+        self._export_torch_metrics()
 
-    def _export_temp_system_metrics(self):
+    def _export_system_metrics(self):
+        """Export system resource usage metrics (no torch operators)."""
         self.info["total_execution_time"] = self.info.pop("end_time") - self.info.pop("start_time")
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
@@ -225,13 +231,13 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         if self.info["cpu_memory_usage"]:
             self.info["average_cpu_memory_utilization"] = mean(self.info.pop("cpu_memory_usage"))
 
-        temp_dir = os.path.join(self.output_dir, "temp_resource_usage_tracker", self.info["code_block_tag"])
+        temp_dir = os.path.join(self.output_dir, "system_resource_usage", self.info["code_block_tag"])
         os.makedirs(temp_dir, exist_ok=True)
         num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
         file_name = os.path.join(temp_dir, f"run_{num_prev_runs}.json")
         save_json(file_name, self.info)
 
-    def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics):
+    def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
@@ -239,12 +245,13 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             reformatted_dict[reformatted_key] = value
         return reformatted_dict
 
-    def _export_temp_torch_metrics(self):
+    def _export_torch_metrics(self):
+        """Export resource usage metrics of torch operators."""
         if self.torch_profiler:
             torch_usage_metrics = get_metrics_from_torch_profiler(self.torch_profiler)
             torch_usage_metrics = self._reformat_torch_usage_metrics_tags(torch_usage_metrics)
             for tag, runs in torch_usage_metrics.items():
-                temp_dir = os.path.join(self.output_dir, "temp_pytorch_profiler", tag)
+                temp_dir = os.path.join(self.output_dir, "torch_ops_resource_usage", tag)
                 os.makedirs(temp_dir, exist_ok=True)
                 for run in runs:
                     num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
