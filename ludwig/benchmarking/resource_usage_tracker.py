@@ -2,11 +2,13 @@
 tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
 
 import contextlib
+import logging
 import os
 import shutil
 import sys
 import threading
 import time
+import glob
 import traceback
 from queue import Empty as EmptyQueueException
 from queue import Queue
@@ -19,6 +21,7 @@ from gpustat.core import GPUStatCollection
 
 from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.constants import LUDWIG_TAG
 from ludwig.utils.data_utils import load_json, save_json
 
 # disabling print because the following imports are verbose
@@ -35,7 +38,7 @@ STOP_MESSAGE = "stop"
 
 
 def monitor(
-    queue: Queue, info: Dict[str, Any], output_dir: str, logging_interval: int, cuda_is_available: bool
+        queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool
 ) -> None:
     """Monitors hardware resource use.
 
@@ -45,7 +48,6 @@ def monitor(
     Args:
         queue: queue from which we can push and retrieve messages sent to the function targeted by the thread.
         info: dictionary containing system resource usage information about the running process.
-        output_dir: directory where the contents of `info` will be saved.
         logging_interval: time interval at which we will poll the system for usage metrics.
         cuda_is_available: stores torch.cuda.is_available().
     """
@@ -95,28 +97,25 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         logging_interval: time interval in seconds at which system is polled for resource usage.
     """
 
-    def __init__(
-        self,
-        tag: str,
-        use_torch_profiler: bool,
-        output_dir: str,
-        logging_interval: float = 0.1,
-    ) -> None:
-        self.output_dir = output_dir
+    def __init__(self, tag: str, use_torch_profiler: bool, output_dir: str, logging_interval: float = 0.1) -> None:
         self.tag = tag
-        self.info = {"code_block_tag": self.tag}
-        self.logging_interval = logging_interval
-        self.launched = False
-        self.cuda_is_available = torch.cuda.is_available()
-        os.makedirs(os.path.join(self.output_dir), exist_ok=True)
+        self._tag = LUDWIG_TAG + self.tag
         self.use_torch_profiler = use_torch_profiler
-
+        self.output_dir = output_dir
+        self.logging_interval = logging_interval
+        self.cuda_is_available = torch.cuda.is_available()
+        self.launched = False
         if self.use_torch_profiler:
-            activities = [torch.profiler.ProfilerActivity.CPU]
+            self.profiler_activities = [torch.profiler.ProfilerActivity.CPU]
             if self.cuda_is_available:
-                activities.append(torch.profiler.ProfilerActivity.CUDA)
-            self.torch_profiler = torch.profiler.profile(activities=activities, profile_memory=True)
-            self.torch_record_function = torch.profiler.record_function(self.tag)
+                self.profiler_activities.append(torch.profiler.ProfilerActivity.CUDA)
+        os.makedirs(os.path.join(self.output_dir), exist_ok=True)
+
+    def _init_tracker_info(self):
+        self.info = {"code_block_tag": self.tag}
+        if self.use_torch_profiler:
+            self.torch_profiler = torch.profiler.profile(activities=self.profiler_activities, profile_memory=True)
+            self.torch_record_function = torch.profiler.record_function(self._tag)
 
     def populate_static_information(self) -> None:
         """Populates the report with static software and hardware information."""
@@ -150,13 +149,20 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
     def __enter__(self):
         """Populates static information and monitors resource usage."""
         if self.launched:
-            raise ValueError("Tracker already launched.")
+            raise RuntimeError("ResourceUsageTracker already launched. You can't use the same instance.")
 
+        self._init_tracker_info()
         self.populate_static_information()
         if self.use_torch_profiler:
             # contextlib.ExitStack gracefully handles situations where __enter__ or __exit__ calls throw exceptions.
             with contextlib.ExitStack() as ctx_exit_stack:
-                ctx_exit_stack.enter_context(self.torch_profiler)
+                try:
+                    ctx_exit_stack.enter_context(self.torch_profiler)
+                except RuntimeError:
+                    # PyTorch profiler is already enabled on this thread.
+                    # Using the running PyTorch profiler to track events.
+                    self.torch_profiler = None
+
                 ctx_exit_stack.enter_context(self.torch_record_function)
                 self._ctx_exit_stack = ctx_exit_stack.pop_all()
         try:
@@ -166,7 +172,6 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
                 args=(
                     self.queue,
                     self.info,
-                    self.output_dir,
                     self.logging_interval,
                     self.cuda_is_available,
                 ),
@@ -178,12 +183,12 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             ex_type, ex_value, tb = sys.exc_info()
             print("Encountered exception when launching tracker thread.")
             print("".join(traceback.format_tb(tb)))
-            raise
+            raise RuntimeError
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Joins monitoring thread.
+        """Joins monitoring thread and stops the PyTorch profiler.
 
         Computes and postprocesses more metrics. Saves report.
         """
@@ -201,7 +206,10 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
+        self._export_temp_system_metrics()
+        self._export_temp_torch_metrics()
 
+    def _export_temp_system_metrics(self):
         self.info["total_execution_time"] = self.info.pop("end_time") - self.info.pop("start_time")
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
@@ -217,9 +225,27 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         if self.info["cpu_memory_usage"]:
             self.info["average_cpu_memory_utilization"] = mean(self.info.pop("cpu_memory_usage"))
 
-        # todo (Wael) clean up
-        torch_usage_metrics = get_metrics_from_torch_profiler([self.tag], self.torch_profiler)[self.tag]["runs"][0]
-        for key, value in torch_usage_metrics.items():
-            self.info[key] = value
+        temp_dir = os.path.join(self.output_dir, "temp_resource_usage_tracker", self.info["code_block_tag"])
+        os.makedirs(temp_dir, exist_ok=True)
+        num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
+        file_name = os.path.join(temp_dir, f"run_{num_prev_runs}.json")
+        save_json(file_name, self.info)
 
-        save_json(os.path.join(self.output_dir, self.info["code_block_tag"] + "_resource_usage_metrics.json"), self.info)
+    def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics):
+        reformatted_dict = {}
+        for key, value in torch_usage_metrics.items():
+            assert key.startswith(LUDWIG_TAG)
+            reformatted_key = key[len(LUDWIG_TAG):]
+            reformatted_dict[reformatted_key] = value
+        return reformatted_dict
+
+    def _export_temp_torch_metrics(self):
+        if self.torch_profiler:
+            torch_usage_metrics = get_metrics_from_torch_profiler(self.torch_profiler)
+            torch_usage_metrics = self._reformat_torch_usage_metrics_tags(torch_usage_metrics)
+            for tag, runs in torch_usage_metrics.items():
+                temp_dir = os.path.join(self.output_dir, "temp_pytorch_profiler", tag)
+                os.makedirs(temp_dir, exist_ok=True)
+                for run in runs:
+                    num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
+                    save_json(os.path.join(temp_dir, f"run_{num_prev_runs}.json"), run)
