@@ -155,7 +155,6 @@ class Predictor(BasePredictor):
             # is a tensor that requires grad.
             predictions[key] = torch.cat(pred_value_list, dim=0).clone().detach().cpu().numpy()
 
-    @torch.profiler.record_function("ludwig.models.predictor.batch_evaluation")
     def batch_evaluation(self, dataset, collect_predictions=False, collect_logits=False, dataset_name=None):
         """Batch evaluate model on dataset.
 

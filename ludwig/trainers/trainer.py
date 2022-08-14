@@ -62,7 +62,7 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
-
+from ludwig.benchmarking.resource_usage_tracker import ResourceUsageTracker
 logger = logging.getLogger(__name__)
 
 
@@ -635,7 +635,7 @@ class Trainer(BaseTrainer):
 
         return should_break
 
-    @torch.profiler.record_function("ludwig.trainers.train")
+    @ResourceUsageTracker(tag="ludwig.trainers.trainer.train", output_dir="exp_out", use_torch_profiler=True)
     def train(self, training_set, validation_set=None, test_set=None, save_path="model", **kwargs):
         """Trains a model with a set of hyperparameters listed below. Customizable.
 
