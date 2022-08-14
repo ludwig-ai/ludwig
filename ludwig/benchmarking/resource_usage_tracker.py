@@ -181,8 +181,8 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         except Exception:
             self.launched = False
             ex_type, ex_value, tb = sys.exc_info()
-            print("Encountered exception when launching tracker thread.")
-            print("".join(traceback.format_tb(tb)))
+            logging.error("Encountered exception when launching tracker thread.")
+            logging.error("".join(traceback.format_tb(tb)))
             raise RuntimeError
 
         return self
@@ -201,8 +201,8 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             self.launched = False
         except Exception:
             ex_type, ex_value, tb = sys.exc_info()
-            print("Encountered exception when joining tracker thread.")
-            print("".join(traceback.format_tb(tb)))
+            logging.error("Encountered exception when joining tracker thread.")
+            logging.error("".join(traceback.format_tb(tb)))
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
