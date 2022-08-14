@@ -51,20 +51,19 @@ def monitor(
         logging_interval: time interval at which we will poll the system for usage metrics.
         cuda_is_available: stores torch.cuda.is_available().
     """
-    for key in info:
-        if "cuda_" in key:
-            info[key]["memory_used"] = []
-    info["cpu_utilization"] = []
-    info["cpu_memory_usage"] = []
-
     # get the pid of the parent process.
     tracked_process = psutil.Process(os.getpid())
 
     # will return a meaningless 0 value on the first call because `interval` arg is set to None.
     tracked_process.cpu_percent(interval=logging_interval)
+    for key in info:
+        if "cuda_" in key:
+            info[key]["memory_used"] = []
+    with tracked_process.oneshot():
+        info["cpu_utilization"] = [tracked_process.cpu_percent()]
+        info["cpu_memory_usage"] = [tracked_process.memory_full_info().uss]
 
     while True:
-        time.sleep(logging_interval)
         try:
             message = queue.get(block=False)
             if isinstance(message, str):
@@ -86,6 +85,7 @@ def monitor(
         with tracked_process.oneshot():
             info["cpu_utilization"].append(tracked_process.cpu_percent())
             info["cpu_memory_usage"].append(tracked_process.memory_full_info().uss)
+        time.sleep(logging_interval)
 
 
 class ResourceUsageTracker(contextlib.ContextDecorator):
@@ -223,13 +223,19 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         for key in self.info:
             if "cuda_" in key:
                 self.info[key]["max_memory_used"] = max(self.info[key]["memory_used"])
-        self.info["max_cpu_utilization"] = max(self.info["cpu_utilization"], default=None)
-        self.info["max_cpu_memory_utilization"] = max(self.info["cpu_memory_usage"], default=None)
+        self.info["max_cpu_utilization"] = max(self.info["cpu_utilization"], default=0)
+        self.info["max_cpu_memory_usage"] = max(self.info["cpu_memory_usage"], default=0)
 
         if self.info["cpu_utilization"]:
             self.info["average_cpu_utilization"] = mean(self.info.pop("cpu_utilization"))
+        else:
+            self.info.pop("cpu_utilization")
+            self.info["average_cpu_utilization"] = 0
         if self.info["cpu_memory_usage"]:
-            self.info["average_cpu_memory_utilization"] = mean(self.info.pop("cpu_memory_usage"))
+            self.info["average_cpu_memory_usage"] = mean(self.info.pop("cpu_memory_usage"))
+        else:
+            self.info.pop("cpu_memory_usage")
+            self.info["average_cpu_memory_usage"] = 0
 
         temp_dir = os.path.join(self.output_dir, "system_resource_usage", self.info["code_block_tag"])
         os.makedirs(temp_dir, exist_ok=True)
