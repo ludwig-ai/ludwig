@@ -472,8 +472,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = AudioInputFeatureConfig()
-        set_default_values(input_feature, {TIED: defaults.tied, PREPROCESSING: {}})
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+        set_default_values(
+            input_feature, {ENCODER: {TYPE: defaults.encoder.type}, PREPROCESSING: {}, TIED: defaults.tied}
+        )
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
