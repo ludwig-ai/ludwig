@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Tuple, Union, Optional
 
 import pandas as pd
 import torch
+import shutil
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
@@ -33,6 +34,7 @@ from ludwig.models.inference import (
     _InferencePreprocessor,
     InferenceModule,
 )
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.misc_utils import remove_empty_lines
 from ludwig.utils.torch_utils import place_on_device
@@ -546,7 +548,9 @@ class TritonModel:
             scripted_module = torch.jit.script(gen_module)
         return scripted_module
 
-def get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, predictor_num_devices, postprocessor_num_cpus):
+
+def get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, predictor_num_devices,
+                                postprocessor_num_cpus):
     if predictor_device_type not in ["cuda", "cpu"]:
         raise ValueError('Invalid predictor device type. Choose one of ["cpu", "cuda"].')
     elif predictor_device_type == "cuda" and not torch.cuda.is_available():
@@ -558,24 +562,42 @@ def get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, pr
     device_counts = [preprocessor_num_cpus, predictor_num_devices, postprocessor_num_cpus]
     return device_types, device_counts
 
+
 def get_inference_modules(model, predictor_device_type):
     inference_module = InferenceModule.from_ludwig_model(
         model.model, model.config, model.training_set_metadata, device=predictor_device_type
     )
     return [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
 
+
+def get_example_input(model, device_types, data_example):
+    if not data_example:
+        features = model.config['input_features'] + model.config['output_features']
+        df = build_synthetic_dataset(dataset_size=1, features=features)
+        data = [row for row in df]
+        data_example = pd.DataFrame(data[1:], columns=data[0])
+    return to_inference_module_input_from_dataframe(
+        data_example.head(1), model.config, load_paths=True, device=device_types[0]
+    )
+
+
+def clean_up_synthetic_data():
+    shutil.rmtree('audio_files', ignore_errors=True)
+    shutil.rmtree('image_files', ignore_errors=True)
+
+
 def export_triton(
-    model: LudwigModel,
-    data_example: pd.DataFrame,
-    output_path: Optional[str] = "model_repository",
-    model_name: Optional[str] = "ludwig_model",
-    model_version: Optional[Union[int, str]] = 1,
-    preprocessor_num_cpus: Optional[int] = 1,
-    predictor_device_type: Optional[str] = "cpu",
-    predictor_num_devices: Optional[int] = 1,
-    postprocessor_num_cpus: Optional[int] = 1,
-    predictor_max_batch_size: Optional[int] = 64,
-    max_queue_delay_microseconds: Optional[int] = 100,
+        model: LudwigModel,
+        data_example: pd.DataFrame,
+        output_path: Optional[str] = "model_repository",
+        model_name: Optional[str] = "ludwig_model",
+        model_version: Optional[Union[int, str]] = 1,
+        preprocessor_num_cpus: Optional[int] = 1,
+        predictor_device_type: Optional[str] = "cpu",
+        predictor_num_devices: Optional[int] = 1,
+        postprocessor_num_cpus: Optional[int] = 1,
+        predictor_max_batch_size: Optional[int] = 64,
+        max_queue_delay_microseconds: Optional[int] = 100,
 ) -> Dict[str, Tuple[str, str]]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
@@ -594,11 +616,10 @@ def export_triton(
     :return: (str, str) The saved model path, and config path.
     """
 
-    device_types, device_counts = get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, predictor_num_devices, postprocessor_num_cpus)
+    device_types, device_counts = get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type,
+                                                              predictor_num_devices, postprocessor_num_cpus)
     split_modules = get_inference_modules(model, device_types[1])
-    example_input = to_inference_module_input_from_dataframe(
-        data_example.head(1), model.config, load_paths=True, device=device_types[0]
-    )
+    example_input = get_example_input(model, device_types, data_example)
 
     paths = {}
     triton_masters = []
@@ -636,5 +657,6 @@ def export_triton(
     ensemble_config_path = ensemble_config.save_ensemble_config()
     ensemble_dummy_model_path = ensemble_config.save_ensemble_dummy_model()
     paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path)
+    clean_up_synthetic_data()
 
     return paths
