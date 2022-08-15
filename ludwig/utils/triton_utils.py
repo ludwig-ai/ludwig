@@ -186,21 +186,24 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
 
 @dataclass
 class TritonConfigFeature:
-    """Represents an input/output feature in a Triton config.
+    """Represents an input/output feature in a Triton config."""
 
-    :param name: name of the feature.
-    :param type: Ludwig type of the feature, or "tensor"
-    :param content: the data contents of the feature.
-    :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
-    :param kind: one of INPUT, OUTPUT.
-    :param index: index of the feature in the Triton Config.
-    """
-
+    # Name of the feature.
     name: str
+
+    # Ludwig type of the feature, or "tensor"
     ludwig_type: str
+
+    # The data contents of the feature.
     content: Union[TorchscriptPreprocessingInput, torch.Tensor]
+
+    # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
+
+    # One of INPUT, OUTPUT.
     kind: str
+
+    # Index of the feature in the Triton Config.
     index: int
 
     def __post_init__(self):
@@ -244,25 +247,39 @@ class TritonConfigFeature:
 
 @dataclass
 class TritonMaster:
-    """Provides access to the Triton Config and the scripted module.
-
-    :param module: the inference module.
-    :param input_data_example: an input for the module that will help determine the
-        input and output dimensions.
-    :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
-    """
-
+    """Provides access to the Triton Config and the scripted module."""
+    # The inference module.
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
+
+    # An input for the module that will help determine the input and output dimensions.
     input_data_example: Dict[str, Union[TorchscriptPreprocessingInput, torch.Tensor]]
+
+    # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
+
+    # Max batch size of the model. (Triton config param).
     max_batch_size: int
+
+    # Max time a request to the Triton model spends in the queue. (Triton config param).
     max_queue_delay_microseconds: int
+
+    # Name of the model as specified by the caller of the triton_export function.
     model_name: str
+
+    # Base output directory. Corresponds to the Triton model registry.
     output_path: str
+
+    # Triton model version.
     model_version: int
+
+    # Ludwig config.
     ludwig_config: Dict[str, Any]
+
+    # One of "cpu", "cuda".
     device: str
-    device_count: int
+
+    # Number of model instances on device.
+    model_instance_count: int
 
     def __post_init__(self):
         """Extract input and output features and necessary information for a Triton config."""
@@ -300,7 +317,7 @@ class TritonMaster:
             raise ValueError("Model version has to be a non-zero positive integer")
         pass
 
-        # this is to debug
+        # wrapper.py is
         wrapper_definition = TritonModel(
             self.module, self.input_features, self.output_features, self.inference_stage
         ).generate_inference_module_wrapper()
@@ -329,7 +346,7 @@ class TritonMaster:
             self.max_batch_size,
             self.max_queue_delay_microseconds,
             device,
-            self.device_count,
+            self.model_instance_count,
             self.inference_stage,
         )
         config_path = os.path.join(self.base_path, "config.pbtxt")
@@ -437,7 +454,7 @@ class TritonConfig:
     max_batch_size: int
     max_queue_delay_microseconds: int
     device: str
-    device_count: int
+    model_instance_count: int
     inference_stage: str
 
     def _get_triton_spec(self, triton_features: List[TritonConfigFeature]) -> str:
@@ -463,7 +480,7 @@ class TritonConfig:
             kind = "KIND_CPU"
         else:
             kind = "KIND_GPU"
-        spec = INSTANCE_SPEC.format(count=self.device_count, kind=kind)
+        spec = INSTANCE_SPEC.format(count=self.model_instance_count, kind=kind)
         return spec
 
     def _get_dynamic_batching_spec(self):
