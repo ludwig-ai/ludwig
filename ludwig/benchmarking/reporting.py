@@ -7,7 +7,7 @@ import torch
 from torch._C._autograd import _KinetoEvent
 from torch.autograd import DeviceType, profiler_util
 
-from ludwig.constants import CACHE, EVAL_TAG, EXPERIMENT_RUN, TRAIN_TAG, LUDWIG_TAG
+from ludwig.constants import CACHE, EVAL_TAG, EXPERIMENT_RUN, LUDWIG_TAG, TRAIN_TAG
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.misc_utils import merge_dict
 
@@ -141,7 +141,8 @@ def get_resource_usage_report(
     return info
 
 
-def get_all_events(kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
+def get_all_events(
+    kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
 ) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
     """Return main Kineto and function events (tagged with "ludwig.*"), memory and out of memory events.
 

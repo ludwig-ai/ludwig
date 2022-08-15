@@ -2,13 +2,13 @@
 tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
 
 import contextlib
+import glob
 import logging
 import os
 import shutil
 import sys
 import threading
 import time
-import glob
 import traceback
 from queue import Empty as EmptyQueueException
 from queue import Queue
@@ -20,8 +20,8 @@ import torch
 from gpustat.core import GPUStatCollection
 
 from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler
-from ludwig.globals import LUDWIG_VERSION
 from ludwig.constants import LUDWIG_TAG
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json, save_json
 
 # disabling print because the following imports are verbose
@@ -37,9 +37,7 @@ sys.stdout = sys.__stdout__
 STOP_MESSAGE = "stop"
 
 
-def monitor(
-        queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool
-) -> None:
+def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
     """Monitors hardware resource use.
 
     Populate `info` with system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval and saves the output
@@ -115,8 +113,8 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
     def _init_tracker_info(self):
         """Initialize new self.info, self.torch_profiler, and self.torch_record_function instances.
 
-        Important to call this in __enter__ if the user decides not to create a new class instance
-        and therefore __init__ wouldn't be called.
+        Important to call this in __enter__ if the user decides not to create a new class instance and therefore
+        __init__ wouldn't be called.
         """
         self.info = {"code_block_tag": self.tag}
         if self.use_torch_profiler:
@@ -254,7 +252,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
-            reformatted_key = key[len(LUDWIG_TAG):]
+            reformatted_key = key[len(LUDWIG_TAG) :]
             reformatted_dict[reformatted_key] = value
         return reformatted_dict
 
