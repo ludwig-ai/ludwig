@@ -24,6 +24,8 @@ def is_dataset_empty(dataset: Union[str, DataFrame], backend) -> bool:
         try:
             from ludwig.data.dataset.ray import read_remote_parquet
 
+            # NOTE: The path must be read in order to determine if the parquet file is empty. This may be an expensive
+            # operation.
             ds = read_remote_parquet(dataset)
             if ds.count() == 0:
                 return True
