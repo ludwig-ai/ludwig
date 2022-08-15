@@ -37,7 +37,7 @@ from ludwig.models.inference import (
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.misc_utils import remove_empty_lines
-from ludwig.utils.torch_utils import place_on_device
+from ludwig.utils.torch_utils import place_on_device, model_size
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
@@ -294,7 +294,7 @@ class TritonMaster:
                 TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, OUTPUT, i)
             )
 
-    def save_model(self) -> str:
+    def save_model(self) -> Tuple[str, int]:
         """Scripts the model and saves it."""
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
@@ -313,8 +313,9 @@ class TritonMaster:
             self.module, self.input_features, self.output_features, self.inference_stage
         ).generate_scripted_module()
         self.model_ts.save(model_path)
+        size = model_size(self.model_ts)
 
-        return model_path
+        return model_path, size
 
     def save_config(self) -> str:
         """Save the Triton config."""
@@ -571,7 +572,7 @@ def get_inference_modules(model, predictor_device_type):
 
 
 def get_example_input(model, device_types, data_example):
-    if not data_example:
+    if data_example is None:
         features = model.config['input_features'] + model.config['output_features']
         df = build_synthetic_dataset(dataset_size=1, features=features)
         data = [row for row in df]
@@ -588,7 +589,7 @@ def clean_up_synthetic_data():
 
 def export_triton(
         model: LudwigModel,
-        data_example: pd.DataFrame,
+        data_example: Optional[pd.DataFrame] = None,
         output_path: Optional[str] = "model_repository",
         model_name: Optional[str] = "ludwig_model",
         model_version: Optional[Union[int, str]] = 1,
@@ -640,8 +641,8 @@ def export_triton(
         )
         example_input = triton_master.output_data_example
         config_path = triton_master.save_config()
-        model_path = triton_master.save_model()
-        paths[INFERENCE_STAGES[i]] = (config_path, model_path)
+        model_path, size = triton_master.save_model()
+        paths[INFERENCE_STAGES[i]] = (config_path, model_path, size)
         triton_masters.append(triton_master)
 
     # saving ensemble config
