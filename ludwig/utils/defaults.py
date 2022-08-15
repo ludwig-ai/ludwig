@@ -63,9 +63,9 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
-base_preprocessing_split = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
+BASE_PREPROCESSING_SPLIT_CONFIG = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
 base_preprocessing_parameters = {
-    "split": base_preprocessing_split,
+    "split": BASE_PREPROCESSING_SPLIT_CONFIG,
     "undersample_majority": None,
     "oversample_minority": None,
     "sample_ratio": 1.0,
