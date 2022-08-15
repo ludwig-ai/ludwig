@@ -9,7 +9,12 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
-    type: str = "dense"
+    type: str = schema_utils.StringOptions(
+        ["dense"],
+        default="dense",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     vocab: List[str] = schema_utils.List(
         default=None,
@@ -85,7 +90,12 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 @dataclass
 class CategoricalSparseConfig(BaseEncoderConfig):
 
-    type: str = "sparse"
+    type: str = schema_utils.StringOptions(
+        ["sparse"],
+        default="sparse",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     vocab: List[str] = schema_utils.List(
         default=None,

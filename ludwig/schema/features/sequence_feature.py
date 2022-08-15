@@ -129,3 +129,19 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
         feature_type=SEQUENCE,
         default="generator",
     )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
+    )

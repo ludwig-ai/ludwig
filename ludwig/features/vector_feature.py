@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -35,9 +35,8 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     R2,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
-    THRESHOLD,
+    REDUCE_INPUT,
     TIED,
     TYPE,
     VECTOR,
@@ -47,7 +46,6 @@ from ludwig.schema.features.utils import register_input_feature, register_output
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -150,13 +148,11 @@ class VectorFeatureMixin:
 
 @register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
-    encoder = {TYPE: "dense"}
-    vector_size = 0
-
-    def __init__(self, feature: Dict[str, Any], encoder_obj: Optional[LudwigModule] = None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
-        self.encoder["input_size"] = feature["vector_size"]
+    def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
+        # self.encoder_config.input_size = self.encoder_config.vector_size
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -173,7 +169,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size])
+        return torch.Size([self.encoder_config.input_size])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -181,13 +177,12 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        for key in ["vector_size"]:
-            input_feature[key] = feature_metadata[key]
+        input_feature[ENCODER]["input_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def populate_defaults(input_feature):
         defaults = VectorInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
         set_default_value(input_feature, PREPROCESSING, {})
 
@@ -202,17 +197,15 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 @register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    decoder = {TYPE: "projector"}
-    loss = {TYPE: MEAN_SQUARED_ERROR}
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
     default_validation_metric = MEAN_SQUARED_ERROR
-    vector_size = 0
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
-        self._input_shape = feature[DECODER]["input_size"]
-        self.decoder["output_size"] = feature["vector_size"]
+    def __init__(
+        self, output_feature_config: VectorOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.decoder_config.output_size = self.decoder_config.vector_size
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -239,15 +232,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.vector_size])
+        return torch.Size([self.decoder_config.vector_size])
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self._input_shape])
+        return torch.Size([self.decoder_config.input_size])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vector_size"] = feature_metadata["vector_size"]
+        output_feature[DECODER]["vector_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
@@ -270,14 +263,13 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    THRESHOLD: defaults.decoder.threshold,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,

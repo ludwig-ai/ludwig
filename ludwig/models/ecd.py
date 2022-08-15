@@ -17,6 +17,8 @@ from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.torch_utils import get_torch_device
 
+logger = logging.getLogger(__name__)
+
 
 class ECD(BaseModel):
     @staticmethod
@@ -49,7 +51,7 @@ class ECD(BaseModel):
             )
 
         # ================ Combiner ================
-        logging.debug(f"Combiner {self._combiner_def[TYPE]}")
+        logger.debug(f"Combiner {self._combiner_def[TYPE]}")
         combiner_class = get_combiner_class(self._combiner_def[TYPE])
         config, kwargs = load_config_with_kwargs(
             combiner_class.get_schema_cls(),

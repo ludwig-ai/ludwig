@@ -36,10 +36,8 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     PROJECTION_INPUT,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
-    SOFTMAX_CROSS_ENTROPY,
-    SUM,
+    REDUCE_INPUT,
     TIED,
     TOP_K,
     TYPE,
@@ -161,11 +159,10 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    encoder = {TYPE: "dense"}
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -209,7 +206,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = CategoryInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -223,15 +220,15 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    decoder = {TYPE: "classifier", "num_classes": 0}
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
-    top_k = 3
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+        self, output_feature_config: CategoryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.top_k = output_feature_config.top_k
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -252,7 +249,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         """
         if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=feature[DECODER]["num_classes"])
+            return calibration_cls(num_classes=self.decoder_config.num_classes)
         return None
 
     def create_predict_module(self) -> PredictModule:
@@ -420,12 +417,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        defaults = CategoryOutputFeatureConfig
+        defaults = CategoryOutputFeatureConfig()
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
         # Populate the default values for LOSS if they aren't defined already
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,
@@ -436,7 +433,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 TOP_K: defaults.top_k,
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,}
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
         )
 
     @staticmethod

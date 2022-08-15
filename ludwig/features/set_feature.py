@@ -32,12 +32,11 @@ from ludwig.constants import (
     PREDICTIONS,
     PROBABILITIES,
     PROC_COLUMN,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SET,
-    SIGMOID_CROSS_ENTROPY,
-    TIED,
     THRESHOLD,
+    TIED,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -213,11 +212,10 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    encoder = {TYPE: "embed", "vocab": []}
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: SetInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -237,7 +235,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.encoder["vocab"])])
+        return torch.Size([len(self.encoder_config.vocab)])
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -246,7 +244,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = SetInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -264,14 +262,14 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 @register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    decoder = {TYPE: "classifier", "num_classes": 0, "threshold": 0.5}
-    loss = {TYPE: SIGMOID_CROSS_ENTROPY}
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+        self, output_feature_config: SetOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -284,10 +282,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.loss
 
     def metric_kwargs(self) -> Dict[str, Any]:
-        return {"threshold": self.decoder["threshold"]}
+        return {"threshold": self.decoder_config.threshold}
 
     def create_predict_module(self) -> PredictModule:
-        return _SetPredict(self.decoder["threshold"])
+        return _SetPredict(self.decoder_config.threshold)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -302,7 +300,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder["num_classes"]])
+        return torch.Size([self.decoder_config.num_classes])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -358,7 +356,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            threshold = self.decoder["threshold"]
+            threshold = self.decoder_config.threshold
 
             def get_prob(prob_set):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
@@ -375,7 +373,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         defaults = SetOutputFeatureConfig()
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,

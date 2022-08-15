@@ -9,7 +9,12 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class H3EmbedConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = schema_utils.StringOptions(
+        ["embed"],
+        default="embed",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -74,11 +79,22 @@ class H3EmbedConfig(BaseEncoderConfig):
         description="Dropout probability for the embedding.",
     )
 
+    reduce_output: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
+        "tensor is greater than 2.",
+    )
+
 
 @dataclass
 class H3WeightedSumConfig(BaseEncoderConfig):
 
-    type: str = "weighted_sum"
+    type: str = schema_utils.StringOptions(
+        ["weighted_sum"],
+        default="weighted_sum",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -153,7 +169,12 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 @dataclass
 class H3RNNConfig(BaseEncoderConfig):
 
-    type: str = "rnn"
+    type: str = schema_utils.StringOptions(
+        ["rnn"],
+        default="rnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,

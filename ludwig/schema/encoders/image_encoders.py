@@ -10,7 +10,22 @@ from ludwig.utils.torch_utils import initializer_registry
 @dataclass
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
-    type: str = "stacked_cnn"
+    type: str = schema_utils.StringOptions(
+        ["stacked_cnn"],
+        default="stacked_cnn",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
 
     conv_layers: Optional[List[dict]] = schema_utils.DictList(
         default=None,
@@ -205,7 +220,22 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 @dataclass
 class ResNetEncoderConfig(BaseEncoderConfig):
 
-    type: str = "resnet"
+    type: str = schema_utils.StringOptions(
+        ["resnet"],
+        default="resnet",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
 
     resnet_size: Optional[int] = schema_utils.PositiveInteger(
         default=50,
@@ -325,7 +355,27 @@ class ResNetEncoderConfig(BaseEncoderConfig):
 @dataclass
 class MLPMixerEncoderConfig(BaseEncoderConfig):
 
-    type: str = "mlp_mixer"
+    type: str = schema_utils.StringOptions(
+        ["mlp_mixer"],
+        default="mlp_mixer",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
+
+    num_channels: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Number of channels to use in the encoder. ",
+    )
 
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
@@ -371,20 +421,31 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 @dataclass
 class ViTEncoderConfig(BaseEncoderConfig):
 
-    type: str = "vit"
-
-    use_pretrained: bool = (
-        schema_utils.Boolean(
-            default=True,
-            description="Use pre-trained model weights from Hugging Face.",
-        ),
+    type: str = schema_utils.StringOptions(
+        ["vit"],
+        default="vit",
+        allow_none=False,
+        description="Type of encoder.",
     )
 
-    pretrained_model: str = (
-        schema_utils.String(  # Internal Only
-            default="google/vit-base-patch16-224",
-            description="The name of the pre-trained model to use.",
-        ),
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Use pre-trained model weights from Hugging Face.",
+    )
+
+    pretrained_model: str = schema_utils.String(
+        default="google/vit-base-patch16-224",
+        description="The name of the pre-trained model to use.",
     )
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(

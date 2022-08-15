@@ -131,7 +131,7 @@ class FCStack(LudwigModule):
         default_norm: Optional[str] = None,
         default_norm_params: Optional[Dict] = None,
         default_activation: str = "relu",
-        default_dropout: int = 0,
+        default_dropout: float = 0,
         residual: bool = False,
         **kwargs,
     ):

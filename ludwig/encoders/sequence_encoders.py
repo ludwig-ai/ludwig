@@ -42,7 +42,7 @@ from ludwig.schema.encoders.sequence_encoders import (
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
+@register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 class SequencePassthroughEncoder(Encoder):
     def __init__(self, reduce_output: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
         """

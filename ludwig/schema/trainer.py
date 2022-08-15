@@ -31,11 +31,8 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str
 
-    learning_rate: float = schema_utils.FloatOrAutoField(
+    learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
-        min=0.0,
-        max=1.0,
-        default_numeric=0.001,
         allow_none=False,
         description=(
             "Controls how much to change the model in response to the estimated error each time the model weights are "
@@ -43,6 +40,10 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
             "the smallest non-diverging gradient update."
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
+        field_options=[
+            schema_utils.FloatRange(default=0.001, min=0, max=1),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     validation_metric: str = schema_utils.String(
@@ -61,16 +62,19 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
-    eval_batch_size: Union[None, int, str] = schema_utils.IntegerOrAutoField(
+    eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
         allow_none=True,
-        min_exclusive=0,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
             "memory is available. If ’auto’, the biggest batch size (power of 2) that can fit in memory will be used."
         ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     early_stop: int = schema_utils.IntegerRange(
@@ -142,16 +146,18 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["should_shuffle"],
     )
 
-    batch_size: Union[int, str] = schema_utils.IntegerOrAutoField(
+    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
         default=128,
-        default_numeric=128,
         allow_none=False,
-        min_exclusive=0,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
             "biggest batch size (power of 2) that can fit in memory will be used."
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
@@ -310,6 +316,19 @@ class GBMTrainerConfig(BaseTrainerConfig):
             "(default: 'lightgbm_trainer')"
         ),
         allow_none=False,
+    )
+
+    # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
+    # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
+    eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
+        default=128,
+        description=("Size of batch to pass to the model for evaluation."),
+        allow_none=True,
+        parameter_metadata=TRAINER_METADATA["eval_batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)

@@ -7,7 +7,12 @@ from ludwig.schema.decoders.base import BaseDecoderConfig
 @dataclass
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
-    type: str = "generator"
+    type: str = schema_utils.StringOptions(
+        ["generator"],
+        default="generator",
+        allow_none=False,
+        description="Type of decoder.",
+    )
 
     vocab_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -46,7 +51,12 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 @dataclass
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
 
-    type: str = "tagger"
+    type: str = schema_utils.StringOptions(
+        ["tagger"],
+        default="tagger",
+        allow_none=False,
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=256,

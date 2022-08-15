@@ -52,12 +52,7 @@ from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutp
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.strings_utils import (
-    build_sequence_matrix,
-    create_vocabulary,
-    SpecialSymbol,
-    UNKNOWN_SYMBOL,
-)
+from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -188,11 +183,11 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature, encoder_obj=encoder_obj)
-        self._input_shape = [feature[ENCODER]["max_sequence_length"]]
+    def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
+        self.encoder_config = input_feature_config.encoder
+        # self._input_shape = [input_feature_config.encoder.max_sequence_length]
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -219,7 +214,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self):
-        return torch.Size(self._input_shape)
+        return torch.Size([self.encoder_config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -231,7 +226,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = TextInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
         encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])
@@ -254,13 +249,14 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 @register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    decoder = {TYPE: "generator", "max_sequence_length": 0, "vocab_size": 0}
-    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
+    def __init__(
+        self, output_feature_config: TextInputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
 
     @classmethod
     def get_output_dtype(cls):
@@ -268,7 +264,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder["max_sequence_length"]])
+        return torch.Size([self.decoder_config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -374,6 +370,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder["max_sequence_length"]), meta=(probs_col, "object")
+            lambda x: x.reshape(-1, self.decoder_config.max_sequence_length), meta=(probs_col, "object")
         )
         return df

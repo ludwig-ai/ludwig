@@ -24,7 +24,7 @@ from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
-from ludwig.utils.misc_utils import get_from_registry, set_default_values, set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -176,16 +176,15 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    encoder = {TYPE: "parallel_cnn"}
-    max_sequence_length = None
-
-    def __init__(self, feature, encoder_obj=None):
+    def __init__(self, input_feature_config: TimeseriesInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
         # add required sequence encoder parameters for time series
-        feature[ENCODER]["embedding_size"] = 1
-        feature[ENCODER]["should_embed"] = False
+        self.encoder_config = input_feature_config.encoder
+        self.encoder_config.embedding_size = 1
+        self.encoder_config.should_embed = False
 
-        # initialize encoder for time series
-        super().__init__(feature, encoder_obj=encoder_obj)
+        # SequenceInputFeauture's constructor initializes the encoder.
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -199,7 +198,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder["max_sequence_length"]])
+        return torch.Size([self.encoder_config.max_sequence_length])
 
     @property
     def input_dtype(self):
@@ -212,7 +211,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = TimeseriesInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -237,9 +236,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             'class_similarities_temperature': 0
 #         }
 #         self.num_classes = 0
-#
-#         self.overwrite_defaults(feature)
-#
+##
 #         self.decoder_obj = self.get_sequence_decoder(feature)
 #
 #     def _get_output_placeholder(self):

@@ -25,7 +25,6 @@ import torch
 import torchvision
 
 from ludwig.constants import (
-    BACKFILL,
     CHECKSUM,
     COLUMN,
     ENCODER,
@@ -62,6 +61,9 @@ from ludwig.utils.image_utils import (
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+
+logger = logging.getLogger(__name__)
+
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -250,7 +252,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
 
-        logging.debug(f"Inferring height: {height} and width: {width}")
+        logger.debug(f"Inferring height: {height} and width: {width}")
         return height, width
 
     @staticmethod
@@ -302,20 +304,23 @@ class ImageFeatureMixin(BaseFeatureMixin):
         expected be of the same size with the same number of channels
         """
 
-        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_height_width = preprocessing_parameters[HEIGHT] or preprocessing_parameters[WIDTH]
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
-        sample = []
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(column), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
         else:
             sample_size = 1  # Take first image
 
+        sample = []
+        sample_num_bytes = []
         failed_entries = []
         for image_entry in column.head(sample_size):
             if isinstance(image_entry, str):
                 # Tries to read image as PNG or numpy file from the path.
-                image = read_image_from_path(image_entry)
+                image, num_bytes = read_image_from_path(image_entry, return_num_bytes=True)
+                if num_bytes is not None:
+                    sample_num_bytes.append(num_bytes)
             else:
                 image = image_entry
 
@@ -376,7 +381,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
 
         assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
-        return (should_resize, width, height, num_channels, user_specified_num_channels)
+
+        average_file_size = np.mean(sample_num_bytes) if sample_num_bytes else None
+        return (should_resize, width, height, num_channels, user_specified_num_channels, average_file_size)
 
     @staticmethod
     def add_feature_data(
@@ -401,6 +408,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             height,
             num_channels,
             user_specified_num_channels,
+            average_file_size,
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
 
         metadata[name][PREPROCESSING]["height"] = height
@@ -428,13 +436,18 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if in_memory or skip_save_processed_input:
             metadata[name]["reshape"] = (num_channels, height, width)
 
-            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
+            proc_col = backend.read_binary_files(
+                abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
+            )
 
             num_failed_image_reads = (
                 proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
             )
 
-            proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
+            proc_col = backend.df_engine.map_objects(
+                proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
+            )
+
             proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
             num_images = len(abs_path_column)
@@ -448,7 +461,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
                 for i, img_entry in enumerate(abs_path_column):
                     res = read_image_if_bytes_obj_and_resize(img_entry)
-                    if res:
+                    if isinstance(res, np.ndarray):
                         image_dataset[i, :height, :width, :] = res
                     else:
                         image_dataset[i, :height, :width, :] = default_image
@@ -468,17 +481,10 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
-    scaling = "pixel_normalization"
-    encoder = {
-        TYPE: "stacked_cnn",
-        "num_channels": 0,
-        "height": 0,
-        "width": 0,
-    }
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: ImageInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -501,7 +507,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder["num_channels"], self.encoder["height"], self.encoder["width"]])
+        return torch.Size([self.encoder_config.num_channels, self.encoder_config.height, self.encoder_config.width])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -515,7 +521,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = ImageInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_value(input_feature, PREPROCESSING, {})
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 

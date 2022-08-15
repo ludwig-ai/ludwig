@@ -85,16 +85,10 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 def get_preprocessing_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
-    return {
-        "type": "object",
-        "allOf": get_preprocessing_conds(),
-        "required": ["type"],
-    }
-
-
-def get_preprocessing_conds():
-    """Returns a list of if-then JSON clauses for each combiner type in `combiner_registry` and its properties'
-    constraints."""
     preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(PreprocessingConfig)
     props = preproc_schema["properties"]
-    return props
+    return {
+        "type": "object",
+        "allOf": props,
+        "required": ["type"],
+    }

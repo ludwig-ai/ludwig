@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import pytest
 
-from ludwig.models.ecd import ECD
+from ludwig.models.base import BaseModel
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -102,7 +102,7 @@ def test_tied_micro_level(input_feature_options):
     if input_feature_options.tie_features:
         input_feature_configs[1]["tied"] = "input_feature_1"
 
-    input_features = ECD.build_inputs(input_feature_configs)
+    input_features = BaseModel.build_inputs(input_feature_configs)
 
     if input_feature_options.tie_features:
         # should be same encoder

@@ -22,7 +22,6 @@ import torch
 from ludwig.constants import (
     ACCURACY,
     BINARY,
-    BINARY_WEIGHTED_CROSS_ENTROPY,
     COLUMN,
     DECODER,
     DEPENDENCIES,
@@ -35,9 +34,9 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    ROC_AUC,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
+    ROC_AUC,
     THRESHOLD,
     TIED,
     TYPE,
@@ -216,11 +215,10 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    encoder = {TYPE: "passthrough", "norm": None, "dropout": None}
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -255,7 +253,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = BinaryInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -276,14 +274,14 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 @register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    decoder = {TYPE: "regressor", "threshold": 0.5}
-    loss = {TYPE: BINARY_WEIGHTED_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+        self, output_feature_config: BinaryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -311,7 +309,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.decoder["threshold"], calibration_module=self.calibration_module)
+        # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
+        # decoder is specified here which has no threshold.
+        threshold = getattr(self.decoder_config, "threshold", 0.5)
+        return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -404,7 +405,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
             output_feature,

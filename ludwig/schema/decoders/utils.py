@@ -37,12 +37,12 @@ def DecoderDataclassField(feature_type: str, default: str):
                 return None
             if isinstance(value, dict):
                 if TYPE in value and value[TYPE] in get_decoder_classes(feature_type):
-                    enc = get_decoder_cls(feature_type, default).get_schema_cls()
+                    dec = get_decoder_cls(feature_type, value[TYPE]).get_schema_cls()
                     try:
-                        return enc.Schema().load(value)
+                        return dec.Schema().load(value)
                     except (TypeError, ValidationError) as error:
                         raise ValidationError(
-                            f"Invalid decoder params: {value}, see `{enc}` definition. Error: {error}"
+                            f"Invalid decoder params: {value}, see `{dec}` definition. Error: {error}"
                         )
                 raise ValidationError(
                     f"Invalid params for decoder: {value}, expect dict with at least a valid `type` attribute."

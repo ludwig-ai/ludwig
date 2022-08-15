@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Union, Tuple
+from typing import List, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
@@ -16,6 +16,30 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
     "Name corresponding to a decoder."
 
+    input_size: int = None
+
+    num_classes: int = None
+
+    fc_layers: List[dict] = None
+
+    num_fc_layers: int = 0
+
+    output_size: int = 256
+
+    use_bias: bool = True
+
+    weights_initializer: str = "xavier_uniform"
+
+    bias_initializer: str = "zeros"
+
+    norm: str = None
+
+    norm_params: dict = None
+
+    activation: str = "relu"
+
+    dropout: float = 0
+
 
 @dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
@@ -28,7 +52,12 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
-    type: str = "regressor"
+    type: str = schema_utils.StringOptions(
+        ["regressor"],
+        default="regressor",
+        allow_none=False,
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -49,6 +78,16 @@ class RegressorConfig(BaseDecoderConfig):
         description="Initializer for the bias vector.",
     )
 
+<<<<<<< HEAD
+=======
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="Threshold for the output of the decoder.",
+    )
+
+>>>>>>> daniel/encoder_refactor
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
@@ -62,7 +101,12 @@ class RegressorConfig(BaseDecoderConfig):
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
-    type: str = "projector"
+    type: str = schema_utils.StringOptions(
+        ["projector"],
+        default="projector",
+        allow_none=False,
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -93,6 +137,14 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
+<<<<<<< HEAD
+=======
+    vector_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the output of the decoder.",
+    )
+
+>>>>>>> daniel/encoder_refactor
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
@@ -105,7 +157,12 @@ class ProjectorConfig(BaseDecoderConfig):
 @dataclass
 class ClassifierConfig(BaseDecoderConfig):
 
-    type: str = "classifier"
+    type: str = schema_utils.StringOptions(
+        ["classifier"],
+        default="classifier",
+        allow_none=False,
+        description="Type of decoder.",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=None,

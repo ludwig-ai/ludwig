@@ -1,8 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
-
-from ludwig.constants import VECTOR, MEAN_SQUARED_ERROR
+from ludwig.constants import VECTOR, MEAN_SQUARED_ERROR, MISSING_VALUE_STRATEGY_OPTIONS
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -58,6 +56,13 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
         default="dense",
     )
 
+    tied: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
+        "feature of the same type and with the same encoder parameters.",
+    )
+
 
 @dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
@@ -66,7 +71,7 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     reduce_input: str = schema_utils.ReductionOptions(
         default=None,
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
-                    "dimension (second if you count the batch dimension)",
+        "dimension (second if you count the batch dimension)",
     )
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
@@ -85,4 +90,9 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
         default="projector",
+    )
+
+    dependencies: List = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
     )

@@ -1,13 +1,13 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import numpy as np
 import pytest
 import torch
 import torchtext
 
-from ludwig.constants import LAST_HIDDEN, LOGITS
-from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
-from ludwig.features.text_feature import TextInputFeature, TextOutputFeature
+from ludwig.constants import LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
+from ludwig.features.sequence_feature import _SequencePreprocessing
+from ludwig.models.base import BaseModel
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
@@ -42,10 +42,8 @@ def input_sequence() -> Tuple[torch.Tensor, List]:
 
 
 @pytest.mark.parametrize("encoder", ENCODERS)
-@pytest.mark.parametrize("sequence_type", [SequenceInputFeature, TextInputFeature])
-def test_sequence_input_feature(
-    input_sequence: tuple, encoder: str, sequence_type: Union[SequenceInputFeature, TextInputFeature]
-) -> None:
+@pytest.mark.parametrize("sequence_type", [SEQUENCE, TEXT])
+def test_sequence_input_feature(input_sequence: tuple, encoder: str, sequence_type: str):
     # test assumes "sequence data" has been tokenized and converted to
     # numeric representation.  Focus of this test is primarily on
     # integration with encoder with correctly sized encoder tensor and
@@ -57,7 +55,7 @@ def test_sequence_input_feature(
     # use sequence_feature() to generate baseline
     # sequence definition and then augment with
     # pre-processing metadata parameters
-    input_feature_defn = sequence_feature(
+    input_feature_def = sequence_feature(
         encoder={
             "type": encoder,
             "max_len": SEQ_SIZE,
@@ -66,9 +64,10 @@ def test_sequence_input_feature(
             "vocab": idx2str,
         }
     )
+    input_feature_def[TYPE] = sequence_type
 
     # create sequence input feature object
-    input_feature_obj = sequence_type(input_feature_defn).to(DEVICE)
+    input_feature_obj = BaseModel.build_single_input(input_feature_def, None).to(DEVICE)
 
     # confirm dtype property
     assert input_feature_obj.input_dtype == torch.int32
@@ -82,17 +81,19 @@ def test_sequence_input_feature(
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
 
-@pytest.mark.parametrize("sequence_type", [SequenceOutputFeature, TextOutputFeature])
-def test_sequence_output_feature(sequence_type: Union[SequenceOutputFeature, TextOutputFeature]):
-    output_feature_defn = sequence_feature(
+@pytest.mark.parametrize("sequence_type", [SEQUENCE, TEXT])
+def test_sequence_output_feature(sequence_type: str):
+    output_feature_def = sequence_feature(
         decoder={
+            "type": "generator",
             "max_len": SEQ_SIZE,
             "max_sequence_length": SEQ_SIZE,
             "vocab_size": VOCAB_SIZE,
             "input_size": VOCAB_SIZE,
         }
     )
-    output_feature_obj = sequence_type(output_feature_defn, {}).to(DEVICE)
+    output_feature_def[TYPE] = sequence_type
+    output_feature_obj = BaseModel.build_single_output(output_feature_def, None).to(DEVICE)
     combiner_outputs = {}
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE], dtype=torch.float32).to(
         DEVICE

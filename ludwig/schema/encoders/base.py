@@ -21,14 +21,29 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
-    type: str = "passthrough"
+    type: str = schema_utils.StringOptions(
+        ["passthrough"],
+        default="passthrough",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
 
 @dataclass
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 
-    type: str = "dense"
+    type: str = schema_utils.StringOptions(
+        ["dense"],
+        default="dense",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    input_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the input to the dense encoder.",
+    )
 
     fc_layers: List[dict] = schema_utils.DictList(
         default=None,

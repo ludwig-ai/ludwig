@@ -23,7 +23,7 @@ def binary_config():
 @pytest.mark.parametrize("encoder", ["passthrough"])
 def test_binary_input_feature(binary_config: Dict, encoder: str):
     binary_config.update({ENCODER: {"type": encoder}})
-    binary_input_feature = BinaryInputFeature(binary_config)
+    binary_input_feature = BinaryInputFeature(binary_config).to(DEVICE)
     binary_tensor = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
     encoder_output = binary_input_feature(binary_tensor)
@@ -32,22 +32,21 @@ def test_binary_input_feature(binary_config: Dict, encoder: str):
 
 
 def test_binary_output_feature():
-    binary_output_feature = BinaryOutputFeature(
-        {
-            "name": "binary_feature",
-            "type": "binary",
-            "decoder": {
-                "type": "regressor",
-                "input_size": 1,
-            },
-            "loss": {
-                "positive_class_weight": 1,
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-            },
+    binary_output_config = {
+        "name": "binary_feature",
+        "type": "binary",
+        "decoder": {
+            "type": "regressor",
+            "input_size": 1,
         },
-        {},
-    ).to(DEVICE)
+        "loss": {
+            "type": "binary_weighted_cross_entropy",
+            "positive_class_weight": 1,
+            "robust_lambda": 0,
+            "confidence_penalty": 0,
+        },
+    }
+    binary_output_feature = BinaryOutputFeature(binary_output_config, {}).to(DEVICE)
     combiner_outputs = dict()
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 
@@ -59,21 +58,21 @@ def test_binary_output_feature():
 
 
 def test_binary_output_feature_without_positive_class_weight():
-    binary_output_feature = BinaryOutputFeature(
-        {
-            "name": "binary_feature",
-            "type": "binary",
-            "decoder": {
-                "input_size": 1,
-            },
-            "loss": {
-                "positive_class_weight": None,
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-            },
+    binary_output_config = {
+        "name": "binary_feature",
+        "type": "binary",
+        "decoder": {
+            "type": "regressor",
+            "input_size": 1,
         },
-        {},
-    ).to(DEVICE)
+        "loss": {
+            "type": "binary_weighted_cross_entropy",
+            "positive_class_weight": None,
+            "robust_lambda": 0,
+            "confidence_penalty": 0,
+        },
+    }
+    binary_output_feature = BinaryOutputFeature(binary_output_config, {}).to(DEVICE)
     combiner_outputs = {}
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
 

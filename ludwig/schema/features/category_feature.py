@@ -66,6 +66,13 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig):
         default="dense",
     )
 
+    tied: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
+        "feature of the same type and with the same encoder parameters.",
+    )
+
 
 @dataclass
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
@@ -87,6 +94,22 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,
         default="classifier",
+    )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
     )
 
     top_k: int = schema_utils.NonNegativeInteger(

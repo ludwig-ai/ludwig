@@ -21,7 +21,7 @@ import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, ENCODER, FILL_WITH_CONST, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, DATE, ENCODER, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
@@ -75,7 +75,7 @@ class DateFeatureMixin(BaseFeatureMixin):
             else:
                 datetime_obj = parse(date_str)
         except Exception as e:
-            logging.error(
+            logger.error(
                 f"Error parsing date: {date_str} with error {e} "
                 "Please provide a datetime format that parses it "
                 "in the preprocessing section of the date feature "
@@ -114,11 +114,10 @@ class DateFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
-    encoder = {TYPE: "embed"}
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: DateInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -152,7 +151,7 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = DateInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod

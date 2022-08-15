@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, ENCODER, FILL_WITH_CONST, H3, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, ENCODER, H3, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
@@ -111,11 +111,12 @@ class H3FeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
-    encoder = {TYPE: "embed"}
+    # encoder = {TYPE: "embed"}
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
+    def __init__(self, input_feature_config: H3InputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
+        self.encoder_config = input_feature_config.encoder
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -149,7 +150,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = H3InputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod

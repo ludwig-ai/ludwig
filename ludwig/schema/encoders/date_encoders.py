@@ -9,7 +9,12 @@ from ludwig.schema.encoders.base import BaseEncoderConfig
 @dataclass
 class DateEmbedConfig(BaseEncoderConfig):
 
-    type: str = "embed"
+    type: str = schema_utils.StringOptions(
+        ["embed"],
+        default="embed",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=10,
@@ -79,7 +84,12 @@ class DateEmbedConfig(BaseEncoderConfig):
 @dataclass
 class DateWaveConfig(BaseEncoderConfig):
 
-    type: str = "wave"
+    type: str = schema_utils.StringOptions(
+        ["wave"],
+        default="wave",
+        allow_none=False,
+        description="Type of encoder.",
+    )
 
     # TODO (Connor): Add nesting logic for fc_layers, see fully_connected_module.py
     fc_layers: List[dict] = schema_utils.DictList(

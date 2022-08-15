@@ -37,18 +37,18 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    REDUCE_INPUT,
     REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    THRESHOLD,
     TIED,
     TOKEN_ACCURACY,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
+from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
+from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
@@ -62,9 +62,6 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
-
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
-from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
 
 logger = logging.getLogger(__name__)
 
@@ -264,14 +261,13 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = {TYPE: "parallel_cnn", "max_sequence_length": None}
-
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
+    def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
-        if "vocab" in feature[ENCODER]:
-            feature[ENCODER]["vocab_size"] = len(feature[ENCODER]["vocab"])
-        self.overwrite_defaults(feature)
+        self.encoder_config = input_feature_config.encoder
+        if getattr(self.encoder_config, "vocab", None):
+            self.encoder_config.vocab_size = len(self.encoder_config.vocab)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -300,7 +296,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         defaults = SequenceInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied.default)
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
@@ -309,7 +305,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder["max_sequence_length"]])
+        return torch.Size([self.encoder_config.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -322,8 +318,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = {TYPE: "generator", "max_sequence_length": 0, "num_classes": 0}
-    loss = {TYPE: SEQUENCE_SOFTMAX_CROSS_ENTROPY}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -334,9 +328,11 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     }
     default_validation_metric = LOSS
 
-    def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
+    def __init__(
+        self, output_feature_config: SequenceOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
@@ -361,7 +357,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder["max_sequence_length"]])
+        return torch.Size([self.decoder_config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -500,7 +496,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         defaults = SequenceOutputFeatureConfig()
-        set_default_values(output_feature[LOSS], defaults.loss.default)
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)
@@ -510,7 +507,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    THRESHOLD: defaults.decoder.threshold,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
@@ -534,6 +530,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder["num_classes"]), meta=(probs_col, "object")
+            lambda x: x.reshape(-1, self.decoder_config.num_classes), meta=(probs_col, "object")
         )
         return df

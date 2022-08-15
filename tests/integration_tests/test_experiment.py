@@ -127,7 +127,7 @@ def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     # seq-to-seq test to use config file instead of dictionary
     input_features = [text_feature(encoder={"reduce_output": None, "type": "embed"})]
-    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
+    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
 
     # Save the config to a yaml file
     config = {
@@ -146,7 +146,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 def test_experiment_seq_seq_train_test_valid(tmpdir):
     # seq-to-seq test to use train, test, validation files
     input_features = [text_feature(encoder={"reduce_output": None, "type": "rnn"})]
-    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
+    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
 
     train_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"))
     test_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "test.csv"), 20)
@@ -169,7 +169,7 @@ def test_experiment_multi_input_intent_classification(csv_filename, encoder):
         text_feature(encoder={"vocab_size": 10, "min_len": 1, "representation": "sparse"}),
         category_feature(encoder={"vocab_size": 10}),
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -211,7 +211,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
     [
         # baseline test case
         [
-            category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+            category_feature(decoder={"reduce_input": "sum", "vocab_size": 2}),
             sequence_feature(decoder={"vocab_size": 10, "max_len": 5}),
             number_feature(),
         ],
@@ -224,7 +224,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         # Generator decoder and reduce_input = None
         [
             category_feature(decoder={"vocab_size": 2, "reduce_input": "sum"}),
-            sequence_feature(decoder={"max_len": 5, "type": "generator"}, reduce_input=None),
+            sequence_feature(decoder={"max_len": 5, "reduce_input": None, "type": "generator"}),
             number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
@@ -277,7 +277,7 @@ def test_basic_image_feature(num_channels, image_source, in_memory, skip_save_pr
             },
         )
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
 
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
@@ -305,7 +305,7 @@ def test_experiment_infer_image_metadata(tmpdir):
         text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum"), number_feature()]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2}), number_feature()]
 
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
@@ -340,7 +340,7 @@ def test_experiment_image_inputs(image_params: ImageParams, tmpdir):
         text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum"), number_feature()]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2}), number_feature()]
 
     input_features[0]["encoder"]["type"] = image_params.image_encoder
     input_features[0]["preprocessing"]["in_memory"] = image_params.in_memory_flag
@@ -372,7 +372,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
         ),
     ]
     output_features = [
-        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        category_feature(decoder={"reduce_input": "sum", "vocab_size": 2}),
     ]
 
     config = {
@@ -509,7 +509,7 @@ def test_experiment_tied_weights(csv_filename):
             name="text_feature2", encoder={"min_len": 1, "type": "cnnrnn", "reduce_output": "sum"}, tied="text_feature1"
         ),
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -527,7 +527,7 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
         sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": enc_cell_type, "reduce_output": None})
     ]
     output_features = [
-        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": attention}, reduce_input=None)
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "reduce_input": None, "attention": attention})
     ]
 
     # Generate test data
@@ -540,7 +540,7 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
 def test_sequence_tagger_text(csv_filename):
     # Define input and output features
     input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
-    output_features = [sequence_feature(decoder={"max_len": 10, "type": "tagger"}, reduce_input=None)]
+    output_features = [sequence_feature(decoder={"max_len": 10, "reduce_input": None, "type": "tagger"})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -574,7 +574,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
             ),
             category_feature(encoder={"vocab_size": 5}),
         ],
-        "output_features": [category_feature(reduce_input="sum", decoder={"vocab_size": 5})],
+        "output_features": [category_feature(decoder={"reduce_input": "sum", "vocab_size": 5})],
         TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
@@ -619,7 +619,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
             ),
             category_feature(vocab_size=5),
         ],
-        "output_features": [category_feature(reduce_input="sum", decoder={"vocab_size": 5})],
+        "output_features": [category_feature(decoder={"reduce_input": "sum", "vocab_size": 5})],
         TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
@@ -639,7 +639,7 @@ def test_experiment_model_resume(tmpdir):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
     input_features = [sequence_feature(encoder={"type": "rnn", "reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
     # Generate test data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
@@ -742,7 +742,7 @@ def test_experiment_date(encoder, csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    input_features[0][ENCODER][TYPE] = encoder
+    input_features[0][ENCODER] = {TYPE: encoder}
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
@@ -754,7 +754,7 @@ def test_experiment_h3(encoder, csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    input_features[0][ENCODER][TYPE] = encoder
+    input_features[0][ENCODER] = {TYPE: encoder}
     run_experiment(input_features, output_features, dataset=rel_path)
 
 

@@ -28,7 +28,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import output_type_registry, input_type_registry
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -439,11 +439,13 @@ def get_features_eligible_for_shared_params(
         if TYPE not in feature:
             raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
         if config_feature_type == INPUT_FEATURES:
-            default_encoder = get_from_registry(feature.get(TYPE), input_type_registry).encoder[TYPE]
+            feature_schema = get_from_registry(feature.get(TYPE), input_type_registry).get_schema_cls()
+            default_encoder = feature_schema().encoder.type
             if not feature[ENCODER].get(TYPE, 0) or feature[ENCODER].get(TYPE) == default_encoder:
                 features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
         else:
-            default_decoder = get_from_registry(feature.get(TYPE), output_type_registry).decoder[TYPE]
+            feature_schema = get_from_registry(feature.get(TYPE), output_type_registry).get_schema_cls()
+            default_decoder = feature_schema().decoder.type
             if not feature[DECODER].get(TYPE, 0) or feature[DECODER].get(TYPE) == default_decoder:
                 features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
 

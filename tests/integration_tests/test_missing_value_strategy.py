@@ -102,7 +102,7 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         sequence_feature(decoder={"vocab_size": 3}, **kwargs),
         text_feature(decoder={"vocab_size": 3}, **kwargs),
         set_feature(decoder={"vocab_size": 3}, **kwargs),
-        vector_feature(),
+        vector_feature(**kwargs),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}

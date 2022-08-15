@@ -54,5 +54,7 @@ def merge_config_preprocessing_with_feature_specific_defaults(
 def get_default_encoder_or_decoder(feature: Dict[str, Any], config_feature_group: str) -> str:
     """Returns the default encoder or decoder for a feature."""
     if config_feature_group == INPUT_FEATURES:
-        return get_from_registry(feature.get(TYPE), input_type_registry).encoder[TYPE]
-    return get_from_registry(feature.get(TYPE), output_type_registry).decoder[TYPE]
+        feature_schema = get_from_registry(feature.get(TYPE), input_type_registry).get_schema_cls()
+        return feature_schema().encoder.type
+    feature_schema = get_from_registry(feature.get(TYPE), output_type_registry).get_schema_cls()
+    return feature_schema().decoder.type

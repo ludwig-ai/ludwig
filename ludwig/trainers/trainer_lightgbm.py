@@ -63,7 +63,7 @@ class LightGBMTrainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_model = skip_save_model
 
-        self.eval_batch_size = config.eval_batch_size or 128
+        self.eval_batch_size = config.eval_batch_size
         self._validation_field = config.validation_field
         self._validation_metric = config.validation_metric
         self.evaluate_training_set = config.evaluate_training_set
@@ -479,7 +479,7 @@ class LightGBMTrainer(BaseTrainer):
                 output_params = {
                     "objective": "multiclass",
                     "metric": ["multi_logloss"],
-                    "num_class": feature.decoder["num_classes"],
+                    "num_class": feature.decoder_config.num_classes,
                 }
             elif feature.type() == BINARY:
                 output_params = {

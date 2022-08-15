@@ -14,24 +14,12 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import torch
 from torch import Tensor
 
-from ludwig.constants import (
-    COLUMN,
-    DECODER,
-    HIDDEN,
-    LENGTHS,
-    LOGITS,
-    LOSS,
-    NAME,
-    PREDICTIONS,
-    PROBABILITIES,
-    PROC_COLUMN,
-    TYPE,
-)
+from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES, TYPE
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -40,10 +28,11 @@ from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.metric_modules import MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
+from ludwig.schema.utils import assert_is_a_marshmallow_class
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
-from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
@@ -133,38 +122,32 @@ class BaseFeature:
     classes to avoid the diamond pattern.
     """
 
-    def __init__(self, feature, *args, **kwargs):
+    def __init__(self, feature: BaseFeatureConfig):
         super().__init__()
 
-        if NAME not in feature:
+        if not feature.name:
             raise ValueError("Missing feature name")
-        self.feature_name = feature[NAME]
+        self.feature_name = feature.name
 
-        if COLUMN not in feature:
-            feature[COLUMN] = self.feature_name
-        self.column = feature[COLUMN]
+        if not feature.column:
+            feature.column = self.feature_name
+        self.column = feature.column
 
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-        self.proc_column = feature[PROC_COLUMN]
+        if not feature.proc_column:
+            feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
+        self.proc_column = feature.proc_column
 
-    def overwrite_defaults(self, feature):
-        attributes = set(self.__dict__.keys())
-        attributes.update(self.__class__.__dict__.keys())
-
-        for k in feature.keys():
-            if k in attributes:
-                if isinstance(feature[k], dict) and hasattr(self, k) and isinstance(getattr(self, k), dict):
-                    setattr(self, k, merge_dict(getattr(self, k), feature[k]))
-                else:
-                    setattr(self, k, feature[k])
+    @classmethod
+    def load_config(cls, feature: Union[BaseFeatureConfig, Dict]) -> BaseFeatureConfig:
+        if isinstance(feature, dict):
+            schema_cls = cls.get_schema_cls()
+            assert_is_a_marshmallow_class(schema_cls)
+            return schema_cls.Schema().load(feature)
+        return feature
 
 
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def create_sample_input(self):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
@@ -181,7 +164,10 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         pass
 
     def initialize_encoder(self):
-        return get_encoder_cls(self.type(), self.encoder[TYPE])(**self.encoder)
+        encoder_cls = get_encoder_cls(self.type(), self.encoder_config.type)
+        encoder_schema = encoder_cls.get_schema_cls().Schema()
+        encoder_params_dict = encoder_schema.dump(self.encoder_config)
+        return encoder_cls(**encoder_params_dict)
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
@@ -195,7 +181,13 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
 
-    def __init__(self, feature: Dict[str, Any], other_output_features: Dict[str, "OutputFeature"], *args, **kwargs):
+    def __init__(
+        self,
+        feature: Union[BaseOutputFeatureConfig, dict],
+        other_output_features: Dict[str, "OutputFeature"],
+        *args,
+        **kwargs,
+    ):
         """Defines defaults, overwrites them based on the feature dictionary, and sets up dependencies.
 
         Any output feature can depend on one or more other output features. The `other_output_features` input dictionary
@@ -203,54 +195,38 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         in topographically sorted order. Attributes of any dependent output features are used to properly initialize
         this feature's sizes.
         """
-        super().__init__(*args, feature=feature, **kwargs)
+        feature = self.load_config(feature)
+        super().__init__(feature)
 
-        self.reduce_input = None
-        self.reduce_dependencies = None
+        self.decoder_config = feature.decoder
+        self.loss = feature.loss
+        self.reduce_input = feature.reduce_input
+        self.reduce_dependencies = feature.reduce_dependencies
 
         # List of feature names that this output feature is dependent on.
         self.dependencies = []
 
-        self.decoder.update(
-            {
-                "fc_layers": None,
-                "num_fc_layers": 0,
-                "output_size": 256,
-                "use_bias": True,
-                "weights_initializer": "xavier_uniform",
-                "bias_initializer": "zeros",
-                "norm": None,
-                "norm_params": None,
-                "activation": "relu",
-                "dropout": 0,
-                "input_size": None,
-            }
-        )
-
-        self.overwrite_defaults(feature)
-
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        self.decoder["input_size"] = get_input_size_with_dependencies(
-            self.decoder["input_size"], self.dependencies, other_output_features
+        feature.decoder.input_size = get_input_size_with_dependencies(
+            feature.decoder.input_size, self.dependencies, other_output_features
         )
-        feature[DECODER]["input_size"] = self.decoder["input_size"]  # needed for future overrides
 
         self.fc_stack = FCStack(
-            first_layer_input_size=self.decoder["input_size"],
-            layers=self.decoder["fc_layers"],
-            num_layers=self.decoder["num_fc_layers"],
-            default_output_size=self.decoder["output_size"],
-            default_use_bias=self.decoder["use_bias"],
-            default_weights_initializer=self.decoder["weights_initializer"],
-            default_bias_initializer=self.decoder["bias_initializer"],
-            default_norm=self.decoder["norm"],
-            default_norm_params=self.decoder["norm_params"],
-            default_activation=self.decoder["activation"],
-            default_dropout=self.decoder["dropout"],
+            first_layer_input_size=feature.decoder.input_size,
+            layers=feature.decoder.fc_layers,
+            num_layers=feature.decoder.num_fc_layers,
+            default_output_size=feature.decoder.output_size,
+            default_use_bias=feature.decoder.use_bias,
+            default_weights_initializer=feature.decoder.weights_initializer,
+            default_bias_initializer=feature.decoder.bias_initializer,
+            default_norm=feature.decoder.norm,
+            default_norm_params=feature.decoder.norm_params,
+            default_activation=feature.decoder.activation,
+            default_dropout=feature.decoder.dropout,
         )
-        self._calibration_module = self.create_calibration_module(feature)
+        self._calibration_module = self.create_calibration_module(kwargs)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -283,9 +259,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def initialize_decoder(self):
         # Input to the decoder is the output feature's FC hidden layer.
-        self.decoder["input_size"] = self.fc_stack.output_shape[-1]
-        decoder = self.decoder["type"]
-        return get_decoder_cls(self.type(), decoder)(**self.decoder)
+        self.decoder_config.input_size = self.fc_stack.output_shape[-1]
+        decoder = self.decoder_config.type
+        return get_decoder_cls(self.type(), decoder)(**self.decoder_config.__dict__)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)
