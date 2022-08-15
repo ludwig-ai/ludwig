@@ -32,7 +32,7 @@ COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 
 TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
-TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe", "gpt2"}
+TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
 # Do not use torchtext implementation of BERT tokenizer for these model names:
