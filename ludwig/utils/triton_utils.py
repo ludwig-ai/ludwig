@@ -10,6 +10,7 @@ import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
+
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -46,6 +47,7 @@ INFERENCE_STAGES = [PREPROCESSOR, PREDICTOR, POSTPROCESSOR]
 INPUT = "INPUT"
 OUTPUT = "OUTPUT"
 ENSEMBLE = "ensemble"
+
 
 INFERENCE_MODULE_TEMPLATE = """
 from typing import Any, Dict, List, Union

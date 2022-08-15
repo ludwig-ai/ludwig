@@ -24,7 +24,11 @@ class DatasetCache:
         if not path_exists(training_set_metadata_fp):
             return None
 
-        cache_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
+        try:
+            cache_training_set_metadata = data_utils.load_json(training_set_metadata_fp)
+        except Exception as e:
+            logger.error(f"failed to load cached training set metadata at {training_set_metadata_fp}", exc_info=e)
+            return None
 
         cached_training_set = self.cache_map[TRAINING] if path_exists(self.cache_map[TRAINING]) else None
 
