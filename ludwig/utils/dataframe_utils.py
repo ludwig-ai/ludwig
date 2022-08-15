@@ -61,7 +61,12 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict
         res = df[col]
         if backend and is_dask_backend(backend):
             res = res.compute()
-        dataset[col] = np.stack(res.to_numpy())
+        try:
+            dataset[col] = np.stack(res.to_numpy())
+        except ValueError:
+            # Dataframe is empty.
+            # Use to_list() directly, as np.stack() requires at least one array to stack.
+            dataset[col] = res.to_list()
     return dataset
 
 
