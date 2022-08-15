@@ -159,8 +159,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    # encoder = {TYPE: "dense"}
-
     def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
