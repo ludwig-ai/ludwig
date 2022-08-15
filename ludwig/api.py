@@ -1306,6 +1306,10 @@ class LudwigModel:
         preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
             self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
         )
+        pg = self.backend.get_placement_group(num_cpu=0.2)
+        self.backend.update_dask_backend_with_pg(pg)
+        print(">>>>>>>>>>>>>>>> AAAAAAAAAAAAAAAAAAAAAAAAAAAAAa")
+        breakpoint()
 
         preprocessed_data = preprocess_for_training(
             self.config,
@@ -1321,6 +1325,8 @@ class LudwigModel:
             random_seed=random_seed,
             callbacks=self.callbacks,
         )
+        self.backend.release_placement_group(pg)
+        self.backend.clear_dask_backend_pg()
 
         (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 

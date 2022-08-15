@@ -32,6 +32,11 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
+from ray.util.placement_group import (
+    placement_group,
+    placement_group_table,
+    remove_placement_group
+)
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
@@ -72,8 +77,6 @@ if _ray112:
     from ludwig.backend._ray112_compat import HorovodConfig
 else:
     from ray.train.horovod import HorovodConfig
-
-
 RAY_DEFAULT_PARALLELISM = 200
 
 
@@ -807,6 +810,20 @@ class RayBackend(RemoteTrainingMixin, Backend):
         dask.config.set(scheduler=ray_dask_get)
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
+
+    def update_dask_backend_with_pg(pg):
+        dask.config.set(annotations={"ray_remote_args": {"placement_group": pg}})
+
+    def clear_dask_backend_pg():
+        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
+
+    def get_placement_group(num_cpu=1, num_gpu=0):
+        pg = placement_group([{"CPU": num_cpu}, {"GPU": num_gpu}])
+        ray.get(pg.ready())
+        return pg
+
+    def release_placement_group(pg):
+        remove_placement_group(pg)
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
