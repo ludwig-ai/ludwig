@@ -101,7 +101,6 @@ from ludwig.utils.data_utils import (
     TSV_FORMATS,
     use_credentials,
 )
-from ludwig.utils.dataset_utils import is_dataset_empty
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
@@ -1615,18 +1614,26 @@ def preprocess_for_training(
         with use_credentials(backend.cache.credentials if cached else None):
             logging.debug("create training dataset")
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
+            if not len(training_set):
+                raise ValueError("Training data is empty following preprocessing.")
 
             validation_dataset = None
-            if validation_set is not None and not is_dataset_empty(validation_set, backend):
+            if validation_set is not None:
                 # Skip creating a dataset if it's None or empty.
                 logging.debug("create validation dataset")
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
+                if not len(validation_dataset):
+                    # Validation dataset is empty.
+                    validation_dataset = None
 
             test_dataset = None
-            if test_set is not None and not is_dataset_empty(test_set, backend):
+            if test_set is not None:
                 # Skip creating a dataset if it's None or empty.
                 logging.debug("create test dataset")
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
+                if not len(test_dataset):
+                    # Test dataset is empty.
+                    test_dataset = None
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 

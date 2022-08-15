@@ -1,37 +1,8 @@
-from typing import Union
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
-from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.types import DataFrame
-
-
-def is_dataset_empty(dataset: Union[str, DataFrame], backend) -> bool:
-    """Returns whether the dataset is empty.
-
-    For RayDataset users, the dataset may be a string path to a remove parquet file, which requires a Ray import.
-    """
-    if isinstance(dataset, pd.DataFrame) and dataset.empty:
-        return True
-
-    if is_dask_series_or_df(dataset, backend) and len(dataset) == 0:
-        return True
-
-    if isinstance(dataset, str):
-        try:
-            from ludwig.data.dataset.ray import read_remote_parquet
-
-            # NOTE: The path must be read in order to determine if the parquet file is empty. This may be an expensive
-            # operation.
-            ds = read_remote_parquet(dataset)
-            if ds.count() == 0:
-                return True
-        except Exception as e:
-            raise ValueError(f"Encountered error while reading from dataset path: {e}")
-    return False
 
 
 def get_repeatable_train_val_test_split(
