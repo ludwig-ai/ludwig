@@ -32,6 +32,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
+from ludwig.benchmarking.resource_usage_tracker import ResourceUsageTracker
 from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -62,7 +63,7 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
-from ludwig.benchmarking.resource_usage_tracker import ResourceUsageTracker
+
 logger = logging.getLogger(__name__)
 
 
