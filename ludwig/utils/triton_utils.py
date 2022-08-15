@@ -10,7 +10,6 @@ import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-
 from ludwig.constants import (
     AUDIO,
     BAG,
