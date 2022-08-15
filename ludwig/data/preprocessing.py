@@ -1619,7 +1619,6 @@ def preprocess_for_training(
 
             validation_dataset = None
             if validation_set is not None:
-                # Skip creating a dataset if it's None or empty.
                 logging.debug("create validation dataset")
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
                 if not len(validation_dataset):
@@ -1628,7 +1627,6 @@ def preprocess_for_training(
 
             test_dataset = None
             if test_set is not None:
-                # Skip creating a dataset if it's None or empty.
                 logging.debug("create test dataset")
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
                 if not len(test_dataset):
