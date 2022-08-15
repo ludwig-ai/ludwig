@@ -1,13 +1,13 @@
 import importlib.util
 import os
 import re
+import shutil
 import tempfile
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import torch
-import shutil
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
@@ -28,16 +28,16 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.models.inference import (
     _InferencePostprocessor,
     _InferencePredictor,
     _InferencePreprocessor,
     InferenceModule,
 )
-from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.misc_utils import remove_empty_lines
-from ludwig.utils.torch_utils import place_on_device, model_size
+from ludwig.utils.torch_utils import model_size, place_on_device
 from ludwig.utils.types import TorchAudioTuple, TorchscriptPreprocessingInput
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
@@ -248,6 +248,7 @@ class TritonConfigFeature:
 @dataclass
 class TritonMaster:
     """Provides access to the Triton Config and the scripted module."""
+
     # The inference module.
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
 
@@ -360,11 +361,22 @@ class TritonMaster:
 class TritonEnsembleConfig:
     """Dataclass for creating and saving the Triton ensemble config."""
 
+    # TritonMaster object for the preprocessor.
     triton_master_preprocessor: TritonMaster
+
+    # TritonMaster object for the predictor.
     triton_master_predictor: TritonMaster
+
+    # TritonMaster object for the postprocessor.
     triton_master_postprocessor: TritonMaster
+
+    # Name of the model as specified by the caller of the triton_export function.
     model_name: str
+
+    # Base output directory. Corresponds to the Triton model registry.
     output_path: str
+
+    # Triton model version.
     model_version: int
 
     def __post_init__(self):
@@ -441,20 +453,30 @@ class TritonEnsembleConfig:
 
 @dataclass
 class TritonConfig:
-    """Enables the creation and export of a Triton config.
+    """Enables the creation and export of a Triton config."""
 
-    :param full_model_name: name of the model. Must be the same as the directory where the config is saved.
-    :param input_features: input features of the model.
-    :param output_features: output features of the model.
-    """
-
+    # Name of the model. Must be the same as the directory where the config is saved.
     full_model_name: str
+
+    # Input features of the model.
     input_features: List[TritonConfigFeature]
+
+    # Output features of the model.
     output_features: List[TritonConfigFeature]
+
+    # Max batch size of the model. (Triton config param).
     max_batch_size: int
+
+    # Max time a request to the Triton model spends in the queue. (Triton config param).
     max_queue_delay_microseconds: int
+
+    # One of "cpu", "cuda".
     device: str
+
+    # Number of model instances on device.
     model_instance_count: int
+
+    # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
 
     def _get_triton_spec(self, triton_features: List[TritonConfigFeature]) -> str:
@@ -507,17 +529,18 @@ class TritonConfig:
 
 @dataclass
 class TritonModel:
-    """Enables the scripting and export of a model.
+    """Enables the scripting and export of a model."""
 
-    :param module: the inference module.
-    :param input_features: input features of the model.
-    :param output_features: output features of the model.
-    :param inference_stage: one of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
-    """
-
+    # The inference module.
     module: Union[_InferencePreprocessor, _InferencePredictor, _InferencePostprocessor]
+
+    # Input features of the model.
     input_features: List[TritonConfigFeature]
+
+    # Output features of the model.
     output_features: List[TritonConfigFeature]
+
+    # One of PREPROCESSOR, PREDICTOR, POSTPROCESSOR.
     inference_stage: str
 
     def _get_dict_type_hint(self) -> str:
@@ -567,8 +590,10 @@ class TritonModel:
         return scripted_module
 
 
-def get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, predictor_num_devices,
-                                postprocessor_num_cpus):
+def get_device_types_and_counts(
+    preprocessor_num_instances, predictor_device_type, predictor_num_instances, postprocessor_num_instances
+):
+    """Retrun device types and instance counts for each of the three inference modules."""
     if predictor_device_type not in ["cuda", "cpu"]:
         raise ValueError('Invalid predictor device type. Choose one of ["cpu", "cuda"].')
     elif predictor_device_type == "cuda" and not torch.cuda.is_available():
@@ -577,11 +602,12 @@ def get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, pr
     preprocessor_device_type = "cpu"
     postprocessor_device_type = "cpu"
     device_types = [preprocessor_device_type, predictor_device_type, postprocessor_device_type]
-    device_counts = [preprocessor_num_cpus, predictor_num_devices, postprocessor_num_cpus]
+    device_counts = [preprocessor_num_instances, predictor_num_instances, postprocessor_num_instances]
     return device_types, device_counts
 
 
 def get_inference_modules(model, predictor_device_type):
+    """Return the three inference modules."""
     inference_module = InferenceModule.from_ludwig_model(
         model.model, model.config, model.training_set_metadata, device=predictor_device_type
     )
@@ -589,8 +615,12 @@ def get_inference_modules(model, predictor_device_type):
 
 
 def get_example_input(model, device_types, data_example):
+    """Return an inference module-compatible input example.
+
+    Generates a synthetic example if one is not provided.
+    """
     if data_example is None:
-        features = model.config['input_features'] + model.config['output_features']
+        features = model.config["input_features"] + model.config["output_features"]
         df = build_synthetic_dataset(dataset_size=1, features=features)
         data = [row for row in df]
         data_example = pd.DataFrame(data[1:], columns=data[0])
@@ -600,23 +630,24 @@ def get_example_input(model, device_types, data_example):
 
 
 def clean_up_synthetic_data():
-    shutil.rmtree('audio_files', ignore_errors=True)
-    shutil.rmtree('image_files', ignore_errors=True)
+    """Clean up synthetic example generated data for audio and image features."""
+    shutil.rmtree("audio_files", ignore_errors=True)
+    shutil.rmtree("image_files", ignore_errors=True)
 
 
 def export_triton(
-        model: LudwigModel,
-        data_example: Optional[pd.DataFrame] = None,
-        output_path: Optional[str] = "model_repository",
-        model_name: Optional[str] = "ludwig_model",
-        model_version: Optional[Union[int, str]] = 1,
-        preprocessor_num_cpus: Optional[int] = 1,
-        predictor_device_type: Optional[str] = "cpu",
-        predictor_num_devices: Optional[int] = 1,
-        postprocessor_num_cpus: Optional[int] = 1,
-        predictor_max_batch_size: Optional[int] = 64,
-        max_queue_delay_microseconds: Optional[int] = 100,
-) -> Dict[str, Tuple[str, str]]:
+    model: LudwigModel,
+    data_example: Optional[pd.DataFrame] = None,
+    output_path: Optional[str] = "model_repository",
+    model_name: Optional[str] = "ludwig_model",
+    model_version: Optional[Union[int, str]] = 1,
+    preprocessor_num_instances: Optional[int] = 1,
+    predictor_device_type: Optional[str] = "cpu",
+    predictor_num_instances: Optional[int] = 1,
+    postprocessor_num_instances: Optional[int] = 1,
+    predictor_max_batch_size: Optional[int] = 64,
+    max_queue_delay_microseconds: Optional[int] = 100,
+) -> Dict[str, Tuple[str, str, int]]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
     # Inputs
@@ -626,16 +657,21 @@ def export_triton(
     :param output_path: (str) The output path for the model repository.
     :param model_name: (str) The optional model name.
     :param model_version: (Union[int,str]) The optional model verison.
-    :param device: (str) The device that we expect the exported models to
-        run on. Must be one of "cpu" or "cuda"
-    :param device_count: (int) The number of instances of the device to use.
+    :param preprocessor_num_instances: (int) number of instances for the preprocessor (on CPU).
+    :param predictor_device_type: (str) device type for the predictor to be deployed on. One of "cpu" or "cuda"
+    :param predictor_num_instances: (int) number of instances for the predictor.
+    :param postprocessor_num_instances: (int) number of instances for the postprocessor (on CPU).
+    :param predictor_max_batch_size: (int) max_batch_size parameter for the predictor Triton config.
+    :param max_queue_delay_microseconds: (int) max_queue_delay_microseconds for all Triton configs.
 
     # Return
-    :return: (str, str) The saved model path, and config path.
+    :return: (Dict[str, Tuple[str, str, int]]) The saved config path, model path, and model size for each of
+        the three inference modules.
     """
 
-    device_types, device_counts = get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type,
-                                                              predictor_num_devices, postprocessor_num_cpus)
+    device_types, instance_counts = get_device_types_and_counts(
+        preprocessor_num_instances, predictor_device_type, predictor_num_instances, postprocessor_num_instances
+    )
     split_modules = get_inference_modules(model, device_types[1])
     example_input = get_example_input(model, device_types, data_example)
 
@@ -654,7 +690,7 @@ def export_triton(
             model_version,
             model.config,
             device_types[i],
-            device_count=device_counts[i],
+            model_instance_count=instance_counts[i],
         )
         example_input = triton_master.output_data_example
         config_path = triton_master.save_config()
@@ -674,7 +710,7 @@ def export_triton(
     )
     ensemble_config_path = ensemble_config.save_ensemble_config()
     ensemble_dummy_model_path = ensemble_config.save_ensemble_dummy_model()
-    paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path)
+    paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path, 0)
     clean_up_synthetic_data()
 
     return paths

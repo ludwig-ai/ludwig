@@ -313,6 +313,6 @@ def _get_torch_init_params() -> Optional[Tuple]:
 def model_size(model: nn.Module):
     """Computes PyTorch model size in bytes."""
     size = 0
-    size += sum([param.nelement() * param.element_size() for param in model.parameters()])
-    size += sum([buffer.nelement() * buffer.element_size() for buffer in model.buffers()])
+    size += sum(param.nelement() * param.element_size() for param in model.parameters())
+    size += sum(buffer.nelement() * buffer.element_size() for buffer in model.buffers())
     return size
