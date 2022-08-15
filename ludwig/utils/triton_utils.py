@@ -3,7 +3,7 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 import pandas as pd
 import torch
@@ -546,17 +546,36 @@ class TritonModel:
             scripted_module = torch.jit.script(gen_module)
         return scripted_module
 
+def get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, predictor_num_devices, postprocessor_num_cpus):
+    if predictor_device_type not in ["cuda", "cpu"]:
+        raise ValueError('Invalid predictor device type. Choose one of ["cpu", "cuda"].')
+    elif predictor_device_type == "cuda" and not torch.cuda.is_available():
+        raise ValueError("Specified num_gpus > 0, but CUDA isn't available.")
+
+    preprocessor_device_type = "cpu"
+    postprocessor_device_type = "cpu"
+    device_types = [preprocessor_device_type, predictor_device_type, postprocessor_device_type]
+    device_counts = [preprocessor_num_cpus, predictor_num_devices, postprocessor_num_cpus]
+    return device_types, device_counts
+
+def get_inference_modules(model, predictor_device_type):
+    inference_module = InferenceModule.from_ludwig_model(
+        model.model, model.config, model.training_set_metadata, device=predictor_device_type
+    )
+    return [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
 
 def export_triton(
     model: LudwigModel,
     data_example: pd.DataFrame,
-    output_path: str = "model_repository",
-    model_name: str = "ludwig_model",
-    model_version: Union[int, str] = 1,
-    device: str = "cpu",
-    device_count: int = 1,
-    predictor_max_batch_size: int = 64,
-    max_queue_delay_microseconds: int = 100,
+    output_path: Optional[str] = "model_repository",
+    model_name: Optional[str] = "ludwig_model",
+    model_version: Optional[Union[int, str]] = 1,
+    preprocessor_num_cpus: Optional[int] = 1,
+    predictor_device_type: Optional[str] = "cpu",
+    predictor_num_devices: Optional[int] = 1,
+    postprocessor_num_cpus: Optional[int] = 1,
+    predictor_max_batch_size: Optional[int] = 64,
+    max_queue_delay_microseconds: Optional[int] = 100,
 ) -> Dict[str, Tuple[str, str]]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
@@ -575,24 +594,16 @@ def export_triton(
     :return: (str, str) The saved model path, and config path.
     """
 
-    if device not in ["cpu", "cuda"]:
-        raise ValueError('Invalid device stage. Choose one of ["cpu", "cuda"].')
-    if device == "cuda" and not torch.cuda.is_available():
-        raise ValueError("Specified cuda as export device type, but cuda isn't available.")
-
-    inference_module = InferenceModule.from_ludwig_model(
-        model.model, model.config, model.training_set_metadata, device=device
-    )
-    split_modules = [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
+    device_types, device_counts = get_device_types_and_counts(preprocessor_num_cpus, predictor_device_type, predictor_num_devices, postprocessor_num_cpus)
+    split_modules = get_inference_modules(model, device_types[1])
     example_input = to_inference_module_input_from_dataframe(
-        data_example.head(1), model.config, load_paths=True, device="cpu"
+        data_example.head(1), model.config, load_paths=True, device=device_types[0]
     )
+
     paths = {}
     triton_masters = []
     for i, module in enumerate(split_modules):
-        if INFERENCE_STAGES[i] == PREDICTOR:
-            example_input = place_on_device(example_input, device)
-
+        example_input = place_on_device(example_input, device_types[i])
         triton_master = TritonMaster(
             module,
             example_input,
@@ -603,17 +614,14 @@ def export_triton(
             output_path,
             model_version,
             model.config,
-            device,
-            device_count=device_count,
+            device_types[i],
+            device_count=device_counts[i],
         )
         example_input = triton_master.output_data_example
-
         config_path = triton_master.save_config()
         model_path = triton_master.save_model()
         paths[INFERENCE_STAGES[i]] = (config_path, model_path)
         triton_masters.append(triton_master)
-        if INFERENCE_STAGES[i] == PREDICTOR:
-            example_input = place_on_device(example_input, "cpu")
 
     # saving ensemble config
     triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
