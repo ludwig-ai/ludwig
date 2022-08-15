@@ -38,6 +38,6 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' -f https://download.pytorch.org/whl/cu111/torch_stable.html && \
+    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116 && \
     horovodrun --check-build && \
     python -c "import horovod.torch; horovod.torch.init()"
