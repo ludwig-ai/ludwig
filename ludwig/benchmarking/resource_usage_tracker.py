@@ -13,7 +13,7 @@ import traceback
 from queue import Empty as EmptyQueueException
 from queue import Queue
 from statistics import mean
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import psutil
 import torch
@@ -22,7 +22,7 @@ from gpustat.core import GPUStatCollection
 from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler
 from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.data_utils import load_json, save_json
+from ludwig.utils.data_utils import save_json
 
 # disabling print because the following imports are verbose
 f = open(os.devnull, "w")
@@ -40,8 +40,8 @@ STOP_MESSAGE = "stop"
 def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
     """Monitors hardware resource use.
 
-    Populate `info` with system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval and saves the output
-    in `output_dir`.
+    Populate `info` with system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval
+    and saves the output in `output_dir`.
 
     Args:
         queue: queue from which we can push and retrieve messages sent to the function targeted by the thread.
@@ -59,7 +59,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
         info["cpu_memory_usage"] = [tracked_process.memory_full_info().uss]
         try:
             info["num_accessible_cpus"] = len(tracked_process.cpu_affinity())
-        except:
+        except Exception:
             pass
 
     while True:
