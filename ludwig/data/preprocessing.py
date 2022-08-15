@@ -1617,18 +1617,16 @@ def preprocess_for_training(
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
 
             validation_dataset = None
-            if validation_set is not None:
+            if validation_set is not None and not is_dataset_empty(validation_set, backend):
+                # Skip creating a dataset if it's None or empty.
                 logging.debug("create validation dataset")
-                # Don't try to create a dataset if it's empty.
-                if not is_dataset_empty(validation_set, backend):
-                    validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
+                validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
 
             test_dataset = None
-            if test_set is not None:
+            if test_set is not None and not is_dataset_empty(test_set, backend):
+                # Skip creating a dataset if it's None or empty.
                 logging.debug("create test dataset")
-                # Don't try to create a dataset if it's empty.
-                if not is_dataset_empty(test_set, backend):
-                    test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
+                test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 
