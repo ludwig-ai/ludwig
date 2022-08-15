@@ -56,12 +56,13 @@ def monitor(
 
     # will return a meaningless 0 value on the first call because `interval` arg is set to None.
     tracked_process.cpu_percent(interval=logging_interval)
-    for key in info:
-        if "cuda_" in key:
-            info[key]["memory_used"] = []
     with tracked_process.oneshot():
         info["cpu_utilization"] = [tracked_process.cpu_percent()]
         info["cpu_memory_usage"] = [tracked_process.memory_full_info().uss]
+        try:
+            info["num_accessible_cpus"] = len(tracked_process.cpu_affinity())
+        except:
+            pass
 
     while True:
         try:
@@ -81,7 +82,7 @@ def monitor(
             gpu_infos = GPUStatCollection.new_query()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"cuda_{i}"
-                info[gpu_key]["memory_used"].append(gpu_info.memory_used)
+                info[f"{gpu_key}_memory_used"].append(gpu_info.memory_used)
         with tracked_process.oneshot():
             info["cpu_utilization"].append(tracked_process.cpu_percent())
             info["cpu_memory_usage"].append(tracked_process.memory_full_info().uss)
@@ -128,9 +129,6 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         self.info["start_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
 
         # CPU information
-        # self.info["python_packages_and_versions"] = [
-        #     str(package) for package in get_python_packages_and_versions()
-        # ]
         cpu_info = get_my_cpu_info()
         self.info["cpu_architecture"] = cpu_info["arch"]
         self.info["num_cpu"] = cpu_info["count"]
@@ -142,11 +140,11 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
             gpu_infos = get_gpu_info()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"cuda_{i}"
-                self.info[gpu_key] = {}
-                self.info[gpu_key]["name"] = gpu_info["name"]
-                self.info[gpu_key]["total_memory"] = gpu_info["total_memory"]
-                self.info[gpu_key]["driver_version"] = gpu_info["driver_version"]
-                self.info[gpu_key]["cuda_version"] = gpu_info["cuda_version"]
+                self.info[f"{gpu_key}_memory_used"] = []
+                self.info[f"{gpu_key}_name"] = gpu_info["name"]
+                self.info[f"{gpu_key}_total_memory"] = gpu_info["total_memory"]
+                self.info[f"{gpu_key}_driver_version"] = gpu_info["driver_version"]
+                self.info[f"{gpu_key}_cuda_version"] = gpu_info["cuda_version"]
 
         # recording in microseconds to be in line with torch profiler time recording.
         self.info["start_time"] = time.perf_counter_ns() / 1000
@@ -220,9 +218,18 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
         self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
         self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
 
-        for key in self.info:
-            if "cuda_" in key:
-                self.info[key]["max_memory_used"] = max(self.info[key]["memory_used"])
+        all_keys = list(self.info.keys())
+        for key in all_keys:
+            if "cuda_" in key and "_memory_used" in key:
+                cuda_max_memory_key = key.replace("_memory_used", "_max_memory_used")
+                self.info[cuda_max_memory_key] = max(self.info[key], default=0)
+                cuda_average_memory_key = key.replace("_memory_used", "_average_memory_used")
+                if self.info[key]:
+                    self.info[cuda_average_memory_key] = mean(self.info.pop(key))
+                else:
+                    self.info.pop(key)
+                    self.info[cuda_average_memory_key] = 0
+
         self.info["max_cpu_utilization"] = max(self.info["cpu_utilization"], default=0)
         self.info["max_cpu_memory_usage"] = max(self.info["cpu_memory_usage"], default=0)
 
