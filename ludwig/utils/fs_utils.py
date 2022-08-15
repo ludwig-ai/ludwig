@@ -34,6 +34,15 @@ from filelock import FileLock
 from fsspec.core import split_protocol
 
 
+def check_url_exists(url: str):
+    """
+    Checks if a url exists
+    :param url: url to check
+    :return: True if the url exists, false otherwise.
+    """
+    return urllib3.PoolManager().request("HEAD", url).status == 200
+
+
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
     # Parse the url to get only the escaped url path

@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional, Union
 import torch
 
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.fs_utils import check_url_exists
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 
 TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
-TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
+TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe", "gpt2"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
 # Do not use torchtext implementation of BERT tokenizer for these model names:
@@ -41,6 +42,14 @@ SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
     "bert-base-german-dbmdz-cased",
     "bert-base-german-dbmdz-uncased",
     "TurkuNLP/bert-base-finnish-cased-v1",
+}
+
+SENTENCEPIECE_VOCAB_FILENAMES = {
+    "spiece.model",
+    "sentencepiece.bpe.model",
+    "source.spm",
+    "prophetnet.tokenizer",
+    "spm.model",
 }
 
 
@@ -1037,6 +1046,7 @@ try:
             vocab_file: Optional[str] = None,
             is_hf_tokenizer: Optional[bool] = False,
             do_lower_case: Optional[bool] = False,
+            strip_accents: Optional[bool] = None,
             **kwargs,
         ):
             super().__init__()
@@ -1053,7 +1063,10 @@ try:
             # Return tokens as raw tokens only if not being used as a HF tokenizer.
             self.return_tokens = not self.is_hf_tokenizer
             self.tokenizer = torchtext.transforms.BERTTokenizer(
-                vocab_path=self.vocab_file, return_tokens=self.return_tokens, do_lower_case=do_lower_case
+                vocab_path=self.vocab_file,
+                return_tokens=self.return_tokens,
+                do_lower_case=do_lower_case,
+                strip_accents=strip_accents,
             )
 
             self.str2idx = self._init_vocab(self.vocab_file)
@@ -1132,7 +1145,7 @@ except ImportError:
     )
 
 
-def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
+def get_hf_tokenizer(pretrained_model_name_or_path):
     """Gets a potentially torchscript-compatible tokenizer that follows HF convention.
 
     Args:
@@ -1140,27 +1153,88 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
+    from transformers import AutoTokenizer, BertTokenizer, CLIPTokenizer, GPT2Tokenizer, RobertaTokenizer
 
-    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
-        from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
+    # use_fast=False to leverage python class inheritance
+    hf_name = pretrained_model_name_or_path
+    hf_tokenizer = AutoTokenizer.from_pretrained(hf_name, use_fast=False)
 
-        if (
-            pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
-            and pretrained_model_name_or_path not in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
-        ):
-            logging.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
-            vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][pretrained_model_name_or_path]
-            init_kwargs = PRETRAINED_INIT_CONFIGURATION.get(pretrained_model_name_or_path, {})
-            return BERTTokenizer(
-                vocab_file,
-                is_hf_tokenizer=True,
-                **init_kwargs,
-            )
+    torchtext_tokenizer = None
+    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
+        tokenizer_kwargs = _get_bert_kwargs(hf_name)
+        torchtext_tokenizer = BERTTokenizer(is_hf_tokenizer=True, **tokenizer_kwargs)
+    elif "clip" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, CLIPTokenizer):
+        tokenizer_kwargs = _get_clip_kwargs(hf_name)
+        torchtext_tokenizer = CLIPTokenizer(**tokenizer_kwargs)
+    elif "gpt2bpe" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, GPT2Tokenizer):
+        tokenizer_kwargs = _get_gpt2_kwargs(hf_name)
+        torchtext_tokenizer = GPT2BPETokenizer(**tokenizer_kwargs)
+    else:
+        logging.warning(
+            f"HuggingFace tokenizer {hf_name} does not subclass Bert, CLIP, or GPT2 "
+            f"tokenizers. Inferring tokenizer type..."
+        )
 
-    # If pretrained_model_name_or_path does not have a torchtext equivalent implementation, load the
-    # HuggingFace implementation.
-    logging.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
-    return HFTokenizer(pretrained_model_name_or_path)
+        # If a vocab file is found following the sentencepiece convention, initialize a sentencepiece tokenizer.
+        for vocab_file_name in SENTENCEPIECE_VOCAB_FILENAMES:
+            if check_url_exists(f"https://huggingface.co/{hf_name}/resolve/main/{vocab_file_name}"):
+                tokenizer_kwargs = _get_sentencepiece_kwargs(hf_name, vocab_file_name)
+                torchtext_tokenizer = SentencePieceTokenizer(**tokenizer_kwargs)
+
+        # Otherwise, revert to special cases.
+        # Roberta is a gpt2 tokenizer but it does not inherit from GPT2Tokenizer
+        if torchtext_tokenizer is None and isinstance(hf_tokenizer, RobertaTokenizer):
+            tokenizer_kwargs = _get_gpt2_kwargs(hf_name)
+            torchtext_tokenizer = GPT2BPETokenizer(**tokenizer_kwargs)
+
+    if torchtext_tokenizer is not None:
+        logging.info(f"Loaded TorchText implementation of {hf_name} tokenizer")
+        return torchtext_tokenizer
+    else:
+        # If hf_name does not have a torchtext equivalent implementation, load the
+        # HuggingFace implementation.
+        logging.info(f"Loaded HuggingFace implementation of {hf_name} tokenizer")
+        return HFTokenizer(hf_name)
+
+
+def _get_bert_kwargs(hf_name):
+    from transformers.utils.hub import cached_path
+
+    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
+    tokenizer_config = load_json(cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json"))
+    init_kwargs = {}
+    if "do_lower_case" in tokenizer_config:
+        init_kwargs["do_lower_case"] = tokenizer_config["do_lower_case"]
+    if "strip_accents" in tokenizer_config:
+        init_kwargs["strip_accents"] = init_kwargs["strip_accents"]
+    return {"vocab_file": vocab_file, **init_kwargs}
+
+
+def _get_gpt2_kwargs(hf_name):
+    from transformers.utils.hub import cached_path
+
+    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.json")
+    merges_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/merges.txt")
+    return {"pretrained_model_name_or_path": merges_file, "vocab_file": vocab_file}
+
+
+def _get_clip_kwargs(hf_name):
+    from transformers.utils.hub import cached_path
+
+    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.json")
+    merges_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/merges.txt")
+    tokenizer_config = load_json(cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json"))
+    init_kwargs = {}
+    if "num_merges" in tokenizer_config:
+        init_kwargs["num_merges"] = tokenizer_config["num_merges"]
+    return {"pretrained_model_name_or_path": merges_file, "vocab_file": vocab_file, **init_kwargs}
+
+
+def _get_sentencepiece_kwargs(hf_name, vocab_file_name):
+    from transformers.utils.hub import cached_path
+
+    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/{vocab_file_name}")
+    return SentencePieceTokenizer(vocab_file)
 
 
 tokenizer_registry.update(
