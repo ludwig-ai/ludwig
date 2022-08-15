@@ -1234,7 +1234,7 @@ def _get_sentencepiece_kwargs(hf_name, vocab_file_name):
     from transformers.utils.hub import cached_path
 
     vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/{vocab_file_name}")
-    return SentencePieceTokenizer(vocab_file)
+    return {"vocab_file": vocab_file}
 
 
 tokenizer_registry.update(

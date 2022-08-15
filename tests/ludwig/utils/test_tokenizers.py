@@ -2,55 +2,57 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.utils.tokenizers import SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES, _get_bert_kwargs
+TORCHTEXT_0_12_0_HF_NAMES = [
+    "gpt2",
+    # "roberta-base",
+]
 
-BERT_TOKENIZERS = [
+TORCHTEXT_0_13_0_HF_NAMES = [
     "bert-base-uncased",
 ]
 
-CLIP_TOKENIZERS = []
 
-GPT2_TOKENIZERS = []
-
-SENTENCEPIECE_TOKENIZERS = []
-
-
-@pytest.mark.parametrize(
-    "pretrained_model_name_or_path",
-    [
-        pytest.param(
-            model_name,
-            marks=[
-                pytest.mark.skipif(
-                    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
-                    reason="requires torchtext 0.13.0 or higher",
-                ),
-                pytest.mark.skipif(model_name in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES, reason="issue on torchtext side"),
-            ],
-        )
-        for model_name in BERT_TOKENIZERS
-    ],
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0), reason="requires torchtext 0.12.0 or higher"
 )
-def test_bert_hf_tokenizer_parity(pretrained_model_name_or_path):
+@pytest.mark.parametrize("pretrained_model_name_or_path", TORCHTEXT_0_12_0_HF_NAMES)
+def test_hf_tokenizer_parity_torchtext_0_12_0(pretrained_model_name_or_path):
     """Tests the BERTTokenizer implementation.
 
     Asserts both tokens and token IDs are the same by initializing the BERTTokenizer as a standalone tokenizer and
     as a HF tokenizer.
     """
-    from ludwig.utils.tokenizers import BERTTokenizer, get_hf_tokenizer, HFTokenizer
+    from ludwig.utils.tokenizers import get_hf_tokenizer, HFTokenizer
 
     inputs = "Hello, I'm a single sentence!"
     hf_tokenizer = HFTokenizer(pretrained_model_name_or_path)
-    tokens_expected = hf_tokenizer.tokenizer.tokenize(inputs)
     token_ids_expected = hf_tokenizer(inputs)
 
-    tokenizer_kwargs = _get_bert_kwargs(pretrained_model_name_or_path)
-    tokenizer = BERTTokenizer(**tokenizer_kwargs)
-    tokens = tokenizer(inputs)
+    torchtext_tokenizer = get_hf_tokenizer(pretrained_model_name_or_path)
+    token_ids = torchtext_tokenizer(inputs)
 
-    tokenizer_ids_only = get_hf_tokenizer(pretrained_model_name_or_path)
-    token_ids = tokenizer_ids_only(inputs)
+    assert not isinstance(torchtext_tokenizer, HFTokenizer)
+    assert token_ids == token_ids_expected
 
-    assert not isinstance(tokenizer_ids_only, HFTokenizer)
-    assert tokens == tokens_expected
+
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0), reason="requires torchtext 0.13.0 or higher"
+)
+@pytest.mark.parametrize("pretrained_model_name_or_path", TORCHTEXT_0_13_0_HF_NAMES)
+def test_hf_tokenizer_parity_torchtext_0_13_0(pretrained_model_name_or_path):
+    """Tests the BERTTokenizer implementation.
+
+    Asserts both tokens and token IDs are the same by initializing the BERTTokenizer as a standalone tokenizer and
+    as a HF tokenizer.
+    """
+    from ludwig.utils.tokenizers import get_hf_tokenizer, HFTokenizer
+
+    inputs = "Hello, I'm a single sentence!"
+    hf_tokenizer = HFTokenizer(pretrained_model_name_or_path)
+    token_ids_expected = hf_tokenizer(inputs)
+
+    torchtext_tokenizer = get_hf_tokenizer(pretrained_model_name_or_path)
+    token_ids = torchtext_tokenizer(inputs)
+
+    assert not isinstance(torchtext_tokenizer, HFTokenizer)
     assert token_ids == token_ids_expected
