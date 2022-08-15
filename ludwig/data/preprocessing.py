@@ -1623,6 +1623,10 @@ def preprocess_for_training(
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
                 if not len(validation_dataset):
                     # Validation dataset is empty.
+                    logging.warning(
+                        "Encountered empty validation dataset. If this is unintentional, please check the "
+                        "preprocessing configuration."
+                    )
                     validation_dataset = None
 
             test_dataset = None
@@ -1631,6 +1635,10 @@ def preprocess_for_training(
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
                 if not len(test_dataset):
                     # Test dataset is empty.
+                    logging.warning(
+                        "Encountered empty test dataset. If this is unintentional, please check the "
+                        "preprocessing configuration."
+                    )
                     test_dataset = None
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
