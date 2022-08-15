@@ -183,7 +183,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def __init__(
         self,
-        feature: Union[BaseOutputFeatureConfig, dict],
+        feature: BaseOutputFeatureConfig,
         other_output_features: Dict[str, "OutputFeature"],
         *args,
         **kwargs,
@@ -195,7 +195,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         in topographically sorted order. Attributes of any dependent output features are used to properly initialize
         this feature's sizes.
         """
-        feature = self.load_config(feature)
         super().__init__(feature)
 
         self.decoder_config = feature.decoder
