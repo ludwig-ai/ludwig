@@ -590,6 +590,16 @@ class TritonModel:
         return scripted_module
 
 
+@dataclass
+class TritonArtifact:
+    model_name: str
+    model_version: Union[int, str]
+    platform: str
+    path: str
+    content_type: str
+    content_length: int
+
+
 def get_device_types_and_counts(
     preprocessor_num_instances, predictor_device_type, predictor_num_instances, postprocessor_num_instances
 ):
