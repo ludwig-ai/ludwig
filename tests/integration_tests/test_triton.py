@@ -13,8 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import shutil
-import sys
 
 import pandas as pd
 import torch
@@ -24,38 +22,33 @@ from ludwig.constants import TRAINER
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.triton_utils import ENSEMBLE, export_triton, get_inference_modules, INFERENCE_STAGES
 from tests.integration_tests.utils import (
-    bag_feature,
     binary_feature,
     category_feature,
-    date_feature,
     generate_data,
-    h3_feature,
     LocalTestBackend,
     number_feature,
     sequence_feature,
     set_feature,
     text_feature,
-    timeseries_feature,
     vector_feature,
 )
 
 
-def dont_test_triton_torchscript(csv_filename, tmpdir):
-    # data_csv_path = os.path.join(tmpdir, csv_filename)
+def test_triton_torchscript(csv_filename, tmpdir):
     # Configure features to be tested:
     input_features = [
         binary_feature(),
         number_feature(),
         category_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3),
-        vector_feature(),
-        timeseries_feature(),
-        date_feature(),
-        h3_feature(),
-        set_feature(vocab_size=3),
-        bag_feature(vocab_size=3),
         # TODO: future support
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # vector_feature(),
+        # timeseries_feature(),
+        # date_feature(),
+        # h3_feature(),
+        # set_feature(vocab_size=3),
+        # bag_feature(vocab_size=3),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
     ]
@@ -74,9 +67,6 @@ def dont_test_triton_torchscript(csv_filename, tmpdir):
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, csv_filename)
 
-    df = pd.read_csv(training_data_csv_path)
-    # df.to_csv(training_data_csv_path)
-
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
@@ -89,12 +79,11 @@ def dont_test_triton_torchscript(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
-    os.remove(training_data_csv_path)
-
     # Create graph inference model (Torchscript) from trained Ludwig model.
     triton_path = os.path.join(tmpdir, "triton")
     model_name = "test_triton"
     model_version = 1
+    df = pd.read_csv(training_data_csv_path)
     paths = export_triton(
         model=ludwig_model, data_example=df, model_name=model_name, output_path=triton_path, model_version=model_version
     )
