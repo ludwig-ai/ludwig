@@ -39,7 +39,7 @@ class ModinEngine(DataFrameEngine):
         return data
 
     def from_pandas(self, df):
-        return df
+        return pd.DataFrame(df)
 
     def map_objects(self, series, map_fn, meta=None):
         return series.map(map_fn)
@@ -59,6 +59,9 @@ class ModinEngine(DataFrameEngine):
     def split(self, df, probabilities):
         return split_by_slices(df.iloc, len(df), probabilities)
 
+    def remove_empty_partitions(self, df):
+        return df
+
     def to_parquet(self, df, path, index=False):
         df.to_parquet(path, engine="pyarrow", index=index)
 
@@ -69,6 +72,9 @@ class ModinEngine(DataFrameEngine):
 
     def from_ray_dataset(self, dataset) -> pd.DataFrame:
         return dataset.to_modin()
+
+    def reset_index(self, df):
+        return df.reset_index(drop=True)
 
     @property
     def array_lib(self):

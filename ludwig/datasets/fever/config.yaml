@@ -1,8 +1,8 @@
 version: 1.0
 download_urls:
-  - https://s3-eu-west-1.amazonaws.com/fever.public/train.jsonl
-  - https://s3-eu-west-1.amazonaws.com/fever.public/paper_dev.jsonl
-  - https://s3-eu-west-1.amazonaws.com/fever.public/paper_test.jsonl
+  - https://fever.ai/download/fever/train.jsonl
+  - https://fever.ai/download/fever/paper_dev.jsonl
+  - https://fever.ai/download/fever/paper_test.jsonl
 split_filenames:
   train_file: train.jsonl
   test_file: paper_dev.jsonl
