@@ -153,13 +153,13 @@ def test_local_gbm_binary(tmpdir, local_backend):
     run_test_gbm_binary(tmpdir, local_backend)
 
 
+@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 @pytest.mark.distributed
 def test_ray_gbm_binary(tmpdir, ray_backend):
     with ray_start():
         run_test_gbm_binary(tmpdir, ray_backend)
 
 
-@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 def run_test_gbm_category(tmpdir, backend_config):
     """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
     input_features = [number_feature(), category_feature(reduce_output="sum")]
@@ -208,7 +208,6 @@ def test_ray_gbm_category(tmpdir, ray_backend):
         run_test_gbm_category(tmpdir, ray_backend)
 
 
-@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 def run_test_gbm_number(tmpdir, backend_config):
     """Test that the GBM model can train and predict a numerical output (regression)."""
     # Given a dataset with a single input feature and a single output feature,
@@ -255,6 +254,7 @@ def test_local_gbm_number(tmpdir, local_backend):
     run_test_gbm_number(tmpdir, local_backend)
 
 
+@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 @pytest.mark.distributed
 def test_ray_gbm_number(tmpdir, ray_backend):
     with ray_start():
