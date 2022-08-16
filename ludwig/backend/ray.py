@@ -40,7 +40,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard, _SCALAR_TYPES
+from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor

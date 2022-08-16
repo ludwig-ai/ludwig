@@ -14,13 +14,13 @@
 # ==============================================================================
 import os
 import tempfile
-from packaging import version
 
 import modin
 import numpy as np
 import pandas as pd
 import pytest
 import torch
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND

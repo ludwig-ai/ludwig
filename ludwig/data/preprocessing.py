@@ -1213,7 +1213,7 @@ def build_dataset(
 
     # Remove partitions that are empty after removing NaNs
     dataset = backend.df_engine.remove_empty_partitions(dataset)
-    
+
     return dataset, metadata
 
 
