@@ -153,7 +153,6 @@ def test_local_gbm_binary(tmpdir, local_backend):
     run_test_gbm_binary(tmpdir, local_backend)
 
 
-@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 @pytest.mark.distributed
 def test_ray_gbm_binary(tmpdir, ray_backend):
     with ray_start():
@@ -201,7 +200,6 @@ def test_local_gbm_category(tmpdir, local_backend):
     run_test_gbm_category(tmpdir, local_backend)
 
 
-@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 @pytest.mark.distributed
 def test_ray_gbm_category(tmpdir, ray_backend):
     with ray_start():
@@ -254,7 +252,6 @@ def test_local_gbm_number(tmpdir, local_backend):
     run_test_gbm_number(tmpdir, local_backend)
 
 
-@pytest.mark.skip(reason="Ray nightly fails 8/16.")
 @pytest.mark.distributed
 def test_ray_gbm_number(tmpdir, ray_backend):
     with ray_start():
