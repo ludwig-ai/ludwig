@@ -344,7 +344,6 @@ class TritonMaster:
             self.module, self.input_features, self.output_features, self.inference_stage
         ).generate_scripted_module()
         self.model_ts.save(model_path)
-        size = model_size(self.model_ts)
 
         model_artifact = TritonArtifact(
             model_name=self.full_model_name,
@@ -352,7 +351,7 @@ class TritonMaster:
             platform="pytorch_libtorch",
             path=model_path,
             content_type="application/octet-stream",
-            content_length=size,
+            content_length=model_size(self.model_ts),
         )
 
         return model_artifact
@@ -387,7 +386,7 @@ class TritonMaster:
             platform="pytorch_libtorch",
             path=config_path,
             content_type="text/x-protobuf",
-            content_length=0,
+            content_length=os.path.getsize(config_path),
         )
 
         return config_artifact
@@ -478,7 +477,7 @@ class TritonEnsembleConfig:
             platform="ensemble",
             path=config_path,
             content_type="text/x-protobuf",
-            content_length=0,
+            content_length=os.path.getsize(config_path),
         )
 
         return config_artifact
@@ -500,7 +499,7 @@ class TritonEnsembleConfig:
             platform="ensemble",
             path=model_path,
             content_type="text/plain",
-            content_length=0,
+            content_length=os.path.getsize(model_path),
         )
 
         return model_artifact
