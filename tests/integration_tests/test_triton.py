@@ -18,6 +18,7 @@ import sys
 
 import pandas as pd
 import torch
+
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
