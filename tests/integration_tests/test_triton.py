@@ -20,7 +20,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
-from ludwig.utils.triton_utils import ENSEMBLE, export_triton, get_inference_modules, INFERENCE_STAGES
+from ludwig.utils.triton_utils import export_triton, get_inference_modules, INFERENCE_STAGES, PREPROCESSOR, PREDICTOR, POSTPROCESSOR
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -84,23 +84,27 @@ def test_triton_torchscript(csv_filename, tmpdir):
     model_name = "test_triton"
     model_version = 1
     df = pd.read_csv(training_data_csv_path)
-    paths = export_triton(
+    triton_artifacts = export_triton(
         model=ludwig_model, data_example=df, model_name=model_name, output_path=triton_path, model_version=model_version
     )
 
-    # Validate number of models and that paths exist
-    assert all(inference_stage in paths for inference_stage in INFERENCE_STAGES)
-    assert ENSEMBLE in paths
-    assert all(len(value) == 3 for value in paths.values())
+    # Validate that artifact paths exist.
     assert os.path.isdir(triton_path)
-    assert all(os.path.exists(value[0]) for value in paths.values())
-    assert all(os.path.exists(value[1]) for value in paths.values())
-    assert all(isinstance(value[2], int) for value in paths.values())
+    assert all(os.path.exists(artifact.path) for artifact in triton_artifacts)
 
     # Load TorchScript models exported for Triton.
-    triton_preprocessor = torch.jit.load(paths[INFERENCE_STAGES[0]][1])
-    triton_predictor = torch.jit.load(paths[INFERENCE_STAGES[1]][1])
-    triton_postprocessor = torch.jit.load(paths[INFERENCE_STAGES[2]][1])
+    triton_preprocessor = triton_predictor = triton_postprocessor = None
+    for artifact in triton_artifacts:
+        if artifact.model_name.endswith(PREPROCESSOR) and artifact.content_type == "application/octet-stream":
+            triton_preprocessor = torch.jit.load(artifact.path)
+        if artifact.model_name.endswith(PREDICTOR) and artifact.content_type == "application/octet-stream":
+            triton_predictor = torch.jit.load(artifact.path)
+        if artifact.model_name.endswith(POSTPROCESSOR) and artifact.content_type == "application/octet-stream":
+            triton_postprocessor = torch.jit.load(artifact.path)
+
+    assert triton_preprocessor is not None
+    assert triton_predictor is not None
+    assert triton_postprocessor is not None
 
     # Forward data through models.
     data_to_predict = to_inference_module_input_from_dataframe(df, ludwig_model.config, load_paths=True, device="cpu")

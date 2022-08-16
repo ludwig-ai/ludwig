@@ -47,7 +47,6 @@ INPUT = "INPUT"
 OUTPUT = "OUTPUT"
 ENSEMBLE = "ensemble"
 
-
 INFERENCE_MODULE_TEMPLATE = """
 from typing import Any, Dict, List, Union
 import torch
@@ -186,6 +185,16 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
 
 
 @dataclass
+class TritonArtifact:
+    model_name: str
+    model_version: Union[int, str]
+    platform: str
+    path: str
+    content_type: str
+    content_length: int
+
+
+@dataclass
 class TritonConfigFeature:
     """Represents an input/output feature in a Triton config."""
 
@@ -313,7 +322,7 @@ class TritonMaster:
                 TritonConfigFeature(feature_name, ludwig_type, content, self.inference_stage, OUTPUT, i)
             )
 
-    def save_model(self) -> Tuple[str, int]:
+    def save_model(self) -> TritonArtifact:
         """Scripts the model and saves it."""
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
@@ -332,10 +341,18 @@ class TritonMaster:
         ).generate_scripted_module()
         self.model_ts.save(model_path)
         size = model_size(self.model_ts)
+        model_artifact = TritonArtifact(
+            model_name=self.full_model_name,
+            model_version=self.model_version,
+            platform="pytorch_libtorch",
+            path=model_path,
+            content_type="application/octet-stream",
+            content_length=size,
+        )
 
-        return model_path, size
+        return model_artifact
 
-    def save_config(self) -> str:
+    def save_config(self) -> TritonArtifact:
         """Save the Triton config."""
         device = self.device
         if self.inference_stage != PREDICTOR:
@@ -354,7 +371,17 @@ class TritonMaster:
         with open(config_path, "w") as f:
             formatted_config = remove_empty_lines(self.config.get_model_config())
             f.write(formatted_config)
-        return config_path
+
+        config_artifact = TritonArtifact(
+            model_name=self.full_model_name,
+            model_version=self.model_version,
+            platform="pytorch_libtorch",
+            path=config_path,
+            content_type="text/x-protobuf",
+            content_length=0,
+        )
+
+        return config_artifact
 
 
 @dataclass
@@ -435,9 +462,19 @@ class TritonEnsembleConfig:
         with open(config_path, "w") as f:
             formatted_config = remove_empty_lines(self.get_config())
             f.write(formatted_config)
-        return config_path
 
-    def save_ensemble_dummy_model(self) -> str:
+        config_artifact = TritonArtifact(
+            model_name=self.ensemble_model_name,
+            model_version=self.model_version,
+            platform="ensemble",
+            path=config_path,
+            content_type="text/x-protobuf",
+            content_length=0,
+        )
+
+        return config_artifact
+
+    def save_ensemble_dummy_model(self) -> TritonArtifact:
         """Scripts the model and saves it."""
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
@@ -448,7 +485,16 @@ class TritonEnsembleConfig:
         with open(model_path, "w") as f:
             f.write("no model for the ensemble")
 
-        return model_path
+        model_artifact = TritonArtifact(
+            model_name=self.ensemble_model_name,
+            model_version=self.model_version,
+            platform="ensemble",
+            path=model_path,
+            content_type="text/plain",
+            content_length=0,
+        )
+
+        return model_artifact
 
 
 @dataclass
@@ -590,18 +636,8 @@ class TritonModel:
         return scripted_module
 
 
-@dataclass
-class TritonArtifact:
-    model_name: str
-    model_version: Union[int, str]
-    platform: str
-    path: str
-    content_type: str
-    content_length: int
-
-
 def get_device_types_and_counts(
-    preprocessor_num_instances, predictor_device_type, predictor_num_instances, postprocessor_num_instances
+        preprocessor_num_instances, predictor_device_type, predictor_num_instances, postprocessor_num_instances
 ):
     """Retrun device types and instance counts for each of the three inference modules."""
     if predictor_device_type not in ["cuda", "cpu"]:
@@ -646,18 +682,18 @@ def clean_up_synthetic_data():
 
 
 def export_triton(
-    model: LudwigModel,
-    data_example: Optional[pd.DataFrame] = None,
-    output_path: Optional[str] = "model_repository",
-    model_name: Optional[str] = "ludwig_model",
-    model_version: Optional[Union[int, str]] = 1,
-    preprocessor_num_instances: Optional[int] = 1,
-    predictor_device_type: Optional[str] = "cpu",
-    predictor_num_instances: Optional[int] = 1,
-    postprocessor_num_instances: Optional[int] = 1,
-    predictor_max_batch_size: Optional[int] = 64,
-    max_queue_delay_microseconds: Optional[int] = 100,
-) -> Dict[str, Tuple[str, str, int]]:
+        model: LudwigModel,
+        data_example: Optional[pd.DataFrame] = None,
+        output_path: Optional[str] = "model_repository",
+        model_name: Optional[str] = "ludwig_model",
+        model_version: Optional[Union[int, str]] = 1,
+        preprocessor_num_instances: Optional[int] = 1,
+        predictor_device_type: Optional[str] = "cpu",
+        predictor_num_instances: Optional[int] = 1,
+        postprocessor_num_instances: Optional[int] = 1,
+        predictor_max_batch_size: Optional[int] = 64,
+        max_queue_delay_microseconds: Optional[int] = 100,
+) -> List[TritonArtifact]:
     """Exports a torchscript model to a output path that serves as a repository for Triton Inference Server.
 
     # Inputs
@@ -675,8 +711,7 @@ def export_triton(
     :param max_queue_delay_microseconds: (int) max_queue_delay_microseconds for all Triton configs.
 
     # Return
-    :return: (Dict[str, Tuple[str, str, int]]) The saved config path, model path, and model size for each of
-        the three inference modules.
+    :return: (List[TritonArtifact]) list of TritonArtifacts that contains information about exported artifacts.
     """
 
     device_types, instance_counts = get_device_types_and_counts(
@@ -687,6 +722,7 @@ def export_triton(
 
     paths = {}
     triton_masters = []
+    triton_artifacts = []
     for i, module in enumerate(split_modules):
         example_input = place_on_device(example_input, device_types[i])
         triton_master = TritonMaster(
@@ -703,10 +739,13 @@ def export_triton(
             model_instance_count=instance_counts[i],
         )
         example_input = triton_master.output_data_example
-        config_path = triton_master.save_config()
-        model_path, size = triton_master.save_model()
-        paths[INFERENCE_STAGES[i]] = (config_path, model_path, size)
+        config_artifact = triton_master.save_config()
+        model_artifact = triton_master.save_model()
         triton_masters.append(triton_master)
+
+        triton_artifacts.extend([config_artifact, model_artifact])
+
+        # paths[INFERENCE_STAGES[i]] = (config_path, model_path, size)
 
     # saving ensemble config
     triton_master_preprocessor, triton_master_predictor, triton_master_postprocessor = triton_masters
@@ -718,9 +757,11 @@ def export_triton(
         output_path,
         model_version,
     )
-    ensemble_config_path = ensemble_config.save_ensemble_config()
-    ensemble_dummy_model_path = ensemble_config.save_ensemble_dummy_model()
-    paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path, 0)
+    config_artifact = ensemble_config.save_ensemble_config()
+    model_artifact = ensemble_config.save_ensemble_dummy_model()
+    triton_artifacts.extend([config_artifact, model_artifact])
+    # paths[ENSEMBLE] = (ensemble_config_path, ensemble_dummy_model_path, 0)
     clean_up_synthetic_data()
 
-    return paths
+    # return paths
+    return triton_artifacts
