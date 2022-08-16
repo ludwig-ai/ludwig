@@ -39,7 +39,7 @@ from tests.integration_tests.utils import (
 
 
 def test_triton_torchscript(csv_filename, tmpdir):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
+    # data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
     input_features = [
         binary_feature(),
@@ -70,7 +70,7 @@ def test_triton_torchscript(csv_filename, tmpdir):
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
 
     # Generate training data
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    training_data_csv_path = generate_data(input_features, output_features, csv_filename)
 
     # Convert bool values to strings, e.g., {'Yes', 'No'}
     df = pd.read_csv(training_data_csv_path)
