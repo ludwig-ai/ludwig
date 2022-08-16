@@ -27,15 +27,12 @@ class ECD(BaseModel):
 
     def __init__(
         self,
-        input_features,
-        combiner,
-        output_features,
+        config_obj,
         random_seed=None,
-        **_kwargs,
     ):
-        self._input_features_def = copy.deepcopy(input_features)
-        self._combiner_def = copy.deepcopy(combiner)
-        self._output_features_def = copy.deepcopy(output_features)
+        self._input_features_def = copy.deepcopy(config_obj.input_features)
+        self._combiner_def = copy.deepcopy(config_obj.combiner)
+        self._output_features_def = copy.deepcopy(config_obj.output_features)
 
         self._random_seed = random_seed
 

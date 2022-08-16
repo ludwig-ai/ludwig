@@ -6,6 +6,8 @@ from ludwig.schema.features.utils import input_type_registry, output_type_regist
 
 from ludwig.constants import (
     COMBINER,
+    DECODER,
+    ENCODER,
     HYPEROPT,
     INPUT_FEATURES,
     NAME,
@@ -61,12 +63,16 @@ class Config:
 
     def parse_input_features(self, input_features):
         for feature in input_features:
+            if DECODER in feature:
+                del feature[DECODER]
             feature_schema = input_type_registry[feature[TYPE]].get_schema_cls()
             setattr(self.input_features, feature[NAME], feature_schema())
             self.set_attributes(getattr(self.input_features, feature[NAME]), feature)
 
     def parse_output_features(self, output_features):
         for feature in output_features:
+            if ENCODER in feature:
+                del feature[ENCODER]
             feature_schema = output_type_registry[feature[TYPE]].get_schema_cls()
             setattr(self.output_features, feature[NAME], feature_schema())
             self.set_attributes(getattr(self.output_features, feature[NAME]), feature)
