@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import torch
 
@@ -183,7 +183,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[TextInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
         self.encoder_config = input_feature_config.encoder
@@ -253,7 +253,10 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     default_validation_metric = LOSS
 
     def __init__(
-        self, output_feature_config: TextInputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[TextInputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)

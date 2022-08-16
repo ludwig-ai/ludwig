@@ -437,7 +437,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    def __init__(self, input_feature_config: AudioInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[AudioInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
         self.encoder_config = input_feature_config.encoder

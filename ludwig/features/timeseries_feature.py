@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -176,7 +176,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    def __init__(self, input_feature_config: TimeseriesInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[TimeseriesInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         # add required sequence encoder parameters for time series
         self.encoder_config = input_feature_config.encoder

@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import random
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -283,7 +283,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[NumberInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         self.encoder_config = input_feature_config.encoder
@@ -352,7 +352,10 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     default_validation_metric = MEAN_SQUARED_ERROR
 
     def __init__(
-        self, output_feature_config: NumberOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[NumberOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)

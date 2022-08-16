@@ -16,7 +16,7 @@
 
 import logging
 from functools import partial
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -261,7 +261,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[SequenceInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
         # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
@@ -329,7 +329,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     default_validation_metric = LOSS
 
     def __init__(
-        self, output_feature_config: SequenceOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[SequenceOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
