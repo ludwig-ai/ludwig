@@ -20,7 +20,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
-from ludwig.utils.triton_utils import export_triton, get_inference_modules, INFERENCE_STAGES, PREPROCESSOR, PREDICTOR, POSTPROCESSOR
+from ludwig.utils.triton_utils import export_triton, get_inference_modules, POSTPROCESSOR, PREDICTOR, PREPROCESSOR
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
