@@ -317,9 +317,8 @@ class TritonMaster:
         """Scripts the model and saves it."""
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
-        pass
 
-        # wrapper.py is
+        # wrapper.py is optional and is just for visualizing the inputs/outputs to the model exported to Triton.
         wrapper_definition = TritonModel(
             self.module, self.input_features, self.output_features, self.inference_stage
         ).generate_inference_module_wrapper()
@@ -681,16 +680,16 @@ def export_triton(
     for i, module in enumerate(split_modules):
         example_input = place_on_device(example_input, device_types[i])
         triton_master = TritonMaster(
-            module,
-            example_input,
-            INFERENCE_STAGES[i],
-            predictor_max_batch_size,
-            max_queue_delay_microseconds,
-            model_name,
-            output_path,
-            model_version,
-            model.config,
-            device_types[i],
+            module=module,
+            input_data_example=example_input,
+            inference_stage=INFERENCE_STAGES[i],
+            max_batch_size=predictor_max_batch_size,
+            max_queue_delay_microseconds=max_queue_delay_microseconds,
+            model_name=model_name,
+            output_path=output_path,
+            model_version=model_version,
+            ludwig_config=model.config,
+            device=device_types[i],
             model_instance_count=instance_counts[i],
         )
         example_input = triton_master.output_data_example
