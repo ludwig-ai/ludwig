@@ -203,7 +203,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.reduce_dependencies = feature.reduce_dependencies
 
         # List of feature names that this output feature is dependent on.
-        self.dependencies = []
+        self.dependencies = feature.dependencies
 
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
