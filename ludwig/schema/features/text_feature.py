@@ -5,7 +5,7 @@ from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
-from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import DROP_ROW, OUTPUT, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -103,6 +103,18 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@register_preprocessor("text_output")
+@dataclass
+class TextOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a text output feature",
+    )
+
+
 @dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
@@ -118,6 +130,8 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 @dataclass
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
     loss: dict = schema_utils.Dict(
         default={

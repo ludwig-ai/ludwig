@@ -2,7 +2,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
 
-from ludwig.constants import NUMBER, MEAN_SQUARED_ERROR
+from ludwig.constants import DROP_ROW, NUMBER, MEAN_SQUARED_ERROR, OUTPUT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -47,6 +47,18 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@register_preprocessor("number_output")
+@dataclass
+class NumberOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a number output feature",
+    )
+
+
 @dataclass
 class NumberInputFeatureConfig(BaseInputFeatureConfig):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
@@ -63,6 +75,8 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig):
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
 
     loss: dict = schema_utils.Dict(
         default={

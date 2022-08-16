@@ -16,6 +16,8 @@
 INPUT_FEATURES = "input_features"
 OUTPUT_FEATURES = "output_features"
 
+INPUT = "input"
+OUTPUT = "output"
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"

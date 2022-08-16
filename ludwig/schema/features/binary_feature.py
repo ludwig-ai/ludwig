@@ -3,7 +3,7 @@ from typing import Union
 
 from ludwig.utils import strings_utils
 
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, MISSING_VALUE_STRATEGY_OPTIONS
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -26,25 +26,25 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         description="What strategy to follow when there's a missing value in a binary column",
     )
 
-    fill_value: Union[int, float, str] = schema_utils.NumericOrStringOptionsField(
-        strings_utils.all_bool_strs(),
+    fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        default_numeric=None,
-        default_option=None,
-        allow_none=False,
-        min=0,
-        max=1,
+        allow_none=True,
+        field_options=[
+            schema_utils.IntegerRange(default=None, min=0, max=1, description=""),
+            schema_utils.FloatRange(default=None, min=0, max=1, description=""),
+            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default=None, allow_none=True),
+        ],
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    computed_fill_value: Union[int, float, str] = schema_utils.NumericOrStringOptionsField(
-        strings_utils.all_bool_strs(),
+    computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        default_numeric=None,
-        default_option=None,
-        allow_none=False,
-        min=0,
-        max=1,
+        allow_none=True,
+        field_options=[
+            schema_utils.IntegerRange(default=None, min=0, max=1, description=""),
+            schema_utils.FloatRange(default=None, min=0, max=1, description=""),
+            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default=None, allow_none=True),
+        ],
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
@@ -55,6 +55,18 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
         "conventional boolean value",
+    )
+
+
+@register_preprocessor("binary_output")
+@dataclass
+class BinaryOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a binary output feature",
     )
 
 
@@ -80,6 +92,8 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig):
 @dataclass
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="binary_output")
 
     loss: dict = schema_utils.Dict(  # TODO: Create schema for loss
         default={

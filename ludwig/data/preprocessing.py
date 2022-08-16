@@ -1138,7 +1138,7 @@ def build_dataset(
         dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
     )
 
-    # Happens after preprocessing parameters are built so we can use precomputed fill values.
+    # Happens after preprocessing parameters are built, so we can use precomputed fill values.
     logging.debug("handle missing values")
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]

@@ -102,8 +102,8 @@ def InitializerOptions(default: str = "xavier_uniform", description=""):
     return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
 
 
-def ActivationOptions(default: str = "relu", description=""):
-    """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
+def ActivationOptions(default: Union[str, None] = "relu", description=""):
+    """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
     return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
 
 
@@ -759,7 +759,7 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-    n=2, default: Tuple = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
+    n=2, default: Union[Tuple, None] = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 

@@ -4,7 +4,7 @@ from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
 
 from ludwig.utils import strings_utils
 
-from ludwig.constants import SET, SIGMOID_CROSS_ENTROPY
+from ludwig.constants import DROP_ROW, SET, SIGMOID_CROSS_ENTROPY, OUTPUT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -79,9 +79,23 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@register_preprocessor("set_output")
+@dataclass
+class SetOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a set output feature",
+    )
+
+
 @dataclass
 class SetOutputFeatureConfig(BaseOutputFeatureConfig):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
 
     loss: dict = schema_utils.Dict(
         default={

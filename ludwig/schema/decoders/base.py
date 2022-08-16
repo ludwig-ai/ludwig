@@ -78,8 +78,6 @@ class RegressorConfig(BaseDecoderConfig):
         description="Initializer for the bias vector.",
     )
 
-<<<<<<< HEAD
-=======
     threshold: float = schema_utils.FloatRange(
         default=0.5,
         min=0,
@@ -87,7 +85,6 @@ class RegressorConfig(BaseDecoderConfig):
         description="Threshold for the output of the decoder.",
     )
 
->>>>>>> daniel/encoder_refactor
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
@@ -137,14 +134,11 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-<<<<<<< HEAD
-=======
     vector_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the output of the decoder.",
     )
 
->>>>>>> daniel/encoder_refactor
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,

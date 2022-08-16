@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
+from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, OUTPUT
 
 from ludwig.utils import strings_utils
 from ludwig.constants import CATEGORY, SOFTMAX_CROSS_ENTROPY
@@ -54,6 +54,18 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@register_preprocessor("category_output")
+@dataclass
+class CategoryOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a category output feature",
+    )
+
+
 @dataclass
 class CategoryInputFeatureConfig(BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
@@ -78,6 +90,8 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig):
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")
 
     loss: dict = schema_utils.Dict(  # TODO: Schema for loss
         default={

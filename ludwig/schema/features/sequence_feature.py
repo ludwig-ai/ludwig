@@ -1,10 +1,10 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
+from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS
 
 from ludwig.utils import strings_utils
 
-from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, SEQUENCE
+from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, SEQUENCE, OUTPUT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -94,6 +94,18 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@register_preprocessor("sequence_output")
+@dataclass
+class SequenceOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a sequence output feature",
+    )
+
+
 @dataclass
 class SequenceInputFeatureConfig(BaseInputFeatureConfig):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
@@ -111,6 +123,8 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig):
 class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="sequence_output")
 
     loss: dict = schema_utils.Dict(  # TODO: Schema for loss
         default={

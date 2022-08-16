@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import VECTOR, MEAN_SQUARED_ERROR, MISSING_VALUE_STRATEGY_OPTIONS
+from ludwig.constants import DROP_ROW, VECTOR, MEAN_SQUARED_ERROR, MISSING_VALUE_STRATEGY_OPTIONS, OUTPUT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -45,6 +45,18 @@ class VectorPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@register_preprocessor("vector_output")
+@dataclass
+class VectorOutputPreprocessingConfig(BasePreprocessingConfig):
+
+    missing_value_strategy: str = schema_utils.StringOptions(
+        MISSING_VALUE_STRATEGY_OPTIONS,
+        default=DROP_ROW,
+        allow_none=False,
+        description="What strategy to follow when there's a missing value in a vector output feature",
+    )
+
+
 @dataclass
 class VectorInputFeatureConfig(BaseInputFeatureConfig):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
@@ -67,6 +79,8 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
 @dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")
 
     reduce_input: str = schema_utils.ReductionOptions(
         default=None,
@@ -92,7 +106,7 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default="projector",
     )
 
-    dependencies: List = schema_utils.List(
+    dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
     )
