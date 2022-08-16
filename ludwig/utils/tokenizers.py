@@ -46,6 +46,7 @@ SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
 
 SENTENCEPIECE_VOCAB_FILENAMES = {
     "spiece.model",
+    "sentencepiece.model",
     "sentencepiece.bpe.model",
     "source.spm",
     "prophetnet.tokenizer",
@@ -925,12 +926,16 @@ try:
         """
 
         class SentencePieceTokenizer(torch.nn.Module):
-            def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
+            def __init__(
+                self, pretrained_model_name_or_path: Optional[str] = None, is_hf_tokenizer: bool = False, **kwargs
+            ):
                 super().__init__()
                 if pretrained_model_name_or_path is None:
                     pretrained_model_name_or_path = (
                         "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
                     )
+
+                self.is_hf_tokenizer = is_hf_tokenizer
                 self.tokenizer = torchtext.transforms.SentencePieceTokenizer(
                     sp_model_path=pretrained_model_name_or_path
                 )
@@ -938,7 +943,11 @@ try:
             def forward(self, v: Union[str, List[str], torch.Tensor]):
                 if isinstance(v, torch.Tensor):
                     raise ValueError(f"Unsupported input: {v}")
-                return self.tokenizer(v)
+
+                if self.is_hf_tokenizer:
+                    return self.tokenizer.sp_model.EncodeAsIds(v)
+                else:
+                    return self.tokenizer(v)
 
         class _BPETokenizer(torch.nn.Module):
             """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
@@ -975,11 +984,16 @@ try:
                 else:
                     inputs.extend(v)
 
-                token_ids = self.tokenizer(inputs)
-                assert torch.jit.isinstance(token_ids, List[List[str]])
-
-                tokens = [[self.idx2str[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
-                return tokens[0] if isinstance(v, str) else tokens
+                token_ids_str = self.tokenizer(inputs)
+                assert torch.jit.isinstance(token_ids_str, List[List[str]])
+                # Must cast token_ids to ints because they are used directly as indices.
+                token_ids: List[List[int]] = []
+                for token_ids_str_i in token_ids_str:
+                    token_ids_i = [int(token_id_str) for token_id_str in token_ids_str_i]
+                    # token_ids_i.insert(0, self.cls_token_id)
+                    # token_ids_i.append(self.sep_token_id)
+                    token_ids.append(token_ids_i)
+                return token_ids[0] if isinstance(v, str) else token_ids
 
             def get_vocab(self) -> Dict[str, str]:
                 return self.str2idx
@@ -1145,7 +1159,7 @@ except ImportError:
     )
 
 
-def get_hf_tokenizer(pretrained_model_name_or_path):
+def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     """Gets a potentially torchscript-compatible tokenizer that follows HF convention.
 
     Args:
@@ -1157,12 +1171,13 @@ def get_hf_tokenizer(pretrained_model_name_or_path):
 
     # use_fast=False to leverage python class inheritance
     hf_name = pretrained_model_name_or_path
+    # cannot tokenize this directly because HF lacks strict typing and List[str] cannot be traced
     hf_tokenizer = AutoTokenizer.from_pretrained(hf_name, use_fast=False)
 
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
         tokenizer_kwargs = _get_bert_kwargs(hf_name)
-        torchtext_tokenizer = BERTTokenizer(is_hf_tokenizer=True, **tokenizer_kwargs)
+        torchtext_tokenizer = BERTTokenizer(**tokenizer_kwargs, is_hf_tokenizer=True)
     elif "clip" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, CLIPTokenizer):
         tokenizer_kwargs = _get_clip_kwargs(hf_name)
         torchtext_tokenizer = CLIPTokenizer(**tokenizer_kwargs)
@@ -1179,7 +1194,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path):
         for vocab_file_name in SENTENCEPIECE_VOCAB_FILENAMES:
             if check_url_exists(f"https://huggingface.co/{hf_name}/resolve/main/{vocab_file_name}"):
                 tokenizer_kwargs = _get_sentencepiece_kwargs(hf_name, vocab_file_name)
-                torchtext_tokenizer = SentencePieceTokenizer(**tokenizer_kwargs)
+                torchtext_tokenizer = SentencePieceTokenizer(**tokenizer_kwargs, is_hf_tokenizer=True)
 
         # Otherwise, revert to special cases.
         # Roberta is a gpt2 tokenizer but it does not inherit from GPT2Tokenizer
@@ -1234,7 +1249,7 @@ def _get_sentencepiece_kwargs(hf_name, vocab_file_name):
     from transformers.utils.hub import cached_path
 
     vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/{vocab_file_name}")
-    return {"vocab_file": vocab_file}
+    return {"pretrained_model_name_or_path": vocab_file}
 
 
 tokenizer_registry.update(

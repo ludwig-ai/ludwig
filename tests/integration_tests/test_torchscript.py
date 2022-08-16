@@ -369,7 +369,7 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
 )
 def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [text_feature(vocab_size=3, encoder="bert")]
+    input_features = [text_feature(vocab_size=3, encoder="t5")]
     output_features = [
         text_feature(vocab_size=3),
     ]
