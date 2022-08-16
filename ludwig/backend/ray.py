@@ -913,7 +913,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
-            ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
+            column_df = column.to_frame(name="value")
+            column_df["idx"] = column_df.index
+            ds = self.df_engine.to_ray_dataset(column_df)
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
             # HACK: Workaround for https://github.com/modin-project/modin/issues/4686
