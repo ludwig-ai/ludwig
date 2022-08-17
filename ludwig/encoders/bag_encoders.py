@@ -49,9 +49,12 @@ class BagEmbedWeightedEncoder(Encoder):
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0.0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  EmbedWeighted")

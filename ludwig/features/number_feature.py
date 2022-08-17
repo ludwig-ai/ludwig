@@ -286,12 +286,12 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[NumberInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
-        self.encoder_config.input_size = self.input_shape[-1]
+        input_feature_config.encoder.input_size = self.input_shape[-1]
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -359,7 +359,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_obj = self.initialize_decoder()
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -368,21 +368,21 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if getattr(self.decoder_config, "clip", None) and not (
-            isinstance(self.decoder_config.clip, (list, tuple)) and len(self.decoder_config.clip) == 2
+        if getattr(self.decoder_obj.config, "clip", None) and not (
+            isinstance(self.decoder_obj.config.clip, (list, tuple)) and len(self.decoder_obj.config.clip) == 2
         ):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumberPredict(getattr(self.decoder_config, "clip", None))
+        return _NumberPredict(getattr(self.decoder_obj.config, "clip", None))
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.input_size])
+        return torch.Size([self.decoder_obj.config.input_size])
 
     @classmethod
     def get_output_dtype(cls):

@@ -179,9 +179,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: Union[TimeseriesInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         # add required sequence encoder parameters for time series
-        self.encoder_config = input_feature_config.encoder
-        self.encoder_config.embedding_size = 1
-        self.encoder_config.should_embed = False
+        input_feature_config.encoder.embedding_size = 1
+        input_feature_config.encoder.should_embed = False
 
         # SequenceInputFeauture's constructor initializes the encoder.
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
@@ -198,7 +197,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder_config.max_sequence_length])
+        return torch.Size([self.encoder_obj.config.max_sequence_length])
 
     @property
     def input_dtype(self):

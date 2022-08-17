@@ -218,11 +218,11 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[BinaryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -285,7 +285,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_obj = self.initialize_decoder()
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -314,7 +314,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def create_predict_module(self) -> PredictModule:
         # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
         # decoder is specified here which has no threshold.
-        threshold = getattr(self.decoder_config, "threshold", 0.5)
+        threshold = getattr(self.decoder_obj.config, THRESHOLD, 0.5)
         return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):

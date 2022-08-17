@@ -163,11 +163,11 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    def initialize_encoder(self):
-        encoder_cls = get_encoder_cls(self.type(), self.encoder_config.type)
+    def initialize_encoder(self, encoder_config):
+        encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         encoder_schema = encoder_cls.get_schema_cls().Schema()
-        encoder_params_dict = encoder_schema.dump(self.encoder_config)
-        return encoder_cls(**encoder_params_dict)
+        encoder_params_dict = encoder_schema.dump(encoder_config)
+        return encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
@@ -197,7 +197,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         super().__init__(feature)
 
-        self.decoder_config = feature.decoder
         self.loss = feature.loss
         self.reduce_input = feature.reduce_input
         self.reduce_dependencies = feature.reduce_dependencies
@@ -256,11 +255,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def metric_functions(self) -> Dict:
         pass
 
-    def initialize_decoder(self):
+    def initialize_decoder(self, decoder_config):
         # Input to the decoder is the output feature's FC hidden layer.
-        self.decoder_config.input_size = self.fc_stack.output_shape[-1]
-        decoder = self.decoder_config.type
-        return get_decoder_cls(self.type(), decoder)(**self.decoder_config.__dict__)
+        decoder_config.input_size = self.fc_stack.output_shape[-1]
+        decoder_cls = get_decoder_cls(self.type(), decoder_config.type)
+        decoder_schema = decoder_cls.get_schema_cls().Schema()
+        decoder_params_dict = decoder_schema.dump(decoder_config)
+        return decoder_cls(decoder_config=decoder_config, **decoder_params_dict)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)

@@ -49,6 +49,7 @@ class DateEmbed(Encoder):
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
         dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -91,6 +92,8 @@ class DateEmbed(Encoder):
         :type dropout: float
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  year FCStack")
@@ -286,6 +289,7 @@ class DateWave(Encoder):
         norm_params: Optional[Dict] = None,
         activation: str = "relu",
         dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -314,6 +318,8 @@ class DateWave(Encoder):
         :type dropout: float
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  year FCStack")

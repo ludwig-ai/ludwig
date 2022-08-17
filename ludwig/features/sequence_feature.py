@@ -264,14 +264,14 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[SequenceInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
-        self.encoder_config = input_feature_config.encoder
-        if getattr(self.encoder_config, "vocab", None):
-            self.encoder_config.vocab_size = len(self.encoder_config.vocab)
+
+        if getattr(input_feature_config, "vocab", None):
+            input_feature_config.encoder.vocab_size = len(input_feature_config.encoder.vocab)
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs: torch.Tensor, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -305,7 +305,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder_config.max_sequence_length])
+        return torch.Size([self.encoder_obj.config.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -336,7 +336,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_obj = self.initialize_decoder()
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -360,7 +360,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.max_sequence_length])
+        return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -533,6 +533,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder_config.num_classes), meta=(probs_col, "object")
+            lambda x: x.reshape(-1, self.decoder_obj.config.num_classes), meta=(probs_col, "object")
         )
         return df

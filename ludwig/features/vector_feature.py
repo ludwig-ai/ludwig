@@ -151,12 +151,12 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[VectorInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
-        # self.encoder_config.input_size = self.encoder_config.vector_size
+
+        # input_feature_config.encoder.input_size = input_feature_config.encoder.vector_size
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
@@ -169,7 +169,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder_config.input_size])
+        return torch.Size([self.encoder_obj.config.input_size])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -208,8 +208,9 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_config.output_size = self.decoder_config.vector_size
-        self.decoder_obj = self.initialize_decoder()
+        output_feature_config.decoder.output_size = output_feature_config.decoder.vector_size
+
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -235,11 +236,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.vector_size])
+        return torch.Size([self.decoder_obj.config.vector_size])
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.input_size])
+        return torch.Size([self.decoder_obj.config.input_size])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):

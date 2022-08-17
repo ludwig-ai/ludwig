@@ -38,9 +38,12 @@ class CategoricalEmbedEncoder(Encoder):
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
         embedding_initializer: Optional[Union[str, Dict]] = None,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Embed")
@@ -89,9 +92,12 @@ class CategoricalSparseEncoder(Encoder):
         embeddings_on_cpu: bool = False,
         dropout: float = 0.0,
         embedding_initializer: Optional[Union[str, Dict]] = None,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Embed")
