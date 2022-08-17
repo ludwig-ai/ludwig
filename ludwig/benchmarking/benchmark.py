@@ -70,7 +70,7 @@ def benchmark(bench_config_path: str) -> None:
             benchmark_one_local(experiment, export_artifacts_dict=config["export"][0])
         except Exception:
             logging.exception(
-                "Benchmarking {} {} failed".format(experiment["dataset_name"], experiment["experiment_name"])
+                f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
 
 
@@ -82,7 +82,7 @@ def cli(sys_argv):
         prog="ludwig benchmark",
         usage="%(prog)s [options]",
     )
-    parser.add_argument("--config", type=str, help="The benchmarking config.")
+    parser.add_argument("--benchmarking_config", type=str, help="The benchmarking config.")
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
     benchmark(args.config)
