@@ -218,13 +218,13 @@ def test_encoder_decoder_backwards_compatibility():
             {
                 "name": "category_feature",
                 "type": "category",
+                "num_classes": 10,
                 "top_k": 3,
                 "preprocessing": {
                     "missing_value_strategy": "backfill",
                 },
                 "decoder": {
                     "type": "classifier",
-                    "num_classes": 10,
                     "use_bias": False,
                 },
             },
