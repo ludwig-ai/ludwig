@@ -207,8 +207,9 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
+        self.vector_size = output_feature_config.vector_size
         super().__init__(output_feature_config, output_features, **kwargs)
-        output_feature_config.decoder.output_size = output_feature_config.decoder.vector_size
+        output_feature_config.decoder.output_size = self.vector_size
 
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
@@ -236,15 +237,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_obj.config.vector_size])
+        return torch.Size([self.vector_size])
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_obj.config.input_size])
+        return torch.Size([self.input_size])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["vector_size"] = feature_metadata["vector_size"]
+        output_feature["vector_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):

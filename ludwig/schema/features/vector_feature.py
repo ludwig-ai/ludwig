@@ -46,6 +46,12 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         description="How to reduce the dependencies of the output feature.",
     )
 
+    vector_size: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The size of the vector. If None, the vector size will be inferred from the data.",
+    )
+
     loss: dict = schema_utils.Dict(
         default={
             "type": MEAN_SQUARED_ERROR,
