@@ -397,7 +397,6 @@ def test_merge_with_defaults():
                 "column": "number_output_feature",
                 "decoder": {
                     "type": "regressor",
-                    "clip": None,
                 },
                 "proc_column": "number_output_feature_mZFLky",
                 "loss": {"type": "mean_squared_error", "weight": 1},

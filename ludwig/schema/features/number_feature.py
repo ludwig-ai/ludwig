@@ -1,3 +1,5 @@
+from typing import List, Tuple, Union
+
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
@@ -33,6 +35,15 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
             "weight": 1,
         },
         description="A dictionary containing a loss type and its hyper-parameters.",
+    )
+
+    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+        n=2,
+        default=None,
+        allow_none=True,
+        min=0,
+        max=999999999,
+        description="Clip the predicted output to the specified range.",
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
