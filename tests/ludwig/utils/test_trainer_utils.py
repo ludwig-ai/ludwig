@@ -12,9 +12,9 @@ def test_progress_tracker_empty():
     output_features["category_feature"] = CategoryOutputFeature(
         {
             "name": "category_feature",
+            "num_classes": 3,
             "decoder": {
                 "type": "classifier",
-                "num_classes": 3,
             },
             "input_size": 10,
         },
@@ -50,8 +50,8 @@ def test_progress_tracker():
             "name": "category_feature",
             "decoder": {
                 "type": "classifier",
-                "num_classes": 3,
             },
+            "num_classes": 3,
             "input_size": 10,
         },
         {},

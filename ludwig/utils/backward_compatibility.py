@@ -72,6 +72,7 @@ OUTPUT_FEATURE_KEYS = [
     "column",
     "proc_column",
     "decoder",
+    "num_classes",
     "tied",
     "preprocessing",
     "loss",

@@ -231,10 +231,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
-        if output_feature_config.decoder.num_classes is None:
+        if hasattr(output_feature_config.decoder, "num_classes"):
             output_feature_config.decoder.num_classes = output_feature_config.num_classes
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
-        self.num_classes = self.decoder_obj.config.num_classes
+        self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
         self._setup_loss()
         self._setup_metrics()

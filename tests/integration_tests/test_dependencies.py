@@ -112,7 +112,7 @@ def test_construct_output_features_with_dependencies(output_feature_defs):
         if DECODER not in output_feature_def:
             output_feature_def[DECODER] = {}
         if output_feature_def[TYPE] == CATEGORY:
-            output_feature_def[DECODER]["num_classes"] = 2
+            output_feature_def["num_classes"] = 2
         elif output_feature_def[TYPE] == NUMBER:
             output_feature_def[DECODER][TYPE] = "regressor"
         elif output_feature_def[TYPE] == SEQUENCE:
