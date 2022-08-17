@@ -217,6 +217,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
         input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
         input_feature[ENCODER]["pad_idx"] = feature_metadata["pad_idx"]
         input_feature[ENCODER]["num_tokens"] = len(feature_metadata["idx2str"])

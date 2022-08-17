@@ -265,9 +265,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
 
-        if getattr(input_feature_config, "vocab", None):
-            input_feature_config.encoder.vocab_size = len(input_feature_config.encoder.vocab)
-
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -291,6 +288,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
         input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
 
     @staticmethod
