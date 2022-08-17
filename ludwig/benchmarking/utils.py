@@ -37,11 +37,6 @@ def load_from_module(
         return get_repeatable_train_val_test_split(dataset, random_seed=default_random_seed)
 
 
-def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:
-    [flat_dict] = pd.json_normalize(d, sep=sep).to_dict(orient="records")
-    return flat_dict
-
-
 def export_artifacts(experiment: Dict[str, str], experiment_output_directory: str, export_base_path: str):
     """Save the experiment artifacts to the `bench_export_directory`.
 
@@ -67,3 +62,40 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
             f"dataset {experiment['dataset_name']}"
         )
+
+
+def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:
+    [flat_dict] = pd.json_normalize(d, sep=sep).to_dict(orient="records")
+    return flat_dict
+
+
+def format_time(time_us):
+    """Defines how to format time in FunctionEvent
+
+    from https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler_util.py
+    """
+    US_IN_SECOND = 1000.0 * 1000.0
+    US_IN_MS = 1000.0
+    if time_us >= US_IN_SECOND:
+        return '{:.3f}s'.format(time_us / US_IN_SECOND)
+    if time_us >= US_IN_MS:
+        return '{:.3f}ms'.format(time_us / US_IN_MS)
+    return '{:.3f}us'.format(time_us)
+
+
+def format_memory(nbytes):
+    """Returns a formatted memory size string
+
+    from https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler_util.py
+    """
+    KB = 1024
+    MB = 1024 * KB
+    GB = 1024 * MB
+    if (abs(nbytes) >= GB):
+        return '{:.2f} Gb'.format(nbytes * 1.0 / GB)
+    elif (abs(nbytes) >= MB):
+        return '{:.2f} Mb'.format(nbytes * 1.0 / MB)
+    elif (abs(nbytes) >= KB):
+        return '{:.2f} Kb'.format(nbytes * 1.0 / KB)
+    else:
+        return str(nbytes) + ' b'

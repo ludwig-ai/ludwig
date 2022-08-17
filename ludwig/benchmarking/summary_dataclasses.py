@@ -4,12 +4,14 @@ from statistics import mean
 from typing import Any, Dict, List, Union
 from pprint import pprint
 
-from torch.autograd.profiler_util import _format_memory, _format_time
+from ludwig.benchmarking.utils import format_memory, format_time
 
 import ludwig.modules.metric_modules  # noqa: F401
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
 from ludwig.utils.data_utils import load_json, flatten_dict
+
+REPORT_JSON = "report.json"
 
 
 @dataclass
@@ -58,13 +60,13 @@ class Diff:
         """Add human-readable string representations to the field."""
 
         if "memory" in self.name:
-            self.base_value_str = _format_memory(self.base_value)
-            self.experimental_value_str = _format_memory(self.experimental_value)
-            self.diff_str = _format_memory(self.diff)
+            self.base_value_str = format_memory(self.base_value)
+            self.experimental_value_str = format_memory(self.experimental_value)
+            self.diff_str = format_memory(self.diff)
         elif "time" in self.name:
-            self.base_value_str = _format_time(self.base_value)
-            self.experimental_value_str = _format_time(self.experimental_value)
-            self.diff_str = _format_time(self.diff)
+            self.base_value_str = format_time(self.base_value)
+            self.experimental_value_str = format_time(self.experimental_value)
+            self.diff_str = format_time(self.diff)
         else:
             self.base_value_str = str(self.base_value)
             self.experimental_value_str = str(self.experimental_value)
@@ -95,43 +97,6 @@ class MetricsDiff:
 
     # `List[Diff]` containing diffs for metric of the two experiments.
     metrics: List[Diff]
-
-    def to_csv(self, path):
-        csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
-        with open(path, "w") as f:
-            f.write(
-                csv_str.format(
-                    "Dataset Name",
-                    "Output Feature Name",
-                    "Metric Name",
-                    self.base_experiment_name,
-                    self.experimental_experiment_name,
-                    "Diff",
-                    "Diff Percentage",
-                )
-            )
-            for metric in sorted(self.metrics, key=lambda m: m.name):
-                output_feature_name = self.base_summary.output_feature_name
-                metric_name = metric.name
-                experiment1_val = round(metric.base_value, 3)
-                experiment2_val = round(metric.experimental_value, 3)
-                diff = round(metric.diff, 3)
-                diff_percentage = metric.diff_percentage
-                if isinstance(diff_percentage, float):
-                    diff_percentage = round(metric.diff_percentage, 3)
-
-                f.write(
-                    csv_str.format(
-                        self.dataset_name,
-                        output_feature_name,
-                        metric_name,
-                        experiment1_val,
-                        experiment2_val,
-                        diff,
-                        diff_percentage,
-                    )
-                )
-        print("Exported report to", path)
 
     def to_string(self):
         ret = []
@@ -169,6 +134,44 @@ class MetricsDiff:
         return "\n".join(ret)
 
 
+def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
+    csv_str = "{}, {}, {}, {}, {}, {}, {}\n"
+    with open(path, "w") as f:
+        f.write(
+            csv_str.format(
+                "Dataset Name",
+                "Output Feature Name",
+                "Metric Name",
+                metrics_diff.base_experiment_name,
+                metrics_diff.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            )
+        )
+        for metric in sorted(metrics_diff.metrics, key=lambda m: m.name):
+            output_feature_name = metrics_diff.base_summary.output_feature_name
+            metric_name = metric.name
+            experiment1_val = round(metric.base_value, 3)
+            experiment2_val = round(metric.experimental_value, 3)
+            diff = round(metric.diff, 3)
+            diff_percentage = metric.diff_percentage
+            if isinstance(diff_percentage, float):
+                diff_percentage = round(metric.diff_percentage, 3)
+
+            f.write(
+                csv_str.format(
+                    metrics_diff.dataset_name,
+                    output_feature_name,
+                    metric_name,
+                    experiment1_val,
+                    experiment2_val,
+                    diff,
+                    diff_percentage,
+                )
+            )
+    print("Exported report to", path)
+
+
 @dataclass
 class ResourceUsageSummary:
     """Summary of resource usage metrics from one experiment."""
@@ -199,35 +202,6 @@ class ResourceUsageDiff:
     # `List[Diff]` containing diffs for metric of the two experiments.
     metrics: List[Diff]
 
-    def to_csv(self, path):
-        csv_str = "{}, {}, {}, {}, {}, {}\n"
-        with open(path, "w") as f:
-            f.write(
-                csv_str.format(
-                    "Code Block Tag",
-                    "Metric Name",
-                    self.base_experiment_name,
-                    self.experimental_experiment_name,
-                    "Diff",
-                    "Diff Percentage",
-                )
-            )
-            for metric in sorted(self.metrics, key=lambda m: m.name):
-                diff_percentage = metric.diff_percentage
-                if isinstance(metric.diff_percentage, float):
-                    diff_percentage = round(metric.diff_percentage, 3)
-                f.write(
-                    csv_str.format(
-                        self.code_block_tag,
-                        metric.name,
-                        metric.base_value_str,
-                        metric.experimental_value_str,
-                        metric.diff_str,
-                        diff_percentage,
-                    )
-                )
-        print("Exported report to", path)
-
     def to_string(self):
         ret = []
         spacing_str = "{:<30} {:<20} {:<20} {:<20} {:<5}"
@@ -257,6 +231,36 @@ class ResourceUsageDiff:
         return "\n".join(ret)
 
 
+def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, path: str):
+    csv_str = "{}, {}, {}, {}, {}, {}\n"
+    with open(path, "w") as f:
+        f.write(
+            csv_str.format(
+                "Code Block Tag",
+                "Metric Name",
+                resource_usage_diff.base_experiment_name,
+                resource_usage_diff.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            )
+        )
+        for metric in sorted(resource_usage_diff.metrics, key=lambda m: m.name):
+            diff_percentage = metric.diff_percentage
+            if isinstance(metric.diff_percentage, float):
+                diff_percentage = round(metric.diff_percentage, 3)
+            f.write(
+                csv_str.format(
+                    resource_usage_diff.code_block_tag,
+                    metric.name,
+                    metric.base_value_str,
+                    metric.experimental_value_str,
+                    metric.diff_str,
+                    diff_percentage,
+                )
+            )
+    print("Exported report to", path)
+
+
 def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
     diff = experimental_value - base_value
     diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
@@ -281,7 +285,7 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     metric_to_values: dict = {
         metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict
     }
-    metric_names: set = set(metric_to_values.keys())
+    metric_names: set = set(metric_to_values)
 
     return MetricsSummary(
         experiment_local_directory=experiment_local_directory,
@@ -325,7 +329,7 @@ def build_resource_usage_summary(path):
     report = load_json(path)
     code_block_tag = report["code_block_tag"]
     report = {key: value for key, value in report.items() if isinstance(value, (int, float))}
-    metric_names = set(report.keys())
+    metric_names = set(report)
     return ResourceUsageSummary(code_block_tag=code_block_tag, metric_to_values=report, metric_names=metric_names)
 
 
@@ -356,7 +360,7 @@ def average_runs(path_to_runs_dir):
     # asserting that keys to each of the dictionaries are consistent throughout the runs.
     assert len(runs) == 1 or all(runs[i].keys() == runs[i + 1].keys() for i in range(len(runs) - 1))
     runs_average = {"num_runs": len(runs)}
-    for key in runs[0].keys():
+    for key in runs[0]:
         if isinstance(runs[0][key], (int, float)):
             runs_average[key] = mean([run[key] for run in runs])
     return runs_average
@@ -374,8 +378,7 @@ def summarize_resource_usage(path, tags=None) -> List[ResourceUsageSummary]:
             if code_block_tag not in summary:
                 summary[code_block_tag] = {}
             run_path = os.path.join(metric_type_path, code_block_tag)
-            runs_average = average_runs(run_path)
-            summary[code_block_tag][metric_type] = runs_average
+            summary[code_block_tag][metric_type] = average_runs(run_path)
 
     summary_list = []
     for code_block_tag, metric_type_dicts in summary.items():
