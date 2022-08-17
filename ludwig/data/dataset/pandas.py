@@ -35,8 +35,6 @@ class PandasDataset(Dataset):
         self.features = features
         self.data_hdf5_fp = data_hdf5_fp
         self.size = len(dataset)
-        if self.size == 0:
-            raise ValueError("Dataset is empty following preprocessing")
         self.dataset = to_numpy_dataset(dataset)
 
     def to_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
