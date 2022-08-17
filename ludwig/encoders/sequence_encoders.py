@@ -50,7 +50,7 @@ class SequencePassthroughEncoder(Encoder):
         max_sequence_length: int = 256,
         encoding_size: int = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param reduce_output: defines how to reduce the output tensor along
