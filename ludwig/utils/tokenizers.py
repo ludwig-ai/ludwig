@@ -1073,8 +1073,8 @@ try:
 
             self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
             self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
-            self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if not HF.
-            self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if not HF.
+            self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
+            self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
             from transformers.models.bert.tokenization_bert import load_vocab
