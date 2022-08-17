@@ -1400,7 +1400,7 @@ class CamemBERTEncoder(Encoder):
     }
 
     default_params = {
-        "pretrained_model_name_or_path": "jplu/camembert-base",
+        "pretrained_model_name_or_path": "camembert-base",
     }
 
     def __init__(

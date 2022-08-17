@@ -367,9 +367,22 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
     reason="requires torchtext 0.13.0 or higher",
 )
-def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
+@pytest.mark.parametrize(
+    "pretrained_model_name_or_path",
+    [
+        None,
+        "nreimers/MiniLM-L6-H384-uncased",  # Community model
+    ],
+)
+def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename, pretrained_model_name_or_path):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    input_features = [text_feature(vocab_size=3, encoder="bert")]
+    if pretrained_model_name_or_path is None:
+        # If pretrained_model_name_or_path is None, do not store it when creating the config.
+        input_features = [text_feature(vocab_size=3, encoder="bert")]
+    else:
+        input_features = [
+            text_feature(vocab_size=3, encoder="bert", pretrained_model_name_or_path=pretrained_model_name_or_path)
+        ]
     output_features = [
         text_feature(vocab_size=3),
     ]

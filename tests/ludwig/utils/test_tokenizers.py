@@ -9,7 +9,8 @@ TORCHTEXT_0_13_0_HF_NAMES = [
     "bert-base-uncased",
     "distilbert-base-uncased",
     "google/electra-small-discriminator",
-    # "dbmdz/bert-base-italian-cased",  # Fixed in https://github.com/pytorch/text/pull/1841. Uncomment when released.
+    "nreimers/MiniLM-L6-H384-uncased",  # Community model
+    # "dbmdz/bert-base-italian-cased",  # Community model. Skipped: https://github.com/pytorch/text/issues/1840
 ]
 
 
