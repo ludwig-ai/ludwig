@@ -10,7 +10,6 @@ from ludwig.benchmarking.reporting import create_metrics_report
 from ludwig.benchmarking.utils import export_artifacts, load_from_module
 from ludwig.utils.data_utils import load_yaml
 
-# todo (Wael): to update once api.py PR is merged.
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
