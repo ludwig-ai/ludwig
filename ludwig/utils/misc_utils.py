@@ -141,3 +141,7 @@ def set_saved_weights_in_checkpoint_flag(config):
     """
     for input_feature in config.get("input_features", []):
         input_feature["saved_weights_in_checkpoint"] = True
+
+
+def remove_empty_lines(str):
+    return "\n".join([line.rstrip() for line in str.split("\n") if line.rstrip()])

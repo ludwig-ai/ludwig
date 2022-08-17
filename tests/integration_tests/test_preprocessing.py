@@ -22,7 +22,7 @@ from tests.integration_tests.utils import (
     sequence_feature,
 )
 
-NUM_EXAMPLES = 10
+NUM_EXAMPLES = 20
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
@@ -124,7 +124,6 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
     output_features = [category_feature(vocab_size=5, reduce_input="sum")]
 
-    # num_examples=100 and npartitions=2 to ensure the test is not flaky, by having non-empty post-split datasets.
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
     data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=2)
     assert data_df.known_divisions
@@ -144,6 +143,38 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
             data_df,
             skip_save_processed_input=False,
         )
+
+
+@pytest.mark.distributed
+def test_drop_empty_partitions(csv_filename, tmpdir):
+    import dask.dataframe as dd
+
+    input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+
+    # num_examples and npartitions set such that each post-split DataFrame has >1 samples, but empty partitions.
+    data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=25)
+    data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=10)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {
+            "epochs": 2,
+        },
+    }
+
+    backend = "ray"
+    with init_backend(backend):
+        model = LudwigModel(config, backend=backend)
+        train_set, val_set, test_set, _ = model.preprocess(
+            data_df,
+            skip_save_processed_input=True,
+        )
+        for dataset in [train_set, val_set, test_set]:
+            df = dataset.ds.to_dask()
+            for partition in df.partitions:
+                assert len(partition) > 0, "empty partitions found in dataset"
 
 
 @pytest.mark.parametrize("generate_images_as_numpy", [False, True])
@@ -289,7 +320,7 @@ def test_presplit_override(format, tmpdir):
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_empty_split_error(backend, tmpdir):
+def test_empty_training_set_error(backend, tmpdir):
     """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -307,5 +338,5 @@ def test_empty_split_error(backend, tmpdir):
 
     with init_backend(backend):
         ludwig_model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Dataset is empty following preprocessing"):
+        with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
             ludwig_model.preprocess(dataset=df)

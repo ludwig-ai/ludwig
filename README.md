@@ -241,8 +241,8 @@ ludwig train --config config.yaml --dataset data.csv
 The training process will produce a model that can be used for evaluating on and obtaining predictions for new data.
 
 ```shell
-ludwig predict –model path/to/trained/model –dataset heldout.csv
-ludwig evaluate –model path/to/trained/model –dataset heldout.csv
+ludwig predict --model path/to/trained/model --dataset heldout.csv
+ludwig evaluate --model path/to/trained/model --dataset heldout.csv
 ```
 
 ## Step 5: Visualize
@@ -302,7 +302,7 @@ Go from training on your local machine to the cloud without code changes.
 Ludwig also natively integrates with pre-trained models, such as the ones available in [Huggingface Transformers](https://huggingface.co/docs/transformers/index). Users can choose from a vast collection of state-of-the-art pre-trained PyTorch models to use without needing to write any code at all. For example, training a BERT-based sentiment analysis model with Ludwig is as simple as:
 
 ```shell
-ludwig train --dataset sst5 -–config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
+ludwig train --dataset sst5 --config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
 ```
 
 ## Low-code interface for AutoML

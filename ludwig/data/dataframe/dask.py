@@ -20,12 +20,11 @@ from typing import Dict
 import dask
 import dask.array as da
 import dask.dataframe as dd
-import ray.data
 from dask.diagnostics import ProgressBar
-from ray.util.dask import ray_dask_get
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import split_by_slices
+from ludwig.utils.dataframe_utils import set_index_name
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
@@ -37,8 +36,28 @@ def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
+def reset_index_across_all_partitions(df):
+    """Compute a monotonically increasing index across all partitions.
+
+    This differs from dd.reset_index, which computes an independent index for each partition.
+    Source: https://stackoverflow.com/questions/61395351/how-to-reset-index-on-concatenated-dataframe-in-dask
+    """
+    # Create temporary column of ones
+    df = df.assign(**{TMP_COLUMN: 1})
+
+    # Set the index to the cumulative sum of TMP_COLUMN, which we know to be sorted; this improves efficiency.
+    df = df.set_index(df[TMP_COLUMN].cumsum() - 1, sorted=True)
+
+    # Drop temporary column and ensure the index is not named TMP_COLUMN
+    df = df.drop(columns=TMP_COLUMN)
+    df = df.map_partitions(lambda pd_df: set_index_name(pd_df, None))
+    return df
+
+
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
+        from ray.util.dask import ray_dask_get
+
         self._parallelism = parallelism
         self._persist = persist
         if _use_ray:
@@ -48,13 +67,46 @@ class DaskEngine(DataFrameEngine):
         self._parallelism = parallelism
 
     def df_like(self, df: dd.DataFrame, proc_cols: Dict[str, dd.Series]):
+        """Outer joins the given DataFrame with the given processed columns.
+
+        NOTE: If any of the processed columns have been repartitioned, the original index is replaced with a
+        monotonically increasing index, which is used to define the new divisions and align the various partitions.
+        """
         # Our goal is to preserve the index of the input dataframe but to drop
         # all its columns. Because to_frame() creates a column from the index,
         # we need to drop it immediately following creation.
         dataset = df.index.to_frame(name=TMP_COLUMN).drop(columns=TMP_COLUMN)
+
+        repartitioned_cols = {}
         for k, v in proc_cols.items():
-            v.divisions = dataset.divisions
-            dataset[k] = v
+            if v.npartitions == dataset.npartitions:
+                # Outer join cols with equal partitions
+                v.divisions = dataset.divisions
+                dataset[k] = v
+            else:
+                # If partitions have changed (e.g. due to conversion from Ray dataset), we handle separately
+                repartitioned_cols[k] = v
+
+        # Assumes that there is a globally unique index (see preprocessing.build_dataset)
+        if repartitioned_cols:
+            if not dataset.known_divisions:
+                # Sometimes divisions are unknown despite having a usable index– set_index to know divisions
+                dataset = dataset.assign(**{TMP_COLUMN: dataset.index})
+                dataset = dataset.set_index(TMP_COLUMN, drop=True)
+                dataset = dataset.map_partitions(lambda pd_df: set_index_name(pd_df, dataset.index.name))
+
+            # Find the divisions of the column with the largest number of partitions
+            proc_col_with_max_npartitions = max(repartitioned_cols.values(), key=lambda x: x.npartitions)
+            new_divisions = proc_col_with_max_npartitions.divisions
+
+            # Repartition all columns to have the same divisions
+            dataset = dataset.repartition(new_divisions)
+            repartitioned_cols = {k: v.repartition(new_divisions) for k, v in repartitioned_cols.items()}
+
+            # Outer join the remaining columns
+            for k, v in repartitioned_cols.items():
+                dataset[k] = v
+
         return dataset
 
     def parallelize(self, data):
@@ -75,7 +127,7 @@ class DaskEngine(DataFrameEngine):
 
     def from_pandas(self, df):
         parallelism = self._parallelism or 1
-        return dd.from_pandas(df, npartitions=parallelism).reset_index()
+        return dd.from_pandas(df, npartitions=parallelism)
 
     def map_objects(self, series, map_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
@@ -86,6 +138,8 @@ class DaskEngine(DataFrameEngine):
         return series.map_partitions(map_fn, meta=meta)
 
     def map_batches(self, series, map_fn):
+        import ray.data
+
         ds = ray.data.from_dask(series)
         ds = ds.map_batches(map_fn, batch_format="pandas")
         return ds.to_dask()
@@ -114,6 +168,23 @@ class DaskEngine(DataFrameEngine):
         slices = df.partitions
         return split_by_slices(slices, n, probabilities)
 
+    def remove_empty_partitions(self, df):
+        # Reference: https://stackoverflow.com/questions/47812785/remove-empty-partitions-in-dask
+        ll = list(df.map_partitions(len).compute())
+        if all([ll_i > 0 for ll_i in ll]):
+            return df
+
+        df_delayed = df.to_delayed()
+        df_delayed_new = list()
+        empty_partition = None
+        for ix, n in enumerate(ll):
+            if n == 0:
+                empty_partition = df.get_partition(ix)
+            else:
+                df_delayed_new.append(df_delayed[ix])
+        df = dd.from_delayed(df_delayed_new, meta=empty_partition)
+        return df
+
     def to_parquet(self, df, path, index=False):
         with ProgressBar():
             df.to_parquet(
@@ -130,6 +201,9 @@ class DaskEngine(DataFrameEngine):
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
         return dataset.to_dask()
+
+    def reset_index(self, df):
+        return reset_index_across_all_partitions(df)
 
     @property
     def array_lib(self):

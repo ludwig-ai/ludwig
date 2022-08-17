@@ -37,6 +37,22 @@ def test_to_numpy_dataset_with_pandas():
     assert np_df == {"col1": np.array([1]), "col2": np.array([2]), "col3": np.array([3])}
 
 
+def test_to_numpy_dataset_empty_with_columns():
+    pd_df = pd.DataFrame(columns=["col1", "col2", "col3"])
+
+    np_df = to_numpy_dataset(pd_df, backend=LOCAL_BACKEND)
+
+    assert np_df == {"col1": [], "col2": [], "col3": []}
+
+
+def test_to_numpy_dataset_empty():
+    pd_df = pd.DataFrame()
+
+    np_df = to_numpy_dataset(pd_df, backend=LOCAL_BACKEND)
+
+    assert np_df == {}
+
+
 @pytest.mark.distributed
 def test_to_numpy_dataset_with_pandas_backend_mismatch():
     pd_df = pd.DataFrame([[1, 2, 3]], columns=["col1", "col2", "col3"])

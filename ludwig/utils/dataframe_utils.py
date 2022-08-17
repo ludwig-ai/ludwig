@@ -61,7 +61,12 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict
         res = df[col]
         if backend and is_dask_backend(backend):
             res = res.compute()
-        dataset[col] = np.stack(res.to_numpy())
+        if len(df.index) != 0:
+            dataset[col] = np.stack(res.to_numpy())
+        else:
+            # Dataframe is empty.
+            # Use to_list() directly, as np.stack() requires at least one array to stack.
+            dataset[col] = res.to_list()
     return dataset
 
 
@@ -79,3 +84,8 @@ def from_numpy_dataset(dataset: BaseDataset) -> pd.DataFrame:
             vals = v
         col_mapping[k] = vals
     return pd.DataFrame.from_dict(col_mapping)
+
+
+def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
+    pd_df.index.name = name
+    return pd_df
