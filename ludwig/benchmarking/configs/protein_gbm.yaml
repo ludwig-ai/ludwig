@@ -1,0 +1,28 @@
+input_features:
+- name: F1
+  type: number
+- name: F2
+  type: number
+- name: F3
+  type: number
+- name: F4
+  type: number
+- name: F5
+  type: number
+- name: F6
+  type: number
+- name: F7
+  type: number
+- name: F8
+  type: number
+- name: F9
+  type: number
+- name: F1
+  type: number
+model_type: gbm
+output_features:
+- name: RMSD
+  type: number
+preprocessing:
+  split:
+    type: fixed
