@@ -24,7 +24,6 @@ losses = [
 
 @pytest.mark.parametrize("Loss", losses)
 def test_non_neg(Loss):
-
     for X, y in zip(Xs, ys):
         ls = Loss(reduction="none")
         lval = ls(X, y)
@@ -35,7 +34,6 @@ def test_non_neg(Loss):
 @pytest.mark.parametrize("ignore_index", (False, True))
 @pytest.mark.parametrize("reduction", ("sum", "elementwise_mean"))
 def test_loss(Loss, ignore_index, reduction):
-
     for X, y in zip(Xs, ys):
         iix = y[0] if ignore_index else -100
         ls = Loss(ignore_index=iix, reduction=reduction)
@@ -44,7 +42,6 @@ def test_loss(Loss, ignore_index, reduction):
 
 @pytest.mark.parametrize("Loss", losses)
 def test_index_ignored(Loss):
-
     x = torch.randn(20, 6, dtype=torch.float64, requires_grad=True)
     _, y = torch.max(torch.randn_like(x), dim=1)
 

@@ -33,7 +33,6 @@ def test_entmax_topk(dim, coef):
 @pytest.mark.parametrize("coef", (0.00001, 0.5, 10000))
 @pytest.mark.parametrize("k", (5, 30))
 def test_sparsemax_topk(dim, coef, k):
-
     x = coef * torch.randn(3, 4, 5)
     tau1, supp1 = _sparsemax_threshold_and_support(x, dim=dim, k=None)
     tau2, supp2 = _sparsemax_threshold_and_support(x, dim=dim, k=k)

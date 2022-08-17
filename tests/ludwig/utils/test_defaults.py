@@ -25,7 +25,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.defaults import BASE_PREPROCESSING_SPLIT_CONFIG, merge_with_defaults
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     binary_feature,
@@ -405,7 +405,7 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         PREPROCESSING: {
-            "split": {},
+            "split": BASE_PREPROCESSING_SPLIT_CONFIG,
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,
