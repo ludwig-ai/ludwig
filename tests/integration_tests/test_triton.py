@@ -59,7 +59,7 @@ def test_triton_torchscript(csv_filename, tmpdir):
         sequence_feature(decoder={"vocab_size": 3}),
         text_feature(decoder={"vocab_size": 3}),
         set_feature(decoder={"vocab_size": 3}),
-        vector_feature()
+        vector_feature(),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
