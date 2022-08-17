@@ -34,6 +34,15 @@ TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
+# Do not use torchtext implementation of BERT tokenizer for these model names:
+# https://github.com/pytorch/text/issues/1840
+SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
+    "bert-base-german-cased",
+    "bert-base-german-dbmdz-cased",
+    "bert-base-german-dbmdz-uncased",
+    "TurkuNLP/bert-base-finnish-cased-v1",
+}
+
 
 class BaseTokenizer:
     @abstractmethod
@@ -907,16 +916,12 @@ try:
         """
 
         class SentencePieceTokenizer(torch.nn.Module):
-            def __init__(
-                self, pretrained_model_name_or_path: Optional[str] = None, is_hf_tokenizer: bool = False, **kwargs
-            ):
+            def __init__(self, pretrained_model_name_or_path: Optional[str] = None, **kwargs):
                 super().__init__()
                 if pretrained_model_name_or_path is None:
                     pretrained_model_name_or_path = (
                         "https://download.pytorch.org/models/text/xlmr.sentencepiece.bpe.model"
                     )
-
-                self.is_hf_tokenizer = is_hf_tokenizer
                 self.tokenizer = torchtext.transforms.SentencePieceTokenizer(
                     sp_model_path=pretrained_model_name_or_path
                 )
@@ -924,18 +929,14 @@ try:
             def forward(self, v: Union[str, List[str], torch.Tensor]):
                 if isinstance(v, torch.Tensor):
                     raise ValueError(f"Unsupported input: {v}")
-
-                if self.is_hf_tokenizer:
-                    return self.tokenizer.sp_model.EncodeAsIds(v)
-                else:
-                    return self.tokenizer(v)
+                return self.tokenizer(v)
 
         class _BPETokenizer(torch.nn.Module):
             """Superclass for tokenizers that use BPE, such as CLIPTokenizer and GPT2BPETokenizer."""
 
             def __init__(self, pretrained_model_name_or_path: str, vocab_file: str):
                 super().__init__()
-                self.vocab, self.idx2str = self._init_vocab(vocab_file)
+                self.str2idx, self.idx2str = self._init_vocab(vocab_file)
                 # TODO(geoffrey): If we move to torchtext>=0.13.0, we can use return_tokens kwarg to get tokens directly
                 self.tokenizer = self._init_tokenizer(pretrained_model_name_or_path, vocab_file)
 
@@ -965,19 +966,14 @@ try:
                 else:
                     inputs.extend(v)
 
-                token_ids_str = self.tokenizer(inputs)
-                assert torch.jit.isinstance(token_ids_str, List[List[str]])
-                # Must cast token_ids to ints because they are used directly as indices.
-                token_ids: List[List[int]] = []
-                for token_ids_str_i in token_ids_str:
-                    token_ids_i = [int(token_id_str) for token_id_str in token_ids_str_i]
-                    # token_ids_i.insert(0, self.cls_token_id)
-                    # token_ids_i.append(self.sep_token_id)
-                    token_ids.append(token_ids_i)
-                return token_ids[0] if isinstance(v, str) else token_ids
+                token_ids = self.tokenizer(inputs)
+                assert torch.jit.isinstance(token_ids, List[List[str]])
+
+                tokens = [[self.idx2str[int(unit_idx)] for unit_idx in sequence] for sequence in token_ids]
+                return tokens[0] if isinstance(v, str) else tokens
 
             def get_vocab(self) -> Dict[str, str]:
-                return self.vocab
+                return self.str2idx
 
         class CLIPTokenizer(_BPETokenizer):
             def __init__(
