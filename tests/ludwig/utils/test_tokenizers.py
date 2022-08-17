@@ -4,7 +4,6 @@ import pytest
 import torch
 import torchtext
 
-
 TORCHTEXT_0_13_0_HF_NAMES = [
     "bert-base-uncased",
     "distilbert-base-uncased",
@@ -21,8 +20,8 @@ TORCHTEXT_0_13_0_HF_NAMES = [
 def test_hf_tokenizer_parity_torchtext_0_13_0(tmpdir, pretrained_model_name_or_path):
     """Tests the BERTTokenizer implementation.
 
-    Asserts both tokens and token IDs are the same by initializing the BERTTokenizer as a standalone tokenizer and
-    as a HF tokenizer.
+    Asserts both tokens and token IDs are the same by initializing the BERTTokenizer as a standalone tokenizer and as a
+    HF tokenizer.
     """
     from ludwig.utils.tokenizers import get_hf_tokenizer, HFTokenizer
 
