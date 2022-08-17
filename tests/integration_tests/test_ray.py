@@ -16,7 +16,6 @@ import os
 import tempfile
 from packaging import version
 
-import modin
 import numpy as np
 import pandas as pd
 import pytest
@@ -49,6 +48,7 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    import modin
     import ray
 
     from ludwig.backend.ray import get_trainer_kwargs, RayBackend
@@ -65,12 +65,13 @@ try:
         model = LudwigModel.load(model_dir, backend="local")
         model.predict(dataset)
 
-except ImportError:
-    ray = None
+    _modin_ray_incompatible = version.parse(modin.__version__) <= version.parse("0.15.2") and version.parse(
+        ray.__version__
+    ) >= version.parse("1.13.0")
 
-_modin_ray_incompatible = version.parse(modin.__version__) <= version.parse("0.15.2") and version.parse(
-    ray.__version__
-) >= version.parse("1.13.0")
+except ImportError:
+    modin = None
+    ray = None
 
 
 def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
@@ -246,6 +247,7 @@ def test_ray_save_processed_input(dataset_type):
     )
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize(
     "df_engine",
     [
@@ -256,7 +258,6 @@ def test_ray_save_processed_input(dataset_type):
         ),
     ],
 )
-@pytest.mark.distributed
 def test_ray_tabular(df_engine):
     input_features = [
         sequence_feature(reduce_output="sum"),
@@ -350,8 +351,8 @@ def test_ray_image(tmpdir, dataset_type):
 
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
-@pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
 @pytest.mark.distributed
+@pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
 def test_ray_image_modin(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
