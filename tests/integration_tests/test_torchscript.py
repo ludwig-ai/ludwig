@@ -367,22 +367,29 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
     reason="requires torchtext 0.13.0 or higher",
 )
-@pytest.mark.parametrize(
-    "pretrained_model_name_or_path",
-    [
-        None,
-        "nreimers/MiniLM-L6-H384-uncased",  # Community model
-    ],
-)
-def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename, pretrained_model_name_or_path):
+@pytest.mark.parametrize("encoder", ["bert", "distilbert", "electra"])
+def test_torchscript_e2e_text_hf_encoder(tmpdir, csv_filename, encoder):
     data_csv_path = os.path.join(tmpdir, csv_filename)
-    if pretrained_model_name_or_path is None:
-        # If pretrained_model_name_or_path is None, do not store it when creating the config.
-        input_features = [text_feature(vocab_size=3, encoder="bert")]
-    else:
-        input_features = [
-            text_feature(vocab_size=3, encoder="bert", pretrained_model_name_or_path=pretrained_model_name_or_path)
-        ]
+    input_features = [text_feature(vocab_size=3, encoder=encoder)]
+    output_features = [
+        text_feature(vocab_size=3),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
+    reason="requires torchtext 0.13.0 or higher",
+)
+def test_torchscript_e2e_text_custom_hf_encoder(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [
+        text_feature(vocab_size=3, encoder="bert", pretrained_model_name_or_path="nreimers/MiniLM-L6-H384-uncased")
+    ]
     output_features = [
         text_feature(vocab_size=3),
     ]

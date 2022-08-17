@@ -34,24 +34,6 @@ TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
 
-# Do not use torchtext implementation of BERT tokenizer for these model names:
-# https://github.com/pytorch/text/issues/1840
-SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES = {
-    "bert-base-german-cased",
-    "bert-base-german-dbmdz-cased",
-    "bert-base-german-dbmdz-uncased",
-    "TurkuNLP/bert-base-finnish-cased-v1",
-}
-
-SENTENCEPIECE_VOCAB_FILENAMES = {
-    "spiece.model",
-    "sentencepiece.model",
-    "sentencepiece.bpe.model",
-    "source.spm",
-    "prophetnet.tokenizer",
-    "spm.model",
-}
-
 
 class BaseTokenizer:
     @abstractmethod
@@ -1195,7 +1177,15 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
             },
         )
 
-    if torchtext_tokenizer is not None:
+    # TODO(geoffrey): can we better validate tokenizer parity before swapping in the TorchText tokenizer?
+    # Samples from https://github.com/huggingface/transformers/blob/main/tests/models/bert/test_tokenization_bert.py
+    use_torchtext = torchtext_tokenizer is not None
+    for sample_input in ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHäLLo!how  \n Are yoU?  "]:
+        if hf_tokenizer.encode(sample_input) != torchtext_tokenizer(sample_input):
+            use_torchtext = False
+            break
+
+    if use_torchtext:
         logging.info(f"Loaded TorchText implementation of {hf_name} tokenizer")
         return torchtext_tokenizer
     else:
