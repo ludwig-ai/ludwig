@@ -28,11 +28,11 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.10.2
             torchscript-version: 1.10.2
-            ray-version: 1.12.1
+            ray-version: 1.13.0
           - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
-            ray-version: 1.13.0
+            ray-version: 2.0.0rc1
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
@@ -106,10 +106,7 @@ jobs:
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
-              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
-
-              # NOTE: pinned to last commit from 7/21/22 to get tests passing
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/c557c7877f099d02a9e43c5c56c958860b6dd737/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
               pip install ray==$RAY_VERSION
             fi

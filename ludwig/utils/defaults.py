@@ -46,7 +46,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.data.split import get_splitter
+from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
@@ -63,8 +63,9 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
+BASE_PREPROCESSING_SPLIT_CONFIG = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
 base_preprocessing_parameters = {
-    "split": {},
+    "split": BASE_PREPROCESSING_SPLIT_CONFIG,
     "undersample_majority": None,
     "oversample_minority": None,
     "sample_ratio": 1.0,
@@ -261,7 +262,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
                 config[DEFAULTS][feature_type] = preprocessing_defaults
             else:
                 config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
-        # Feature type exists but preprocessing hasn't be specified
+        # Feature type exists but preprocessing hasn't been specified
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_defaults
         # Preprocessing parameters exist for feature type, update defaults with parameters from config
@@ -323,7 +324,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Hyperpot =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
-
     return config
 
 
