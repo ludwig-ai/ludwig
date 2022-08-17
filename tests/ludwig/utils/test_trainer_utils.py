@@ -14,9 +14,9 @@ def test_progress_tracker_empty():
             "name": "category_feature",
             "decoder": {
                 "type": "classifier",
-                "input_size": 10,
                 "num_classes": 3,
             },
+            "input_size": 10,
         },
         {},
     )
@@ -50,9 +50,9 @@ def test_progress_tracker():
             "name": "category_feature",
             "decoder": {
                 "type": "classifier",
-                "input_size": 10,
                 "num_classes": 3,
             },
+            "input_size": 10,
         },
         {},
     )
