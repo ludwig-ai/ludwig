@@ -9,7 +9,7 @@ hf_tokenizer = AutoTokenizer.from_pretrained(hf_name)
 
 vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
 hf_config_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json")
-with open(hf_config_file, "r") as f:
+with open(hf_config_file) as f:
     hf_config = json.load(f)
 
 # Extract kwargs for TorchText tokenizer from tokenizer config
