@@ -73,6 +73,8 @@ except ImportError:
     modin = None
     ray = None
 
+    _modin_ray_incompatible = False
+
 
 def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
     # Sanity check that we get 4 slots over 1 host
