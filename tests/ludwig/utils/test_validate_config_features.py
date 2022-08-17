@@ -54,7 +54,6 @@ def test_incorrect_input_features_config():
 
 
 def test_incorrect_output_features_config():
-
     config = {
         "input_features": [
             number_feature(),

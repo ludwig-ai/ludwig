@@ -319,7 +319,7 @@ def test_presplit_override(format, tmpdir):
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_empty_split_error(backend, tmpdir):
+def test_empty_training_set_error(backend, tmpdir):
     """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -337,5 +337,5 @@ def test_empty_split_error(backend, tmpdir):
 
     with init_backend(backend):
         ludwig_model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Dataset is empty following preprocessing"):
+        with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
             ludwig_model.preprocess(dataset=df)

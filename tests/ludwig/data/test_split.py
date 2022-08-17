@@ -70,6 +70,35 @@ def test_random_split(df_engine):
         pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
     ],
 )
+def test_random_split_zero_probability_for_test_produces_no_zombie(df_engine):
+    nrows = 102
+    npartitions = 10
+
+    df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
+    if isinstance(df_engine, DaskEngine):
+        df = df_engine.df_lib.from_pandas(df, npartitions=npartitions)
+
+    probs = (0.7, 0.3, 0.0)
+    split_params = {
+        "type": "random",
+        "probabilities": probs,
+    }
+    splitter = get_splitter(**split_params)
+
+    backend = Mock()
+    backend.df_engine = df_engine
+    splits = splitter.split(df, backend, random_seed=42)
+
+    assert len(splits[-1]) == 0
+
+
+@pytest.mark.parametrize(
+    ("df_engine",),
+    [
+        pytest.param(PandasEngine(), id="pandas"),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+    ],
+)
 def test_fixed_split(df_engine):
     nrows = 100
     npartitions = 10

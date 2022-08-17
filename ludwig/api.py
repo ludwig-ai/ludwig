@@ -73,7 +73,6 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
@@ -96,6 +95,7 @@ from ludwig.utils.misc_utils import (
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
+from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -595,44 +595,17 @@ class LudwigModel:
                         if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
                             save_json(training_stats_fn, train_stats)
 
-                    # grab the results of the model with highest validation test performance
-                    validation_field = trainer.validation_field
-                    validation_metric = trainer.validation_metric
-                    validation_field_result = train_valiset_stats[validation_field]
-
-                    best_function = get_best_function(validation_metric)
-
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
-                        best_vali_index, (
-                            epoch_best_validation_metric,
-                            step_best_validation_metric,
-                            best_validation_metric,
-                        ) = best_function(
-                            enumerate(validation_field_result[validation_metric]),
-                            # -1 for the last element of the TrainerMetric namedtuple.
-                            key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
+                        training_report = get_training_report(
+                            trainer.validation_field,
+                            trainer.validation_metric,
+                            test_set is not None,
+                            train_valiset_stats,
+                            train_testset_stats,
                         )
-                        logger.info(
-                            f"Best validation model step: {step_best_validation_metric}, epoch: "
-                            f"{epoch_best_validation_metric + 1}"
-                        )
-                        logger.info(
-                            f"Best validation model {validation_metric} on validation set {validation_field}: "
-                            f"{best_validation_metric}"
-                        )
-                        if test_set is not None:
-                            validation_selected_test_metric_score = train_testset_stats[validation_field][
-                                validation_metric
-                            ][best_vali_index][
-                                -1
-                            ]  # -1 for the last element of the TrainerMetric namedtuple.
-
-                            logger.info(
-                                f"Best validation model {validation_metric} on test set {validation_field}: "
-                                f"{validation_selected_test_metric_score}"
-                            )
+                        logger.info(tabulate(training_report, tablefmt="fancy_grid"))
                         logger.info(f"\nFinished: {experiment_name}_{model_name}")
                         logger.info(f"Saved to: {output_directory}")
                 finally:
