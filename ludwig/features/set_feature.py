@@ -272,6 +272,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
+        self.threshold = output_feature_config.threshold
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
@@ -285,10 +286,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.loss
 
     def metric_kwargs(self) -> Dict[str, Any]:
-        return {"threshold": self.decoder_obj.config.threshold}
+        return {"threshold": self.threshold}
 
     def create_predict_module(self) -> PredictModule:
-        return _SetPredict(self.decoder_obj.config.threshold)
+        return _SetPredict(self.threshold)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -359,11 +360,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            threshold = self.decoder_obj.config.threshold
 
             def get_prob(prob_set):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
-                return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
+                return np.array([prob for prob in prob_set if prob >= self.threshold], dtype=np.float32)
 
             result[probabilities_col] = result[probabilities_col].map(get_prob)
 
@@ -384,11 +384,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    THRESHOLD: defaults.decoder.threshold,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
                 REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+                THRESHOLD: defaults.threshold,
             },
         )
 
