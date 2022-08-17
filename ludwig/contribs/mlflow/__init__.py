@@ -43,13 +43,16 @@ class MlflowCallback(Callback):
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
 
+    def get_experiment_id(self, experiment_name):
+        return _get_or_create_experiment_id(experiment_name)
+
     def on_preprocess_end(
         self, training_set: Dataset, validation_set: Dataset, test_set: Dataset, training_set_metadata: Dict[str, Any]
     ):
         self.training_set_metadata = training_set_metadata
 
     def on_hyperopt_init(self, experiment_name):
-        self.experiment_id = _get_or_create_experiment_id(experiment_name)
+        self.experiment_id = self.get_experiment_id(experiment_name)
         self.experiment_name = experiment_name
 
     def on_hyperopt_trial_start(self, parameters):
@@ -70,9 +73,14 @@ class MlflowCallback(Callback):
         # this should be handled by the executor.
         if self.experiment_id is None:
             mlflow.end_run()
-            self.experiment_id = _get_or_create_experiment_id(experiment_name)
+            self.experiment_id = self.get_experiment_id(experiment_name)
             self.experiment_name = experiment_name
 
+        active_run = mlflow.active_run()
+        if active_run is not None:
+            # Currently active run started by Ray Tune MLflow mixin.
+            self.run = active_run
+        else:
             run_id = None
             if resume_directory is not None:
                 previous_runs = _get_runs(self.experiment_id)
@@ -84,8 +92,11 @@ class MlflowCallback(Callback):
                 run_name = os.path.basename(output_directory)
                 self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
 
+        self.log_config(base_config)
+
+    def log_config(self, config):
         if self.log_artifacts:
-            mlflow.log_dict(to_json_dict(base_config), "config.yaml")
+            mlflow.log_dict(to_json_dict(config), "config.yaml")
 
     def on_train_start(self, config, **kwargs):
         self.config = config
