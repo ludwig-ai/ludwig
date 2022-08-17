@@ -30,6 +30,9 @@ from ludwig.constants import (
     NUMBER,
     SEQUENCE,
     SET,
+    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    SIGMOID_CROSS_ENTROPY,
+    SOFTMAX_CROSS_ENTROPY,
     TEXT,
     TIMESERIES,
     VECTOR,
@@ -59,6 +62,10 @@ def register_loss(name: str, features: Union[str, List[str]]):
 
 def get_loss_cls(feature: str, name: str):
     return loss_registry[feature][name]
+
+
+def get_loss_classes(feature: str):
+    return loss_registry[feature]
 
 
 class LogitsInputsMixin:
@@ -144,7 +151,7 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
         return train_mean_loss
 
 
-@register_loss("softmax_cross_entropy", [CATEGORY, VECTOR])
+@register_loss(SOFTMAX_CROSS_ENTROPY, [CATEGORY, VECTOR])
 class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
@@ -168,7 +175,7 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         return self.loss_fn(preds, target)
 
 
-@register_loss("sequence_softmax_cross_entropy", [SEQUENCE, TEXT])
+@register_loss(SEQUENCE_SOFTMAX_CROSS_ENTROPY, [SEQUENCE, TEXT])
 class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, **kwargs):
         """
@@ -188,7 +195,7 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
 
 
-@register_loss("sigmoid_cross_entropy", [SET])
+@register_loss(SIGMOID_CROSS_ENTROPY, [SET])
 class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """

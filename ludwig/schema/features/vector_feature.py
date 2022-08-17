@@ -110,3 +110,9 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default=[],
         description="List of input features that this feature depends on.",
     )
+
+    softmax: bool = schema_utils.Boolean(
+        default=False,
+        description="Determines whether to apply a softmax at the end of the decoder. This is useful for predicting a "
+                    "vector of values that sum up to 1 and can be interpreted as probabilities.",
+    )

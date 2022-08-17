@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, OUTPUT
+from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS
 
 from ludwig.utils import strings_utils
 from ludwig.constants import CATEGORY, SOFTMAX_CROSS_ENTROPY
