@@ -1174,13 +1174,16 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
             },
         )
 
-    # TODO(geoffrey): can we better validate tokenizer parity before swapping in the TorchText tokenizer?
-    # Samples from https://github.com/huggingface/transformers/blob/main/tests/models/bert/test_tokenization_bert.py
     use_torchtext = torchtext_tokenizer is not None
-    for sample_input in ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHäLLo!how  \n Are yoU?  "]:
-        if hf_tokenizer.encode(sample_input) != torchtext_tokenizer(sample_input):
-            use_torchtext = False
-            break
+    if use_torchtext:
+        # If a torchtext tokenizer is instantiable, tenatively we will use it. However,
+        # if the tokenizer does not pass (lightweight) validation, then we will fall back to the vanilla HF tokenizer.
+        # TODO(geoffrey): can we better validate tokenizer parity before swapping in the TorchText tokenizer?
+        # Samples from https://github.com/huggingface/transformers/blob/main/tests/models/bert/test_tokenization_bert.py
+        for sample_input in ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHäLLo!how  \n Are yoU?  "]:
+            if hf_tokenizer.encode(sample_input) != torchtext_tokenizer(sample_input):
+                use_torchtext = False
+                break
 
     if use_torchtext:
         logging.info(f"Loaded TorchText implementation of {hf_name} tokenizer")
