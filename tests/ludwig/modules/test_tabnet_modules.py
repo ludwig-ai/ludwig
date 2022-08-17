@@ -20,7 +20,6 @@ RANDOM_SEED = 67
     ],
 )
 def test_sparsemax(input_tensor: torch.Tensor) -> None:
-
     output_tensor = sparsemax(input_tensor)
 
     assert isinstance(output_tensor, torch.Tensor)

@@ -33,7 +33,7 @@ repos:
       - id: pyupgrade
         args: [--py36-plus]
   - repo: https://github.com/myint/docformatter
-    rev: v1.4
+    rev: v1.5.0-rc1
     hooks:
       - id: docformatter
         args: [--in-place, --wrap-summaries=115, --wrap-descriptions=120]
@@ -43,7 +43,7 @@ repos:
       - id: isort
         name: Format imports
   - repo: https://github.com/pycqa/flake8
-    rev: "5.0.2"
+    rev: "5.0.4"
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black
