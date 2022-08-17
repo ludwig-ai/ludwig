@@ -231,8 +231,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.top_k = output_feature_config.top_k
+        if output_feature_config.decoder.num_classes is None:
+            output_feature_config.decoder.num_classes = output_feature_config.num_classes
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
+        self.num_classes = self.decoder_obj.config.num_classes
+        self.top_k = output_feature_config.top_k
         self._setup_loss()
         self._setup_metrics()
 
@@ -252,7 +255,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         """
         if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=self.decoder_obj.config.num_classes)
+            return calibration_cls(num_classes=self.num_classes)
         return None
 
     def create_predict_module(self) -> PredictModule:
@@ -278,11 +281,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["num_classes"] = feature_metadata["vocab_size"]
-        output_feature["top_k"] = min(output_feature[DECODER]["num_classes"], output_feature["top_k"])
+        output_feature["num_classes"] = feature_metadata["vocab_size"]
+        output_feature["top_k"] = min(output_feature["num_classes"], output_feature["top_k"])
 
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -290,7 +293,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature[DECODER]["num_classes"],
+                        output_feature["num_classes"],
                         output_feature[COLUMN],
                     )
                 )

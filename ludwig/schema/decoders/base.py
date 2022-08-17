@@ -28,11 +28,6 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
         description="Size of the input to the decoder.",
     )
 
-    num_classes: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Number of classes to predict.",
-    )
-
 
 @dataclass
 class RegressorConfig(BaseDecoderConfig):

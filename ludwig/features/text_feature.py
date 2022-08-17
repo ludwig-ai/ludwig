@@ -186,7 +186,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: Union[TextInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
-        # self._input_shape = [input_feature_config.encoder.max_sequence_length]
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
