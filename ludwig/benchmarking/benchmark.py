@@ -1,14 +1,14 @@
+import argparse
 import importlib
 import logging
 import os
 import shutil
-import argparse
 from typing import Any, Dict, Union
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.utils import export_artifacts, load_from_module
-from ludwig.utils.data_utils import load_yaml
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.utils.data_utils import load_yaml
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -70,14 +70,17 @@ def benchmark(bench_config_path: str) -> None:
             benchmark_one_local(experiment, export_artifacts_dict=config["export"][0])
         except Exception:
             logging.exception(
-                "Benchmarking {} {} failed".format(experiment["dataset_name"], experiment["experiment_name"]))
+                "Benchmarking {} {} failed".format(experiment["dataset_name"], experiment["experiment_name"])
+            )
 
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description="This script runs a ludwig experiment on datasets specified in the benchmark config and exports "
-                    "the experiment artifact for each of the datasets following the export parameters specified in"
-                    "the benchmarking config.", prog="ludwig benchmark", usage="%(prog)s [options]"
+        "the experiment artifact for each of the datasets following the export parameters specified in"
+        "the benchmarking config.",
+        prog="ludwig benchmark",
+        usage="%(prog)s [options]",
     )
     parser.add_argument("--config", type=str, help="The benchmarking config.")
     add_contrib_callback_args(parser)

@@ -1,10 +1,10 @@
 import logging
 import os
+from types import ModuleType
+from typing import Any, Dict, Union
+
 import fsspec
 import pandas as pd
-
-from typing import Any, Dict, Union
-from types import ModuleType
 
 from ludwig.constants import CATEGORY
 from ludwig.datasets.base_dataset import BaseDataset
@@ -15,7 +15,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def load_from_module(
-        dataset_module: Union[BaseDataset, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
+    dataset_module: Union[BaseDataset, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
@@ -65,4 +65,5 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
     except Exception:
         logging.exception(
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
-            f"dataset {experiment['dataset_name']}")
+            f"dataset {experiment['dataset_name']}"
+        )

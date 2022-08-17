@@ -38,7 +38,7 @@ Available sub-commands:
    evaluate              Evaluate a pretrained model's performance
    experiment            Runs a full experiment training a model and evaluating it
    hyperopt              Perform hyperparameter optimization
-   benchmark             Run and track experiments on a number of datasets and configs, and export experiment artifacts. 
+   benchmark             Run and track experiments on a number of datasets and configs, and export experiment artifacts.
    serve                 Serves a pretrained model
    visualize             Visualizes experimental results
    collect_summary       Prints names of weights and layers activations to use with other collect commands
