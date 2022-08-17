@@ -61,7 +61,6 @@ class Regressor(Decoder):
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
-        activation=None,
         decoder_config=None,
         **kwargs,
     ):

@@ -23,7 +23,6 @@ import torch
 from torch import nn
 
 from ludwig.constants import (
-    CLIP,
     COLUMN,
     DECODER,
     DEPENDENCIES,
@@ -429,7 +428,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    CLIP: defaults.decoder.clip,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,

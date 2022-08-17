@@ -201,6 +201,10 @@ class FCStack(LudwigModule):
         return hidden
 
     @property
+    def num_layers(self) -> int:
+        return len(self.layers)
+
+    @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.input_size])
 

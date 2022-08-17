@@ -35,6 +35,7 @@ def test_binary_output_feature():
     binary_output_config = {
         "name": "binary_feature",
         "type": "binary",
+        "input_size": BINARY_W_SIZE,
         "decoder": {
             "type": "regressor",
             "input_size": 1,
@@ -61,6 +62,7 @@ def test_binary_output_feature_without_positive_class_weight():
     binary_output_config = {
         "name": "binary_feature",
         "type": "binary",
+        "input_size": BINARY_W_SIZE,
         "decoder": {
             "type": "regressor",
             "input_size": 1,

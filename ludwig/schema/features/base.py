@@ -81,3 +81,27 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         default="sum",
         description="How to reduce the dependencies of the output feature.",
     )
+
+    input_size: int = None
+
+    num_classes: int = None
+
+    fc_layers: List[dict] = None
+
+    num_fc_layers: int = 0
+
+    output_size: int = 256
+
+    use_bias: bool = True
+
+    weights_initializer: str = "xavier_uniform"
+
+    bias_initializer: str = "zeros"
+
+    norm: str = None
+
+    norm_params: dict = None
+
+    activation: str = "relu"
+
+    dropout: float = 0

@@ -207,22 +207,21 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        feature.decoder.input_size = get_input_size_with_dependencies(
-            feature.decoder.input_size, self.dependencies, other_output_features
-        )
+        self.input_size = get_input_size_with_dependencies(feature.input_size, self.dependencies, other_output_features)
+        feature.input_size = self.input_size
 
         self.fc_stack = FCStack(
-            first_layer_input_size=feature.decoder.input_size,
-            layers=feature.decoder.fc_layers,
-            num_layers=feature.decoder.num_fc_layers,
-            default_output_size=feature.decoder.output_size,
-            default_use_bias=feature.decoder.use_bias,
-            default_weights_initializer=feature.decoder.weights_initializer,
-            default_bias_initializer=feature.decoder.bias_initializer,
-            default_norm=feature.decoder.norm,
-            default_norm_params=feature.decoder.norm_params,
-            default_activation=feature.decoder.activation,
-            default_dropout=feature.decoder.dropout,
+            first_layer_input_size=self.input_size,
+            layers=feature.fc_layers,
+            num_layers=feature.num_fc_layers,
+            default_output_size=feature.output_size,
+            default_use_bias=feature.use_bias,
+            default_weights_initializer=feature.weights_initializer,
+            default_bias_initializer=feature.bias_initializer,
+            default_norm=feature.norm,
+            default_norm_params=feature.norm_params,
+            default_activation=feature.activation,
+            default_dropout=feature.dropout,
         )
         self._calibration_module = self.create_calibration_module(kwargs)
         self._prediction_module = self.create_predict_module()

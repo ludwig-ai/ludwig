@@ -116,11 +116,11 @@ def get_input_size_with_dependencies(
     """
     input_size_with_dependencies = combiner_output_size
     for feature_name in dependencies:
-        if other_output_features[feature_name].decoder_config.num_fc_layers:
+        if other_output_features[feature_name].fc_stack.num_layers:
             input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape[-1]
         else:
             # 0-layer FCStack. Use the output feature's input size.
-            input_size_with_dependencies += other_output_features[feature_name].decoder_config.input_size
+            input_size_with_dependencies += other_output_features[feature_name].input_size
     return input_size_with_dependencies
 
 

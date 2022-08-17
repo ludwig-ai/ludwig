@@ -44,6 +44,14 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         description="A dictionary containing a loss type and its hyper-parameters.",
     )
 
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
+        "than or equal to threshold are mapped to True.",
+    )
+
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=BINARY,
         default="regressor",

@@ -284,6 +284,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
+        self.threshold = output_feature_config.threshold
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
@@ -312,10 +313,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
-        # decoder is specified here which has no threshold.
-        threshold = getattr(self.decoder_obj.config, THRESHOLD, 0.5)
-        return _BinaryPredict(threshold, calibration_module=self.calibration_module)
+        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
