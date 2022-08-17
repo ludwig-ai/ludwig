@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 from hummingbird.ml import convert
 
-from ludwig.constants import BINARY, CATEGORY, DECODER, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
