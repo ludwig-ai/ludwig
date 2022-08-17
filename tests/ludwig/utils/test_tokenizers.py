@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import torch
 import torchtext
@@ -7,6 +9,7 @@ TORCHTEXT_0_13_0_HF_NAMES = [
     "bert-base-uncased",
     "distilbert-base-uncased",
     "google/electra-small-discriminator",
+    # "dbmdz/bert-base-italian-cased",  # Fixed in https://github.com/pytorch/text/pull/1841. Uncomment when released.
 ]
 
 
@@ -22,12 +25,16 @@ def test_hf_tokenizer_parity_torchtext_0_13_0(tmpdir, pretrained_model_name_or_p
     """
     from ludwig.utils.tokenizers import get_hf_tokenizer, HFTokenizer
 
-    inputs = "Hello, I'm a single sentence!"
+    inputs = "Hello, ``I'm'' ónë of 1,205,000 sentences!"
     hf_tokenizer = HFTokenizer(pretrained_model_name_or_path)
-    token_ids_expected = hf_tokenizer(inputs)
 
     torchtext_tokenizer = get_hf_tokenizer(pretrained_model_name_or_path)
+    # Ensure that the tokenizer is scriptable
+    tokenizer_path = os.path.join(tmpdir, "tokenizer.pt")
+    torch.jit.script(torchtext_tokenizer).save(tokenizer_path)
+    torchtext_tokenizer = torch.jit.load(tokenizer_path)
+
+    token_ids_expected = hf_tokenizer(inputs)
     token_ids = torchtext_tokenizer(inputs)
 
-    assert not isinstance(torchtext_tokenizer, HFTokenizer)
     assert token_ids_expected == token_ids

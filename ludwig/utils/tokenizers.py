@@ -1067,6 +1067,16 @@ try:
                 # If vocab_file not passed in, use default "bert-base-uncased" vocab and kwargs.
                 kwargs = _get_bert_config("bert-base-uncased")
                 vocab_file = kwargs["vocab_file"]
+                vocab = self._init_vocab(vocab_file)
+                hf_tokenizer_attrs = {
+                    "pad_token": "[PAD]",
+                    "unk_token": "[UNK]",
+                    "sep_token_id": vocab["[SEP]"],
+                    "cls_token_id": vocab["[CLS]"],
+                }
+            else:
+                vocab = self._init_vocab(vocab_file)
+            self.vocab = vocab
 
             tokenizer_kwargs = {}
             if "do_lower_case" in kwargs:
@@ -1077,20 +1087,18 @@ try:
             self.is_hf_tokenizer = is_hf_tokenizer
             # Return tokens as raw tokens only if not being used as a HF tokenizer.
             self.return_tokens = not self.is_hf_tokenizer
-
             self.tokenizer = torchtext.transforms.BERTTokenizer(
                 vocab_path=vocab_file,
                 **tokenizer_kwargs,
                 return_tokens=self.return_tokens,
             )
 
-            self.vocab = self._init_vocab(vocab_file)
             self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
             self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
             self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if not HF.
             self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if not HF.
 
-        def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
+        def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
             from transformers.models.bert.tokenization_bert import load_vocab
 
             return load_vocab(vocab_file)
@@ -1129,7 +1137,7 @@ try:
             assert torch.jit.isinstance(tokens, List[List[str]])
             return tokens[0] if isinstance(v, str) else tokens
 
-        def get_vocab(self) -> Dict[str, str]:
+        def get_vocab(self) -> Dict[str, int]:
             return self.vocab
 
         def get_pad_token(self) -> str:
