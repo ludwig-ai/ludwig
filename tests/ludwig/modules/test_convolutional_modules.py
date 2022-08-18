@@ -123,7 +123,7 @@ def test_conv1d_layer(
     assert out_tensor.size() == (BATCH_SIZE, output_seq_size, NUM_FILTERS)
 
 
-@pytest.mark.parametrize("dropout", [0, 0.9])
+@pytest.mark.parametrize("dropout", [0, 0.5])
 @pytest.mark.parametrize(
     "layers, num_layers",
     [

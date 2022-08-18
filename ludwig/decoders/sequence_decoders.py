@@ -263,6 +263,7 @@ class SequenceGeneratorDecoder(Decoder):
         input_size: int = 256,
         reduce_input: str = "sum",
         num_layers: int = 1,
+        decoder_config=None,
         **kwargs,
     ):
         """
@@ -275,6 +276,8 @@ class SequenceGeneratorDecoder(Decoder):
             num_layers: Number of layers for the RNN deecoders.
         """
         super().__init__()
+        self.config = decoder_config
+
         self.vocab_size = vocab_size
         self.input_size = input_size
         self.max_sequence_length = max_sequence_length

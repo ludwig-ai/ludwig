@@ -16,36 +16,17 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
     "Name corresponding to a decoder."
 
-    input_size: int = None
-
-    num_classes: int = None
-
-    fc_layers: List[dict] = None
-
-    num_fc_layers: int = 0
-
-    output_size: int = 256
-
-    use_bias: bool = True
-
-    weights_initializer: str = "xavier_uniform"
-
-    bias_initializer: str = "zeros"
-
-    norm: str = None
-
-    norm_params: dict = None
-
-    activation: str = "relu"
-
-    dropout: float = 0
-
 
 @dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
     type: str = "passthrough"
+
+    input_size: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Size of the input to the decoder.",
+    )
 
 
 @dataclass
@@ -76,21 +57,6 @@ class RegressorConfig(BaseDecoderConfig):
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
-    )
-
-    threshold: float = schema_utils.FloatRange(
-        default=0.5,
-        min=0,
-        max=1,
-        description="Threshold for the output of the decoder.",
-    )
-
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
-        n=2,
-        default=None,
-        allow_none=True,
-        min=0, max=999999999,
-        description="Clip the output of the decoder to be within the given range."
     )
 
 
@@ -134,17 +100,13 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-    vector_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Size of the output of the decoder.",
-    )
-
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
         allow_none=True,
-        min=0, max=999999999,
-        description="Clip the output of the decoder to be within the given range."
+        min=0,
+        max=999999999,
+        description="Clip the output of the decoder to be within the given range.",
     )
 
 
@@ -168,31 +130,6 @@ class ClassifierConfig(BaseDecoderConfig):
         description="Number of classes to predict.",
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-    )
-
-    output_size: int = schema_utils.PositiveInteger(
-        default=256,
-        description="The default output_size that will be used for each layer.",
-    )
-
-    activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each layer."
-    )
-
-    norm: str = schema_utils.StringOptions(
-        ["batch", "layer"],
-        default=None,
-        description="The default norm that will be used for each layer.",
-    )
-
-    norm_params: dict = schema_utils.Dict(
-        default=None,
-        description="Parameters used if norm is either `batch` or `layer`.",
-    )
-
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
@@ -205,12 +142,4 @@ class ClassifierConfig(BaseDecoderConfig):
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
-    )
-
-    threshold: float = schema_utils.FloatRange(
-        default=0.5,
-        min=0,
-        max=1,
-        description="The threshold above (greater or equal) which the predicted output of the sigmoid will be mapped "
-        "to 1.",
     )

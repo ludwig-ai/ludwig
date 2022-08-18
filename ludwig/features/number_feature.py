@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import random
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -283,15 +283,15 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[NumberInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
-        self.encoder_config.input_size = self.input_shape[-1]
+        input_feature_config.encoder.input_size = self.input_shape[-1]
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -352,11 +352,15 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     default_validation_metric = MEAN_SQUARED_ERROR
 
     def __init__(
-        self, output_feature_config: NumberOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[NumberOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
+        self.clip = output_feature_config.clip
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_obj = self.initialize_decoder()
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -379,7 +383,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.input_size])
+        return torch.Size([self.decoder_obj.config.input_size])
 
     @classmethod
     def get_output_dtype(cls):
@@ -426,8 +430,8 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    CLIP: defaults.decoder.clip,
                 },
+                CLIP: defaults.clip,
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
                 REDUCE_DEPENDENCIES: defaults.reduce_dependencies,

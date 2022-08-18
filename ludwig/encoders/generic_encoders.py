@@ -28,8 +28,10 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
-    def __init__(self, input_size=1, **kwargs):
+    def __init__(self, input_size=1, encoder_config=None, **kwargs):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         self.input_size = input_size
 
@@ -68,9 +70,12 @@ class DenseEncoder(Encoder):
         norm_params=None,
         activation="relu",
         dropout=0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         self.input_size = input_size
 

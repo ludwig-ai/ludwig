@@ -6,8 +6,7 @@ import torch
 import torchtext
 
 from ludwig.constants import LAST_HIDDEN, LOGITS, SEQUENCE, TEXT, TYPE
-from ludwig.features.sequence_feature import _SequencePreprocessing
-from ludwig.models.base import BaseModel
+from ludwig.features.sequence_feature import _SequencePreprocessing, SequenceInputFeature, SequenceOutputFeature
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import ENCODERS, sequence_feature
 
@@ -67,7 +66,7 @@ def test_sequence_input_feature(input_sequence: tuple, encoder: str, sequence_ty
     input_feature_def[TYPE] = sequence_type
 
     # create sequence input feature object
-    input_feature_obj = BaseModel.build_single_input(input_feature_def, None).to(DEVICE)
+    input_feature_obj = SequenceInputFeature(input_feature_def, {}).to(DEVICE)
 
     # confirm dtype property
     assert input_feature_obj.input_dtype == torch.int32
@@ -89,11 +88,11 @@ def test_sequence_output_feature(sequence_type: str):
             "max_len": SEQ_SIZE,
             "max_sequence_length": SEQ_SIZE,
             "vocab_size": VOCAB_SIZE,
-            "input_size": VOCAB_SIZE,
-        }
+        },
+        input_size=VOCAB_SIZE,
     )
     output_feature_def[TYPE] = sequence_type
-    output_feature_obj = BaseModel.build_single_output(output_feature_def, None).to(DEVICE)
+    output_feature_obj = SequenceOutputFeature(output_feature_def, {}).to(DEVICE)
     combiner_outputs = {}
     combiner_outputs["combiner_output"] = torch.randn([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE], dtype=torch.float32).to(
         DEVICE

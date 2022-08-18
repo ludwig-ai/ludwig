@@ -163,11 +163,11 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def populate_defaults(input_feature):
         pass
 
-    def initialize_encoder(self):
-        encoder_cls = get_encoder_cls(self.type(), self.encoder_config.type)
+    def initialize_encoder(self, encoder_config):
+        encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         encoder_schema = encoder_cls.get_schema_cls().Schema()
-        encoder_params_dict = encoder_schema.dump(self.encoder_config)
-        return encoder_cls(**encoder_params_dict)
+        encoder_params_dict = encoder_schema.dump(encoder_config)
+        return encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
@@ -183,7 +183,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def __init__(
         self,
-        feature: Union[BaseOutputFeatureConfig, dict],
+        feature: BaseOutputFeatureConfig,
         other_output_features: Dict[str, "OutputFeature"],
         *args,
         **kwargs,
@@ -195,36 +195,33 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         in topographically sorted order. Attributes of any dependent output features are used to properly initialize
         this feature's sizes.
         """
-        feature = self.load_config(feature)
         super().__init__(feature)
 
-        self.decoder_config = feature.decoder
         self.loss = feature.loss
         self.reduce_input = feature.reduce_input
         self.reduce_dependencies = feature.reduce_dependencies
 
         # List of feature names that this output feature is dependent on.
-        self.dependencies = []
+        self.dependencies = feature.dependencies
 
         logger.debug(" output feature fully connected layers")
         logger.debug("  FCStack")
 
-        feature.decoder.input_size = get_input_size_with_dependencies(
-            feature.decoder.input_size, self.dependencies, other_output_features
-        )
+        self.input_size = get_input_size_with_dependencies(feature.input_size, self.dependencies, other_output_features)
+        feature.input_size = self.input_size
 
         self.fc_stack = FCStack(
-            first_layer_input_size=feature.decoder.input_size,
-            layers=feature.decoder.fc_layers,
-            num_layers=feature.decoder.num_fc_layers,
-            default_output_size=feature.decoder.output_size,
-            default_use_bias=feature.decoder.use_bias,
-            default_weights_initializer=feature.decoder.weights_initializer,
-            default_bias_initializer=feature.decoder.bias_initializer,
-            default_norm=feature.decoder.norm,
-            default_norm_params=feature.decoder.norm_params,
-            default_activation=feature.decoder.activation,
-            default_dropout=feature.decoder.dropout,
+            first_layer_input_size=self.input_size,
+            layers=feature.fc_layers,
+            num_layers=feature.num_fc_layers,
+            default_output_size=feature.output_size,
+            default_use_bias=feature.use_bias,
+            default_weights_initializer=feature.weights_initializer,
+            default_bias_initializer=feature.bias_initializer,
+            default_norm=feature.norm,
+            default_norm_params=feature.norm_params,
+            default_activation=feature.activation,
+            default_dropout=feature.dropout,
         )
         self._calibration_module = self.create_calibration_module(kwargs)
         self._prediction_module = self.create_predict_module()
@@ -257,11 +254,13 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def metric_functions(self) -> Dict:
         pass
 
-    def initialize_decoder(self):
+    def initialize_decoder(self, decoder_config):
         # Input to the decoder is the output feature's FC hidden layer.
-        self.decoder_config.input_size = self.fc_stack.output_shape[-1]
-        decoder = self.decoder_config.type
-        return get_decoder_cls(self.type(), decoder)(**self.decoder_config.__dict__)
+        decoder_config.input_size = self.fc_stack.output_shape[-1]
+        decoder_cls = get_decoder_cls(self.type(), decoder_config.type)
+        decoder_schema = decoder_cls.get_schema_cls().Schema()
+        decoder_params_dict = decoder_schema.dump(decoder_config)
+        return decoder_cls(decoder_config=decoder_config, **decoder_params_dict)
 
     def train_loss(self, targets: Tensor, predictions: Dict[str, Tensor], feature_name):
         loss_class = type(self.train_loss_function)

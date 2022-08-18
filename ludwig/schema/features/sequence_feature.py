@@ -4,7 +4,7 @@ from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS
 
 from ludwig.utils import strings_utils
 
-from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, SEQUENCE, OUTPUT
+from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig

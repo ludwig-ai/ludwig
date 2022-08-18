@@ -72,7 +72,7 @@ OUTPUT_FEATURE_KEYS = [
     "column",
     "proc_column",
     "decoder",
-    "tied",
+    "num_classes",
     "preprocessing",
     "loss",
     "reduce_input",
@@ -80,6 +80,19 @@ OUTPUT_FEATURE_KEYS = [
     "reduce_dependencies",
     "top_k",
     "vector_size",
+]
+
+FC_LAYER_KEYS = [
+    "fc_layers",
+    "num_fc_layers",
+    "output_size",
+    "use_bias",
+    "weights_initializer",
+    "bias_initializer",
+    "norm",
+    "norm_params",
+    "activation",
+    "dropout",
 ]
 
 
@@ -149,7 +162,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         module_type = DECODER
 
     module = feature.get(module_type, {})
-    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else OUTPUT_FEATURE_KEYS + [ENCODER, DECODER]
+    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else FC_LAYER_KEYS + OUTPUT_FEATURE_KEYS + [ENCODER, DECODER]
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module
@@ -168,7 +181,10 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         feature[module_type] = module
 
     for k in nested_params:
-        del feature[k]
+        # Some of these params exist in both the decoder and the output feature schemas - to preserve old behavior,
+        # these params will be copied to the decoder and not removed from the feature.
+        if k not in FC_LAYER_KEYS:
+            del feature[k]
 
     if warn:
         warnings.warn(

@@ -5,7 +5,7 @@ from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
-from ludwig.constants import DROP_ROW, OUTPUT, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import DROP_ROW, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig

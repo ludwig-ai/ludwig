@@ -29,8 +29,10 @@ logger = logging.getLogger(__name__)
 
 @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
-    def __init__(self, input_size: int = 1, num_classes: int = None, **kwargs):
+    def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
         self.input_size = input_size
         self.num_classes = num_classes
@@ -59,10 +61,12 @@ class Regressor(Decoder):
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
-        activation=None,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Dense")
@@ -98,9 +102,12 @@ class Projector(Decoder):
         bias_initializer="zeros",
         activation=None,
         clip=None,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Dense")
@@ -149,9 +156,12 @@ class Classifier(Decoder):
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Dense")

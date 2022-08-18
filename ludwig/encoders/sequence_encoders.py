@@ -44,7 +44,14 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 class SequencePassthroughEncoder(Encoder):
-    def __init__(self, reduce_output: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
+    def __init__(
+        self,
+        reduce_output: str = None,
+        max_sequence_length: int = 256,
+        encoding_size: int = None,
+        encoder_config=None,
+        **kwargs,
+    ):
         """
         :param reduce_output: defines how to reduce the output tensor along
                the `s` sequence length dimension if the rank of the tensor
@@ -57,6 +64,8 @@ class SequencePassthroughEncoder(Encoder):
         :param encoding_size: The size of the encoding vector, or None if sequence elements are scalars.
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.reduce_output = reduce_output
@@ -102,6 +111,7 @@ class SequenceEmbedEncoder(Encoder):
         weights_initializer=None,
         dropout=0,
         reduce_output="sum",
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -172,6 +182,8 @@ class SequenceEmbedEncoder(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         self.embedding_size = embedding_size
         self.max_sequence_length = max_sequence_length
@@ -252,6 +264,7 @@ class ParallelCNN(Encoder):
         activation="relu",
         dropout=0,
         reduce_output="max",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: revise docstring
@@ -386,6 +399,8 @@ class ParallelCNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -556,6 +571,7 @@ class StackedCNN(Encoder):
         activation="relu",
         dropout=0,
         reduce_output="max",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: fixup docstring
@@ -690,6 +706,8 @@ class StackedCNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         if conv_layers is not None and num_conv_layers is None:
@@ -883,6 +901,7 @@ class StackedParallelCNN(Encoder):
         activation="relu",
         dropout=0,
         reduce_output="max",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: review docstring
@@ -1024,6 +1043,8 @@ class StackedParallelCNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -1196,6 +1217,7 @@ class StackedRNN(Encoder):
         fc_activation="relu",
         fc_dropout=0,
         reduce_output="last",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: fix up docstring
@@ -1319,6 +1341,8 @@ class StackedRNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -1479,6 +1503,7 @@ class StackedCNNRNN(Encoder):
         fc_activation="relu",
         fc_dropout=0,
         reduce_output="last",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: fix up docstring
@@ -1568,6 +1593,8 @@ class StackedCNNRNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         if conv_layers is not None and num_conv_layers is None:
@@ -1746,6 +1773,7 @@ class StackedTransformer(Encoder):
         fc_activation="relu",
         fc_dropout=0,
         reduce_output="last",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: update docstring as needed
@@ -1867,6 +1895,8 @@ class StackedTransformer(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length

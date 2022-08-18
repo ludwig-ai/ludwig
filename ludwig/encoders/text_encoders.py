@@ -88,9 +88,12 @@ class ALBERTEncoder(Encoder):
         bos_token_id: int = 2,
         eos_token_id: int = 3,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import AlbertConfig, AlbertModel
         except ModuleNotFoundError:
@@ -219,9 +222,12 @@ class MT5Encoder(Encoder):
         eos_token_id: int = 1,
         decoder_start_token_id: int = 0,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import MT5Config, MT5EncoderModel
         except ModuleNotFoundError:
@@ -334,9 +340,12 @@ class XLMRoBERTaEncoder(Encoder):
         eos_token_id: int = 2,
         add_pooling_layer: bool = True,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import XLMRobertaConfig, XLMRobertaModel
         except ModuleNotFoundError:
@@ -447,9 +456,12 @@ class BERTEncoder(Encoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import BertConfig, BertModel
         except ModuleNotFoundError:
@@ -586,9 +598,12 @@ class XLMEncoder(Encoder):
         pad_token_id: int = 2,
         bos_token_id: int = 0,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import XLMConfig, XLMModel
         except ModuleNotFoundError:
@@ -713,9 +728,12 @@ class GPTEncoder(Encoder):
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import OpenAIGPTConfig, OpenAIGPTModel
         except ModuleNotFoundError:
@@ -819,9 +837,12 @@ class GPT2Encoder(Encoder):
         initializer_range: float = 0.02,
         scale_attn_weights: bool = True,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import GPT2Config, GPT2Model
         except ModuleNotFoundError:
@@ -918,9 +939,12 @@ class RoBERTaEncoder(Encoder):
         bos_token_id: int = 0,
         eos_token_id: int = 2,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import RobertaConfig, RobertaModel
         except ModuleNotFoundError:
@@ -1030,9 +1054,12 @@ class TransformerXLEncoder(Encoder):
         layer_norm_epsilon: float = 1e-5,
         eos_token_id: int = 0,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import TransfoXLConfig, TransfoXLModel
         except ModuleNotFoundError:
@@ -1158,9 +1185,12 @@ class XLNetEncoder(Encoder):
         bos_token_id: int = 1,
         eos_token_id: int = 2,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import XLNetConfig, XLNetModel
         except ModuleNotFoundError:
@@ -1279,9 +1309,12 @@ class DistilBERTEncoder(Encoder):
         qa_dropout: float = 0.1,
         seq_classif_dropout: float = 0.2,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import DistilBertConfig, DistilBertModel
         except ModuleNotFoundError:
@@ -1386,9 +1419,12 @@ class CTRLEncoder(Encoder):
         layer_norm_epsilon: float = 1e-6,
         initializer_range: float = 0.02,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import CTRLConfig, CTRLModel
         except ModuleNotFoundError:
@@ -1496,9 +1532,12 @@ class CamemBERTEncoder(Encoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import CamembertConfig, CamembertModel
         except ModuleNotFoundError:
@@ -1616,9 +1655,12 @@ class T5Encoder(Encoder):
         initializer_factor: float = 1,
         feed_forward_proj: str = "relu",
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import T5Config, T5Model
         except ModuleNotFoundError:
@@ -1741,9 +1783,12 @@ class FlauBERTEncoder(Encoder):
         mask_token_id: int = 0,
         lang_id: int = 1,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import FlaubertConfig, FlaubertModel
         except ModuleNotFoundError:
@@ -1869,9 +1914,12 @@ class ELECTRAEncoder(Encoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: Optional[float] = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import ElectraConfig, ElectraModel
         except ModuleNotFoundError:
@@ -1974,9 +2022,12 @@ class LongformerEncoder(Encoder):
         trainable: bool = False,
         num_tokens: Optional[int] = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import LongformerConfig, LongformerModel
         except ModuleNotFoundError:
@@ -2058,9 +2109,12 @@ class AutoTransformerEncoder(Encoder):
         trainable: bool = False,
         vocab_size: int = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import AutoModel
         except ModuleNotFoundError:

@@ -111,6 +111,14 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         default="regressor",
     )
 
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
+        "than or equal to threshold are mapped to True.",
+    )
+
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "

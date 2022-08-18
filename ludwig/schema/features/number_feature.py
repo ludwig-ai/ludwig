@@ -1,8 +1,9 @@
 from marshmallow_dataclass import dataclass
+from typing import List, Tuple, Union
 
 from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS
 
-from ludwig.constants import DROP_ROW, NUMBER, MEAN_SQUARED_ERROR, OUTPUT
+from ludwig.constants import DROP_ROW, NUMBER, MEAN_SQUARED_ERROR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -76,14 +77,21 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
-
     loss: dict = schema_utils.Dict(
         default={
             "type": MEAN_SQUARED_ERROR,
             "weight": 1,
         },
         description="A dictionary containing a loss type and its hyper-parameters.",
+    )
+
+    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
+        n=2,
+        default=None,
+        allow_none=True,
+        min=0,
+        max=999999999,
+        description="Clip the predicted output to the specified range.",
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(

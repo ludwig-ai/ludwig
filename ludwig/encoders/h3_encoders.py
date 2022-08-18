@@ -52,6 +52,7 @@ class H3Embed(Encoder):
         activation: str = "relu",
         dropout: float = 0,
         reduce_output: str = "sum",
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -75,6 +76,8 @@ class H3Embed(Encoder):
         :type dropout: Boolean
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.embedding_size = embedding_size
@@ -228,6 +231,7 @@ class H3WeightedSum(Encoder):
         norm_params: Dict = None,
         activation: str = "relu",
         dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -251,6 +255,8 @@ class H3WeightedSum(Encoder):
         :type dropout: Boolean
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.should_softmax = should_softmax
@@ -341,6 +347,7 @@ class H3RNN(Encoder):
         dropout: float = 0.0,
         recurrent_dropout: float = 0.0,
         reduce_output: str = "last",
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -400,6 +407,8 @@ class H3RNN(Encoder):
         :type recurrent_dropout: float
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.embedding_size = embedding_size

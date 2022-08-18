@@ -72,9 +72,11 @@ class Stacked2DCNN(Encoder):
         fc_norm_params: Optional[Dict[str, Any]] = None,
         fc_activation: str = "relu",
         fc_dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
 
         logger.debug(f" {self.name}")
 
@@ -183,9 +185,12 @@ class ResNetEncoder(Encoder):
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         img_height = height
@@ -260,9 +265,12 @@ class MLPMixerEncoder(Encoder):
         num_layers: int = 8,
         dropout: float = 0.0,
         avg_pool: bool = True,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         img_height = height
@@ -330,6 +338,7 @@ class ViTEncoder(Encoder):
         patch_size: int = 16,
         trainable: bool = True,
         output_attentions: bool = False,
+        encoder_config=None,
         **kwargs,
     ):
         """Creates a ViT encoder using transformers.ViTModel.
@@ -341,6 +350,8 @@ class ViTEncoder(Encoder):
             the arguments.
         """
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import ViTConfig, ViTModel
         except ModuleNotFoundError:

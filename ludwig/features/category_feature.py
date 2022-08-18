@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -159,14 +159,14 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[CategoryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -224,12 +224,18 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     default_validation_metric = ACCURACY
 
     def __init__(
-        self, output_feature_config: CategoryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[CategoryOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
+        if hasattr(output_feature_config.decoder, "num_classes"):
+            output_feature_config.decoder.num_classes = output_feature_config.num_classes
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
+        self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
-        self.decoder_obj = self.initialize_decoder()
         self._setup_loss()
         self._setup_metrics()
 
@@ -249,7 +255,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         """
         if feature.get("calibration"):
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=self.decoder_config.num_classes)
+            return calibration_cls(num_classes=self.num_classes)
         return None
 
     def create_predict_module(self) -> PredictModule:

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -215,14 +215,14 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[BinaryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -278,11 +278,15 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     default_validation_metric = ROC_AUC
 
     def __init__(
-        self, output_feature_config: BinaryOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[BinaryOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
+        self.threshold = output_feature_config.threshold
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_obj = self.initialize_decoder()
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -412,11 +416,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    THRESHOLD: defaults.decoder.threshold,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
                 REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+                THRESHOLD: defaults.threshold,
             },
         )
 

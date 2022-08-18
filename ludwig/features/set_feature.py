@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -212,14 +212,14 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: SetInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[SetInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -235,7 +235,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.encoder_config.vocab)])
+        return torch.Size([len(self.encoder_obj.config.vocab)])
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
@@ -266,11 +266,15 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     default_validation_metric = JACCARD
 
     def __init__(
-        self, output_feature_config: SetOutputFeatureConfig, output_features: Dict[str, OutputFeature], **kwargs
+        self,
+        output_feature_config: Union[SetOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
     ):
         output_feature_config = self.load_config(output_feature_config)
+        self.threshold = output_feature_config.threshold
         super().__init__(output_feature_config, output_features, **kwargs)
-        self.decoder_obj = self.initialize_decoder()
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -300,7 +304,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.num_classes])
+        return torch.Size([self.decoder_obj.config.num_classes])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
@@ -356,11 +360,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            threshold = self.decoder_config.threshold
 
             def get_prob(prob_set):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
-                return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
+                return np.array([prob for prob in prob_set if prob >= self.threshold], dtype=np.float32)
 
             result[probabilities_col] = result[probabilities_col].map(get_prob)
 
@@ -381,11 +384,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
-                    THRESHOLD: defaults.decoder.threshold,
                 },
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
                 REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+                THRESHOLD: defaults.threshold,
             },
         )
 

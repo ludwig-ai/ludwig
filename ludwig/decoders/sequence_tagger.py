@@ -24,9 +24,12 @@ class SequenceTaggerDecoder(Decoder):
         use_bias: bool = True,
         attention_embedding_size: int = 256,
         attention_num_heads: int = 8,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
         self.input_size = input_size

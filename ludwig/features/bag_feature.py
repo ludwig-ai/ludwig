@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from collections import Counter
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import torch
@@ -88,14 +88,14 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: BagInputFeatureConfig, encoder_obj=None, **kwargs):
+    def __init__(self, input_feature_config: Union[BagInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
         super().__init__(input_feature_config, **kwargs)
-        self.encoder_config = input_feature_config.encoder
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder()
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -107,7 +107,7 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.encoder_config.vocab)])
+        return torch.Size([len(self.encoder_obj.config.vocab)])
 
     @property
     def output_shape(self) -> torch.Size:
