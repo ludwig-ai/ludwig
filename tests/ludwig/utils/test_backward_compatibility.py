@@ -195,6 +195,7 @@ def test_encoder_decoder_backwards_compatibility():
                     "width": 7.5,
                     "num_channels": 4,
                 },
+                "dropout": 0.1,
                 "encoder": {
                     "type": "resnet",
                     "num_channels": 4,
@@ -225,8 +226,8 @@ def test_encoder_decoder_backwards_compatibility():
                 },
                 "decoder": {
                     "type": "classifier",
-                    "use_bias": False,
                 },
+                "use_bias": False,
             },
             {
                 "name": "binary_feature",
@@ -238,9 +239,9 @@ def test_encoder_decoder_backwards_compatibility():
                 "reduce_dependencies": "mean",
                 "decoder": {
                     "type": "regressor",
-                    "use_bias": True,
-                    "bias_initializer": "constant",
                 },
+                "bias_initializer": "constant",
+                "use_bias": True,
             },
         ],
     }
