@@ -1,5 +1,5 @@
 version: 1.0
 download_urls:
-  - https://raw.githubusercontent.com/ourownstory/neural_prophet/master/example_data/yosemite_temps.csv
+  - https://raw.githubusercontent.com/ourownstory/neuralprophet-data/main/datasets/yosemite_temps.csv
 download_file_type: csv
 csv_filename: yosemite_temps.csv

@@ -20,8 +20,8 @@ from ludwig.datasets.mixins.process import IdentityProcessMixin
 from ludwig.datasets.registry import register_dataset
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_api_key=None):
-    dataset = Temperature(cache_dir=cache_dir, kaggle_username=kaggle_username, kaggle_api_key=kaggle_api_key)
+def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
+    dataset = Temperature(cache_dir=cache_dir, kaggle_username=kaggle_username, kaggle_key=kaggle_key)
     return dataset.load(split=split)
 
 
@@ -29,8 +29,8 @@ def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, ka
 class Temperature(CSVLoadMixin, IdentityProcessMixin, KaggleDownloadMixin, BaseDataset):
     """Hourly temperature dataset from Kaggle."""
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, kaggle_username=None, kaggle_api_key=None):
+    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, kaggle_username=None, kaggle_key=None):
         self.kaggle_username = kaggle_username
-        self.kaggle_api_key = kaggle_api_key
+        self.kaggle_key = kaggle_key
         self.is_kaggle_competition = False
         super().__init__(dataset_name="temperature", cache_dir=cache_dir)

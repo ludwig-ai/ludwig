@@ -46,7 +46,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.data.split import get_splitter
+from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
@@ -55,6 +55,7 @@ from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwarg
 from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
+from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
@@ -62,8 +63,9 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
+BASE_PREPROCESSING_SPLIT_CONFIG = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
 base_preprocessing_parameters = {
-    "split": {},
+    "split": BASE_PREPROCESSING_SPLIT_CONFIG,
     "undersample_majority": None,
     "oversample_minority": None,
     "sample_ratio": 1.0,
@@ -260,7 +262,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
                 config[DEFAULTS][feature_type] = preprocessing_defaults
             else:
                 config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
-        # Feature type exists but preprocessing hasn't be specified
+        # Feature type exists but preprocessing hasn't been specified
         elif PREPROCESSING not in config[DEFAULTS][feature_type]:
             config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_defaults
         # Preprocessing parameters exist for feature type, update defaults with parameters from config
@@ -322,7 +324,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Hyperpot =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
-
     return config
 
 
@@ -359,7 +360,7 @@ def render_config(config=None, output=None, **kwargs):
     if output is None:
         print(yaml.safe_dump(output_config, None, sort_keys=False))
     else:
-        with open(output, "w") as f:
+        with open_file(output, "w") as f:
             yaml.safe_dump(output_config, f, sort_keys=False)
 
 

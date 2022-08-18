@@ -1,0 +1,26 @@
+input_features:
+- name: Pclass
+  type: category
+- name: Sex
+  type: category
+- name: Age
+  preprocessing:
+    missing_value_strategy: fill_with_mean
+  type: number
+- name: SibSp
+  type: number
+- name: Parch
+  type: number
+- name: Fare
+  preprocessing:
+    missing_value_strategy: fill_with_mean
+  type: number
+- name: Embarked
+  type: category
+model_type: gbm
+output_features:
+- name: Survived
+  type: binary
+preprocessing:
+  split:
+    type: fixed

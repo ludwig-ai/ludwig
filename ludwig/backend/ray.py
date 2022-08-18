@@ -38,9 +38,9 @@ if TYPE_CHECKING:
 
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
+from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -775,7 +775,13 @@ class RayPredictor(BasePredictor):
                 return ordered_predictions
 
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
-                res = {c: batch[c].to_numpy() for c in self.features.keys()}
+                res = {}
+                for c in self.features.keys():
+                    if self.features[c][TYPE] not in _SCALAR_TYPES:
+                        # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
+                        res[c] = np.stack(batch[c].values)
+                    else:
+                        res[c] = batch[c].to_numpy()
 
                 for c in self.features.keys():
                     reshape = self.reshape_map.get(c)
@@ -907,7 +913,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
-            ds = self.df_engine.to_ray_dataset(column.to_frame(name="value"))
+            column_df = column.to_frame(name="value")
+            column_df["idx"] = column_df.index
+            ds = self.df_engine.to_ray_dataset(column_df)
 
         def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
             # HACK: Workaround for https://github.com/modin-project/modin/issues/4686

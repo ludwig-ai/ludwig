@@ -33,7 +33,6 @@ TRAINING_PREPROC_FILE_NAME = "training.hdf5"
 
 HYPEROPT_STATISTICS_FILE_NAME = "hyperopt_statistics.json"
 
-REPORT_JSON = "report.json"
 CONFIG_YAML = "config.yaml"
 
 DISABLE_PROGRESSBAR = False
