@@ -4,6 +4,7 @@ from types import ModuleType
 from typing import Any, Dict, Union
 
 import fsspec
+import shutil
 import pandas as pd
 
 from ludwig.constants import CATEGORY
@@ -62,6 +63,12 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
             f"dataset {experiment['dataset_name']}"
         )
+
+
+def delete_model_checkpoints(output_directory: str):
+    shutil.rmtree(os.path.join(output_directory, "model", "training_checkpoints"), ignore_errors=True)
+    if os.path.isfile(os.path.join(output_directory, "model", "model_weights")):
+        os.remove(os.path.join(output_directory, "model", "model_weights"))
 
 
 def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:

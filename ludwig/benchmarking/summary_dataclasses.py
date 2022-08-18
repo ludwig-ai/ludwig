@@ -275,12 +275,11 @@ def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
 
 
 def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
-    config = load_json(os.path.join(experiment_local_directory, MODEL_HYPERPARAMETERS_FILE_NAME))
-    report = load_json(os.path.join(experiment_local_directory, REPORT_JSON))
-    performance_metrics = report["evaluate"]["performance_metrics"]
+    config = load_json(os.path.join(experiment_local_directory, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
+    report = load_json(os.path.join(experiment_local_directory, "test_statistics.json"))
     output_feature_type: str = config["output_features"][0]["type"]
     output_feature_name: str = config["output_features"][0]["name"]
-    metric_dict = performance_metrics[output_feature_name]
+    metric_dict = report[output_feature_name]
     full_metric_names = get_metric_classes(output_feature_type)
     metric_to_values: dict = {
         metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict

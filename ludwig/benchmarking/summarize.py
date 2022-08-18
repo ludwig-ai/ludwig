@@ -3,18 +3,18 @@ import functools
 import os
 import traceback
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Set
 
 import fsspec
-from summary_dataclasses import build_metrics_diff, MetricsDiff
+from ludwig.benchmarking.summary_dataclasses import build_metrics_diff, MetricsDiff
 
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def download_artifacts(
-    bench_config: Dict[str, Any], base_experiment: str, experimental_experiment: str, download_base_path: str
-) -> List[Union[Tuple[str, str], Any]]:
+    bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
+) -> Set[Union[Tuple[Any, Any]]]:
     """Download benchmarking artifacts for two experiments.
 
     bench_config: bench config file. Can be the same one that was used to run
@@ -24,9 +24,10 @@ def download_artifacts(
     download_base_path: base path under which live the stored artifacts of
         the benchmarking experiments.
     """
+    bench_config = load_yaml(bench_config_path)
     protocol, _ = fsspec.core.split_protocol(download_base_path)
     fs, _ = get_fs_and_path(download_base_path)
-    local_dir = os.path.join(os.getcwd(), "visualize-temp")
+    local_dir = "benchmarking_summaries"
     os.makedirs(local_dir, exist_ok=True)
 
     coroutines = []
@@ -38,7 +39,7 @@ def download_artifacts(
     futures = asyncio.gather(*coroutines, return_exceptions=True)
     downloaded_names = loop.run_until_complete(futures)
     loop.close()
-    return downloaded_names
+    return set(downloaded_names)
 
 
 async def download_one(
@@ -55,21 +56,16 @@ async def download_one(
     """
     loop = asyncio.get_running_loop()
     local_experiment_dir = os.path.join(local_dir, dataset_name, experiment_name)
+    remote_experiment_directory = os.path.join(download_base_path, dataset_name, experiment_name)
     os.makedirs(local_experiment_dir, exist_ok=True)
     with ThreadPoolExecutor() as pool:
-        remote_files = [
-            file_dict["Key"]
-            for file_dict in fs.listdir(os.path.join(download_base_path, dataset_name, experiment_name))
-        ]
-        remote_files = [remote_file for remote_file in remote_files if remote_file.endswith(".json")]
-        for remote_file in remote_files:
-            func = functools.partial(
-                fs.get,
-                remote_file,
-                os.path.join(local_experiment_dir, remote_file.split("/")[-1]),
-                recursive=True,
-            )
-            await loop.run_in_executor(pool, func)
+        func = functools.partial(
+            fs.get,
+            remote_experiment_directory,
+            local_experiment_dir,
+            recursive=True,
+        )
+        await loop.run_in_executor(pool, func)
     return dataset_name, local_dir
 
 
@@ -85,13 +81,12 @@ def summarize_metrics(
     download_base_path: base path under which live the stored artifacts of
         the benchmarking experiments.
     """
-    config = load_yaml(bench_config_path)
-    downloaded_names = set(download_artifacts(config, base_experiment, experimental_experiment, download_base_path))
+    downloaded_names = download_artifacts(bench_config_path, base_experiment, experimental_experiment, download_base_path)
     print(downloaded_names)
     experiment_diffs = []
-    for n in downloaded_names:
-        if isinstance(n, tuple) and len(n) == 2:
-            (dataset_name, local_dir) = n
+    for experiment_tuple in downloaded_names:
+        if isinstance(experiment_tuple, tuple) and len(experiment_tuple) == 2:
+            (dataset_name, local_dir) = experiment_tuple
             try:
                 e = build_metrics_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
                 experiment_diffs.append(e)
