@@ -20,11 +20,11 @@ def _get_runs(experiment_id: str):
     return mlflow.tracking.client.MlflowClient().search_runs([experiment_id])
 
 
-def _get_or_create_experiment_id(experiment_name):
+def _get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is not None:
         return experiment.experiment_id
-    return mlflow.create_experiment(name=experiment_name)
+    return mlflow.create_experiment(name=experiment_name, artifact_location=artifact_uri)
 
 
 class MlflowCallback(Callback):
