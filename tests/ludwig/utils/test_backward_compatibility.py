@@ -266,7 +266,7 @@ def test_encoder_decoder_backwards_compatibility():
                     "output_size": 128,
                     "activation": "tanh",
                     "dropout": 0.1,
-                }
+                },
             },
         ],
     }
