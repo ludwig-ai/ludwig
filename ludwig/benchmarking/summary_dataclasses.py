@@ -332,7 +332,7 @@ def build_resource_usage_summary(path):
     return ResourceUsageSummary(code_block_tag=code_block_tag, metric_to_values=report, metric_names=metric_names)
 
 
-def build_resource_usage_diff_from_path(base_path, experimental_path):
+def build_single_resource_usage_diff_from_path(base_path, experimental_path):
     base_summary = build_resource_usage_summary(base_path)
     experimental_summary = build_resource_usage_summary(experimental_path)
 
