@@ -23,6 +23,26 @@ from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.text_encoders import (
+    ALBERTConfig,
+    AutoTransformerConfig,
+    BERTConfig,
+    CamemBERTConfig,
+    CTRLConfig,
+    DistilBERTConfig,
+    ELECTRAConfig,
+    FlauBERTConfig,
+    GPT2Config,
+    GPTConfig,
+    LongformerConfig,
+    MT5Config,
+    RoBERTaConfig,
+    T5Config,
+    TransformerXLConfig,
+    XLMConfig,
+    XLMRoBERTaConfig,
+    XLNetConfig,
+)
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
@@ -68,9 +88,12 @@ class ALBERTEncoder(Encoder):
         bos_token_id: int = 2,
         eos_token_id: int = 3,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import AlbertConfig, AlbertModel
         except ModuleNotFoundError:
@@ -135,6 +158,10 @@ class ALBERTEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ALBERTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -195,9 +222,12 @@ class MT5Encoder(Encoder):
         eos_token_id: int = 1,
         decoder_start_token_id: int = 0,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import MT5Config, MT5EncoderModel
         except ModuleNotFoundError:
@@ -260,6 +290,10 @@ class MT5Encoder(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return MT5Config
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -306,9 +340,12 @@ class XLMRoBERTaEncoder(Encoder):
         eos_token_id: int = 2,
         add_pooling_layer: bool = True,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import XLMRobertaConfig, XLMRobertaModel
         except ModuleNotFoundError:
@@ -356,6 +393,10 @@ class XLMRoBERTaEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return XLMRoBERTaConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -415,9 +456,12 @@ class BERTEncoder(Encoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import BertConfig, BertModel
         except ModuleNotFoundError:
@@ -479,6 +523,10 @@ class BERTEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return BERTConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -550,9 +598,12 @@ class XLMEncoder(Encoder):
         pad_token_id: int = 2,
         bos_token_id: int = 0,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import XLMConfig, XLMModel
         except ModuleNotFoundError:
@@ -619,6 +670,10 @@ class XLMEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return XLMConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -673,9 +728,12 @@ class GPTEncoder(Encoder):
         layer_norm_epsilon: float = 1e-5,
         initializer_range: float = 0.02,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import OpenAIGPTConfig, OpenAIGPTModel
         except ModuleNotFoundError:
@@ -727,6 +785,10 @@ class GPTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return GPTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -775,9 +837,12 @@ class GPT2Encoder(Encoder):
         initializer_range: float = 0.02,
         scale_attn_weights: bool = True,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import GPT2Config, GPT2Model
         except ModuleNotFoundError:
@@ -831,6 +896,10 @@ class GPT2Encoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return GPT2Config
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -870,9 +939,12 @@ class RoBERTaEncoder(Encoder):
         bos_token_id: int = 0,
         eos_token_id: int = 2,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import RobertaConfig, RobertaModel
         except ModuleNotFoundError:
@@ -916,6 +988,10 @@ class RoBERTaEncoder(Encoder):
             hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return RoBERTaConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -978,9 +1054,12 @@ class TransformerXLEncoder(Encoder):
         layer_norm_epsilon: float = 1e-5,
         eos_token_id: int = 0,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import TransfoXLConfig, TransfoXLModel
         except ModuleNotFoundError:
@@ -1038,6 +1117,10 @@ class TransformerXLEncoder(Encoder):
 
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return TransformerXLConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1102,9 +1185,12 @@ class XLNetEncoder(Encoder):
         bos_token_id: int = 1,
         eos_token_id: int = 2,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import XLNetConfig, XLNetModel
         except ModuleNotFoundError:
@@ -1170,6 +1256,10 @@ class XLNetEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return XLNetConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1219,9 +1309,12 @@ class DistilBERTEncoder(Encoder):
         qa_dropout: float = 0.1,
         seq_classif_dropout: float = 0.2,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import DistilBertConfig, DistilBertModel
         except ModuleNotFoundError:
@@ -1274,6 +1367,10 @@ class DistilBERTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return DistilBERTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1322,9 +1419,12 @@ class CTRLEncoder(Encoder):
         layer_norm_epsilon: float = 1e-6,
         initializer_range: float = 0.02,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import CTRLConfig, CTRLModel
         except ModuleNotFoundError:
@@ -1377,6 +1477,10 @@ class CTRLEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return CTRLConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1407,7 +1511,7 @@ class CamemBERTEncoder(Encoder):
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "ctrl",
+        pretrained_model_name_or_path: str = "jplu/camembert-base",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = False,
@@ -1428,9 +1532,12 @@ class CamemBERTEncoder(Encoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import CamembertConfig, CamembertModel
         except ModuleNotFoundError:
@@ -1491,6 +1598,10 @@ class CamemBERTEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return CamemBERTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1544,9 +1655,12 @@ class T5Encoder(Encoder):
         initializer_factor: float = 1,
         feed_forward_proj: str = "relu",
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import T5Config, T5Model
         except ModuleNotFoundError:
@@ -1597,6 +1711,10 @@ class T5Encoder(Encoder):
         hidden = transformer_outputs[0][:, 0:-1, :]  # [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return T5Config
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1665,9 +1783,12 @@ class FlauBERTEncoder(Encoder):
         mask_token_id: int = 0,
         lang_id: int = 1,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import FlaubertConfig, FlaubertModel
         except ModuleNotFoundError:
@@ -1733,6 +1854,10 @@ class FlauBERTEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return FlauBERTConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1789,9 +1914,12 @@ class ELECTRAEncoder(Encoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: Optional[float] = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import ElectraConfig, ElectraModel
         except ModuleNotFoundError:
@@ -1846,6 +1974,10 @@ class ELECTRAEncoder(Encoder):
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ELECTRAConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1890,9 +2022,12 @@ class LongformerEncoder(Encoder):
         trainable: bool = False,
         num_tokens: Optional[int] = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import LongformerConfig, LongformerModel
         except ModuleNotFoundError:
@@ -1934,6 +2069,10 @@ class LongformerEncoder(Encoder):
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return LongformerConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1970,9 +2109,12 @@ class AutoTransformerEncoder(Encoder):
         trainable: bool = False,
         vocab_size: int = None,
         pretrained_kwargs: Dict = None,
+        encoder_config=None,
         **kwargs
     ):
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import AutoModel
         except ModuleNotFoundError:
@@ -2013,6 +2155,10 @@ class AutoTransformerEncoder(Encoder):
             hidden = transformer_outputs["last_hidden_state"]
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return AutoTransformerConfig
 
     @property
     def input_shape(self) -> torch.Size:

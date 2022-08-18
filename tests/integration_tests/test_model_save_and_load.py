@@ -40,27 +40,29 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     input_features = [
         binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3, encoder="rnn", cell_type="lstm", num_layers=2, bidirections=True),
+        category_feature(encoder={"vocab_size": 3}),
+        sequence_feature(encoder={"vocab_size": 3}),
+        text_feature(
+            encoder={"vocab_size": 3, "type": "rnn", "cell_type": "lstm", "num_layers": 2, "bidirectional": False}
+        ),
         vector_feature(),
         image_feature(image_dest_folder),
-        audio_feature(audio_dest_folder, encoder="stacked_cnn"),
-        timeseries_feature(encoder="parallel_cnn"),
-        sequence_feature(vocab_size=3, encoder="stacked_parallel_cnn"),
+        audio_feature(audio_dest_folder, encoder={"type": "stacked_cnn"}),
+        timeseries_feature(encoder={"type": "parallel_cnn"}),
+        sequence_feature(encoder={"vocab_size": 3, "type": "stacked_parallel_cnn"}),
         date_feature(),
         h3_feature(),
-        set_feature(vocab_size=3),
-        bag_feature(vocab_size=3),
+        set_feature(encoder={"vocab_size": 3}),
+        bag_feature(encoder={"vocab_size": 3}),
     ]
 
     output_features = [
         binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3),
-        set_feature(vocab_size=3),
+        category_feature(decoder={"vocab_size": 3}),
+        sequence_feature(decoder={"vocab_size": 3}),
+        text_feature(decoder={"vocab_size": 3}),
+        set_feature(decoder={"vocab_size": 3}),
         vector_feature(),
     ]
 
@@ -134,8 +136,8 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     random.seed(1)
     np.random.seed(1)
 
-    input_features = [binary_feature(), number_feature(), category_feature(vocab_size=3)]
-    output_features = [category_feature(vocab_size=3)]
+    input_features = [binary_feature(), number_feature(), category_feature(encoder={"vocab_size": 3})]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
 
     # Generate test data
     data_csv_path = generate_data(input_features, output_features, csv_filename)

@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+INPUT_FEATURES = "input_features"
+OUTPUT_FEATURES = "output_features"
+
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"
@@ -40,9 +43,11 @@ LOSS = "loss"
 ROC_AUC = "roc_auc"
 EVAL_LOSS = "eval_loss"
 TRAIN_MEAN_LOSS = "train_mean_loss"
+SEQUENCE_SOFTMAX_CROSS_ENTROPY = "sequence_softmax_cross_entropy"
 SOFTMAX_CROSS_ENTROPY = "softmax_cross_entropy"
 SIGMOID_CROSS_ENTROPY = "sigmoid_cross_entropy"
 BINARY_WEIGHTED_CROSS_ENTROPY = "binary_weighted_cross_entropy"
+THRESHOLD = "threshold"
 ACCURACY = "accuracy"
 HITS_AT_K = "hits_at_k"
 MEAN_HITS_AT_K = "mean_hits_at_k"
@@ -58,6 +63,7 @@ EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
 JACCARD = "jaccard"
 PREDICTIONS = "predictions"
+TOP_K = "top_k"
 TOP_K_PREDICTIONS = "top_k_predictions"
 PROBABILITY = "probability"
 PROBABILITIES = "probabilities"
@@ -136,9 +142,6 @@ SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
 
-INPUT_FEATURES = "input_features"
-OUTPUT_FEATURES = "output_features"
-
 NAME = "name"
 COLUMN = "column"
 TYPE = "type"
@@ -167,12 +170,18 @@ CONV_BIAS = "conv_bias"
 AUTO = "auto"
 CONFIG = "config"
 
+CLIP = "clip"
+DEPENDENCIES = "dependencies"
+REDUCE_INPUT = "reduce_input"
+REDUCE_DEPENDENCIES = "reduce_dependencies"
+
 COMBINER = "combiner"
 
 ENCODER = "encoder"
 DECODER = "decoder"
 
 DEFAULTS = "defaults"
+DEFAULT = "default"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05

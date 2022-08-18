@@ -3,6 +3,7 @@ from typing import Dict
 import pytest
 import torch
 
+from ludwig.constants import ENCODER, TYPE
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -18,19 +19,22 @@ def timeseries_config():
     return {
         "name": "timeseries_12",
         "type": "timeseries",
-        "max_len": MAX_LEN,
-        "embedding_size": EMBEDDING_SIZE,
-        "max_sequence_length": SEQ_SIZE,
-        "output_size": 8,
-        "state_size": 8,
-        "num_filters": 8,
-        "hidden_size": 8,
+        "encoder": {
+            "max_len": MAX_LEN,
+            "embedding_size": EMBEDDING_SIZE,
+            "max_sequence_length": SEQ_SIZE,
+            "output_size": 8,
+            "state_size": 8,
+            "num_filters": 8,
+            "hidden_size": 8,
+        },
     }
 
 
 @pytest.mark.parametrize("encoder", ["rnn", "stacked_cnn", "parallel_cnn"])
 def test_timeseries_input_feature(timeseries_config: Dict, encoder: str) -> None:
-    timeseries_config.update({"encoder": encoder})
+    timeseries_config[ENCODER][TYPE] = encoder
+
     timeseries_input_feature = TimeseriesInputFeature(timeseries_config).to(DEVICE)
     timeseries_tensor = torch.randn([SEQ_SIZE, TIMESERIES_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = timeseries_input_feature(timeseries_tensor)

@@ -24,8 +24,8 @@ import torchaudio
 from ludwig.constants import (
     AUDIO,
     AUDIO_FEATURE_KEYS,
-    BACKFILL,
     COLUMN,
+    ENCODER,
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
@@ -55,6 +55,8 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
+
+logger = logging.getLogger(__name__)
 
 
 class _AudioPreprocessing(torch.nn.Module):
@@ -99,19 +101,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": BACKFILL,
-            "in_memory": True,
-            "padding_value": 0,
-            "norm": None,
-            "type": "fbank",
-            "window_length_in_s": 0.04,
-            "window_shift_in_s": 0.02,
-            "num_fft_points": None,
-            "window_type": "hamming",
-            "num_filter_bands": 80,
-        }
+        return AudioInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -232,7 +222,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             merged_stats["cropped"],
             audio_file_length_limit_in_s,
         )
-        logging.debug(print_statistics)
+        logger.debug(print_statistics)
         return processed_audio
 
     @staticmethod
@@ -242,7 +232,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         audio_feature_dict: Dict[str, Union[float, int, str]],
         feature_dim: int,
         max_length: int,
-        padding_value: int,
+        padding_value: float,
         normalization_type: Optional[str] = None,
         type_key: str = TYPE,
     ):
@@ -371,7 +361,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError("There are no audio files in the dataset provided.")
 
         first_audio_entry = next(iter(column))
-        logging.debug(f"Detected audio feature type is {type(first_audio_entry)}")
+        logger.debug(f"Detected audio feature type is {type(first_audio_entry)}")
 
         if not isinstance(first_audio_entry, str) and not isinstance(first_audio_entry, torch.Tensor):
             raise ValueError(
@@ -447,15 +437,13 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    encoder = "parallel_cnn"
-    max_sequence_length = None
-    embedding_size = None
+    def __init__(self, input_feature_config: Union[AudioInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature, encoder_obj=encoder_obj)
-        if not self.embedding_size:
+        if not getattr(self.encoder_obj.config, "embedding_size", None):
             raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
-        if not self.max_sequence_length:
+        if not getattr(self.encoder_obj.config, "max_sequence_length", None):
             raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):
@@ -469,7 +457,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length, self.embedding_size])
+        return torch.Size([self.encoder_obj.config.max_sequence_length, self.encoder_obj.config.embedding_size])
 
     @property
     def input_dtype(self):
@@ -477,13 +465,16 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["max_sequence_length"] = feature_metadata["max_length"]
-        input_feature["embedding_size"] = feature_metadata["feature_dim"]
-        input_feature["should_embed"] = False
+        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_length"]
+        input_feature[ENCODER]["embedding_size"] = feature_metadata["feature_dim"]
+        input_feature[ENCODER]["should_embed"] = False
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_values(input_feature, {TIED: None, "preprocessing": {}})
+        defaults = AudioInputFeatureConfig()
+        set_default_values(
+            input_feature, {ENCODER: {TYPE: defaults.encoder.type}, PREPROCESSING: {}, TIED: defaults.tied}
+        )
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

@@ -1265,18 +1265,19 @@ def build_preprocessing_parameters(
 
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"])
-            if hasattr(encoder_class, "fixed_preprocessing_parameters"):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
+            if TYPE in feature_config[ENCODER]:
+                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
+                if hasattr(encoder_class, "fixed_preprocessing_parameters"):
+                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-                preprocessing_parameters = merge_dict(
-                    preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                )
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
+                    )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
         if fill_value is not None:
-            preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
+            preprocessing_parameters.update({"computed_fill_value": fill_value})
 
         feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
 
@@ -1443,11 +1444,14 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
     # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get("computed_fill_value")
 
-    if computed_fill_value is not None:
+    if (
+        missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE}
+        and computed_fill_value is not None
+    ):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
+    elif missing_value_strategy in {BACKFILL, BFILL, PAD, FFILL}:
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
@@ -1457,7 +1461,7 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         # result in the removal of the rows.
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
     else:
-        raise ValueError("Invalid missing value strategy")
+        raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
