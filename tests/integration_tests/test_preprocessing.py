@@ -262,6 +262,29 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     assert np.all(concatenated_df[num_feat[PROC_COLUMN]] == 0.0)
 
 
+def test_column_feature_type_mismatch_fill():
+    """Tests that we are able to fill missing values even in columns where the column dtype and desired feature
+    dtype do not match."""
+    cat_feat = category_feature()
+    bin_feat = binary_feature()
+    input_features = [cat_feat]
+    output_features = [bin_feat]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    # Construct dataframe with int-like column representing a categorical feature
+    df = pd.DataFrame(
+        {
+            cat_feat[NAME]: pd.Series(pd.array([None] + [1] * 24, dtype=pd.Int64Dtype())),
+            bin_feat[NAME]: pd.Series([True] * 25),
+        }
+    )
+
+    # run preprocessing
+    backend = LocalTestBackend()
+    ludwig_model = LudwigModel(config, backend=backend)
+    train_ds, val_ds, test_ds, _ = ludwig_model.preprocess(dataset=df)
+
+
 @pytest.mark.parametrize("format", ["file", "df"])
 def test_presplit_override(format, tmpdir):
     """Tests that provising a pre-split file or dataframe overrides the user's split config."""
