@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import pytest
 
-from ludwig.models.ecd import ECD
+from ludwig.models.base import BaseModel
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -27,44 +27,82 @@ InputFeatureOptions = namedtuple("InputFeatureOptions", "feature_type feature_op
     "input_feature_options",
     [
         # tie input features, encoders should be the same
-        InputFeatureOptions("number", None, True),
-        InputFeatureOptions("number", {"preprocessing": {"normalization": "zscore"}}, True),
-        InputFeatureOptions("binary", None, True),
-        InputFeatureOptions("category", {"vocab": ["a", "b", "c"]}, True),
-        InputFeatureOptions("set", {"vocab": ["a", "b", "c"]}, True),
-        InputFeatureOptions("sequence", {"max_sequence_length": 10, "vocab": ["x", "y", "z"]}, True),
-        InputFeatureOptions("text", {"max_sequence_length": 10, "vocab": ["a", "b", "c"]}, True),
-        InputFeatureOptions("timeseries", {"max_sequence_length": 10, "should_embed": False}, True),
-        InputFeatureOptions("audio", {"embedding_size": 64, "max_sequence_length": 16, "should_embed": False}, True),
+        InputFeatureOptions("number", {"encoder": {"type": "passthrough"}}, True),
+        InputFeatureOptions(
+            "number", {"encoder": {"type": "passthrough"}, "preprocessing": {"normalization": "zscore"}}, True
+        ),
+        InputFeatureOptions("binary", {"encoder": {"type": "passthrough"}}, True),
+        InputFeatureOptions("category", {"encoder": {"type": "dense", "vocab": ["a", "b", "c"]}}, True),
+        InputFeatureOptions("set", {"encoder": {"type": "embed", "vocab": ["a", "b", "c"]}}, True),
+        InputFeatureOptions(
+            "sequence", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["x", "y", "z"]}}, True
+        ),
+        InputFeatureOptions(
+            "text", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["a", "b", "c"]}}, True
+        ),
+        InputFeatureOptions(
+            "timeseries", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "should_embed": False}}, True
+        ),
+        InputFeatureOptions(
+            "audio",
+            {
+                "encoder": {
+                    "type": "parallel_cnn",
+                    "embedding_size": 64,
+                    "max_sequence_length": 16,
+                    "should_embed": False,
+                }
+            },
+            True,
+        ),
         # do not tie input features, encoders should be different
-        InputFeatureOptions("number", None, False),
-        InputFeatureOptions("number", {"preprocessing": {"normalization": "zscore"}}, False),
-        InputFeatureOptions("binary", None, False),
-        InputFeatureOptions("category", {"vocab": ["a", "b", "c"]}, False),
-        InputFeatureOptions("set", {"vocab": ["a", "b", "c"]}, False),
-        InputFeatureOptions("sequence", {"max_sequence_length": 10, "vocab": ["x", "y", "z"]}, False),
-        InputFeatureOptions("text", {"max_sequence_length": 10, "vocab": ["a", "b", "c"]}, False),
-        InputFeatureOptions("timeseries", {"max_sequence_length": 10, "should_embed": False}, False),
-        InputFeatureOptions("audio", {"embedding_size": 64, "max_sequence_length": 16, "should_embed": False}, False),
+        InputFeatureOptions("number", {"encoder": {"type": "passthrough"}}, False),
+        InputFeatureOptions(
+            "number", {"encoder": {"type": "passthrough"}, "preprocessing": {"normalization": "zscore"}}, False
+        ),
+        InputFeatureOptions("binary", {"encoder": {"type": "passthrough"}}, False),
+        InputFeatureOptions("category", {"encoder": {"type": "dense", "vocab": ["a", "b", "c"]}}, False),
+        InputFeatureOptions("set", {"encoder": {"type": "embed", "vocab": ["a", "b", "c"]}}, False),
+        InputFeatureOptions(
+            "sequence",
+            {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["x", "y", "z"]}},
+            False,
+        ),
+        InputFeatureOptions(
+            "text", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "vocab": ["a", "b", "c"]}}, False
+        ),
+        InputFeatureOptions(
+            "timeseries", {"encoder": {"type": "parallel_cnn", "max_sequence_length": 10, "should_embed": False}}, False
+        ),
+        InputFeatureOptions(
+            "audio",
+            {
+                "encoder": {
+                    "type": "parallel_cnn",
+                    "embedding_size": 64,
+                    "max_sequence_length": 16,
+                    "should_embed": False,
+                }
+            },
+            False,
+        ),
     ],
 )
 def test_tied_micro_level(input_feature_options):
     # build input feature config
-    input_feature_configs = []
+    input_feature_configs = list()
 
     input_feature_configs.append({"name": "input_feature_1", "type": input_feature_options.feature_type})
-    if input_feature_options.feature_options is not None:
-        input_feature_configs[0].update(input_feature_options.feature_options)
+    input_feature_configs[0].update(input_feature_options.feature_options)
 
     input_feature_configs.append({"name": "input_feature_2", "type": input_feature_options.feature_type})
-    if input_feature_options.feature_options is not None:
-        input_feature_configs[1].update(input_feature_options.feature_options)
+    input_feature_configs[1].update(input_feature_options.feature_options)
 
     # add tied option to the second feature
     if input_feature_options.tie_features:
         input_feature_configs[1]["tied"] = "input_feature_1"
 
-    input_features = ECD.build_inputs(input_feature_configs)
+    input_features = BaseModel.build_inputs(input_feature_configs)
 
     if input_feature_options.tie_features:
         # should be same encoder

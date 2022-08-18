@@ -5,6 +5,7 @@ from typing import Dict
 import pytest
 import torch
 
+from ludwig.constants import ENCODER
 from ludwig.features.bag_feature import BagInputFeature
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -23,16 +24,18 @@ def bag_config():
     return {
         "name": "bag_feature",
         "type": "bag",
-        "max_len": 5,
-        "vocab_size": 10,
-        "embedding_size": EMBEDDING_SIZE,
-        "vocab": VOCAB,
+        "encoder": {
+            "max_len": 5,
+            "vocab_size": 10,
+            "embedding_size": EMBEDDING_SIZE,
+            "vocab": VOCAB,
+        },
     }
 
 
 @pytest.mark.parametrize("encoder", ["embed"])
 def test_bag_input_feature(bag_config: Dict, encoder: str) -> None:
-    bag_config.update({"encoder": encoder})
+    bag_config[ENCODER].update({"type": encoder})
     bag_input_feature = BagInputFeature(bag_config).to(DEVICE)
     bag_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, BAG_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = bag_input_feature(bag_tensor)

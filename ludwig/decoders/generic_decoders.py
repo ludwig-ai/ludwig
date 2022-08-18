@@ -21,6 +21,7 @@ import torch
 from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
+from ludwig.schema.decoders.base import ClassifierConfig, PassthroughDecoderConfig, ProjectorConfig, RegressorConfig
 from ludwig.utils.torch_utils import Dense, get_activation
 
 logger = logging.getLogger(__name__)
@@ -28,14 +29,20 @@ logger = logging.getLogger(__name__)
 
 @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
-    def __init__(self, input_size: int = 1, num_classes: int = None, **kwargs):
+    def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
         self.input_size = input_size
         self.num_classes = num_classes
 
     def forward(self, inputs, **kwargs):
         return inputs
+
+    @staticmethod
+    def get_schema_cls():
+        return PassthroughDecoderConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -46,7 +53,7 @@ class PassthroughDecoder(Decoder):
         return self.input_shape
 
 
-@register_decoder("regressor", [BINARY, NUMBER], default=True)
+@register_decoder("regressor", [BINARY, NUMBER])
 class Regressor(Decoder):
     def __init__(
         self,
@@ -54,10 +61,12 @@ class Regressor(Decoder):
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
-        activation=None,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Dense")
@@ -70,6 +79,10 @@ class Regressor(Decoder):
             bias_initializer=bias_initializer,
         )
 
+    @staticmethod
+    def get_schema_cls():
+        return RegressorConfig
+
     @property
     def input_shape(self):
         return self.dense.input_shape
@@ -78,7 +91,7 @@ class Regressor(Decoder):
         return self.dense(inputs)
 
 
-@register_decoder("projector", [VECTOR], default=True)
+@register_decoder("projector", [VECTOR])
 class Projector(Decoder):
     def __init__(
         self,
@@ -89,9 +102,12 @@ class Projector(Decoder):
         bias_initializer="zeros",
         activation=None,
         clip=None,
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Dense")
@@ -116,6 +132,10 @@ class Projector(Decoder):
         else:
             self.clip = None
 
+    @staticmethod
+    def get_schema_cls():
+        return ProjectorConfig
+
     @property
     def input_shape(self):
         return self.dense.input_shape
@@ -127,7 +147,7 @@ class Projector(Decoder):
         return values
 
 
-@register_decoder("classifier", [CATEGORY, SET], default=True)
+@register_decoder("classifier", [CATEGORY, SET])
 class Classifier(Decoder):
     def __init__(
         self,
@@ -136,9 +156,12 @@ class Classifier(Decoder):
         use_bias=True,
         weights_initializer="xavier_uniform",
         bias_initializer="zeros",
+        decoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = decoder_config
+
         logger.debug(f" {self.name}")
 
         logger.debug("  Dense")
@@ -159,6 +182,10 @@ class Classifier(Decoder):
         # so the first time we need to compute the full dense,
         # otherwise the weights of the Dense layer would not be initialized
         self.first_call = True
+
+    @staticmethod
+    def get_schema_cls():
+        return ClassifierConfig
 
     @property
     def input_shape(self):

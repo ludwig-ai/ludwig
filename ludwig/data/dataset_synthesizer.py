@@ -33,6 +33,8 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     DATE,
+    DECODER,
+    ENCODER,
     H3,
     IMAGE,
     NAME,
@@ -111,7 +113,12 @@ def return_none(feature):
 
 
 def assign_vocab(feature):
-    feature["idx2str"] = build_vocab(feature.get("vocab_size", 10))
+    if DECODER in feature:
+        feature["idx2str"] = build_vocab(feature[DECODER].get("vocab_size", 10))
+    elif ENCODER in feature:
+        feature["idx2str"] = build_vocab(feature[ENCODER].get("vocab_size", 10))
+    else:
+        feature["idx2str"] = build_vocab(10)
 
 
 def build_feature_parameters(features):
@@ -371,7 +378,11 @@ def generate_h3(feature):
 
 def generate_vector(feature):
     # Space delimited string with floating point numbers
-    return " ".join([str(100 * random.random()) for _ in range(feature.get("vector_size", 10))])
+    if PREPROCESSING in feature:
+        vector_size = feature[PREPROCESSING].get("vector_size", 10)
+    else:
+        vector_size = feature.get("vector_size", 10)
+    return " ".join([str(100 * random.random()) for _ in range(vector_size)])
 
 
 generators_registry = {
