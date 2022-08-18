@@ -401,8 +401,8 @@ def test_regularization(generated_data, tmp_path):
 # test cache checksum function
 def test_cache_checksum(csv_filename, tmp_path):
     # setup for training
-    input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(vocab_size=2, top_k=2)]
+    input_features = [category_feature(encoder={"vocab_size": 5})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, top_k=2)]
 
     source_dataset = os.path.join(tmp_path, csv_filename)
     source_dataset = generate_data(input_features, output_features, source_dataset)
@@ -465,7 +465,7 @@ def test_cache_checksum(csv_filename, tmp_path):
 
     # force change in features names (and properties)
     prior_training_timestamp = current_training_timestamp
-    input_features = [category_feature(vocab_size=5), category_feature()]
+    input_features = [category_feature(encoder={"vocab_size": 5}), category_feature()]
     source_dataset = generate_data(input_features, output_features, source_dataset)
     config[INPUT_FEATURES] = input_features
     model = LudwigModel(config, backend=backend)

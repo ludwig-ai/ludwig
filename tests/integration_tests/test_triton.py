@@ -39,26 +39,26 @@ def test_triton_torchscript(csv_filename, tmpdir):
     input_features = [
         binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
         # TODO: future support
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
+        # sequence_feature(encoder={"vocab_size": 3}),
+        # text_feature(encoder={"vocab_size": 3}),
         # vector_feature(),
         # timeseries_feature(),
         # date_feature(),
         # h3_feature(),
-        # set_feature(vocab_size=3),
-        # bag_feature(vocab_size=3),
+        # set_feature(encoder={"vocab_size": 3}),
+        # bag_feature(encoder={"vocab_size": 3}),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
     ]
     output_features = [
         binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
-        sequence_feature(vocab_size=3),
-        text_feature(vocab_size=3),
-        set_feature(vocab_size=3),
+        category_feature(decoder={"vocab_size": 3}),
+        sequence_feature(decoder={"vocab_size": 3}),
+        text_feature(decoder={"vocab_size": 3}),
+        set_feature(decoder={"vocab_size": 3}),
         vector_feature(),
     ]
     backend = LocalTestBackend()

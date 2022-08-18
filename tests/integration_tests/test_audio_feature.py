@@ -10,16 +10,14 @@ AUDIO_W_SIZE = 16
 DEFAULT_OUTPUT_SIZE = 256
 
 
-@pytest.mark.parametrize(
-    "enc_encoder", ["stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn", "passthrough"]
-)
+@pytest.mark.parametrize("enc_encoder", ["stacked_cnn", "parallel_cnn", "stacked_parallel_cnn", "rnn", "cnnrnn"])
 def test_audio_feature(enc_encoder):
     # synthetic audio tensor
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32)
 
     # generate audio feature config
     audio_feature_config = audio_feature(
-        folder=".", encoder=enc_encoder, max_sequence_length=SEQ_SIZE, embedding_size=AUDIO_W_SIZE
+        folder=".", encoder={"type": enc_encoder, "max_sequence_length": SEQ_SIZE, "embedding_size": AUDIO_W_SIZE}
     )
 
     # instantiate audio input feature object

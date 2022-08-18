@@ -16,6 +16,8 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import DEVICE, LudwigModule, reg_loss
 from ludwig.utils.types import TorchDevice
 
+logger = logging.getLogger(__name__)
+
 
 class BaseModel(LudwigModule, metaclass=ABCMeta):
     """Base model for use in LudwigModule.
@@ -51,10 +53,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_input(
-        input_feature_def: Dict[str, Any], other_input_features: Dict[str, InputFeature]
+        input_feature_def: Dict[str, Any], other_input_features: Optional[Dict[str, InputFeature]]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
-        logging.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
+        logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
 
         encoder_obj = None
         if input_feature_def.get(TIED, None) is not None:
@@ -63,8 +65,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
                 encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
         input_feature_class = get_from_registry(input_feature_def[TYPE], input_type_registry)
-        input_feature_obj = input_feature_class(input_feature_def, encoder_obj)
-
+        input_feature_obj = input_feature_class(input_feature_def, encoder_obj=encoder_obj)
         return input_feature_obj
 
     @classmethod
@@ -84,14 +85,12 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @staticmethod
     def build_single_output(
-        output_feature_def: Dict[str, Any], output_features: Dict[str, OutputFeature]
+        output_feature_def: Dict[str, Any], output_features: Optional[Dict[str, OutputFeature]]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
-        logging.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
-
+        logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
         output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-        output_feature_obj = output_feature_class(output_feature_def, output_features)
-
+        output_feature_obj = output_feature_class(output_feature_def, output_features=output_features)
         return output_feature_obj
 
     def get_model_inputs(self):

@@ -23,9 +23,11 @@ from ludwig.constants import (
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
+    DECODER,
     DEFAULT_BIAS,
     DEFAULT_USE_BIAS,
     DEFAULTS,
+    ENCODER,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
@@ -52,6 +54,46 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.utils.misc_utils import merge_dict
+
+INPUT_FEATURE_KEYS = [
+    "name",
+    "type",
+    "column",
+    "proc_column",
+    "encoder",
+    "tied",
+    "preprocessing",
+    "vector_size",
+]
+
+OUTPUT_FEATURE_KEYS = [
+    "name",
+    "type",
+    "column",
+    "proc_column",
+    "decoder",
+    "num_classes",
+    "preprocessing",
+    "loss",
+    "reduce_input",
+    "dependencies",
+    "reduce_dependencies",
+    "top_k",
+    "vector_size",
+]
+
+FC_LAYER_KEYS = [
+    "fc_layers",
+    "num_fc_layers",
+    "output_size",
+    "use_bias",
+    "weights_initializer",
+    "bias_initializer",
+    "norm",
+    "norm_params",
+    "activation",
+    "dropout",
+]
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
@@ -104,6 +146,52 @@ def _upgrade_feature(feature: Dict[str, Any]):
             DeprecationWarning,
         )
     _traverse_dicts(feature, _upgrade_use_bias)
+
+
+def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> None:
+    """
+    This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
+    Args:
+        feature (Dict): Feature to nest encoder/decoder params for.
+        input_feature (Bool): Whether this feature is an input feature or not.
+    """
+    warn = False
+    if input_feature:
+        module_type = ENCODER
+    else:
+        module_type = DECODER
+
+    module = feature.get(module_type, {})
+    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else FC_LAYER_KEYS + OUTPUT_FEATURE_KEYS + [ENCODER, DECODER]
+    if isinstance(module, str):
+        module = {TYPE: module}
+        feature[module_type] = module
+        warn = True
+
+    nested_params = []
+    for k, v in feature.items():
+        if k not in keys:
+            module[k] = v
+            nested_params.append(k)
+            warn = True
+
+    if module_type in feature:
+        feature[module_type].update(module)
+    else:
+        feature[module_type] = module
+
+    for k in nested_params:
+        # Some of these params exist in both the decoder and the output feature schemas - to preserve old behavior,
+        # these params will be copied to the decoder and not removed from the feature.
+        if k not in FC_LAYER_KEYS:
+            del feature[k]
+
+    if warn:
+        warnings.warn(
+            f"{module_type} specific parameters should now be nested within a dictionary under the '{module_type}' "
+            f"parameter. Support for un-nested {module_type} specific parameters will be removed in v0.7",
+            DeprecationWarning,
+        )
 
 
 def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
@@ -290,6 +378,12 @@ def upgrade_deprecated_fields(config: Dict[str, Any]):
 
     for feature in config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, []):
         _upgrade_feature(feature)
+
+    for feature in config.get(INPUT_FEATURES, []):
+        _upgrade_encoder_decoder_params(feature, input_feature=True)
+
+    for feature in config.get(OUTPUT_FEATURES, []):
+        _upgrade_encoder_decoder_params(feature, input_feature=False)
 
     if HYPEROPT in config:
         _upgrade_hyperopt(config[HYPEROPT])

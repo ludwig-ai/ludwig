@@ -10,7 +10,7 @@ from tests.integration_tests.utils import binary_feature, category_feature, numb
 def test_config_tabnet(eval_batch_size):
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -48,7 +48,7 @@ def test_config_tabnet(eval_batch_size):
 def test_config_bad_combiner():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -96,7 +96,7 @@ def test_config_bad_combiner():
 def test_config_bad_combiner_types_enums():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -108,13 +108,13 @@ def test_config_bad_combiner_types_enums():
 
     # Test weights initializer:
     config["combiner"]["weights_initializer"] = {"test": "fail"}
-    with pytest.raises(ValidationError, match=r"{'test': 'fail'} is not of*"):
+    with pytest.raises(ValidationError, match=r"'type' is a required property"):
         validate_config(config)
     config["combiner"]["weights_initializer"] = "fail"
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
     config["combiner"]["weights_initializer"] = {}
-    with pytest.raises(ValidationError, match=r"Failed validating 'type'"):
+    with pytest.raises(ValidationError, match=r"'type' is a required property"):
         validate_config(config)
     config["combiner"]["weights_initializer"] = {"type": "fail"}
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
@@ -130,7 +130,7 @@ def test_config_bad_combiner_types_enums():
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
         validate_config(config)
     config["combiner"]["bias_initializer"] = {}
-    with pytest.raises(ValidationError, match=r"Failed validating 'type'"):
+    with pytest.raises(ValidationError, match=r"'type' is a required property"):
         validate_config(config)
     config["combiner"]["bias_initializer"] = {"type": "fail"}
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):

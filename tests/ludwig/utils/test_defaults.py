@@ -5,8 +5,11 @@ from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
+    DECODER,
     DEFAULTS,
+    DEPENDENCIES,
     DROP_ROW,
+    ENCODER,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FILL_WITH_MODE,
@@ -19,14 +22,19 @@ from ludwig.constants import (
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SCHEDULER,
     SPLIT,
+    SUM,
+    TIED,
+    TOP_K,
     TRAINER,
     TYPE,
 )
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.defaults import BASE_PREPROCESSING_SPLIT_CONFIG, merge_with_defaults
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -268,6 +276,42 @@ def test_deprecated_split_aliases(stratify, force_split):
         assert split.get("column") == stratify
 
 
+def test_set_default_values():
+    config = {
+        INPUT_FEATURES: [number_feature(encoder={"max_sequence_length": 10})],
+        OUTPUT_FEATURES: [category_feature(decoder={})],
+    }
+
+    assert TIED not in config[INPUT_FEATURES][0]
+    assert TOP_K not in config[OUTPUT_FEATURES][0]
+    assert DEPENDENCIES not in config[OUTPUT_FEATURES][0]
+    assert REDUCE_INPUT not in config[OUTPUT_FEATURES][0]
+    assert REDUCE_DEPENDENCIES not in config[OUTPUT_FEATURES][0]
+
+    set_default_values(config[INPUT_FEATURES][0], {ENCODER: {TYPE: "passthrough"}, TIED: None})
+
+    set_default_values(
+        config[OUTPUT_FEATURES][0],
+        {
+            DECODER: {
+                TYPE: "classifier",
+            },
+            TOP_K: 3,
+            DEPENDENCIES: [],
+            REDUCE_INPUT: SUM,
+            REDUCE_DEPENDENCIES: SUM,
+        },
+    )
+
+    assert config[INPUT_FEATURES][0][ENCODER][TYPE] == "passthrough"
+    assert config[INPUT_FEATURES][0][TIED] is None
+    assert config[OUTPUT_FEATURES][0][DECODER][TYPE] == "classifier"
+    assert config[OUTPUT_FEATURES][0][TOP_K] == 3
+    assert config[OUTPUT_FEATURES][0][DEPENDENCIES] == []
+    assert config[OUTPUT_FEATURES][0][REDUCE_INPUT] == SUM
+    assert config[OUTPUT_FEATURES][0][REDUCE_DEPENDENCIES] == SUM
+
+
 def test_merge_with_defaults():
     # configuration with legacy parameters
     legacy_config_format = {
@@ -324,6 +368,7 @@ def test_merge_with_defaults():
             {
                 "type": "number",
                 "name": "number_input_feature",
+                "encoder": {"type": "passthrough"},
                 "column": "number_input_feature",
                 "proc_column": "number_input_feature_mZFLky",
                 "tied": None,
@@ -331,12 +376,14 @@ def test_merge_with_defaults():
             {
                 "type": "image",
                 "name": "image_input_feature",
-                "encoder": "stacked_cnn",
-                "conv_layers": [
-                    {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
-                    {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
-                ],
-                "conv_use_bias": True,
+                "encoder": {
+                    "type": "stacked_cnn",
+                    "conv_layers": [
+                        {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
+                        {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
+                    ],
+                    "conv_use_bias": True,
+                },
                 "column": "image_input_feature",
                 "proc_column": "image_input_feature_mZFLky",
                 "tied": None,
@@ -348,9 +395,11 @@ def test_merge_with_defaults():
                 "type": "number",
                 "name": "number_output_feature",
                 "column": "number_output_feature",
+                "decoder": {
+                    "type": "regressor",
+                },
                 "proc_column": "number_output_feature_mZFLky",
                 "loss": {"type": "mean_squared_error", "weight": 1},
-                "clip": None,
                 "dependencies": [],
                 "reduce_input": "sum",
                 "reduce_dependencies": "sum",
@@ -424,6 +473,7 @@ def test_merge_with_defaults():
                     "lowercase": True,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "category": {
@@ -432,6 +482,7 @@ def test_merge_with_defaults():
                     "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "set": {
@@ -441,6 +492,7 @@ def test_merge_with_defaults():
                     "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "bag": {
@@ -450,11 +502,24 @@ def test_merge_with_defaults():
                     "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
-            "binary": {PREPROCESSING: {"missing_value_strategy": "fill_with_false"}},
+            "binary": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_false",
+                    "computed_fill_value": None,
+                    "fallback_true_label": None,
+                    "fill_value": None,
+                }
+            },
             "number": {
-                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 0, "normalization": None}
+                PREPROCESSING: {
+                    "computed_fill_value": 0.0,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": 0.0,
+                    "normalization": None,
+                }
             },
             "sequence": {
                 PREPROCESSING: {
@@ -468,20 +533,27 @@ def test_merge_with_defaults():
                     "vocab_file": None,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
+                    "computed_fill_value": "<UNK>",
                 }
             },
             "timeseries": {
                 PREPROCESSING: {
                     "timeseries_length_limit": 256,
-                    "padding_value": 0,
+                    "padding_value": 0.0,
                     "padding": "right",
                     "tokenizer": "space",
                     "missing_value_strategy": "fill_with_const",
+                    "computed_fill_value": "",
                     "fill_value": "",
                 }
             },
             "image": {
                 PREPROCESSING: {
+                    "computed_fill_value": None,
+                    "fill_value": None,
+                    "height": None,
+                    "width": None,
+                    "num_channels": None,
                     "missing_value_strategy": "backfill",
                     "in_memory": True,
                     "resize_method": "interpolate",
@@ -499,7 +571,7 @@ def test_merge_with_defaults():
                     "audio_file_length_limit_in_s": 7.5,
                     "missing_value_strategy": "backfill",
                     "in_memory": True,
-                    "padding_value": 0,
+                    "padding_value": 0.0,
                     "norm": None,
                     "type": "fbank",
                     "window_length_in_s": 0.04,
@@ -507,13 +579,33 @@ def test_merge_with_defaults():
                     "num_fft_points": None,
                     "window_type": "hamming",
                     "num_filter_bands": 80,
+                    "computed_fill_value": None,
+                    "fill_value": None,
                 }
             },
-            "h3": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": 576495936675512319}},
-            "date": {
-                PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": "", "datetime_format": None}
+            "h3": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": 576495936675512319,
+                    "computed_fill_value": 576495936675512319,
+                }
             },
-            "vector": {PREPROCESSING: {"missing_value_strategy": "fill_with_const", "fill_value": ""}},
+            "date": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_const",
+                    "computed_fill_value": "",
+                    "fill_value": "",
+                    "datetime_format": None,
+                }
+            },
+            "vector": {
+                PREPROCESSING: {
+                    "missing_value_strategy": "fill_with_const",
+                    "computed_fill_value": "",
+                    "fill_value": "",
+                    "vector_size": None,
+                }
+            },
         },
         "combiner": {
             "type": "concat",
