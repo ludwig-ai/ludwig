@@ -23,7 +23,6 @@ from ludwig.constants import (
     REDUCE_DEPENDENCIES,
     REDUCE_INPUT,
     SCHEDULER,
-    SPLIT,
     SUM,
     TIED,
     TOP_K,
