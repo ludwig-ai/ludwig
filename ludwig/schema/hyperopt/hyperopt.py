@@ -64,34 +64,3 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 def get_hyperopt_jsonschema():
     return schema_utils.unload_jsonschema_from_marshmallow_class(HyperoptConfig)
-
-    # def allowed_types_for_trainer_schema(cls) -> List[str]:
-    #     """Returns the allowed values for the "type" field on the given trainer schema."""
-    #     return cls.Schema().fields[TYPE].validate.choices
-
-    # conds = []
-    # all_trainer_types = []
-    # for trainer in trainer_schema_registry:
-    #     trainer_cls = trainer_schema_registry[trainer]
-
-    #     allowed_trainer_types = allowed_types_for_trainer_schema(trainer_cls)
-    #     all_trainer_types.extend(allowed_trainer_types)
-
-    #     other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
-    #     other_props.pop("type")
-    #     for trainer_type in allowed_trainer_types:
-    #         trainer_cond = schema_utils.create_cond(
-    #             {"type": trainer_type},
-    #             other_props,
-    #         )
-    #         conds.append(trainer_cond)
-
-    # return {
-    #     "type": "object",
-    #     "properties": {
-    #         "type": {"type": "string", "enum": all_trainer_types},
-    #     },
-    #     "title": "trainer_options",
-    #     "allOf": conds,
-    #     "description": "Use type 'trainer' for training ECD models, or 'lightgbm_trainer' for Tree models.",
-    # }
