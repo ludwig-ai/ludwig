@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
@@ -82,26 +82,38 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         description="How to reduce the dependencies of the output feature.",
     )
 
-    input_size: int = None
+    input_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the input to the decoder.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
+    )
 
-    num_classes: int = None
+    num_classes: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the input to the decoder.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
+    )
 
-    fc_layers: List[dict] = None
+    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
+        default=None, description="List of dictionaries containing the parameters for each fully connected layer."
+    )
 
-    num_fc_layers: int = 0
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0, description="Number of fully-connected layers if fc_layers not specified."
+    )
 
-    output_size: int = 256
+    output_size: int = schema_utils.PositiveInteger(default=256, description="Output size of fully connected stack.")
 
-    use_bias: bool = True
+    use_bias: bool = schema_utils.Boolean(default=True, description="Whether the layer uses a bias vector.")
 
-    weights_initializer: str = "xavier_uniform"
+    weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(default="xavier_uniform", description="")
 
-    bias_initializer: str = "zeros"
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(default="zeros", description="")
 
-    norm: str = None
+    norm: Optional[str] = schema_utils.StringOptions(["batch", "layer"], description="")
 
-    norm_params: dict = None
+    norm_params: Optional[dict] = schema_utils.Dict(description="")
 
-    activation: str = "relu"
+    activation: str = schema_utils.ActivationOptions(default="relu", description="")
 
-    dropout: float = 0
+    dropout: float = schema_utils.FloatRange(default=0.0, min=0, max=1, description="")
