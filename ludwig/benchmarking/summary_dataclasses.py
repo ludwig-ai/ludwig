@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from statistics import mean
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 from pprint import pprint
 
 from ludwig.benchmarking.utils import format_memory, format_time
@@ -12,29 +12,6 @@ from ludwig.modules.metric_registry import get_metric_classes, metric_feature_re
 from ludwig.utils.data_utils import load_json, flatten_dict
 
 REPORT_JSON = "report.json"
-
-
-@dataclass
-class MetricsSummary:
-    """Summary of metrics from one experiment."""
-
-    # Path containing the artifacts for the experiment.
-    experiment_local_directory: str
-
-    # Full Ludwig config.
-    config: Dict[str, Any]
-
-    # LudwigModel output feature type.
-    output_feature_type: str
-
-    # LudwigModel output feature name.
-    output_feature_name: str
-
-    # Dictionary that maps from metric name to their values.
-    metric_to_values: Dict[str, Union[float, int]]
-
-    # Names of metrics for the output feature.
-    metric_names: set
 
 
 @dataclass
@@ -71,6 +48,52 @@ class Diff:
             self.base_value_str = str(self.base_value)
             self.experimental_value_str = str(self.experimental_value)
             self.diff_str = str(self.diff)
+
+
+def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
+    """Build a diff between any type of metric.
+
+    :param name: name assigned to the metric to be diff-ed.
+    :param base_value: base value of the metric.
+    :param experimental_value: experimental value of the metric.
+    """
+    diff = experimental_value - base_value
+    diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
+
+    return Diff(
+        name=name,
+        base_value=base_value,
+        experimental_value=experimental_value,
+        diff=diff,
+        diff_percentage=diff_percentage,
+    )
+
+
+##############################
+# Resource Usage Dataclasses #
+##############################
+
+@dataclass
+class MetricsSummary:
+    """Summary of metrics from one experiment."""
+
+    # Path containing the artifacts for the experiment.
+    experiment_local_directory: str
+
+    # Full Ludwig config.
+    config: Dict[str, Any]
+
+    # LudwigModel output feature type.
+    output_feature_type: str
+
+    # LudwigModel output feature name.
+    output_feature_name: str
+
+    # Dictionary that maps from metric name to their values.
+    metric_to_values: Dict[str, Union[float, int]]
+
+    # Names of metrics for the output feature.
+    metric_names: set
 
 
 @dataclass
@@ -172,6 +195,72 @@ def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
     print("Exported report to", path)
 
 
+def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
+    """Build a metrics summary for an experiment.
+
+    :param experiment_local_directory: directory where the experiment artifacts live.
+        e.g. local_experiment_repo/ames_housing/some_experiment/
+    """
+    config = load_json(os.path.join(experiment_local_directory, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
+    report = load_json(os.path.join(experiment_local_directory, "test_statistics.json"))
+    output_feature_type: str = config["output_features"][0]["type"]
+    output_feature_name: str = config["output_features"][0]["name"]
+    metric_dict = report[output_feature_name]
+    full_metric_names = get_metric_classes(output_feature_type)
+    metric_to_values: dict = {
+        metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict
+    }
+    metric_names: set = set(metric_to_values)
+
+    return MetricsSummary(
+        experiment_local_directory=experiment_local_directory,
+        config=config,
+        output_feature_name=output_feature_name,
+        output_feature_type=output_feature_type,
+        metric_to_values=metric_to_values,
+        metric_names=metric_names,
+    )
+
+
+def build_metrics_diff(
+        dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
+) -> MetricsDiff:
+    """Build a MetricsDiff object between two experiments on a dataset.
+
+    :param dataset_name: the name of the Ludwig dataset.
+    :param base_experiment_name: the name of the base experiment.
+    :param experimental_experiment_name: the name of the experimental experiment.
+    :param local_directory: the local directory where the experiment artifacts are downloaded.
+    """
+    base_summary: MetricsSummary = build_metrics_summary(
+        os.path.join(local_directory, dataset_name, base_experiment_name)
+    )
+    experimental_summary: MetricsSummary = build_metrics_summary(
+        os.path.join(local_directory, dataset_name, experimental_experiment_name)
+    )
+
+    metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
+
+    metrics: List[Diff] = [
+        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
+        for name in metrics_in_common
+    ]
+
+    return MetricsDiff(
+        dataset_name=dataset_name,
+        base_experiment_name=base_experiment_name,
+        experimental_experiment_name=experimental_experiment_name,
+        local_directory=local_directory,
+        base_summary=base_summary,
+        experimental_summary=experimental_summary,
+        metrics=metrics,
+    )
+
+
+##############################
+# Resource Usage Dataclasses #
+##############################
+
 @dataclass
 class ResourceUsageSummary:
     """Summary of resource usage metrics from one experiment."""
@@ -261,99 +350,14 @@ def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, pa
     print("Exported report to", path)
 
 
-def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
-    diff = experimental_value - base_value
-    diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
-
-    return Diff(
-        name=name,
-        base_value=base_value,
-        experimental_value=experimental_value,
-        diff=diff,
-        diff_percentage=diff_percentage,
-    )
-
-
-def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
-    config = load_json(os.path.join(experiment_local_directory, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
-    report = load_json(os.path.join(experiment_local_directory, "test_statistics.json"))
-    output_feature_type: str = config["output_features"][0]["type"]
-    output_feature_name: str = config["output_features"][0]["name"]
-    metric_dict = report[output_feature_name]
-    full_metric_names = get_metric_classes(output_feature_type)
-    metric_to_values: dict = {
-        metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict
-    }
-    metric_names: set = set(metric_to_values)
-
-    return MetricsSummary(
-        experiment_local_directory=experiment_local_directory,
-        config=config,
-        output_feature_name=output_feature_name,
-        output_feature_type=output_feature_type,
-        metric_to_values=metric_to_values,
-        metric_names=metric_names,
-    )
-
-
-def build_metrics_diff(
-        dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
-) -> MetricsDiff:
-    base_summary: MetricsSummary = build_metrics_summary(
-        os.path.join(local_directory, dataset_name, base_experiment_name)
-    )
-    experimental_summary: MetricsSummary = build_metrics_summary(
-        os.path.join(local_directory, dataset_name, experimental_experiment_name)
-    )
-
-    metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-
-    metrics: List[Diff] = [
-        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
-        for name in metrics_in_common
-    ]
-
-    return MetricsDiff(
-        dataset_name=dataset_name,
-        base_experiment_name=base_experiment_name,
-        experimental_experiment_name=experimental_experiment_name,
-        local_directory=local_directory,
-        base_summary=base_summary,
-        experimental_summary=experimental_summary,
-        metrics=metrics,
-    )
-
-
-def build_resource_usage_summary(path):
-    report = load_json(path)
-    code_block_tag = report["code_block_tag"]
-    report = {key: value for key, value in report.items() if isinstance(value, (int, float))}
-    metric_names = set(report)
-    return ResourceUsageSummary(code_block_tag=code_block_tag, metric_to_values=report, metric_names=metric_names)
-
-
-def build_single_resource_usage_diff_from_path(base_path, experimental_path):
-    base_summary = build_resource_usage_summary(base_path)
-    experimental_summary = build_resource_usage_summary(experimental_path)
-
-    metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-    metrics: List[Diff] = [
-        build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
-        for name in metrics_in_common
-    ]
-    diff = ResourceUsageDiff(
-        code_block_tag=base_summary.code_block_tag,
-        base_experiment_name=base_summary.code_block_tag,
-        experimental_experiment_name=experimental_summary.code_block_tag,
-        metrics=metrics,
-    )
-    return diff
-
-
-def average_runs(path_to_runs_dir):
+def average_runs(path_to_runs_dir) -> Dict[str, Union[int, float]]:
     """Return average metrics from code blocks/function that ran more than once.
 
     Metrics for code blocks/functions that were executed exactly once will be returned as is.
+
+    :param path_to_runs_dir: path to where metrics specific to a tag are stored.
+        e.g. resource_usage_out_dir/torch_ops_resource_usage/LudwigModel.evaluate/
+        This directory will contain JSON files with the following pattern run_*.json
     """
     runs = [load_json(os.path.join(path_to_runs_dir, run)) for run in os.listdir(path_to_runs_dir)]
     # asserting that keys to each of the dictionaries are consistent throughout the runs.
@@ -365,7 +369,15 @@ def average_runs(path_to_runs_dir):
     return runs_average
 
 
-def summarize_resource_usage(path, tags=None) -> List[ResourceUsageSummary]:
+def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> List[ResourceUsageSummary]:
+    """Create resource usage summaries for each code block/function that was decorated with ResourceUsageTracker.
+
+    Each entry of the list corresponds to the metrics collected from a code block/function run.
+    Important: code blocks that ran more than once are averaged.
+
+    :param path: corresponds to the `output_dir` argument in a ResourceUsageTracker run.
+    :param tags: (optional) list of tags to create summary for. If None, metrics from all tags will be summarized.
+    """
     summary = dict()
     # metric types: system_resource_usage, torch_ops_resource_usage.
     for metric_type in os.listdir(path):
@@ -377,6 +389,7 @@ def summarize_resource_usage(path, tags=None) -> List[ResourceUsageSummary]:
             if code_block_tag not in summary:
                 summary[code_block_tag] = {}
             run_path = os.path.join(metric_type_path, code_block_tag)
+            # Metrics from code blocks/functions that ran more than once are averaged.
             summary[code_block_tag][metric_type] = average_runs(run_path)
 
     summary_list = []
@@ -391,11 +404,11 @@ def summarize_resource_usage(path, tags=None) -> List[ResourceUsageSummary]:
     return summary_list
 
 
-def build_resource_usage_diff(base_path, experimental_path):
+def build_resource_usage_diff(base_path: str, experimental_path: str) -> List[ResourceUsageDiff]:
     """Build and return a ResourceUsageDiff object to diff resource usage metrics between two experiments.
 
-    base_path and experimental_path corresponds to the output_dir argument in
-    ResourceUsageTracker for two different experiments
+    :param base_path: corresponds to the `output_dir` argument in the base ResourceUsageTracker run.
+    :param experimental_path: corresponds to the `output_dir` argument in the experimental ResourceUsageTracker run.
     """
     base_summary_list = summarize_resource_usage(base_path)
     experimental_summary_list = summarize_resource_usage(experimental_path)
