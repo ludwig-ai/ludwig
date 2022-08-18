@@ -171,7 +171,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         if k not in keys:
             module[k] = v
             if k in FC_LAYER_KEYS and module_type == DECODER:
-                module[f'fc_{k}'] = v
+                module[f"fc_{k}"] = v
             nested_params.append(k)
             warn = True
 
