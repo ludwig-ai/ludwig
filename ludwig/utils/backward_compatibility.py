@@ -228,7 +228,8 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         module_type = DECODER
 
     module = feature.get(module_type, {})
-    keys = INPUT_FEATURE_KEYS if module_type == ENCODER else FC_LAYER_KEYS + OUTPUT_FEATURE_KEYS + [ENCODER, DECODER]
+    # List of keys to keep in the output feature.
+    feature_keys = INPUT_FEATURE_KEYS if module_type == ENCODER else FC_LAYER_KEYS + OUTPUT_FEATURE_KEYS
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module
@@ -236,7 +237,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
 
     nested_params = []
     for k, v in feature.items():
-        if k not in keys:
+        if k not in feature_keys:
             module[k] = v
             nested_params.append(k)
             warn = True
