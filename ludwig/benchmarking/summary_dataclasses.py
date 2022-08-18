@@ -1,13 +1,12 @@
+import csv
 import logging
 import os
-import csv
 from dataclasses import dataclass
 from statistics import mean
-from typing import Any, Dict, List, Union, Optional
-
-from ludwig.benchmarking.utils import format_memory, format_time
+from typing import Any, Dict, List, Optional, Union
 
 import ludwig.modules.metric_modules  # noqa: F401
+from ludwig.benchmarking.utils import format_memory, format_time
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
 from ludwig.utils.data_utils import load_json
@@ -71,6 +70,7 @@ def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
 ##############################
 # Resource Usage Dataclasses #
 ##############################
+
 
 @dataclass
 class MetricsSummary:
@@ -157,13 +157,20 @@ class MetricsDiff:
 
 
 def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
-    """Export metrics report to .csv
+    """Export metrics report to .csv.
 
     :param metrics_diff: MetricsDiff object containing the diff for two experiments on a dataset.
     :param path: file name of the exported csv.
     """
-    header = ["Dataset Name", "Output Feature Name", "Metric Name", metrics_diff.base_experiment_name,
-              metrics_diff.experimental_experiment_name, "Diff", "Diff Percentage"]
+    header = [
+        "Dataset Name",
+        "Output Feature Name",
+        "Metric Name",
+        metrics_diff.base_experiment_name,
+        metrics_diff.experimental_experiment_name,
+        "Diff",
+        "Diff Percentage",
+    ]
     rows = []
     for metric in sorted(metrics_diff.metrics, key=lambda m: m.name):
         output_feature_name = metrics_diff.base_summary.output_feature_name
@@ -175,8 +182,16 @@ def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
         if isinstance(diff_percentage, float):
             diff_percentage = round(metric.diff_percentage, 3)
         rows.append(
-            [metrics_diff.dataset_name, output_feature_name, metric_name, experiment1_val, experiment2_val, diff,
-             diff_percentage])
+            [
+                metrics_diff.dataset_name,
+                output_feature_name,
+                metric_name,
+                experiment1_val,
+                experiment2_val,
+                diff,
+                diff_percentage,
+            ]
+        )
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(header)
@@ -212,7 +227,7 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
 
 
 def build_metrics_diff(
-        dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
+    dataset_name: str, base_experiment_name: str, experimental_experiment_name: str, local_directory: str
 ) -> MetricsDiff:
     """Build a MetricsDiff object between two experiments on a dataset.
 
@@ -249,6 +264,7 @@ def build_metrics_diff(
 ##############################
 # Resource Usage Dataclasses #
 ##############################
+
 
 @dataclass
 class ResourceUsageSummary:
@@ -310,21 +326,34 @@ class ResourceUsageDiff:
 
 
 def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, path: str):
-    """Export resource usage metrics report to .csv
+    """Export resource usage metrics report to .csv.
 
     :param resource_usage_diff: ResourceUsageDiff object containing the diff for two experiments on a dataset.
     :param path: file name of the exported csv.
     """
-    header = ["Code Block Tag", "Metric Name", resource_usage_diff.base_experiment_name,
-              resource_usage_diff.experimental_experiment_name, "Diff", "Diff Percentage"]
+    header = [
+        "Code Block Tag",
+        "Metric Name",
+        resource_usage_diff.base_experiment_name,
+        resource_usage_diff.experimental_experiment_name,
+        "Diff",
+        "Diff Percentage",
+    ]
     rows = []
     for metric in sorted(resource_usage_diff.metrics, key=lambda m: m.name):
         diff_percentage = metric.diff_percentage
         if isinstance(metric.diff_percentage, float):
             diff_percentage = round(metric.diff_percentage, 3)
         rows.append(
-            [resource_usage_diff.code_block_tag, metric.name, metric.base_value_str, metric.experimental_value_str,
-             metric.diff_str, diff_percentage])
+            [
+                resource_usage_diff.code_block_tag,
+                metric.name,
+                metric.base_value_str,
+                metric.experimental_value_str,
+                metric.diff_str,
+                diff_percentage,
+            ]
+        )
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(header)
@@ -332,7 +361,7 @@ def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, pa
     logging.info(f"Exported a CSV report to {path}")
 
 
-def average_runs(path_to_runs_dir) -> Dict[str, Union[int, float]]:
+def average_runs(path_to_runs_dir: str) -> Dict[str, Union[int, float]]:
     """Return average metrics from code blocks/function that ran more than once.
 
     Metrics for code blocks/functions that were executed exactly once will be returned as is.
@@ -381,13 +410,20 @@ def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> Lis
             assert "num_runs" in metrics
             assert "num_runs" not in merged_summary or metrics["num_runs"] == merged_summary["num_runs"]
             merged_summary.update(metrics)
-        summary_list.append(ResourceUsageSummary(code_block_tag=code_block_tag, metric_to_values=merged_summary,
-                                                 metric_names=set(merged_summary)))
+        summary_list.append(
+            ResourceUsageSummary(
+                code_block_tag=code_block_tag, metric_to_values=merged_summary, metric_names=set(merged_summary)
+            )
+        )
     return summary_list
 
 
-def build_resource_usage_diff(base_path: str, experimental_path: str, base_experiment_name: Optional[str] = None,
-                              experimental_experiment_name: Optional[str] = None) -> List[ResourceUsageDiff]:
+def build_resource_usage_diff(
+    base_path: str,
+    experimental_path: str,
+    base_experiment_name: Optional[str] = None,
+    experimental_experiment_name: Optional[str] = None,
+) -> List[ResourceUsageDiff]:
     """Build and return a ResourceUsageDiff object to diff resource usage metrics between two experiments.
 
     :param base_path: corresponds to the `output_dir` argument in the base ResourceUsageTracker run.
@@ -412,7 +448,9 @@ def build_resource_usage_diff(base_path: str, experimental_path: str, base_exper
         diff = ResourceUsageDiff(
             code_block_tag=base_summary.code_block_tag,
             base_experiment_name=base_experiment_name if base_experiment_name else "experiment_1",
-            experimental_experiment_name=experimental_experiment_name if experimental_experiment_name else "experiment_2",
+            experimental_experiment_name=experimental_experiment_name
+            if experimental_experiment_name
+            else "experiment_2",
             metrics=metrics,
         )
         diffs.append(diff)

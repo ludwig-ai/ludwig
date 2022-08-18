@@ -1,28 +1,26 @@
-import os
 import asyncio
 import functools
 import logging
-
-from types import ModuleType
-from typing import Any, Dict, List, Tuple, Union
-
+import os
+import shutil
 from concurrent.futures import ThreadPoolExecutor
+from types import ModuleType
+from typing import Dict, List, Tuple, Union
 
 import fsspec
-import shutil
 import pandas as pd
 
-from ludwig.utils.data_utils import load_yaml
 from ludwig.constants import CATEGORY
 from ludwig.datasets.base_dataset import BaseDataset
 from ludwig.globals import CONFIG_YAML
+from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def load_from_module(
-        dataset_module: Union[BaseDataset, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
+    dataset_module: Union[BaseDataset, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
@@ -72,8 +70,11 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
 
 
 def download_artifacts(
-        bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str,
-        local_dir: str = "benchmarking_summaries",
+    bench_config_path: str,
+    base_experiment: str,
+    experimental_experiment: str,
+    download_base_path: str,
+    local_dir: str = "benchmarking_summaries",
 ) -> Tuple[str, List[str]]:
     """Download benchmarking artifacts for two experiments.
 
@@ -99,14 +100,15 @@ def download_artifacts(
     downloaded_names = loop.run_until_complete(futures)
 
     dataset_names = [experiment_tuple[0] for experiment_tuple in set(downloaded_names) if experiment_tuple[0]]
-    assert len(set(experiment_tuple[1] for experiment_tuple in downloaded_names)) == 1 and downloaded_names[0][
-        1] == local_dir, "Experiments not downloaded to the same path"
+    assert (
+        len({experiment_tuple[1] for experiment_tuple in downloaded_names}) == 1 and downloaded_names[0][1] == local_dir
+    ), "Experiments not downloaded to the same path"
 
     return local_dir, dataset_names
 
 
 async def download_one(
-        fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
+    fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
 ) -> Tuple[str, str]:
     """Download `config.yaml` and `report.json` for an experiment.
 
@@ -130,7 +132,7 @@ async def download_one(
                 recursive=True,
             )
             await loop.run_in_executor(pool, func)
-    except:
+    except Exception:
         logging.exception(f"Couldn't download experiment *{experiment_name}* of dataset *{dataset_name}*.")
         return "", local_dir
     return dataset_name, local_dir
@@ -143,32 +145,32 @@ def delete_model_checkpoints(output_directory: str):
 
 
 def format_time(time_us):
-    """Defines how to format time in FunctionEvent
+    """Defines how to format time in FunctionEvent.
 
     from https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler_util.py
     """
     US_IN_SECOND = 1000.0 * 1000.0
     US_IN_MS = 1000.0
     if time_us >= US_IN_SECOND:
-        return '{:.3f}s'.format(time_us / US_IN_SECOND)
+        return f"{time_us / US_IN_SECOND:.3f}s"
     if time_us >= US_IN_MS:
-        return '{:.3f}ms'.format(time_us / US_IN_MS)
-    return '{:.3f}us'.format(time_us)
+        return f"{time_us / US_IN_MS:.3f}ms"
+    return f"{time_us:.3f}us"
 
 
 def format_memory(nbytes):
-    """Returns a formatted memory size string
+    """Returns a formatted memory size string.
 
     from https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler_util.py
     """
     KB = 1024
     MB = 1024 * KB
     GB = 1024 * MB
-    if (abs(nbytes) >= GB):
-        return '{:.2f} Gb'.format(nbytes * 1.0 / GB)
-    elif (abs(nbytes) >= MB):
-        return '{:.2f} Mb'.format(nbytes * 1.0 / MB)
-    elif (abs(nbytes) >= KB):
-        return '{:.2f} Kb'.format(nbytes * 1.0 / KB)
+    if abs(nbytes) >= GB:
+        return f"{nbytes * 1.0 / GB:.2f} Gb"
+    elif abs(nbytes) >= MB:
+        return f"{nbytes * 1.0 / MB:.2f} Mb"
+    elif abs(nbytes) >= KB:
+        return f"{nbytes * 1.0 / KB:.2f} Kb"
     else:
-        return str(nbytes) + ' b'
+        return str(nbytes) + " b"

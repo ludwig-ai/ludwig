@@ -6,7 +6,7 @@ import shutil
 from typing import Any, Dict, Union
 
 from ludwig.api import LudwigModel
-from ludwig.benchmarking.utils import export_artifacts, load_from_module, delete_model_checkpoints
+from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils.data_utils import load_yaml
 
