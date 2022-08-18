@@ -10,6 +10,7 @@ from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, DECODER, LOSS, NAME, TIED, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.schema.config_object import Config
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
@@ -43,17 +44,23 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         super().__init__()
 
     @classmethod
-    def build_inputs(cls, input_features_def: List[Dict[str, Any]]) -> Dict[str, InputFeature]:
+    def build_inputs(cls, input_features_def: List[Dict[str, Any]], config: Config) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
         input_features_def = topological_sort_feature_dependencies(input_features_def)
         for input_feature_def in input_features_def:
-            input_features[input_feature_def[NAME]] = cls.build_single_input(input_feature_def, input_features)
+            input_features[input_feature_def[NAME]] = cls.build_single_input(
+                getattr(config, input_feature_def[NAME]),
+                input_feature_def,
+                input_features
+            )
         return input_features
 
     @staticmethod
     def build_single_input(
-        input_feature_def: Dict[str, Any], other_input_features: Optional[Dict[str, InputFeature]]
+        feature_config: Config,
+        input_feature_def: Dict[str, Any],
+        other_input_features: Optional[Dict[str, InputFeature]]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
         logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
