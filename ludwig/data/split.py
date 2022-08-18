@@ -67,7 +67,13 @@ class RandomSplitter(Splitter):
 
         n = len(df)
         d1 = int(self.probabilities[0] * n)
-        d2 = d1 + int(self.probabilities[1] * n)
+        if not self.probabilities[-1]:
+            # If the last probability is 0, then use the entire remaining dataset for validation.
+            d2 = n
+        else:
+            d2 = d1 + int(self.probabilities[1] * n)
+
+        # Note that sometimes this results in the test set with 1 example even if the last probability is 0.
         return np.split(df.sample(frac=1, random_state=random_seed), [d1, d2])
 
     def has_split(self, split_index: int) -> bool:

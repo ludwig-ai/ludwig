@@ -58,7 +58,6 @@ def test_entmax_correct_multiple_alphas():
 
 
 def test_entmax_grad_multiple_alphas():
-
     n = 4
     x = torch.randn(n, 6, dtype=torch.float64, requires_grad=True)
     alpha = 0.05 + 2.5 * torch.rand((n, 1), dtype=torch.float64, requires_grad=True)

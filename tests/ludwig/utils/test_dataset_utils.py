@@ -4,7 +4,6 @@ from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 
 
 def test_get_repeatable_train_val_test_split():
-
     # Test adding split with stratify
     df = pd.DataFrame(
         [

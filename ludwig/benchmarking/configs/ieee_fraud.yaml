@@ -847,7 +847,7 @@ input_features:
   - name: id_30
     type: category
   - name: id_31
-    type: text
+    type: category
   - name: id_32
     type: number
   - name: id_33
