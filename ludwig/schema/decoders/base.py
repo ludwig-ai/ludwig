@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict, Any
 
 from marshmallow_dataclass import dataclass
 
@@ -15,6 +15,55 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str
     "Name corresponding to a decoder."
+
+    fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
+        default=None, description="List of dictionaries containing the parameters for each fully connected layer."
+    )
+
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0, description="Number of fully-connected layers if fc_layers not specified."
+    )
+
+    fc_output_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Output size of fully connected stack."
+    )
+
+    fc_use_bias: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether the layer uses a bias vector in the fc_stack."
+    )
+
+    fc_weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+        default="xavier_uniform",
+        description="The weights initializer to use for the layers in the fc_stack"
+    )
+
+    fc_bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+        default="zeros",
+        description="The bias initializer to use for the layers in the fc_stack"
+    )
+
+    fc_norm: str = schema_utils.StringOptions(
+        ["batch", "layer"],
+        description="The normalization to use for the layers in the fc_stack"
+    )
+
+    fc_norm_params: dict = schema_utils.Dict(
+        description="The additional parameters for the normalization in the fc_stack"
+    )
+
+    fc_activation: str = schema_utils.ActivationOptions(
+        default="relu",
+        description="The activation to use for the layers in the fc_stack"
+    )
+
+    fc_dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate to use for the layers in the fc_stack"
+    )
 
 
 @dataclass

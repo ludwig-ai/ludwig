@@ -163,6 +163,15 @@ def test_encoder_decoder_backwards_compatibility():
                 "use_bias": True,
                 "bias_initializer": "constant",
             },
+            {
+                "name": "vector_feature",
+                "type": "vector",
+                "decoder": "projector",
+                "num_fc_layers": 5,
+                "output_size": 128,
+                "activation": "tanh",
+                "dropout": 0.1,
+            },
         ],
     }
 
@@ -195,7 +204,6 @@ def test_encoder_decoder_backwards_compatibility():
                     "width": 7.5,
                     "num_channels": 4,
                 },
-                "dropout": 0.1,
                 "encoder": {
                     "type": "resnet",
                     "num_channels": 4,
@@ -226,8 +234,9 @@ def test_encoder_decoder_backwards_compatibility():
                 },
                 "decoder": {
                     "type": "classifier",
+                    "fc_use_bias": False,
+                    "use_bias": False,
                 },
-                "use_bias": False,
             },
             {
                 "name": "binary_feature",
@@ -239,9 +248,25 @@ def test_encoder_decoder_backwards_compatibility():
                 "reduce_dependencies": "mean",
                 "decoder": {
                     "type": "regressor",
+                    "fc_use_bias": True,
+                    "fc_bias_initializer": "constant",
+                    "bias_initializer": "constant",
+                    "use_bias": True,
                 },
-                "bias_initializer": "constant",
-                "use_bias": True,
+            },
+            {
+                "name": "vector_feature",
+                "type": "vector",
+                "decoder": {
+                    "type": "projector",
+                    "num_fc_layers": 5,
+                    "fc_output_size": 128,
+                    "fc_activation": "tanh",
+                    "fc_dropout": 0.1,
+                    "output_size": 128,
+                    "activation": "tanh",
+                    "dropout": 0.1,
+                }
             },
         ],
     }
