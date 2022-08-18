@@ -9,7 +9,7 @@ from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
@@ -136,7 +136,7 @@ def String(
                 dump_default=default,
                 metadata={"description": description},
             ),
-            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         default=default,
     )
@@ -174,7 +174,7 @@ def StringOptions(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -198,7 +198,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -226,7 +226,7 @@ def Integer(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -258,7 +258,7 @@ def PositiveInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -293,7 +293,7 @@ def NonNegativeInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -332,7 +332,7 @@ def IntegerRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -365,7 +365,7 @@ def NonNegativeFloat(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -403,7 +403,7 @@ def FloatRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -428,7 +428,7 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -458,7 +458,7 @@ def DictList(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -718,7 +718,7 @@ def OneOfOptionsField(
             "marshmallow_field": OneOfOptionsCombinatorialField(
                 allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             ),
-            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         **default_kwarg,
     )
