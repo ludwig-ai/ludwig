@@ -1140,6 +1140,16 @@ def build_dataset(
 
     # Happens after preprocessing parameters are built so we can use precomputed fill values.
     logging.debug("handle missing values")
+
+    # In some cases, there can be a (temporary) mismatch between the dtype of the column and the type expected by the
+    # preprocessing config (e.g., a categorical feature represented as an int-like column). In particular, Dask
+    # may raise an error even when there are no missing values in the column itself.
+    #
+    # Since we immediately cast all columns in accordance with their expected feature types after filling missing
+    # values, we work around the above issue by temporarily treating all columns as object dtype.
+    for col_key in dataset_cols:
+        dataset_cols[col_key] = dataset_cols[col_key].astype(object)
+
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
