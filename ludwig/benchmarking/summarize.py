@@ -27,7 +27,7 @@ def summarize_metrics(
 
             base_path = os.path.join(local_dir, dataset_name, base_experiment, "resource_usage_metrics")
             experimental_path = os.path.join(local_dir, dataset_name, experimental_experiment, "resource_usage_metrics")
-            resource_usage_diff = build_resource_usage_diff(base_path, experimental_path)
+            resource_usage_diff = build_resource_usage_diff(base_path, experimental_path, base_experiment, experimental_experiment)
             resource_usage_diffs.append(resource_usage_diff)
         except Exception:
             logging.exception(f"Exception encountered while creating diff summary for {dataset_name}.")
