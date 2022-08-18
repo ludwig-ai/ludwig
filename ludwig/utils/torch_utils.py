@@ -188,7 +188,8 @@ class LudwigModule(Module):
     @abstractmethod
     def input_shape(self) -> torch.Size:
         """Returns size of the input tensor without the batch dimension."""
-        raise NotImplementedError("Abstract class.")
+        pass
+        # raise NotImplementedError("Abstract class.")
 
     @property
     def output_shape(self) -> torch.Size:
@@ -307,3 +308,11 @@ def _set_torch_init_params(params: Optional[Tuple]):
 
 def _get_torch_init_params() -> Optional[Tuple]:
     return _TORCH_INIT_PARAMS
+
+
+def model_size(model: nn.Module):
+    """Computes PyTorch model size in bytes."""
+    size = 0
+    size += sum(param.nelement() * param.element_size() for param in model.parameters())
+    size += sum(buffer.nelement() * buffer.element_size() for buffer in model.buffers())
+    return size

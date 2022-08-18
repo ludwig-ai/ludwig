@@ -20,16 +20,17 @@ def _get_runs(experiment_id: str):
     return mlflow.tracking.client.MlflowClient().search_runs([experiment_id])
 
 
-def _get_or_create_experiment_id(experiment_name):
+def _get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is not None:
         return experiment.experiment_id
-    return mlflow.create_experiment(name=experiment_name)
+    return mlflow.create_experiment(name=experiment_name, artifact_location=artifact_uri)
 
 
 class MlflowCallback(Callback):
-    def __init__(self, tracking_uri=None):
+    def __init__(self, tracking_uri=None, log_artifacts: bool = True):
         self.experiment_id = None
+        self.experiment_name = None
         self.run = None
         self.run_ended = False
         self.tracking_uri = tracking_uri
@@ -38,8 +39,12 @@ class MlflowCallback(Callback):
         self.save_in_background = True
         self.save_fn = None
         self.save_thread = None
+        self.log_artifacts = log_artifacts
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
+
+    def get_experiment_id(self, experiment_name):
+        return _get_or_create_experiment_id(experiment_name)
 
     def on_preprocess_end(
         self, training_set: Dataset, validation_set: Dataset, test_set: Dataset, training_set_metadata: Dict[str, Any]
@@ -47,7 +52,8 @@ class MlflowCallback(Callback):
         self.training_set_metadata = training_set_metadata
 
     def on_hyperopt_init(self, experiment_name):
-        self.experiment_id = _get_or_create_experiment_id(experiment_name)
+        self.experiment_id = self.get_experiment_id(experiment_name)
+        self.experiment_name = experiment_name
 
     def on_hyperopt_trial_start(self, parameters):
         # Filter out mlflow params like tracking URI, experiment ID, etc.
@@ -67,8 +73,14 @@ class MlflowCallback(Callback):
         # this should be handled by the executor.
         if self.experiment_id is None:
             mlflow.end_run()
-            self.experiment_id = _get_or_create_experiment_id(experiment_name)
+            self.experiment_id = self.get_experiment_id(experiment_name)
+            self.experiment_name = experiment_name
 
+        active_run = mlflow.active_run()
+        if active_run is not None:
+            # Currently active run started by Ray Tune MLflow mixin.
+            self.run = active_run
+        else:
             run_id = None
             if resume_directory is not None:
                 previous_runs = _get_runs(self.experiment_id)
@@ -80,14 +92,19 @@ class MlflowCallback(Callback):
                 run_name = os.path.basename(output_directory)
                 self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
 
-        mlflow.log_dict(to_json_dict(base_config), "config.yaml")
+        self.log_config(base_config)
+
+    def log_config(self, config):
+        if self.log_artifacts:
+            mlflow.log_dict(to_json_dict(config), "config.yaml")
 
     def on_train_start(self, config, **kwargs):
         self.config = config
         self._log_params({TRAINER: config[TRAINER]})
 
     def on_train_end(self, output_directory):
-        _log_artifacts(output_directory)
+        if self.log_artifacts:
+            _log_artifacts(output_directory)
         if self.run is not None:
             mlflow.end_run()
             self.run_ended = True
@@ -109,10 +126,10 @@ class MlflowCallback(Callback):
         if self.save_in_background:
             save_queue = queue.Queue()
             self.save_fn = lambda args: save_queue.put(args)
-            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue,))
+            self.save_thread = threading.Thread(target=_log_mlflow_loop, args=(save_queue, self.log_artifacts))
             self.save_thread.start()
         else:
-            self.save_fn = lambda args: _log_mlflow(*args)
+            self.save_fn = lambda args: _log_mlflow(*args, self.log_artifacts)
 
     def on_eval_end(self, trainer, progress_tracker, save_path):
         self.save_fn((progress_tracker.log_metrics(), progress_tracker.steps, save_path, True))
@@ -135,6 +152,7 @@ class MlflowCallback(Callback):
             **tune_config,
             "mlflow": {
                 "experiment_id": self.experiment_id,
+                "experiment_name": self.experiment_name,
                 "tracking_uri": mlflow.get_tracking_uri(),
             },
         }
@@ -153,7 +171,7 @@ class MlflowCallback(Callback):
             self.run = mlflow.start_run(run_id=self.run.info.run_id, experiment_id=self.run.info.experiment_id)
 
 
-def _log_mlflow_loop(q: queue.Queue):
+def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
     should_continue = True
     while should_continue:
         elem = q.get()
@@ -165,12 +183,14 @@ def _log_mlflow_loop(q: queue.Queue):
             # if we're about to do it again
             continue
 
-        _log_model(save_path)
+        if log_artifacts:
+            _log_model(save_path)
 
 
-def _log_mlflow(log_metrics, steps, save_path, should_continue):
+def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: bool = True):
     mlflow.log_metrics(log_metrics, step=steps)
-    _log_model(save_path)
+    if log_artifacts:
+        _log_model(save_path)
 
 
 def _log_artifacts(output_directory):

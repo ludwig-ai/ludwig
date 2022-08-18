@@ -1,11 +1,11 @@
-from typing import Optional
-
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import SET
-from ludwig.decoders.registry import get_decoder_classes
-from ludwig.encoders.registry import get_encoder_classes
+from ludwig.constants import SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import DecoderDataclassField
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -16,10 +16,16 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes(SET).keys()),
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=SET,
         default="embed",
-        description="Encoder to use for this set feature.",
+    )
+
+    tied: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
+        "feature of the same type and with the same encoder parameters.",
     )
 
 
@@ -27,9 +33,40 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
 class SetOutputFeatureConfig(BaseOutputFeatureConfig):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
-    decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes(SET).keys()),
+    loss: dict = schema_utils.Dict(
+        default={
+            "type": SIGMOID_CROSS_ENTROPY,
+            "class_weights": None,
+            "weight": 1,
+        },
+        description="A dictionary containing a loss type and its hyper-parameters.",
+    )
+
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
+        "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=SET,
         default="classifier",
-        allow_none=True,
-        description="Decoder to use for this set feature.",
+    )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
     )

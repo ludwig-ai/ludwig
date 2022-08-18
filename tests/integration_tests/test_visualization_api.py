@@ -22,7 +22,18 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TEST, TRAINER, TRAINING, VALIDATION
+from ludwig.constants import (
+    ENCODER,
+    NAME,
+    PREDICTIONS,
+    PROBABILITIES,
+    PROBABILITY,
+    TEST,
+    TRAINER,
+    TRAINING,
+    TYPE,
+    VALIDATION,
+)
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
@@ -73,8 +84,8 @@ class Experiment:
     def __init__(self, csv_filename, tmpdir):
         self.tmpdir = tmpdir
         self.csv_file = os.path.join(tmpdir, csv_filename)
-        self.input_features = [category_feature(vocab_size=10)]
-        self.output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+        self.input_features = [category_feature(encoder={"vocab_size": 10})]
+        self.output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
         data_csv = generate_data(self.input_features, self.output_features, self.csv_file)
         self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
@@ -492,21 +503,21 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
+        text_feature(encoder={"vocab_size": 10, "min_len": 1, "type": "stacked_cnn"}),
         number_feature(),
-        category_feature(vocab_size=10, embedding_size=5),
+        category_feature(encoder={"vocab_size": 10, "embedding_size": 5}),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(encoder={"vocab_size": 10, "max_len": 10, "type": "embed"}),
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
     ]
     encoder = "parallel_cnn"
     with TemporaryDirectory() as tmpvizdir:
         # Generate test data
         data_csv = generate_data(input_features, output_features, os.path.join(tmpvizdir, csv_filename))
-        input_features[0]["encoder"] = encoder
+        input_features[0][ENCODER][TYPE] = encoder
         model = run_api_experiment(input_features, output_features)
         test_df, train_df, val_df = obtain_df_splits(data_csv)
         _, _, output_dir = model.train(
@@ -564,21 +575,21 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=10, min_len=1, encoder="stacked_cnn"),
+        text_feature(encoder={"vocab_size": 10, "min_len": 1, "type": "stacked_cnn"}),
         number_feature(),
-        category_feature(vocab_size=10, embedding_size=5),
+        category_feature(encoder={"vocab_size": 10, "embedding_size": 5}),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(encoder={"vocab_size": 10, "max_len": 10, "type": "embed"}),
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
     ]
     encoder = "parallel_cnn"
     with TemporaryDirectory() as tmpvizdir:
         # Generate test data
         data_csv = generate_data(input_features, output_features, os.path.join(tmpvizdir, csv_filename))
-        input_features[0]["encoder"] = encoder
+        input_features[0][ENCODER][TYPE] = encoder
         model = run_api_experiment(input_features, output_features)
         test_df, train_df, val_df = obtain_df_splits(data_csv)
         _, _, output_dir = model.train(

@@ -8,10 +8,10 @@ from tests.integration_tests.utils import binary_feature, category_feature, numb
 def test_config_input_output_features():
     config = {
         "input_features": [
-            category_feature(),
-            number_feature(),
+            category_feature(encoder={"type": "dense"}),
+            number_feature(encoder={"type": "passthrough"}),
         ],
-        "output_features": [binary_feature()],
+        "output_features": [binary_feature(decoder={"type": "regressor"})],
     }
 
     validate_config(config)
@@ -54,7 +54,6 @@ def test_incorrect_input_features_config():
 
 
 def test_incorrect_output_features_config():
-
     config = {
         "input_features": [
             number_feature(),

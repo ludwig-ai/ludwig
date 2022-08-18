@@ -1,9 +1,10 @@
 import logging
 from collections import OrderedDict
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from ludwig.constants import COMBINED, LOSS
 from ludwig.features.base_feature import OutputFeature
+from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.metric_utils import TrainerMetric
 
@@ -184,3 +185,50 @@ def get_final_steps_per_checkpoint(
         return steps_per_epoch
 
     return steps_per_checkpoint
+
+
+def get_training_report(
+    validation_field: str,
+    validation_metric: str,
+    include_test_set: bool,
+    train_valiset_stats: Dict[str, Dict[str, List[float]]],
+    train_testset_stats: Dict[str, Dict[str, List[float]]],
+) -> List[Tuple[str, str]]:
+    """Returns a training report in the form of a list [(report item, value)]."""
+    validation_field_result = train_valiset_stats[validation_field]
+    best_function = get_best_function(validation_metric)
+
+    training_report = []
+    best_vali_index, (
+        epoch_best_validation_metric,
+        step_best_validation_metric,
+        best_validation_metric,
+    ) = best_function(
+        enumerate(validation_field_result[validation_metric]),
+        # -1 for the last element of the TrainerMetric namedtuple.
+        key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
+    )
+    training_report.append(["Validation feature", validation_field])
+    training_report.append(["Validation metric", validation_metric])
+    training_report.append(["Best model step", step_best_validation_metric])
+    training_report.append(["Best model epoch", epoch_best_validation_metric + 1])
+    training_report.append(
+        [
+            f"Best model's validation {validation_metric}",
+            best_validation_metric,
+        ]
+    )
+    if include_test_set:
+        validation_selected_test_metric_score = train_testset_stats[validation_field][validation_metric][
+            best_vali_index
+        ][
+            -1
+        ]  # -1 for the last element of the TrainerMetric namedtuple.
+
+        training_report.append(
+            [
+                f"Best model's test {validation_metric}",
+                validation_selected_test_metric_score,
+            ]
+        )
+    return training_report

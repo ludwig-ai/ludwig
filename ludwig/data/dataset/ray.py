@@ -74,8 +74,6 @@ class RayDataset(Dataset):
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
-        if self.size == 0:
-            raise ValueError("Dataset is empty following preprocessing")
         self.features = features
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
@@ -292,13 +290,18 @@ class RayDatasetBatcher(Batcher):
         return to_tensors
 
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
-        res = {c: batch[c].to_numpy() for c in self.columns}
+        res = {}
+        for c in self.columns:
+            if self.features[c][TYPE] not in _SCALAR_TYPES:
+                # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
+                res[c] = np.stack(batch[c].values)
+            else:
+                res[c] = batch[c].to_numpy()
 
         for c in self.columns:
             reshape = self.reshape_map.get(c)
             if reshape is not None:
                 res[c] = res[c].reshape((-1, *reshape))
-
         return res
 
     def _create_sync_reader(self, pipeline: DatasetPipeline):

@@ -16,15 +16,17 @@
 
 import logging
 from functools import partial
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
 
 from ludwig.constants import (
     COLUMN,
+    DECODER,
+    DEPENDENCIES,
     EDIT_DISTANCE,
-    FILL_WITH_CONST,
+    ENCODER,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
@@ -35,9 +37,10 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    SUM,
     TIED,
     TOKEN_ACCURACY,
     TYPE,
@@ -48,11 +51,10 @@ from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry, set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
-    PADDING_SYMBOL,
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
@@ -200,18 +202,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "max_sequence_length": 256,
-            "most_common": 20000,
-            "padding_symbol": PADDING_SYMBOL,
-            "unknown_symbol": UNKNOWN_SYMBOL,
-            "padding": "right",
-            "tokenizer": "space",
-            "lowercase": False,
-            "vocab_file": None,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return SequenceInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -270,19 +261,14 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    encoder = "parallel_cnn"
-    max_sequence_length = None
+    def __init__(self, input_feature_config: Union[SequenceInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        # TODO: Potentially abstract this feature-specific attribute overwrite to a consolidated design.
-        if "vocab" in feature:
-            feature["vocab_size"] = len(feature["vocab"])
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs: torch.Tensor, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -301,13 +287,15 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
-        input_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
+        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_value(input_feature, "encoder", "parallel_cnn")
+        defaults = SequenceInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -315,7 +303,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
+        return torch.Size([self.encoder_obj.config.max_sequence_length])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -328,8 +316,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 @register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = "generator"
-    loss = {TYPE: "sequence_softmax_cross_entropy"}
     metric_functions = {
         LOSS: None,
         TOKEN_ACCURACY: None,
@@ -339,13 +325,16 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         EDIT_DISTANCE: None,
     }
     default_validation_metric = LOSS
-    max_sequence_length = 0
-    num_classes = 0
 
-    def __init__(self, feature: Dict[str, Any], output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+    def __init__(
+        self,
+        output_feature_config: Union[SequenceOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -369,14 +358,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.max_sequence_length])
+        return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature["max_sequence_length"] = feature_metadata["max_sequence_length"]
+        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
+        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["vocab_size"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -384,7 +373,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature["vocab_size"],
+                        output_feature[DECODER]["vocab_size"],
                         output_feature[COLUMN],
                     )
                 )
@@ -426,14 +415,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         )
                     )
 
-                if all_rows_length != output_feature["vocab_size"]:
+                if all_rows_length != output_feature[DECODER]["vocab_size"]:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> and <PAD> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature["vocab_size"]
+                            output_feature[COLUMN], all_rows_length, output_feature[DECODER]["vocab_size"]
                         )
                     )
 
@@ -507,28 +496,24 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(
-            output_feature,
-            LOSS,
-            {
-                TYPE: "sequence_softmax_cross_entropy",
-                "class_weights": 1,
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-                "class_similarities_temperature": 0,
-                "weight": 1,
-            },
-        )
+        defaults = SequenceOutputFeatureConfig()
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(output_feature[LOSS], defaults.loss)
 
-        set_default_value(output_feature[LOSS], "unique", False)
-        set_default_value(output_feature, "decoder", "generator")
-
-        if output_feature["decoder"] == "tagger":
+        if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)
 
-        set_default_value(output_feature, "dependencies", [])
-        set_default_value(output_feature, "reduce_input", SUM)
-        set_default_value(output_feature, "reduce_dependencies", SUM)
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                },
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
+        )
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
@@ -545,5 +530,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
-        df[probs_col] = df[probs_col].apply(lambda x: x.reshape(-1, self.num_classes), meta=(probs_col, "object"))
+        df[probs_col] = df[probs_col].apply(
+            lambda x: x.reshape(-1, self.decoder_obj.config.num_classes), meta=(probs_col, "object")
+        )
         return df
