@@ -2,17 +2,16 @@ import os
 import shutil
 import time
 
-import torch
 import numpy as np
 import pandas as pd
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.profiler import LudwigProfiler
 from ludwig.constants import TRAINER
 
 
-def test_resource_usage_tracker(tmpdir):
-
+def test_ludwig_profiler(tmpdir):
     @LudwigProfiler(tag="test_function", output_dir=tmpdir, use_torch_profiler=False, logging_interval=0.1)
     def func(duration):
         time.sleep(duration)

@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from typing import Any, Union, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import torch
 from torch._C._autograd import _KinetoEvent
@@ -32,7 +32,9 @@ def get_memory_details(kineto_event: _KinetoEvent) -> Tuple[str, int]:
         raise ValueError(f"Device {kineto_event.device_type()} is not valid.")
 
 
-def get_device_memory_usage(kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc, run_usage_info: Dict[str, Any]) -> Dict[str, Any]:
+def get_device_memory_usage(
+    kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc, run_usage_info: Dict[str, Any]
+) -> Dict[str, Any]:
     """Get CPU and CUDA memory usage for an event.
 
     :param kineto_event: a Kineto event instance.
@@ -79,7 +81,9 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> U
     return total
 
 
-def get_device_run_durations(function_event: profiler_util.FunctionEvent, run_usage_info: Dict[str, Any]) -> Dict[str, Any]:
+def get_device_run_durations(
+    function_event: profiler_util.FunctionEvent, run_usage_info: Dict[str, Any]
+) -> Dict[str, Any]:
     """Get CPU and CUDA run durations for an event.
 
     :param function_event: a function event instance.
@@ -118,8 +122,11 @@ def get_resource_usage_report(
     return info
 
 
-def get_all_events(kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
-    """Return main Kineto and function events, memory and OOM events for functions/code blocks tagged in LudwigProfiler.
+def get_all_events(
+    kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
+) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
+    """Return main Kineto and function events, memory and OOM events for functions/code blocks tagged in
+    LudwigProfiler.
 
     :param kineto_events: list of Kineto Events.
     :param function_events: list of function events.

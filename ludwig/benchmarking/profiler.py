@@ -95,7 +95,8 @@ class LudwigProfiler(contextlib.ContextDecorator):
     definition: https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler.py
 
     Attributes:
-        tag: a string tag describing the code block/function that we're tracking. (e.g trainer.train, preprocessing, etc.)
+        tag: a string tag describing the code block/function that we're tracking.
+            (e.g trainer.train, preprocessing, etc.)
         output_dir: path where metrics are saved.
         logging_interval: time interval in seconds at which system is polled for resource usage.
     """
@@ -256,7 +257,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
-            reformatted_key = key[len(LUDWIG_TAG):]
+            reformatted_key = key[len(LUDWIG_TAG) :]
             reformatted_dict[reformatted_key] = value
         return reformatted_dict
 
