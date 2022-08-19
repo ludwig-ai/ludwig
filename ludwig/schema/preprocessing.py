@@ -1,58 +1,51 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from marshmallow_dataclass import dataclass
-# from dataclasses import field
-#
-# from ludwig.constants import (
-#     AUDIO,
-#     BINARY,
-#     CATEGORY,
-#     DATE,
-#     H3,
-#     IMAGE,
-#     NUMBER,
-#     SEQUENCE,
-#     SET,
-#     TEXT,
-#     TIMESERIES,
-#     VECTOR,
-# )
+
+from ludwig.constants import (
+    AUDIO,
+    BINARY,
+    CATEGORY,
+    DATE,
+    H3,
+    IMAGE,
+    NUMBER,
+    RANDOM,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
 from ludwig.schema import utils as schema_utils
-# from ludwig.schema.features.base import BasePreprocessingConfig
-# from ludwig.schema.features.utils import PreprocessingDataclassField
+from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
+from ludwig.schema.features.base import BasePreprocessingConfig
+from ludwig.schema.features.utils import PreprocessingDataclassField
 
 
 @dataclass
 class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing"""
 
-    force_split: bool = schema_utils.Boolean(
-        default=False,
-        description="If true, the split column in the dataset file is ignored and the dataset is randomly split. If "
-                    "false the split column is used if available. "
+    split: BaseSplitConfig = SplitDataclassField(
+        default=RANDOM,
     )
 
-    split_probabilities: Tuple[float] = schema_utils.FloatRangeTupleDataclassField(
-        n=3,
-        default=(0.7, 0.1, 0.2),
-        description="The proportion of the dataset data to end up in training, validation and test, respectively. "
-                    "The three values must sum to 1.0. "
-    )
-
-    stratify: str = schema_utils.String(
-        default=None,
-        description="If null the split is random, otherwise you can specify the name of a category feature and the "
-                    "split will be stratified on that feature. "
+    sample_ratio: float = schema_utils.NonNegativeFloat(
+        default=1.0,
+        description="Ratio of the dataset to use for training. If 1.0, all the data is used for training."
     )
 
     oversample_minority: float = schema_utils.NonNegativeFloat(
         default=None,
+        allow_none=True,
         description="If not None, the minority class will be oversampled to reach the specified ratio respective to "
                     "the majority class. "
     )
 
     undersample_majority: float = schema_utils.NonNegativeFloat(
         default=None,
+        allow_none=True,
         description="If not None, the majority class will be undersampled to reach the specified ratio respective "
                     "to the minority class. "
     )

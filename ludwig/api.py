@@ -215,7 +215,8 @@ class LudwigModel:
 
         # merge config with defaults
         self.base_config = copy.deepcopy(config_dict)
-        self.config = merge_with_defaults(config_dict)
+        # self.config = merge_with_defaults(config_dict)
+        self.config = Config(config_dict)
         validate_config(self.config)
 
         # setup logging
