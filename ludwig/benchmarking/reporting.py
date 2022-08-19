@@ -1,10 +1,10 @@
-import torch
-
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Tuple
 
+import torch
 from torch._C._autograd import _KinetoEvent
 from torch.autograd import DeviceType, profiler_util
+
 from ludwig.constants import LUDWIG_TAG
 
 
