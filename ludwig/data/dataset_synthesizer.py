@@ -218,7 +218,7 @@ def generate_datapoint(features):
 
 def generate_category(feature):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
-    return encoder_or_decoder["idx2str"]
+    return random.choice(encoder_or_decoder["idx2str"])
 
 
 def generate_number(feature):
