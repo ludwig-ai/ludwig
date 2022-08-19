@@ -87,7 +87,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
         time.sleep(logging_interval)
 
 
-class ResourceUsageTracker(contextlib.ContextDecorator):
+class LudwigProfiler(contextlib.ContextDecorator):
     """Track system resource (hardware and software) usage.
 
     Warning: If `use_torch_profiler=True` while profiling on CUDA, it's not possible to benchmark DataLoaders
@@ -154,7 +154,7 @@ class ResourceUsageTracker(contextlib.ContextDecorator):
     def __enter__(self):
         """Populates static information and monitors resource usage."""
         if self.launched:
-            raise RuntimeError("ResourceUsageTracker already launched. You can't use the same instance.")
+            raise RuntimeError("LudwigProfiler already launched. You can't use the same instance.")
 
         self._init_tracker_info()
         self.populate_static_information()
