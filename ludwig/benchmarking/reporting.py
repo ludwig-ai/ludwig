@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Union, Dict, List, Tuple
 
 import torch
 from torch._C._autograd import _KinetoEvent
@@ -32,9 +32,7 @@ def get_memory_details(kineto_event: _KinetoEvent) -> Tuple[str, int]:
         raise ValueError(f"Device {kineto_event.device_type()} is not valid.")
 
 
-def get_device_memory_usage(
-    kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc, run_usage_info: Dict[str, Any]
-) -> Dict[str, Any]:
+def get_device_memory_usage(kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc, run_usage_info: Dict[str, Any]) -> Dict[str, Any]:
     """Get CPU and CUDA memory usage for an event.
 
     :param kineto_event: a Kineto event instance.
@@ -63,7 +61,7 @@ def get_device_memory_usage(
     return run_usage_info
 
 
-def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str):
+def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> Union[int, float]:
     """Get time torch operators spent executing for a list of events.
 
     :param events: list of events.
@@ -81,9 +79,7 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str):
     return total
 
 
-def get_device_run_durations(
-    function_event: profiler_util.FunctionEvent, run_usage_info: Dict[str, Any]
-) -> Dict[str, Any]:
+def get_device_run_durations(function_event: profiler_util.FunctionEvent, run_usage_info: Dict[str, Any]) -> Dict[str, Any]:
     """Get CPU and CUDA run durations for an event.
 
     :param function_event: a function event instance.
@@ -122,12 +118,9 @@ def get_resource_usage_report(
     return info
 
 
-def get_all_events(
-    kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
-) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
-    """Return main Kineto and function events (tagged with "ludwig.*"), memory and out of memory events.
+def get_all_events(kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
+    """Return main Kineto and function events, memory and OOM events for functions/code blocks tagged in LudwigProfiler.
 
-    :param tags: set of code block/function tags we report resource usage metrics for.
     :param kineto_events: list of Kineto Events.
     :param function_events: list of function events.
     """
@@ -139,7 +132,7 @@ def get_all_events(
     return main_kineto_events, main_function_events, memory_events, out_of_memory_events
 
 
-def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile):
+def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile) -> Dict[str, Any]:
     """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler.
 
     The profiler keeps track of *torch operations* being executed in C++. It keeps track
@@ -152,7 +145,6 @@ def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile):
 
     :param profile: profiler object that contains all the events that
         were registered during the execution of the wrapped code block.
-    :param output_dir: a tag for the experiment.
     """
     # events in both of these lists are in chronological order.
     kineto_events = profile.profiler.kineto_results.events()

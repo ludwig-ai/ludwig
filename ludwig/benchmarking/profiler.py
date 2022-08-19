@@ -40,8 +40,8 @@ STOP_MESSAGE = "stop"
 def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
     """Monitors hardware resource use.
 
-    Populate `info` with system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval
-    and saves the output in `output_dir`.
+    Collects system specific metrics (CPU/CUDA, CPU/CUDA memory) at a `logging_interval` interval and pushes
+    results back to the parent process.
 
     Args:
         queue: queue from which we can push and retrieve messages sent to the function targeted by the thread.
@@ -95,7 +95,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
     definition: https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler.py
 
     Attributes:
-        tag: a string tag about the process that we're tracking. Examples: train, evaluate, preprocess, etc.
+        tag: a string tag describing the code block/function that we're tracking. (e.g trainer.train, preprocessing, etc.)
         output_dir: path where metrics are saved.
         logging_interval: time interval in seconds at which system is polled for resource usage.
     """
@@ -126,7 +126,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.torch_record_function = torch.profiler.record_function(self._tag)
 
     def populate_static_information(self) -> None:
-        """Populates the report with static software and hardware information."""
+        """Populate the report with static software and hardware information."""
         self.info["ludwig_version"] = LUDWIG_VERSION
         self.info["start_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
 
@@ -152,7 +152,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         self.info["start_time"] = time.perf_counter_ns() / 1000
 
     def __enter__(self):
-        """Populates static information and monitors resource usage."""
+        """Populate static information and monitors resource usage."""
         if self.launched:
             raise RuntimeError("LudwigProfiler already launched. You can't use the same instance.")
 
