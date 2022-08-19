@@ -90,6 +90,10 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
 class ResourceUsageTracker(contextlib.ContextDecorator):
     """Track system resource (hardware and software) usage.
 
+    Warning: If `use_torch_profiler=True` while profiling on CUDA, it's not possible to benchmark DataLoaders
+    with `num_workers > 0` due to CUDA multiprocessing limitations. See warning under `profile` class
+    definition: https://github.com/pytorch/pytorch/blob/master/torch/autograd/profiler.py
+
     Attributes:
         tag: a string tag about the process that we're tracking. Examples: train, evaluate, preprocess, etc.
         output_dir: path where metrics are saved.

@@ -1,43 +1,11 @@
-import os
+import torch
+
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Tuple
 
-import torch
 from torch._C._autograd import _KinetoEvent
 from torch.autograd import DeviceType, profiler_util
-
-from ludwig.constants import CACHE, EVAL_TAG, EXPERIMENT_RUN, LUDWIG_TAG, TRAIN_TAG
-from ludwig.utils.data_utils import load_json, save_json
-from ludwig.utils.misc_utils import merge_dict
-
-
-def create_metrics_report(experiment_name: str) -> Tuple[Dict[str, Any], str]:
-    """Compiles performance and non-performance metrics.
-
-    :param experiment_name: name referring to the experiment.
-    Returns a full report and the path where it's saved.
-    """
-    full_report = dict()
-    os.makedirs(os.path.join(os.getcwd(), experiment_name, "metrics_report"), exist_ok=True)
-    for tag in [TRAIN_TAG, EVAL_TAG]:
-        if tag == TRAIN_TAG:
-            resource_usage_path = os.path.join(os.getcwd(), experiment_name, CACHE, "train_resource_usage_metrics.json")
-            performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "training_statistics.json")
-        elif tag == EVAL_TAG:
-            resource_usage_path = os.path.join(
-                os.getcwd(), experiment_name, CACHE, "evaluate_resource_usage_metrics.json"
-            )
-            performance_path = os.path.join(os.getcwd(), experiment_name, EXPERIMENT_RUN, "test_statistics.json")
-        else:
-            raise ValueError("Tag unrecognized. Please choose 'train' or 'evaluate'.")
-
-        resource_usage_metrics = load_json(resource_usage_path)
-        performance_metrics = load_json(performance_path)
-        full_report[tag] = merge_dict(performance_metrics, resource_usage_metrics)
-
-    merged_file_path = os.path.join(os.getcwd(), experiment_name, "metrics_report", "{}.json".format("full_report"))
-    save_json(merged_file_path, full_report)
-    return full_report, merged_file_path
+from ludwig.constants import LUDWIG_TAG
 
 
 def initialize_stats_dict(main_function_events: List[profiler_util.FunctionEvent]) -> Dict[str, Any]:
@@ -95,6 +63,24 @@ def get_device_memory_usage(
     return run_usage_info
 
 
+def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str):
+    """Get time torch operators spent executing for a list of events.
+
+    :param events: list of events.
+    :param attr: a FunctionEvent attribute. Expecting one of "cpu_time_total", "cuda_time_total".
+    """
+    if attr not in ["cpu_time_total", "cuda_time_total"]:
+        return -1
+
+    total = 0
+    for e in events:
+        if LUDWIG_TAG not in e.trace_name:
+            total += getattr(e, attr)
+        else:
+            total += get_torch_op_time(e.cpu_children, attr)
+    return total
+
+
 def get_device_run_durations(
     function_event: profiler_util.FunctionEvent, run_usage_info: Dict[str, Any]
 ) -> Dict[str, Any]:
@@ -103,12 +89,8 @@ def get_device_run_durations(
     :param function_event: a function event instance.
     :param run_usage_info: usage info for one execution of the tagged code block.
     """
-    run_usage_info["torch_self_cpu_time_total"] = function_event.self_cpu_time_total
-    run_usage_info["torch_cuda_time_total"] = function_event.cuda_time_total
-    run_usage_info["torch_self_cuda_time_total"] = function_event.self_cuda_time_total
-    run_usage_info["torch_cpu_time_total"] = function_event.cpu_time_total
-    run_usage_info["torch_cpu_time"] = function_event.cpu_time
-    run_usage_info["torch_cuda_time"] = function_event.cuda_time
+    run_usage_info["torch_cpu_time"] = get_torch_op_time(function_event.cpu_children, "cpu_time_total")
+    run_usage_info["torch_cuda_time"] = get_torch_op_time(function_event.cpu_children, "cuda_time_total")
     return run_usage_info
 
 
