@@ -217,12 +217,8 @@ def generate_datapoint(features):
 
 
 def generate_category(feature):
-    if DECODER in feature:
-        return random.choice(feature[DECODER]["idx2str"])
-    elif ENCODER in feature:
-        return random.choice(feature[ENCODER]["idx2str"])
-    else:
-        logger.error(f"Feature {str(feature)} should have either an encoder or decoder.")
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
+    return encoder_or_decoder["idx2str"]
 
 
 def generate_number(feature):
