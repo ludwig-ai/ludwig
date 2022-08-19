@@ -211,8 +211,8 @@ class LudwigProfiler(contextlib.ContextDecorator):
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
-        self._export_system_metrics()
-        self._export_torch_metrics()
+                self._export_torch_metrics()
+            self._export_system_metrics()
 
     def _export_system_metrics(self):
         """Export system resource usage metrics (no torch operators)."""
@@ -256,7 +256,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
-            reformatted_key = key[len(LUDWIG_TAG) :]
+            reformatted_key = key[len(LUDWIG_TAG):]
             reformatted_dict[reformatted_key] = value
         return reformatted_dict
 
