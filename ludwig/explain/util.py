@@ -1,7 +1,7 @@
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.constants import SPLIT, PREPROCESSING, COLUMN, INPUT_FEATURES
+from ludwig.constants import COLUMN, INPUT_FEATURES, PREPROCESSING, SPLIT
 
 
 def filter_cols(df, cols):
