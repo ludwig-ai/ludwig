@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from ludwig.encoders.image_encoders import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder
+from ludwig.encoders.image_encoders import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder, TVResNetEncoder
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
@@ -86,5 +86,25 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(vit, (inputs,), target)
+
+    assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+
+
+@pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
+@pytest.mark.parametrize("load_pre_trained", [False])  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("resnet_size", [18, 34, 50, 101, 152])
+def test_tv_resnet_encoder(resnet_size: int, load_pre_trained: bool, height: int, width: int, num_channels: int):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    resnet = TVResNetEncoder(height=height, width=width, num_channels=num_channels, resnet_size=resnet_size,
+                             load_pre_trained=load_pre_trained)
+    inputs = torch.rand(2, num_channels, height, width)
+    outputs = resnet(inputs)
+    assert outputs["encoder_output"].shape[1] == resnet.output_shape
+
+    # check for parameter updating
+    target = torch.randn(outputs["encoder_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
