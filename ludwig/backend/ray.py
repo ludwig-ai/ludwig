@@ -34,8 +34,7 @@ from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import (
     placement_group,
-    placement_group_table,
-    remove_placement_group
+    remove_placement_group,
 )
 
 if TYPE_CHECKING:
@@ -791,13 +790,15 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, **kwargs):
+    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, data_preprocessor=None, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
+        self._preprocessor_kwargs = data_preprocessor or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._use_legacy = use_legacy
+        self._preprocessor_pg = None
 
     def initialize(self):
         if not ray.is_initialized():
@@ -811,19 +812,28 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
-    def update_dask_backend_with_pg(pg):
+    def _update_dask_backend_with_pg(self, pg):
         dask.config.set(annotations={"ray_remote_args": {"placement_group": pg}})
 
-    def clear_dask_backend_pg():
+    def _clear_dask_backend_pg(self):
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
-    def get_placement_group(num_cpu=1, num_gpu=0):
-        pg = placement_group([{"CPU": num_cpu}, {"GPU": num_gpu}])
-        ray.get(pg.ready())
-        return pg
+    def provision_preprocessing_workers(self):
+        if not self._preprocessor_kwargs['use_preprocessing_placement_group']:
+            logger.warning("Backend config has use_preprocessing_placement_group set to False. provision_preprocessing_workers() is a no-op in this case")
+            return
+        num_cpu = self._preprocessor_kwargs['num_cpu_workers']
+        self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
+        ray.get(self._preprocessor_pg.ready())
+        self._update_dask_backend_with_pg(self._preprocessor_pg)
 
-    def release_placement_group(pg):
-        remove_placement_group(pg)
+    def release_preprocessing_workers(self):
+        self._clear_dask_backend_pg()
+        if not self._preprocessor_kwargs['use_preprocessing_placement_group']:
+            logger.warning("Backend config has use_preprocessing_placement_group set to False. provision_preprocessing_workers() is a no-op in this case")
+            return
+        remove_placement_group(self._preprocessor_pg)
+        self._preprocessor_pg = None
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node

@@ -45,6 +45,14 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def create_predictor(self, model: BaseModel, **kwargs):
         return Predictor(model, horovod=self._horovod, **kwargs)
 
+    def provision_preprocessing_workers(self):
+        # No-op only used for ray backends
+        pass
+
+    def release_preprocessing_workers(self):
+        # No-op only used for ray backends
+        pass
+
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
         # to all other ranks
