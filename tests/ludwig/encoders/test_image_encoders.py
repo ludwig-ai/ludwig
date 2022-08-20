@@ -1,7 +1,9 @@
 import pytest
 import torch
 
-from ludwig.encoders.image_encoders import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder, TVResNetEncoder
+from ludwig.encoders.image_encoders import (
+    MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder, TVResNetEncoder, HFResNetEncoder
+)
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
@@ -99,6 +101,27 @@ def test_tv_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, heig
 
     resnet = TVResNetEncoder(height=height, width=width, num_channels=num_channels, resnet_size=resnet_size,
                              use_pre_trained_weights=use_pre_trained_weights)
+    inputs = torch.rand(2, num_channels, height, width)
+    outputs = resnet(inputs)
+    assert outputs["encoder_output"].shape[1] == resnet.output_shape
+
+    # check for parameter updating
+    target = torch.randn(outputs["encoder_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
+
+    assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+
+
+@pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
+@pytest.mark.parametrize("use_pre_trained_weights", [False, True])  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("resnet_size", [18, 34, 50, 101, 152])
+def test_hf_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, height: int, width: int, num_channels: int):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    resnet = HFResNetEncoder(height=height, width=width, num_channels=num_channels, resnet_size=resnet_size,
+                             use_pre_trained_weights=use_pre_trained_weights,
+                             cache_dir="/opt/project/sandbox/vision_models/hf_cache")  # TODO: remove cache_dir
     inputs = torch.rand(2, num_channels, height, width)
     outputs = resnet(inputs)
     assert outputs["encoder_output"].shape[1] == resnet.output_shape
