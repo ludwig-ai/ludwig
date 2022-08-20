@@ -19,7 +19,7 @@ from functools import lru_cache
 from typing import Any, Dict
 
 import torch
-from torch.nn import Linear, ModuleList
+from torch.nn import Linear, ModuleList, CosineSimilarity
 
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.registry import sequence_encoder_registry
@@ -995,3 +995,136 @@ class ProjectAggregateCombiner(Combiner):
     @staticmethod
     def get_schema_cls():
         return ProjectAggregateCombinerConfig
+
+@register_combiner(name="dot_product")
+class DotProductCombiner(Combiner):
+    def __init__(
+        self,
+        input_features: Dict[str, "InputFeature"],
+        config: DotProductCombinerConfig = None,
+        **kwargs,
+    ):
+        super().__init__(input_features)
+        self.name = "DotProductCombiner"
+        logger.debug(f"Entering {self.name}")
+
+        self.entity_1 = config.entity_1
+        self.entity_2 = config.entity_2
+        self.required_inputs = set(config.entity_1 + config.entity_2)
+        self.output_size = config.output_size
+
+        self.fc_stack = None
+
+        # todo future: this may be redundant, check
+        fc_layers = config.fc_layers
+        if fc_layers is None and config.num_fc_layers is not None:
+            fc_layers = []
+            for _ in range(config.num_fc_layers):
+                fc_layers.append({"output_size": config.output_size})
+
+        if fc_layers is not None:
+            logger.debug("Setting up FCStack")
+            self.e1_fc_stack = FCStack(
+                self.get_entity_shape(config.entity_1)[-1],
+                layers=fc_layers,
+                num_layers=config.num_fc_layers,
+                default_output_size=config.output_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+            )
+            self.e2_fc_stack = FCStack(
+                self.get_entity_shape(config.entity_2)[-1],
+                layers=fc_layers,
+                num_layers=config.num_fc_layers,
+                default_output_size=config.output_size,
+                default_use_bias=config.use_bias,
+                default_weights_initializer=config.weights_initializer,
+                default_bias_initializer=config.bias_initializer,
+                default_norm=config.norm,
+                default_norm_params=config.norm_params,
+                default_activation=config.activation,
+                default_dropout=config.dropout,
+            )
+
+        self.last_fc_layer_output_size = fc_layers[-1]["output_size"]
+
+        self.cosine_similarity = config.cosine_similarity
+        if config.cosine_similarity:
+            self.cos_sim = CosineSimilarity()
+
+    def get_entity_shape(self, entity: list) -> torch.Size:
+        sizes = [torch.prod(torch.Tensor([*self.input_features[k].output_shape])) for k in entity]
+        return torch.Size([torch.sum(torch.Tensor(sizes)).type(torch.int32)])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size([1])
+
+    def forward(
+        self,
+        inputs: Dict,  # encoder outputs
+    ) -> Dict[str, torch.Tensor]:  # encoder outputs
+        if inputs.keys() != self.required_inputs:
+            raise ValueError(f"Missing inputs {self.required_inputs - set(inputs.keys())}")
+
+        ############
+        # Entity 1 #
+        ############
+        e1_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_1]
+
+        # ================ Flatten ================
+        batch_size = e1_enc_outputs[0].shape[0]
+        e1_enc_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in e1_enc_outputs]
+
+        # ================ Concat ================
+        if len(e1_enc_outputs) > 1:
+            e1_hidden = torch.cat(e1_enc_outputs, 1)
+        else:
+            e1_hidden = list(e1_enc_outputs)[0]
+
+        # ================ Fully Connected ================
+        e1_hidden = self.e1_fc_stack(e1_hidden)  # [bs, output_size]
+
+        ############
+        # Entity 2 #
+        ############
+        e2_enc_outputs = [inputs[k]["encoder_output"] for k in self.entity_2]
+
+        # ================ Flatten ================
+        batch_size = e2_enc_outputs[0].shape[0]
+        e2_enc_outputs = [torch.reshape(eo, [batch_size, -1]) for eo in e2_enc_outputs]
+
+        # ================ Concat ================
+        if len(e2_enc_outputs) > 1:
+            e2_hidden = torch.cat(e2_enc_outputs, 1)
+        else:
+            e2_hidden = list(e2_enc_outputs)[0]
+
+        # ================ Fully Connected ================
+        e2_hidden = self.e2_fc_stack(e2_hidden)  # [bs, output_size]
+
+        ###########
+        # Compare #
+        ###########
+        if e1_hidden.shape != e2_hidden.shape:
+            raise ValueError(
+                f"Mismatching shapes among dimensions! "
+                f"entity1 shape: {e1_hidden.shape} "
+                f"entity2 shape: {e2_hidden.shape}"
+            )
+
+        if self.cosine_similarity:
+            hidden = self.cos_sim(e1_hidden * e2_hidden)  # [bs, 1]
+        else:
+            hidden = torch.dot(e1_hidden * e2_hidden)  # [bs, 1]
+
+        return {"combiner_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return DotProductCombinerConfig
