@@ -819,8 +819,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
     def provision_preprocessing_workers(self):
-        if not self._preprocessor_kwargs['use_preprocessing_placement_group']:
-            logger.warning("Backend config has use_preprocessing_placement_group set to False. provision_preprocessing_workers() is a no-op in this case")
+        if not self._preprocessor_kwargs.get('use_preprocessing_placement_group', False):
+            logger.warning("Backend config has use_preprocessing_placement_group set to False or did not set it at all. provision_preprocessing_workers() is a no-op in this case")
             return
         num_cpu = self._preprocessor_kwargs['num_cpu_workers']
         self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
@@ -829,8 +829,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def release_preprocessing_workers(self):
         self._clear_dask_backend_pg()
-        if not self._preprocessor_kwargs['use_preprocessing_placement_group']:
-            logger.warning("Backend config has use_preprocessing_placement_group set to False. provision_preprocessing_workers() is a no-op in this case")
+        if not self._preprocessor_kwargs.get('use_preprocessing_placement_group', False):
+            logger.warning("Backend config has use_preprocessing_placement_group set to False or did not set it at all. release_preprocessing_workers() should not be called here")
             return
         remove_placement_group(self._preprocessor_pg)
         self._preprocessor_pg = None
