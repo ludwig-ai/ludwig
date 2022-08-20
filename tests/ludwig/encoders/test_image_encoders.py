@@ -91,14 +91,14 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 
 
 @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
-@pytest.mark.parametrize("load_pre_trained", [False])  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("use_pre_trained_weights", [False, ])  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("resnet_size", [18, 34, 50, 101, 152])
-def test_tv_resnet_encoder(resnet_size: int, load_pre_trained: bool, height: int, width: int, num_channels: int):
+def test_tv_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, height: int, width: int, num_channels: int):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     resnet = TVResNetEncoder(height=height, width=width, num_channels=num_channels, resnet_size=resnet_size,
-                             load_pre_trained=load_pre_trained)
+                             use_pre_trained_weights=use_pre_trained_weights)
     inputs = torch.rand(2, num_channels, height, width)
     outputs = resnet(inputs)
     assert outputs["encoder_output"].shape[1] == resnet.output_shape

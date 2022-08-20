@@ -427,11 +427,11 @@ class ViTEncoder(Encoder):
 
 
 resnet_registry = {
-    18: (resnet18, ResNet18_Weights.DEFAULT),
-    34: (resnet34, ResNet34_Weights.DEFAULT),
-    50: (resnet50, ResNet50_Weights.DEFAULT),
-    101: (resnet101, ResNet101_Weights.DEFAULT),
-    152: (resnet152, ResNet152_Weights.DEFAULT),
+    18: (resnet18, ResNet18_Weights),
+    34: (resnet34, ResNet34_Weights),
+    50: (resnet50, ResNet50_Weights),
+    101: (resnet101, ResNet101_Weights),
+    152: (resnet152, ResNet152_Weights),
 }
 
 
@@ -444,7 +444,7 @@ class TVResNetEncoder(Encoder):
             resnet_size: int = 50,
             num_channels: int = 3,
             out_channels: int = 16,
-            load_pre_trained: bool = True,
+            use_pre_trained_weights: bool = True,
             encoder_config=None,
             **kwargs,
     ):
@@ -456,14 +456,16 @@ class TVResNetEncoder(Encoder):
         img_height = height
         img_width = width
         first_in_channels = num_channels
+        self.use_pre_trained_weights = use_pre_trained_weights
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
         model = resnet_registry[resnet_size][0]
-        pre_trained_weights = resnet_registry[resnet_size][1] if load_pre_trained else None
+        self.pre_trained_weights = resnet_registry[resnet_size][1].DEFAULT if self.use_pre_trained_weights else None
+        self.pre_trained_transforms = self.pre_trained_weights.transforms() if self.use_pre_trained_weights else None
 
         logger.debug("  ResNet")
-        self.resnet = model(weights=pre_trained_weights)
+        self.resnet = model(weights=self.pre_trained_weights)
         # self.resnet = ResNet(
         #     img_height=img_height,
         #     img_width=img_width,
@@ -495,7 +497,10 @@ class TVResNetEncoder(Encoder):
         # )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-        return {"encoder_output": self.resnet(inputs)}
+        hidden = inputs
+        if self.use_pre_trained_weights:
+            hidden = self.pre_trained_transforms(hidden)
+        return {"encoder_output": self.resnet(hidden)}
 
     @staticmethod
     def get_schema_cls():
