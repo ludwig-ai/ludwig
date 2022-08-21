@@ -541,6 +541,11 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="The size of the ResNet model to use.",
     )
 
+    use_pre_trained_weights: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="Download model weights from pre-trained model.",
+    )
+
     pre_trained_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
     )
@@ -678,6 +683,11 @@ class HFResNetEncoderConfig(BaseEncoderConfig):
     resnet_size: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         description="The size of the ResNet model to use.",
+    )
+
+    use_pre_trained_weights: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="Download model weights from pre-trained model.",
     )
 
     pre_trained_cache_dir: str = schema_utils.String(
