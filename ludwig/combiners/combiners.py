@@ -19,7 +19,7 @@ from functools import lru_cache
 from typing import Any, Dict
 
 import torch
-from torch.nn import CosineSimilarity, Linear, ModuleList
+from torch.nn import Linear, ModuleList, CosineSimilarity
 
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.registry import sequence_encoder_registry
@@ -31,6 +31,7 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.dot_product import DotProductCombinerConfig
 from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
 from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
@@ -896,7 +897,7 @@ class ComparatorCombiner(Combiner):
 
         logger.debug(
             "preparing combiner output by concatenating these tensors: "
-            f"dot_product: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}"
+            f"dot_product.py: {dot_product.shape}, element_size_mul: {element_wise_mul.shape}"
             f", abs_diff: {abs_diff.shape}, bilinear_prod {bilinear_prod.shape}"
         )
         hidden = torch.cat([dot_product, element_wise_mul, abs_diff, bilinear_prod], 1)  # [bs, 2 * output_size + 2]
@@ -995,7 +996,6 @@ class ProjectAggregateCombiner(Combiner):
     @staticmethod
     def get_schema_cls():
         return ProjectAggregateCombinerConfig
-
 
 @register_combiner(name="dot_product")
 class DotProductCombiner(Combiner):
