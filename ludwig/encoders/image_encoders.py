@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -446,14 +447,15 @@ tv_resnet_registry = {
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
-        self,
-        height: int,
-        width: int,
-        resnet_size: int = 50,
-        num_channels: int = 3,
-        use_pre_trained_weights: bool = True,
-        encoder_config: Optional[Dict] = None,
-        **kwargs,
+            self,
+            height: int,
+            width: int,
+            resnet_size: int = 50,
+            num_channels: int = 3,
+            use_pre_trained_weights: bool = True,
+            pre_trained_cache_dir: Optional[str] = None,
+            encoder_config: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -464,8 +466,14 @@ class TVResNetEncoder(Encoder):
         img_width = width
         first_in_channels = num_channels
         self.use_pre_trained_weights = use_pre_trained_weights
+        self.pre_trained_cache_dir = pre_trained_cache_dir
 
         self._input_shape = (first_in_channels, img_height, img_width)
+
+        # cache pre-trained models if requested
+        # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564
+        if self.pre_trained_cache_dir is not None:
+            os.environ["TORCH_HOME"] = self.pre_trained_cache_dir
 
         model = tv_resnet_registry[resnet_size][0]
         self.pre_trained_weights = tv_resnet_registry[resnet_size][1].DEFAULT if self.use_pre_trained_weights else None
@@ -499,16 +507,16 @@ class TVResNetEncoder(Encoder):
 @register_encoder("hf_resnet", IMAGE)
 class HFResNetEncoder(Encoder):
     def __init__(
-        self,
-        height: int,
-        width: int,
-        resnet_size: int = 50,
-        num_channels: int = 3,
-        out_channels: int = 16,
-        use_pre_trained_weights: bool = True,
-        encoder_config: Optional[Dict] = None,
-        cache_dir: Optional[str] = None,
-        **kwargs,
+            self,
+            height: int,
+            width: int,
+            resnet_size: int = 50,
+            num_channels: int = 3,
+            out_channels: int = 16,
+            use_pre_trained_weights: bool = True,
+            pre_trained_cache_dir: Optional[str] = None,
+            encoder_config: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -519,6 +527,7 @@ class HFResNetEncoder(Encoder):
         img_width = width
         first_in_channels = num_channels
         self.use_pre_trained_weights = use_pre_trained_weights
+        self.pre_trained_cache_dir = pre_trained_cache_dir
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
@@ -526,8 +535,14 @@ class HFResNetEncoder(Encoder):
 
         logger.debug("  ResNet")
         if self.use_pre_trained_weights:
-            self.feature_extractor = AutoFeatureExtractor.from_pretrained(self.resnet_size, cache_dir=cache_dir)
-            self.resnet = ResNetForImageClassification.from_pretrained(self.resnet_size, cache_dir=cache_dir)
+            self.feature_extractor = AutoFeatureExtractor.from_pretrained(
+                self.resnet_size,
+                cache_dir=self.pre_trained_cache_dir
+            )
+            self.resnet = ResNetForImageClassification.from_pretrained(
+                self.resnet_size,
+                cache_dir=self.pre_trained_cache_dir
+            )
         else:
             self.batch_feature = BatchFeature
             # TODO: need to parameterize ResNetConfig call from constructor parameters
