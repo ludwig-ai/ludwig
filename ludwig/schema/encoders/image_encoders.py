@@ -649,3 +649,138 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
     #     max=1,
     #     description="Dropout rate",
     # )
+
+
+# TODO: finalize the options
+@dataclass
+class HFResNetEncoderConfig(BaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["hf_resnet"],
+        default="hf_resnet",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    height: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Height of the input image.",
+    )
+
+    width: int = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Width of the input image.",
+    )
+
+    resnet_size: Optional[int] = schema_utils.PositiveInteger(
+        default=50,
+        description="The size of the ResNet model to use.",
+    )
+
+    # num_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    #     default=None,
+    #     description="Number of channels to use in the encoder. ",
+    # )
+    #
+    # out_channels: Optional[int] = schema_utils.NonNegativeInteger(
+    #     default=32,
+    #     description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
+    #     "If out_channels is not already specified in conv_layers this is the default out_channels that "
+    #     "will be used for each layer. ",
+    # )
+    #
+    # kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
+    #     default=3,
+    #     description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
+    #     "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
+    #     "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
+    #     "each layer.",
+    # )
+    #
+    # conv_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
+    #     default=1,
+    #     description="An integer or pair of integers specifying the stride of the initial convolutional layer.",
+    # )
+    #
+    # first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
+    #     default=None,
+    #     description="Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.",
+    # )
+    #
+    # first_pool_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
+    #     default=None,
+    #     description="Stride for first pooling layer. If null, defaults to first_pool_kernel_size.",
+    # )
+    #
+    # batch_norm_momentum: float = schema_utils.NonNegativeFloat(
+    #     default=0.9,
+    #     description="Momentum of the batch norm running statistics.",
+    # )
+    #
+    # batch_norm_epsilon: float = schema_utils.NonNegativeFloat(
+    #     default=0.001,
+    #     description="Epsilon of the batch norm.",
+    # )
+    #
+    # fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
+    #     default=None,
+    #     description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
+    #     "of the list determines the number of stacked fully connected layers and the content of each "
+    #     "dictionary determines the parameters for a specific layer. The available parameters for each "
+    #     "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+    #     "weights_initializer. If any of those values is missing from the dictionary, the default one "
+    #     "specified as a parameter of the encoder will be used instead. ",
+    # )
+    #
+    # num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
+    #     default=1,
+    #     description="The number of stacked fully connected layers.",
+    # )
+    #
+    # output_size: Optional[int] = schema_utils.PositiveInteger(
+    #     default=128,
+    #     description="if output_size is not already specified in fc_layers this is the default output_size that will "
+    #     "be used for each layer. It indicates the size of the output of a fully connected layer. ",
+    # )
+    #
+    # use_bias: Optional[bool] = schema_utils.Boolean(
+    #     default=True,
+    #     description="Whether the layer uses a bias vector.",
+    # )
+    #
+    # weights_initializer: Optional[str] = schema_utils.StringOptions(
+    #     sorted(list(initializer_registry.keys())),
+    #     default="xavier_uniform",
+    #     description="Initializer for the weights matrix.",
+    # )
+    #
+    # bias_initializer: Optional[str] = schema_utils.StringOptions(
+    #     sorted(list(initializer_registry.keys())),
+    #     default="zeros",
+    #     description="initializer for the bias vector.",
+    # )
+    #
+    # norm: Optional[str] = schema_utils.StringOptions(
+    #     ["batch", "layer"],
+    #     default=None,
+    #     description="if a norm is not already specified in fc_layers this is the default norm that will be used for "
+    #     "each layer. It indicates the norm of the output and can be null, batch or layer.",
+    # )
+    #
+    # norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
+    #     default=None,
+    #     description="parameters used if norm is either batch or layer. For information on parameters used with batch "
+    #     "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
+    #     "normalization.",
+    # )
+    #
+    # activation: Optional[str] = schema_utils.ActivationOptions(
+    #     description="if an activation is not already specified in fc_layers this is the default activation that will "
+    #     "be used for each layer. It indicates the activation function applied to the output.",
+    # )
+    #
+    # dropout: Optional[float] = schema_utils.FloatRange(
+    #     default=0.0,
+    #     min=0,
+    #     max=1,
+    #     description="Dropout rate",
+    # )

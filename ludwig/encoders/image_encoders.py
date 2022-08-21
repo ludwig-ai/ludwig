@@ -38,6 +38,7 @@ from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.schema.encoders.image_encoders import (
+    HFResNetEncoderConfig,
     MLPMixerEncoderConfig,
     ResNetEncoderConfig,
     Stacked2DCNNEncoderConfig,
@@ -549,15 +550,15 @@ class HFResNetEncoder(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return ResNetEncoderConfig
+        return HFResNetEncoderConfig
 
     @property
     def output_shape(self) -> torch.Size:
         # TODO: Review this with team
         if self.use_pre_trained_weights:
-            return self.resnet.classifier[1].out_features
+            return torch.Size([self.resnet.classifier[1].out_features])
         else:
-            return self.resnet.encoder.stages[-1].layers[-1].layer[-1].convolution.out_channels
+            return torch.Size([self.resnet.encoder.stages[-1].layers[-1].layer[-1].convolution.out_channels])
 
     @property
     def input_shape(self) -> torch.Size:
