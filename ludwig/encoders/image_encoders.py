@@ -18,14 +18,18 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from torchvision.models import (
-    resnet18, ResNet18_Weights,
-    resnet34, ResNet34_Weights,
-    resnet50, ResNet50_Weights,
-    resnet101, ResNet101_Weights,
-    resnet152, ResNet152_Weights,
+    resnet18,
+    ResNet18_Weights,
+    resnet34,
+    ResNet34_Weights,
+    resnet50,
+    ResNet50_Weights,
+    resnet101,
+    ResNet101_Weights,
+    resnet152,
+    ResNet152_Weights,
 )
-
-from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetModel, ResNetForImageClassification
+from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
 
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
@@ -440,14 +444,14 @@ tv_resnet_registry = {
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            resnet_size: int = 50,
-            num_channels: int = 3,
-            use_pre_trained_weights: bool = True,
-            encoder_config: Optional[Dict] = None,
-            **kwargs,
+        self,
+        height: int,
+        width: int,
+        resnet_size: int = 50,
+        num_channels: int = 3,
+        use_pre_trained_weights: bool = True,
+        encoder_config: Optional[Dict] = None,
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -493,16 +497,16 @@ class TVResNetEncoder(Encoder):
 @register_encoder("hf_resnet", IMAGE)
 class HFResNetEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            resnet_size: int = 50,
-            num_channels: int = 3,
-            out_channels: int = 16,
-            use_pre_trained_weights: bool = True,
-            encoder_config: Optional[Dict] = None,
-            cache_dir: Optional[str] = None,
-            **kwargs,
+        self,
+        height: int,
+        width: int,
+        resnet_size: int = 50,
+        num_channels: int = 3,
+        out_channels: int = 16,
+        use_pre_trained_weights: bool = True,
+        encoder_config: Optional[Dict] = None,
+        cache_dir: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
