@@ -118,7 +118,7 @@ def test_tv_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, heig
     )
     inputs = torch.rand(2, num_channels, height, width)
     outputs = resnet(inputs)
-    assert outputs["encoder_output"].shape[1] == resnet.output_shape
+    assert outputs["encoder_output"].shape[1:] == resnet.output_shape
 
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)

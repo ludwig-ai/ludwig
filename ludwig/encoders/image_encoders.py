@@ -41,6 +41,7 @@ from ludwig.schema.encoders.image_encoders import (
     MLPMixerEncoderConfig,
     ResNetEncoderConfig,
     Stacked2DCNNEncoderConfig,
+    TVResNetEncoderConfig,
     ViTEncoderConfig,
 )
 from ludwig.utils.pytorch_utils import freeze_parameters
@@ -471,7 +472,7 @@ class TVResNetEncoder(Encoder):
 
         logger.debug("  ResNet")
         if encoder_config:
-            self.resnet = model(weights=self.pre_trained_weights, **encoder_config)
+            self.resnet = model(weights=self.pre_trained_weights)
         else:
             self.resnet = model(weights=self.pre_trained_weights)
 
@@ -483,11 +484,11 @@ class TVResNetEncoder(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return ResNetEncoderConfig
+        return TVResNetEncoderConfig
 
     @property
     def output_shape(self) -> torch.Size:
-        return self.resnet.fc.out_features
+        return torch.Size([self.resnet.fc.out_features])
 
     @property
     def input_shape(self) -> torch.Size:
