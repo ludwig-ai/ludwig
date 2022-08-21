@@ -443,7 +443,7 @@ tv_resnet_registry = {
     152: (resnet152, ResNet152_Weights),
 }
 
-
+# TODO: Finalize constructor parameters
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
@@ -504,6 +504,7 @@ class TVResNetEncoder(Encoder):
         return torch.Size(self._input_shape)
 
 
+# TODO: Finalize constructor parameters
 @register_encoder("hf_resnet", IMAGE)
 class HFResNetEncoder(Encoder):
     def __init__(
