@@ -120,8 +120,7 @@ def test_hf_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, heig
     set_random_seed(RANDOM_SEED)
 
     resnet = HFResNetEncoder(height=height, width=width, num_channels=num_channels, resnet_size=resnet_size,
-                             use_pre_trained_weights=use_pre_trained_weights,
-                             cache_dir="/opt/project/sandbox/vision_models/hf_cache")  # TODO: remove cache_dir
+                             use_pre_trained_weights=use_pre_trained_weights)
     inputs = torch.rand(2, num_channels, height, width)
     outputs = resnet(inputs)
     assert outputs["encoder_output"].shape[1] == resnet.output_shape
