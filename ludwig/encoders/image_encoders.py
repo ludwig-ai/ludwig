@@ -539,6 +539,7 @@ class HFResNetEncoder(Encoder):
             data = {"pixel_values": hidden}
             hidden = BatchFeature(data=data, tensor_type="pt")
             encoder_output = self.resnet(**hidden).pooler_output
+            encoder_output = torch.flatten(encoder_output, start_dim=1)
         return {"encoder_output": encoder_output}
 
     @staticmethod
@@ -547,6 +548,7 @@ class HFResNetEncoder(Encoder):
 
     @property
     def output_shape(self) -> torch.Size:
+        # TODO: Review this with team
         if self.use_pre_trained_weights:
             return self.resnet.classifier[1].out_features
         else:
