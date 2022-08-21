@@ -5,6 +5,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 
+
 @dataclass
 class DotProductCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
@@ -38,5 +39,6 @@ class DotProductCombinerConfig(BaseCombinerConfig):
     )
 
     cosine_similarity: bool = schema_utils.Boolean(
-        default=False, description="Determines if to apply cosine similarity to the vectors representing the two entities. If False, a dot product is computed instead"
+        default=False,
+        description="Determines if to apply cosine similarity to the vectors representing the two entities. If False, a dot product is computed instead",
     )
