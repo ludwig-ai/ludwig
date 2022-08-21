@@ -19,7 +19,7 @@ from functools import lru_cache
 from typing import Any, Dict
 
 import torch
-from torch.nn import Linear, ModuleList, CosineSimilarity
+from torch.nn import CosineSimilarity, Linear, ModuleList
 
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.registry import sequence_encoder_registry
@@ -995,6 +995,7 @@ class ProjectAggregateCombiner(Combiner):
     @staticmethod
     def get_schema_cls():
         return ProjectAggregateCombinerConfig
+
 
 @register_combiner(name="dot_product")
 class DotProductCombiner(Combiner):
