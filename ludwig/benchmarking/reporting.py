@@ -74,7 +74,8 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> U
 
     total = 0
     for e in events:
-        # Possible trace_names are torch ops, or tagged code blocks by LudwigProfiler (which are prepended with LUDWIG_TAG).
+        # Possible trace_names are torch ops, or tagged code blocks by LudwigProfiler (which are
+        # prepended with LUDWIG_TAG).
         if LUDWIG_TAG not in e.trace_name:
             total += getattr(e, attr)
         else:
