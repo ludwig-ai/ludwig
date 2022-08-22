@@ -1,6 +1,3 @@
-"""some parts are inspired from https://github.com/Breakend/experiment-impact-
-tracker/blob/master/experiment_impact_tracker/compute_tracker.py."""
-
 import contextlib
 import glob
 import logging
@@ -247,10 +244,10 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.info.pop("cpu_memory_usage")
             self.info["average_cpu_memory_usage"] = 0
 
-        temp_dir = os.path.join(self.output_dir, "system_resource_usage", self.info["code_block_tag"])
-        os.makedirs(temp_dir, exist_ok=True)
-        num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
-        file_name = os.path.join(temp_dir, f"run_{num_prev_runs}.json")
+        output_subdir = os.path.join(self.output_dir, "system_resource_usage", self.info["code_block_tag"])
+        os.makedirs(output_subdir, exist_ok=True)
+        num_prev_runs = len(glob.glob(os.path.join(output_subdir, "run_*.json")))
+        file_name = os.path.join(output_subdir, f"run_{num_prev_runs}.json")
         save_json(file_name, self.info)
 
     def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:

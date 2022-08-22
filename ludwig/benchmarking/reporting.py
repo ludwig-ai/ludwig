@@ -8,12 +8,12 @@ from torch.autograd import DeviceType, profiler_util
 from ludwig.constants import LUDWIG_TAG
 
 
-def initialize_stats_dict(main_function_events: List[profiler_util.FunctionEvent]) -> Dict[str, Any]:
+def initialize_stats_dict(main_function_events: List[profiler_util.FunctionEvent]) -> Dict[str, list]:
     """Initialize dictionary which stores resource usage information per tagged code block.
 
     :param main_function_events: list of main function events.
     """
-    info = dict()
+    info = {}
     for event_name in [evt.name for evt in main_function_events]:
         info[event_name] = []
     return info
@@ -74,6 +74,7 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> U
 
     total = 0
     for e in events:
+        # Possible trace_names are torch ops, or tagged code blocks by LudwigProfiler (which are prepended with LUDWIG_TAG).
         if LUDWIG_TAG not in e.trace_name:
             total += getattr(e, attr)
         else:
@@ -130,6 +131,8 @@ def get_all_events(
     :param kineto_events: list of Kineto Events.
     :param function_events: list of function events.
     """
+    # LUDWIG_TAG is prepended to LudwigProfiler tags. This edited tag is passed in to `torch.profiler.record_function`
+    # so we can easily retrieve events for code blocks wrapped with LudwigProfiler.
     main_function_events = [evt for evt in function_events if LUDWIG_TAG in evt.name]
     main_kineto_events = [event for event in kineto_events if LUDWIG_TAG in event.name()]
     memory_events = [[event, False] for event in kineto_events if profiler_util.MEMORY_EVENT_NAME in event.name()]
