@@ -112,8 +112,7 @@ def get_resource_usage_report(
         (evt for evt in main_kineto_events if LUDWIG_TAG in evt.name()), key=lambda x: x.correlation_id()
     )
     main_function_events = sorted((evt for evt in main_function_events if LUDWIG_TAG in evt.name), key=lambda x: x.id)
-    assert [evt.id for evt in main_function_events] == [evt.correlation_id() for evt in main_kineto_events]
-    assert [evt.name for evt in main_function_events] == [evt.name() for evt in main_kineto_events]
+
     for kineto_event, function_event in zip(main_kineto_events, main_function_events):
         run_usage_info = {}
         run_usage_info = get_device_memory_usage(kineto_event, mem_records_acc, run_usage_info)
