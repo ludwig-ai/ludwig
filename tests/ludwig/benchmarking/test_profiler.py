@@ -31,7 +31,7 @@ def test_ludwig_profiler(tmpdir):
 
     model = LudwigModel(config=config, backend="local")
 
-    with LudwigProfiler(tag="train", output_dir=tmpdir, use_torch_profiler=False, logging_interval=0.1):
+    with LudwigProfiler(tag="profile_1", output_dir=tmpdir, use_torch_profiler=False, logging_interval=0.1):
         model.train(
             dataset=train_df,
             output_directory=tmpdir,
@@ -43,14 +43,14 @@ def test_ludwig_profiler(tmpdir):
             skip_save_processed_input=True,
         )
 
-    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "train", "run_0.json"))
+    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "profile_1", "run_0.json"))
 
-    with LudwigProfiler(tag="evaluate", output_dir=tmpdir, use_torch_profiler=True, logging_interval=0.1):
+    with LudwigProfiler(tag="profile_2", output_dir=tmpdir, use_torch_profiler=True, logging_interval=0.1):
         model.evaluate(dataset=eval_df)
         func(0.1)
 
-    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "evaluate", "run_0.json"))
-    assert os.path.exists(os.path.join(tmpdir, "torch_ops_resource_usage", "evaluate", "run_0.json"))
+    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "profile_2", "run_0.json"))
+    assert os.path.exists(os.path.join(tmpdir, "torch_ops_resource_usage", "profile_2", "run_0.json"))
 
     func(0.25)
     func(0.5)
