@@ -34,7 +34,7 @@ from PIL import Image
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
+from ludwig.constants import COLUMN, DECODER, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -236,64 +236,120 @@ def number_feature(normalization=None, **kwargs):
     return feature
 
 
-def category_feature(**kwargs):
+def category_feature(output_feature=False, **kwargs):
+    if DECODER in kwargs:
+        output_feature = True
     feature = {
         "type": "category",
         "name": "category_" + random_string(),
-        ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
     }
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "classifier", "vocab_size": 10},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
+            }
+        )
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
-def text_feature(**kwargs):
+def text_feature(output_feature=False, **kwargs):
+    if DECODER in kwargs:
+        output_feature = True
     feature = {
         "name": "text_" + random_string(),
         "type": "text",
-        ENCODER: {
-            "type": "parallel_cnn",
-            "vocab_size": 5,
-            "min_len": 7,
-            "max_len": 7,
-            "embedding_size": 8,
-            "state_size": 8,
-        },
     }
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "generator", "vocab_size": 5, "max_len": 7},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {
+                    "type": "parallel_cnn",
+                    "vocab_size": 5,
+                    "min_len": 7,
+                    "max_len": 7,
+                    "embedding_size": 8,
+                    "state_size": 8,
+                },
+            }
+        )
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
-def set_feature(**kwargs):
+def set_feature(output_feature=False, **kwargs):
+    if DECODER in kwargs:
+        output_feature = True
     feature = {
         "type": "set",
         "name": "set_" + random_string(),
-        ENCODER: {"type": "embed", "vocab_size": 10, "max_len": 5, "embedding_size": 5},
     }
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {"type": "classifier", "vocab_size": 10, "max_len": 5},
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {"type": "embed", "vocab_size": 10, "max_len": 5, "embedding_size": 5},
+            }
+        )
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
     return feature
 
 
-def sequence_feature(**kwargs):
+def sequence_feature(output_feature=False, **kwargs):
+    if DECODER in kwargs:
+        output_feature = True
     feature = {
         "type": "sequence",
         "name": "sequence_" + random_string(),
-        ENCODER: {
-            "type": "embed",
-            "vocab_size": 10,
-            "max_len": 7,
-            "embedding_size": 8,
-            "output_size": 8,
-            "state_size": 8,
-            "num_filters": 8,
-            "hidden_size": 8,
-        },
     }
+    if output_feature:
+        feature.update(
+            {
+                DECODER: {
+                    "type": "generator",
+                    "vocab_size": 10,
+                    "max_len": 7,
+                }
+            }
+        )
+    else:
+        feature.update(
+            {
+                ENCODER: {
+                    "type": "embed",
+                    "vocab_size": 10,
+                    "max_len": 7,
+                    "embedding_size": 8,
+                    "output_size": 8,
+                    "state_size": 8,
+                    "num_filters": 8,
+                    "hidden_size": 8,
+                },
+            }
+        )
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)

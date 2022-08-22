@@ -19,6 +19,8 @@ from ludwig.schema.utils import (
 )
 from ludwig.utils.registry import Registry
 
+from .metadata.parameter_metadata import convert_metadata_to_json
+
 optimizer_registry = Registry()
 
 
@@ -435,7 +437,10 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,
-                metadata={"description": description, "parameter_metadata": TRAINER_METADATA["gradient_clipping"]},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(TRAINER_METADATA["gradient_clipping"]),
+                },
             )
         },
         default_factory=lambda: load_default,
