@@ -14,9 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import os
-import contextlib
 
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
@@ -109,4 +109,3 @@ def provision_preprocessing_workers(backend):
     finally:
         if backend.BACKEND_TYPE == RAY:
             backend.release_preprocessing_workers()
-
