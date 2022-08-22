@@ -27,6 +27,8 @@ from ludwig.utils.torch_utils import initialize_pytorch
 
 
 class HorovodBackend(LocalPreprocessingMixin, Backend):
+    BACKEND_TYPE = "horovod"
+
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
         self._horovod = None
@@ -44,14 +46,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     def create_predictor(self, model: BaseModel, **kwargs):
         return Predictor(model, horovod=self._horovod, **kwargs)
-
-    def provision_preprocessing_workers(self):
-        # No-op only used for ray backends
-        pass
-
-    def release_preprocessing_workers(self):
-        # No-op only used for ray backends
-        pass
 
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast

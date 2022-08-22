@@ -787,6 +787,8 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
+    BACKEND_TYPE = "ray"
+
     def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, data_preprocessor=None, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = data_preprocessor or {}

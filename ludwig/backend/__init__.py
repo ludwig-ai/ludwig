@@ -16,6 +16,7 @@
 
 import logging
 import os
+import contextlib
 
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
@@ -97,3 +98,15 @@ def initialize_backend(backend):
         backend = create_backend(backend)
     backend.initialize()
     return backend
+
+
+@contextlib.contextmanager
+def provision_preprocessing_workers(backend):
+    if backend.BACKEND_TYPE == RAY:
+        backend.provision_preprocessing_workers()
+    try:
+        yield
+    finally:
+        if backend.BACKEND_TYPE == RAY:
+            backend.release_preprocessing_workers()
+

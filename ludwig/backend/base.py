@@ -100,14 +100,6 @@ class Backend(ABC):
     def num_nodes(self) -> int:
         raise NotImplementedError()
 
-    @abstractmethod
-    def provision_preprocessing_workers(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def release_preprocessing_workers(self):
-        raise NotImplementedError()
-
 
 class LocalPreprocessingMixin:
     @property
@@ -184,18 +176,12 @@ class RemoteTrainingMixin:
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+    BACKEND_TYPE = "local"
+
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
 
     def initialize(self):
-        pass
-
-    def provision_preprocessing_workers(self):
-        # no-op only used for ray backend
-        pass
-
-    def release_preprocessing_workers(self):
-        # no-op only used for ray backend
         pass
 
     @property
