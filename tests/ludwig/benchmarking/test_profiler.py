@@ -54,8 +54,6 @@ def test_ludwig_profiler(tmpdir):
 
     func(0.25)
     func(0.5)
-    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "test_function", "run_0.json"))
-    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "test_function", "run_1.json"))
-    assert os.path.exists(os.path.join(tmpdir, "system_resource_usage", "test_function", "run_2.json"))
-
-    shutil.rmtree(tmpdir)
+    assert set(os.listdir(os.path.join(tmpdir, "system_resource_usage", "test_function"))) == {"run_0.json",
+                                                                                               "run_1.json",
+                                                                                               "run_2.json"}
