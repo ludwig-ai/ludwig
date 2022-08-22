@@ -13,6 +13,7 @@ from ludwig.schema.utils import (
     create_cond,
     FloatRange,
     FloatRangeTupleDataclassField,
+    Integer,
     NonNegativeFloat,
     StringOptions,
     unload_jsonschema_from_marshmallow_class,
@@ -68,6 +69,40 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
     dampening: float = NonNegativeFloat(default=0.0, description="Dampening for momentum.")
     nesterov: bool = Boolean(default=False, description="Enables Nesterov momentum.")
+
+
+@register_optimizer(name="lbfgs")
+@dataclass
+class LBFGSOptimizerConfig(BaseOptimizerConfig):
+    """Parameters for stochastic gradient descent."""
+
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.LBFGS
+    """Points to `torch.optim.LBFGS`."""
+
+    type: str = StringOptions(["lbfgs"], default="lbfgs", allow_none=False)
+    """Must be 'lbfgs' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
+       'lbfgs')"""
+
+    # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.LBFGS.html#torch.optim.LBFGS
+    lr: float = NonNegativeFloat(default=1, description="Learning rate.")
+    max_iter: int = Integer(default=20, description="Maximum number of iterations per optimization step.")
+    max_eval: int = Integer(
+        default=None,
+        allow_none=True,
+        description="Maximum number of function evaluations per optimization step. Default: `max_iter` * 1.25."
+    )
+    tolerance_grad: float = NonNegativeFloat(
+        default=1e-07, description="Termination tolerance on first order optimality."
+    )
+    tolerance_change: float = NonNegativeFloat(
+        default=1e-09, description="Termination tolerance on function value/parameter changes."
+    )
+    history_size: int = Integer(default=100, description="Update history size.")
+    line_search_fn: str = StringOptions(
+        ["strong_wolfe"],
+        default=None,
+        description="Line search function to use.",
+    )
 
 
 @register_optimizer(name="adam")
