@@ -826,8 +826,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
         ray.get(self._preprocessor_pg.ready())
         self._update_dask_backend_with_pg(self._preprocessor_pg)
+        try:
+            yield
+        finally:
+            self._release_preprocessing_workers()
 
-    def release_preprocessing_workers(self):
+    def _release_preprocessing_workers(self):
         self._clear_dask_backend_pg()
         if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
             logger.warning(

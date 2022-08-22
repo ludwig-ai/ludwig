@@ -100,12 +100,9 @@ class Backend(ABC):
     def num_nodes(self) -> int:
         raise NotImplementedError()
 
+    @contextmanager
     @abstractmethod
     def provision_preprocessing_workers(self):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def release_preprocessing_workers(self):
         raise NotImplementedError()
 
 

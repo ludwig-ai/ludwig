@@ -49,10 +49,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         # No-op only used for ray backends
         pass
 
-    def release_preprocessing_workers(self):
-        # No-op only used for ray backends
-        pass
-
     def sync_model(self, model):
         # Model weights are only saved on the coordinator, so broadcast
         # to all other ranks
