@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Union
 
 import torch
 
@@ -82,7 +81,7 @@ class CategoricalSparseEncoder(Encoder):
             pretrained_embeddings=encoder_config.pretrained_embeddings,
             embeddings_on_cpu=encoder_config.embeddings_on_cpu,
             dropout=encoder_config.dropout,
-            embedding_initializer=encoder_config.gembedding_initializer,
+            embedding_initializer=encoder_config.embedding_initializer,
         )
         self.embedding_size = self.embed.embedding_size
 
