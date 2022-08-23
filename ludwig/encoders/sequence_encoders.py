@@ -744,7 +744,7 @@ class StackedCNNRNN(Encoder):
         logger.debug("  Conv1DStack")
         in_channels = self.embed_sequence.output_shape[-1] if self.should_embed else encoder_config.embedding_size
         self.conv1d_stack = Conv1DStack(
-            in_channels=encoder_config.in_channels,
+            in_channels=in_channels,
             max_sequence_length=self.max_sequence_length,
             layers=self.conv_layers,
             num_layers=self.num_conv_layers,

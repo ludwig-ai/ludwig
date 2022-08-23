@@ -329,13 +329,22 @@ class SequenceCombiner(Combiner):
             f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape}"
         )
 
-        self.encoder_obj = get_from_registry(config.encoder, sequence_encoder_registry)(
-            should_embed=False,
-            reduce_output=config.reduce_output,
-            embedding_size=self.combiner.output_shape[1],
-            max_sequence_length=self.combiner.output_shape[0],
-            **kwargs,
+        # TODO: construct encoder
+        encoder_cls = get_from_registry(config.encoder, sequence_encoder_registry)
+        encoder_config = (
+            encoder_cls.get_schema_cls()
+            .Schema()
+            .load(
+                {
+                    "should_embed": False,
+                    "reduce_output": config.reduce_output,
+                    "embedding_size": self.combiner.output_shape[1],
+                    "max_sequence_length": self.combiner.output_shape[0],
+                    **kwargs,
+                }
+            )
         )
+        self.encoder_obj = encoder_cls(encoder_config)
 
         if hasattr(self.encoder_obj, "supports_masking") and self.encoder_obj.supports_masking:
             self.supports_masking = True
