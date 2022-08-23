@@ -1,11 +1,13 @@
-from typing import Tuple, Optional
-from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
+from marshmallow import fields, ValidationError
 from dataclasses import field
 
 from ludwig.constants import TYPE
+from ludwig.utils.registry import Registry
 from ludwig.schema import utils as schema_utils
-from ludwig.data.split import DEFAULT_PROBABILITIES, split_registry
+
+split_config_registry = Registry()
+DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
 
 
 @dataclass
@@ -18,6 +20,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     "Name corresponding to the splitting type."
 
 
+@split_config_registry.register("random")
 @dataclass
 class RandomSplitConfig(BaseSplitConfig):
     """
@@ -38,6 +41,7 @@ class RandomSplitConfig(BaseSplitConfig):
     )
 
 
+@split_config_registry.register("fixed")
 @dataclass
 class FixedSplitConfig(BaseSplitConfig):
     """
@@ -52,11 +56,11 @@ class FixedSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
-        allow_none=False,
         description="The column name to use for fixed splitting.",
     )
 
 
+@split_config_registry.register("stratify")
 @dataclass
 class StratifySplitConfig(BaseSplitConfig):
     """
@@ -71,7 +75,6 @@ class StratifySplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
-        allow_none=False,
         description="The column name to base the stratified splitting on.",
     )
 
@@ -82,6 +85,7 @@ class StratifySplitConfig(BaseSplitConfig):
     )
 
 
+@split_config_registry.register("datetime")
 @dataclass
 class DateTimeSplitConfig(BaseSplitConfig):
     """
@@ -96,7 +100,6 @@ class DateTimeSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
-        allow_none=False,
         description="The column name to perform datetime splitting on.",
     )
 
@@ -105,8 +108,8 @@ def get_split_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
     `ludwig.modules.optimization_modules.optimizer_registry`."""
     conds = []
-    for splitter in split_registry:
-        splitter_cls = split_registry[splitter].get_schema_cls()
+    for splitter in split_config_registry.data:
+        splitter_cls = split_config_registry.data[splitter]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(splitter_cls)["properties"]
         other_props.pop("type")
         splitter_cond = schema_utils.create_cond(
@@ -131,8 +134,8 @@ def SplitDataclassField(default: str):
             if value is None:
                 return None
             if isinstance(value, dict):
-                if TYPE in value and value[TYPE] in split_registry:
-                    split_class = split_registry[value[TYPE]]
+                if TYPE in value and value[TYPE] in split_config_registry.data:
+                    split_class = split_config_registry.data[value[TYPE]]
                     try:
                         return split_class.get_schema_cls().Schema().load(value)
                     except (TypeError, ValidationError) as error:
@@ -149,14 +152,14 @@ def SplitDataclassField(default: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(split_registry.keys()), "default": default},
+                    "type": {"type": "string", "enum": list(split_config_registry.data.keys()), "default": default},
                 },
                 "title": "split_options",
                 "allOf": get_split_conds()
             }
 
     try:
-        splitter = split_registry[default].get_schema_cls()
+        splitter = split_config_registry.data[default]
         load_default = splitter.Schema().load({"type": default})
         dump_default = splitter.Schema().dump({"type": default})
 

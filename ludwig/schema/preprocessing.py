@@ -1,5 +1,3 @@
-from typing import Tuple, Optional
-
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
@@ -19,8 +17,8 @@ from ludwig.constants import (
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
-from ludwig.schema.features.base import BasePreprocessingConfig
-from ludwig.schema.features.utils import PreprocessingDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 
 
 @dataclass
@@ -50,29 +48,29 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "to the minority class. "
     )
 
-    # audio: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=AUDIO)
-    #
-    # binary: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=BINARY)
-    #
-    # category: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=CATEGORY)
-    #
-    # date: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=DATE)
-    #
-    # h3: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=H3)
-    #
-    # image: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=IMAGE)
-    #
-    # number: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=NUMBER)
-    #
-    # sequence: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=SEQUENCE)
-    #
-    # set: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=SET)
-    #
-    # text: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=TEXT)
-    #
-    # timeseries: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=TIMESERIES)
-    #
-    # vector: Optional[BasePreprocessingConfig] = PreprocessingDataclassField(feature_type=VECTOR)
+    audio: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=AUDIO)
+
+    binary: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
+
+    category: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
+
+    date: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=DATE)
+
+    h3: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
+
+    image: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
+
+    number: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
+
+    sequence: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
+
+    set: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
+
+    text: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
+
+    timeseries: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
+
+    vector: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
 
 def get_preprocessing_jsonschema():

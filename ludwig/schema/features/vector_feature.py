@@ -1,60 +1,16 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import DROP_ROW, VECTOR, MEAN_SQUARED_ERROR, MISSING_VALUE_STRATEGY_OPTIONS, OUTPUT
+from ludwig.constants import MEAN_SQUARED_ERROR, VECTOR
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, BasePreprocessingConfig
-from ludwig.schema.features.utils import register_preprocessor, PreprocessingDataclassField
-
-
-@register_preprocessor(VECTOR)
-@dataclass
-class VectorPreprocessingConfig(BasePreprocessingConfig):
-
-    vector_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The size of the vector. If None, the vector size will be inferred from the data.",
-    )
-
-    missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
-        default="fill_with_const",
-        allow_none=False,
-        description="What strategy to follow when there's a missing value in a vector column",
-    )
-
-    fill_value: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
-    )
-
-    computed_fill_value: str = schema_utils.String(
-        default="",
-        allow_none=False,
-        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
-    )
-
-
-@register_preprocessor("vector_output")
-@dataclass
-class VectorOutputPreprocessingConfig(BasePreprocessingConfig):
-
-    missing_value_strategy: str = schema_utils.StringOptions(
-        MISSING_VALUE_STRATEGY_OPTIONS,
-        default=DROP_ROW,
-        allow_none=False,
-        description="What strategy to follow when there's a missing value in a vector output feature",
-    )
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.loss.loss import BaseLossConfig
+from ludwig.schema.loss.utils import LossDataclassField
 
 
 @dataclass
@@ -99,12 +55,9 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         description="The size of the vector. If None, the vector size will be inferred from the data.",
     )
 
-    loss: dict = schema_utils.Dict(
-        default={
-            "type": MEAN_SQUARED_ERROR,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=VECTOR,
+        default=MEAN_SQUARED_ERROR,
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
