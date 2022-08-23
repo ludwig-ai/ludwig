@@ -73,7 +73,9 @@ class ALBERTEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = AlbertModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = AlbertModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = AlbertConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -175,7 +177,9 @@ class MT5Encoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = MT5EncoderModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = MT5EncoderModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = MT5Config(
                 vocab_size=encoder_config.vocab_size,
@@ -276,7 +280,9 @@ class XLMRoBERTaEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = XLMRobertaModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = XLMRobertaModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = XLMRobertaConfig(
                 pad_token_id=encoder_config.pad_token_id,
@@ -363,7 +369,9 @@ class BERTEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = BertModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = BertModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = BertConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -464,7 +472,9 @@ class XLMEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = XLMModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = XLMModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
             if trainable:
                 self.transformer.train()
         else:
@@ -569,7 +579,9 @@ class GPTEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = OpenAIGPTModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = OpenAIGPTModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = OpenAIGPTConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -652,7 +664,9 @@ class GPT2Encoder(Encoder):
 
         if encoder_config.use_pretrained:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = GPT2Model.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = GPT2Model.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = GPT2Config(
                 vocab_size=encoder_config.vocab_size,
@@ -737,7 +751,9 @@ class RoBERTaEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = RobertaModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = RobertaModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = RobertaConfig(
                 pad_token_id=encoder_config.pad_token_id,
@@ -813,7 +829,9 @@ class TransformerXLEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = TransfoXLModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = TransfoXLModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = TransfoXLConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -904,7 +922,9 @@ class XLNetEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = XLNetModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = XLNetModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = XLNetConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -1002,7 +1022,9 @@ class DistilBERTEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = DistilBertModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = DistilBertModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = DistilBertConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -1087,7 +1109,9 @@ class CTRLEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = CTRLModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = CTRLModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = CTRLConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -1171,7 +1195,9 @@ class CamemBERTEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = CamembertModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = CamembertModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = CamembertConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -1269,7 +1295,9 @@ class T5Encoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = T5Model.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = T5Model.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = T5Config(
                 vocab_size=encoder_config.vocab_size,
@@ -1358,7 +1386,9 @@ class FlauBERTEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = FlaubertModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = FlaubertModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = FlaubertConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -1461,7 +1491,9 @@ class ELECTRAEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = ElectraModel.from_pretrained(encoder_config.pretrained_model_name_or_path, **pretrained_kwargs)
+            self.transformer = ElectraModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
+            )
         else:
             config = ElectraConfig(
                 vocab_size=encoder_config.vocab_size,
@@ -1553,7 +1585,9 @@ class LongformerEncoder(Encoder):
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
             pretrained_kwargs = encoder_config.pretrained_kwargs or {}
-            self.transformer = LongformerModel.from_pretrained(encoder_config.pretrained_model_name_or_path, pretrained_kwargs)
+            self.transformer = LongformerModel.from_pretrained(
+                encoder_config.pretrained_model_name_or_path, pretrained_kwargs
+            )
         else:
             config = LongformerConfig(encoder_config.attention_window, encoder_config.sep_token_id)
             self.transformer = LongformerModel(config)

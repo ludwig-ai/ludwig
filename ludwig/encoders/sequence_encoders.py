@@ -52,7 +52,7 @@ class SequencePassthroughEncoder(Encoder):
         self.reduce_sequence = SequenceReducer(
             reduce_mode=encoder_config.reduce_output,
             max_sequence_length=encoder_config.max_sequence_length,
-            encoding_size=encoder_config.encoding_size
+            encoding_size=encoder_config.encoding_size,
         )
         if self.reduce_output is None:
             self.supports_masking = True
@@ -886,7 +886,9 @@ class StackedTransformer(Encoder):
             used_embedding_size = self.embed_sequence.output_shape[-1]
             if used_embedding_size != encoder_config.hidden_size:
                 logger.debug("  project_to_embed_size")
-                self.project_to_hidden_size = nn.Linear(self.embed_sequence.output_shape[-1], encoder_config.hidden_size)
+                self.project_to_hidden_size = nn.Linear(
+                    self.embed_sequence.output_shape[-1], encoder_config.hidden_size
+                )
                 self.should_project = True
         else:
             logger.debug("  project_to_embed_size")
