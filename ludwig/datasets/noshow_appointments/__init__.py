@@ -29,7 +29,7 @@ class NoShowAppointments(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
     def process_downloaded_dataset(self):
         """The final method where we create a concatenated CSV file with both training and test data."""
         df = pd.read_csv(os.path.join(self.raw_dataset_path, self.csv_filename))
-        df[SPLIT] = df.index.to_series().map(lambda x: np.random.choice(3, 1, p=(0.7, 0.1, 0.2))).astype(np.int8)
+        df[SPLIT] = np.random.choice(3, len(df), p=(0.7, 0.1, 0.2)).astype(np.int8)
 
         makedirs(self.processed_temp_path, exist_ok=True)
         df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename), index=False)
