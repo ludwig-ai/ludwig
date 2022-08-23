@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
 
 import torch
 
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("embed", BAG)
 class BagEmbedWeightedEncoder(Encoder):
-    def __init__(self, encoder_config: BagEmbedWeightedConfig, **kwargs):
+    def __init__(self, encoder_config: BagEmbedWeightedConfig = BagEmbedWeightedConfig(), **kwargs):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")

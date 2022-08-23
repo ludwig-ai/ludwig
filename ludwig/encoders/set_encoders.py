@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional
 
 import torch
 
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("embed", SET)
 class SetSparseEncoder(Encoder):
-    def __init__(self, encoder_config: SetSparseEncoderConfig):
+    def __init__(self, encoder_config: SetSparseEncoderConfig = SetSparseEncoderConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")

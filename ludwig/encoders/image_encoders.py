@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict
 
 import torch
 
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 # TODO(shreya): Add type hints for missing args
 @register_encoder("stacked_cnn", IMAGE)
 class Stacked2DCNN(Encoder):
-    def __init__(self, encoder_config: Stacked2DCNNEncoderConfig):
+    def __init__(self, encoder_config: Stacked2DCNNEncoderConfig = Stacked2DCNNEncoderConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
@@ -125,7 +125,7 @@ class Stacked2DCNN(Encoder):
 
 @register_encoder("resnet", IMAGE)
 class ResNetEncoder(Encoder):
-    def __init__(self, encoder_config: ResNetEncoderConfig):
+    def __init__(self, encoder_config: ResNetEncoderConfig = ResNetEncoderConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
@@ -190,7 +190,7 @@ class ResNetEncoder(Encoder):
 
 @register_encoder("mlp_mixer", IMAGE)
 class MLPMixerEncoder(Encoder):
-    def __init__(self, encoder_config: MLPMixerEncoderConfig):
+    def __init__(self, encoder_config: MLPMixerEncoderConfig = MLPMixerEncoderConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
@@ -199,7 +199,7 @@ class MLPMixerEncoder(Encoder):
         img_width = encoder_config.width
         in_channels = encoder_config.num_channels
 
-        if num_channels is None:
+        if in_channels is None:
             raise RuntimeError("num_channels must not be None")
 
         self._input_shape = (in_channels, img_height, img_width)
@@ -262,7 +262,7 @@ class ViTEncoder(Encoder):
         self._input_shape = (in_channels, img_height, img_width)
 
         if encoder_config.use_pretrained and not encoder_config.saved_weights_in_checkpoint:
-            self.transformer = ViTModel.from_pretrained(pretrained_model)
+            self.transformer = ViTModel.from_pretrained(encoder_config.pretrained_model)
         else:
             config = ViTConfig(
                 image_size=img_height,
@@ -281,13 +281,13 @@ class ViTEncoder(Encoder):
             )
             self.transformer = ViTModel(config)
 
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
 
         self._output_shape = (self.transformer.config.hidden_size,)
-        self.output_attentions = output_attentions
+        self.output_attentions = encoder_config.output_attentions
 
     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         output = self.transformer(inputs, head_mask=head_mask, output_attentions=self.output_attentions)

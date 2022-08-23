@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 class SequencePassthroughEncoder(Encoder):
-    def __init__(self, encoder_config: SequencePassthroughConfig):
+    def __init__(self, encoder_config: SequencePassthroughConfig = SequencePassthroughConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -81,7 +81,7 @@ class SequencePassthroughEncoder(Encoder):
 
 @register_encoder("embed", [SEQUENCE, TEXT])
 class SequenceEmbedEncoder(Encoder):
-    def __init__(self, encoder_config: SequenceEmbedConfig):
+    def __init__(self, encoder_config: SequenceEmbedConfig = SequenceEmbedConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
         self.embedding_size = encoder_config.embedding_size
@@ -136,7 +136,7 @@ class SequenceEmbedEncoder(Encoder):
 @register_sequence_encoder("parallel_cnn")
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class ParallelCNN(Encoder):
-    def __init__(self, encoder_config: ParallelCNNConfig):
+    def __init__(self, encoder_config: ParallelCNNConfig = ParallelCNNConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -274,7 +274,7 @@ class ParallelCNN(Encoder):
 @register_sequence_encoder("stacked_cnn")
 @register_encoder("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedCNN(Encoder):
-    def __init__(self, encoder_config: StackedCNNConfig):
+    def __init__(self, encoder_config: StackedCNNConfig = StackedCNNConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -443,7 +443,7 @@ class StackedCNN(Encoder):
 @register_sequence_encoder("stacked_parallel_cnn")
 @register_encoder("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedParallelCNN(Encoder):
-    def __init__(self, encoder_config: StackedParallelCNNConfig):
+    def __init__(self, encoder_config: StackedParallelCNNConfig = StackedParallelCNNConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -585,7 +585,7 @@ class StackedParallelCNN(Encoder):
 @register_sequence_encoder("rnn")
 @register_encoder("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedRNN(Encoder):
-    def __init__(self, encoder_config: StackedRNNConfig):
+    def __init__(self, encoder_config: StackedRNNConfig = StackedRNNConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -703,7 +703,7 @@ class StackedRNN(Encoder):
 @register_sequence_encoder("cnnrnn")
 @register_encoder("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedCNNRNN(Encoder):
-    def __init__(self, encoder_config: StackedCNNRNNConfig):
+    def __init__(self, encoder_config: StackedCNNRNNConfig = StackedCNNRNNConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
@@ -859,7 +859,7 @@ class StackedCNNRNN(Encoder):
 
 @register_encoder("transformer", [SEQUENCE, TEXT, TIMESERIES])
 class StackedTransformer(Encoder):
-    def __init__(self, encoder_config: StackedTransformerConfig):
+    def __init__(self, encoder_config: StackedTransformerConfig = StackedTransformerConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 

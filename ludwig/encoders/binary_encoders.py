@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", BINARY)
 class BinaryPassthroughEncoder(Encoder):
-    def __init__(self, encoder_config: BinaryPassthroughEncoderConfig):
+    def __init__(self, encoder_config: BinaryPassthroughEncoderConfig = BinaryPassthroughEncoderConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional
+from typing import Dict
 
 import torch
 
@@ -37,7 +37,7 @@ H3_INPUT_SIZE = 19
 
 @register_encoder("embed", H3)
 class H3Embed(Encoder):
-    def __init__(self, encoder_config: H3EmbedConfig):
+    def __init__(self, encoder_config: H3EmbedConfig = H3EmbedConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -177,7 +177,7 @@ class H3Embed(Encoder):
 
 @register_encoder("weighted_sum", H3)
 class H3WeightedSum(Encoder):
-    def __init__(self, encoder_config: H3WeightedSumConfig):
+    def __init__(self, encoder_config: H3WeightedSumConfig = H3WeightedSumConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")
@@ -252,7 +252,7 @@ class H3WeightedSum(Encoder):
 
 @register_encoder("rnn", H3)
 class H3RNN(Encoder):
-    def __init__(self, encoder_config: H3RNNConfig):
+    def __init__(self, encoder_config: H3RNNConfig = H3RNNConfig()):
         super().__init__(encoder_config)
 
         logger.debug(f" {self.name}")

@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional
+from typing import Dict
 
 import torch
 
@@ -35,7 +35,7 @@ DATE_INPUT_SIZE = 9
 
 @register_encoder("embed", DATE)
 class DateEmbed(Encoder):
-    def __init__(self, encoder_config: DateEmbedConfig):
+    def __init__(self, encoder_config: DateEmbedConfig = DateEmbedConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
 
@@ -96,7 +96,7 @@ class DateEmbed(Encoder):
             representation="dense",
             embeddings_trainable=True,
             pretrained_embeddings=None,
-            embeddings_on_cpu=eencoder_config.mbeddings_on_cpu,
+            embeddings_on_cpu=encoder_config.embeddings_on_cpu,
             dropout=encoder_config.dropout,
             embedding_initializer=encoder_config.weights_initializer,
         )

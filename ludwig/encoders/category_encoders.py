@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("dense", CATEGORY)
 class CategoricalEmbedEncoder(Encoder):
-    def __init__(self, encoder_config: CategoricalEmbedConfig):
+    def __init__(self, encoder_config: CategoricalEmbedConfig = CategoricalEmbedConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
         logger.debug("  Embed")

@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import sys
-from typing import Callable, Dict, List, Optional, Union
+from typing import Dict, Optional
 
 import torch
 
@@ -59,7 +59,7 @@ class ALBERTEncoder(Encoder):
         "pretrained_model_name_or_path": "albert-base-v2",
     }
 
-    def __init__(self, encoder_config: ALBERTConfig):
+    def __init__(self, encoder_config: ALBERTConfig = ALBERTConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import AlbertConfig, AlbertModel
@@ -163,7 +163,7 @@ class MT5Encoder(Encoder):
         "pretrained_model_name_or_path": "google/mt5-base",
     }
 
-    def __init__(self, encoder_config: MT5Config):
+    def __init__(self, encoder_config: MT5Config = MT5Config()):
         super().__init__(encoder_config)
         try:
             from transformers import MT5Config, MT5EncoderModel
@@ -207,7 +207,7 @@ class MT5Encoder(Encoder):
         self.reduce_output = encoder_config.reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -265,7 +265,7 @@ class XLMRoBERTaEncoder(Encoder):
         "pretrained_model_name_or_path": "xlm-roberta-base",
     }
 
-    def __init__(self, encoder_config: XLMRoBERTaConfig):
+    def __init__(self, encoder_config: XLMRoBERTaConfig = XLMRoBERTaConfig()):
         super().__init__(encoder_config)
 
         try:
@@ -295,7 +295,7 @@ class XLMRoBERTaEncoder(Encoder):
         self.reduce_output = encoder_config.reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -355,7 +355,7 @@ class BERTEncoder(Encoder):
         "pretrained_model_name_or_path": "bert-base-uncased",
     }
 
-    def __init__(self, encoder_config: BERTConfig):
+    def __init__(self, encoder_config: BERTConfig = BERTConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import BertConfig, BertModel
@@ -397,7 +397,7 @@ class BERTEncoder(Encoder):
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
 
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -458,7 +458,7 @@ class XLMEncoder(Encoder):
         "pretrained_model_name_or_path": "xlm-mlm-en-2048",
     }
 
-    def __init__(self, encoder_config: XLMConfig):
+    def __init__(self, encoder_config: XLMConfig = XLMConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import XLMConfig, XLMModel
@@ -475,7 +475,7 @@ class XLMEncoder(Encoder):
             self.transformer = XLMModel.from_pretrained(
                 encoder_config.pretrained_model_name_or_path, **pretrained_kwargs
             )
-            if trainable:
+            if encoder_config.trainable:
                 self.transformer.train()
         else:
             config = XLMConfig(
@@ -565,7 +565,7 @@ class GPTEncoder(Encoder):
         "pretrained_model_name_or_path": "openai-gpt",
     }
 
-    def __init__(self, encoder_config: GPTConfig):
+    def __init__(self, encoder_config: GPTConfig = GPTConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import OpenAIGPTConfig, OpenAIGPTModel
@@ -601,7 +601,7 @@ class GPTEncoder(Encoder):
 
         self.reduce_output = encoder_config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -650,7 +650,7 @@ class GPT2Encoder(Encoder):
         "pretrained_model_name_or_path": "gpt2",
     }
 
-    def __init__(self, encoder_config: GPT2Config):
+    def __init__(self, encoder_config: GPT2Config = GPT2Config()):
         super().__init__(encoder_config)
         try:
             from transformers import GPT2Config, GPT2Model
@@ -686,7 +686,7 @@ class GPT2Encoder(Encoder):
             )
             self.transformer = GPT2Model(config)
 
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -737,7 +737,7 @@ class RoBERTaEncoder(Encoder):
         "pretrained_model_name_or_path": "roberta-base",
     }
 
-    def __init__(self, encoder_config: RoBERTaConfig):
+    def __init__(self, encoder_config: RoBERTaConfig = RoBERTaConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import RobertaConfig, RobertaModel
@@ -761,7 +761,7 @@ class RoBERTaEncoder(Encoder):
                 eos_token_id=encoder_config.eos_token_id,
             )
             self.transformer = RobertaModel(config)
-        if trainable:
+        if encoder_config.rainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -815,7 +815,7 @@ class TransformerXLEncoder(Encoder):
         "pretrained_model_name_or_path": "transfo-xl-wt103",
     }
 
-    def __init__(self, encoder_config: TransformerXLConfig):
+    def __init__(self, encoder_config: TransformerXLConfig = TransformerXLConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import TransfoXLConfig, TransfoXLModel
@@ -864,7 +864,7 @@ class TransformerXLEncoder(Encoder):
             self.transformer = TransfoXLModel(config)
         self.reduce_output = encoder_config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -908,7 +908,7 @@ class XLNetEncoder(Encoder):
         "pretrained_model_name_or_path": "xlnet-base-cased",
     }
 
-    def __init__(self, encoder_config: XLNetConfig):
+    def __init__(self, encoder_config: XLNetConfig = XLNetConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import XLNetConfig, XLNetModel
@@ -959,7 +959,7 @@ class XLNetEncoder(Encoder):
         self.max_sequence_length = encoder_config.max_sequence_length
         self.reduce_output = encoder_config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1008,7 +1008,7 @@ class DistilBERTEncoder(Encoder):
         "pretrained_model_name_or_path": "distilbert-base-uncased",
     }
 
-    def __init__(self, encoder_config: DistilBERTConfig):
+    def __init__(self, encoder_config: DistilBERTConfig = DistilBERTConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import DistilBertConfig, DistilBertModel
@@ -1043,7 +1043,7 @@ class DistilBERTEncoder(Encoder):
             )
             self.transformer = DistilBertModel(config)
 
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1095,7 +1095,7 @@ class CTRLEncoder(Encoder):
         "pretrained_model_name_or_path": "ctrl",
     }
 
-    def __init__(self, encoder_config: CTRLConfig):
+    def __init__(self, encoder_config: CTRLConfig = CTRLConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import CTRLConfig, CTRLModel
@@ -1131,7 +1131,7 @@ class CTRLEncoder(Encoder):
 
         self.vocab_size = encoder_config.vocab_size
         self.max_sequence_length = encoder_config.max_sequence_length
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1181,7 +1181,7 @@ class CamemBERTEncoder(Encoder):
         "pretrained_model_name_or_path": "jplu/camembert-base",
     }
 
-    def __init__(self, encoder_config: CamemBERTConfig):
+    def __init__(self, encoder_config: CamemBERTConfig = CamemBERTConfig()):
         super().__init__()
         try:
             from transformers import CamembertConfig, CamembertModel
@@ -1219,7 +1219,7 @@ class CamemBERTEncoder(Encoder):
             )
             self.transformer = CamembertModel(config)
 
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1281,7 +1281,7 @@ class T5Encoder(Encoder):
         "pretrained_model_name_or_path": "t5-small",
     }
 
-    def __init__(self, encoder_config: T5Config):
+    def __init__(self, encoder_config: T5Config = T5Config()):
         super().__init__(encoder_config)
         try:
             from transformers import T5Config, T5Model
@@ -1318,7 +1318,7 @@ class T5Encoder(Encoder):
         self.max_sequence_length = encoder_config.max_sequence_length
         self.reduce_output = encoder_config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1372,7 +1372,7 @@ class FlauBERTEncoder(Encoder):
         "pretrained_model_name_or_path": "flaubert/flaubert_small_cased",
     }
 
-    def __init__(self, encoder_config: FlauBERTConfig):
+    def __init__(self, encoder_config: FlauBERTConfig = FlauBERTConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import FlaubertConfig, FlaubertModel
@@ -1423,7 +1423,7 @@ class FlauBERTEncoder(Encoder):
         self.max_sequence_length = encoder_config.max_sequence_length
         self.reduce_output = encoder_config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1477,7 +1477,7 @@ class ELECTRAEncoder(Encoder):
         "pretrained_model_name_or_path": "google/electra-small-discriminator",
     }
 
-    def __init__(self, encoder_config: ELECTRAConfig):
+    def __init__(self, encoder_config: ELECTRAConfig = ELECTRAConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import ElectraConfig, ElectraModel
@@ -1517,7 +1517,7 @@ class ELECTRAEncoder(Encoder):
         self.max_sequence_length = encoder_config.max_sequence_length
         self.reduce_output = encoder_config.reduce_output
         self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1571,7 +1571,7 @@ class LongformerEncoder(Encoder):
         "pretrained_model_name_or_path": "allenai/longformer-base-4096",
     }
 
-    def __init__(self, encoder_config: LongformerConfig):
+    def __init__(self, encoder_config: LongformerConfig = LongformerConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import LongformerConfig, LongformerModel
@@ -1594,7 +1594,7 @@ class LongformerEncoder(Encoder):
         self.reduce_output = encoder_config.reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
@@ -1648,7 +1648,7 @@ class AutoTransformerEncoder(Encoder):
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
     }
 
-    def __init__(self, encoder_config: AutoTransformerConfig):
+    def __init__(self, encoder_config: AutoTransformerConfig = AutoTransformerConfig()):
         super().__init__(encoder_config)
         try:
             from transformers import AutoModel
@@ -1665,7 +1665,7 @@ class AutoTransformerEncoder(Encoder):
         self.reduce_output = encoder_config.reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_output)
-        if trainable:
+        if encoder_config.trainable:
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)

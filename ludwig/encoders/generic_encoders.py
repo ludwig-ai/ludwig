@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
-    def __init__(self, encoder_config: PassthroughEncoderConfig):
+    def __init__(self, encoder_config: PassthroughEncoderConfig = PassthroughEncoderConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
         self.input_size = encoder_config.input_size
@@ -55,7 +55,7 @@ class PassthroughEncoder(Encoder):
 
 @register_encoder("dense", [BINARY, NUMBER, VECTOR])
 class DenseEncoder(Encoder):
-    def __init__(self, encoder_config: DenseEncoderConfig):
+    def __init__(self, encoder_config: DenseEncoderConfig = DenseEncoderConfig()):
         super().__init__(encoder_config)
         logger.debug(f" {self.name}")
         self.input_size = encoder_config.input_size
