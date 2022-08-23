@@ -106,6 +106,9 @@ from ludwig.utils.fs_utils import file_lock, is_url, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
 from ludwig.utils.types import DataFrame, Series
 
+logger = logging.getLogger(__name__)
+
+
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 
 
@@ -168,7 +171,7 @@ class DictPreprocessor(DataFormatPreprocessor):
     ):
         num_overrides = override_in_memory_flag(features, True)
         if num_overrides > 0:
-            logging.warning("Using in_memory = False is not supported " "with {} data format.".format("dict"))
+            logger.warning("Using in_memory = False is not supported " "with {} data format.".format("dict"))
 
         df_engine = backend.df_engine
         if dataset is not None:
@@ -225,7 +228,7 @@ class DataFramePreprocessor(DataFormatPreprocessor):
     ):
         num_overrides = override_in_memory_flag(features, True)
         if num_overrides > 0:
-            logging.warning("Using in_memory = False is not supported " "with {} data format.".format("dataframe"))
+            logger.warning("Using in_memory = False is not supported " "with {} data format.".format("dataframe"))
 
         if isinstance(dataset, pd.DataFrame):
             dataset = backend.df_engine.from_pandas(dataset)
@@ -1017,17 +1020,17 @@ class HDF5Preprocessor(DataFormatPreprocessor):
         if not training_set_metadata:
             raise ValueError("When providing HDF5 data, " "training_set_metadata must not be None.")
 
-        logging.info("Using full hdf5 and json")
+        logger.info("Using full hdf5 and json")
 
         if DATA_TRAIN_HDF5_FP not in training_set_metadata:
-            logging.warning(
+            logger.warning(
                 "data_train_hdf5_fp not present in training_set_metadata. "
                 "Adding it with the current HDF5 file path {}".format(not_none_set)
             )
             training_set_metadata[DATA_TRAIN_HDF5_FP] = not_none_set
 
         elif training_set_metadata[DATA_TRAIN_HDF5_FP] != not_none_set:
-            logging.warning(
+            logger.warning(
                 "data_train_hdf5_fp in training_set_metadata is {}, "
                 "different from the current HDF5 file path {}. "
                 "Replacing it".format(training_set_metadata[DATA_TRAIN_HDF5_FP], not_none_set)
@@ -1100,7 +1103,7 @@ def build_dataset(
             # - In this case, the partitions should remain aligned throughout.
             # - Further, while the indices might not be globally unique, they should be unique within each partition.
             # - These two properties make it possible to do the join op within each partition without a global index.
-            logging.warning(
+            logger.warning(
                 f"Dataset has {dataset_df.npartitions} partitions and feature types that cause repartitioning. "
                 f"Resetting index to ensure globally unique indices."
             )
@@ -1110,7 +1113,7 @@ def build_dataset(
 
     sample_ratio = global_preprocessing_parameters["sample_ratio"]
     if sample_ratio < 1.0:
-        logging.debug(f"sample {sample_ratio} of data")
+        logger.debug(f"sample {sample_ratio} of data")
         dataset_df = dataset_df.sample(frac=sample_ratio)
 
     # If persisting DataFrames in memory is enabled, we want to do this after
@@ -1133,7 +1136,7 @@ def build_dataset(
     for feature_config in feature_configs:
         dataset_cols[feature_config[COLUMN]] = dataset_df[feature_config[COLUMN]]
 
-    logging.debug("build preprocessing parameters")
+    logger.debug("build preprocessing parameters")
     feature_name_to_preprocessing_parameters = build_preprocessing_parameters(
         dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
     )
@@ -1275,20 +1278,14 @@ def build_preprocessing_parameters(
 
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            encoder_fixed_parameters = {}
-            if "url" in feature_config[ENCODER]:
-                # If we are loading in a pre-trained encoder, copy its preprocessing metadata.
-                # TODO(daniel): Update this to use schema of encoder class to copy encoder preprocessing params only.
-                encoder_state = serialization.load_state_from_file(feature_config["url"])
-                encoder_fixed_parameters = encoder_state.metadata
-            elif TYPE in feature_config[ENCODER]:
+            if TYPE in feature_config[ENCODER]:
                 encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
                 if hasattr(encoder_class, "fixed_preprocessing_parameters"):
-                    encoder_fixed_parameters = encoder_class.fixed_preprocessing_parameters
+                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-            preprocessing_parameters = merge_dict(
-                preprocessing_parameters, resolve_pointers(encoder_fixed_parameters, feature_config, "feature.")
-            )
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
+                    )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
@@ -1333,14 +1330,12 @@ def build_data(
 ) -> Dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
-
     Args:
         input_cols: Input dataframe to be processed.
         feature_configs: List of feature configs.
         training_set_metadata: Training set metadata. Additional fields may be added.
         backend: Backend for data processing.
         skip_save_processed_input: (bool) Whether to skip saving the processed input.
-
     Returns:
         Dictionary of (feature name) -> (processed data).
     """
@@ -1367,13 +1362,11 @@ def build_data(
 def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessing_parameters: Dict, backend: Backend):
     """The purpose of this function is to balance the training dataset using either over-sampling or under-
     sampling.
-
     Args:
         dataset_df: Input dataframe to be over-sampled or under-sampled.
         output_features: List of feature configs.
         preprocessing_parameters: Dictionary of the global preprocessing parameters.
         backend: Backend for data processing.
-
     Returns: An over-sampled or under-sampled training dataset.
     """
 
@@ -1413,7 +1406,6 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
     """Precomputes the fill value for a feature.
-
     NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
     NOTE: this is called before columns are cast. Modifications here must handle dtype conversion gracefully.
     """
@@ -1558,17 +1550,6 @@ def preprocess_for_training(
         # setup
         features = config["input_features"] + config["output_features"]
 
-        # Load metadata for any columns which are using pre-trained encoders.
-        for input_feature in config["input_features"]:
-            encoder_name_or_url = input_feature.get("encoder", "")
-            if is_url(encoder_name_or_url):
-                try:
-                    encoder_state = serialization.load_state_from_file(encoder_name_or_url)
-                    training_set_metadata[input_feature["name"]] = encoder_state.metadata
-                except Exception as e:
-                    logger.error(f"Failed to load encoder from {encoder_name_or_url}.")
-                    logger.exception(e)
-
         # in case data_format is one of the cacheable formats,
         # check if there's a cached hdf5 file with the same name,
         # and in case move on with the hdf5 branch.
@@ -1700,7 +1681,6 @@ def _preprocess_file_for_training(
     callbacks=None,
 ):
     """Method to pre-process csv data.
-
     :param features: list of all features (input + output)
     :param dataset: path to the data
     :param training_set:  training data
@@ -1803,7 +1783,6 @@ def _preprocess_df_for_training(
     callbacks=None,
 ):
     """Method to pre-process dataframes.
-
     This doesn't have the option to save the processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
@@ -1864,7 +1843,6 @@ def preprocess_for_prediction(
     callbacks=None,
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
-
     :param model_path: The input data that is joined with the model
            hyperparameter file to create the config file
     :param data_csv: The CSV input data file

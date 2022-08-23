@@ -23,7 +23,6 @@ from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABI
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
-from ludwig.modules import serialization
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.modules.ludwig_module import LudwigModule
@@ -34,7 +33,6 @@ from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConf
 from ludwig.schema.utils import assert_is_a_marshmallow_class
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
-from ludwig.utils.fs_utils import is_url
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.types import DataFrame
 

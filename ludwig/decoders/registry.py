@@ -1,7 +1,6 @@
 from typing import Dict, List, Type, Union
 
 from ludwig.decoders.base import Decoder
-from ludwig.modules.ludwig_module import register_module
 from ludwig.utils.registry import Registry
 
 decoder_registry = Registry()
