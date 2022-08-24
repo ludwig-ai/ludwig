@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import DECODER, TRAINER
 from ludwig.serve import ALL_FEATURES_PRESENT_ERROR, server
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -83,7 +83,7 @@ def output_keys_for(output_features):
             keys.append(f"{name}_probability")
             keys.append(f"{name}_probabilities")
             keys.append(f"{name}_probabilities_<UNK>")
-            for category in feature["idx2str"]:
+            for category in feature[DECODER]["idx2str"]:
                 keys.append(f"{name}_probabilities_{category}")
 
         elif feature["type"] == "number":
@@ -125,14 +125,13 @@ def test_server_integration_with_images(tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
+            encoder={"output_size": 16, "num_filters": 8},
             preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
-            output_size=16,
-            num_filters=8,
         ),
-        text_feature(encoder="embed", min_len=1),
+        text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(vocab_size=4), number_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 4}), number_feature()]
 
     np.random.seed(123)  # reproducible synthetic data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
@@ -191,10 +190,10 @@ def test_server_integration_with_audio(single_record, tmpdir):
         audio_feature(
             folder=audio_dest_folder,
         ),
-        text_feature(encoder="embed", min_len=1),
+        text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),
     ]
-    output_features = [category_feature(vocab_size=4), number_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 4}), number_feature()]
 
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 

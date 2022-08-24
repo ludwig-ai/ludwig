@@ -23,7 +23,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME, TRAINER
+from ludwig.constants import ENCODER, NAME, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -57,7 +57,7 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
 @pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
 def test_binary_predictions(tmpdir, backend, distinct_values):
     input_features = [
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
     ]
 
     feature = binary_feature()
@@ -111,7 +111,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values):
 @pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
 def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
     input_features = [
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
     ]
 
     feature = binary_feature()
@@ -164,7 +164,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
 def test_set_feature_saving(tmpdir, pct_positive):
     backend = "local"
     input_features = [
-        text_feature(vocab_size=3),
+        text_feature(encoder={"vocab_size": 3}),
     ]
 
     feature = set_feature()
@@ -187,7 +187,7 @@ def test_set_feature_saving(tmpdir, pct_positive):
         partial(
             random_set_logits,
             num_predict_samples=len(data_df),
-            vocab_size=feature["vocab_size"] + 1,  # +1 for UNK
+            vocab_size=feature[ENCODER]["vocab_size"] + 1,  # +1 for UNK
             pct_positive=pct_positive,
         ),
     )

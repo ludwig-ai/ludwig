@@ -8,7 +8,7 @@ import pytest
 from PIL import Image
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
@@ -31,8 +31,8 @@ def test_sample_ratio(backend, tmpdir):
     num_examples = 100
     sample_ratio = 0.25
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
     )
@@ -61,7 +61,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
     input_features = [binary_feature()]
-    cat_feat = category_feature(vocab_size=3)
+    cat_feat = category_feature(decoder={"vocab_size": 3})
     output_features = [cat_feat]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features}
@@ -77,7 +77,7 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     train_ds, _, _, metadata = ludwig_model.preprocess(dataset=df)
 
     # expect values containing whitespaces to be properly mapped to vocab_size unique values
-    assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat["vocab_size"]
+    assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat[DECODER]["vocab_size"]
 
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
@@ -88,8 +88,8 @@ def test_with_split(backend, csv_filename, tmpdir):
     val_set_size = int(num_examples * 0.1)
     test_set_size = int(num_examples * 0.1)
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=num_examples
     )
@@ -122,8 +122,7 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     import dask.dataframe as dd
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
-
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=100)
     data_df = dd.from_pandas(pd.read_csv(data_csv), npartitions=2)
     assert data_df.known_divisions
@@ -180,7 +179,7 @@ def test_drop_empty_partitions(csv_filename, tmpdir):
 @pytest.mark.parametrize("generate_images_as_numpy", [False, True])
 def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"), save_as_numpy=generate_images_as_numpy)]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
     )
@@ -200,7 +199,7 @@ def test_read_image_from_path(tmpdir, csv_filename, generate_images_as_numpy):
 
 def test_read_image_from_numpy_array(tmpdir, csv_filename):
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,
@@ -263,12 +262,35 @@ def test_number_feature_wrong_dtype(csv_filename, tmpdir):
     assert np.all(concatenated_df[num_feat[PROC_COLUMN]] == 0.0)
 
 
+def test_column_feature_type_mismatch_fill():
+    """Tests that we are able to fill missing values even in columns where the column dtype and desired feature
+    dtype do not match."""
+    cat_feat = category_feature()
+    bin_feat = binary_feature()
+    input_features = [cat_feat]
+    output_features = [bin_feat]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    # Construct dataframe with int-like column representing a categorical feature
+    df = pd.DataFrame(
+        {
+            cat_feat[NAME]: pd.Series(pd.array([None] + [1] * 24, dtype=pd.Int64Dtype())),
+            bin_feat[NAME]: pd.Series([True] * 25),
+        }
+    )
+
+    # run preprocessing
+    backend = LocalTestBackend()
+    ludwig_model = LudwigModel(config, backend=backend)
+    train_ds, val_ds, test_ds, _ = ludwig_model.preprocess(dataset=df)
+
+
 @pytest.mark.parametrize("format", ["file", "df"])
 def test_presplit_override(format, tmpdir):
     """Tests that provising a pre-split file or dataframe overrides the user's split config."""
     num_feat = number_feature(normalization=None)
-    input_features = [num_feat, sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [num_feat, sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=25)
     data_df = pd.read_csv(data_csv)
@@ -320,7 +342,7 @@ def test_presplit_override(format, tmpdir):
 
 @pytest.mark.parametrize("backend", ["local", "ray"])
 @pytest.mark.distributed
-def test_empty_split_error(backend, tmpdir):
+def test_empty_training_set_error(backend, tmpdir):
     """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -338,5 +360,5 @@ def test_empty_split_error(backend, tmpdir):
 
     with init_backend(backend):
         ludwig_model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Dataset is empty following preprocessing"):
+        with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
             ludwig_model.preprocess(dataset=df)

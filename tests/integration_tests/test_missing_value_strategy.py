@@ -40,7 +40,9 @@ def test_missing_value_prediction(tmpdir, csv_filename):
     random.seed(1)
     np.random.seed(1)
     input_features = [
-        category_feature(vocab_size=2, reduce_input="sum", preprocessing=dict(missing_value_strategy="fill_with_mode"))
+        category_feature(
+            encoder={"vocab_size": 2}, reduce_input="sum", preprocessing=dict(missing_value_strategy="fill_with_mode")
+        )
     ]
     output_features = [binary_feature()]
 
@@ -72,7 +74,7 @@ def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir):
     input_features = [
         number_feature(**kwargs),
         binary_feature(),
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
     ]
     output_features = [binary_feature()]
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -91,16 +93,16 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
     input_features = [
         number_feature(),
         binary_feature(),
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
     ]
     output_features = [
         binary_feature(**kwargs),
         number_feature(**kwargs),
-        category_feature(vocab_size=3, **kwargs),
-        sequence_feature(vocab_size=3, **kwargs),
-        text_feature(vocab_size=3, **kwargs),
-        set_feature(vocab_size=3, **kwargs),
-        vector_feature(),
+        category_feature(decoder={"vocab_size": 3}, **kwargs),
+        sequence_feature(decoder={"vocab_size": 3}, **kwargs),
+        text_feature(decoder={"vocab_size": 3}, **kwargs),
+        set_feature(decoder={"vocab_size": 3}, **kwargs),
+        vector_feature(**kwargs),
     ]
     backend = LocalTestBackend()
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}

@@ -25,9 +25,9 @@ import torch
 import torchvision
 
 from ludwig.constants import (
-    BACKFILL,
     CHECKSUM,
     COLUMN,
+    ENCODER,
     HEIGHT,
     IMAGE,
     INFER_IMAGE_DIMENSIONS,
@@ -41,6 +41,7 @@ from ludwig.constants import (
     SRC,
     TIED,
     TRAINING,
+    TYPE,
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
@@ -58,8 +59,11 @@ from ludwig.utils.image_utils import (
     read_image_from_path,
     resize_image,
 )
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+
+logger = logging.getLogger(__name__)
+
 
 # TODO(shreya): Confirm if it's ok to do per channel normalization
 # TODO(shreya): Also confirm if this is being used anywhere
@@ -127,18 +131,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "missing_value_strategy": BACKFILL,
-            "in_memory": True,
-            "resize_method": "interpolate",
-            "scaling": "pixel_normalization",
-            "num_processes": 1,
-            "infer_image_num_channels": True,
-            "infer_image_dimensions": True,
-            "infer_image_max_height": 256,
-            "infer_image_max_width": 256,
-            "infer_image_sample_size": 100,
-        }
+        return ImageInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -259,7 +252,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
 
-        logging.debug(f"Inferring height: {height} and width: {width}")
+        logger.debug(f"Inferring height: {height} and width: {width}")
         return height, width
 
     @staticmethod
@@ -311,7 +304,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         expected be of the same size with the same number of channels
         """
 
-        explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
+        explicit_height_width = preprocessing_parameters[HEIGHT] or preprocessing_parameters[WIDTH]
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
@@ -488,19 +481,14 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
-    height = 0
-    width = 0
-    num_channels = 0
-    scaling = "pixel_normalization"
-    encoder = "stacked_cnn"
+    def __init__(self, input_feature_config: Union[ImageInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
@@ -519,7 +507,9 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.num_channels, self.height, self.width])
+        return torch.Size(
+            [self.encoder_obj.config.num_channels, self.encoder_obj.config.height, self.encoder_obj.config.width]
+        )
 
     @property
     def output_shape(self) -> torch.Size:
@@ -528,12 +518,14 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         for key in ["height", "width", "num_channels", "scaling"]:
-            input_feature[key] = feature_metadata[PREPROCESSING][key]
+            input_feature[ENCODER][key] = feature_metadata[PREPROCESSING][key]
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = ImageInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
         set_default_value(input_feature, PREPROCESSING, {})
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

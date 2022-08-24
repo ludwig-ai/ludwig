@@ -461,7 +461,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
 
     @classmethod
     def can_report(cls, feature: "OutputFeature") -> bool:  # noqa: F821
-        return feature.decoder_obj.num_classes > feature.top_k
+        return feature.num_classes > feature.top_k
 
 
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR])

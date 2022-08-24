@@ -14,7 +14,7 @@ from tests.integration_tests.utils import binary_feature, category_feature, numb
 def test_config_trainer_empty_null_and_default():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -36,7 +36,7 @@ def test_config_trainer_empty_null_and_default():
 def test_config_trainer_bad_optimizer():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -73,7 +73,7 @@ def test_config_trainer_bad_optimizer():
 def test_optimizer_property_validation():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -111,7 +111,7 @@ def test_optimizer_property_validation():
 def test_clipper_property_validation():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],

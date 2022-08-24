@@ -33,8 +33,8 @@ def test_whylogs_callback_local(tmpdir):
     batch_size = 8
     num_examples = 32
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,
@@ -67,8 +67,8 @@ def test_whylogs_callback_local(tmpdir):
 def test_whylogs_callback_dask(tmpdir):
     num_examples = 100
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=num_examples

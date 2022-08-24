@@ -78,7 +78,8 @@ def export_triton(model_path, output_path="model_repository", model_name="ludwig
 
     model = LudwigModel.load(model_path)
     os.makedirs(output_path, exist_ok=True)
-    utils_export_triton(model, output_path, model_name, model_version)
+
+    utils_export_triton(model=model, output_path=output_path, model_name=model_name, model_version=model_version)
 
     logger.info(f"Saved to: {output_path}")
 

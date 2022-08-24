@@ -3,9 +3,13 @@ import logging
 import pytest
 import torch
 
+from ludwig.combiners.combiners import ConcatCombiner
+from ludwig.constants import CATEGORY, DECODER, NUMBER, SEQUENCE, TYPE
+from ludwig.models.base import BaseModel
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.utils import output_feature_utils
-from tests.integration_tests.utils import number_feature
+from tests.integration_tests.utils import generate_output_features_with_dependencies, number_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -92,3 +96,41 @@ def test_multiple_dependencies(reduce_dependencies, hidden_shape, dependent_hidd
         assert results.shape == (BATCH_SIZE, SEQ_SIZE, expected_hidden_size)
     else:
         assert results.shape == (BATCH_SIZE, expected_hidden_size)
+
+
+@pytest.mark.parametrize(
+    "output_feature_defs",
+    [
+        generate_output_features_with_dependencies("number_feature", ["category_feature"]),
+        generate_output_features_with_dependencies("number_feature", ["category_feature", "sequence_feature"]),
+        generate_output_features_with_dependencies("sequence_feature", ["category_feature", "number_feature"]),
+    ],
+)
+def test_construct_output_features_with_dependencies(output_feature_defs):
+    # Add keys to output_feature_defs which would have been derived from data.
+    def add_data_derived_keys(output_feature_def):
+        if DECODER not in output_feature_def:
+            output_feature_def[DECODER] = {}
+        if output_feature_def[TYPE] == CATEGORY:
+            output_feature_def["num_classes"] = 2
+        elif output_feature_def[TYPE] == NUMBER:
+            output_feature_def[DECODER][TYPE] = "regressor"
+        elif output_feature_def[TYPE] == SEQUENCE:
+            output_feature_def[DECODER]["max_sequence_length"] = 5
+        return output_feature_def
+
+    output_feature_defs = [add_data_derived_keys(of) for of in output_feature_defs]
+    # Gets name of output feature which has dependencies.
+    dep_feature_name = [of for of in output_feature_defs if len(of.get("dependencies", [])) > 0][0]["name"]
+    # Creates a dummy input feature and combiner.
+    input_feature_def = number_feature()
+    input_features = {input_feature_def["name"]: BaseModel.build_single_input(input_feature_def, {})}
+    combiner_config = ConcatCombinerConfig.Schema().load({"type": "concat", "output_size": 1})
+    combiner = ConcatCombiner(input_features=input_features, config=combiner_config)
+    output_features = BaseModel.build_outputs(output_feature_defs, combiner)
+    # Gets the output feature object which has dependencies.
+    feature_with_deps = output_features[dep_feature_name]
+    n_dependencies = len(feature_with_deps.dependencies)
+    assert n_dependencies > 0
+    # Each synthetic output feature has output size 1, so total size is 1 + n_dependencies.
+    assert feature_with_deps.fc_stack.input_shape == torch.Size([1 + n_dependencies])
