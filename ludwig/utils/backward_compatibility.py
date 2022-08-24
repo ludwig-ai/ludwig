@@ -209,7 +209,6 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
 
     fc_layer_keys = [
         "fc_layers",
-        "num_fc_layers",
         "output_size",
         "use_bias",
         "weights_initializer",
