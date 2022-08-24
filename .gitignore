@@ -76,6 +76,10 @@ coverage.xml
 *.hdf5
 *.meta.json
 *.parquet
+*.jpg
+*.jpeg
+*.gif
+*.png
 
 # Translations
 *.mo

@@ -20,12 +20,12 @@ if __name__ == "__main__":
     dataset = twitter_bots.TwitterBots(cache_dir=".")
     training_set, val_set, test_set = dataset.load(split=True)
     # Moves profile images into local directory, so relative paths in the dataset will be resolved.
-    rename(os.path.join(dataset.processed_dataset_path, "profile_images"), "./profile_images")
+    # rename(os.path.join(dataset.processed_dataset_path, "profile_images"), "./profile_images")
 
     with open("./config.yaml") as f:
         config = yaml.safe_load(f.read())
 
-    model = LudwigModel(config, logging_level=logging.INFO)
+    model = LudwigModel(config, logging_level=logging.INFO, backend="local")
 
     train_stats, preprocessed_data, output_directory = model.train(dataset=training_set)
 

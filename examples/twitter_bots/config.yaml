@@ -5,6 +5,7 @@ input_features:
     type: binary
   - name: description
     type: text
+    encoder: embed
   - name: favourites_count
     type: number
   - name: followers_count
@@ -19,10 +20,10 @@ input_features:
     type: category
   - name: profile_background_image_path
     type: category
-  - name: profile_image_path
-    type: image
-    preprocessing:
-      num_channels: 3
+  # - name: profile_image_path
+  #   type: image
+  #   preprocessing:
+  #     num_channels: 3
   - name: statuses_count
     type: number
   - name: verified
@@ -34,3 +35,8 @@ input_features:
 output_features:
   - name: account_type
     type: binary
+trainer:
+  learning_rate: 0.0002
+  evaluate_training_set: false
+  early_stop: 10
+  validation_metric: roc_auc
