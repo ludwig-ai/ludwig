@@ -34,7 +34,7 @@ def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str
 
 @register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
 class LightGBMTrainer(BaseTrainer):
-    TRAIN_KEY = "training"
+    TRAIN_KEY = "train"
     VALID_KEY = "validation"
     TEST_KEY = "test"
 
@@ -246,7 +246,6 @@ class LightGBMTrainer(BaseTrainer):
         tables[COMBINED] = [[COMBINED, LOSS]]
 
         # eval metrics on train
-        self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
         if self.evaluate_training_set:
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
@@ -328,6 +327,8 @@ class LightGBMTrainer(BaseTrainer):
         lgb_train: lgb.Dataset,
         eval_sets: List[lgb.Dataset],
         eval_names: List[str],
+        progress_tracker: ProgressTracker,
+        save_path: str,
     ) -> lgb.Booster:
         """Trains a LightGBM model.
 
@@ -340,6 +341,31 @@ class LightGBMTrainer(BaseTrainer):
         Returns:
             LightGBM Booster model
         """
+        # def record_evaluation() -> Callable:
+        #     def _callback(env: lgb.CallbackEnv) -> None:
+        #         for data_name, eval_name, result, _ in env.evaluation_result_list:
+        #             # DEBUG: add dummy progress
+        #             # init tables
+        #             tables = OrderedDict()
+        #             output_features = self.model.output_features
+        #             metrics_names = get_metric_names(output_features)
+        #             for output_feature_name, output_feature in output_features.items():
+        #                 tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
+        #             tables[COMBINED] = [[COMBINED, LOSS]]
+
+        #             metrics = {
+        #                 "Survived": {"loss": result},
+        #                 COMBINED: {"loss": result},
+        #             }
+        #             progress_tracker.epoch = env.iteration
+        #             progress_tracker.steps = env.iteration
+        #             self.append_metrics("train" if data_name == "training" else "validation", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+        #             self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
+        #             self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+        #             ###
+
+        #     _callback.order = 20  # type: ignore
+        #     return _callback
         gbm = lgb.train(
             params,
             lgb_train,
@@ -352,6 +378,7 @@ class LightGBMTrainer(BaseTrainer):
             callbacks=[
                 lgb.early_stopping(stopping_rounds=self.early_stop),
                 lgb.log_evaluation(),
+                # lgb.record_evaluation(),
             ],
         )
 
@@ -397,11 +424,11 @@ class LightGBMTrainer(BaseTrainer):
         self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
-        gbm = self._train(params, lgb_train, eval_sets, eval_names)
+        gbm = self._train(params, lgb_train, eval_sets, eval_names, progress_tracker, save_path)
 
         self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
         # ================ Post Training Epoch ================
-        progress_tracker.steps = gbm.current_iteration()
+        progress_tracker.epoch = progress_tracker.steps = gbm.current_iteration()
         progress_tracker.last_improvement_steps = gbm.best_iteration
         self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
 
@@ -676,6 +703,8 @@ class LightGBMRayTrainer(LightGBMTrainer):
         lgb_train: "RayDMatrix",  # noqa: F821
         eval_sets: List["RayDMatrix"],  # noqa: F821
         eval_names: List[str],
+        progress_tracker: ProgressTracker,
+        save_path: str,
     ) -> lgb.Booster:
         """Trains a LightGBM model using ray.
 
@@ -690,23 +719,52 @@ class LightGBMRayTrainer(LightGBMTrainer):
         """
         from lightgbm_ray import train as lgb_ray_train
 
-        gbm = lgb_ray_train(
-            params,
-            lgb_train,
-            num_boost_round=self.num_boost_round,
-            valid_sets=eval_sets,
-            valid_names=eval_names,
-            feature_name=list(self.model.input_features.keys()),
-            # NOTE: hummingbird does not support categorical features
-            # categorical_feature=categorical_features,
-            callbacks=[
-                lgb.early_stopping(stopping_rounds=self.early_stop),
-                log_eval_distributed(10),
-            ],
-            ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
-        )
+        name_to_metrics_log = {
+            LightGBMTrainer.TRAIN_KEY: progress_tracker.train_metrics,
+            LightGBMTrainer.VALID_KEY: progress_tracker.validation_metrics,
+            LightGBMTrainer.TEST_KEY: progress_tracker.test_metrics,
+        }
+        tables = OrderedDict()
+        output_features = self.model.output_features
+        metrics_names = get_metric_names(output_features)
+        for output_feature_name, output_feature in output_features.items():
+            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
+        tables[COMBINED] = [[COMBINED, LOSS]]
+        booster = None
 
-        return gbm.booster_
+        steps_per_epoch = 10
+        for epoch, steps in enumerate(range(0, self.num_boost_round, steps_per_epoch), start=1):
+            progress_tracker.epoch = epoch
+            evals_result = {}
+            gbm = lgb_ray_train(
+                params,
+                lgb_train,
+                init_model=booster,
+                num_boost_round=steps_per_epoch,
+                valid_sets=eval_sets,
+                valid_names=eval_names,
+                feature_name=list(self.model.input_features.keys()),
+                evals_result=evals_result,
+                # NOTE: hummingbird does not support categorical features
+                # categorical_feature=categorical_features,
+                callbacks=[
+                    lgb.early_stopping(stopping_rounds=self.early_stop),
+                    log_eval_distributed(10),
+                ],
+                ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
+            )
+            booster = gbm.booster_
+            progress_tracker.steps = steps + steps_per_epoch
+            # log training progress
+            for data_name in eval_names:
+                loss_name = params['metric'][0]
+                loss = evals_result[data_name][loss_name][-1]
+                metrics = {"Survived": {LOSS: loss}, COMBINED: {LOSS: loss}}
+                self.append_metrics(data_name, metrics, name_to_metrics_log[data_name], tables, progress_tracker)
+            self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
+            self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
+
+        return booster
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         from ludwig.backend.ray import _get_df_engine, RayPredictor
