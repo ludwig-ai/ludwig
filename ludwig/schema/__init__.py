@@ -45,7 +45,7 @@ def get_schema():
             OUTPUT_FEATURES: get_output_feature_jsonschema(),
             COMBINER: get_combiner_jsonschema(),
             TRAINER: get_trainer_jsonschema(),
-            PREPROCESSING: {},
+            PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: {},
             DEFAULTS: {},
         },
