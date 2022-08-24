@@ -247,13 +247,13 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def create_calibration_module(self, feature) -> torch.nn.Module:
+    def create_calibration_module(self, feature: CategoryOutputFeatureConfig) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
-        if feature.get("calibration"):
+        if feature.calibration:
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
             return calibration_cls(num_classes=self.num_classes)
         return None
