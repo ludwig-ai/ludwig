@@ -77,6 +77,13 @@ coverage.xml
 *.meta.json
 *.parquet
 
+# Images
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+
 # Translations
 *.mo
 *.pot
