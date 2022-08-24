@@ -693,17 +693,18 @@ class LudwigModel:
             self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
         )
 
-        training_dataset, _, _, training_set_metadata = preprocess_for_training(
-            self.config,
-            training_set=dataset,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            skip_save_processed_input=True,
-            preprocessing_params=preprocessing_params,
-            backend=self.backend,
-            random_seed=random_seed,
-            callbacks=self.callbacks,
-        )
+        with provision_preprocessing_workers(self.backend):
+            training_dataset, _, _, training_set_metadata = preprocess_for_training(
+                self.config,
+                training_set=dataset,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
+                skip_save_processed_input=True,
+                preprocessing_params=preprocessing_params,
+                backend=self.backend,
+                random_seed=random_seed,
+                callbacks=self.callbacks,
+            )
 
         if not self.training_set_metadata:
             self.training_set_metadata = training_set_metadata
