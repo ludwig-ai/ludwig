@@ -695,20 +695,22 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
 @pytest.mark.parametrize(
     "feature_list",  # defines parameter for fixture features_to_test()
     [
-        [("binary", [BATCH_SIZE, 1]), ("category", [BATCH_SIZE, 16])],
         [
             ("binary", [BATCH_SIZE, 1]),
             ("category", [BATCH_SIZE, 16]),
             ("binary", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 32]),
         ],
         [
             ("number", [BATCH_SIZE, 1]),
             ("category", [BATCH_SIZE, 16]),
+            ("number", [BATCH_SIZE, 1]),
+            ("category", [BATCH_SIZE, 32]),
         ],
         [
             ("number", [BATCH_SIZE, 1]),
             ("category", [BATCH_SIZE, 16]),
-            ("number", [BATCH_SIZE, 1]),
+            ("binary", [BATCH_SIZE, 1]),
             ("category", [BATCH_SIZE, 32]),
         ],
     ],
@@ -761,11 +763,7 @@ def test_tabtransformer_combiner_number_or_binary_with_category(
     # combination of input feature types (NUMBER, BINARY, CATEGORY) in the dataset and parameters used to
     # instantiate the TabTransformerCombiner object.
 
-    # make adjustment for case with a single categorical input feature
-    # in the situation of a one categorical input feature, the query and key parameters are not updated
-    number_category_features = sum(input_features[i_f].type() == CATEGORY for i_f in input_features)
-    adjustment_for_single_category = 1 if number_category_features == 1 else 0
+    # This test does not explicity test for a single categorical input feature
+    # in this situation of a one categorical input feature, the query and key parameters are not updated
 
-    assert upc == (
-        tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
-    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
