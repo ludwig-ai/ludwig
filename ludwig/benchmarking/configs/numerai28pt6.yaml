@@ -1,0 +1,71 @@
+input_features:
+  - column: feature1
+    name: feature1
+    type: number
+  - column: feature2
+    name: feature2
+    type: number
+  - column: feature3
+    name: feature3
+    type: number
+  - column: feature4
+    name: feature4
+    type: number
+  - column: feature5
+    name: feature5
+    type: number
+  - column: feature6
+    name: feature6
+    type: number
+  - column: feature7
+    name: feature7
+    type: number
+  - column: feature8
+    name: feature8
+    type: number
+  - column: feature9
+    name: feature9
+    type: number
+  - column: feature10
+    name: feature10
+    type: number
+  - column: feature11
+    name: feature11
+    type: number
+  - column: feature12
+    name: feature12
+    type: number
+  - column: feature13
+    name: feature13
+    type: number
+  - column: feature14
+    name: feature14
+    type: number
+  - column: feature15
+    name: feature15
+    type: number
+  - column: feature16
+    name: feature16
+    type: number
+  - column: feature17
+    name: feature17
+    type: number
+  - column: feature18
+    name: feature18
+    type: number
+  - column: feature19
+    name: feature19
+    type: number
+  - column: feature20
+    name: feature20
+    type: number
+  - column: feature21
+    name: feature21
+    type: number
+output_features:
+  - column: target
+    name: target
+    type: binary
+preprocessing:
+  split:
+    type: fixed
