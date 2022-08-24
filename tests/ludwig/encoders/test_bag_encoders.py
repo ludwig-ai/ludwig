@@ -4,6 +4,7 @@ import pytest
 import torch
 
 from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
+from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
@@ -19,14 +20,14 @@ DEVICE = get_torch_device()
 def test_set_encoder(vocab: List[str], embedding_size: int, representation: str, num_fc_layers: int, dropout: float):
     # make repeatable
     torch.manual_seed(RANDOM_SEED)
-
-    bag_encoder = BagEmbedWeightedEncoder(
+    encoder_config = BagEmbedWeightedConfig(
         vocab=vocab,
         representation=representation,
         embedding_size=embedding_size,
         num_fc_layers=num_fc_layers,
         dropout=dropout,
-    ).to(DEVICE)
+    )
+    bag_encoder = BagEmbedWeightedEncoder(encoder_config).to(DEVICE)
     inputs = torch.randint(0, 9, size=(2, len(vocab))).to(DEVICE)
     outputs = bag_encoder(inputs)
     assert outputs.shape[1:] == bag_encoder.output_shape
