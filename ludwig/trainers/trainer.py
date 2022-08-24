@@ -245,8 +245,9 @@ class Trainer(BaseTrainer):
                 else:
                     targets[target_feature_name] = target_value
 
-            encoder_outputs = self.model.encode(inputs)
-            combiner_outputs = self.model.combine(encoder_outputs)
+            with torch.no_grad():
+                encoder_outputs = self.model.encode(inputs)
+                combiner_outputs = self.model.combine(encoder_outputs)
 
             def closure():
                 self.optimizer.zero_grad()
