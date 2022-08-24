@@ -52,7 +52,6 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
-from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
@@ -244,7 +243,6 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
 
 def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
-    upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)
