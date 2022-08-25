@@ -70,10 +70,10 @@ BASE_PREPROCESSING_SPLIT_CONFIG = {"type": "random", "probabilities": list(DEFAU
 #     "sample_ratio": 1.0,
 # }
 
-# default_feature_specific_preprocessing_parameters = {
-#     name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
-# }
-#
+default_feature_specific_preprocessing_parameters = {
+    name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
+}
+
 # default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 # default_preprocessing_parameters.update(base_preprocessing_parameters)
 

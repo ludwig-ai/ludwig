@@ -53,9 +53,9 @@ class DateFeatureMixin(BaseFeatureMixin):
     def type():
         return DATE
 
-    @staticmethod
-    def preprocessing_defaults():
-        return DateInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return DateInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -148,11 +148,11 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
     def create_sample_input(self):
         return torch.Tensor([[2013, 2, 26, 1, 57, 0, 0, 0, 0], [2015, 2, 26, 1, 57, 0, 0, 0, 0]]).type(torch.int32)
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = DateInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = DateInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

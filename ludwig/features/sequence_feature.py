@@ -200,9 +200,9 @@ class SequenceFeatureMixin(BaseFeatureMixin):
     def type():
         return SEQUENCE
 
-    @staticmethod
-    def preprocessing_defaults():
-        return SequenceInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return SequenceInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -291,11 +291,11 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
         input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = SequenceInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = SequenceInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -494,26 +494,26 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
         return result
 
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = SequenceOutputFeatureConfig()
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
-
-        if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
-            set_default_value(output_feature, "reduce_input", None)
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-            },
-        )
+    # @staticmethod
+    # def populate_defaults(output_feature):
+    #     defaults = SequenceOutputFeatureConfig()
+    #     set_default_value(output_feature, LOSS, {})
+    #     set_default_values(output_feature[LOSS], defaults.loss)
+    #
+    #     if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
+    #         set_default_value(output_feature, "reduce_input", None)
+    #
+    #     set_default_values(
+    #         output_feature,
+    #         {
+    #             DECODER: {
+    #                 TYPE: defaults.decoder.type,
+    #             },
+    #             DEPENDENCIES: defaults.dependencies,
+    #             REDUCE_INPUT: defaults.reduce_input,
+    #             REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+    #         },
+    #     )
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

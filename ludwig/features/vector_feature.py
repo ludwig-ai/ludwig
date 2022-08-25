@@ -96,9 +96,9 @@ class VectorFeatureMixin:
     def type():
         return VECTOR
 
-    @staticmethod
-    def preprocessing_defaults():
-        return VectorInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return VectorInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -179,12 +179,12 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["input_size"] = feature_metadata["vector_size"]
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = VectorInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
-        set_default_value(input_feature, PREPROCESSING, {})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = VectorInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    #     set_default_value(input_feature, PREPROCESSING, {})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
@@ -262,25 +262,25 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             result[predictions_col] = result[predictions_col].map(lambda pred: pred.tolist())
         return result
 
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = VectorOutputFeatureConfig()
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-            },
-        )
+    # @staticmethod
+    # def populate_defaults(output_feature):
+    #     defaults = VectorOutputFeatureConfig()
+    #
+    #     # If Loss is not defined, set an empty dictionary
+    #     set_default_value(output_feature, LOSS, {})
+    #     set_default_values(output_feature[LOSS], defaults.loss)
+    #
+    #     set_default_values(
+    #         output_feature,
+    #         {
+    #             DECODER: {
+    #                 TYPE: defaults.decoder.type,
+    #             },
+    #             DEPENDENCIES: defaults.dependencies,
+    #             REDUCE_INPUT: defaults.reduce_input,
+    #             REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+    #         },
+    #     )
 
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

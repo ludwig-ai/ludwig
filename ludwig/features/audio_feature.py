@@ -99,9 +99,9 @@ class AudioFeatureMixin(BaseFeatureMixin):
     def type():
         return AUDIO
 
-    @staticmethod
-    def preprocessing_defaults():
-        return AudioInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return AudioInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -469,12 +469,12 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         input_feature[ENCODER]["embedding_size"] = feature_metadata["feature_dim"]
         input_feature[ENCODER]["should_embed"] = False
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = AudioInputFeatureConfig()
-        set_default_values(
-            input_feature, {ENCODER: {TYPE: defaults.encoder.type}, PREPROCESSING: {}, TIED: defaults.tied}
-        )
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = AudioInputFeatureConfig()
+    #     set_default_values(
+    #         input_feature, {ENCODER: {TYPE: defaults.encoder.type}, PREPROCESSING: {}, TIED: defaults.tied}
+    #     )
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

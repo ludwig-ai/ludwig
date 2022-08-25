@@ -43,6 +43,7 @@ class Config:
     trainer: BaseTrainerConfig = ECDTrainerConfig()
     preprocessing = PreprocessingConfig()
     hyperopt = {}
+    defaults = {}
 
     def __init__(self, config_dict):
         self.parse_input_features(config_dict[INPUT_FEATURES])

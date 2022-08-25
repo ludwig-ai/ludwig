@@ -129,9 +129,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
     def type():
         return IMAGE
 
-    @staticmethod
-    def preprocessing_defaults():
-        return ImageInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return ImageInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -520,12 +520,12 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         for key in ["height", "width", "num_channels", "scaling"]:
             input_feature[ENCODER][key] = feature_metadata[PREPROCESSING][key]
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = ImageInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_value(input_feature, PREPROCESSING, {})
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = ImageInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_value(input_feature, PREPROCESSING, {})
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

@@ -160,9 +160,9 @@ class SetFeatureMixin(BaseFeatureMixin):
     def type():
         return SET
 
-    @staticmethod
-    def preprocessing_defaults():
-        return SetInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return SetInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -241,11 +241,11 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = SetInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = SetInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -373,24 +373,24 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SetPostprocessing(metadata)
 
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = SetOutputFeatureConfig()
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-                THRESHOLD: defaults.threshold,
-            },
-        )
+    # @staticmethod
+    # def populate_defaults(output_feature):
+    #     defaults = SetOutputFeatureConfig()
+    #     set_default_value(output_feature, LOSS, {})
+    #     set_default_values(output_feature[LOSS], defaults.loss)
+    #
+    #     set_default_values(
+    #         output_feature,
+    #         {
+    #             DECODER: {
+    #                 TYPE: defaults.decoder.type,
+    #             },
+    #             DEPENDENCIES: defaults.dependencies,
+    #             REDUCE_INPUT: defaults.reduce_input,
+    #             REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+    #             THRESHOLD: defaults.threshold,
+    #         },
+    #     )
 
     @staticmethod
     def get_schema_cls():

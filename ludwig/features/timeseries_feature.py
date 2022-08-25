@@ -107,9 +107,9 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
     def type():
         return TIMESERIES
 
-    @staticmethod
-    def preprocessing_defaults():
-        return TimeseriesInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return TimeseriesInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -207,11 +207,11 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_timeseries_length"]
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = TimeseriesInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = TimeseriesInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

@@ -37,9 +37,9 @@ class BagFeatureMixin(BaseFeatureMixin):
     def type():
         return BAG
 
-    @staticmethod
-    def preprocessing_defaults():
-        return BagInputFeatureConfig().preprocessing.__dict__
+    # @staticmethod
+    # def preprocessing_defaults():
+    #     return BagInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -117,11 +117,11 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = BagInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    # @staticmethod
+    # def populate_defaults(input_feature):
+    #     defaults = BagInputFeatureConfig()
+    #     set_default_value(input_feature, TIED, defaults.tied)
+    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
