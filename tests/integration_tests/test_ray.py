@@ -341,8 +341,7 @@ def test_ray_image(tmpdir, dataset_type):
         image_feature(
             folder=image_dest_folder,
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
+            encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
     output_features = [binary_feature()]
@@ -384,14 +383,12 @@ def test_ray_image_multiple_features(tmpdir):
         image_feature(
             folder=os.path.join(tmpdir, "generated_images_1"),
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
+            encoder={"output_size": 16, "num_filters": 8},
         ),
         image_feature(
             folder=os.path.join(tmpdir, "generated_images_2"),
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
+            encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
     output_features = [binary_feature()]
