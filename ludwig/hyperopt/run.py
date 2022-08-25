@@ -444,11 +444,11 @@ def get_features_eligible_for_shared_params(
 
         if config_feature_type == INPUT_FEATURES:
             default_encoder = feature_schema().encoder.type
-            if feature.get(ENCODER) and feature.get(ENCODER).get(TYPE, 0) != default_encoder:
+            if feature.get(ENCODER, None) and feature.get(ENCODER).get(TYPE, None) != default_encoder:
                 continue
         else:
             default_decoder = feature_schema().decoder.type
-            if feature.get(DECODER) and feature.get(DECODER).get(TYPE, 0) != default_decoder:
+            if feature.get(DECODER, None) and feature.get(DECODER).get(TYPE, None) != default_decoder:
                 continue
 
         features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
