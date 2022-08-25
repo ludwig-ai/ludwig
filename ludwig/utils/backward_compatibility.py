@@ -91,9 +91,8 @@ def upgrade_to_latest_version(config: Dict):
             "ludwig_version".
     """
     if "ludwig_version" in config:
-        to_version = re.findall(r".*\d", LUDWIG_VERSION)[0]
         return config_transformation_registry.update_config(
-            config, from_version=config["ludwig_version"], to_version=to_version
+            config, from_version=config["ludwig_version"], to_version=LUDWIG_VERSION
         )
     else:
         return config
