@@ -27,7 +27,20 @@ class AimCallback(Callback):
     ):
         logger.info("aim.on_train_init() called...")
 
-        self.aim_run = aim.Run(repo=self.repo, experiment=experiment_name, run_hash=model_name)
+        try:
+            query = f'run.name == "{model_name}"'
+            if self.repo is None:
+                aim_repo = aim.Repo.default_repo()
+            else:
+                aim_repo = aim.Repo.from_path(self.repo)
+            runs_generator = aim_repo.query_runs(query)
+            run = next(runs_generator.iter_runs())
+            run_hash = run.run.hash
+            self.aim_run = aim.Run(run_hash=run_hash, repo=self.repo, experiment=experiment_name)
+        except Exception:
+            self.aim_run = aim.Run(repo=self.repo, experiment=experiment_name)
+            self.aim_run.name = model_name
+
         self.aim_run["base_config"] = self.normalize_config(base_config)
 
         params = dict(name=model_name, dir=experiment_directory)
