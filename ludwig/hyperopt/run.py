@@ -30,6 +30,7 @@ from ludwig.constants import (
 from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
+from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
@@ -193,8 +194,11 @@ def hyperopt(
         OUTPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, OUTPUT_FEATURES),
     }
 
+    # backwards compatibility
+    config = upgrade_to_latest_version(config_dict)
+
     # merge config with defaults
-    config = merge_with_defaults(config_dict)
+    config = merge_with_defaults(config)
 
     if HYPEROPT not in config:
         raise ValueError("Hyperopt Section not present in config")
