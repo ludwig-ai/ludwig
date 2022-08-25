@@ -441,11 +441,17 @@ def get_features_eligible_for_shared_params(
         if config_feature_type == INPUT_FEATURES:
             feature_schema = get_from_registry(feature.get(TYPE), input_type_registry).get_schema_cls()
             default_encoder = feature_schema().encoder.type
+            if not feature.get(ENCODER):
+                continue
+
             if not feature[ENCODER].get(TYPE, 0) or feature[ENCODER].get(TYPE) == default_encoder:
                 features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
         else:
             feature_schema = get_from_registry(feature.get(TYPE), output_type_registry).get_schema_cls()
             default_decoder = feature_schema().decoder.type
+            if not feature.get(DECODER):
+                continue
+
             if not feature[DECODER].get(TYPE, 0) or feature[DECODER].get(TYPE) == default_decoder:
                 features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
 
