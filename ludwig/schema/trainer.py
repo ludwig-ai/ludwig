@@ -327,6 +327,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 
+    steps_per_epoch: int = schema_utils.PositiveInteger(
+        default=10,
+        description="Number of steps (boosting rounds) per log of the training progress."
+    )
+
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
         ["gbdt", "rf", "dart", "goss"],
