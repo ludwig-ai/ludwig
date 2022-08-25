@@ -58,7 +58,7 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
         export_full_path = os.path.join(export_base_path, experiment["dataset_name"], experiment["experiment_name"])
         fs.put(experiment_output_directory, export_full_path, recursive=True)
         fs.put(
-            os.path.join("configs", experiment["config_path"]),
+            os.path.join(experiment["config_path"]),
             os.path.join(export_full_path, CONFIG_YAML),
         )
         logging.info(f"Uploaded experiment artifact to\n\t{export_full_path}")

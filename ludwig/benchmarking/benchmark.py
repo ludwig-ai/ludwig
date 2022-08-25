@@ -85,4 +85,7 @@ def cli(sys_argv):
     parser.add_argument("--benchmarking_config", type=str, help="The benchmarking config.")
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
-    benchmark(args.config)
+    import time
+    start_t = time.perf_counter()
+    benchmark(args.benchmarking_config)
+    print("TOOK", time.perf_counter() - start_t)
