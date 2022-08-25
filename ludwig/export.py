@@ -166,7 +166,7 @@ def cli_export_torchscript(sys_argv):
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("-od", "--output_path", type=str, help="path where to save the export model", required=True)
+    parser.add_argument("op", "--output_path", type=str, help="path where to save the export model", required=True)
 
     # ------------------
     # Runtime parameters
@@ -213,7 +213,7 @@ def cli_export_triton(sys_argv):
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("-od", "--output_path", type=str, help="path where to save the export model", required=True)
+    parser.add_argument("-op", "--output_path", type=str, help="path where to save the export model", required=True)
 
     # ------------------
     # Runtime parameters
@@ -259,7 +259,7 @@ def cli_export_neuropod(sys_argv):
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("-od", "--output_path", type=str, help="path where to save the export model", required=True)
+    parser.add_argument("-op", "--output_path", type=str, help="path where to save the export model", required=True)
 
     # ------------------
     # Runtime parameters
@@ -301,13 +301,17 @@ def cli_export_mlflow(sys_argv):
     # ----------------
     parser.add_argument("-m", "--model_path", help="model to load", required=True)
     parser.add_argument(
-        "-mn", "--registered_model_name", help="model name to upload to in MLflow model registry", default="mlflow"
+        "-mn",
+        "--registered_model_name",
+        help="model name to upload to in MLflow model registry",
     )
 
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("-od", "--output_path", type=str, help="path where to save the exported model", required=True)
+    parser.add_argument(
+        "-op", "--output_path", type=str, help="path where to save the exported model", default="mlflow"
+    )
 
     # ------------------
     # Runtime parameters

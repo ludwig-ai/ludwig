@@ -48,6 +48,7 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
 from ludwig.utils.image_utils import (
     get_gray_default_image,
@@ -313,17 +314,20 @@ class ImageFeatureMixin(BaseFeatureMixin):
         explicit_height_width = HEIGHT in preprocessing_parameters or WIDTH in preprocessing_parameters
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
 
-        sample = []
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(column), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
         else:
             sample_size = 1  # Take first image
 
+        sample = []
+        sample_num_bytes = []
         failed_entries = []
         for image_entry in column.head(sample_size):
             if isinstance(image_entry, str):
                 # Tries to read image as PNG or numpy file from the path.
-                image = read_image_from_path(image_entry)
+                image, num_bytes = read_image_from_path(image_entry, return_num_bytes=True)
+                if num_bytes is not None:
+                    sample_num_bytes.append(num_bytes)
             else:
                 image = image_entry
 
@@ -384,7 +388,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
 
         assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
-        return (should_resize, width, height, num_channels, user_specified_num_channels)
+
+        average_file_size = np.mean(sample_num_bytes) if sample_num_bytes else None
+        return (should_resize, width, height, num_channels, user_specified_num_channels, average_file_size)
 
     @staticmethod
     def add_feature_data(
@@ -409,6 +415,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             height,
             num_channels,
             user_specified_num_channels,
+            average_file_size,
         ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
 
         metadata[name][PREPROCESSING]["height"] = height
@@ -436,11 +443,22 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if in_memory or skip_save_processed_input:
             metadata[name]["reshape"] = (num_channels, height, width)
 
-            proc_col = backend.read_binary_files(abs_path_column, map_fn=read_image_if_bytes_obj_and_resize)
-            proc_col = backend.df_engine.map_objects(proc_col, lambda row: row if row is not None else default_image)
+            proc_col = backend.read_binary_files(
+                abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
+            )
+
+            num_failed_image_reads = (
+                proc_col.isna().sum().compute() if is_dask_series_or_df(proc_col, backend) else proc_col.isna().sum()
+            )
+
+            proc_col = backend.df_engine.map_objects(
+                proc_col, lambda row: default_image if not isinstance(row, np.ndarray) else row
+            )
+
             proc_df[feature_config[PROC_COLUMN]] = proc_col
         else:
             num_images = len(abs_path_column)
+            num_failed_image_reads = 0
 
             data_fp = backend.cache.get_cache_path(wrap(metadata.get(SRC)), metadata.get(CHECKSUM), TRAINING)
             with upload_h5(data_fp) as h5_file:
@@ -450,10 +468,21 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 )
                 for i, img_entry in enumerate(abs_path_column):
                     res = read_image_if_bytes_obj_and_resize(img_entry)
-                    image_dataset[i, :height, :width, :] = res if res is not None else default_image
+                    if isinstance(res, np.ndarray):
+                        image_dataset[i, :height, :width, :] = res
+                    else:
+                        image_dataset[i, :height, :width, :] = default_image
+                        num_failed_image_reads += 1
                 h5_file.flush()
 
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
+
+        if num_failed_image_reads > 0:
+            logging.warning(
+                f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
+                "Using default image for these rows in the dataset."
+            )
+
         return proc_df
 
 

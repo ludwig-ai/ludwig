@@ -8,6 +8,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
+from ludwig.utils.fs_utils import open_file
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ def generate_neuropod_torchscript(model: LudwigModel):
     inference_module = model.to_torchscript()
     with tempfile.TemporaryDirectory() as tmpdir:
         ts_path = os.path.join(tmpdir, "generated.py")
-        with open(ts_path, "w") as f:
+        with open_file(ts_path, "w") as f:
             f.write(
                 INFERENCE_MODULE_TEMPLATE.format(
                     input_signature=_get_input_signature(config),
