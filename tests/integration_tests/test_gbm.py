@@ -55,7 +55,7 @@ def ray_backend():
 
 def run_test_gbm_output_not_supported(tmpdir, backend_config):
     """Test that an error is raised when the output feature is not supported by the model."""
-    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [text_feature()]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -82,11 +82,11 @@ def test_ray_gbm_output_not_supported(tmpdir, ray_backend):
 
 def run_test_gbm_multiple_outputs(tmpdir, backend_config):
     """Test that an error is raised when the model is trained with multiple outputs."""
-    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [
-        category_feature(vocab_size=3),
+        category_feature(decoder={"vocab_size": 3}),
         binary_feature(),
-        category_feature(vocab_size=3),
+        category_feature(decoder={"vocab_size": 3}),
     ]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -116,7 +116,7 @@ def test_ray_gbm_multiple_outputs(tmpdir, ray_backend):
 
 def run_test_gbm_binary(tmpdir, backend_config):
     """Test that the GBM model can train and predict a binary variable (binary classification)."""
-    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_feature = binary_feature()
     output_features = [output_feature]
 
@@ -161,9 +161,9 @@ def test_ray_gbm_binary(tmpdir, ray_backend):
 
 def run_test_gbm_category(tmpdir, backend_config):
     """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
-    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     vocab_size = 3
-    output_feature = category_feature(vocab_size=vocab_size)
+    output_feature = category_feature(decoder={"vocab_size": vocab_size})
     output_features = [output_feature]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -209,7 +209,7 @@ def test_ray_gbm_category(tmpdir, ray_backend):
 def run_test_gbm_number(tmpdir, backend_config):
     """Test that the GBM model can train and predict a numerical output (regression)."""
     # Given a dataset with a single input feature and a single output feature,
-    input_features = [number_feature(), category_feature(reduce_output="sum")]
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_feature = number_feature()
     output_features = [output_feature]
 

@@ -26,6 +26,7 @@ from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.h3_encoders import H3EmbedConfig, H3RNNConfig, H3WeightedSumConfig
 from ludwig.utils import torch_utils
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ class H3Embed(Encoder):
         activation: str = "relu",
         dropout: float = 0,
         reduce_output: str = "sum",
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -74,6 +76,8 @@ class H3Embed(Encoder):
         :type dropout: Boolean
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.embedding_size = embedding_size
@@ -197,6 +201,10 @@ class H3Embed(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return H3EmbedConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_INPUT_SIZE])
@@ -223,6 +231,7 @@ class H3WeightedSum(Encoder):
         norm_params: Dict = None,
         activation: str = "relu",
         dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -246,6 +255,8 @@ class H3WeightedSum(Encoder):
         :type dropout: Boolean
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.should_softmax = should_softmax
@@ -303,6 +314,10 @@ class H3WeightedSum(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return H3WeightedSumConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([H3_INPUT_SIZE])
@@ -332,6 +347,7 @@ class H3RNN(Encoder):
         dropout: float = 0.0,
         recurrent_dropout: float = 0.0,
         reduce_output: str = "last",
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -391,6 +407,8 @@ class H3RNN(Encoder):
         :type recurrent_dropout: float
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.embedding_size = embedding_size
@@ -430,6 +448,10 @@ class H3RNN(Encoder):
         hidden, final_state = self.recurrent_stack(embedded_h3["encoder_output"])
 
         return {"encoder_output": hidden, "encoder_output_state": final_state}
+
+    @staticmethod
+    def get_schema_cls():
+        return H3RNNConfig
 
     @property
     def input_shape(self) -> torch.Size:

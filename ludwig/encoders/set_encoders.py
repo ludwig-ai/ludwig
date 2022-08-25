@@ -23,11 +23,12 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import EmbedSet
 from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.schema.encoders.set_encoders import SetSparseEncoderConfig
 
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("embed", SET, default=True)
+@register_encoder("embed", SET)
 class SetSparseEncoder(Encoder):
     def __init__(
         self,
@@ -47,9 +48,12 @@ class SetSparseEncoder(Encoder):
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0.0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.vocab_size = len(vocab)
@@ -95,6 +99,10 @@ class SetSparseEncoder(Encoder):
         hidden = self.fc_stack(hidden)
 
         return hidden
+
+    @staticmethod
+    def get_schema_cls():
+        return SetSparseEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:

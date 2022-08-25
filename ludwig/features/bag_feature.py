@@ -15,19 +15,19 @@
 # ==============================================================================
 import logging
 from collections import Counter
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, FILL_WITH_CONST, NAME, PROC_COLUMN, TIED
+from ludwig.constants import BAG, COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
-from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +39,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "tokenizer": "space",
-            "most_common": 10000,
-            "lowercase": False,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return BagInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -94,16 +88,14 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    encoder = "embed"
-    vocab = []
+    def __init__(self, input_feature_config: Union[BagInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -115,7 +107,7 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.vocab)])
+        return torch.Size([len(self.encoder_obj.config.vocab)])
 
     @property
     def output_shape(self) -> torch.Size:
@@ -123,11 +115,13 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = BagInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

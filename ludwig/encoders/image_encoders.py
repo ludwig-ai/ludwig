@@ -24,13 +24,19 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
+from ludwig.schema.encoders.image_encoders import (
+    MLPMixerEncoderConfig,
+    ResNetEncoderConfig,
+    Stacked2DCNNEncoderConfig,
+    ViTEncoderConfig,
+)
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 
 
 # TODO(shreya): Add type hints for missing args
-@register_encoder("stacked_cnn", IMAGE, default=True)
+@register_encoder("stacked_cnn", IMAGE)
 class Stacked2DCNN(Encoder):
     def __init__(
         self,
@@ -66,9 +72,11 @@ class Stacked2DCNN(Encoder):
         fc_norm_params: Optional[Dict[str, Any]] = None,
         fc_activation: str = "relu",
         fc_dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
 
         logger.debug(f" {self.name}")
 
@@ -139,6 +147,10 @@ class Stacked2DCNN(Encoder):
 
         return {"encoder_output": outputs}
 
+    @staticmethod
+    def get_schema_cls():
+        return Stacked2DCNNEncoderConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
@@ -173,9 +185,12 @@ class ResNetEncoder(Encoder):
         norm_params: Optional[Dict[str, Any]] = None,
         activation: str = "relu",
         dropout: float = 0,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         img_height = height
@@ -223,6 +238,10 @@ class ResNetEncoder(Encoder):
         hidden = self.fc_stack(hidden)
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ResNetEncoderConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.fc_stack.output_shape
@@ -246,9 +265,12 @@ class MLPMixerEncoder(Encoder):
         num_layers: int = 8,
         dropout: float = 0.0,
         avg_pool: bool = True,
+        encoder_config=None,
         **kwargs,
     ):
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         img_height = height
@@ -279,6 +301,10 @@ class MLPMixerEncoder(Encoder):
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = self.mlp_mixer(inputs)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return MLPMixerEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -312,6 +338,7 @@ class ViTEncoder(Encoder):
         patch_size: int = 16,
         trainable: bool = True,
         output_attentions: bool = False,
+        encoder_config=None,
         **kwargs,
     ):
         """Creates a ViT encoder using transformers.ViTModel.
@@ -323,6 +350,8 @@ class ViTEncoder(Encoder):
             the arguments.
         """
         super().__init__()
+        self.config = encoder_config
+
         try:
             from transformers import ViTConfig, ViTModel
         except ModuleNotFoundError:
@@ -376,6 +405,10 @@ class ViTEncoder(Encoder):
         if self.output_attentions:
             return_dict["attentions"] = output.attentions
         return return_dict
+
+    @staticmethod
+    def get_schema_cls():
+        return ViTEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:

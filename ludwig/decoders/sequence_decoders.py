@@ -23,6 +23,7 @@ from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.decoders.sequence_decoder_utils import get_lstm_init_state, get_rnn_init_state
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.decoders.sequence_decoders import SequenceGeneratorDecoderConfig
 from ludwig.utils import strings_utils
 
 logger = logging.getLogger(__name__)
@@ -262,6 +263,7 @@ class SequenceGeneratorDecoder(Decoder):
         input_size: int = 256,
         reduce_input: str = "sum",
         num_layers: int = 1,
+        decoder_config=None,
         **kwargs,
     ):
         """
@@ -274,6 +276,8 @@ class SequenceGeneratorDecoder(Decoder):
             num_layers: Number of layers for the RNN deecoders.
         """
         super().__init__()
+        self.config = decoder_config
+
         self.vocab_size = vocab_size
         self.input_size = input_size
         self.max_sequence_length = max_sequence_length
@@ -312,6 +316,10 @@ class SequenceGeneratorDecoder(Decoder):
 
     def get_prediction_set(self):
         return {LOGITS}
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceGeneratorDecoderConfig
 
     @property
     def input_shape(self):

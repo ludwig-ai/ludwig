@@ -87,10 +87,10 @@ def test_global_default_parameters_merge_with_defaults(csv_filename):
 
     # Feature encoders and decoders should update
     for feature in updated_config[INPUT_FEATURES]:
-        assert feature[ENCODER] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
+        assert feature[ENCODER][TYPE] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
 
     output_feature = updated_config[OUTPUT_FEATURES][0]
-    assert output_feature[DECODER] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]
+    assert output_feature[DECODER][TYPE] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]
 
 
 def test_global_defaults_with_encoder_dependencies(csv_filename):
@@ -110,5 +110,5 @@ def test_global_defaults_with_encoder_dependencies(csv_filename):
     # Config should populate with the additional required fields for bert
     updated_config = merge_with_defaults(config)
 
-    assert updated_config[INPUT_FEATURES][0][ENCODER] == "bert"
+    assert updated_config[INPUT_FEATURES][0][ENCODER][TYPE] == "bert"
     assert updated_config[INPUT_FEATURES][0]["pretrained_model_name_or_path"] == "bert-base-uncased"

@@ -13,63 +13,59 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import List, Union
 
-import numpy as np
 import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import PREDICTIONS, TRAINER
-from ludwig.utils.triton_utils import export_triton
+from ludwig.constants import TRAINER
+from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
+from ludwig.utils.triton_utils import export_triton, get_inference_modules, POSTPROCESSOR, PREDICTOR, PREPROCESSOR
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
     LocalTestBackend,
     number_feature,
+    sequence_feature,
+    set_feature,
+    text_feature,
+    vector_feature,
 )
 
 
 def test_triton_torchscript(csv_filename, tmpdir):
-    data_csv_path = os.path.join(tmpdir, csv_filename)
-
     # Configure features to be tested:
     input_features = [
         binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
         # TODO: future support
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
+        # sequence_feature(encoder={"vocab_size": 3}),
+        # text_feature(encoder={"vocab_size": 3}),
         # vector_feature(),
-        # image_feature(image_dest_folder),
-        # audio_feature(audio_dest_folder),
         # timeseries_feature(),
         # date_feature(),
         # h3_feature(),
-        # set_feature(vocab_size=3),
-        # bag_feature(vocab_size=3),
+        # set_feature(encoder={"vocab_size": 3}),
+        # bag_feature(encoder={"vocab_size": 3}),
+        # image_feature(image_dest_folder),
+        # audio_feature(audio_dest_folder),
     ]
     output_features = [
         binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
-        # TODO: future support
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
-        # vector_feature()
+        category_feature(decoder={"vocab_size": 3}),
+        sequence_feature(decoder={"vocab_size": 3}),
+        text_feature(decoder={"vocab_size": 3}),
+        set_feature(decoder={"vocab_size": 3}),
+        vector_feature(),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
 
     # Generate training data
-    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
-
-    # Convert bool values to strings, e.g., {'Yes', 'No'}
-    df = pd.read_csv(training_data_csv_path)
-    df.to_csv(training_data_csv_path)
+    training_data_csv_path = generate_data(input_features, output_features, csv_filename)
 
     # Train Ludwig (Pythonic) model:
     ludwig_model = LudwigModel(config, backend=backend)
@@ -83,45 +79,69 @@ def test_triton_torchscript(csv_filename, tmpdir):
         skip_save_processed_input=True,
     )
 
-    # Obtain predictions from Python model
-    preds_dict, _ = ludwig_model.predict(dataset=training_data_csv_path, return_type=dict)
-
     # Create graph inference model (Torchscript) from trained Ludwig model.
     triton_path = os.path.join(tmpdir, "triton")
     model_name = "test_triton"
     model_version = 1
-    model_path, config_path = export_triton(ludwig_model, triton_path, model_name, model_version)
-
-    # Validate relative path
-    output_filename = os.path.relpath(model_path, triton_path)
-    assert output_filename == f"{model_name}/{model_version}/model.pt"
-    config_filename = os.path.relpath(config_path, triton_path)
-    assert config_filename == f"{model_name}/config.pbtxt"
-
-    # Restore the torchscript model
-    restored_model = torch.jit.load(model_path)
-
-    def to_input(s: pd.Series) -> Union[List[str], torch.Tensor]:
-        if s.dtype == "object":
-            return s.to_list()
-        return torch.from_numpy(s.to_numpy().astype(np.float32))
-
     df = pd.read_csv(training_data_csv_path)
-    inputs = {name: to_input(df[feature.column]) for name, feature in ludwig_model.model.input_features.items()}
-    outputs = restored_model(**inputs)
+    triton_artifacts = export_triton(
+        model=ludwig_model, data_example=df, model_name=model_name, output_path=triton_path, model_version=model_version
+    )
 
-    def from_output(o: Union[List[str], torch.Tensor]) -> np.array:
-        if isinstance(o, list):
-            return np.array(o)
-        return o.numpy()
+    # Validate that artifact paths exist.
+    assert os.path.isdir(triton_path)
+    assert all(os.path.exists(artifact.path) for artifact in triton_artifacts)
 
-    # Enumerate over the output feature and lookup predictions to see the match outputs
-    assert len(preds_dict) == len(outputs)
-    for i, feature_name in enumerate(ludwig_model.model.output_features):
-        output_values_expected = preds_dict[feature_name][PREDICTIONS]
-        output_values = from_output(outputs[i])
-        if output_values.dtype.type in {np.string_, np.str_}:
-            # Strings should match exactly
-            assert np.all(output_values == output_values_expected), f"feature: {feature_name}, output: predictions"
+    # Load TorchScript models exported for Triton.
+    triton_preprocessor = triton_predictor = triton_postprocessor = None
+    for artifact in triton_artifacts:
+        if artifact.model_name.endswith(PREPROCESSOR) and artifact.content_type == "application/octet-stream":
+            triton_preprocessor = torch.jit.load(artifact.path)
+        if artifact.model_name.endswith(PREDICTOR) and artifact.content_type == "application/octet-stream":
+            triton_predictor = torch.jit.load(artifact.path)
+        if artifact.model_name.endswith(POSTPROCESSOR) and artifact.content_type == "application/octet-stream":
+            triton_postprocessor = torch.jit.load(artifact.path)
+
+    assert triton_preprocessor is not None
+    assert triton_predictor is not None
+    assert triton_postprocessor is not None
+
+    # Forward data through models.
+    data_to_predict = to_inference_module_input_from_dataframe(df, ludwig_model.config, load_paths=True, device="cpu")
+    triton_preprocessor_output = triton_preprocessor(*data_to_predict.values())
+    triton_predictor_output = triton_predictor(*triton_preprocessor_output)
+    triton_postprocessor_output = triton_postprocessor(*triton_predictor_output)
+
+    # Get TorchScript inference modules and forward data.
+    inference_modules = get_inference_modules(ludwig_model, "cpu")
+    preprocessor_output = inference_modules[0](data_to_predict)
+    predictor_output = inference_modules[1](preprocessor_output)
+    postprocessor_output = inference_modules[2](predictor_output)
+
+    assert len(postprocessor_output) == len(
+        triton_postprocessor_output
+    ), "Number of output mismatch after postprocessor step"
+
+    for i, (_, out_value) in enumerate(postprocessor_output.items()):
+        both_list = isinstance(out_value, list) and isinstance(triton_postprocessor_output[i], list)
+        both_tensor = isinstance(out_value, torch.Tensor) and isinstance(triton_postprocessor_output[i], torch.Tensor)
+        assert both_list or both_tensor, "Type mismatch in PREDICTIONS, PROBABILITIES, LOGITS output"
+
+        if isinstance(out_value, list) and len(out_value) > 0 and isinstance(out_value[0], str):
+            assert out_value == triton_postprocessor_output[i], "Category feature outputs failure."
+        elif isinstance(out_value, list) and len(out_value) > 0 and isinstance(out_value[0], torch.Tensor):
+            assert len(out_value) == len(triton_postprocessor_output[i]), "Set feature outputs failure."
+            assert all(
+                torch.allclose(inf, trit) for inf, trit in zip(out_value, triton_postprocessor_output[i])
+            ), "Set feature outputs failure."
+        elif isinstance(out_value, list) and len(out_value) > 0 and isinstance(out_value[0], list):
+            assert len(out_value) == len(
+                triton_postprocessor_output[i]
+            ), "Sequence (including text, etc.) feature outputs failure."
+            assert all(
+                inf == trit for inf, trit in zip(out_value, triton_postprocessor_output[i])
+            ), "Sequence (including text, etc.) feature outputs failure."
+        elif isinstance(out_value, torch.Tensor):
+            assert torch.allclose(out_value, triton_postprocessor_output[i])
         else:
-            assert np.allclose(output_values, output_values_expected), f"feature: {feature_name}, output: predictions"
+            raise ValueError("Value should be either List[str] or torch.Tensor.")

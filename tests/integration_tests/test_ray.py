@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
@@ -47,6 +48,7 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    import modin
     import ray
 
     from ludwig.backend.ray import get_trainer_kwargs, RayBackend
@@ -63,8 +65,15 @@ try:
         model = LudwigModel.load(model_dir, backend="local")
         model.predict(dataset)
 
+    _modin_ray_incompatible = version.parse(modin.__version__) <= version.parse("0.15.2") and version.parse(
+        ray.__version__
+    ) >= version.parse("1.13.0")
+
 except ImportError:
+    modin = None
     ray = None
+
+    _modin_ray_incompatible = False
 
 
 def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
@@ -225,10 +234,10 @@ def test_ray_read_binary_files(tmpdir, df_engine):
 @pytest.mark.distributed
 def test_ray_save_processed_input(dataset_type):
     input_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
     output_features = [
-        category_feature(vocab_size=5),  # Regression test for #1991 requires multi-class predictions.
+        category_feature(decoder={"vocab_size": 5}),  # Regression test for #1991 requires multi-class predictions.
     ]
     run_test_with_features(
         input_features,
@@ -240,12 +249,21 @@ def test_ray_save_processed_input(dataset_type):
     )
 
 
-@pytest.mark.parametrize("df_engine", ["dask", "modin"])
 @pytest.mark.distributed
+@pytest.mark.parametrize(
+    "df_engine",
+    [
+        "dask",
+        pytest.param(
+            "modin",
+            marks=pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
+        ),
+    ],
+)
 def test_ray_tabular(df_engine):
     input_features = [
-        sequence_feature(reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        sequence_feature(encoder={"reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
         number_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
@@ -273,7 +291,7 @@ def test_ray_text():
         text_feature(),
     ]
     output_features = [
-        text_feature(reduce_input=None, decoder="tagger"),
+        text_feature(reduce_input=None, decoder={"type": "tagger"}),
     ]
     run_test_with_features(input_features, output_features)
 
@@ -281,8 +299,12 @@ def test_ray_text():
 @pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
 def test_ray_sequence():
-    input_features = [sequence_feature(max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)]
-    output_features = [sequence_feature(max_len=10, decoder="tagger", attention=False, reduce_input=None)]
+    input_features = [
+        sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": "lstm", "reduce_output": None})
+    ]
+    output_features = [
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": False}, reduce_input=None)
+    ]
     run_test_with_features(input_features, output_features)
 
 
@@ -319,8 +341,7 @@ def test_ray_image(tmpdir, dataset_type):
         image_feature(
             folder=image_dest_folder,
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
+            encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
     output_features = [binary_feature()]
@@ -336,15 +357,14 @@ def test_ray_image(tmpdir, dataset_type):
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
 @pytest.mark.distributed
+@pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
 def test_ray_image_modin(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="resnet",
+            encoder={"type": "resnet", "output_size": 16, "num_filters": 8},
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
         ),
     ]
     output_features = [binary_feature()]
@@ -363,14 +383,12 @@ def test_ray_image_multiple_features(tmpdir):
         image_feature(
             folder=os.path.join(tmpdir, "generated_images_1"),
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
+            encoder={"output_size": 16, "num_filters": 8},
         ),
         image_feature(
             folder=os.path.join(tmpdir, "generated_images_2"),
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
+            encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
     output_features = [binary_feature()]
@@ -391,7 +409,7 @@ def test_ray_split():
         set_feature(),
         binary_feature(),
     ]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
     run_test_with_features(
         input_features,
         output_features,
@@ -428,10 +446,8 @@ def test_ray_lazy_load_image_error(tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder="resnet",
+            encoder={"type": "resnet", "output_size": 16, "num_filters": 8},
             preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            output_size=16,
-            num_filters=8,
         ),
     ]
     output_features = [binary_feature()]
@@ -443,7 +459,7 @@ def test_ray_lazy_load_image_error(tmpdir):
 @pytest.mark.distributed
 def test_train_gpu_load_cpu():
     input_features = [
-        category_feature(vocab_size=2, reduce_input="sum"),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
         number_feature(normalization="zscore"),
     ]
     output_features = [
@@ -513,7 +529,7 @@ def test_tune_batch_size_lr(tmpdir):
                 set_feature(),
                 binary_feature(),
             ],
-            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+            "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
             TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
         }
@@ -532,7 +548,7 @@ def test_tune_batch_size_lr(tmpdir):
 def test_ray_progress_bar():
     # This is a simple test that is just meant to make sure that the progress bar isn't breaking
     input_features = [
-        sequence_feature(reduce_output="sum"),
+        sequence_feature(encoder={"reduce_output": "sum"}),
     ]
     output_features = [
         binary_feature(bool2str=["No", "Yes"]),
@@ -554,6 +570,6 @@ def test_ray_calibration(calibration):
     ]
     output_features = [
         binary_feature(calibration=calibration),
-        category_feature(vocab_size=3, calibration=calibration),
+        category_feature(decoder={"vocab_size": 3}, calibration=calibration),
     ]
     run_test_with_features(input_features, output_features)

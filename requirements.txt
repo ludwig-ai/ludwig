@@ -31,7 +31,6 @@ psutil
 protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
 experiment_impact_tracker
 gpustat
-s3fs
 
 # new data format support
 xlwt            # excel

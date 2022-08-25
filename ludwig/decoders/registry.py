@@ -1,12 +1,12 @@
 from typing import Dict, List, Type, Union
 
 from ludwig.decoders.base import Decoder
-from ludwig.utils.registry import DEFAULT_KEYS, Registry
+from ludwig.utils.registry import Registry
 
 decoder_registry = Registry()
 
 
-def register_decoder(name: str, features: Union[str, List[str]], default=False):
+def register_decoder(name: str, features: Union[str, List[str]]):
     if isinstance(features, str):
         features = [features]
 
@@ -14,9 +14,6 @@ def register_decoder(name: str, features: Union[str, List[str]], default=False):
         for feature in features:
             feature_registry = decoder_registry.get(feature, {})
             feature_registry[name] = cls
-            if default:
-                for key in DEFAULT_KEYS:
-                    feature_registry[key] = cls
             decoder_registry[feature] = feature_registry
         return cls
 

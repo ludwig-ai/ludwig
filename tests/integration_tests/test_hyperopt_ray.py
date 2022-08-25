@@ -84,11 +84,11 @@ SCENARIOS = [
 
 def _get_config(search_alg, executor):
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     return {
         "input_features": input_features,
@@ -199,11 +199,11 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 @pytest.mark.distributed
 def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 

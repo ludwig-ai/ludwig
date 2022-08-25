@@ -43,11 +43,11 @@ def yaml_filename():
 def hyperopt_results():
     """This function generates hyperopt results."""
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     csv_filename = uuid.uuid4().hex[:10].upper() + ".csv"
     rel_path = generate_data(input_features, output_features, csv_filename)

@@ -23,7 +23,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
+from ludwig.constants import ENCODER, TRAINER, TYPE
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
@@ -151,31 +151,31 @@ def run_api_experiment_separated_datasets(input_features, output_features, data_
 
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        input_features[0]["encoder"] = encoder
+        input_features[0][ENCODER][TYPE] = encoder
         run_api_experiment(input_features, output_features, data_csv=rel_path)
 
 
 def test_api_intent_classification_separated(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        input_features[0]["encoder"] = encoder
+        input_features[0][ENCODER][TYPE] = encoder
         run_api_experiment_separated_datasets(input_features, output_features, data_csv=rel_path)
 
 
 def test_api_train_online(csv_filename):
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(input_features, output_features, csv_filename)
 
     config = {
@@ -191,8 +191,8 @@ def test_api_train_online(csv_filename):
 
 
 def test_api_training_set(tmpdir):
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
@@ -212,8 +212,8 @@ def test_api_training_set(tmpdir):
 
 
 def test_api_training_determinism(tmpdir):
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
@@ -351,8 +351,8 @@ def test_api_skip_parameters_train(
     skip_save_processed_input,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(vocab_size=5)]
+    input_features = [category_feature(encoder={"vocab_size": 5})]
+    output_features = [category_feature(decoder={"vocab_size": 5})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
@@ -379,8 +379,8 @@ def test_api_skip_parameters_predict(
     skip_save_predictions,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(vocab_size=5)]
+    input_features = [category_feature(encoder={"vocab_size": 5})]
+    output_features = [category_feature(decoder={"vocab_size": 5})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
@@ -409,8 +409,8 @@ def test_api_skip_parameters_evaluate(
     skip_collect_overall_stats,
 ):
     # Single sequence input, single category output
-    input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(vocab_size=5)]
+    input_features = [category_feature(encoder={"vocab_size": 5})]
+    output_features = [category_feature(decoder={"vocab_size": 5})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename))
@@ -438,8 +438,8 @@ def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, s
     total_checkpoints = (steps_per_epoch / steps_per_checkpoint) * epochs
     total_batches = epochs * (num_examples / batch_size)
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,
@@ -487,8 +487,8 @@ def test_api_callbacks_checkpoints_per_epoch(
     total_checkpoints = epochs * checkpoints_per_epoch
     total_batches = epochs * (num_examples / batch_size)
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,
@@ -532,8 +532,8 @@ def test_api_callbacks_default_train_steps(tmpdir, csv_filename):
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
 
     config = {
         "input_features": input_features,
@@ -559,8 +559,8 @@ def test_api_callbacks_fixed_train_steps(tmpdir, csv_filename):
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -586,8 +586,8 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
     num_examples = 80
     mock_callback = mock.Mock(wraps=Callback())
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -615,8 +615,8 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
 
 def test_api_save_torchscript(tmpdir):
     """Tests successful saving and loading of model in TorchScript format."""
-    input_features = [category_feature(vocab_size=5)]
-    output_features = [category_feature(name="class", vocab_size=5, reduce_input="sum")]
+    input_features = [category_feature(encoder={"vocab_size": 5})]
+    output_features = [category_feature(name="class", encoder={"vocab_size": 5}, reduce_input="sum")]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))

@@ -1140,6 +1140,16 @@ def build_dataset(
 
     # Happens after preprocessing parameters are built so we can use precomputed fill values.
     logging.debug("handle missing values")
+
+    # In some cases, there can be a (temporary) mismatch between the dtype of the column and the type expected by the
+    # preprocessing config (e.g., a categorical feature represented as an int-like column). In particular, Dask
+    # may raise an error even when there are no missing values in the column itself.
+    #
+    # Since we immediately cast all columns in accordance with their expected feature types after filling missing
+    # values, we work around the above issue by temporarily treating all columns as object dtype.
+    for col_key in dataset_cols:
+        dataset_cols[col_key] = dataset_cols[col_key].astype(object)
+
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
@@ -1265,18 +1275,19 @@ def build_preprocessing_parameters(
 
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            encoder_class = get_encoder_cls(feature_config[TYPE], feature_config["encoder"])
-            if hasattr(encoder_class, "fixed_preprocessing_parameters"):
-                encoder_fpp = encoder_class.fixed_preprocessing_parameters
+            if TYPE in feature_config[ENCODER]:
+                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
+                if hasattr(encoder_class, "fixed_preprocessing_parameters"):
+                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-                preprocessing_parameters = merge_dict(
-                    preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                )
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
+                    )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
         if fill_value is not None:
-            preprocessing_parameters = {"computed_fill_value": fill_value, **preprocessing_parameters}
+            preprocessing_parameters.update({"computed_fill_value": fill_value})
 
         feature_name_to_preprocessing_parameters[feature_name] = preprocessing_parameters
 
@@ -1443,11 +1454,14 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
     # Check for the precomputed fill value in the metadata
     computed_fill_value = preprocessing_parameters.get("computed_fill_value")
 
-    if computed_fill_value is not None:
+    if (
+        missing_value_strategy in {FILL_WITH_CONST, FILL_WITH_MODE, FILL_WITH_MEAN, FILL_WITH_FALSE}
+        and computed_fill_value is not None
+    ):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in [BACKFILL, BFILL, PAD, FFILL]:
+    elif missing_value_strategy in {BACKFILL, BFILL, PAD, FFILL}:
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
@@ -1457,7 +1471,7 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         # result in the removal of the rows.
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].dropna()
     else:
-        raise ValueError("Invalid missing value strategy")
+        raise ValueError(f"Invalid missing value strategy {missing_value_strategy}")
 
 
 def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, shuffle_training=False):
@@ -1614,16 +1628,32 @@ def preprocess_for_training(
         with use_credentials(backend.cache.credentials if cached else None):
             logging.debug("create training dataset")
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
+            if not len(training_set):
+                raise ValueError("Training data is empty following preprocessing.")
 
             validation_dataset = None
             if validation_set is not None:
                 logging.debug("create validation dataset")
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
+                if not len(validation_dataset):
+                    # Validation dataset is empty.
+                    logging.warning(
+                        "Encountered empty validation dataset. If this is unintentional, please check the "
+                        "preprocessing configuration."
+                    )
+                    validation_dataset = None
 
             test_dataset = None
             if test_set is not None:
                 logging.debug("create test dataset")
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
+                if not len(test_dataset):
+                    # Test dataset is empty.
+                    logging.warning(
+                        "Encountered empty test dataset. If this is unintentional, please check the "
+                        "preprocessing configuration."
+                    )
+                    test_dataset = None
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 

@@ -33,6 +33,8 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     DATE,
+    DECODER,
+    ENCODER,
     H3,
     IMAGE,
     NAME,
@@ -92,6 +94,20 @@ DATETIME_FORMATS = {
 }
 
 
+def _get_feature_encoder_or_decoder(feature):
+    """Returns the nested decoder or encoder dictionary for a feature.
+
+    If neither encoder nor decoder is present, creates an empty encoder dict and returns it.
+    """
+    if DECODER in feature:
+        return feature[DECODER]
+    elif ENCODER in feature:
+        return feature[ENCODER]
+    else:
+        feature[ENCODER] = {}
+        return feature[ENCODER]
+
+
 def generate_string(length):
     sequence = []
     for _ in range(length):
@@ -111,7 +127,9 @@ def return_none(feature):
 
 
 def assign_vocab(feature):
-    feature["idx2str"] = build_vocab(feature.get("vocab_size", 10))
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
+    encoder_or_decoder["idx2str"] = build_vocab(encoder_or_decoder.get("vocab_size", 10))
+    encoder_or_decoder["vocab_size"] = len(encoder_or_decoder["idx2str"])
 
 
 def build_feature_parameters(features):
@@ -199,7 +217,8 @@ def generate_datapoint(features):
 
 
 def generate_category(feature):
-    return random.choice(feature["idx2str"])
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
+    return random.choice(encoder_or_decoder["idx2str"])
 
 
 def generate_number(feature):
@@ -213,45 +232,50 @@ def generate_binary(feature):
 
 
 def generate_sequence(feature):
-    length = feature.get("max_len", 10)
-    if "min_len" in feature:
-        length = random.randint(feature["min_len"], length)
-    sequence = [random.choice(feature["idx2str"]) for _ in range(length)]
-    if "vocab_size" not in feature:
-        feature["vocab_size"] = len(feature["idx2str"])
-    feature["vocab_size"] = feature["vocab_size"] + 4  # For special symbols: START, STOP, PAD, UNK.
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
+    length = encoder_or_decoder.get("max_len", 10)
+    if "min_len" in encoder_or_decoder:
+        length = random.randint(encoder_or_decoder["min_len"], length)
+    sequence = [random.choice(encoder_or_decoder["idx2str"]) for _ in range(length)]
+    encoder_or_decoder["vocab_size"] = (
+        encoder_or_decoder["vocab_size"] + 4
+    )  # For special symbols: START, STOP, PAD, UNK.
     return " ".join(sequence)
 
 
 def generate_set(feature):
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
-    for _ in range(random.randint(0, feature.get("max_len", 3))):
-        elems.append(random.choice(feature["idx2str"]))
+    for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
+        elems.append(random.choice(encoder_or_decoder["idx2str"]))
     return " ".join(list(set(elems)))
 
 
 def generate_bag(feature):
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
-    for _ in range(random.randint(0, feature.get("max_len", 3))):
-        elems.append(random.choice(feature["idx2str"]))
+    for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
+        elems.append(random.choice(encoder_or_decoder["idx2str"]))
     return " ".join(elems)
 
 
 def generate_text(feature):
-    length = feature.get("max_len", 10)
+    encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
+    length = encoder_or_decoder.get("max_len", 10)
     text = []
     for _ in range(random.randint(length - int(length * 0.2), length)):
-        text.append(random.choice(feature["idx2str"]))
+        text.append(random.choice(encoder_or_decoder["idx2str"]))
     return " ".join(text)
 
 
 def generate_timeseries(feature, max_len=10):
+    encoder = _get_feature_encoder_or_decoder(feature)
     series = []
-    if "max_len" in feature:
-        max_len = feature["max_len"]
+    if "max_len" in encoder:
+        max_len = encoder["max_len"]
     series_len = random.randint(max_len - 2, max_len)  # simulates variable length
     for _ in range(series_len):
-        series.append(str(random.uniform(feature.get("min", 0), feature.get("max", 1))))
+        series.append(str(random.uniform(encoder.get("min", 0), encoder.get("max", 1))))
     return " ".join(series)
 
 
@@ -300,9 +324,10 @@ def generate_image(feature, save_as_numpy=False):
         width = feature[PREPROCESSING].get("width", 28)
         num_channels = feature[PREPROCESSING].get("num_channels", 1)
     else:
-        height = feature.get("height", 28)
-        width = feature.get("width", 28)
-        num_channels = feature.get("num_channels", 1)
+        encoder = _get_feature_encoder_or_decoder(feature)
+        height = encoder.get("height", 28)
+        width = encoder.get("width", 28)
+        num_channels = encoder.get("num_channels", 1)
 
     if width <= 0 or height <= 0 or num_channels < 1:
         raise ValueError("Invalid arguments for generating images")
@@ -371,7 +396,11 @@ def generate_h3(feature):
 
 def generate_vector(feature):
     # Space delimited string with floating point numbers
-    return " ".join([str(100 * random.random()) for _ in range(feature.get("vector_size", 10))])
+    if PREPROCESSING in feature:
+        vector_size = feature[PREPROCESSING].get("vector_size", 10)
+    else:
+        vector_size = feature.get("vector_size", 10)
+    return " ".join([str(100 * random.random()) for _ in range(vector_size)])
 
 
 generators_registry = {
@@ -395,9 +424,10 @@ category_cycle = 0
 
 def cycle_category(feature):
     global category_cycle
-    if category_cycle >= len(feature["idx2str"]):
+    idx2str = feature[DECODER]["idx2str"] if DECODER in feature else feature[ENCODER]["idx2str"]
+    if category_cycle >= len(idx2str):
         category_cycle = 0
-    category = feature["idx2str"][category_cycle]
+    category = idx2str[category_cycle]
     category_cycle += 1
     return category
 

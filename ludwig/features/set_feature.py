@@ -14,14 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
 
 from ludwig.constants import (
     COLUMN,
-    FILL_WITH_CONST,
+    DECODER,
+    DEPENDENCIES,
+    ENCODER,
     HIDDEN,
     JACCARD,
     LOGITS,
@@ -30,9 +32,10 @@ from ludwig.constants import (
     PREDICTIONS,
     PROBABILITIES,
     PROC_COLUMN,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     SET,
-    SIGMOID_CROSS_ENTROPY,
-    SUM,
+    THRESHOLD,
     TIED,
     TYPE,
 )
@@ -41,7 +44,7 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import get_from_registry, set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -159,13 +162,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "tokenizer": "space",
-            "most_common": 10000,
-            "lowercase": False,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return SetInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -215,16 +212,14 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    encoder = "embed"
-    vocab = []
+    def __init__(self, input_feature_config: Union[SetInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -240,15 +235,17 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.vocab)])
+        return torch.Size([len(self.encoder_obj.config.vocab)])
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = SetInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -265,17 +262,19 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 @register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    decoder = "classifier"
-    loss = {TYPE: SIGMOID_CROSS_ENTROPY}
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
-    num_classes = 0
-    threshold = 0.5
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+    def __init__(
+        self,
+        output_feature_config: Union[SetOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        self.threshold = output_feature_config.threshold
+        super().__init__(output_feature_config, output_features, **kwargs)
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -305,13 +304,13 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.num_classes])
+        return torch.Size([self.decoder_obj.config.num_classes])
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["vocab_size"]
+        output_feature[DECODER]["num_classes"] = feature_metadata["vocab_size"]
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["num_classes"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -361,11 +360,10 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
         probabilities_col = f"{self.feature_name}_{PROBABILITIES}"
         if probabilities_col in result:
-            threshold = self.threshold
 
             def get_prob(prob_set):
                 # Cast to float32 because empty np.array objects are np.float64, causing mismatch errors during saving.
-                return np.array([prob for prob in prob_set if prob >= threshold], dtype=np.float32)
+                return np.array([prob for prob in prob_set if prob >= self.threshold], dtype=np.float32)
 
             result[probabilities_col] = result[probabilities_col].map(get_prob)
 
@@ -377,14 +375,22 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(output_feature, LOSS, {TYPE: SIGMOID_CROSS_ENTROPY, "weight": 1})
-        set_default_value(output_feature[LOSS], "weight", 1)
-        set_default_value(output_feature[LOSS], "class_weights", None)
+        defaults = SetOutputFeatureConfig()
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(output_feature[LOSS], defaults.loss)
 
-        set_default_value(output_feature, "threshold", 0.5)
-        set_default_value(output_feature, "dependencies", [])
-        set_default_value(output_feature, "reduce_input", SUM)
-        set_default_value(output_feature, "reduce_dependencies", SUM)
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                },
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+                THRESHOLD: defaults.threshold,
+            },
+        )
 
     @staticmethod
     def get_schema_cls():

@@ -42,6 +42,8 @@ START_SYMBOL = "<SOS>"
 PADDING_SYMBOL = "<PAD>"
 UNKNOWN_SYMBOL = "<UNK>"
 
+logger = logging.getLogger(__name__)
+
 
 class SpecialSymbol(Enum):
     """Special symbols used for text features."""
@@ -411,7 +413,7 @@ def build_sequence_matrix(
 
     max_length = processor.compute(unit_vectors.map(len).max())
     if max_length < length_limit:
-        logging.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
+        logger.debug(f"max length of {format}: {max_length} < limit: {length_limit}")
     max_length = length_limit
 
     def pad(vector):
