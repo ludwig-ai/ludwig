@@ -14,9 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
+import re
 import warnings
 from typing import Any, Callable, Dict, List, Union
-import re
 
 from ludwig.constants import (
     AUDIO,
