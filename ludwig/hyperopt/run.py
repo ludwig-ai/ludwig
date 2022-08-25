@@ -434,19 +434,23 @@ def get_features_eligible_for_shared_params(
     features_eligible_for_shared_params = defaultdict(set)
 
     features = config_dict.get(config_feature_type)
+    feature_registry = input_type_registry if config_feature_type == INPUT_FEATURES else output_type_registry
 
     for feature in features:
         if TYPE not in feature:
             raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
+
+        feature_schema = get_from_registry(feature.get(TYPE), feature_registry).get_schema_cls()
+
         if config_feature_type == INPUT_FEATURES:
-            feature_schema = get_from_registry(feature.get(TYPE), input_type_registry).get_schema_cls()
             default_encoder = feature_schema().encoder.type
-            if not feature[ENCODER].get(TYPE, 0) or feature[ENCODER].get(TYPE) == default_encoder:
-                features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
+            if feature.get(ENCODER, None) and feature.get(ENCODER).get(TYPE, None) != default_encoder:
+                continue
         else:
-            feature_schema = get_from_registry(feature.get(TYPE), output_type_registry).get_schema_cls()
             default_decoder = feature_schema().decoder.type
-            if not feature[DECODER].get(TYPE, 0) or feature[DECODER].get(TYPE) == default_decoder:
-                features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
+            if feature.get(DECODER, None) and feature.get(DECODER).get(TYPE, None) != default_decoder:
+                continue
+
+        features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
 
     return features_eligible_for_shared_params
