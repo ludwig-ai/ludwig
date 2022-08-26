@@ -53,7 +53,7 @@ def get_feature_configs():
             "decoder": {
                 "num_fc_layers": 5,
                 "fc_output_size": 64,
-            }
+            },
         }
     ]
 
