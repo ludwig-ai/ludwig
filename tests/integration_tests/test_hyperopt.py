@@ -461,6 +461,7 @@ def test_hyperopt_with_shared_params(csv_filename, tmpdir):
     )
 
 
+@pytest.mark.distributed
 def test_hyperopt_old_config(csv_filename, tmpdir):
     old_config = {
         "ludwig_version": "0.4",
