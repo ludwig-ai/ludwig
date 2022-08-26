@@ -463,15 +463,15 @@ def test_hyperopt_with_shared_params(csv_filename, tmpdir):
 
 def test_hyperopt_old_config(csv_filename, tmpdir):
     old_config = {
-        'ludwig_version': "0.4",
-        'input_features': [
-            {'name': 'cat1', 'type': 'category', 'encoder': {'vocab_size': 2}},
-            {'name': 'num1', 'type': 'number'},
+        "ludwig_version": "0.4",
+        "input_features": [
+            {"name": "cat1", "type": "category", "encoder": {"vocab_size": 2}},
+            {"name": "num1", "type": "number"},
         ],
-        'output_features': [
-            {'name': 'bin1', 'type': 'binary'},
+        "output_features": [
+            {"name": "bin1", "type": "binary"},
         ],
-        'trainer': {'epochs': 2},
+        "trainer": {"epochs": 2},
         "hyperopt": {
             "executor": {
                 "type": "ray",
@@ -503,12 +503,12 @@ def test_hyperopt_old_config(csv_filename, tmpdir):
                     "lower": 0.001,
                     "upper": 0.1,
                 },
-            }
+            },
         },
     }
 
-    input_features = old_config['input_features']
-    output_features = old_config['output_features']
+    input_features = old_config["input_features"]
+    output_features = old_config["output_features"]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
