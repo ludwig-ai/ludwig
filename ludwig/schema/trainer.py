@@ -328,8 +328,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     steps_per_epoch: int = schema_utils.PositiveInteger(
-        default=10,
-        description="Number of steps (boosting rounds) per log of the training progress."
+        default=10, description="Number of steps (boosting rounds) per log of the training progress."
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)

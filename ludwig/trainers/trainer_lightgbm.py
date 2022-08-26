@@ -346,14 +346,16 @@ class LightGBMTrainer(BaseTrainer):
 
         for epoch, steps in enumerate(range(0, self.num_boost_round, self.steps_per_epoch), start=1):
             progress_tracker.epoch = epoch
-            
+
             evals_result = {}
-            booster = self.train_step(params, lgb_train, eval_sets, eval_names, booster, self.steps_per_epoch, evals_result)
-            
+            booster = self.train_step(
+                params, lgb_train, eval_sets, eval_names, booster, self.steps_per_epoch, evals_result
+            )
+
             progress_tracker.steps = steps + self.steps_per_epoch
             # log training progress
             for data_name in eval_names:
-                loss_name = params['metric'][0]
+                loss_name = params["metric"][0]
                 loss = evals_result[data_name][loss_name][-1]
                 metrics = {"Survived": {LOSS: loss}, COMBINED: {LOSS: loss}}
                 self.append_metrics(data_name, metrics, name_to_metrics_log[data_name], tables, progress_tracker)
