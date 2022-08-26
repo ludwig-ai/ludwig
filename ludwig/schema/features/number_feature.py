@@ -10,8 +10,8 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.loss.loss import BaseLossConfig
-from ludwig.schema.loss.utils import LossDataclassField
+from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.utils import LossDataclassField
 
 
 @dataclass

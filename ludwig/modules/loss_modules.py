@@ -38,7 +38,7 @@ from ludwig.constants import (
     VECTOR,
 )
 
-from ludwig.schema.loss.loss import (
+from ludwig.schema.features.loss.loss import (
     MSELossConfig,
     MAELossConfig,
     RMSELossConfig,
