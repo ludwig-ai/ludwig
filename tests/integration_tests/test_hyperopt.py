@@ -459,3 +459,56 @@ def test_hyperopt_with_shared_params(csv_filename, tmpdir):
     _test_hyperopt_with_shared_params_written_config(
         hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
     )
+
+
+def test_hyperopt_old_config(csv_filename, tmpdir):
+    old_config = {
+        'ludwig_version': "0.4",
+        'input_features': [
+            {'name': 'cat1', 'type': 'category', 'encoder': {'vocab_size': 2}},
+            {'name': 'num1', 'type': 'number'},
+        ],
+        'output_features': [
+            {'name': 'bin1', 'type': 'binary'},
+        ],
+        'trainer': {'epochs': 2},
+        "hyperopt": {
+            "executor": {
+                "type": "ray",
+                "time_budget_s": 200,
+                "cpu_resources_per_trial": 1,
+            },
+            "sampler": {
+                "type": "ray",
+                "scheduler": {
+                    "type": "async_hyperband",
+                    "max_t": 200,
+                    "time_attr": "time_total_s",
+                    "grace_period": 72,
+                    "reduction_factor": 5,
+                },
+                "search_alg": {
+                    "type": "hyperopt",
+                    "random_state_seed": 42,
+                },
+                "num_samples": 2,
+            },
+            "parameters": {
+                "trainer.batch_size": {
+                    "space": "choice",
+                    "categories": [64, 128, 256],
+                },
+                "trainer.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.001,
+                    "upper": 0.1,
+                },
+            }
+        },
+    }
+
+    input_features = old_config['input_features']
+    output_features = old_config['output_features']
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
