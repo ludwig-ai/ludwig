@@ -3,9 +3,13 @@ import os
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.automl.automl import train_with_config
 from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
+
+try:
+    from ludwig.automl.automl import train_with_config
+except ImportError:
+    pass
 
 
 @pytest.mark.distributed
