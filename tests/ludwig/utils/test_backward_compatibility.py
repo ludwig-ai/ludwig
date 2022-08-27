@@ -429,6 +429,6 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
     merged_config = merge_with_defaults(updated_config)
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
-    # manage trial lifecycle.
+    # hyperopt scheduler to manage trial lifecycle.
     expected_early_stop = -1 if use_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected_early_stop
