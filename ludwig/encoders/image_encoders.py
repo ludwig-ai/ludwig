@@ -18,18 +18,7 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from torchvision.models import (
-    resnet18,
-    ResNet18_Weights,
-    resnet34,
-    ResNet34_Weights,
-    resnet50,
-    ResNet50_Weights,
-    resnet101,
-    ResNet101_Weights,
-    resnet152,
-    ResNet152_Weights,
-)
+
 from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
 
 from ludwig.constants import IMAGE
@@ -46,6 +35,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVResNetEncoderConfig,
     ViTEncoderConfig,
 )
+from ludwig.utils.image_utils import torchvision_pre_trained_registry
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
@@ -435,14 +425,6 @@ class ViTEncoder(Encoder):
         return torch.Size(self._output_shape)
 
 
-tv_resnet_registry = {
-    18: (resnet18, ResNet18_Weights),
-    34: (resnet34, ResNet34_Weights),
-    50: (resnet50, ResNet50_Weights),
-    101: (resnet101, ResNet101_Weights),
-    152: (resnet152, ResNet152_Weights),
-}
-
 # TODO: Finalize constructor parameters
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
@@ -475,8 +457,10 @@ class TVResNetEncoder(Encoder):
         if self.pre_trained_cache_dir is not None:
             os.environ["TORCH_HOME"] = self.pre_trained_cache_dir
 
-        model = tv_resnet_registry[resnet_size][0]
-        self.pre_trained_weights = tv_resnet_registry[resnet_size][1].DEFAULT if self.use_pre_trained_weights else None
+        resnet_model_id = f"resnet-{resnet_size}"
+        model = torchvision_pre_trained_registry[resnet_model_id][0]
+        self.pre_trained_weights = torchvision_pre_trained_registry[resnet_model_id][
+            1].DEFAULT if self.use_pre_trained_weights else None
         self.pre_trained_transforms = self.pre_trained_weights.transforms() if self.use_pre_trained_weights else None
 
         logger.debug("  ResNet")

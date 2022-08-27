@@ -23,7 +23,18 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
-
+from torchvision.models import (
+    resnet18,
+    ResNet18_Weights,
+    resnet34,
+    ResNet34_Weights,
+    resnet50,
+    ResNet50_Weights,
+    resnet101,
+    ResNet101_Weights,
+    resnet152,
+    ResNet152_Weights,
+)
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
@@ -302,3 +313,12 @@ def get_img_output_shape(
     out_shape = np.floor(((shape + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1)
 
     return tuple(out_shape.astype(int))
+
+
+torchvision_pre_trained_registry = {
+    "resnet-18": (resnet18, ResNet18_Weights),
+    "resnet-34": (resnet34, ResNet34_Weights),
+    "resnet-50": (resnet50, ResNet50_Weights),
+    "resnet-101": (resnet101, ResNet101_Weights),
+    "resnet-152": (resnet152, ResNet152_Weights),
+}
