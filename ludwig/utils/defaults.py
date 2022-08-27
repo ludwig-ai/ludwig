@@ -159,7 +159,7 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
     if "hyperopt" not in config:
         return
 
-    scheduler = config["hyperopt"].get("executor", {}).get("scheduler")
+    scheduler = config["hyperopt"].get("sampler", {}).get("scheduler")
     if not scheduler:
         return
 

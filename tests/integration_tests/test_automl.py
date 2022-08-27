@@ -3,6 +3,7 @@ import os
 import pytest
 
 from ludwig.automl.automl import train_with_config
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 CONFIG = {
@@ -73,4 +74,7 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
     outdir = os.path.join(tmpdir, "output")
     results = train_with_config(dataset, config, output_directory=outdir)
     best_model = results.best_model
-    assert best_model.config["early_stop"] == -1
+
+    # Early stopping in the rendered config needs to be disabled to allow the hyperopt scheduler to
+    # manage trial lifecycle.
+    assert best_model.config[TRAINER]["early_stop"] == -1
