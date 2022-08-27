@@ -8,7 +8,8 @@ from tests.integration_tests.utils import category_feature, generate_data, numbe
 
 
 @pytest.mark.distributed
-def test_train_with_config(ray_cluster_2cpu, tmpdir):
+@pytest.mark.parametrize("use_scheduler", [True, False])
+def test_train_with_config(use_scheduler, ray_cluster_2cpu, tmpdir):
     input_features = [
         number_feature(),
         number_feature(),
@@ -17,6 +18,20 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
     ]
     output_features = [category_feature(decoder={"vocab_size": 3})]
     dataset = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    sampler = {
+        "type": "ray",
+        "num_samples": 2,
+    }
+
+    if use_scheduler:
+        sampler["scheduler"] = {
+            "type": "async_hyperband",
+            "max_t": 200,
+            "time_attr": "time_total_s",
+            "grace_period": 72,
+            "reduction_factor": 5,
+        }
 
     config = {
         "input_features": input_features,
@@ -32,17 +47,7 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
                 "time_budget_s": 200,
                 "cpu_resources_per_trial": 1,
             },
-            "sampler": {
-                "type": "ray",
-                "num_samples": 2,
-                "scheduler": {
-                    "type": "async_hyperband",
-                    "max_t": 200,
-                    "time_attr": "time_total_s",
-                    "grace_period": 72,
-                    "reduction_factor": 5,
-                },
-            },
+            "sampler": sampler,
             "parameters": {
                 "trainer.batch_size": {
                     "space": "choice",
@@ -63,4 +68,5 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
 
     # Early stopping in the rendered config needs to be disabled to allow the hyperopt scheduler to
     # manage trial lifecycle.
-    assert best_model.config[TRAINER]["early_stop"] == -1
+    expected_early_stop = -1 if use_scheduler else 5
+    assert best_model.config[TRAINER]["early_stop"] == expected_early_stop
