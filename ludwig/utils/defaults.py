@@ -17,6 +17,7 @@ import argparse
 import copy
 import logging
 import sys
+import warnings
 from dataclasses import asdict
 from typing import Any, Dict
 
@@ -171,9 +172,10 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
     trainer = config[TRAINER]
     early_stop = trainer.get("early_stop")
     if early_stop is not None and early_stop != -1:
-        raise ValueError(
+        trainer["early_stop"] = -1
+        warnings.warn(
             "Cannot set trainer parameter `early_stop` when using a hyperopt scheduler. "
-            "Unset this parameter in your config."
+            "The `early_stop` parameter will not be used."
         )
     trainer["early_stop"] = -1
 
