@@ -6,20 +6,6 @@ from ludwig.automl.automl import train_with_config
 from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
-CONFIG = {
-    "input_features": [
-        {"name": "PClass", "type": "category"},
-        {"name": "Sex", "type": "category"},
-        {"name": "Age", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mean"}},
-        {"name": "SibSp", "type": "number"},
-        {"name": "Parch", "type": "number"},
-        {"name": "Fare", "type": "number", "preprocessing": {"missing_value_strategy": "fill_with_mean"}},
-        {"name": "Embarked", "type": "category"},
-    ],
-    "output_features": [{"name": "Survived", "type": "binary"}],
-    "trainer": {"epochs": 2},
-}
-
 
 @pytest.mark.distributed
 def test_train_with_config(ray_cluster_2cpu, tmpdir):
