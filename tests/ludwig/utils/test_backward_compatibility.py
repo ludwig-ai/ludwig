@@ -2,21 +2,25 @@ import pytest
 
 from ludwig.constants import (
     EVAL_BATCH_SIZE,
+    EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    SCHEDULER,
     SPLIT,
     TRAINER,
     TYPE,
 )
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing_split,
     upgrade_to_latest_version,
 )
+from ludwig.utils.defaults import merge_with_defaults
 
 
 def test_preprocessing_backward_compatibility():
@@ -362,3 +366,69 @@ def test_deprecated_split_aliases(stratify, force_split):
     else:
         assert split.get(TYPE) == "stratify"
         assert split.get("column") == stratify
+
+
+@pytest.mark.parametrize("use_scheduler", [True, False])
+def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
+    sampler = {
+        "type": "ray",
+        "num_samples": 2,
+    }
+
+    if use_scheduler:
+        sampler[SCHEDULER] = {
+            "type": "async_hyperband",
+            "max_t": 200,
+            "time_attr": "time_total_s",
+            "grace_period": 72,
+            "reduction_factor": 5,
+        }
+
+    config = {
+        INPUT_FEATURES: [
+            {
+                "type": "category",
+                "name": "cat_input_feature",
+            },
+        ],
+        OUTPUT_FEATURES: [
+            {
+                "type": "number",
+                "name": "num_output_feature",
+            },
+        ],
+        "hyperopt": {
+            "search_alg": {
+                "type": "hyperopt",
+                "random_state_seed": 42,
+            },
+            "executor": {
+                "type": "ray",
+                "time_budget_s": 200,
+                "cpu_resources_per_trial": 1,
+            },
+            "sampler": sampler,
+            "parameters": {
+                "trainer.batch_size": {
+                    "space": "choice",
+                    "categories": [64, 128, 256],
+                },
+                "trainer.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.001,
+                    "upper": 0.1,
+                },
+            },
+        },
+    }
+
+    updated_config = upgrade_to_latest_version(config)
+    if use_scheduler:
+        assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
+
+    merged_config = merge_with_defaults(updated_config)
+
+    # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
+    # manage trial lifecycle.
+    expected_early_stop = -1 if use_scheduler else ECDTrainerConfig().early_stop
+    assert merged_config[TRAINER]["early_stop"] == expected_early_stop

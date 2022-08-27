@@ -81,7 +81,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
 
 def upgrade_to_latest_version(config: Dict):
     """Updates config from an older version of Ludwig to the current version. If config does not have a
-    "ludwig_version" key, no updates are applied.
+    "ludwig_version" key, all updates are applied.
 
     Args:
         config: A config saved by an older version of Ludwig.
@@ -89,12 +89,9 @@ def upgrade_to_latest_version(config: Dict):
     Returns A new copy of config, upgraded to the current Ludwig version. Returns config if config has no
             "ludwig_version".
     """
-    if "ludwig_version" in config:
-        return config_transformation_registry.update_config(
-            config, from_version=config["ludwig_version"], to_version=LUDWIG_VERSION
-        )
-    else:
-        return config
+    return config_transformation_registry.update_config(
+        config, from_version=config.get("ludwig_version", "0.0"), to_version=LUDWIG_VERSION
+    )
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
