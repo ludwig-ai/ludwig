@@ -109,6 +109,8 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
+    # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
+    # manage trial lifecycle.
     expected = -1 if use_hyperopt_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
