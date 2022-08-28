@@ -98,6 +98,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 
 
 @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
+@pytest.mark.parametrize("remove_last_layer", [True, False])
 @pytest.mark.parametrize(
     "use_pre_trained_weights",
     [
@@ -105,7 +106,14 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("resnet_size", [18, 34, 50, 101, 152])
-def test_tv_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, height: int, width: int, num_channels: int):
+def test_tv_resnet_encoder(
+        resnet_size: int,
+        use_pre_trained_weights: bool,
+        remove_last_layer: bool,
+        height: int,
+        width: int,
+        num_channels: int
+):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
@@ -114,6 +122,7 @@ def test_tv_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, heig
         width=width,
         num_channels=num_channels,
         pre_trained__size=resnet_size,
+        remove_last_layer=remove_last_layer,
         use_pre_trained_weights=use_pre_trained_weights,
     )
     inputs = torch.rand(2, num_channels, height, width)
