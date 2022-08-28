@@ -432,7 +432,7 @@ class TVResNetEncoder(Encoder):
         self,
         height: int,
         width: int,
-        resnet_size: int = 50,
+        pre_trained_model_variant: int = 50,
         num_channels: int = 3,
         use_pre_trained_weights: bool = True,
         pre_trained_cache_dir: Optional[str] = None,
@@ -457,22 +457,18 @@ class TVResNetEncoder(Encoder):
         if self.pre_trained_cache_dir is not None:
             os.environ["TORCH_HOME"] = self.pre_trained_cache_dir
 
-        resnet_model_id = f"resnet-{resnet_size}"
+        resnet_model_id = f"tv_resnet-{pre_trained_model_variant}"
         model = torchvision_pre_trained_registry[resnet_model_id][0]
         self.pre_trained_weights = torchvision_pre_trained_registry[resnet_model_id][
             1].DEFAULT if self.use_pre_trained_weights else None
-        self.pre_trained_transforms = self.pre_trained_weights.transforms() if self.use_pre_trained_weights else None
 
         logger.debug("  ResNet")
-        if encoder_config:
-            self.resnet = model(weights=self.pre_trained_weights)
-        else:
-            self.resnet = model(weights=self.pre_trained_weights)
+        self.resnet = model(weights=self.pre_trained_weights)
+
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs
-        if self.use_pre_trained_weights:
-            hidden = self.pre_trained_transforms(hidden)
+        hidden = self.pre_trained_transforms(hidden)
         return {"encoder_output": self.resnet(hidden)}
 
     @staticmethod

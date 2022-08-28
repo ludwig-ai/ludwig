@@ -316,9 +316,9 @@ def get_img_output_shape(
 
 
 torchvision_pre_trained_registry = {
-    "resnet-18": (resnet18, ResNet18_Weights),
-    "resnet-34": (resnet34, ResNet34_Weights),
-    "resnet-50": (resnet50, ResNet50_Weights),
-    "resnet-101": (resnet101, ResNet101_Weights),
-    "resnet-152": (resnet152, ResNet152_Weights),
+    "tv_resnet-18": (resnet18, ResNet18_Weights),
+    "tv_resnet-34": (resnet34, ResNet34_Weights),
+    "tv_resnet-50": (resnet50, ResNet50_Weights),
+    "tv_resnet-101": (resnet101, ResNet101_Weights),
+    "tv_resnet-152": (resnet152, ResNet152_Weights),
 }

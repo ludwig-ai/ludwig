@@ -18,7 +18,7 @@ import os
 import warnings
 from collections import Counter
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -58,6 +58,7 @@ from ludwig.utils.image_utils import (
     read_image_from_bytes_obj,
     read_image_from_path,
     resize_image,
+    torchvision_pre_trained_registry
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
@@ -235,6 +236,27 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
+    def _read_image_with_pretrained_transform(
+        img_entry: Union[bytes, torch.Tensor, np.ndarray],
+        transform_fn: Callable,
+        ) -> Optional[np.ndarray]:
+
+        if isinstance(img_entry, bytes):
+            img = read_image_from_bytes_obj(img_entry)
+        elif isinstance(img_entry, np.ndarray):
+            img = torch.from_numpy(img_entry).permute(2, 0, 1)
+        else:
+            img = img_entry
+
+        if not isinstance(img, torch.Tensor):
+            warnings.warn(f"Image with value {img} cannot be read")
+            return None
+
+        img = transform_fn(img)
+
+        return img.numpy()
+
+    @staticmethod
     def _infer_image_size(image_sample: List[torch.Tensor], max_height: int, max_width: int):
         """Infers the size to use from a group of images. The returned height will be the average height of images
         in image_sample rounded to the nearest integer, or max_height. Likewise for width.
@@ -402,31 +424,45 @@ class ImageFeatureMixin(BaseFeatureMixin):
             lambda row: get_abs_path(src_path, row) if isinstance(row, str) and not has_remote_protocol(row) else row,
         )
 
-        (
-            should_resize,
-            width,
-            height,
-            num_channels,
-            user_specified_num_channels,
-            average_file_size,
-        ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
-
-        metadata[name][PREPROCESSING]["height"] = height
-        metadata[name][PREPROCESSING]["width"] = width
-        metadata[name][PREPROCESSING]["num_channels"] = num_channels
-
-        read_image_if_bytes_obj_and_resize = partial(
-            ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
-            img_width=width,
-            img_height=height,
-            should_resize=should_resize,
-            num_channels=num_channels,
-            resize_method=preprocessing_parameters["resize_method"],
-            user_specified_num_channels=user_specified_num_channels,
+        # determine if specified encoder is a pre-trained model
+        is_pre_trained_model = any(
+            [x.startswith(feature_config[ENCODER][TYPE]) for x in torchvision_pre_trained_registry]
         )
 
-        # TODO: alternatively use get_average_image() for unreachable images
-        default_image = get_gray_default_image(num_channels, height, width)
+        if is_pre_trained_model:
+            pre_trained_model_id = f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['pre_trained_model_variant']}"
+            read_image_if_bytes_obj_and_resize = partial(
+                ImageFeatureMixin._read_image_with_pretrained_transform,
+                transform_fn=torchvision_pre_trained_registry[pre_trained_model_id][1].DEFAULT.transforms(),
+            )
+            average_file_size = None
+        else:
+            (
+                should_resize,
+                width,
+                height,
+                num_channels,
+                user_specified_num_channels,
+                average_file_size,
+            ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
+
+            metadata[name][PREPROCESSING]["height"] = height
+            metadata[name][PREPROCESSING]["width"] = width
+            metadata[name][PREPROCESSING]["num_channels"] = num_channels
+
+            read_image_if_bytes_obj_and_resize = partial(
+                ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
+                img_width=width,
+                img_height=height,
+                should_resize=should_resize,
+                num_channels=num_channels,
+                resize_method=preprocessing_parameters["resize_method"],
+                user_specified_num_channels=user_specified_num_channels,
+            )
+
+            # TODO: alternatively use get_average_image() for unreachable images
+            default_image = get_gray_default_image(num_channels, height, width)
+            metadata[name]["reshape"] = (num_channels, height, width)
 
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
@@ -434,7 +470,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
-            metadata[name]["reshape"] = (num_channels, height, width)
 
             proc_col = backend.read_binary_files(
                 abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size

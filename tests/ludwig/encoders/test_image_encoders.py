@@ -113,7 +113,7 @@ def test_tv_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, heig
         height=height,
         width=width,
         num_channels=num_channels,
-        resnet_size=resnet_size,
+        pre_trained__size=resnet_size,
         use_pre_trained_weights=use_pre_trained_weights,
     )
     inputs = torch.rand(2, num_channels, height, width)
