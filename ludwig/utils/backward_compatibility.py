@@ -363,25 +363,27 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     if PREPROCESSING in config and not config[PREPROCESSING]:
         del config[PREPROCESSING]
 
-    if DEFAULTS not in config:
-        config[DEFAULTS] = dict()
-
     # Update defaults with the default feature specific preprocessing parameters
+    defaults = config.get(DEFAULTS, {})
     for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
         # If defaults was empty, then create a new key with feature type
-        if feature_type not in config.get(DEFAULTS):
+        if feature_type not in defaults:
             if PREPROCESSING in preprocessing_param:
-                config[DEFAULTS][feature_type] = preprocessing_param
+                defaults[feature_type] = preprocessing_param
             else:
-                config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_param}
+                defaults[feature_type] = {PREPROCESSING: preprocessing_param}
         # Feature type exists but preprocessing hasn't be specified
-        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
-            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+        elif PREPROCESSING not in defaults[feature_type]:
+            defaults[feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
         # Update default feature specific preprocessing with parameters from config
         else:
-            config[DEFAULTS][feature_type][PREPROCESSING].update(
-                merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
+            defaults[feature_type][PREPROCESSING].update(
+                merge_dict(defaults[feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
             )
+
+    if defaults:
+        config[DEFAULTS] = defaults
+
     return config
 
 

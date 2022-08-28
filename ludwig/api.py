@@ -213,10 +213,13 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
+        self.base_config = config_dict
+
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        self.base_config = upgrade_to_latest_version(config_dict)
+        upgraded_config = upgrade_to_latest_version(copy.deepcopy(config_dict))
+
         # Merge upgraded config with defaults.
-        self.config = merge_with_defaults(copy.deepcopy(self.base_config))
+        self.config = merge_with_defaults(upgraded_config)
         validate_config(self.config)
 
         # setup logging

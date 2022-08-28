@@ -136,7 +136,7 @@ class VersionTransformationRegistry:
         """
         from_version = pkg_version.parse(from_version)
 
-        # Ignore pre-release, development versions
+        # Ignore pre-release, development versions. Otherwise transformations for upcoming releases will not be applied.
         to_version = pkg_version.parse(to_version)
         to_version = pkg_version.parse(f"{to_version.major}.{to_version.minor}")
 
