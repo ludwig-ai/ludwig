@@ -468,7 +468,6 @@ class TVResNetEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs
-        hidden = self.pre_trained_transforms(hidden)
         return {"encoder_output": self.resnet(hidden)}
 
     @staticmethod

@@ -233,6 +233,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 "#image-features-preprocessing".format([img_height, img_width, num_channels], img.shape)
             )
 
+        # casting and rescaling
+        img = img.type(torch.float32) / 255
+
         return img.numpy()
 
     @staticmethod
@@ -527,10 +530,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.uint8, torch.int64]
-
-        # casting and rescaling
-        inputs = inputs.type(torch.float32) / 255
+        # assert inputs.dtype in [torch.uint8, torch.int64]
 
         inputs_encoded = self.encoder_obj(inputs)
 
