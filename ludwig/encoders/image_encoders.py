@@ -429,15 +429,16 @@ class ViTEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
-        self,
-        height: int,
-        width: int,
-        pre_trained_model_variant: int = 50,
-        num_channels: int = 3,
-        use_pre_trained_weights: bool = True,
-        pre_trained_cache_dir: Optional[str] = None,
-        encoder_config: Optional[Dict] = None,
-        **kwargs,
+            self,
+            height: int,
+            width: int,
+            pre_trained_model_variant: int = 50,
+            num_channels: int = 3,
+            use_pre_trained_weights: bool = True,
+            remove_last_layer: bool = False,
+            pre_trained_cache_dir: Optional[str] = None,
+            encoder_config: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -465,6 +466,10 @@ class TVResNetEncoder(Encoder):
         logger.debug("  ResNet")
         self.resnet = model(weights=self.pre_trained_weights)
 
+        # if requested, remove final classification layer and feed
+        # average pool output as output of this encoder
+        if remove_last_layer:
+            self.resnet.fc = torch.nn.Identity()
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs
@@ -476,11 +481,16 @@ class TVResNetEncoder(Encoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.resnet.fc.out_features])
+        # create synthetic image and run through forward method
+        inputs = torch.randn([1, *self.input_shape])
+        output = self.resnet(inputs)
+        return torch.Size(output.shape[1:])
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self._input_shape)
+        # resnet shape after all pre-processing
+        # [num_channels, height, width]
+        return torch.Size([3, 224, 224])
 
 
 # TODO: Finalize constructor parameters

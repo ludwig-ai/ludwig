@@ -550,6 +550,11 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Directory path to cache pretrained model weights.",
     )
 
+    remove_last_layer: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="Remove last layer of the encoder.",
+    )
+
     # num_channels: Optional[int] = schema_utils.NonNegativeInteger(
     #     default=None,
     #     description="Number of channels to use in the encoder. ",
