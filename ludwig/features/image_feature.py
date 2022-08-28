@@ -530,7 +530,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
-        # assert inputs.dtype in [torch.uint8, torch.int64]
+        assert inputs.dtype in [torch.float32]
 
         inputs_encoded = self.encoder_obj(inputs)
 
