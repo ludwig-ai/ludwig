@@ -134,14 +134,18 @@ class VersionTransformationRegistry:
 
         Returns an ordered list of transformations to apply to the config to update it.
         """
-        to_version = pkg_version.parse(to_version)
         from_version = pkg_version.parse(from_version)
+
+        # Ignore pre-release, development versions
+        to_version = pkg_version.parse(to_version)
+        to_version = pkg_version.parse(f"{to_version.major}.{to_version.minor}")
 
         def in_range(v, to_version, from_version):
             v = pkg_version.parse(v)
-            return v <= to_version and v > from_version
+            return from_version < v <= to_version
 
         versions = [v for v in self._registry.keys() if in_range(v, to_version, from_version)]
+
         transforms = sorted(t for v in versions for t in self._registry[v])
         return transforms
 
