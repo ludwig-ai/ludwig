@@ -1168,7 +1168,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename, bin
         "--visualization",
         "binary_threshold_vs_metric",
         "--positive_label",
-        "2",
+        "1",
         "--metrics",
         "accuracy",
         "precision",
@@ -1234,7 +1234,7 @@ def test_visualization_roc_curves_output_saved(csv_filename, binary_output_type)
         "--visualization",
         "roc_curves",
         "--positive_label",
-        "2",
+        "1",
         "--metrics",
         "accuracy",
         "--ground_truth",
@@ -1367,7 +1367,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 7 == len(figure_cnt)
+        assert 5 == len(figure_cnt)
 
 
 def test_visualization_calibration_multiclass_output_saved(csv_filename):
