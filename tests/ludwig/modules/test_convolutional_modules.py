@@ -458,7 +458,7 @@ def test_resnet_bottleneck_block(
     assert output_tensor.shape[1:] == resnet_block.output_shape
 
 
-@pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels,num_blocks", [(224, 224, 3, 64, 3)])
+@pytest.mark.parametrize("img_height,img_width,first_in_channels,out_channels,num_blocks", [(224, 224, 3, 32, 3)])
 @pytest.mark.parametrize("is_bottleneck, block_fn", [(True, ResNetBottleneckBlock), (False, ResNetBlock)])
 def test_resnet_block_layer(
     img_height: int,
