@@ -50,8 +50,10 @@ def get_feature_configs():
             "name": "y",
             "type": "number",
             "loss": {"type": "mean_squared_error"},
-            "num_fc_layers": 5,
-            "output_size": 64,
+            "decoder": {
+                "num_fc_layers": 5,
+                "fc_output_size": 64,
+            },
         }
     ]
 
