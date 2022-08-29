@@ -330,9 +330,6 @@ def create_vocabulary_single_token(
     This assumption allows us to be more efficient than `create_vocabulary()` as we can skip tokenization and
     computing the maximum sequence length, which are unnecessary for category features.
 
-    The `UNKNOWN` special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
-    STOP) are added if add_special_symbols=True.
-
     Args:
         data: Series of string data.
         num_most_frequent: Upper limit on vocabulary size.
@@ -347,7 +344,12 @@ def create_vocabulary_single_token(
     """
     processed_counts = data.str.strip().value_counts(sort=True)
     processed_counts = processor.compute(processed_counts)
-    vocab = [unknown_symbol] + processed_counts.index.tolist()[:num_most_frequent]
+    full_vocab = processed_counts.index.tolist()
+    # Only add unknown symbol if num most frequent tokens is less than total number of unique tokens
+    if num_most_frequent < len(full_vocab):
+        vocab = [unknown_symbol] + full_vocab[:num_most_frequent]
+    else:
+        vocab = full_vocab
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = processed_counts.to_dict()
     str2freq = {k: str2freq.get(k, 0) for k in vocab}
