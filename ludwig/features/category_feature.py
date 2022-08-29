@@ -59,7 +59,10 @@ class _CategoryPreprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.str2idx = metadata["str2idx"]
-        self.unk = self.str2idx[UNKNOWN_SYMBOL]
+        if UNKNOWN_SYMBOL in self.str2idx:
+            self.unk = self.str2idx[UNKNOWN_SYMBOL]
+        else:
+            self.unk = None
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[str]):
@@ -137,13 +140,26 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata):
-        return column.map(
-            lambda x: (
-                metadata["str2idx"][x.strip()]
-                if x.strip() in metadata["str2idx"]
-                else metadata["str2idx"][UNKNOWN_SYMBOL]
+        def __replace_token_with_idx(value: Any, metadata: Dict[str, Any], unknown_symbol_idx: int) -> int:
+            stripped_value = value.strip()
+            if stripped_value in metadata["str2idx"]:
+                return metadata["str2idx"][stripped_value]
+            logger.warning("Using unknown symbol during category feature processing.")
+            return unknown_symbol_idx
+
+        # No unknown symbol in Metadata from preprocessing means that all values
+        # should be mappable to vocabulary
+        if UNKNOWN_SYMBOL not in metadata["str2idx"]:
+            # If no unknown is defined, just use the most popular token's index as the fallback index
+            most_popular_token = max(metadata["str2freq"], key=metadata["str2freq"].get)
+            most_popular_token_idx = metadata["str2idx"].get(most_popular_token)
+            return column.map(lambda x: __replace_token_with_idx(x, metadata, most_popular_token_idx)).astype(
+                int_type(metadata["vocab_size"])
             )
-        ).astype(int_type(metadata["vocab_size"]))
+        else:
+            return column.map(
+                lambda x: __replace_token_with_idx(x, metadata, metadata["str2idx"][UNKNOWN_SYMBOL])
+            ).astype(int_type(metadata["vocab_size"]))
 
     @staticmethod
     def add_feature_data(

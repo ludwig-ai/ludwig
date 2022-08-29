@@ -196,6 +196,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         "name",
         "type",
         "column",
+        "proc_column",
         "decoder",
         "num_classes",
         "preprocessing",
