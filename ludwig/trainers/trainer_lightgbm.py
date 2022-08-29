@@ -78,7 +78,7 @@ class LightGBMTrainer(BaseTrainer):
         self.boosting_type = config.boosting_type
         self.tree_learner = config.tree_learner
         self.num_boost_round = config.num_boost_round
-        self.steps_per_epoch = config.steps_per_epoch
+        self.boosting_round_log_frequency = config.boosting_round_log_frequency
         self.max_depth = config.max_depth
         self.num_leaves = config.num_leaves
         self.min_data_in_leaf = config.min_data_in_leaf
@@ -344,15 +344,15 @@ class LightGBMTrainer(BaseTrainer):
         tables[COMBINED] = [[COMBINED, LOSS]]
         booster = None
 
-        for epoch, steps in enumerate(range(0, self.num_boost_round, self.steps_per_epoch), start=1):
+        for epoch, steps in enumerate(range(0, self.num_boost_round, self.boosting_round_log_frequency), start=1):
             progress_tracker.epoch = epoch
 
             evals_result = {}
             booster = self.train_step(
-                params, lgb_train, eval_sets, eval_names, booster, self.steps_per_epoch, evals_result
+                params, lgb_train, eval_sets, eval_names, booster, self.boosting_round_log_frequency, evals_result
             )
 
-            progress_tracker.steps = steps + self.steps_per_epoch
+            progress_tracker.steps = steps + self.boosting_round_log_frequency
             # log training progress
             of_name = self.model.output_features.keys()[0]
             for data_name in eval_names:
