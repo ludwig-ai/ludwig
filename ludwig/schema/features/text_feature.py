@@ -11,8 +11,10 @@ from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(TEXT)
 @dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
@@ -25,6 +27,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(TEXT)
 @dataclass
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""

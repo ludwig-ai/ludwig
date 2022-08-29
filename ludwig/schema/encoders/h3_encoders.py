@@ -2,10 +2,13 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import H3
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@register_encoder_config("embed", H3)
 @dataclass
 class H3EmbedConfig(BaseEncoderConfig):
 
@@ -86,6 +89,7 @@ class H3EmbedConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("weighted_sum", H3)
 @dataclass
 class H3WeightedSumConfig(BaseEncoderConfig):
 
@@ -166,6 +170,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("rnn", H3)
 @dataclass
 class H3RNNConfig(BaseEncoderConfig):
 

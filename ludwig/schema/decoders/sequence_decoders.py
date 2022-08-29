@@ -1,9 +1,12 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import SEQUENCE, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import register_decoder_config
 
 
+@register_decoder_config("generator", [SEQUENCE, TEXT])
 @dataclass
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
@@ -48,6 +51,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     )
 
 
+@register_decoder_config("tagger", [SEQUENCE, TEXT])
 @dataclass
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
 

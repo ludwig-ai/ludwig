@@ -63,9 +63,9 @@ class TextFeatureMixin(BaseFeatureMixin):
     def type():
         return TEXT
 
-    # @staticmethod
-    # def preprocessing_defaults():
-    #     return TextInputFeatureConfig().preprocessing.__dict__
+    @staticmethod
+    def preprocessing_defaults():
+        return TextInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -222,16 +222,16 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         input_feature[ENCODER]["pad_idx"] = feature_metadata["pad_idx"]
         input_feature[ENCODER]["num_tokens"] = len(feature_metadata["idx2str"])
 
-    # @staticmethod
-    # def populate_defaults(input_feature):
-    #     defaults = TextInputFeatureConfig()
-    #     set_default_value(input_feature, TIED, defaults.tied)
-    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
-    #
-    #     encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])
-    #
-    #     if hasattr(encoder_class, "default_params"):
-    #         set_default_values(input_feature, encoder_class.default_params)
+    @staticmethod
+    def populate_defaults(input_feature):
+        defaults = TextInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+
+        encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])
+
+        if hasattr(encoder_class, "default_params"):
+            set_default_values(input_feature, encoder_class.default_params)
 
     @staticmethod
     def get_schema_cls():
@@ -356,9 +356,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
 
-    # @staticmethod
-    # def populate_defaults(output_feature):
-    #     SequenceOutputFeature.populate_defaults(output_feature)
+    @staticmethod
+    def populate_defaults(output_feature):
+        SequenceOutputFeature.populate_defaults(output_feature)
 
     @staticmethod
     def get_schema_cls():

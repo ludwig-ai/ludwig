@@ -2,11 +2,14 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.utils.torch_utils import initializer_registry
+from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@register_encoder_config("stacked_cnn", IMAGE)
 @dataclass
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
@@ -217,6 +220,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("resnet", IMAGE)
 @dataclass
 class ResNetEncoderConfig(BaseEncoderConfig):
 
@@ -352,6 +356,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("mlp_mixer", IMAGE)
 @dataclass
 class MLPMixerEncoderConfig(BaseEncoderConfig):
 
@@ -418,6 +423,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("vit", IMAGE)
 @dataclass
 class ViTEncoderConfig(BaseEncoderConfig):
 

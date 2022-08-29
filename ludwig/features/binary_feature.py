@@ -133,9 +133,9 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     def type():
         return BINARY
 
-    # @staticmethod
-    # def preprocessing_defaults() -> Dict[str, Any]:
-    #     return BinaryInputFeatureConfig().preprocessing.__dict__
+    @staticmethod
+    def preprocessing_defaults() -> Dict[str, Any]:
+        return BinaryInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -250,11 +250,11 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
-    # @staticmethod
-    # def populate_defaults(input_feature):
-    #     defaults = BinaryInputFeatureConfig()
-    #     set_default_value(input_feature, TIED, defaults.tied)
-    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    @staticmethod
+    def populate_defaults(input_feature):
+        defaults = BinaryInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -403,26 +403,26 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         return result
 
-    # @staticmethod
-    # def populate_defaults(output_feature):
-    #     defaults = BinaryOutputFeatureConfig()
-    #
-    #     # If Loss is not defined, set an empty dictionary
-    #     set_default_value(output_feature, LOSS, {})
-    #     set_default_values(output_feature[LOSS], defaults.loss)
-    #
-    #     set_default_values(
-    #         output_feature,
-    #         {
-    #             DECODER: {
-    #                 TYPE: defaults.decoder.type,
-    #             },
-    #             DEPENDENCIES: defaults.dependencies,
-    #             REDUCE_INPUT: defaults.reduce_input,
-    #             REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-    #             THRESHOLD: defaults.threshold,
-    #         },
-    #     )
+    @staticmethod
+    def populate_defaults(output_feature):
+        defaults = BinaryOutputFeatureConfig()
+
+        # If Loss is not defined, set an empty dictionary
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(output_feature[LOSS], defaults.loss)
+
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                },
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+                THRESHOLD: defaults.threshold,
+            },
+        )
 
     @staticmethod
     def get_schema_cls():

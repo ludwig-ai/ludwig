@@ -11,8 +11,10 @@ from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(BINARY)
 @dataclass
 class BinaryInputFeatureConfig(BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
@@ -32,6 +34,7 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(BINARY)
 @dataclass
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""

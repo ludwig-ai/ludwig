@@ -3,7 +3,9 @@ from typing import List, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.utils import register_decoder_config
 
 
 @dataclass
@@ -17,6 +19,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     "Name corresponding to a decoder."
 
 
+@register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 @dataclass
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
@@ -29,6 +32,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
     )
 
 
+@register_decoder_config("regressor", [BINARY, NUMBER])
 @dataclass
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
@@ -60,6 +64,7 @@ class RegressorConfig(BaseDecoderConfig):
     )
 
 
+@register_decoder_config("projector", [VECTOR])
 @dataclass
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
@@ -110,6 +115,7 @@ class ProjectorConfig(BaseDecoderConfig):
     )
 
 
+@register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass
 class ClassifierConfig(BaseDecoderConfig):
 

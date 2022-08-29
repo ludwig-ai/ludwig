@@ -1,18 +1,16 @@
 from marshmallow import fields, ValidationError
 from dataclasses import field
 
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 import ludwig.schema.utils as schema_utils
 
 
 def get_defaults_conds():
     """Returns a JSON schema of conditionals to validate against encoder types for specific feature types."""
     conds = []
-    for feat in input_type_registry.keys():
-        input_feature_cls = input_type_registry.get(feat).get_schema_cls()
-        output_feature_cls = output_type_registry.get(feat, None)
-        if output_feature_cls:
-            output_feature_cls = output_feature_cls.get_schema_cls()
+    for feat in input_config_registry.keys():
+        input_feature_cls = input_config_registry.get(feat)
+        output_feature_cls = output_config_registry.get(feat, None)
         input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
         output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
         combined_props = {**input_props, **output_props}
@@ -40,12 +38,12 @@ def DefaultsDataclassField(feature_type: str):
             if value is None:
                 return None
             if isinstance(value, dict):
-                input_feature_class = input_type_registry[feature_type]
-                output_feature_class = output_type_registry.get(feature_type, None)
+                input_feature_class = input_config_registry[feature_type]
+                output_feature_class = output_config_registry.get(feature_type, None)
                 try:
-                    input_schema = input_feature_class.get_schema_cls().Schema().load(value)
+                    input_schema = input_feature_class.Schema().load(value)
                     if output_feature_class:
-                        output_schema = output_feature_class.get_schema_cls().Schema().load(value)
+                        output_schema = output_feature_class.Schema().load(value)
                         combined = input_schema + output_schema
                     else:
                         combined = input_schema
@@ -63,19 +61,26 @@ def DefaultsDataclassField(feature_type: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(input_type_registry.data.keys()), "default": None},
+                    "type": {"type": "string", "enum": list(input_config_registry.data.keys()), "default": None},
                 },
                 "title": "defaults_options",
                 "allOf": get_defaults_conds()
             }
 
     try:
-        input_cls = input_type_registry[feature_type]
-        output_cls = output_type_registry.get(feature_type, None)
-        defaults = input_cls + output_cls
-        load_default = defaults.Schema().load({"type": feature_type})
-        dump_default = defaults.Schema().dump({"type": feature_type})
+        input_cls = input_config_registry[feature_type]
+        output_cls = output_config_registry.get(feature_type, None)
+        dump_default = input_cls.Schema().dump({"type": feature_type})
+        if output_cls:
+            output_dump = output_cls.Schema().dump({"type": feature_type})
+            dump_default = {**dump_default, **output_dump}
 
+        load_default = input_cls.Schema().load({"type": feature_type})
+        if output_cls:
+            output_load = output_cls.Schema().load({"type": feature_type})
+            for k in dump_default.keys():
+                if getattr(load_default, k, -1) == -1:
+                    setattr(load_default, k, getattr(output_load, k))
         return field(
             metadata={
                 "marshmallow_field": DefaultMarshmallowField(
@@ -87,4 +92,4 @@ def DefaultsDataclassField(feature_type: str):
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(f"Unsupported splitter type: {feature_type}. See split_registry. " f"Details: {e}")
+        raise ValidationError(f"Unsupported feature type: {feature_type}. See input_type_registry. " f"Details: {e}")

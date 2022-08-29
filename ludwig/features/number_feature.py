@@ -227,9 +227,9 @@ class NumberFeatureMixin(BaseFeatureMixin):
     def type():
         return NUMBER
 
-    # @staticmethod
-    # def preprocessing_defaults():
-    #     return NumberInputFeatureConfig().preprocessing.__dict__
+    @staticmethod
+    def preprocessing_defaults():
+        return NumberInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -320,11 +320,11 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
-    # @staticmethod
-    # def populate_defaults(input_feature):
-    #     defaults = NumberInputFeatureConfig()
-    #     set_default_value(input_feature, TIED, defaults.tied)
-    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    @staticmethod
+    def populate_defaults(input_feature):
+        defaults = NumberInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -420,23 +420,23 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
 
         return predictions
 
-    # @staticmethod
-    # def populate_defaults(output_feature):
-    #     defaults = NumberOutputFeatureConfig()
-    #     set_default_value(output_feature, LOSS, {})
-    #     set_default_values(output_feature[LOSS], defaults.loss)
-    #     set_default_values(
-    #         output_feature,
-    #         {
-    #             DECODER: {
-    #                 TYPE: defaults.decoder.type,
-    #             },
-    #             CLIP: defaults.clip,
-    #             DEPENDENCIES: defaults.dependencies,
-    #             REDUCE_INPUT: defaults.reduce_input,
-    #             REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-    #         },
-    #     )
+    @staticmethod
+    def populate_defaults(output_feature):
+        defaults = NumberOutputFeatureConfig()
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                },
+                CLIP: defaults.clip,
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
+        )
 
     @staticmethod
     def get_schema_cls():

@@ -71,9 +71,9 @@ class H3FeatureMixin(BaseFeatureMixin):
     def type():
         return H3
 
-    # @staticmethod
-    # def preprocessing_defaults():
-    #     return H3InputFeatureConfig().preprocessing.__dict__
+    @staticmethod
+    def preprocessing_defaults():
+        return H3InputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -145,11 +145,11 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
 
-    # @staticmethod
-    # def populate_defaults(input_feature):
-    #     defaults = H3InputFeatureConfig()
-    #     set_default_value(input_feature, TIED, defaults.tied)
-    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    @staticmethod
+    def populate_defaults(input_feature):
+        defaults = H3InputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

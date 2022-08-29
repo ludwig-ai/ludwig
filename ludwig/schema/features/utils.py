@@ -2,7 +2,9 @@ from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
 input_type_registry = Registry()
+input_config_registry = Registry()
 output_type_registry = Registry()
+output_config_registry = Registry()
 
 
 def register_input_feature(name: str):

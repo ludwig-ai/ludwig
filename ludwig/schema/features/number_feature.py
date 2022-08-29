@@ -12,8 +12,10 @@ from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(NUMBER)
 @dataclass
 class NumberInputFeatureConfig(BaseInputFeatureConfig):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
@@ -26,6 +28,7 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(NUMBER)
 @dataclass
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output

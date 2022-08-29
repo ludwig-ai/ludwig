@@ -117,9 +117,9 @@ class CategoryFeatureMixin(BaseFeatureMixin):
     def type():
         return CATEGORY
 
-    # @staticmethod
-    # def preprocessing_defaults():
-    #     return CategoryInputFeatureConfig().preprocessing.__dict__
+    @staticmethod
+    def preprocessing_defaults():
+        return CategoryInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -203,11 +203,11 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
-    # @staticmethod
-    # def populate_defaults(input_feature):
-    #     defaults = CategoryInputFeatureConfig()
-    #     set_default_value(input_feature, TIED, defaults.tied)
-    #     set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    @staticmethod
+    def populate_defaults(input_feature):
+        defaults = CategoryInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -421,27 +421,27 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
         return predictions
 
-    # @staticmethod
-    # def populate_defaults(output_feature):
-    #     defaults = CategoryOutputFeatureConfig()
-    #
-    #     # If Loss is not defined, set an empty dictionary
-    #     set_default_value(output_feature, LOSS, {})
-    #     # Populate the default values for LOSS if they aren't defined already
-    #     set_default_values(output_feature[LOSS], defaults.loss)
-    #
-    #     set_default_values(
-    #         output_feature,
-    #         {
-    #             DECODER: {
-    #                 TYPE: defaults.decoder.type,
-    #             },
-    #             TOP_K: defaults.top_k,
-    #             DEPENDENCIES: defaults.dependencies,
-    #             REDUCE_INPUT: defaults.reduce_input,
-    #             REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-    #         },
-    #     )
+    @staticmethod
+    def populate_defaults(output_feature):
+        defaults = CategoryOutputFeatureConfig()
+
+        # If Loss is not defined, set an empty dictionary
+        set_default_value(output_feature, LOSS, {})
+        # Populate the default values for LOSS if they aren't defined already
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
+
+        set_default_values(
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                },
+                TOP_K: defaults.top_k,
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
+        )
 
     @staticmethod
     def get_schema_cls():

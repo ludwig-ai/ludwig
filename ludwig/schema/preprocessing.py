@@ -48,30 +48,6 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
                     "to the minority class. "
     )
 
-    audio: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=AUDIO)
-
-    binary: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
-
-    category: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
-
-    date: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=DATE)
-
-    h3: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
-
-    image: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
-
-    number: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
-
-    sequence: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
-
-    set: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
-
-    text: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
-
-    timeseries: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
-
-    vector: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
-
 
 def get_preprocessing_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
