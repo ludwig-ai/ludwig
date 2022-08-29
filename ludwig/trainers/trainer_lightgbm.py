@@ -354,10 +354,11 @@ class LightGBMTrainer(BaseTrainer):
 
             progress_tracker.steps = steps + self.steps_per_epoch
             # log training progress
+            of_name = self.model.output_features.keys()[0]
             for data_name in eval_names:
                 loss_name = params["metric"][0]
                 loss = evals_result[data_name][loss_name][-1]
-                metrics = {"Survived": {LOSS: loss}, COMBINED: {LOSS: loss}}
+                metrics = {of_name: {"Survived": {LOSS: loss}}, COMBINED: {LOSS: loss}}
                 self.append_metrics(data_name, metrics, name_to_metrics_log[data_name], tables, progress_tracker)
             self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
             self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
