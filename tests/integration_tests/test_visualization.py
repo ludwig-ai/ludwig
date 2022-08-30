@@ -94,12 +94,11 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(encoder={"type": "parallel_cnn"})]
+    input_features = [text_feature(encoder={"type": "embed"})]
     output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0][ENCODER][TYPE] = "parallel_cnn"
     exp_dir_name = run_experiment_with_visualization(input_features, output_features, dataset=rel_path)
 
     vis_output_pattern_pdf = os.path.join(exp_dir_name, "*.pdf")

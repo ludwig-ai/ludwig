@@ -69,8 +69,7 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        "combiner.num_steps": {"space": "grid_search", "values": [3, 4, 5]},
+        "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2]},
     },
     "goal": "minimize",
 }
@@ -82,16 +81,16 @@ SCENARIOS = [
         "search_alg": {"type": "variant_generator"},
     },
     # TODO(shreya): Uncomment when https://github.com/ludwig-ai/ludwig/issues/2039 is fixed.
-    # {
-    #     "type": "ray",
-    #     "num_samples": 1,
-    #     "scheduler": {
-    #         "type": "async_hyperband",
-    #         "time_attr": "training_iteration",
-    #         "reduction_factor": 2,
-    #         "dynamic_resource_allocation": True,
-    #     },
-    # },
+    {
+        "type": "ray",
+        "num_samples": 1,
+        "scheduler": {
+            "type": "async_hyperband",
+            "time_attr": "training_iteration",
+            "reduction_factor": 2,
+            "dynamic_resource_allocation": True,
+        },
+    },
     {
         "executor": {
             "type": "ray",
@@ -242,7 +241,7 @@ def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir):
     run_hyperopt_executor(search_alg, executor, csv_filename, ray_mock_dir)
 
 
-@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
+# @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     run_hyperopt_executor(
@@ -257,7 +256,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
     )
 
 
-@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
+# @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
 def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
