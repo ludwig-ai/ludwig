@@ -32,12 +32,12 @@ def get_test_raw_dataset_fp(tmpdir: pathlib.Path) -> str:
     raw_fp = os.path.join(tmpdir, "raw_data.csv")
     random.seed(42)
     cli_synthesize_dataset(64, INPUT_FEATURES + OUTPUT_FEATURES, raw_fp)
-    yield raw_fp
+    return raw_fp
 
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
-def test_preprocess(random_seed: int, second_seed_offset: int) -> None:
+def test_preprocess(tmpdir, random_seed: int, second_seed_offset: int) -> None:
     """Test reproducibility of train/validation/test splits.
 
     Args:
@@ -47,7 +47,7 @@ def test_preprocess(random_seed: int, second_seed_offset: int) -> None:
 
     Returns: None
     """
-    raw_dataset_fp = get_test_raw_dataset_fp()
+    raw_dataset_fp = get_test_raw_dataset_fp(tmpdir)
 
     # define Ludwig model
     model1 = LudwigModel(config=CONFIG)
@@ -72,7 +72,7 @@ def test_preprocess(random_seed: int, second_seed_offset: int) -> None:
 
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
-def test_preprocess_ignore_torch_seed(random_seed: int) -> None:
+def test_preprocess_ignore_torch_seed(tmpdir, random_seed: int) -> None:
     """Test reproducibility of train/validation/test splits when an unrelated torch random operation is performed
     between the Ludwig operations.
 
@@ -81,7 +81,7 @@ def test_preprocess_ignore_torch_seed(random_seed: int) -> None:
 
     Returns: None
     """
-    raw_dataset_fp = get_test_raw_dataset_fp()
+    raw_dataset_fp = get_test_raw_dataset_fp(tmpdir)
 
     # define Ludwig model
     model1 = LudwigModel(config=CONFIG)
@@ -108,7 +108,7 @@ def test_preprocess_ignore_torch_seed(random_seed: int) -> None:
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
-def test_train(random_seed: int, second_seed_offset: int) -> None:
+def test_train(tmpdir, random_seed: int, second_seed_offset: int) -> None:
     """Test reproducibility of training API.
 
     Args:
@@ -118,7 +118,7 @@ def test_train(random_seed: int, second_seed_offset: int) -> None:
 
     Returns: None
     """
-    raw_dataset_fp = get_test_raw_dataset_fp()
+    raw_dataset_fp = get_test_raw_dataset_fp(tmpdir)
 
     # perform first model training run
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
@@ -155,7 +155,7 @@ def test_train(random_seed: int, second_seed_offset: int) -> None:
 
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
-def test_train_ignore_torch_seed(random_seed: int) -> None:
+def test_train_ignore_torch_seed(tmpdir, random_seed: int) -> None:
     """Test reproducibility of training API when an unrelated torch random operation is performed between the
     Ludwig operations.
 
@@ -164,7 +164,7 @@ def test_train_ignore_torch_seed(random_seed: int) -> None:
 
     Returns: None
     """
-    raw_dataset_fp = get_test_raw_dataset_fp()
+    raw_dataset_fp = get_test_raw_dataset_fp(tmpdir)
 
     # define Ludwig model
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
@@ -197,7 +197,7 @@ def test_train_ignore_torch_seed(random_seed: int) -> None:
 
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
-def test_experiment(random_seed: int, second_seed_offset: int) -> None:
+def test_experiment(tmpdir, random_seed: int, second_seed_offset: int) -> None:
     """Test reproducibility of experiment API.
 
     Args:
@@ -207,7 +207,7 @@ def test_experiment(random_seed: int, second_seed_offset: int) -> None:
 
     Returns: None
     """
-    raw_dataset_fp = get_test_raw_dataset_fp()
+    raw_dataset_fp = get_test_raw_dataset_fp(tmpdir)
 
     # perform first model experiment
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
@@ -243,7 +243,7 @@ def test_experiment(random_seed: int, second_seed_offset: int) -> None:
 
 
 @pytest.mark.parametrize("random_seed", [1919, 31])
-def test_experiment_ignore_torch_seed(random_seed: int) -> None:
+def test_experiment_ignore_torch_seed(tmpdir, random_seed: int) -> None:
     """Test reproducibility of experiment API when an unrelated torch random operation is performed between the
     Ludwig operations.
 
@@ -252,7 +252,7 @@ def test_experiment_ignore_torch_seed(random_seed: int) -> None:
 
     Returns: None
     """
-    raw_dataset_fp = get_test_raw_dataset_fp()
+    raw_dataset_fp = get_test_raw_dataset_fp(tmpdir)
 
     # define Ludwig model
     model1 = LudwigModel(config=CONFIG, logging_level=logging.WARN)
