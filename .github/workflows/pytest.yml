@@ -151,11 +151,11 @@ jobs:
 
       - name: Tests a-m
         run: |
-          pytest -v --timeout 150 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests -k "test_a or test_b or test_c or test_d or test_e or test_f or test_g or test_h or test_i or test_j or test_k or test_l or test_m"
+          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests -k "test_a or test_b or test_c or test_d or test_e or test_f or test_g or test_h or test_i or test_j or test_k or test_l or test_m"
 
       - name: Tests n-z
         run: |
-          pytest -v --timeout 150 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests -k "not (test_a or test_b or test_c or test_d or test_e or test_f or test_g or test_h or test_i or test_j or test_k or test_l or test_m)"
+          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests -k "not (test_a or test_b or test_c or test_d or test_e or test_f or test_g or test_h or test_i or test_j or test_k or test_l or test_m)"
 
       - name: Upload Unit Test Results
         if: always()
