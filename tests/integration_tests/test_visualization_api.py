@@ -15,6 +15,7 @@
 import glob
 import logging
 import os
+import uuid
 from tempfile import TemporaryDirectory
 
 import numpy as np
@@ -36,6 +37,7 @@ from ludwig.constants import (
 )
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
+from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
     bag_feature,
@@ -756,8 +758,59 @@ def test_frequency_vs_f1_vis_api():
             assert 2 == len(figure_cnt)
 
 
+def get_test_hyperopt_results():
+    """This function generates hyperopt results."""
+    input_features = [
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+    ]
+
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = uuid.uuid4().hex[:10].upper() + ".csv"
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+    }
+
+    output_feature_name = output_features[0]["name"]
+
+    hyperopt_configs = {
+        "parameters": {
+            "trainer.learning_rate": {
+                "space": "loguniform",
+                "lower": 0.0001,
+                "upper": 0.01,
+            },
+        },
+        "goal": "minimize",
+        "output_feature": output_feature_name,
+        "validation_metrics": "loss",
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+        },
+        "search_alg": {
+            "type": "variant_generator",
+        },
+    }
+
+    # add hyperopt parameter space to the config
+    config["hyperopt"] = hyperopt_configs
+
+    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
+
+    return os.path.join(os.path.abspath("results"), "hyperopt_test")
+
+
 @pytest.mark.distributed
-def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
+def test_hyperopt_report_vis_api(tmpdir):
+    hyperopt_results = get_test_hyperopt_results()
+
     vis_dir = os.path.join(tmpdir, "visualizations")
 
     visualize.hyperopt_report(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)
@@ -770,7 +823,9 @@ def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
 
 
 @pytest.mark.distributed
-def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
+def test_hyperopt_hiplot_vis_api(tmpdir):
+    hyperopt_results = get_test_hyperopt_results()
+
     vis_dir = os.path.join(tmpdir, "visualizations")
 
     visualize.hyperopt_hiplot(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)

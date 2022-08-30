@@ -151,7 +151,20 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/integration_tests
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/automl
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/benchmarking
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/combiners
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/data
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/datasets
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/decoders
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/encoders
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/features
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/hyperopt
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/marshmallow
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/models
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/modules
+          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/utils
 
       - name: Upload Unit Test Results
         if: always()
