@@ -69,8 +69,7 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        "combiner.num_steps": {"space": "grid_search", "values": [3, 4, 5]},
+        "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2]},
     },
     "goal": "minimize",
 }
