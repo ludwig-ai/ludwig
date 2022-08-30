@@ -49,16 +49,10 @@ output_features:
     type: category
 combiner:
   type: transformer
-  num_layers: 1
-  num_heads: 8
-  hidden_size: 32
-  dropout: 0.1
-  fc_dropout: 0.2
-  num_fc_layers: 1
 trainer:
   batch_size: 256
   learning_rate: .001
-  epochs: 5
+  epochs: 1
 """
 
 uncalibrated_config = yaml.safe_load(config_yaml)
