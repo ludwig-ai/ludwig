@@ -27,7 +27,6 @@ from ludwig.constants import (
     COMBINER,
     DECODER,
     DEFAULTS,
-    DROP_ROW,
     ENCODER,
     EXECUTOR,
     HYPEROPT,
@@ -311,10 +310,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
             set_default_values(output_feature, {DECODER: {TYPE: "passthrough"}})
             remove_ecd_params(output_feature)
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
-
-        # By default, drop rows with missing output features
-        set_default_value(output_feature, PREPROCESSING, {})
-        set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
 
         # Update decoder and loss related parameters for output feature from global defaults
         update_feature_from_defaults(config, output_feature, OUTPUT_FEATURES)
