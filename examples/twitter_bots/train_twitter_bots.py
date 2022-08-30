@@ -24,9 +24,6 @@ if __name__ == "__main__":
     if not os.path.exists("./profile_images"):
         rename(os.path.join(dataset.processed_dataset_path, "profile_images"), "./profile_images")
 
-    if not os.path.exists("./profile_background_images"):
-        rename(os.path.join(dataset.processed_dataset_path, "profile_background_images"), "./profile_background_images")
-
     config = yaml.safe_load(
         """
     input_features:

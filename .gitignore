@@ -15,9 +15,7 @@ docker_assets
 # data
 mnist_data/
 profile_images/
-profile_background_images/
 ./profile_images/
-./profile_background_images/
 
 ###########
 # General #
