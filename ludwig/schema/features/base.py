@@ -81,3 +81,15 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         default="sum",
         description="How to reduce the dependencies of the output feature.",
     )
+
+    input_size: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the input to the decoder.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
+    )
+
+    num_classes: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Size of the input to the decoder.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
+    )
