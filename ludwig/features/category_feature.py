@@ -62,7 +62,8 @@ class _CategoryPreprocessing(torch.nn.Module):
         if UNKNOWN_SYMBOL in self.str2idx:
             self.unk = self.str2idx[UNKNOWN_SYMBOL]
         else:
-            self.unk = None
+            # TODO: Replace with mode or something to that effect
+            self.unk = 0
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[str]):
