@@ -128,13 +128,11 @@ def test_missing_outputs_drop_rows():
 
     assert output_feature_config[PREPROCESSING][MISSING_VALUE_STRATEGY] == DROP_ROW
 
+    assert global_preprocessing[input_feature_config[TYPE]][PREPROCESSING][MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
     feature_preprocessing = merge_dict(
         global_preprocessing[output_feature_config[TYPE]][PREPROCESSING], output_feature_config[PREPROCESSING]
     )
     assert feature_preprocessing[MISSING_VALUE_STRATEGY] == DROP_ROW
-
-    feature_preprocessing = global_preprocessing[input_feature_config[TYPE]][PREPROCESSING]
-    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
 
 
 def test_default_model_type():
