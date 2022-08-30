@@ -27,7 +27,6 @@ TEST_NUM_FILTERS = 24
 
 
 # generates dataset that can be used for rest of test
-@pytest.fixture(scope="module")
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
@@ -107,12 +106,12 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
 def test_sequence_decoders(
     dec_cell_type,
     combiner_output_shapes,
-    generate_sequence_training_data,
 ):
     # retrieve pre-computed dataset and features
-    raw_df = generate_sequence_training_data[0]
-    input_features = generate_sequence_training_data[1]
-    output_features = generate_sequence_training_data[2]
+    sequence_training_data = generate_sequence_training_data()
+    raw_df = sequence_training_data[0]
+    input_features = sequence_training_data[1]
+    output_features = sequence_training_data[2]
     output_feature_name = output_features[0]["name"]
     output_features[0][DECODER]["cell_type"] = dec_cell_type
 

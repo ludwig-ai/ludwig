@@ -37,8 +37,7 @@ encoder_parameters = {
 }
 
 
-@pytest.fixture(scope="module")
-def input_sequence() -> torch.Tensor:
+def get_test_input_sequence() -> torch.Tensor:
     # generates a realistic looking synthetic sequence tensor, i.e.
     # each sequence will have non-zero tokens at the beginning with
     # trailing zero tokens, including a max length token with a single
@@ -74,8 +73,8 @@ def test_sequence_encoders(
     enc_num_layers: int,
     enc_norm: Union[None, str],
     enc_reduce_output: Union[None, str],
-    input_sequence: torch.Tensor,
 ):
+    input_sequence = get_test_input_sequence()
     # update encoder parameters for specific unit test case
     encoder_parameters["cell_type"] = enc_cell_type
     encoder_parameters["dropout"] = enc_dropout
@@ -166,7 +165,8 @@ def test_sequence_encoders(
 
 
 @pytest.mark.parametrize("enc_reduce_output", [None, "sum", "last", "mean", "max", "concat"])
-def test_passthrough_encoder(enc_reduce_output, input_sequence):
+def test_passthrough_encoder(enc_reduce_output):
+    input_sequence = get_test_input_sequence()
     encoder_parameters = {"reduce_output": enc_reduce_output}
 
     # retrieve encoder to test
@@ -184,7 +184,8 @@ def test_passthrough_encoder(enc_reduce_output, input_sequence):
 
 # test to ensure correct handling of vocab_size and embedding_size specifications
 @pytest.mark.parametrize("enc_embedding_size", [TEST_VOCAB_SIZE - 8, TEST_VOCAB_SIZE, TEST_VOCAB_SIZE + 8])
-def test_sequence_embed_encoder(enc_embedding_size: int, input_sequence: torch.Tensor) -> None:
+def test_sequence_embed_encoder(enc_embedding_size: int) -> None:
+    input_sequence = get_test_input_sequence()
     encoder_parameters["embedding_size"] = enc_embedding_size
 
     encoder_obj = get_encoder_cls(SEQUENCE, "embed")(**encoder_parameters)

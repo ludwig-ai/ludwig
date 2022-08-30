@@ -68,8 +68,7 @@ def run_api_experiment(input_features, output_features):
     return model
 
 
-@pytest.fixture(scope="module")
-def experiment_to_use():
+def get_test_experiment():
     with TemporaryDirectory() as tmpdir:
         experiment = Experiment("data_for_test.csv", tmpdir)
         return experiment
@@ -140,14 +139,9 @@ def obtain_df_splits(data_csv):
 
 
 @pytest.mark.parametrize("training_only", [True, False])
-def test_learning_curves_vis_api(experiment_to_use, training_only):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_learning_curves_vis_api(training_only):
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     viz_outputs = ("pdf", "png")
     train_stats = experiment.train_stats
     if training_only:
@@ -164,14 +158,9 @@ def test_learning_curves_vis_api(experiment_to_use, training_only):
             assert 3 == len(figure_cnt)
 
 
-def test_compare_performance_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_performance_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     # extract test stats only
     test_stats = experiment.test_stats_full
     viz_outputs = ("pdf", "png")
@@ -189,14 +178,9 @@ def test_compare_performance_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_classifier_performance_from_prob_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probability = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -217,14 +201,9 @@ def test_compare_classifier_performance_from_prob_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_classifier_performance_from_pred_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     prediction = experiment.predictions
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -244,14 +223,9 @@ def test_compare_classifier_performance_from_pred_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_classifiers_performance_subset_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -273,14 +247,9 @@ def test_compare_classifiers_performance_subset_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_classifiers_performance_changing_k_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -301,14 +270,9 @@ def test_compare_classifiers_performance_changing_k_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_classifiers_multiclass_multimetric_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     # extract test stats only
     test_stats = experiment.test_stats_full
     viz_outputs = ("pdf", "png")
@@ -328,14 +292,9 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(experiment_to_use):
             assert 4 == len(figure_cnt)
 
 
-def test_compare_classifiers_predictions_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_compare_classifiers_predictions_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     predictions = experiment.predictions
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -355,14 +314,12 @@ def test_compare_classifiers_predictions_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_compare_classifiers_predictions_distribution_vis_api(experiment_to_use):
+def test_compare_classifiers_predictions_distribution_vis_api():
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
     :return: None
     """
-    experiment = experiment_to_use
+    experiment = get_test_experiment()
     predictions = experiment.predictions_num
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -382,14 +339,12 @@ def test_compare_classifiers_predictions_distribution_vis_api(experiment_to_use)
             assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_vis_api(experiment_to_use):
+def test_confidence_thresholding_vis_api():
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
     :return: None
     """
-    experiment = experiment_to_use
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -409,14 +364,12 @@ def test_confidence_thresholding_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
+def test_confidence_thresholding_data_vs_acc_vis_api():
     """Ensure pdf and png figures can be saved via visualization API call.
 
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
     :return: None
     """
-    experiment = experiment_to_use
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -436,14 +389,9 @@ def test_confidence_thresholding_data_vs_acc_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_confidence_thresholding_data_vs_acc_subset_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -465,14 +413,9 @@ def test_confidence_thresholding_data_vs_acc_subset_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -641,14 +584,9 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
             assert 1 == len(figure_cnt)
 
 
-def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_binary_threshold_vs_metric_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     metrics = ["accuracy"]
@@ -671,14 +609,9 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
             assert 1 == len(figure_cnt)
 
 
-def test_roc_curves_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_roc_curves_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     positive_label = 2
@@ -733,14 +666,9 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
             assert 1 == len(figure_cnt)
 
 
-def test_calibration_1_vs_all_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_calibration_1_vs_all_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -761,14 +689,9 @@ def test_calibration_1_vs_all_vis_api(experiment_to_use):
             assert 7 == len(figure_cnt)
 
 
-def test_calibration_multiclass_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_calibration_multiclass_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     with TemporaryDirectory() as tmpvizdir:
@@ -788,14 +711,9 @@ def test_calibration_multiclass_vis_api(experiment_to_use):
             assert 2 == len(figure_cnt)
 
 
-def test_confusion_matrix_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_confusion_matrix_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     # extract test stats only
     test_stats = experiment.test_stats_full
     viz_outputs = ("pdf", "png")
@@ -816,14 +734,9 @@ def test_confusion_matrix_vis_api(experiment_to_use):
             assert 4 == len(figure_cnt)
 
 
-def test_frequency_vs_f1_vis_api(experiment_to_use):
-    """Ensure pdf and png figures can be saved via visualization API call.
-
-    :param experiment_to_use: Object containing trained model and results to
-        test visualization
-    :return: None
-    """
-    experiment = experiment_to_use
+def test_frequency_vs_f1_vis_api():
+    """Ensure pdf and png figures can be saved via visualization API call."""
+    experiment = get_test_experiment()
     # extract test stats
     test_stats = experiment.test_stats_full
     viz_outputs = ("pdf", "png")

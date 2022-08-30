@@ -16,8 +16,7 @@ SEQ_SIZE = 6
 VOCAB_SIZE = 64
 
 
-@pytest.fixture(scope="module")
-def input_sequence() -> Tuple[torch.Tensor, List]:
+def get_test_input_sequence() -> Tuple[torch.Tensor, List]:
     # generates a realistic looking synthetic sequence tensor, i.e.
     # each sequence will have non-zero tokens at the beginning with
     # trailing zero tokens, including a max length token with a single
@@ -42,13 +41,13 @@ def input_sequence() -> Tuple[torch.Tensor, List]:
 
 @pytest.mark.parametrize("encoder", ENCODERS)
 @pytest.mark.parametrize("sequence_type", [SEQUENCE, TEXT])
-def test_sequence_input_feature(input_sequence: tuple, encoder: str, sequence_type: str):
+def test_sequence_input_feature(encoder: str, sequence_type: str):
     # test assumes "sequence data" has been tokenized and converted to
     # numeric representation.  Focus of this test is primarily on
     # integration with encoder with correctly sized encoder tensor and
     # required properties are present
 
-    input_sequence, idx2str = input_sequence
+    input_sequence, idx2str = get_test_input_sequence()
 
     # setup input sequence feature definition
     # use sequence_feature() to generate baseline
