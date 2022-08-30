@@ -433,7 +433,12 @@ def test_ray_stratify():
     run_test_with_features(
         input_features,
         output_features,
-        preprocessing={"stratify": output_features[0][NAME]},
+        preprocessing={
+            "split": {
+                "type": "stratify",
+                "column": output_features[0][NAME],
+            }
+        },
     )
 
 
