@@ -5,27 +5,6 @@ from ludwig.schema.features.utils import input_config_registry, output_config_re
 import ludwig.schema.utils as schema_utils
 
 
-def get_defaults_conds():
-    """Returns a JSON schema of conditionals to validate against encoder types for specific feature types."""
-    conds = []
-    for feat in input_config_registry.keys():
-        input_feature_cls = input_config_registry.get(feat)
-        output_feature_cls = output_config_registry.get(feat, None)
-        input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
-        if output_feature_cls:
-            output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
-            combined_props = {**input_props, **output_props}
-        else:
-            combined_props = input_props
-        combined_props.pop("type")
-        defaults_cond = schema_utils.create_cond(
-            {"type": feat},
-            combined_props,
-        )
-        conds.append(defaults_cond)
-    return conds
-
-
 def DefaultsDataclassField(feature_type: str):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested default config
     for a specific feature type.
@@ -66,7 +45,7 @@ def DefaultsDataclassField(feature_type: str):
             input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
             if output_feature_cls:
                 output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
-                combined_props = {**input_props, **output_props}
+                combined_props = {**output_props, **input_props}
             else:
                 combined_props = input_props
             return {
@@ -81,7 +60,7 @@ def DefaultsDataclassField(feature_type: str):
         dump_default = input_cls.Schema().dump({"type": feature_type})
         if output_cls:
             output_dump = output_cls.Schema().dump({"type": feature_type})
-            dump_default = {**dump_default, **output_dump}
+            dump_default = {**output_dump, **dump_default}
 
         load_default = input_cls.Schema().load({"type": feature_type})
         if output_cls:

@@ -34,6 +34,8 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
+
     loss: BaseLossConfig = LossDataclassField(
         feature_type=NUMBER,
         default=MEAN_SQUARED_ERROR,

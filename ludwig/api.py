@@ -220,9 +220,6 @@ class LudwigModel:
         self.config = merge_with_defaults(copy.deepcopy(self.base_config))
         validate_config(self.config)
 
-        # Load config object
-        self.config = Config(config_dict)
-
         # setup logging
         self.set_logging_level(logging_level)
 

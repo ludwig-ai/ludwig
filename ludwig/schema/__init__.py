@@ -48,7 +48,8 @@ def get_schema():
             TRAINER: get_trainer_jsonschema(),
             PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: {},
-            DEFAULTS: get_defaults_jsonschema(),
+            # DEFAULTS: get_defaults_jsonschema(),
+            DEFAULTS: {}
         },
         "definitions": {},
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
