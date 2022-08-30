@@ -12,8 +12,11 @@ def get_defaults_conds():
         input_feature_cls = input_config_registry.get(feat)
         output_feature_cls = output_config_registry.get(feat, None)
         input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
-        output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
-        combined_props = {**input_props, **output_props}
+        if output_feature_cls:
+            output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
+            combined_props = {**input_props, **output_props}
+        else:
+            combined_props = input_props
         combined_props.pop("type")
         defaults_cond = schema_utils.create_cond(
             {"type": feat},
@@ -58,13 +61,18 @@ def DefaultsDataclassField(feature_type: str):
 
         @staticmethod
         def _jsonschema_type_mapping():
+            input_feature_cls = input_config_registry.get(feature_type)
+            output_feature_cls = output_config_registry.get(feature_type, None)
+            input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
+            if output_feature_cls:
+                output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
+                combined_props = {**input_props, **output_props}
+            else:
+                combined_props = input_props
             return {
                 "type": "object",
-                "properties": {
-                    "type": {"type": "string", "enum": list(input_config_registry.data.keys()), "default": None},
-                },
+                "properties": combined_props,
                 "title": "defaults_options",
-                "allOf": get_defaults_conds()
             }
 
     try:

@@ -277,6 +277,7 @@ def test_validate_defaults_schema():
                     "type": "sparse",
                 },
                 "decoder": {
+                    "type": "classifier",
                     "norm_params": None,
                     "dropout": 0.0,
                     "use_bias": True,

@@ -54,6 +54,5 @@ def get_defaults_jsonschema():
     props = defaults_schema["properties"]
     return {
         "type": "object",
-        "allOf": props,
-        "required": ["type"],
+        "properties": props,
     }

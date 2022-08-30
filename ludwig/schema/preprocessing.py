@@ -56,6 +56,5 @@ def get_preprocessing_jsonschema():
     props = preproc_schema["properties"]
     return {
         "type": "object",
-        "allOf": props,
-        "required": ["type"],
+        "properties": props,
     }
