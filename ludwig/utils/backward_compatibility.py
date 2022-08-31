@@ -246,6 +246,8 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
 
     if module_type in feature:
         feature[module_type].update(module)
+    else:
+        feature[module_type] = module
 
     for k in nested_params:
         del feature[k]

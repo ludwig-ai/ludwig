@@ -61,10 +61,12 @@ def validate_config(config):
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+    from ludwig.utils.defaults import merge_with_defaults
 
     if "ludwig_version" not in config:
         config["ludwig_version"] = "0.4"
     updated_config = upgrade_to_latest_version(config)
+    updated_config = merge_with_defaults(updated_config)
 
     type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
     CustomValidator = extend(Draft7Validator, type_checker=type_checker)
