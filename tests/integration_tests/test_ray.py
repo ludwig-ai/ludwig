@@ -621,5 +621,3 @@ def test_ray_distributed_predict(tmpdir):
             # compute the predictions
             preds = preds.compute()
             assert preds.iloc[1].name != preds.iloc[42].name
-
-
