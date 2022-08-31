@@ -1,5 +1,5 @@
 version: 1.0
 name: twitter_bots
-kaggle_competition: danieltreiman/twitter-human-bots-dataset
+kaggle_dataset_id: danieltreiman/twitter-human-bots-dataset
 archive_filenames: twitter-human-bots-dataset.zip
 dataset_filenames: twitter_human_bots_dataset.csv

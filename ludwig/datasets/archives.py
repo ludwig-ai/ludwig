@@ -110,9 +110,8 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
             with ZipFile(archive_path) as zfile:
                 zfile.extractall(tmpdir)
         elif archive_type == ArchiveType.GZIP:
-            gzip_content_file = ".".join(archive_path.split(".")[:-1])  # Path minus the .gz extention
+            gzip_content_file = ".".join(archive_path.split(".")[:-1])  # Path minus the .gz extension
             with gzip.open(archive_path) as gzfile:
-                # TODO: What is gzip content file?
                 with open(os.path.join(tmpdir, gzip_content_file), "wb") as output:
                     shutil.copyfileobj(gzfile, output)
         elif archive_type in {ArchiveType.TAR, ArchiveType.TAR_ZIP, ArchiveType.TAR_BZ2, ArchiveType.TAR_GZ}:
