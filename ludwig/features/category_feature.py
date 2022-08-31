@@ -142,7 +142,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata):
-        def __replace_token_with_idx(value: Any, metadata: Dict[str, Any], unknown_symbol_idx: int) -> int:
+        def __replace_token_with_idx(value: Any, metadata: Dict[str, Any], fallback_symbol_idx: int) -> int:
             stripped_value = value.strip()
             if stripped_value in metadata["str2idx"]:
                 return metadata["str2idx"][stripped_value]
@@ -154,10 +154,11 @@ class CategoryFeatureMixin(BaseFeatureMixin):
                 training set. Consider re-splitting your data to ensure full representation, or setting
                 preprocessing.most_common parameter to be smaller than this feature's total vocabulary
                 size, {len(metadata["str2idx"])}, which will ensure that the model is architected and
-                trained with an UNKNOWN symbol. Returning the index for the most frequent symbol instead.
+                trained with an UNKNOWN symbol. Returning the index for the most frequent symbol,
+                {metadata["idx2str"][fallback_symbol_idx]}, instead.
                 """
             )
-            return unknown_symbol_idx
+            return fallback_symbol_idx
 
         # No unknown symbol in Metadata from preprocessing means that all values
         # should be mappable to vocabulary
@@ -170,7 +171,11 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             )
         else:
             return column.map(
-                lambda x: __replace_token_with_idx(x, metadata, metadata["str2idx"][UNKNOWN_SYMBOL])
+                lambda x: (
+                    metadata["str2idx"][x.strip()]
+                    if x.strip() in metadata["str2idx"]
+                    else metadata["str2idx"][UNKNOWN_SYMBOL]
+                )
             ).astype(int_type(metadata["vocab_size"]))
 
     @staticmethod
