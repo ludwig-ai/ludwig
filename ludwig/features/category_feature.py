@@ -62,7 +62,8 @@ class _CategoryPreprocessing(torch.nn.Module):
         if UNKNOWN_SYMBOL in self.str2idx:
             self.unk = self.str2idx[UNKNOWN_SYMBOL]
         else:
-            # TODO: Replace with mode or something to that effect
+            # self.unk is set to 0 to comply with Torchscript type tracing and will
+            # likely not be used during training, but potentially during inference
             self.unk = 0
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
@@ -145,7 +146,17 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             stripped_value = value.strip()
             if stripped_value in metadata["str2idx"]:
                 return metadata["str2idx"][stripped_value]
-            logger.warning("Using unknown symbol during category feature processing.")
+            logger.warning(
+                f"""
+                Encountered unknown symbol '{stripped_value}' for '{column.name}' during category
+                feature preprocessing. This should never happen during training. If this happens during
+                inference, this may be an indication that not all possible symbols were present in your
+                training set. Consider re-splitting your data to ensure full representation, or setting
+                preprocessing.most_common parameter to be smaller than this feature's total vocabulary
+                size, {len(metadata["str2idx"])}, which will ensure that the model is architected and
+                trained with an UNKNOWN symbol. Returning the index for the most frequent symbol instead.
+                """
+            )
             return unknown_symbol_idx
 
         # No unknown symbol in Metadata from preprocessing means that all values
