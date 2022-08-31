@@ -20,7 +20,7 @@ import random
 import string
 import sys
 import uuid
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -204,7 +204,11 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str
         yield generate_datapoint(features=features, outdir=outdir)
 
 
-def generate_datapoint(features, outdir: str):
+def generate_datapoint(features: List[Dict], outdir: str) -> Union[str, int, bool]:
+    """Returns a synthetic example containing features specified by the features spec.
+
+    `outdir` is only used for generating synthetic image and synthetic audio features. Otherwise, it is unused.
+    """
     datapoint = []
     for feature in features:
         if "cycle" in feature and feature["cycle"] is True and feature[TYPE] in cyclers_registry:
@@ -217,22 +221,38 @@ def generate_datapoint(features, outdir: str):
     return datapoint
 
 
-def generate_category(feature, outdir: Optional[str] = None):
+def generate_category(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random category.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     return random.choice(encoder_or_decoder["idx2str"])
 
 
-def generate_number(feature, outdir: Optional[str] = None):
+def generate_number(feature, outdir: Optional[str] = None) -> int:
+    """Returns a random number.
+
+    `outdir` is unused.
+    """
     return random.uniform(feature["min"] if "min" in feature else 0, feature["max"] if "max" in feature else 1)
 
 
-def generate_binary(feature, outdir: Optional[str] = None):
+def generate_binary(feature, outdir: Optional[str] = None) -> bool:
+    """Returns a random boolean.
+
+    `outdir` is unused.
+    """
     choices = feature.get("bool2str", [False, True])
     p = feature["prob"] if "prob" in feature else 0.5
     return np.random.choice(choices, p=[1 - p, p])
 
 
-def generate_sequence(feature, outdir: Optional[str] = None):
+def generate_sequence(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random sequence.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     length = encoder_or_decoder.get("max_len", 10)
     if "min_len" in encoder_or_decoder:
@@ -244,7 +264,11 @@ def generate_sequence(feature, outdir: Optional[str] = None):
     return " ".join(sequence)
 
 
-def generate_set(feature, outdir: Optional[str] = None):
+def generate_set(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random set.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
     for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
@@ -252,7 +276,11 @@ def generate_set(feature, outdir: Optional[str] = None):
     return " ".join(list(set(elems)))
 
 
-def generate_bag(feature, outdir: Optional[str] = None):
+def generate_bag(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random bag.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
     for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
@@ -260,7 +288,11 @@ def generate_bag(feature, outdir: Optional[str] = None):
     return " ".join(elems)
 
 
-def generate_text(feature, outdir: Optional[str] = None):
+def generate_text(feature, outdir: Optional[str] = None) -> str:
+    """Returns random text.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     length = encoder_or_decoder.get("max_len", 10)
     text = []
@@ -269,17 +301,25 @@ def generate_text(feature, outdir: Optional[str] = None):
     return " ".join(text)
 
 
-def generate_timeseries(feature, max_len=10, outdir: Optional[str] = None):
+def generate_timeseries(feature, max_len=10, outdir: Optional[str] = None) -> str:
+    """Returns a random timeseries.
+
+    `outdir` is unused.
+    """
     encoder = _get_feature_encoder_or_decoder(feature)
     series = []
-    max_len = encoder.get("max_len", 10)  # Default to max_len=10
+    max_len = encoder.get("max_len", max_len)
     series_len = random.randint(max_len - 2, max_len)  # simulates variable length
     for _ in range(series_len):
         series.append(str(random.uniform(encoder.get("min", 0), encoder.get("max", 1))))
     return " ".join(series)
 
 
-def generate_audio(feature, outdir: str):
+def generate_audio(feature, outdir: str) -> str:
+    """Generates random audio and saves it to the outdir.
+
+    Returns the path to the directory of saved files.
+    """
     destination_folder = feature.get("destination_folder", outdir)
     if PREPROCESSING in feature:
         audio_length = feature[PREPROCESSING].get("audio_file_length_limit_in_s", 2)
@@ -303,7 +343,11 @@ def generate_audio(feature, outdir: str):
     return audio_dest_path
 
 
-def generate_image(feature, outdir: str, save_as_numpy: bool = False):
+def generate_image(feature, outdir: str, save_as_numpy: bool = False) -> str:
+    """Generates random images and saves it to the outdir.
+
+    Returns the path to the directory of saved files.
+    """
     save_as_numpy = feature.get("save_as_numpy", save_as_numpy)
 
     try:
@@ -354,8 +398,8 @@ def generate_image(feature, outdir: str, save_as_numpy: bool = False):
     return image_dest_path
 
 
-def generate_datetime(feature, outdir: Optional[str] = None):
-    """picking a format among different types.
+def generate_datetime(feature, outdir: Optional[str] = None) -> str:
+    """Generates a random date time, picking a format among different types.
 
     If no format is specified, the first one is used.
     """
@@ -377,7 +421,11 @@ def generate_datetime(feature, outdir: Optional[str] = None):
     return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
 
 
-def generate_h3(feature, outdir: Optional[str] = None):
+def generate_h3(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random h3.
+
+    `outdir` is unused.
+    """
     resolution = random.randint(0, 15)  # valid values [0, 15]
     h3_components = {
         "mode": 1,  # we can avoid testing other modes
@@ -391,7 +439,11 @@ def generate_h3(feature, outdir: Optional[str] = None):
     return components_to_h3(h3_components)
 
 
-def generate_vector(feature, outdir: Optional[str] = None):
+def generate_vector(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random vector.
+
+    `outdir` is unused.
+    """
     # Space delimited string with floating point numbers
     if PREPROCESSING in feature:
         vector_size = feature[PREPROCESSING].get("vector_size", 10)
