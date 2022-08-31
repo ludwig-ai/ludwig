@@ -614,7 +614,7 @@ class TabTransformerCombiner(Combiner):
         self.unembeddable_features = []
         self.embeddable_features = []
         for i_f in input_features:
-            if input_features[i_f].type in {NUMBER, BINARY}:
+            if input_features[i_f].type() in {NUMBER, BINARY}:
                 self.unembeddable_features.append(i_f)
             else:
                 self.embeddable_features.append(i_f)

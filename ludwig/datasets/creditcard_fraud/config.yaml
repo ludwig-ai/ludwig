@@ -1,0 +1,5 @@
+version: 1.0
+competition: mlg-ulb/creditcardfraud
+archive_filename: creditcardfraud.zip
+csv_filename: creditcard.csv
+download_file_type: csv
