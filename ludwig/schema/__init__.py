@@ -59,6 +59,13 @@ def validate_config(config):
     def custom_is_array(checker, instance):
         return isinstance(instance, list) or isinstance(instance, tuple)
 
+    # Update config from previous versions to check that backwards compatibility will enable a valid config
+    from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+
+    if "ludwig_version" not in config:
+        config["ludwig_version"] = "0.4"
+    updated_config = upgrade_to_latest_version(config)
+
     type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
     CustomValidator = extend(Draft7Validator, type_checker=type_checker)
-    validate(instance=config, schema=get_schema(), cls=CustomValidator)
+    validate(instance=updated_config, schema=get_schema(), cls=CustomValidator)
