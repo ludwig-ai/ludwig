@@ -26,15 +26,15 @@ jobs:
         test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
-            pytorch-version: 1.10.2
+            pytorch-version: 1.11.0
             torchscript-version: 1.10.2
             ray-version: 1.13.0
           - python-version: 3.8
-            pytorch-version: 1.11.0
+            pytorch-version: 1.12.1
             torchscript-version: 1.10.2
             ray-version: 2.0.0rc1
           - python-version: 3.9
-            pytorch-version: 1.11.0
+            pytorch-version: nightly
             torchscript-version: 1.10.2
             ray-version: nightly
     env:
@@ -96,7 +96,7 @@ jobs:
           if [ "$PYTORCH" == "nightly" ]; then
             cat requirements.txt | sed '/^torch[>=<]/d' | sed '/^torchtext[>=<]/d' | sed '/^torchvision[>=<]/d' | sed '/^torchaudio[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
             extra_index_url=https://download.pytorch.org/whl/nightly/cpu
-            pip install --pre torch==1.13.0.dev20220819+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
+            pip install --pre torch==1.13.0.dev20220816+cpu torchtext torchvision torchaudio --extra-index-url $extra_index_url
           else
             extra_index_url=https://download.pytorch.org/whl/cpu
             pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
