@@ -114,12 +114,12 @@ class GBM(BaseModel):
 
         assert list(inputs.keys()) == self.input_features.keys()
 
-        # Convert inputs to tensors.
+        # Convert inputs to tensors of type float as expected by hummingbird GEMMTreeImpl.
         for input_feature_name, input_values in inputs.items():
             if not isinstance(input_values, torch.Tensor):
-                inputs[input_feature_name] = torch.from_numpy(input_values)
+                inputs[input_feature_name] = torch.from_numpy(input_values).float()
             else:
-                inputs[input_feature_name] = input_values.view(-1, 1)
+                inputs[input_feature_name] = input_values.view(-1, 1).float()
 
         # TODO(travis): include encoder and decoder steps during inference
         # encoder_outputs = {}
