@@ -6,17 +6,15 @@ import shutil
 import sys
 import threading
 import time
-import traceback
 from queue import Empty as EmptyQueueException
 from queue import Queue
-from statistics import mean
 from typing import Any, Dict
 
 import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
-from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler
+from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler, get_metrics_from_system_usage_profiler
 from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
@@ -122,7 +120,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.torch_profiler = torch.profiler.profile(activities=self.profiler_activities, profile_memory=True)
             self.torch_record_function = torch.profiler.record_function(self._tag)
 
-    def populate_static_information(self) -> None:
+    def _populate_static_information(self) -> None:
         """Populate the report with static software and hardware information."""
         self.info["ludwig_version"] = LUDWIG_VERSION
         self.info["start_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
@@ -154,7 +152,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             raise RuntimeError("LudwigProfiler already launched. You can't use the same instance.")
 
         self._init_tracker_info()
-        self.populate_static_information()
+        self._populate_static_information()
 
         if self.use_torch_profiler:
             # contextlib.ExitStack gracefully handles situations where __enter__ or __exit__ calls throw exceptions.
@@ -185,10 +183,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.launched = True
         except Exception:
             self.launched = False
-            ex_type, ex_value, tb = sys.exc_info()
-            logging.error("Encountered exception when launching tracker thread.")
-            logging.error("".join(traceback.format_tb(tb)))
-            raise RuntimeError
+            logging.exception("Encountered exception when launching tracker thread.")
 
         return self
 
@@ -200,60 +195,30 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.info = self.queue.get()
             # recording in microseconds to be in line with torch profiler time recording.
             self.info["end_time"] = time.perf_counter_ns() / 1000
+            self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
             self.launched = False
         except Exception:
-            ex_type, ex_value, tb = sys.exc_info()
-            logging.error("Encountered exception when joining tracker thread.")
-            logging.error("".join(traceback.format_tb(tb)))
+            logging.exception("Encountered exception when joining tracker thread.")
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()
                 self._export_torch_metrics()
-            self._export_system_metrics()
+            self._export_system_usage_metrics()
 
-    def _export_system_metrics(self):
+    def _export_system_usage_metrics(self):
         """Export system resource usage metrics (no torch operators)."""
-        self.info["total_execution_time"] = self.info.pop("end_time") - self.info.pop("start_time")
-        self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
-        self.info["disk_footprint"] = self.info.pop("end_disk_usage") - self.info.pop("start_disk_usage")
-
-        all_keys = list(self.info.keys())
-        for key in all_keys:
-            if "cuda_" in key and "_memory_used" in key:
-                cuda_max_memory_key = key.replace("_memory_used", "_max_memory_used")
-                self.info[cuda_max_memory_key] = max(self.info[key], default=0)
-                cuda_average_memory_key = key.replace("_memory_used", "_average_memory_used")
-                if self.info[key]:
-                    self.info[cuda_average_memory_key] = mean(self.info.pop(key))
-                else:
-                    self.info.pop(key)
-                    self.info[cuda_average_memory_key] = 0
-
-        self.info["max_cpu_utilization"] = max(self.info["cpu_utilization"], default=0)
-        self.info["max_cpu_memory_usage"] = max(self.info["cpu_memory_usage"], default=0)
-
-        if self.info["cpu_utilization"]:
-            self.info["average_cpu_utilization"] = mean(self.info.pop("cpu_utilization"))
-        else:
-            self.info.pop("cpu_utilization")
-            self.info["average_cpu_utilization"] = 0
-        if self.info["cpu_memory_usage"]:
-            self.info["average_cpu_memory_usage"] = mean(self.info.pop("cpu_memory_usage"))
-        else:
-            self.info.pop("cpu_memory_usage")
-            self.info["average_cpu_memory_usage"] = 0
-
-        output_subdir = os.path.join(self.output_dir, "system_resource_usage", self.info["code_block_tag"])
+        system_usage_metrics = get_metrics_from_system_usage_profiler(self.info)
+        output_subdir = os.path.join(self.output_dir, "system_resource_usage", system_usage_metrics.code_block_tag)
         os.makedirs(output_subdir, exist_ok=True)
         num_prev_runs = len(glob.glob(os.path.join(output_subdir, "run_*.json")))
         file_name = os.path.join(output_subdir, f"run_{num_prev_runs}.json")
-        save_json(file_name, self.info)
+        save_json(file_name, system_usage_metrics.to_flat_dict())
 
     def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
-            reformatted_key = key[len(LUDWIG_TAG) :]
+            reformatted_key = key[len(LUDWIG_TAG):]
             reformatted_dict[reformatted_key] = value
         return reformatted_dict
 
