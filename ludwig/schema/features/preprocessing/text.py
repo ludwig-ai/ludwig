@@ -107,3 +107,17 @@ class TextOutputPreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text output feature",
     )
+
+    fill_value: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
+    )
+
+    computed_fill_value: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The internally computed fill value to replace missing values with in case the "
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
+    )

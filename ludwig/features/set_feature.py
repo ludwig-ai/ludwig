@@ -377,7 +377,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = SetOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

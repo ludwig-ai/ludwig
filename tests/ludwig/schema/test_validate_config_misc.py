@@ -54,13 +54,13 @@ def test_config_features():
         vector_feature(encoder={"type": "dense"}),
     ]
     all_output_features = [
-        binary_feature(decoder={"type": "regressor"}),
-        category_feature(decoder={"type": "classifier"}),
-        number_feature(decoder={"type": "regressor"}),
-        sequence_feature(decoder={"type": "generator"}),
-        set_feature(decoder={"type": "classifier"}),
-        text_feature(decoder={"type": "generator"}),
-        vector_feature(decoder={"type": "projector"}),
+        binary_feature(output_feature=True, decoder={"type": "regressor"}),
+        category_feature(output_feature=True, decoder={"type": "classifier"}),
+        number_feature(output_feature=True, decoder={"type": "regressor"}),
+        sequence_feature(output_feature=True, decoder={"type": "generator"}),
+        set_feature(output_feature=True, decoder={"type": "classifier"}),
+        text_feature(output_feature=True, decoder={"type": "generator"}),
+        vector_feature(output_feature=True, decoder={"type": "projector"}),
     ]
 
     # validate config with all features

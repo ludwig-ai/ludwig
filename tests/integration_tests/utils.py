@@ -224,12 +224,14 @@ def random_string(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
-def number_feature(normalization=None, **kwargs):
+def number_feature(normalization=None, output_feature=False, **kwargs):
     feature = {
         "name": "num_" + random_string(),
         "type": "number",
         "preprocessing": {"normalization": normalization},
     }
+    if output_feature:
+        del feature["preprocessing"]
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -458,7 +460,7 @@ def h3_feature(**kwargs):
     return feature
 
 
-def vector_feature(**kwargs):
+def vector_feature(output_feature=False, **kwargs):
     feature = {
         "type": VECTOR,
         "name": "vector_" + random_string(),
@@ -466,6 +468,8 @@ def vector_feature(**kwargs):
             "vector_size": 5,
         },
     }
+    if output_feature:
+        del feature["preprocessing"]
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)

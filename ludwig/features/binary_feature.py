@@ -409,7 +409,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,
