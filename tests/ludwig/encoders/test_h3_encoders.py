@@ -32,7 +32,7 @@ def test_h3_embed():
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(embed, (inputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters.  Parameters not updated: {not_updated}"
 
 
 def test_h3_weighted_sum():
@@ -54,7 +54,7 @@ def test_h3_weighted_sum():
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(embed, (inputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters.  Parameters not updated: {not_updated}"
 
 
 def test_h3_rnn_embed():
@@ -76,4 +76,4 @@ def test_h3_rnn_embed():
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(embed, (inputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters.  Parameters not updated: {not_updated}"

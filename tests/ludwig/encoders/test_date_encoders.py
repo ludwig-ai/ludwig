@@ -28,7 +28,7 @@ def test_date_embed():
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(date_embed, (inputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters.  Parameters not updated: {not_updated}"
 
 
 def test_date_wave():
@@ -46,4 +46,4 @@ def test_date_wave():
     # check for parameter updating
     target = torch.randn(outputs["encoder_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(date_embed, (inputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters.  Parameters not updated: {not_updated}"

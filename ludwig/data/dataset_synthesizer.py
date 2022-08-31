@@ -157,8 +157,10 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset(dataset_size: int, features: List[dict]):
+def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
+
+    The outdir is used for audio and image files.
 
     :param dataset_size: (int) size of the dataset
     :param features: (List[dict]) list of features to generate in YAML format.
@@ -200,10 +202,10 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
 
     yield header
     for _ in range(dataset_size):
-        yield generate_datapoint(features)
+        yield generate_datapoint(features, outdir)
 
 
-def generate_datapoint(features):
+def generate_datapoint(features, outdir: str):
     datapoint = []
     for feature in features:
         if "cycle" in feature and feature["cycle"] is True and feature[TYPE] in cyclers_registry:
@@ -211,27 +213,27 @@ def generate_datapoint(features):
             feature_value = cycler_function(feature)
         else:
             generator_function = get_from_registry(feature[TYPE], generators_registry)
-            feature_value = generator_function(feature)
+            feature_value = generator_function(feature, outdir)
         datapoint.append(feature_value)
     return datapoint
 
 
-def generate_category(feature):
+def generate_category(feature, unused_outdir: str):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     return random.choice(encoder_or_decoder["idx2str"])
 
 
-def generate_number(feature):
+def generate_number(feature, unused_outdir: str):
     return random.uniform(feature["min"] if "min" in feature else 0, feature["max"] if "max" in feature else 1)
 
 
-def generate_binary(feature):
+def generate_binary(feature, unused_outdir: str):
     choices = feature.get("bool2str", [False, True])
     p = feature["prob"] if "prob" in feature else 0.5
     return np.random.choice(choices, p=[1 - p, p])
 
 
-def generate_sequence(feature):
+def generate_sequence(feature, unused_outdir: str):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     length = encoder_or_decoder.get("max_len", 10)
     if "min_len" in encoder_or_decoder:
@@ -243,7 +245,7 @@ def generate_sequence(feature):
     return " ".join(sequence)
 
 
-def generate_set(feature):
+def generate_set(feature, unused_outdir: str):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
     for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
@@ -251,7 +253,7 @@ def generate_set(feature):
     return " ".join(list(set(elems)))
 
 
-def generate_bag(feature):
+def generate_bag(feature, unused_outdir: str):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
     for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
@@ -259,7 +261,7 @@ def generate_bag(feature):
     return " ".join(elems)
 
 
-def generate_text(feature):
+def generate_text(feature, unused_outdir: str):
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     length = encoder_or_decoder.get("max_len", 10)
     text = []
@@ -268,7 +270,7 @@ def generate_text(feature):
     return " ".join(text)
 
 
-def generate_timeseries(feature, max_len=10):
+def generate_timeseries(feature, unused_outdir: str, max_len=10):
     encoder = _get_feature_encoder_or_decoder(feature)
     series = []
     if "max_len" in encoder:
@@ -279,8 +281,8 @@ def generate_timeseries(feature, max_len=10):
     return " ".join(series)
 
 
-def generate_audio(feature):
-    destination_folder = feature.get("destination_folder", "audio_files")
+def generate_audio(feature, outdir: str):
+    destination_folder = feature.get("destination_folder", outdir)
     if PREPROCESSING in feature:
         audio_length = feature[PREPROCESSING].get("audio_file_length_limit_in_s", 2)
     else:
@@ -299,13 +301,13 @@ def generate_audio(feature):
         torchaudio.save(audio_dest_path, audio_tensor, sampling_rate)
 
     except OSError as e:
-        raise OSError("Unable to create a folder for audio or save audio to disk." "{}".format(e))
+        raise OSError(f"Unable to create a folder for audio or save audio to disk. {e}")
 
     return audio_dest_path
 
 
-def generate_image(feature, save_as_numpy=False):
-    save_as_numpy = feature.get("save_as_numpy", save_as_numpy)
+def generate_image(feature, outdir: str):
+    save_as_numpy = feature.get("save_as_numpy", False)
 
     try:
         from torchvision.io import write_png
@@ -318,7 +320,7 @@ def generate_image(feature, save_as_numpy=False):
         sys.exit(-1)
 
     # Read num_channels, width, height
-    destination_folder = feature.get("destination_folder", "image_files")
+    destination_folder = feature.get("destination_folder", outdir)
     if PREPROCESSING in feature:
         height = feature[PREPROCESSING].get("height", 28)
         width = feature[PREPROCESSING].get("width", 28)
@@ -357,7 +359,7 @@ def generate_image(feature, save_as_numpy=False):
     return image_dest_path
 
 
-def generate_datetime(feature):
+def generate_datetime(feature, unused_outdir: str):
     """picking a format among different types.
 
     If no format is specified, the first one is used.
@@ -380,7 +382,7 @@ def generate_datetime(feature):
     return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
 
 
-def generate_h3(feature):
+def generate_h3(feature, unused_outdir: str):
     resolution = random.randint(0, 15)  # valid values [0, 15]
     h3_components = {
         "mode": 1,  # we can avoid testing other modes
@@ -394,7 +396,7 @@ def generate_h3(feature):
     return components_to_h3(h3_components)
 
 
-def generate_vector(feature):
+def generate_vector(feature, unused_outdir: str):
     # Space delimited string with floating point numbers
     if PREPROCESSING in feature:
         vector_size = feature[PREPROCESSING].get("vector_size", 10)
@@ -489,7 +491,7 @@ def cli_synthesize_dataset(dataset_size: int, features: List[dict], output_path:
         raise ValueError(
             "Missing one or more required parameters: '--dataset_size', " "'--features' or '--output_path'"
         )
-    dataset = build_synthetic_dataset(dataset_size, features)
+    dataset = build_synthetic_dataset(dataset_size, features, output_path)
     save_csv(output_path, dataset)
 
 
