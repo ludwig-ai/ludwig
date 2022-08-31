@@ -961,6 +961,7 @@ def brier_plot(
     filename=None,
     callbacks=None,
 ):
+    plt.figure()
     sns.set_style("whitegrid")
 
     if title is not None:
@@ -1123,6 +1124,7 @@ def plot_matrix(
     filename=None,
     callbacks=None,
 ):
+    plt.figure()
     plt.matshow(matrix, cmap=cmap)
     visualize_callbacks(callbacks, plt.gcf())
     if filename:
