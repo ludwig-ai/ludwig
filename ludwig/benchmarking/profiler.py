@@ -26,7 +26,6 @@ f = open(os.devnull, "w")
 sys.stdout = f
 from experiment_impact_tracker.cpu.common import get_my_cpu_info  # noqa E402
 from experiment_impact_tracker.gpu.nvidia import get_gpu_info  # noqa E402
-from experiment_impact_tracker.py_environment.common import get_python_packages_and_versions  # noqa E402
 
 f.close()
 sys.stdout = sys.__stdout__
