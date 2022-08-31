@@ -18,7 +18,7 @@ import uuid
 
 import pytest
 
-from ludwig.constants import TRAINER
+from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -53,13 +53,13 @@ def hyperopt_results():
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
     }
 
-    output_feature_name = output_features[0]["name"]
+    output_feature_name = output_features[0][NAME]
 
     hyperopt_configs = {
         "parameters": {
@@ -84,7 +84,7 @@ def hyperopt_results():
     }
 
     # add hyperopt parameter space to the config
-    config["hyperopt"] = hyperopt_configs
+    config[HYPEROPT] = hyperopt_configs
 
     hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
 

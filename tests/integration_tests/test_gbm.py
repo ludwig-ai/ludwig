@@ -159,6 +159,51 @@ def test_ray_gbm_binary(tmpdir, ray_backend):
         run_test_gbm_binary(tmpdir, ray_backend)
 
 
+def run_test_gbm_non_number_inputs(tmpdir, backend_config):
+    """Test that the GBM model can train and predict with non-number inputs."""
+    input_features = [binary_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    output_feature = binary_feature()
+    output_features = [output_feature]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
+
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"num_boost_round": 2},
+    }
+
+    model = LudwigModel(config, backend=backend_config)
+    _, _, output_directory = model.train(
+        dataset=dataset_filename,
+        output_directory=tmpdir,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_log=True,
+    )
+    model.load(os.path.join(tmpdir, "api_experiment_run", "model"))
+    preds, _ = model.predict(dataset=dataset_filename, output_directory=output_directory)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend_config["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == 2
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+def test_local_gbm_non_number_inputs(tmpdir, local_backend):
+    run_test_gbm_non_number_inputs(tmpdir, local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_non_number_inputs(tmpdir, ray_backend):
+    with ray_start():
+        run_test_gbm_non_number_inputs(tmpdir, ray_backend)
+
+
 def run_test_gbm_category(tmpdir, backend_config):
     """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
