@@ -491,7 +491,7 @@ def cli_synthesize_dataset(dataset_size: int, features: List[dict], output_path:
         raise ValueError(
             "Missing one or more required parameters: '--dataset_size', " "'--features' or '--output_path'"
         )
-    dataset = build_synthetic_dataset(dataset_size, features, output_path)
+    dataset = build_synthetic_dataset(dataset_size, features, os.path.dirname(output_path))
     save_csv(output_path, dataset)
 
 
