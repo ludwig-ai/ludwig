@@ -117,6 +117,7 @@ jobs:
 
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]' --extra-index-url $extra_index_url
+
           pip list
 
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""

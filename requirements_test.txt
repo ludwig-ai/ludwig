@@ -2,9 +2,19 @@ pytest
 pytest-timeout
 wget
 six>=1.13.0
-aim
+
+aim==3.12.2
+aim-ui==3.12.2
+boto3==1.24.56
+botocore==1.27.56
+comet_ml==3.31.9
+fonttools==4.36.0
+huggingface-hub==0.8.1
+urllib3==1.26.11
+websocket-client==1.3.3
+xgboost==1.6.1
+
 wandb<0.12.11
-comet_ml
 mlflow
 whylogs<1.0
 
@@ -21,7 +31,7 @@ sqlalchemy
 bayesian-optimization
 
 # search_alg: cfo and blendsearch
-flaml[blendsearch]
+flaml[blendsearch]==1.0.10
 
 # search_alg: dragonfly
 dragonfly-opt

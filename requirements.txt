@@ -10,7 +10,7 @@ torch>=1.10.0
 torchaudio
 torchtext
 torchvision>=0.10.1
-transformers>=4.10.1
+transformers==4.21.1
 spacy>=2.3
 PyYAML>=3.12
 absl-py
@@ -20,7 +20,7 @@ tables
 fsspec[http]<2022.8
 dataclasses-json
 jsonschema>=4.5.0,<4.7
-marshmallow
+marshmallow==3.17.0
 marshmallow-jsonschema
 marshmallow-dataclass==8.5.5
 tensorboard
