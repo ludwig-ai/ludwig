@@ -174,14 +174,14 @@ def _upgrade_decoder_params(feature: Dict[str, Any]):
     return _upgrade_encoder_decoder_params(feature, False)
 
 
-def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> None:
+def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> Dict[str, Any]:
     """
     This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
     Args:
         feature (Dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
     """
-    INPUT_FEATURE_KEYS = [
+    input_feature_keys = [
         "name",
         "type",
         "column",
@@ -192,7 +192,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         "vector_size",
     ]
 
-    OUTPUT_FEATURE_KEYS = [
+    output_feature_keys = [
         "name",
         "type",
         "column",
@@ -208,9 +208,8 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         "vector_size",
     ]
 
-    FC_LAYER_KEYS = [
+    fc_layer_keys = [
         "fc_layers",
-        "num_fc_layers",
         "output_size",
         "use_bias",
         "weights_initializer",
@@ -228,8 +227,10 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         module_type = DECODER
 
     module = feature.get(module_type, {})
+
     # List of keys to keep in the output feature.
-    feature_keys = INPUT_FEATURE_KEYS if module_type == ENCODER else FC_LAYER_KEYS + OUTPUT_FEATURE_KEYS
+    feature_keys = input_feature_keys if module_type == ENCODER else output_feature_keys
+
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module
@@ -239,6 +240,8 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
     for k, v in feature.items():
         if k not in feature_keys:
             module[k] = v
+            if k in fc_layer_keys and module_type == DECODER:
+                module[f"fc_{k}"] = v
             nested_params.append(k)
             warn = True
 
@@ -248,10 +251,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         feature[module_type] = module
 
     for k in nested_params:
-        # Some of these params exist in both the decoder and the output feature schemas - to preserve old behavior,
-        # these params will be copied to the decoder and not removed from the feature.
-        if k not in FC_LAYER_KEYS:
-            del feature[k]
+        del feature[k]
 
     if warn:
         warnings.warn(

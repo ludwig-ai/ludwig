@@ -170,10 +170,11 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
-        if "fallback_true_label" in preprocessing_parameters:
+        if preprocessing_parameters["fallback_true_label"]:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
             fallback_true_label = sorted(distinct_values)[0]
+            preprocessing_parameters["fallback_true_label"] = fallback_true_label
 
         try:
             str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
