@@ -1,5 +1,4 @@
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.constants import (
     EVAL_BATCH_SIZE,
