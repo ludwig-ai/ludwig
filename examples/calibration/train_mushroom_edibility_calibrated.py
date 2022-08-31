@@ -22,9 +22,6 @@ dataset = mushroom_edibility.load()
 dataset.split = np.random.choice(3, len(dataset), p=(0.7, 0.1, 0.2))
 
 config_yaml = """
-output_features:
-  - name: class
-    type: category
 input_features:
   - name: cap-shape
     type: category
@@ -69,6 +66,9 @@ input_features:
   - name: population
     type: category
   - name: habitat
+    type: category
+output_features:
+  - name: class
     type: category
 combiner:
   type: concat
