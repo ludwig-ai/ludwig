@@ -192,7 +192,9 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
     output_feature_keys = [
         "name",
         "type",
+        "calibration",
         "column",
+        "proc_column",
         "decoder",
         "num_classes",
         "preprocessing",
@@ -241,10 +243,11 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
             nested_params.append(k)
             warn = True
 
-    if module_type in feature:
-        feature[module_type].update(module)
-    else:
-        feature[module_type] = module
+    if module:
+        if module_type in feature:
+            feature[module_type].update(module)
+        else:
+            feature[module_type] = module
 
     for k in nested_params:
         del feature[k]

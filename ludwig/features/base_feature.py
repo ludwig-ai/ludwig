@@ -223,7 +223,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             default_activation=feature.decoder.fc_activation,
             default_dropout=feature.decoder.fc_dropout,
         )
-        self._calibration_module = self.create_calibration_module(kwargs)
+        self._calibration_module = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -293,7 +293,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             },
         }
 
-    def create_calibration_module(self, feature) -> CalibrationModule:
+    def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
         """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
         return None
 

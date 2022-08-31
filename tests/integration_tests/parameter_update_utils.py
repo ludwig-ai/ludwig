@@ -74,8 +74,12 @@ def check_module_parameters_updated(
                     loss = loss_function(module_output["logits"], target_tensor)
                 elif "encoder_output" in module_output:
                     loss = loss_function(module_output["encoder_output"], target_tensor)
-            else:
+                elif "combiner_output" in module_output:
+                    loss = loss_function(module_output["combiner_output"], target_tensor)
+            elif isinstance(module_output, (list, tuple)):
                 loss = loss_function(module_output[0], target_tensor)
+            else:
+                raise ValueError(f"Unexpected output type.  Module type found is {type(module_output)}")
 
             loss.backward()
             optimizer.step()

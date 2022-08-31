@@ -170,10 +170,11 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
-        if "fallback_true_label" in preprocessing_parameters:
+        if preprocessing_parameters["fallback_true_label"]:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
             fallback_true_label = sorted(distinct_values)[0]
+            preprocessing_parameters["fallback_true_label"] = fallback_true_label
 
         try:
             str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
@@ -301,13 +302,13 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             confidence_penalty=self.loss["confidence_penalty"],
         )
 
-    def create_calibration_module(self, feature) -> torch.nn.Module:
+    def create_calibration_module(self, feature: BinaryOutputFeatureConfig) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
-        if feature.get("calibration"):
+        if feature.calibration:
             calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")
             return calibration_cls(binary=True)
         return None

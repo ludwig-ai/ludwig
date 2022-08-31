@@ -17,7 +17,7 @@ absl-py
 kaggle
 requests
 tables
-fsspec[http]
+fsspec[http]<2022.8
 dataclasses-json
 jsonschema>=4.5.0,<4.7
 marshmallow

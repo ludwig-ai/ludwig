@@ -13,6 +13,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema import validate_config
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,
@@ -432,3 +433,30 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
     # hyperopt scheduler to manage trial lifecycle.
     expected_early_stop = -1 if use_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected_early_stop
+
+
+def test_validate_old_model_config():
+    old_valid_config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category", "encoder": "dense"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+    }
+
+    old_invalid_config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category", "encoder": "fake_encoder"},
+        ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ],
+    }
+
+    validate_config(old_valid_config)
+
+    with pytest.raises(Exception):
+        validate_config(old_invalid_config)

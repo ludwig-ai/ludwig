@@ -1,0 +1,4 @@
+version: 1.0
+competition: joniarroba/noshowappointments
+archive_filename: noshowappointments.zip
+csv_filename: KaggleV2-May-2016.csv
