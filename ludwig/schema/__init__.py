@@ -61,7 +61,6 @@ def validate_config(config):
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-    from ludwig.utils.defaults import merge_with_defaults
 
     if "ludwig_version" not in config:
         config["ludwig_version"] = "0.4"
