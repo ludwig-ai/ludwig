@@ -216,7 +216,7 @@ def generate_datapoint(features: List[Dict], outdir: str) -> Union[str, int, boo
             feature_value = cycler_function(feature)
         else:
             generator_function = get_from_registry(feature[TYPE], generators_registry)
-            feature_value = generator_function(feature, outdir)
+            feature_value = generator_function(feature=feature, outdir=outdir)
         datapoint.append(feature_value)
     return datapoint
 
