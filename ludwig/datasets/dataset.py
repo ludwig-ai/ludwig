@@ -16,10 +16,9 @@
 import logging
 import os
 import urllib
-from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Union
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -27,6 +26,7 @@ from tqdm import tqdm
 
 from ludwig.constants import SPLIT
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
+from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.kaggle import download_kaggle_dataset
 
 logger = logging.getLogger(__name__)
@@ -54,46 +54,9 @@ class TqdmUpTo(tqdm):
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
 
-@dataclass
-class DatasetConfig:
-    # The version of the dataset.
-    version: str
-
-    # The name of the dataset. Make this a valid python module name, should not contain spaces or dashes.
-    name: str
-
-    # The readable description of the dataset
-    description: str = ""
-
-    # The kaggle competition this dataset belongs to, or None if this dataset is not hosted by a Kaggle competition.
-    kaggle_competition: Optional[str] = None
-
-    # The kaggle dataset ID, or None if this dataset if not hosted by Kaggle.
-    kaggle_dataset_id: Optional[str] = None
-
-    # The list of URLs to download.
-    download_urls: List[str] = field(default_factory=list)
-
-    # The list of file archives which will be downloaded. If download_urls contains a filename with extension, for
-    # example https://domain.com/archive.zip, then archive_filenames does not need to be specified.
-    archive_filenames: List[str] = field(default_factory=list)
-
-    # The names of files in the dataset (after extraction). Glob-style patterns are supported, see:
-    # https://docs.python.org/3/library/glob.html
-    dataset_filenames: List[str] = field(default_factory=list)
-
-    # If the dataset contains separate files for training, testing, or validation. Glob-style patterns are supported,
-    # see https://docs.python.org/3/library/glob.html
-    train_filenames: List[str] = field(default_factory=list)
-    validation_filenames: List[str] = field(default_factory=list)
-    test_filenames: List[str] = field(default_factory=list)
-
-    # List of column names, for datasets which do not have column names. If specified, will override the column names
-    # already present in the dataset.
-    columns: List[str] = field(default_factory=list)
-
-    # Custom dataset implementation, must be provided by @register_dataset. See datasets/registry.py
-    custom_implementation: Optional[str] = None
+def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
+    """Helper function to accept single string or lists in config."""
+    return [list_or_string] if isinstance(list_or_string, str) else list_or_string
 
 
 class DatasetState(int, Enum):
@@ -181,11 +144,13 @@ class Dataset:
         """Dataset state."""
         if os.path.exists(self.processed_dataset_path):
             return DatasetState.TRANSFORMED
-        if all(os.path.exists(os.path.join(self.raw_dataset_dir, filename)) for filename in self.download_filenames):
+        if all([os.path.exists(os.path.join(self.raw_dataset_dir, filename)) for filename in self.download_filenames]):
             archive_filenames = [f for f in self.download_filenames if is_archive(f)]
             if archive_filenames:
                 # Check to see if archive has been extracted.
-                extracted_files = [f for a in archive_filenames for f in list_archive(a)]
+                extracted_files = [
+                    f for a in archive_filenames for f in list_archive(os.path.join(self.raw_dataset_dir, a))
+                ]
                 if all(os.path.exists(os.path.join(self.raw_dataset_dir, ef)) for ef in extracted_files):
                     return DatasetState.EXTRACTED
                 else:
@@ -196,11 +161,29 @@ class Dataset:
 
     @property
     def download_urls(self) -> List[str]:
-        return self.config.download_urls
+        return _list_of_strings(self.config.download_urls)
 
     @property
     def download_filenames(self) -> List[str]:
+        """Filenames for downloaded files inferred from download_urls."""
+        if self.config.archive_filenames:
+            return _list_of_strings(self.config.archive_filenames)
         return [os.path.basename(urlparse(url).path) for url in self.download_urls]
+
+    # @property
+    # def raw_dataset_filenames(self):
+    #     """Returns the set of filenames expected to be present after download and extract."""
+    #     expected_filenames = set([
+    #         *_list_of_strings(self.config.dataset_filenames),
+    #         *_list_of_strings(self.config.train_filenames),
+    #         *_list_of_strings(self.config.test_filenames),
+    #         *_list_of_strings(self.config.validation_filenames)
+    #     ])
+    #     # If no files are explicitly declared, infer filenames from download_urls.
+    #     return expected_filenames
+
+    def description(self):
+        return f"{self.config.name} {self.config.version}\n{self.config.description}"
 
     def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
         """Loads the dataset, downloaded and processing it if needed.
@@ -240,6 +223,7 @@ class Dataset:
             os.makedirs(self.raw_dataset_dir)
         if self.is_kaggle_dataset:
             return download_kaggle_dataset(
+                self.raw_dataset_dir,
                 kaggle_dataset_id=self.config.kaggle_dataset_id,
                 kaggle_competition=self.config.kaggle_competition,
                 kaggle_username=kaggle_username,
@@ -313,5 +297,5 @@ class Dataset:
             test_set = dataset[dataset[SPLIT] == 2].drop(columns=[SPLIT])
             return training_set, test_set, val_set
         else:
-            raise ValueError("The dataset does not have splits, " "load with `split=False`")
+            raise ValueError(f"The dataset does not a '{SPLIT}' column, load with `split=False`")
         return dataset
