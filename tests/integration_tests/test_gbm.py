@@ -237,7 +237,7 @@ def run_test_gbm_category(tmpdir, backend_config):
     prob_col = preds[output_feature["name"] + "_probabilities"]
     if backend_config["type"] == "ray":
         prob_col = prob_col.compute()
-    assert len(prob_col.iloc[0]) == (vocab_size + 1)
+    assert len(prob_col.iloc[0]) == vocab_size
     assert prob_col.apply(sum).mean() == pytest.approx(1.0)
 
 
