@@ -20,8 +20,8 @@ dataset_registry = Registry()
 
 
 def register_dataset(name: str):
-    def wrap(cls):
-        dataset_registry[name] = cls
-        return cls
+    def wrap(dataset):
+        dataset_registry[name] = dataset
+        return dataset
 
     return wrap

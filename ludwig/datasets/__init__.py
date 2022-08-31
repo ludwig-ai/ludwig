@@ -37,7 +37,7 @@ def _import_dataset_configs():
             dataset_registry[dataset_config.name] = Dataset(dataset_config)
 
 
-_import_submodules()
+# _import_submodules()
 _import_dataset_configs()
 
 # TODO: generate datasets from configs
@@ -48,14 +48,13 @@ def list_datasets() -> List[str]:
 
 
 def describe_dataset(dataset: str) -> str:
-    return dataset_registry[dataset].__doc__
+    return dataset_registry[dataset].description()
 
 
-def download_dataset(dataset: str, output_dir: str = "."):
-    dataset_obj = dataset_registry[dataset]()
-    if not dataset_obj.is_processed():
-        dataset_obj.process()
-    processed_path = dataset_obj.processed_dataset_path
+def download_dataset(dataset_name: str, output_dir: str = "."):
+    dataset = dataset_registry[dataset_name]
+    _ = dataset.load()
+    processed_path = dataset.processed_dataset_dir
     _copytree(processed_path, output_dir)
 
 
