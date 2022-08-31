@@ -153,9 +153,9 @@ jobs:
         run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/integration_tests
 
-      - name: AutoML Tests
-        run: |
-          pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/automl
+      # - name: AutoML Tests
+      #   run: |
+      #     pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/automl
 
       - name: Benchmarking Tests
         run: |
