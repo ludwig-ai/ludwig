@@ -508,7 +508,7 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
             assert input_feature["embedding_size"] in embedding_size_search_space
 
 
-def test_hyperopt_old_config(csv_filename, tmpdir):
+def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
     old_config = {
         "ludwig_version": "0.4",
         "input_features": [
