@@ -1,4 +1,5 @@
 import pytest
+from marshmallow import ValidationError
 
 from ludwig.constants import (
     EVAL_BATCH_SIZE,
@@ -17,6 +18,7 @@ from ludwig.utils.backward_compatibility import (
     _upgrade_preprocessing_split,
     upgrade_to_latest_version,
 )
+from ludwig.schema import validate_config
 
 
 def test_preprocessing_backward_compatibility():
@@ -362,3 +364,30 @@ def test_deprecated_split_aliases(stratify, force_split):
     else:
         assert split.get(TYPE) == "stratify"
         assert split.get("column") == stratify
+
+
+def test_validate_old_model_config():
+    old_valid_config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category", "encoder": "dense"}
+            ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ]
+    }
+
+    old_invalid_config = {
+        "input_features": [
+            {"name": "feature_1", "type": "category"},
+            {"name": "Sex", "type": "category", "encoder": "fake_encoder"}
+            ],
+        "output_features": [
+            {"name": "Survived", "type": "category"},
+        ]
+    }
+
+    validate_config(old_valid_config)
+
+    with pytest.raises(Exception):
+        validate_config(old_invalid_config)
