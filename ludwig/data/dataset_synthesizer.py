@@ -338,7 +338,7 @@ def generate_audio(feature, outdir: str) -> str:
     try:
         torchaudio.save(audio_dest_path, audio_tensor, sampling_rate)
     except OSError as e:
-        raise OSError(f"Unable to create a folder for audio or save audio to disk: {e}")
+        raise OSError(f"Unable to save audio to disk: {e}")
 
     return audio_dest_path
 
@@ -393,7 +393,7 @@ def generate_image(feature, outdir: str, save_as_numpy: bool = False) -> str:
         else:
             write_png(img, image_dest_path)
     except OSError as e:
-        raise OSError(f"Unable to create a folder for images/save image to disk: {e}")
+        raise OSError(f"Unable to save images to disk: {e}")
 
     return image_dest_path
 
