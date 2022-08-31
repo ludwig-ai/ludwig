@@ -149,20 +149,56 @@ jobs:
           horovodrun --check-build
         shell: bash
 
-      - name: Tests
+      - name: Integration Tests
         run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/integration_tests
+
+      - name: AutoML Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/automl
+
+      - name: Benchmarking Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/benchmarking
+
+      - name: Combiner Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/combiners
+
+      - name: Data Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/data
+
+      - name: Datasets Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/datasets
+
+      - name: Decoders Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/decoders
+
+      - name: Encoders Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/encoders
+
+      - name: Features Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/features
+
+      - name: Hyperopt Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/hyperopt
+
+      - name: Marshmallow Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/marshmallow
+
+      - name: Module Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/modules
+
+      - name: Utils Tests
+        run: |
           pytest -v --disable-warnings --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests/ludwig/utils
 
       - name: Upload Unit Test Results
