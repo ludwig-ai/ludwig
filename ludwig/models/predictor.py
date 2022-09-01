@@ -324,7 +324,13 @@ def save_prediction_outputs(
         import pyarrow as pa
 
         prob_cols = [feature + "_probabilities" for feature in output_features]
-        schema = pa.schema({feature: pa.list_(pa.float64()) for feature in prob_cols if feature in postprocessed_output.columns.tolist()})
+        schema = pa.schema(
+            {
+                feature: pa.list_(pa.float64())
+                for feature in prob_cols
+                if feature in postprocessed_output.columns.tolist()
+            }
+        )
     except ImportError:
         logger.warning("Could not import pyarrow in save_prediction_outputs()")
 
