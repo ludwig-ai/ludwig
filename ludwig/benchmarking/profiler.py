@@ -8,13 +8,14 @@ import threading
 import time
 from queue import Empty as EmptyQueueException
 from queue import Queue
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
 from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler, get_metrics_from_system_usage_profiler
+from ludwig.benchmarking.profiler_dataclasses import TorchProfilerMetrics
 from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
@@ -214,7 +215,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         file_name = os.path.join(output_subdir, f"run_{num_prev_runs}.json")
         save_json(file_name, system_usage_metrics.to_flat_dict())
 
-    def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
+    def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics: Dict[str, Any]) -> Dict[str, List[TorchProfilerMetrics]]:
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
@@ -232,4 +233,4 @@ class LudwigProfiler(contextlib.ContextDecorator):
                 os.makedirs(temp_dir, exist_ok=True)
                 for run in runs:
                     num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
-                    save_json(os.path.join(temp_dir, f"run_{num_prev_runs}.json"), run)
+                    save_json(os.path.join(temp_dir, f"run_{num_prev_runs}.json"), run.to_flat_dict())

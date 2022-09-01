@@ -4,7 +4,7 @@ from typing import Dict
 from ludwig.utils.data_utils import flatten_dict
 
 @dataclass
-class CudaUsageMetrics:
+class DeviceUsageMetrics:
     # Max CUDA memory utilization of the code block.
     max_memory_used: float
 
@@ -49,15 +49,27 @@ class SystemResourceMetrics:
     # Avergae CPU memory (RAM) utilization of the code block.
     average_cpu_memory_usage: float
 
-    # CUDA devices usage. Dictionary containing max and average memory used per device.
-    cuda_usage: Dict[str, CudaUsageMetrics]
+    # Per device usage. Dictionary containing max and average memory used per device.
+    device_usage: Dict[str, DeviceUsageMetrics]
 
     def to_flat_dict(self):
         nested_dict = dataclasses.asdict(self)
-        return flatten_dict(nested_dict, sep="_")
+        nested_dict[""] = nested_dict.pop("device_usage")
+        return flatten_dict(nested_dict, sep="")
 
 
 @dataclass
 class TorchProfilerMetrics:
-    name: str
+    # Time taken by torch ops to execute on the CPU.
+    torch_cpu_time: float
 
+    # Time taken by torch ops to execute on CUDA devices.
+    torch_cuda_time: float
+
+    # Per device usage by torch ops. Dictionary containing max and average memory used per device.
+    device_usage: Dict[str, DeviceUsageMetrics]
+
+    def to_flat_dict(self):
+        nested_dict = dataclasses.asdict(self)
+        nested_dict[""] = nested_dict.pop("device_usage")
+        return flatten_dict(nested_dict, sep="")

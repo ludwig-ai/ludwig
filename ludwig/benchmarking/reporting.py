@@ -6,10 +6,10 @@ from torch._C._autograd import _KinetoEvent
 from torch.autograd import DeviceType, profiler_util
 from statistics import mean
 from ludwig.constants import LUDWIG_TAG
-from ludwig.benchmarking.profiler_dataclasses import CudaUsageMetrics, SystemResourceMetrics
+from ludwig.benchmarking.profiler_dataclasses import DeviceUsageMetrics, SystemResourceMetrics, TorchProfilerMetrics
 
 
-def initialize_stats_dict(main_function_events: List[profiler_util.FunctionEvent]) -> Dict[str, list]:
+def initialize_stats_dict(main_function_events: List[profiler_util.FunctionEvent]) -> Dict[str, List]:
     """Initialize dictionary which stores resource usage information per tagged code block.
 
     :param main_function_events: list of main function events.
@@ -33,14 +33,12 @@ def get_memory_details(kineto_event: _KinetoEvent) -> Tuple[str, int]:
         raise ValueError(f"Device {kineto_event.device_type()} is not valid.")
 
 
-def get_device_memory_usage(
-        kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc, run_usage_info: Dict[str, Any]
-) -> Dict[str, Any]:
+def get_device_memory_usage(kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc) -> Dict[
+    str, DeviceUsageMetrics]:
     """Get CPU and CUDA memory usage for an event.
 
     :param kineto_event: a Kineto event instance.
     :param mem_records_acc: memory events wrapped in a data structure for fast lookup.
-    :param run_usage_info: usage info for one execution of the tagged code block.
     """
     records_in_interval = mem_records_acc.in_interval(
         kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
@@ -58,10 +56,11 @@ def get_device_memory_usage(
                 count_so_far[device] + 1
         )
         count_so_far[device] += 1
+    memory_info_per_device = {}
     for device in count_so_far:
-        run_usage_info[f"torch_average_{device}_memory_usage"] = average_so_far[device]
-        run_usage_info[f"torch_max_{device}_memory_usage"] = max_so_far[device]
-    return run_usage_info
+        memory_info_per_device[f"torch_{device}_"] = DeviceUsageMetrics(max_memory_used=max_so_far[device],
+                                                                       average_memory_used=average_so_far[device])
+    return memory_info_per_device
 
 
 def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> Union[int, float]:
@@ -84,17 +83,14 @@ def get_torch_op_time(events: List[profiler_util.FunctionEvent], attr: str) -> U
     return total
 
 
-def get_device_run_durations(
-        function_event: profiler_util.FunctionEvent, run_usage_info: Dict[str, Any]
-) -> Dict[str, Any]:
+def get_device_run_durations(function_event: profiler_util.FunctionEvent) -> Tuple[float, float]:
     """Get CPU and CUDA run durations for an event.
 
     :param function_event: a function event instance.
-    :param run_usage_info: usage info for one execution of the tagged code block.
     """
-    run_usage_info["torch_cpu_time"] = get_torch_op_time(function_event.cpu_children, "cpu_time_total")
-    run_usage_info["torch_cuda_time"] = get_torch_op_time(function_event.cpu_children, "cuda_time_total")
-    return run_usage_info
+    torch_cpu_time = get_torch_op_time(function_event.cpu_children, "cpu_time_total")
+    torch_cuda_time = get_torch_op_time(function_event.cpu_children, "cuda_time_total")
+    return torch_cpu_time, torch_cuda_time
 
 
 def get_resource_usage_report(
@@ -102,7 +98,7 @@ def get_resource_usage_report(
         main_function_events: List[profiler_util.FunctionEvent],
         memory_events: List[Any],
         info: Dict[str, Any],
-) -> Dict[str, Any]:
+) -> Dict[str, List[TorchProfilerMetrics]]:
     """Get relevant information from Kineto events and function events exported by the profiler.
 
     :param main_kineto_events: list of main Kineto events.
@@ -117,10 +113,14 @@ def get_resource_usage_report(
     main_function_events = sorted((evt for evt in main_function_events if LUDWIG_TAG in evt.name), key=lambda x: x.id)
 
     for kineto_event, function_event in zip(main_kineto_events, main_function_events):
-        run_usage_info = {}
-        run_usage_info = get_device_memory_usage(kineto_event, mem_records_acc, run_usage_info)
-        run_usage_info = get_device_run_durations(function_event, run_usage_info)
-        info[function_event.name].append(run_usage_info)
+        # Two different instances of `function_event` can have the same name if a the same
+        # tagged code block/function was executed more than once.
+        memory_info_per_device = get_device_memory_usage(kineto_event, mem_records_acc)
+        torch_cpu_time, torch_cuda_time = get_device_run_durations(function_event)
+        torch_profiler_metrics = TorchProfilerMetrics(torch_cpu_time=torch_cpu_time,
+                                                      torch_cuda_time=torch_cuda_time,
+                                                      device_usage=memory_info_per_device)
+        info[function_event.name].append(torch_profiler_metrics)
     return info
 
 
@@ -143,7 +143,7 @@ def get_all_events(
     return main_kineto_events, main_function_events, memory_events, out_of_memory_events
 
 
-def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile) -> Dict[str, Any]:
+def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile) -> Dict[str, List[TorchProfilerMetrics]]:
     """Export time and resource usage metrics (CPU and CUDA) from a PyTorch profiler.
 
     The profiler keeps track of *torch operations* being executed in C++. It keeps track
@@ -175,14 +175,14 @@ def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemRes
 
     :param system_usage_info: dictionary containing resource usage information.
     """
-    cuda_usage_dict: Dict[str, CudaUsageMetrics] = {}
+    device_usage_dict: Dict[str, DeviceUsageMetrics] = {}
     for key in system_usage_info:
         if "cuda_" in key and "_memory_used" in key:
             cuda_device_name = "_".join(key.split("_")[:2])
             max_memory_used = max(system_usage_info[key], default=0)
             average_memory_used = mean(system_usage_info.get(key, [0]))
-            cuda_usage_dict[cuda_device_name] = CudaUsageMetrics(max_memory_used=max_memory_used,
-                                                                 average_memory_used=average_memory_used)
+            device_usage_dict[cuda_device_name] = DeviceUsageMetrics(max_memory_used=max_memory_used,
+                                                                   average_memory_used=average_memory_used)
     return SystemResourceMetrics(code_block_tag=system_usage_info["code_block_tag"],
                                  cpu_name=system_usage_info["cpu_name"],
                                  cpu_architecture=system_usage_info["cpu_architecture"],
@@ -190,10 +190,11 @@ def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemRes
                                  cpu_memory_available=system_usage_info["cpu_memory_available"],
                                  ludwig_version=system_usage_info["ludwig_version"],
                                  total_execution_time=system_usage_info["end_time"] - system_usage_info["start_time"],
-                                 disk_footprint=system_usage_info["end_disk_usage"] - system_usage_info["start_disk_usage"],
+                                 disk_footprint=system_usage_info["end_disk_usage"] - system_usage_info[
+                                     "start_disk_usage"],
                                  max_cpu_utilization=max(system_usage_info["cpu_utilization"], default=0),
                                  max_cpu_memory_usage=max(system_usage_info["cpu_memory_usage"], default=0),
                                  average_cpu_utilization=mean(system_usage_info.get("cpu_utilization", [0])),
                                  average_cpu_memory_usage=mean(system_usage_info.get("cpu_memory_usage", [0])),
-                                 cuda_usage=cuda_usage_dict,
+                                 device_usage=device_usage_dict,
                                  )
