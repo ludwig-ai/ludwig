@@ -100,7 +100,11 @@ def sanitize(name):
 
 
 def compute_feature_hash(feature: dict) -> str:
-    preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
+    preproc = feature.get(PREPROCESSING, {})
+    if isinstance(preproc, dict):
+        preproc_hash = hash_dict(preproc)
+    else:
+        preproc_hash = hash_dict(preproc.to_dict())
     return sanitize(feature[NAME]) + "_" + preproc_hash.decode("ascii")
 
 

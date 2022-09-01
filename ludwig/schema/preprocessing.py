@@ -40,4 +40,5 @@ def get_preprocessing_jsonschema():
     return {
         "type": "object",
         "properties": props,
+        "additionalProperties": False
     }
