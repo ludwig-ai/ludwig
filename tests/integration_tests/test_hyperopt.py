@@ -21,6 +21,7 @@ import pytest
 import torch
 from packaging import version
 
+from ludwig.callbacks import Callback
 from ludwig.constants import (
     ACCURACY,
     CATEGORY,
@@ -38,7 +39,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
-from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
 from ludwig.utils.defaults import merge_with_defaults
@@ -241,7 +242,7 @@ def test_hyperopt_search_alg(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
     raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
-    assert isinstance(raytune_results, RayTuneResults)
+    assert isinstance(raytune_results, HyperoptResults)
 
 
 @pytest.mark.distributed
@@ -308,7 +309,7 @@ def test_hyperopt_scheduler(
             parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
         )
         raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
-        assert isinstance(raytune_results, RayTuneResults)
+        assert isinstance(raytune_results, HyperoptResults)
 
 
 @pytest.mark.distributed
@@ -562,3 +563,78 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+
+
+@pytest.mark.distributed
+def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
+    config = {
+        INPUT_FEATURES: [
+            {"name": "cat1", TYPE: "category", "encoder": {"vocab_size": 2}},
+            {"name": "num1", TYPE: "number"},
+        ],
+        OUTPUT_FEATURES: [
+            {"name": "bin1", TYPE: "binary"},
+        ],
+        TRAINER: {"epochs": 2},
+        HYPEROPT: {
+            EXECUTOR: {
+                TYPE: "ray",
+                "time_budget_s": 200,
+                "cpu_resources_per_trial": 1,
+                "num_samples": 4,
+                "scheduler": {TYPE: "fifo"},
+            },
+            "search_alg": {TYPE: "variant_generator"},
+            "parameters": {
+                ".": {
+                    "space": "choice",
+                    "categories": [
+                        [
+                            {
+                                "combiner": {
+                                    "type": "tabnet",
+                                    "bn_virtual_bs": 256,
+                                },
+                                "trainer": {
+                                    "learning_rate_scaling": "sqrt",
+                                    "decay": True,
+                                    "decay_steps": 20000,
+                                    "decay_rate": 0.8,
+                                    "optimizer": {"type": "adam"},
+                                },
+                            },
+                            {
+                                "combiner": {
+                                    "type": "concat",
+                                    "num_fc_layers": 2,
+                                },
+                                "trainer": {
+                                    "learning_rate_scaling": "linear",
+                                },
+                            },
+                        ]
+                    ],
+                },
+                "trainer.learning_rate": {"space": "choice", "categories": [0.1, 1.0]},
+            },
+        },
+    }
+
+    input_features = config[INPUT_FEATURES]
+    output_features = config[OUTPUT_FEATURES]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    class CollectParametersCallback(Callback):
+        def on_hyperopt_trial_start(self, parameters: Dict[str, Any]):
+            print(parameters)
+
+    results = hyperopt(
+        config,
+        dataset=rel_path,
+        output_directory=tmpdir,
+        callbacks=[CollectParametersCallback()],
+        experiment_name="test_hyperopt_nested_params",
+    )
+
+    for trial in results.experiment_analysis:
+        print(trial.parameters)

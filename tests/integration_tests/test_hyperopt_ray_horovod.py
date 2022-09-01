@@ -25,6 +25,7 @@ from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
@@ -40,7 +41,6 @@ try:
 
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
-    from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
     ray = None
     RayTuneExecutor = object
@@ -318,7 +318,7 @@ def run_hyperopt(
         )
 
         # check for return results
-        assert isinstance(hyperopt_results, RayTuneResults)
+        assert isinstance(hyperopt_results, HyperoptResults)
 
         # check for existence of the hyperopt statistics file
         assert os.path.isfile(os.path.join(out_dir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))

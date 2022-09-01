@@ -43,7 +43,7 @@ from ludwig.constants import (
     TYPE,
     VALIDATION,
 )
-from ludwig.hyperopt.results import RayTuneResults, TrialResults
+from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
@@ -654,7 +654,7 @@ class RayTuneExecutor:
         hyperopt_log_verbosity=3,
         features_eligible_for_shared_params=None,
         **kwargs,
-    ) -> RayTuneResults:
+    ) -> HyperoptResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
@@ -872,7 +872,7 @@ class RayTuneExecutor:
             logger.warning("No trials reported results; check if time budget lower than epoch latency")
             ordered_trials = []
 
-        return RayTuneResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
+        return HyperoptResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
 
 
 class CallbackStopper(Stopper):
