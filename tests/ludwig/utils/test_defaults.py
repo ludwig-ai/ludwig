@@ -395,7 +395,7 @@ def test_merge_with_defaults():
                     "padding_symbol": "<PAD>",
                     "unknown_symbol": "<UNK>",
                     "padding": "right",
-                    "lowercase": False,
+                    "lowercase": True,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
                     "computed_fill_value": "<UNK>",
