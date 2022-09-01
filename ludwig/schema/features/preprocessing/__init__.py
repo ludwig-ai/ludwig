@@ -1,5 +1,5 @@
 # Register all preprocessors
-from ludwig.schema.features.preprocessing import (
+from ludwig.schema.features.preprocessing import (  # noqa
     audio,
     bag,
     binary,
@@ -13,4 +13,4 @@ from ludwig.schema.features.preprocessing import (
     text,
     timeseries,
     vector,
-) # noqa
+)
