@@ -317,7 +317,16 @@ def save_prediction_outputs(
     backend,
 ):
     postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
-    postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME), schema=None)
+
+    schema = "infer"
+    try:
+        # Schema is needed for Dask 2022.6+ otherwise probabilities columns will be inferred as strings
+        import pyarrow as pa
+        schema = pa.schema({feature + "_probabilities": pa.list_(pa.float64()) for feature in output_features})
+    except ImportError:
+        logger.warning("Could not import pyarrow in save_prediction_outputs()")
+
+    postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME), schema=schema)
     save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
     if not backend.df_engine.partitioned:
         # csv can only be written out for unpartitioned df format (i.e., pandas)
