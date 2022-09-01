@@ -527,7 +527,7 @@ class LightGBMTrainer(BaseTrainer):
                 output_params = {
                     "objective": "multiclass",
                     "metric": ["multi_logloss"],
-                    "num_class": feature.decoder_config.num_classes,
+                    "num_class": feature.num_classes,
                 }
             elif feature.type() == BINARY:
                 output_params = {
