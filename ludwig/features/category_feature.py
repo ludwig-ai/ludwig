@@ -314,11 +314,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["num_classes"] = feature_metadata["vocab_size"]
-        output_feature["top_k"] = min(output_feature[DECODER]["num_classes"], output_feature["top_k"])
+        output_feature["num_classes"] = feature_metadata["vocab_size"]
+        output_feature["top_k"] = min(output_feature["num_classes"], output_feature["top_k"])
 
         if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["num_classes"]:
+            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
@@ -326,7 +326,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> class too.".format(
                         len(output_feature[LOSS]["class_weights"]),
-                        output_feature[DECODER]["num_classes"],
+                        output_feature["num_classes"],
                         output_feature[COLUMN],
                     )
                 )

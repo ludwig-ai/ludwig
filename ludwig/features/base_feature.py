@@ -279,8 +279,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type(), self.loss.type)(**loss_kwargs)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable

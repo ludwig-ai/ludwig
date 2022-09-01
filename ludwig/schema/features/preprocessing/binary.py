@@ -54,33 +54,11 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
 @register_preprocessor("binary_output")
 @dataclass
-class BinaryOutputPreprocessingConfig(BasePreprocessingConfig):
+class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary output feature",
-    )
-
-    fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
-        default=None,
-        allow_none=True,
-        field_options=[
-            schema_utils.FloatRange(default=None, allow_none=False, min=0, max=1, description=""),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
-        ],
-        description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
-    )
-
-    computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
-        default=None,
-        allow_none=True,
-        field_options=[
-            schema_utils.FloatRange(default=1.0, allow_none=False, min=0, max=1, description=""),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
-        ],
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
     )
