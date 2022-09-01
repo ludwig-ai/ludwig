@@ -317,7 +317,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature["num_classes"], output_feature[NAME]
+                        len(output_feature[LOSS]["class_weights"]),
+                        output_feature[DECODER]["num_classes"],
+                        output_feature[NAME],
                     )
                 )
 

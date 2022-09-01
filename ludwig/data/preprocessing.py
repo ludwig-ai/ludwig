@@ -1438,7 +1438,12 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
         # Distinct values are sorted in reverse to mirror the selection of the default fallback_true_label (in
         # binary_feature.get_feature_meta) for binary columns with unconventional boolean values, "human"/"bot".
         for v in sorted(distinct_values, reverse=True):
-            fallback_true_label = preprocessing_parameters.get("fallback_true_label", "true")
+            fallback_true_label = (
+                preprocessing_parameters["fallback_true_label"]
+                # By default, preprocessing_parameters.fallback_true_label is None.
+                if preprocessing_parameters["fallback_true_label"]
+                else "true"
+            )
             if strings_utils.str2bool(v, fallback_true_label) is False:
                 return v
         raise ValueError(

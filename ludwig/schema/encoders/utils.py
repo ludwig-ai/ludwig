@@ -85,7 +85,6 @@ def EncoderDataclassField(feature_type: str, default: str):
                 },
                 "title": "encoder_options",
                 "allOf": get_encoder_conds(feature_type),
-                "required": ["type"],
             }
 
     try:

@@ -85,7 +85,6 @@ def DecoderDataclassField(feature_type: str, default: str):
                 },
                 "title": "decoder_options",
                 "allOf": get_decoder_conds(feature_type),
-                "required": ["type"],
             }
 
     try:

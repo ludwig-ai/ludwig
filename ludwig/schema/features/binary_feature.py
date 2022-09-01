@@ -74,3 +74,8 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         default="sum",
         description="How to reduce the dependencies of the output feature.",
     )
+
+    calibration: bool = schema_utils.Boolean(
+        default=False,
+        description="Calibrate the model's output probabilities using temperature scaling.",
+    )

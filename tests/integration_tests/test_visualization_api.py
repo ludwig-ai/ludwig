@@ -483,7 +483,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment
                 experiment.ground_truth,
                 experiment.ground_truth_metadata,
                 experiment.output_feature_name,
-                top_n_classes=[3],
+                top_n_classes=[2],
                 labels_limit=0,
                 subset="ground_truth",
                 model_names=["Model1", "Model2"],
@@ -493,7 +493,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment
             figure_cnt = glob.glob(vis_output_pattern_pdf)
             # 3 figures should be saved because experiment setting top_n_classes = 3
             # hence one figure per class
-            assert 3 == len(figure_cnt)
+            assert 2 == len(figure_cnt)
 
 
 def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
@@ -652,7 +652,7 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     metrics = ["accuracy"]
-    positive_label = 2
+    positive_label = 1
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
@@ -681,7 +681,7 @@ def test_roc_curves_vis_api(experiment_to_use):
     experiment = experiment_to_use
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
-    positive_label = 2
+    positive_label = 1
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
@@ -758,7 +758,7 @@ def test_calibration_1_vs_all_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 7 == len(figure_cnt)
+            assert 5 == len(figure_cnt)
 
 
 def test_calibration_multiclass_vis_api(experiment_to_use):
