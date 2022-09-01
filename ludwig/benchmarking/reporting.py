@@ -33,13 +33,14 @@ def get_memory_details(kineto_event: _KinetoEvent) -> Tuple[str, int]:
         raise ValueError(f"Device {kineto_event.device_type()} is not valid.")
 
 
-def get_device_memory_usage(kineto_event: _KinetoEvent, mem_records_acc: profiler_util.MemRecordsAcc) -> Dict[
+def get_device_memory_usage(kineto_event: _KinetoEvent, memory_events: List[List[Union[_KinetoEvent, bool]]]) -> Dict[
     str, DeviceUsageMetrics]:
     """Get CPU and CUDA memory usage for an event.
 
     :param kineto_event: a Kineto event instance.
-    :param mem_records_acc: memory events wrapped in a data structure for fast lookup.
+    :param memory_events: list of memory events.
     """
+    mem_records_acc = profiler_util.MemRecordsAcc(memory_events)
     records_in_interval = mem_records_acc.in_interval(
         kineto_event.start_us(), kineto_event.start_us() + kineto_event.duration_us()
     )
@@ -59,7 +60,7 @@ def get_device_memory_usage(kineto_event: _KinetoEvent, mem_records_acc: profile
     memory_info_per_device = {}
     for device in count_so_far:
         memory_info_per_device[f"torch_{device}_"] = DeviceUsageMetrics(max_memory_used=max_so_far[device],
-                                                                       average_memory_used=average_so_far[device])
+                                                                        average_memory_used=average_so_far[device])
     return memory_info_per_device
 
 
@@ -93,10 +94,18 @@ def get_device_run_durations(function_event: profiler_util.FunctionEvent) -> Tup
     return torch_cpu_time, torch_cuda_time
 
 
+def get_num_oom_events(kineto_event: _KinetoEvent, out_of_memory_events: List[List[Union[_KinetoEvent, bool]]]) -> int:
+    oom_records_acc = profiler_util.MemRecordsAcc(out_of_memory_events)
+    records_in_interval = oom_records_acc.in_interval(kineto_event.start_us(),
+                                                      kineto_event.start_us() + kineto_event.duration_us())
+    return len(list(records_in_interval))
+
+
 def get_resource_usage_report(
         main_kineto_events: List[_KinetoEvent],
         main_function_events: List[profiler_util.FunctionEvent],
-        memory_events: List[Any],
+        memory_events: List[List[Union[_KinetoEvent, bool]]],
+        out_of_memory_events: List[List[Union[_KinetoEvent, bool]]],
         info: Dict[str, Any],
 ) -> Dict[str, List[TorchProfilerMetrics]]:
     """Get relevant information from Kineto events and function events exported by the profiler.
@@ -104,9 +113,9 @@ def get_resource_usage_report(
     :param main_kineto_events: list of main Kineto events.
     :param main_function_events: list of main function events.
     :param memory_events: list of memory events.
+    :param out_of_memory_events: list of out of memory events.
     :param info: dictionary used to record resource usage metrics.
     """
-    mem_records_acc = profiler_util.MemRecordsAcc(memory_events)
     main_kineto_events = sorted(
         (evt for evt in main_kineto_events if LUDWIG_TAG in evt.name()), key=lambda x: x.correlation_id()
     )
@@ -115,10 +124,12 @@ def get_resource_usage_report(
     for kineto_event, function_event in zip(main_kineto_events, main_function_events):
         # Two different instances of `function_event` can have the same name if a the same
         # tagged code block/function was executed more than once.
-        memory_info_per_device = get_device_memory_usage(kineto_event, mem_records_acc)
+        memory_info_per_device = get_device_memory_usage(kineto_event, memory_events)
         torch_cpu_time, torch_cuda_time = get_device_run_durations(function_event)
+        num_oom_events = get_num_oom_events(kineto_event, out_of_memory_events)
         torch_profiler_metrics = TorchProfilerMetrics(torch_cpu_time=torch_cpu_time,
                                                       torch_cuda_time=torch_cuda_time,
+                                                      num_oom_events=num_oom_events,
                                                       device_usage=memory_info_per_device)
         info[function_event.name].append(torch_profiler_metrics)
     return info
@@ -126,7 +137,8 @@ def get_resource_usage_report(
 
 def get_all_events(
         kineto_events: List[_KinetoEvent], function_events: profiler_util.EventList
-) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[Any], List[_KinetoEvent]]:
+) -> Tuple[List[_KinetoEvent], List[profiler_util.FunctionEvent], List[List[Union[_KinetoEvent, bool]]], List[
+    List[Union[_KinetoEvent, bool]]]]:
     """Return main Kineto and function events, memory and OOM events for functions/code blocks tagged in
     LudwigProfiler.
 
@@ -139,7 +151,7 @@ def get_all_events(
     main_kineto_events = [event for event in kineto_events if LUDWIG_TAG in event.name()]
     memory_events = [[event, False] for event in kineto_events if profiler_util.MEMORY_EVENT_NAME in event.name()]
     # profiler_util.OUT_OF_MEMORY_EVENT_NAME seems to only be in newer versions of torch.
-    out_of_memory_events = [event for event in kineto_events if "[OutOfMemory]" in event.name()]
+    out_of_memory_events = [[event, False] for event in kineto_events if "[OutOfMemory]" in event.name()]
     return main_kineto_events, main_function_events, memory_events, out_of_memory_events
 
 
@@ -160,13 +172,15 @@ def get_metrics_from_torch_profiler(profile: torch.profiler.profiler.profile) ->
     # events in both of these lists are in chronological order.
     kineto_events = profile.profiler.kineto_results.events()
     function_events = profile.profiler.function_events
-    main_kineto_events, main_function_events, memory_events, _ = get_all_events(kineto_events, function_events)
+    main_kineto_events, main_function_events, memory_events, out_of_memory_events = get_all_events(kineto_events,
+                                                                                                   function_events)
 
     assert Counter([event.name for event in main_function_events]) == Counter(
         [event.name() for event in main_kineto_events]
     )
     info = initialize_stats_dict(main_function_events)
-    info = get_resource_usage_report(main_kineto_events, main_function_events, memory_events, info)
+    info = get_resource_usage_report(main_kineto_events, main_function_events, memory_events, out_of_memory_events,
+                                     info)
     return info
 
 
@@ -182,7 +196,7 @@ def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemRes
             max_memory_used = max(system_usage_info[key], default=0)
             average_memory_used = mean(system_usage_info.get(key, [0]))
             device_usage_dict[cuda_device_name] = DeviceUsageMetrics(max_memory_used=max_memory_used,
-                                                                   average_memory_used=average_memory_used)
+                                                                     average_memory_used=average_memory_used)
     return SystemResourceMetrics(code_block_tag=system_usage_info["code_block_tag"],
                                  cpu_name=system_usage_info["cpu_name"],
                                  cpu_architecture=system_usage_info["cpu_architecture"],

@@ -66,6 +66,9 @@ class TorchProfilerMetrics:
     # Time taken by torch ops to execute on CUDA devices.
     torch_cuda_time: float
 
+    # Number of out of memory events.
+    num_oom_events: int
+
     # Per device usage by torch ops. Dictionary containing max and average memory used per device.
     device_usage: Dict[str, DeviceUsageMetrics]
 
