@@ -5,8 +5,8 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
-from ludwig.utils.torch_utils import initializer_registry
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.utils.torch_utils import initializer_registry
 
 
 @register_encoder_config("stacked_cnn", IMAGE)

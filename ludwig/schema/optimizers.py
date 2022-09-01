@@ -83,15 +83,10 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
        (default: 'adam')"""
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adam.html#torch.optim.Adam :
-    lr: float = FloatRange(
-        default=1e-03,
-        min=0.0, max=1.0,
-        description="Learning rate."
-    )
+    lr: float = FloatRange(default=1e-03, min=0.0, max=1.0, description="Learning rate.")
 
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
-        default=(0.9, 0.999),
-        description="Coefficients used for computing running averages of gradient and its square."
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
     )
 
     eps: float = NonNegativeFloat(
@@ -125,8 +120,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     lr: float = FloatRange(default=1e-03, min=0.0, max=1.0, description="Learning rate.")
 
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
-        default=(0.9, 0.999),
-        description="Coefficients used for computing running averages of gradient and its square."
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
     )
 
     eps: float = NonNegativeFloat(
@@ -165,8 +159,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     )
 
     eps: float = NonNegativeFloat(
-        default=1e-06,
-        description="Term added to the denominator to improve numerical stability."
+        default=1e-06, description="Term added to the denominator to improve numerical stability."
     )
 
     lr: float = FloatRange(
@@ -216,8 +209,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0, description="Learning rate.")
 
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
-        default=(0.9, 0.999),
-        description="Coefficients used for computing running averages of gradient and its square."
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
     )
 
     eps: float = NonNegativeFloat(
@@ -249,8 +241,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     lr: float = FloatRange(default=2e-3, min=0.0, max=1.0, description="Learning rate.")
 
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
-        default=(0.9, 0.999),
-        description="Coefficients used for computing running averages of gradient and its square."
+        default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
     )
 
     eps: float = NonNegativeFloat(

@@ -1,10 +1,11 @@
-from marshmallow_dataclass import dataclass
-from marshmallow import fields, ValidationError
 from dataclasses import field
 
+from marshmallow import fields, ValidationError
+from marshmallow_dataclass import dataclass
+
 from ludwig.constants import TYPE
-from ludwig.utils.registry import Registry
 from ludwig.schema import utils as schema_utils
+from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()
 DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
@@ -12,9 +13,7 @@ DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
 
 @dataclass
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
-    """
-    This Dataclass is a base schema for the nested split config under preprocessing
-    """
+    """This Dataclass is a base schema for the nested split config under preprocessing."""
 
     type: str
     "Name corresponding to the splitting type."
@@ -23,9 +22,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 @split_config_registry.register("random")
 @dataclass
 class RandomSplitConfig(BaseSplitConfig):
-    """
-    This Dataclass generates a schema for the random splitting config
-    """
+    """This Dataclass generates a schema for the random splitting config."""
 
     type: str = schema_utils.StringOptions(
         ["random"],
@@ -44,9 +41,7 @@ class RandomSplitConfig(BaseSplitConfig):
 @split_config_registry.register("fixed")
 @dataclass
 class FixedSplitConfig(BaseSplitConfig):
-    """
-    This Dataclass generates a schema for the fixed splitting config
-    """
+    """This Dataclass generates a schema for the fixed splitting config."""
 
     type: str = schema_utils.StringOptions(
         ["fixed"],
@@ -63,9 +58,7 @@ class FixedSplitConfig(BaseSplitConfig):
 @split_config_registry.register("stratify")
 @dataclass
 class StratifySplitConfig(BaseSplitConfig):
-    """
-    This Dataclass generates a schema for the fixed splitting config
-    """
+    """This Dataclass generates a schema for the fixed splitting config."""
 
     type: str = schema_utils.StringOptions(
         ["stratify"],
@@ -88,9 +81,7 @@ class StratifySplitConfig(BaseSplitConfig):
 @split_config_registry.register("datetime")
 @dataclass
 class DateTimeSplitConfig(BaseSplitConfig):
-    """
-    This Dataclass generates a schema for the fixed splitting config
-    """
+    """This Dataclass generates a schema for the fixed splitting config."""
 
     type: str = schema_utils.StringOptions(
         ["datetime"],
@@ -121,14 +112,15 @@ def get_split_conds():
 
 
 def SplitDataclassField(default: str):
-    """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested split config.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested split
+    config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a split config.
     """
 
     class SplitMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid split config from the
-        split_registry and creates a corresponding JSON schema for external usage."""
+        """Custom marshmallow field that deserializes a dict for a valid split config from the split_registry and
+        creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -155,7 +147,7 @@ def SplitDataclassField(default: str):
                     "type": {"type": "string", "enum": list(split_config_registry.data.keys()), "default": default},
                 },
                 "title": "split_options",
-                "allOf": get_split_conds()
+                "allOf": get_split_conds(),
             }
 
     try:

@@ -1,8 +1,9 @@
-from marshmallow import fields, ValidationError
 from dataclasses import field
 
+from marshmallow import fields, ValidationError
+
 from ludwig.constants import TYPE
-from ludwig.modules.loss_modules import get_loss_cls, get_loss_classes
+from ludwig.modules.loss_modules import get_loss_classes, get_loss_cls
 from ludwig.schema import utils as schema_utils
 
 
@@ -22,8 +23,8 @@ def get_loss_conds(feature_type: str):
 
 
 def LossDataclassField(feature_type: str, default: str):
-    """Custom dataclass field that when used inside a dataclass will allow the user to specify a loss
-    config for the decoder of an output feature.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify a loss config for
+    the decoder of an output feature.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a loss config.
     """

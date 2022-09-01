@@ -1,9 +1,3 @@
-from ludwig.schema.combiners.concat import ConcatCombinerConfig
-from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig
-from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.features.utils import input_type_registry, output_type_registry
-
 from ludwig.constants import (
     COMBINER,
     DECODER,
@@ -16,27 +10,29 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.features.utils import input_type_registry, output_type_registry
+from ludwig.schema.preprocessing import PreprocessingConfig
+from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig
 
 
 class InputFeatures:
-    """
-    InputFeatures is a container for all input features.
-    """
+    """InputFeatures is a container for all input features."""
+
     pass
 
 
 class OutputFeatures:
-    """
-    OutputFeatures is a container for all output features.
-    """
+    """OutputFeatures is a container for all output features."""
+
     pass
 
 
 class Config:
-    """
-    This class is the implementation of the config object that replaces the need for a config dictionary throughout the
-    project.
-    """
+    """This class is the implementation of the config object that replaces the need for a config dictionary
+    throughout the project."""
+
     input_features = InputFeatures()
     output_features = OutputFeatures()
     combiner: BaseCombinerConfig = ConcatCombinerConfig()

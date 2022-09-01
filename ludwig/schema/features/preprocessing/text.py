@@ -1,13 +1,12 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, TEXT
-from ludwig.utils import strings_utils
-from ludwig.utils.tokenizers import tokenizer_registry
-
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
+from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
+from ludwig.utils import strings_utils
+from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @register_preprocessor(TEXT)
