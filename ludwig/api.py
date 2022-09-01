@@ -74,7 +74,6 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.registry import model_type_registry
 from ludwig.schema import validate_config
-from ludwig.schema.config_object import Config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
@@ -1536,8 +1535,7 @@ class LudwigModel:
         :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
         model_type = get_from_registry(config[MODEL_TYPE], model_type_registry)
-        config_obj = Config(config)
-        return model_type(config_obj, random_seed=random_seed)
+        return model_type(**config, random_seed=random_seed)
 
     @staticmethod
     def set_logging_level(logging_level: int) -> None:

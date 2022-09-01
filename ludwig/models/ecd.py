@@ -27,12 +27,15 @@ class ECD(BaseModel):
 
     def __init__(
         self,
-        config_obj,
+        input_features,
+        combiner,
+        output_features,
         random_seed=None,
+        **_kwargs,
     ):
-        self._input_features_def = copy.deepcopy(config_obj.input_features.Schema().dump(config_obj.input_features))
-        self._combiner_def = copy.deepcopy(config_obj.combiner.Schema().dump(config_obj.combiner))
-        self._output_features_def = copy.deepcopy(config_obj.output_features.Schema().dump(config_obj.output_features))
+        self._input_features_def = copy.deepcopy(input_features)
+        self._combiner_def = copy.deepcopy(combiner)
+        self._output_features_def = copy.deepcopy(output_features)
 
         self._random_seed = random_seed
 
@@ -41,10 +44,7 @@ class ECD(BaseModel):
         # ================ Inputs ================
         self.input_features = LudwigFeatureDict()
         try:
-            self.input_features.update(self.build_inputs(
-                input_features_def=self._input_features_def,
-                config=config_obj
-            ))
+            self.input_features.update(self.build_inputs(self._input_features_def))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"

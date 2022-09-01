@@ -8,7 +8,7 @@ import torch
 import torchmetrics
 from hummingbird.ml import convert
 
-from ludwig.constants import BINARY, CATEGORY, DECODER, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -64,7 +64,7 @@ class GBM(BaseModel):
         output_feature_def = output_features_def[0]
         output_features = {}
 
-        output_feature_def[DECODER]["input_size"] = input_size
+        output_feature_def["input_size"] = input_size
         output_feature = cls.build_single_output(output_feature_def, output_features)
         output_features[output_feature_def[NAME]] = output_feature
 
@@ -86,7 +86,7 @@ class GBM(BaseModel):
         gbm_sklearn._n_features = len(self.input_features)
         if isinstance(gbm_sklearn, lgb.LGBMClassifier):
             gbm_sklearn._n_classes = (
-                output_feature.decoder_config.num_classes if output_feature.type() == CATEGORY else 2
+                output_feature.num_classes if output_feature.type() == CATEGORY else 2
             )
 
         hb_model = convert(gbm_sklearn, "torch", extra_config={"tree_implementation": "gemm"})
