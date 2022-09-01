@@ -322,6 +322,7 @@ def save_prediction_outputs(
     try:
         # Schema is needed for Dask 2022.6+ otherwise probabilities columns will be inferred as strings
         import pyarrow as pa
+
         schema = pa.schema({feature + "_probabilities": pa.list_(pa.float64()) for feature in output_features})
     except ImportError:
         logger.warning("Could not import pyarrow in save_prediction_outputs()")
