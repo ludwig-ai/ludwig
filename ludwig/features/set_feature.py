@@ -162,7 +162,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return SetInputFeatureConfig().preprocessing.__dict__
+        return SetInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -283,13 +283,13 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def loss_kwargs(self):
-        return self.loss
+        return self.loss.to_dict()
 
     def metric_kwargs(self) -> Dict[str, Any]:
-        return {"threshold": self.decoder_config.threshold}
+        return {"threshold": self.threshold}
 
     def create_predict_module(self) -> PredictModule:
-        return _SetPredict(self.decoder_config.threshold)
+        return _SetPredict(self.threshold)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}

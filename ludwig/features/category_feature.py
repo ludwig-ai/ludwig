@@ -124,7 +124,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return CategoryInputFeatureConfig().preprocessing.__dict__
+        return CategoryInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):

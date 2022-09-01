@@ -82,6 +82,15 @@ class BaseMarshmallowConfig:
         unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
+    def to_dict(self):
+        """
+        Method for getting a dictionary representation of this dataclass
+
+        Returns: dict for this dataclass
+
+        """
+        return self.__dict__
+
 
 def assert_is_a_marshmallow_class(cls):
     assert hasattr(cls, "Schema") and isinstance(

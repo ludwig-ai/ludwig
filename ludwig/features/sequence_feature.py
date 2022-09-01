@@ -202,7 +202,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return SequenceInputFeatureConfig().preprocessing.__dict__
+        return SequenceInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):

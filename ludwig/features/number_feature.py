@@ -229,7 +229,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return NumberInputFeatureConfig().preprocessing.__dict__
+        return NumberInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -369,14 +369,14 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if getattr(self.decoder_config, "clip", None) and not (
-            isinstance(self.decoder_config.clip, (list, tuple)) and len(self.decoder_config.clip) == 2
+        if getattr(self, "clip", None) and not (
+            isinstance(self.clip, (list, tuple)) and len(self.clip) == 2
         ):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumberPredict(getattr(self.decoder_config, "clip", None))
+        return _NumberPredict(getattr(self, "clip", None))
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}

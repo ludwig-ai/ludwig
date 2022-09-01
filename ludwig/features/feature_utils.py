@@ -120,7 +120,7 @@ def get_input_size_with_dependencies(
             input_size_with_dependencies += other_output_features[feature_name].fc_stack.output_shape[-1]
         else:
             # 0-layer FCStack. Use the output feature's input size.
-            input_size_with_dependencies += other_output_features[feature_name].decoder["input_size"]
+            input_size_with_dependencies += other_output_features[feature_name].input_size
     return input_size_with_dependencies
 
 

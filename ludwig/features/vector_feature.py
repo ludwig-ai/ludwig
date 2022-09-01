@@ -98,7 +98,7 @@ class VectorFeatureMixin:
 
     @staticmethod
     def preprocessing_defaults():
-        return VectorInputFeatureConfig().preprocessing.__dict__
+        return VectorInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -220,7 +220,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def loss_kwargs(self):
-        return self.loss
+        return self.loss.to_dict()
 
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
@@ -237,7 +237,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_config.vector_size])
+        return torch.Size([self.vector_size])
 
     @property
     def input_shape(self) -> torch.Size:
@@ -245,7 +245,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["vector_size"] = feature_metadata["vector_size"]
+        output_feature["vector_size"] = feature_metadata["vector_size"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
