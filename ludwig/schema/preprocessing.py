@@ -1,23 +1,7 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import (
-    AUDIO,
-    BINARY,
-    CATEGORY,
-    DATE,
-    H3,
-    IMAGE,
-    NUMBER,
-    RANDOM,
-    SEQUENCE,
-    SET,
-    TEXT,
-    TIMESERIES,
-    VECTOR,
-)
+from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
-from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 
 

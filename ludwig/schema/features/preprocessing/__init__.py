@@ -13,4 +13,4 @@ from ludwig.schema.features.preprocessing import (
     text,
     timeseries,
     vector,
-)
+) # noqa

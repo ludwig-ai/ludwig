@@ -7,4 +7,4 @@ import ludwig.schema.encoders.h3_encoders
 import ludwig.schema.encoders.image_encoders
 import ludwig.schema.encoders.sequence_encoders
 import ludwig.schema.encoders.set_encoders
-import ludwig.schema.encoders.text_encoders
+import ludwig.schema.encoders.text_encoders # noqa
