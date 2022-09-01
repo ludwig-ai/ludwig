@@ -104,7 +104,7 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
         )
         return []
     archive_directory = os.path.dirname(archive_path)
-    directory_contents_before = set(os.path.listdir(archive_directory))
+    directory_contents_before = os.listdir(archive_directory)
     with upload_output_directory(archive_directory) as (tmpdir, _):
         if archive_type == ArchiveType.ZIP:
             with ZipFile(archive_path) as zfile:
@@ -119,5 +119,5 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
                 tar_file.extractall(path=tmpdir)
         else:
             logger.error(f"Unsupported archive: {archive_path}")
-    directory_contents_after = set(os.path.listdir(archive_directory))
+    directory_contents_after = set(os.listdir(archive_directory))
     return directory_contents_after.difference(directory_contents_before)
