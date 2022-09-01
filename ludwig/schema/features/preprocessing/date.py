@@ -1,11 +1,10 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import DATE, MISSING_VALUE_STRATEGY_OPTIONS
-
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
+from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 
 
 @register_preprocessor(DATE)

@@ -1,14 +1,16 @@
 # Register all preprocessors
-from ludwig.schema.features.preprocessing import audio
-from ludwig.schema.features.preprocessing import bag
-from ludwig.schema.features.preprocessing import binary
-from ludwig.schema.features.preprocessing import category
-from ludwig.schema.features.preprocessing import date
-from ludwig.schema.features.preprocessing import h3
-from ludwig.schema.features.preprocessing import image
-from ludwig.schema.features.preprocessing import number
-from ludwig.schema.features.preprocessing import sequence
-from ludwig.schema.features.preprocessing import set
-from ludwig.schema.features.preprocessing import text
-from ludwig.schema.features.preprocessing import timeseries
-from ludwig.schema.features.preprocessing import vector
+from ludwig.schema.features.preprocessing import (
+    audio,
+    bag,
+    binary,
+    category,
+    date,
+    h3,
+    image,
+    number,
+    sequence,
+    set,
+    text,
+    timeseries,
+    vector,
+)

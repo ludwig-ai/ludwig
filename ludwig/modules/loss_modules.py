@@ -29,24 +29,23 @@ from ludwig.constants import (
     LOGITS,
     NUMBER,
     SEQUENCE,
-    SET,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    SET,
     SIGMOID_CROSS_ENTROPY,
     SOFTMAX_CROSS_ENTROPY,
     TEXT,
     TIMESERIES,
     VECTOR,
 )
-
 from ludwig.schema.features.loss.loss import (
-    MSELossConfig,
+    BWCEWLossConfig,
     MAELossConfig,
+    MSELossConfig,
     RMSELossConfig,
     RMSPELossConfig,
-    BWCEWLossConfig,
-    SoftmaxCrossEntropyLossConfig,
     SequenceSoftmaxCrossEntropyLossConfig,
     SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
 )
 from ludwig.utils import strings_utils
 from ludwig.utils.registry import Registry

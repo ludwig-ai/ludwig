@@ -285,20 +285,16 @@ def test_validate_defaults_schema():
                 "loss": {
                     "type": "softmax_cross_entropy",
                     "confidence_penalty": 0,
-                }
+                },
             },
             "number": {
                 "preprocessing": {
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": 0,
                 },
-                "loss": {
-                    "type": "mean_absolute_error"
-                }
-            }
-        }
+                "loss": {"type": "mean_absolute_error"},
+            },
+        },
     }
 
     validate_config(config)
-
-

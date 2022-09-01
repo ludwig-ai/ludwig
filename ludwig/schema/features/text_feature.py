@@ -1,16 +1,16 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import TEXT, SEQUENCE_SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
-from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 

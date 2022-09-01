@@ -22,7 +22,7 @@ from sklearn.model_selection import train_test_split
 
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
-from ludwig.schema.split import RandomSplitConfig, FixedSplitConfig, StratifySplitConfig, DateTimeSplitConfig
+from ludwig.schema.split import DateTimeSplitConfig, FixedSplitConfig, RandomSplitConfig, StratifySplitConfig
 from ludwig.utils.data_utils import split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame

@@ -1,5 +1,5 @@
-from typing import Union, List
 from dataclasses import field
+from typing import List, Union
 
 from marshmallow import fields, ValidationError
 

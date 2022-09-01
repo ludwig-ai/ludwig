@@ -62,7 +62,7 @@ def test_config_object():
                 "beta1": 0.8,
                 "beta2": 0.999,
                 "epsilon": 5e-09,
-            }
+            },
         },
     }
 

@@ -6,13 +6,8 @@ from tests.integration_tests.utils import binary_feature, category_feature
 
 
 def test_config_preprocessing():
-    input_features = [
-        category_feature(),
-        category_feature()
-    ]
-    output_features = [
-        binary_feature()
-    ]
+    input_features = [category_feature(), category_feature()]
+    output_features = [binary_feature()]
 
     config = {
         "input_features": input_features,
@@ -22,8 +17,8 @@ def test_config_preprocessing():
             "split_probabilities": [0.6, 0.2, 0.2],
             "category": {
                 "fill_value": "test",
-            }
-        }
+            },
+        },
     }
 
     validate_config(config)
@@ -38,4 +33,3 @@ def test_config_preprocessing():
 
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
         validate_config(config)
-

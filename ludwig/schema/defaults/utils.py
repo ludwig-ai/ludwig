@@ -1,20 +1,21 @@
-from marshmallow import fields, ValidationError
 from dataclasses import field
 
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from marshmallow import fields, ValidationError
+
 import ludwig.schema.utils as schema_utils
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
 def DefaultsDataclassField(feature_type: str):
-    """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested default config
-    for a specific feature type.
+    """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested default
+    config for a specific feature type.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a defaults config.
     """
 
     class DefaultMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid split config from the
-        split_registry and creates a corresponding JSON schema for external usage."""
+        """Custom marshmallow field that deserializes a dict for a valid split config from the split_registry and
+        creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
@@ -31,12 +32,8 @@ def DefaultsDataclassField(feature_type: str):
                         combined = input_schema
                     return combined
                 except (TypeError, ValidationError) as error:
-                    raise ValidationError(
-                        f"Invalid params: {value}, see `{attr}` definition. Error: {error}"
-                    )
-            raise ValidationError(
-                f"Invalid params: {value}"
-            )
+                    raise ValidationError(f"Invalid params: {value}, see `{attr}` definition. Error: {error}")
+            raise ValidationError(f"Invalid params: {value}")
 
         @staticmethod
         def _jsonschema_type_mapping():

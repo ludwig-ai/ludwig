@@ -1,18 +1,17 @@
-from marshmallow_dataclass import dataclass
+from typing import List, Union
 
-from typing import Union, List
+from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
-    MEAN_SQUARED_ERROR,
     MEAN_ABSOLUTE_ERROR,
+    MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     SIGMOID_CROSS_ENTROPY,
     SOFTMAX_CROSS_ENTROPY,
 )
-
 from ludwig.schema import utils as schema_utils
 
 
@@ -94,15 +93,9 @@ class BWCEWLossConfig(BaseLossConfig):
         description="Weight of the positive class.",
     )
 
-    robust_lambda: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    confidence_penalty: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    confidence_penalty: int = schema_utils.NonNegativeInteger(default=0, description="")
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
@@ -124,20 +117,11 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Weights to apply to each class in the loss. If not specified, all classes are weighted equally.",
     )
 
-    robust_lambda: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    confidence_penalty: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    confidence_penalty: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    class_similarities_temperature: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
@@ -159,26 +143,17 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         description="Weights to apply to each class in the loss. If not specified, all classes are weighted equally.",
     )
 
-    robust_lambda: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    confidence_penalty: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
+    confidence_penalty: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    class_similarities_temperature: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=""
-    )
-    
+    class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
+
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
     )
-    
+
     unique: bool = schema_utils.Boolean(
         default=False,
         description="If true, the loss is only computed for unique elements in the sequence.",
@@ -198,7 +173,7 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
         default=None,
         description="Weights to apply to each class in the loss. If not specified, all classes are weighted equally.",
     )
-    
+
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
