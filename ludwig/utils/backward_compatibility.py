@@ -81,7 +81,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
 
 def upgrade_to_latest_version(config: Dict):
     """Updates config from an older version of Ludwig to the current version. If config does not have a
-    "ludwig_version" key, no updates are applied.
+    "ludwig_version" key, all updates are applied.
 
     Args:
         config: A config saved by an older version of Ludwig.
@@ -89,12 +89,9 @@ def upgrade_to_latest_version(config: Dict):
     Returns A new copy of config, upgraded to the current Ludwig version. Returns config if config has no
             "ludwig_version".
     """
-    if "ludwig_version" in config:
-        return config_transformation_registry.update_config(
-            config, from_version=config["ludwig_version"], to_version=LUDWIG_VERSION
-        )
-    else:
-        return config
+    return config_transformation_registry.update_config(
+        config, from_version=config.get("ludwig_version", "0.0"), to_version=LUDWIG_VERSION
+    )
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
@@ -369,25 +366,27 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     if PREPROCESSING in config and not config[PREPROCESSING]:
         del config[PREPROCESSING]
 
-    if DEFAULTS not in config:
-        config[DEFAULTS] = dict()
-
     # Update defaults with the default feature specific preprocessing parameters
+    defaults = config.get(DEFAULTS, {})
     for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
         # If defaults was empty, then create a new key with feature type
-        if feature_type not in config.get(DEFAULTS):
+        if feature_type not in defaults:
             if PREPROCESSING in preprocessing_param:
-                config[DEFAULTS][feature_type] = preprocessing_param
+                defaults[feature_type] = preprocessing_param
             else:
-                config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_param}
+                defaults[feature_type] = {PREPROCESSING: preprocessing_param}
         # Feature type exists but preprocessing hasn't be specified
-        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
-            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+        elif PREPROCESSING not in defaults[feature_type]:
+            defaults[feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
         # Update default feature specific preprocessing with parameters from config
         else:
-            config[DEFAULTS][feature_type][PREPROCESSING].update(
-                merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
+            defaults[feature_type][PREPROCESSING].update(
+                merge_dict(defaults[feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
             )
+
+    if defaults:
+        config[DEFAULTS] = defaults
+
     return config
 
 

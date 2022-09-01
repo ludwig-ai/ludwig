@@ -19,6 +19,8 @@ from collections import defaultdict
 from functools import total_ordering
 from typing import Callable, Dict, List, Optional
 
+from packaging import version as pkg_version
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +40,7 @@ class VersionTransformation:
         """
         self.transform = transform
         self.version = version
+        self.pkg_version = pkg_version.parse(version)
         self.prefixes = prefixes if prefixes else []
 
     def transform_config(self, config: Dict):
@@ -101,8 +104,8 @@ class VersionTransformation:
         - max_prefix_length (ascending) Process outer config transformations before inner.
         - longest_prefix (ascending) Order alphabetically by prefix if max_prefix_length equal.
         """
-        return (self.version, self.max_prefix_length, self.longest_prefix) < (
-            other.version,
+        return (self.pkg_version, self.max_prefix_length, self.longest_prefix) < (
+            other.pkg_version,
             other.max_prefix_length,
             other.longest_prefix,
         )
@@ -131,7 +134,18 @@ class VersionTransformationRegistry:
 
         Returns an ordered list of transformations to apply to the config to update it.
         """
-        versions = [v for v in self._registry.keys() if v <= to_version and v > from_version]
+        from_version = pkg_version.parse(from_version)
+
+        # Ignore pre-release, development versions. Otherwise transformations for upcoming releases will not be applied.
+        to_version = pkg_version.parse(to_version)
+        to_version = pkg_version.parse(f"{to_version.major}.{to_version.minor}")
+
+        def in_range(v, to_version, from_version):
+            v = pkg_version.parse(v)
+            return from_version < v <= to_version
+
+        versions = [v for v in self._registry.keys() if in_range(v, to_version, from_version)]
+
         transforms = sorted(t for v in versions for t in self._registry[v])
         return transforms
 

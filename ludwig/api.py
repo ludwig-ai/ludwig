@@ -214,10 +214,13 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
+        self.base_config = config_dict
+
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        self.base_config = upgrade_to_latest_version(config_dict)
+        upgraded_config = upgrade_to_latest_version(config_dict)
+
         # Merge upgraded config with defaults.
-        self.config = merge_with_defaults(copy.deepcopy(self.base_config))
+        self.config = merge_with_defaults(upgraded_config)
         validate_config(self.config)
 
         # setup logging
@@ -1362,11 +1365,6 @@ class LudwigModel:
         )
 
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
-
-        if "ludwig_version" not in config:
-            # Configs saved with 0.5 and above should have "ludwig_version" key, so if the config has none then assume
-            # it was saved by an older version of Ludwig and run all upgrades.
-            config["ludwig_version"] = "0.4"
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config = upgrade_to_latest_version(config)
