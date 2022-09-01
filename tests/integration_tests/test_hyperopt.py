@@ -479,9 +479,10 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
         TRAINER: {"epochs": 1, "learning_rate": 0.001},
         HYPEROPT: {
             "parameters": {
-                input_features[0][NAME] + ".filter_size": {"space": "choice", "categories": filter_size_search_space},
+                input_features[0][NAME]
+                + ".encoder.filter_size": {"space": "choice", "categories": filter_size_search_space},
                 input_features[1][NAME]
-                + ".embedding_size": {"space": "choice", "categories": embedding_size_search_space},
+                + ".encoder.embedding_size": {"space": "choice", "categories": embedding_size_search_space},
             },
             "goal": "minimize",
             "output_feature": output_features[0][NAME],
@@ -504,9 +505,9 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
 
     for input_feature in model_parameters[INPUT_FEATURES]:
         if input_feature[TYPE] == TEXT:
-            assert input_feature["filter_size"] in filter_size_search_space
+            assert input_feature["encoder"]["filter_size"] in filter_size_search_space
         elif input_feature[TYPE] == CATEGORY:
-            assert input_feature["embedding_size"] in embedding_size_search_space
+            assert input_feature["encoder"]["embedding_size"] in embedding_size_search_space
 
 
 @pytest.mark.distributed
