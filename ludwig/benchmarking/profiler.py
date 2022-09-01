@@ -14,8 +14,8 @@ import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
-from ludwig.benchmarking.reporting import get_metrics_from_torch_profiler, get_metrics_from_system_usage_profiler
 from ludwig.benchmarking.profiler_dataclasses import TorchProfilerMetrics
+from ludwig.benchmarking.reporting import get_metrics_from_system_usage_profiler, get_metrics_from_torch_profiler
 from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import save_json
@@ -215,11 +215,13 @@ class LudwigProfiler(contextlib.ContextDecorator):
         file_name = os.path.join(output_subdir, f"run_{num_prev_runs}.json")
         save_json(file_name, system_usage_metrics.to_flat_dict())
 
-    def _reformat_torch_usage_metrics_tags(self, torch_usage_metrics: Dict[str, Any]) -> Dict[str, List[TorchProfilerMetrics]]:
+    def _reformat_torch_usage_metrics_tags(
+        self, torch_usage_metrics: Dict[str, Any]
+    ) -> Dict[str, List[TorchProfilerMetrics]]:
         reformatted_dict = {}
         for key, value in torch_usage_metrics.items():
             assert key.startswith(LUDWIG_TAG)
-            reformatted_key = key[len(LUDWIG_TAG):]
+            reformatted_key = key[len(LUDWIG_TAG) :]
             reformatted_dict[reformatted_key] = value
         return reformatted_dict
 

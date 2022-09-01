@@ -1,7 +1,9 @@
 import dataclasses
 from dataclasses import dataclass
 from typing import Dict
+
 from ludwig.utils.data_utils import flatten_dict
+
 
 @dataclass
 class DeviceUsageMetrics:
@@ -10,6 +12,7 @@ class DeviceUsageMetrics:
 
     # Average CUDA memory utilization of the code block.
     average_memory_used: float
+
 
 @dataclass
 class SystemResourceMetrics:
