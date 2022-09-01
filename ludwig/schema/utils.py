@@ -863,7 +863,8 @@ def OneOfOptionsField(
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
-                    mfield_meta.validate(value)
+                    if mfield_meta.validate:
+                        mfield_meta.validate(value)
                     return mfield_meta._deserialize(value, attr, obj, **kwargs)
                 except Exception:
                     continue

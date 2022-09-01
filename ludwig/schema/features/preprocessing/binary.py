@@ -28,6 +28,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         field_options=[
             schema_utils.FloatRange(default=None, allow_none=False, min=0, max=1, description=""),
             schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
+            schema_utils.Boolean(default=True, description="")
         ],
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
@@ -38,6 +39,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         field_options=[
             schema_utils.FloatRange(default=1.0, allow_none=False, min=0, max=1, description=""),
             schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
+            schema_utils.Boolean(default=True, description="")
         ],
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
