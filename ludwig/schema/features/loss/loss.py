@@ -21,7 +21,7 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
 
     type: str
 
-    weight: float
+    weight: float = 1.0
 
 
 @dataclass
