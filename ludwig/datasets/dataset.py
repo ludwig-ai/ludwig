@@ -256,9 +256,19 @@ class Dataset:
     def transform_files(self, file_paths: List[str]) -> List[str]:
         """Transform data files before loading to dataframe.
 
-        Subclasses should override this method to process files before loading dataframe.
+        Subclasses should override this method to process files before loading dataframe, calling the base class
+        implementation first to get the list of data files.
         """
-        return file_paths
+        data_directories = [p for p in file_paths if os.path.isdir(p)]
+        data_files = [p for p in file_paths if not os.path.isdir(p)]
+        if not os.path.exists(self.processed_dataset_dir):
+            os.makedirs(self.processed_dataset_dir)
+        # Symlinks any data directories (ex. image directories) into processed directory to avoid unnecessary copy.
+        for source_directory in data_directories:
+            dest_directory = os.path.join(self.processed_dataset_dir, os.path.basename(source_directory))
+            if not os.path.exists(dest_directory):
+                os.symlink(source_directory, dest_directory)
+        return data_files
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe."""
