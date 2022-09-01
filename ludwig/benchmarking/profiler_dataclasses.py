@@ -28,8 +28,8 @@ class SystemResourceMetrics:
     # Number of CPUs on the machine.
     num_cpu: int
 
-    # CPU memory available at the beginning of the code block.
-    cpu_memory_available: float
+    # Total CPU memory size.
+    total_cpu_memory_size: float
 
     # Ludwig version in the environment.
     ludwig_version: str
@@ -46,11 +46,17 @@ class SystemResourceMetrics:
     # Max CPU memory (RAM) utilization of the code block.
     max_cpu_memory_usage: float
 
+    # Min GLOBAL CPU memory available (how much physical memory is left).
+    min_global_cpu_memory_available: float
+
     # Average CPU utilization of the code block.
     average_cpu_utilization: float
 
-    # Avergae CPU memory (RAM) utilization of the code block.
+    # Average CPU memory (RAM) utilization of the code block.
     average_cpu_memory_usage: float
+
+    # Average GLOBAL CPU memory available (how much physical memory is left).
+    average_global_cpu_memory_available: float
 
     # Per device usage. Dictionary containing max and average memory used per device.
     device_usage: Dict[str, DeviceUsageMetrics]

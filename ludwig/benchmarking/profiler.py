@@ -44,6 +44,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
         logging_interval: time interval at which we will poll the system for usage metrics.
         cuda_is_available: stores torch.cuda.is_available().
     """
+    info["global_cpu_memory_available"] = [psutil.virtual_memory().available]
     # get the pid of the parent process.
     tracked_process = psutil.Process(os.getpid())
 
@@ -79,6 +80,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
         with tracked_process.oneshot():
             info["cpu_utilization"].append(tracked_process.cpu_percent() / info["num_cpu"])
             info["cpu_memory_usage"].append(tracked_process.memory_full_info().uss)
+        info["global_cpu_memory_available"].append(psutil.virtual_memory().available)
         time.sleep(logging_interval)
 
 
@@ -131,7 +133,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         self.info["cpu_architecture"] = cpu_info["arch"]
         self.info["num_cpu"] = psutil.cpu_count()
         self.info["cpu_name"] = cpu_info["brand_raw"]
-        self.info["cpu_memory_available"] = psutil.virtual_memory().available
+        self.info["total_cpu_memory_size"] = psutil.virtual_memory().total
 
         # GPU information
         if self.cuda_is_available:
