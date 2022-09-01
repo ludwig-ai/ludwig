@@ -14,7 +14,7 @@ import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
-from ludwig.benchmarking.profiler_dataclasses import TorchProfilerMetrics
+from ludwig.benchmarking.profiler_dataclasses import TorchProfilerMetrics, profiler_dataclass_to_flat_dict
 from ludwig.benchmarking.reporting import get_metrics_from_system_usage_profiler, get_metrics_from_torch_profiler
 from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
@@ -213,7 +213,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         os.makedirs(output_subdir, exist_ok=True)
         num_prev_runs = len(glob.glob(os.path.join(output_subdir, "run_*.json")))
         file_name = os.path.join(output_subdir, f"run_{num_prev_runs}.json")
-        save_json(file_name, system_usage_metrics.to_flat_dict())
+        save_json(file_name, profiler_dataclass_to_flat_dict(system_usage_metrics))
 
     def _reformat_torch_usage_metrics_tags(
         self, torch_usage_metrics: Dict[str, Any]
@@ -235,4 +235,4 @@ class LudwigProfiler(contextlib.ContextDecorator):
                 os.makedirs(temp_dir, exist_ok=True)
                 for run in runs:
                     num_prev_runs = len(glob.glob(os.path.join(temp_dir, "run_*.json")))
-                    save_json(os.path.join(temp_dir, f"run_{num_prev_runs}.json"), run.to_flat_dict())
+                    save_json(os.path.join(temp_dir, f"run_{num_prev_runs}.json"), profiler_dataclass_to_flat_dict(run))

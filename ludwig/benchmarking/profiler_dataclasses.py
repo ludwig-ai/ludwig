@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Union
 
 from ludwig.utils.data_utils import flatten_dict
 
@@ -55,11 +55,6 @@ class SystemResourceMetrics:
     # Per device usage. Dictionary containing max and average memory used per device.
     device_usage: Dict[str, DeviceUsageMetrics]
 
-    def to_flat_dict(self):
-        nested_dict = dataclasses.asdict(self)
-        nested_dict[""] = nested_dict.pop("device_usage")
-        return flatten_dict(nested_dict, sep="")
-
 
 @dataclass
 class TorchProfilerMetrics:
@@ -75,7 +70,9 @@ class TorchProfilerMetrics:
     # Per device usage by torch ops. Dictionary containing max and average memory used per device.
     device_usage: Dict[str, DeviceUsageMetrics]
 
-    def to_flat_dict(self):
-        nested_dict = dataclasses.asdict(self)
-        nested_dict[""] = nested_dict.pop("device_usage")
-        return flatten_dict(nested_dict, sep="")
+
+def profiler_dataclass_to_flat_dict(data: Union[SystemResourceMetrics, TorchProfilerMetrics]) -> Dict:
+    """Returns a flat dictionary representation, with the device_usage key removed."""
+    nested_dict = dataclasses.asdict(data)
+    nested_dict[""] = nested_dict.pop("device_usage")
+    return flatten_dict(nested_dict, sep="")
