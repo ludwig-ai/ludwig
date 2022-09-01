@@ -14,7 +14,7 @@ import psutil
 import torch
 from gpustat.core import GPUStatCollection
 
-from ludwig.benchmarking.profiler_dataclasses import TorchProfilerMetrics, profiler_dataclass_to_flat_dict
+from ludwig.benchmarking.profiler_dataclasses import profiler_dataclass_to_flat_dict, TorchProfilerMetrics
 from ludwig.benchmarking.reporting import get_metrics_from_system_usage_profiler, get_metrics_from_torch_profiler
 from ludwig.constants import LUDWIG_TAG
 from ludwig.globals import LUDWIG_VERSION
