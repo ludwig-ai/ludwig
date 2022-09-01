@@ -50,7 +50,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
     # will return a meaningless 0 value on the first call because `interval` arg is set to None.
     tracked_process.cpu_percent(interval=logging_interval)
     with tracked_process.oneshot():
-        info["cpu_utilization"] = [tracked_process.cpu_percent()]
+        info["cpu_utilization"] = [tracked_process.cpu_percent() / info["num_cpu"]]
         info["cpu_memory_usage"] = [tracked_process.memory_full_info().uss]
         try:
             info["num_accessible_cpus"] = len(tracked_process.cpu_affinity())
@@ -77,7 +77,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
                 gpu_key = f"cuda_{i}"
                 info[f"{gpu_key}_memory_used"].append(gpu_info.memory_used)
         with tracked_process.oneshot():
-            info["cpu_utilization"].append(tracked_process.cpu_percent())
+            info["cpu_utilization"].append(tracked_process.cpu_percent() / info["num_cpu"])
             info["cpu_memory_usage"].append(tracked_process.memory_full_info().uss)
         time.sleep(logging_interval)
 
@@ -129,7 +129,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         # CPU information
         cpu_info = get_my_cpu_info()
         self.info["cpu_architecture"] = cpu_info["arch"]
-        self.info["num_cpu"] = cpu_info["count"]
+        self.info["num_cpu"] = psutil.cpu_count()
         self.info["cpu_name"] = cpu_info["brand_raw"]
         self.info["cpu_memory_available"] = psutil.virtual_memory().available
 

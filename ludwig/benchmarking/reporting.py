@@ -204,7 +204,7 @@ def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemRes
     device_usage_dict: Dict[str, DeviceUsageMetrics] = {}
     for key in system_usage_info:
         if "cuda_" in key and "_memory_used" in key:
-            cuda_device_name = "_".join(key.split("_")[:2])
+            cuda_device_name = "_".join(key.split("_")[:2]) + "_"
             max_memory_used = max(system_usage_info[key], default=0)
             average_memory_used = mean(system_usage_info.get(key, [0]))
             device_usage_dict[cuda_device_name] = DeviceUsageMetrics(
