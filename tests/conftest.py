@@ -113,6 +113,12 @@ def ray_cluster_2cpu():
         yield
 
 
+@pytest.fixture(scope="module")
+def ray_cluster_3cpu():
+    with _ray_start(num_cpus=3):
+        yield
+
+
 @contextlib.contextmanager
 def _ray_start(**kwargs):
     import ray
