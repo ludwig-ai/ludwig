@@ -1,10 +1,11 @@
+import copy
 import dataclasses
 import json
 import logging
 import os
 from typing import Any, Dict
 
-from ludwig.constants import HYPEROPT, PARAMETERS, PREPROCESSING
+from ludwig.constants import HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PARAMETERS, PREPROCESSING
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.utils.data_utils import save_json
@@ -73,12 +74,55 @@ def parameter_to_dict(name, value):
     return parameter_dict
 
 
+def feature_list_to_dict(config: Dict[str, Any]) -> Dict[str, Any]:
+    input_features_dict = {}
+    for feature in config[INPUT_FEATURES]:
+        input_features_dict[feature[NAME]] = feature
+
+    output_features_dict = {}
+    for feature in config[OUTPUT_FEATURES]:
+        output_features_dict[feature[NAME]] = feature
+
+    config = copy.copy(config)
+    config[INPUT_FEATURES] = input_features_dict
+    config[OUTPUT_FEATURES] = output_features_dict
+    return config
+
+
+def feature_dict_to_list(config: Dict[str, Any]) -> Dict[str, Any]:
+    # This works because Python dicts are order-preserving, so we do not need to
+    # do anything special to map from a key in the dict to an index in a list
+    input_features_list = []
+    for feature in config[INPUT_FEATURES].values():
+        input_features_list.append(feature)
+
+    output_features_list = []
+    for feature in config[OUTPUT_FEATURES].values():
+        output_features_list.append(feature)
+
+    config = copy.copy(config)
+    config[INPUT_FEATURES] = input_features_list
+    config[OUTPUT_FEATURES] = output_features_list
+    return config
+
+
 def substitute_parameters(
     config: Dict[str, Any],
     parameters: Dict[str, Any],
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
+
+    # Features in the user config are provided as a list, but in hyperopt we reference
+    # features by name, so convert temporarily to a dict to simplify the mergep process.
+    config = feature_list_to_dict(config)
+
+    # Merge parameters into the user configuration in order. As such, if there are conflicting
+    # params, the later params will take precedence.
     for name, value in parameters.items():
         param_dict = parameter_to_dict(name, value)
         config = merge_dict(config, param_dict)
+
+    # Now that all features have been merged, convert back to the original list format.
+    config = feature_dict_to_list(config)
+
     return config
