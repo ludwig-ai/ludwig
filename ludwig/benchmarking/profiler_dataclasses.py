@@ -46,8 +46,11 @@ class SystemResourceMetrics:
     # Max CPU memory (RAM) utilization of the code block.
     max_cpu_memory_usage: float
 
-    # Min GLOBAL CPU memory available (how much physical memory is left).
+    # Min system-wide CPU memory available (how much physical memory is left).
     min_global_cpu_memory_available: float
+
+    # Max system-wide CPU utilization.
+    max_global_cpu_utilization: float
 
     # Average CPU utilization of the code block.
     average_cpu_utilization: float
@@ -55,8 +58,11 @@ class SystemResourceMetrics:
     # Average CPU memory (RAM) utilization of the code block.
     average_cpu_memory_usage: float
 
-    # Average GLOBAL CPU memory available (how much physical memory is left).
+    # Average system-wide CPU memory available (how much physical memory is left).
     average_global_cpu_memory_available: float
+
+    # Average system-wide CPU utilization.
+    average_global_cpu_utilization: float
 
     # Per device usage. Dictionary containing max and average memory used per device.
     device_usage: Dict[str, DeviceUsageMetrics]

@@ -222,8 +222,10 @@ def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemRes
         max_cpu_utilization=max(system_usage_info["cpu_utilization"], default=0),
         max_cpu_memory_usage=max(system_usage_info["cpu_memory_usage"], default=0),
         min_global_cpu_memory_available=min(system_usage_info["global_cpu_memory_available"], default=0),
+        max_global_cpu_utilization=max(system_usage_info["global_cpu_utilization"], default=0),
         average_cpu_utilization=mean(system_usage_info.get("cpu_utilization", [0])),
         average_cpu_memory_usage=mean(system_usage_info.get("cpu_memory_usage", [0])),
         average_global_cpu_memory_available=mean(system_usage_info.get("global_cpu_memory_available", [0])),
+        average_global_cpu_utilization=mean(system_usage_info.get("global_cpu_utilization", [0])),
         device_usage=device_usage_dict,
     )

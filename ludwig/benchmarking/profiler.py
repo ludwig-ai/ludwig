@@ -45,6 +45,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
         cuda_is_available: stores torch.cuda.is_available().
     """
     info["global_cpu_memory_available"] = [psutil.virtual_memory().available]
+    info["global_cpu_utilization"] = [psutil.cpu_percent()]
     # get the pid of the parent process.
     tracked_process = psutil.Process(os.getpid())
 
@@ -81,6 +82,7 @@ def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_a
             info["cpu_utilization"].append(tracked_process.cpu_percent() / info["num_cpu"])
             info["cpu_memory_usage"].append(tracked_process.memory_full_info().uss)
         info["global_cpu_memory_available"].append(psutil.virtual_memory().available)
+        info["global_cpu_utilization"].append(psutil.cpu_percent())
         time.sleep(logging_interval)
 
 
