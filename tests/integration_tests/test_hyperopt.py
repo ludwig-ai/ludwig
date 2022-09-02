@@ -25,8 +25,6 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COMBINER,
-    DEFAULTS,
-    ENCODER,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
@@ -40,7 +38,6 @@ from ludwig.constants import (
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -388,75 +385,6 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", HYPEROPT_STATISTICS_FILE_NAME))
-
-
-def _test_hyperopt_with_shared_params_trial_table(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
-):
-    # Check that hyperopt trials sample from defaults in the search space
-    for _, trial_row in hyperopt_results_df.iterrows():
-        embedding_size = _get_trial_parameter_value("defaults.category.encoder.embedding_size", trial_row)
-        num_filters = _get_trial_parameter_value("defaults.text.encoder.num_filters", trial_row)
-        reduce_input = _get_trial_parameter_value("defaults.category.decoder.reduce_input", trial_row).replace('"', "")
-        assert embedding_size in embedding_size_search_space
-        assert num_filters in num_filters_search_space
-        assert reduce_input in reduce_input_search_space
-
-
-def _test_hyperopt_with_shared_params_written_config(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
-):
-    # Check that each hyperopt trial's written input/output configs got updated
-    for _, trial_row in hyperopt_results_df.iterrows():
-        model_parameters = json.load(
-            open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
-        )
-
-        # Check that num_filters got updated from the sampler correctly
-        for input_feature in model_parameters[INPUT_FEATURES]:
-            if input_feature[TYPE] == TEXT:
-                assert input_feature[ENCODER]["num_filters"] in num_filters_search_space
-            elif input_feature[TYPE] == CATEGORY:
-                assert input_feature[ENCODER]["embedding_size"] in embedding_size_search_space
-
-        # All text features with defaults should have the same num_filters for this trial
-        text_input_num_filters = get_feature_type_parameter_values_from_section(
-            model_parameters, INPUT_FEATURES, TEXT, "num_filters"
-        )
-        assert len(text_input_num_filters) == 1
-
-        for output_feature in model_parameters[OUTPUT_FEATURES]:
-            if output_feature[TYPE] == CATEGORY:
-                assert model_parameters[DEFAULTS]["reduce_input"] in reduce_input_search_space
-
-        # All category features with defaults should have the same embedding_size for this trial
-        input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
-            model_parameters, INPUT_FEATURES, CATEGORY, "embedding_size"
-        )
-
-        assert len(input_category_features_embedding_sizes) == 1
-
-
-@pytest.mark.distributed
-def test_hyperopt_with_shared_params(csv_filename, tmpdir):
-    (
-        config,
-        rel_path,
-        num_filters_search_space,
-        embedding_size_search_space,
-        reduce_input_search_space,
-    ) = _setup_ludwig_config_with_shared_params(csv_filename)
-
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-    hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
-
-    _test_hyperopt_with_shared_params_trial_table(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
-    )
-
-    _test_hyperopt_with_shared_params_written_config(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
-    )
 
 
 @pytest.mark.distributed
