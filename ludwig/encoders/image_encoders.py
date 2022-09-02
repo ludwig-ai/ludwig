@@ -459,17 +459,19 @@ class TVResNetEncoder(Encoder):
             os.environ["TORCH_HOME"] = self.pre_trained_cache_dir
 
         resnet_model_id = f"tv_resnet-{pre_trained_model_variant}"
-        model = torchvision_pre_trained_registry[resnet_model_id][0]
+        self.model = torchvision_pre_trained_registry[resnet_model_id][0]
         self.pre_trained_weights = torchvision_pre_trained_registry[resnet_model_id][
             1].DEFAULT if self.use_pre_trained_weights else None
 
         logger.debug("  ResNet")
-        self.resnet = model(weights=self.pre_trained_weights)
+        self.resnet = self.model(weights=self.pre_trained_weights)
 
         # if requested, remove final classification layer and feed
         # average pool output as output of this encoder
         if remove_last_layer:
             self.resnet.fc = torch.nn.Identity()
+
+        self.resnet.requires_grad = False
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs

@@ -541,6 +541,11 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="The size of the ResNet model to use.",
     )
 
+    pre_trained_model_variant: Optional[int] = schema_utils.PositiveInteger(
+        default=50,
+        description="Pretrained model variant to use.",
+    )
+
     use_pre_trained_weights: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Download model weights from pre-trained model.",
