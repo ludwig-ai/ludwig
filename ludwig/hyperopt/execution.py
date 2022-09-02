@@ -42,13 +42,13 @@ from ludwig.constants import (
 )
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
-from ludwig.hyperopt.utils import load_json_values
+from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
-from ludwig.utils.misc_utils import get_from_registry, merge_dict
+from ludwig.utils.misc_utils import get_from_registry
 
 _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
 if _ray_114:
@@ -1003,39 +1003,6 @@ def get_parameters_dict(parameters):
                 curr_dict[name_elem] = name_dict
                 curr_dict = name_dict
     return parameters_dict
-
-
-def parameter_to_dict(name, value):
-    if name == ".":
-        # Parameter name ".", means top-level config
-        return value
-
-    parameter_dict = {}
-    curr_dict = parameter_dict
-    name_list = name.split(".")
-    for i, name_elem in enumerate(name_list):
-        if i == len(name_list) - 1:
-            curr_dict[name_elem] = value
-        else:
-            name_dict = curr_dict.get(name_elem, {})
-            curr_dict[name_elem] = name_dict
-            curr_dict = name_dict
-    return parameter_dict
-
-
-def substitute_parameters(
-    config: Dict[str, Any],
-    parameters: Dict[str, Any],
-    features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
-):
-    print("!!!!! HERE !!!!!")
-    print("CONFIG", config)
-    print("PARAMETERS", parameters)
-    """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
-    for name, value in parameters.items():
-        param_dict = parameter_to_dict(name, value)
-        config = merge_dict(config, param_dict)
-    return config
 
 
 def run_experiment(

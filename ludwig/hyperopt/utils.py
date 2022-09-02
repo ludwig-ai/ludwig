@@ -2,11 +2,13 @@ import dataclasses
 import json
 import logging
 import os
+from typing import Any, Dict, Set
 
 from ludwig.constants import HYPEROPT, PARAMETERS, PREPROCESSING
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.utils.data_utils import save_json
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
@@ -51,3 +53,36 @@ def should_tune_preprocessing(config):
         if f"{PREPROCESSING}." in param_name:
             return True
     return False
+
+
+def parameter_to_dict(name, value):
+    if name == ".":
+        # Parameter name ".", means top-level config
+        return value
+
+    parameter_dict = {}
+    curr_dict = parameter_dict
+    name_list = name.split(".")
+    for i, name_elem in enumerate(name_list):
+        if i == len(name_list) - 1:
+            curr_dict[name_elem] = value
+        else:
+            name_dict = curr_dict.get(name_elem, {})
+            curr_dict[name_elem] = name_dict
+            curr_dict = name_dict
+    return parameter_dict
+
+
+def substitute_parameters(
+    config: Dict[str, Any],
+    parameters: Dict[str, Any],
+    features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
+):
+    print("!!!!! HERE !!!!!")
+    print("CONFIG", config)
+    print("PARAMETERS", parameters)
+    """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
+    for name, value in parameters.items():
+        param_dict = parameter_to_dict(name, value)
+        config = merge_dict(config, param_dict)
+    return config

@@ -1,8 +1,8 @@
 import pytest
 
 from ludwig.constants import ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TYPE
-from ludwig.hyperopt.execution import substitute_parameters
 from ludwig.hyperopt.run import get_features_eligible_for_shared_params
+from ludwig.hyperopt.utils import substitute_parameters
 
 
 def _setup():
