@@ -61,7 +61,6 @@ def LossDataclassField(feature_type: str, default: str):
                 },
                 "title": "loss_options",
                 "allOf": get_loss_conds(feature_type),
-                "required": ["type"],
             }
 
     try:

@@ -95,7 +95,7 @@ class BWCEWLossConfig(BaseLossConfig):
 
     robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    confidence_penalty: int = schema_utils.NonNegativeInteger(default=0, description="")
+    confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
@@ -119,7 +119,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    confidence_penalty: int = schema_utils.NonNegativeInteger(default=0, description="")
+    confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
 
     class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
 
@@ -145,7 +145,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
 
-    confidence_penalty: int = schema_utils.NonNegativeInteger(default=0, description="")
+    confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
 
     class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
 
