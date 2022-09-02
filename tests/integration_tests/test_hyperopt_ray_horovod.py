@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import os.path
 import shutil
 import uuid
@@ -27,7 +26,7 @@ from ludwig.constants import ACCURACY, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
-from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature, spawn
+from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
 try:
     import ray
@@ -146,19 +145,6 @@ class TestCallback(Callback):
         assert self.preprocessed
 
 
-@contextlib.contextmanager
-def ray_start_7_cpus():
-    res = ray.init(
-        num_cpus=7,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
 @pytest.fixture
 def ray_mock_dir():
     path = os.path.join(ray._private.utils.get_user_temp_dir(), f"mock-client-{uuid.uuid4().hex[:4]}") + os.sep
@@ -169,7 +155,6 @@ def ray_mock_dir():
         shutil.rmtree(path)
 
 
-@spawn
 def run_hyperopt_executor(
     search_alg,
     executor,
@@ -178,65 +163,64 @@ def run_hyperopt_executor(
     validate_output_feature=False,
     validation_metric=None,
 ):
-    with ray_start_7_cpus():
-        config = _get_config(search_alg, executor)
+    config = _get_config(search_alg, executor)
 
-        csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
-        dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
-        dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+    csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
+    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
+    dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
 
-        config = merge_with_defaults(config)
+    config = merge_with_defaults(config)
 
-        hyperopt_config = config["hyperopt"]
+    hyperopt_config = config["hyperopt"]
 
-        if validate_output_feature:
-            hyperopt_config["output_feature"] = config["output_features"][0]["name"]
-        if validation_metric:
-            hyperopt_config["validation_metric"] = validation_metric
+    if validate_output_feature:
+        hyperopt_config["output_feature"] = config["output_features"][0]["name"]
+    if validation_metric:
+        hyperopt_config["validation_metric"] = validation_metric
 
-        update_hyperopt_params_with_defaults(hyperopt_config)
+    update_hyperopt_params_with_defaults(hyperopt_config)
 
-        parameters = hyperopt_config["parameters"]
-        if search_alg.get("type", "") == "bohb":
-            # bohb does not support grid_search search space
-            del parameters["combiner.num_steps"]
-            hyperopt_config["parameters"] = parameters
+    parameters = hyperopt_config["parameters"]
+    if search_alg.get("type", "") == "bohb":
+        # bohb does not support grid_search search space
+        del parameters["combiner.num_steps"]
+        hyperopt_config["parameters"] = parameters
 
-        split = hyperopt_config["split"]
-        output_feature = hyperopt_config["output_feature"]
-        metric = hyperopt_config["metric"]
-        goal = hyperopt_config["goal"]
-        search_alg = hyperopt_config["search_alg"]
+    split = hyperopt_config["split"]
+    output_feature = hyperopt_config["output_feature"]
+    metric = hyperopt_config["metric"]
+    goal = hyperopt_config["goal"]
+    search_alg = hyperopt_config["search_alg"]
 
-        # preprocess
-        backend = RayBackend(**RAY_BACKEND_KWARGS)
-        model = LudwigModel(config=config, backend=backend)
-        training_set, validation_set, test_set, training_set_metadata = model.preprocess(
-            dataset=dataset_parquet,
-        )
+    # preprocess
+    backend = RayBackend(**RAY_BACKEND_KWARGS)
+    model = LudwigModel(config=config, backend=backend)
+    training_set, validation_set, test_set, training_set_metadata = model.preprocess(
+        dataset=dataset_parquet,
+    )
 
-        # hyperopt
-        hyperopt_executor = MockRayTuneExecutor(
-            parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
-        )
-        hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
+    # hyperopt
+    hyperopt_executor = MockRayTuneExecutor(
+        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
+    )
+    hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
-        hyperopt_executor.execute(
-            config,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            backend=backend,
-            output_directory=ray_mock_dir,
-            skip_save_processed_input=True,
-            skip_save_unprocessed_output=True,
-        )
+    hyperopt_executor.execute(
+        config,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        backend=backend,
+        output_directory=ray_mock_dir,
+        skip_save_processed_input=True,
+        skip_save_unprocessed_output=True,
+    )
 
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("scenario", SCENARIOS)
-def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir):
+def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):
     search_alg = scenario["search_alg"]
     executor = scenario["executor"]
     run_hyperopt_executor(search_alg, executor, csv_filename, ray_mock_dir)
@@ -244,7 +228,7 @@ def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir):
 
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
-def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
+def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     run_hyperopt_executor(
         # {"type": "ray", "num_samples": 2},
         # {"type": "ray"},
@@ -260,7 +244,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir):
 @pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/1441")
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
-def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
+def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     input_features = [number_feature(), number_feature()]
     output_features = [binary_feature()]
 
@@ -300,25 +284,23 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir):
     run_hyperopt(config, dataset_parquet, ray_mock_dir)
 
 
-@spawn
 def run_hyperopt(
     config,
     rel_path,
     out_dir,
     experiment_name="ray_hyperopt",
 ):
-    with ray_start_7_cpus():
-        callback = TestCallback()
-        hyperopt_results = hyperopt(
-            config,
-            dataset=rel_path,
-            output_directory=out_dir,
-            experiment_name=experiment_name,
-            callbacks=[callback],
-        )
+    callback = TestCallback()
+    hyperopt_results = hyperopt(
+        config,
+        dataset=rel_path,
+        output_directory=out_dir,
+        experiment_name=experiment_name,
+        callbacks=[callback],
+    )
 
-        # check for return results
-        assert isinstance(hyperopt_results, RayTuneResults)
+    # check for return results
+    assert isinstance(hyperopt_results, RayTuneResults)
 
-        # check for existence of the hyperopt statistics file
-        assert os.path.isfile(os.path.join(out_dir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+    # check for existence of the hyperopt statistics file
+    assert os.path.isfile(os.path.join(out_dir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
