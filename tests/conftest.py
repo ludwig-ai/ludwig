@@ -31,6 +31,7 @@ def setup_tests(request):
         # Only run this patch if we're running distributed tests, otherwise Ray will not be installed
         # and this will fail.
         # See: https://stackoverflow.com/a/38763328
+        yield
         return
 
     with mock.patch("ludwig.backend.ray.init_ray_local") as mock_init_ray_local:
