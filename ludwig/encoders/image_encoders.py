@@ -425,7 +425,8 @@ class ViTEncoder(Encoder):
         return torch.Size(self._output_shape)
 
 
-# TODO: Finalize constructor parameters
+# TODO: Finalize constructor parameters and finalize name fo encoder
+#       should it be model specific or generic name like tv_pretrained_encoder
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
