@@ -315,7 +315,7 @@ def get_img_output_shape(
     return tuple(out_shape.astype(int))
 
 
-torchvision_pre_trained_registry = {
+torchvision_pretrained_registry = {
     "tv_resnet-18": (resnet18, ResNet18_Weights),
     "tv_resnet-34": (resnet34, ResNet34_Weights),
     "tv_resnet-50": (resnet50, ResNet50_Weights),
