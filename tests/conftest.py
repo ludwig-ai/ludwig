@@ -26,7 +26,13 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 
 @pytest.fixture(autouse=True)
-def setup_tests():
+def setup_tests(request):
+    if "distributed" not in request.keywords:
+        # Only run this patch if we're running distributed tests, otherwise Ray will not be installed
+        # and this will fail.
+        # See: https://stackoverflow.com/a/38763328
+        return
+
     with mock.patch("ludwig.backend.ray.init_ray_local") as mock_init_ray_local:
         mock_init_ray_local.side_effect = RuntimeError("Ray must be initialized explicitly when running tests")
         yield mock_init_ray_local
