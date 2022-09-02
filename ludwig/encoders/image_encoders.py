@@ -18,7 +18,6 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-
 from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
 
 from ludwig.constants import IMAGE
@@ -459,8 +458,9 @@ class TVResNetEncoder(Encoder):
 
         resnet_model_id = f"resnet-{resnet_size}"
         model = torchvision_pre_trained_registry[resnet_model_id][0]
-        self.pre_trained_weights = torchvision_pre_trained_registry[resnet_model_id][
-            1].DEFAULT if self.use_pre_trained_weights else None
+        self.pre_trained_weights = (
+            torchvision_pre_trained_registry[resnet_model_id][1].DEFAULT if self.use_pre_trained_weights else None
+        )
         self.pre_trained_transforms = self.pre_trained_weights.transforms() if self.use_pre_trained_weights else None
 
         logger.debug("  ResNet")

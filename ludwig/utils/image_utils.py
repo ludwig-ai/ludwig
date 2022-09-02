@@ -35,6 +35,7 @@ from torchvision.models import (
     resnet152,
     ResNet152_Weights,
 )
+
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
