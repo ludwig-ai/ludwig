@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 from collections import defaultdict
@@ -197,6 +198,9 @@ def hyperopt(
     # backwards compatibility
     config = upgrade_to_latest_version(config_dict)
 
+    # Retain pre-merged config for hyperopt schema generation
+    premerged_config = copy.deepcopy(config)
+
     # merge config with defaults
     config = merge_with_defaults(config)
 
@@ -339,7 +343,7 @@ def hyperopt(
         callback.on_hyperopt_start(experiment_name)
 
     hyperopt_results = hyperopt_executor.execute(
-        config,
+        premerged_config,
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,

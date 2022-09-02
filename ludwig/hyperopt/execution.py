@@ -28,15 +28,12 @@ from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
 from ludwig.callbacks import Callback
 from ludwig.constants import (
-    COLUMN,
-    COMBINER,
     DECODER,
     DEFAULTS,
     ENCODER,
     INPUT_FEATURES,
     MAXIMIZE,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
+    NAME,
     TEST,
     TRAINER,
     TRAINING,
@@ -49,9 +46,9 @@ from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
-from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
-from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 
 _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
 if _ray_114:
@@ -460,6 +457,8 @@ class RayTuneExecutor:
         modified_config = substitute_parameters(
             copy.deepcopy(hyperopt_dict["config"]), config, features_eligible_for_shared_params
         )
+
+        modified_config = merge_with_defaults(modified_config)
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -932,7 +931,7 @@ def update_features_with_shared_params(
     :type features_eligible_for_shared_params: dict[str, dict[str, set]]
     """
 
-    feature_name = section_dict.get(COLUMN)
+    feature_name = section_dict.get(NAME)
     feature_type = section_dict.get(TYPE)
 
     # No default parameters specified in hyperopt parameter search space
@@ -1006,36 +1005,58 @@ def get_parameters_dict(parameters):
     return parameters_dict
 
 
+def parameter_to_dict(name, value):
+    parameter_dict = {}
+    curr_dict = parameter_dict
+    name_list = name.split(".")
+    for i, name_elem in enumerate(name_list):
+        if i == len(name_list) - 1:
+            curr_dict[name_elem] = value
+        else:
+            name_dict = curr_dict.get(name_elem, {})
+            curr_dict[name_elem] = name_dict
+            curr_dict = name_dict
+    return parameter_dict
+
+
 def substitute_parameters(
     config: Dict[str, Any],
     parameters: Dict[str, Any],
     features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
 ):
+    print("!!!!! HERE !!!!!")
+    print("CONFIG", config)
+    print("PARAMETERS", parameters)
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
-    parameters_dict = get_parameters_dict(parameters)
-    for input_feature in config[INPUT_FEATURES]:
-        # Update shared params
-        update_features_with_shared_params(
-            input_feature,
-            parameters_dict,
-            config_feature_group=INPUT_FEATURES,
-            features_eligible_for_shared_params=features_eligible_for_shared_params,
-        )
-        # Update or overwrite any feature specific hyperopt params
-        update_section_dict(input_feature, input_feature[COLUMN], parameters_dict)
-    for output_feature in config[OUTPUT_FEATURES]:
-        # Update shared params
-        update_features_with_shared_params(
-            output_feature,
-            parameters_dict,
-            config_feature_group=OUTPUT_FEATURES,
-            features_eligible_for_shared_params=features_eligible_for_shared_params,
-        )
-        # Update or overwrite any feature specific hyperopt params
-        update_section_dict(output_feature, output_feature[COLUMN], parameters_dict)
-    update_section_dict(config[COMBINER], COMBINER, parameters_dict)
-    update_section_dict(config[TRAINER], TRAINER, parameters_dict)
-    update_section_dict(config[PREPROCESSING], PREPROCESSING, parameters_dict)
+    for name, value in parameters.items():
+        param_dict = parameter_to_dict(name, value)
+        config = merge_dict(config, param_dict)
+
+    # parameters_dict = get_parameters_dict(parameters)
+    # print("PARAMS DICT", parameters_dict)
+    # for input_feature in config[INPUT_FEATURES]:
+    #     # Update shared params
+    #     update_features_with_shared_params(
+    #         input_feature,
+    #         parameters_dict,
+    #         config_feature_group=INPUT_FEATURES,
+    #         features_eligible_for_shared_params=features_eligible_for_shared_params,
+    #     )
+    #     # Update or overwrite any feature specific hyperopt params
+    #     update_section_dict(input_feature, input_feature[NAME], parameters_dict)
+    # for output_feature in config[OUTPUT_FEATURES]:
+    #     # Update shared params
+    #     update_features_with_shared_params(
+    #         output_feature,
+    #         parameters_dict,
+    #         config_feature_group=OUTPUT_FEATURES,
+    #         features_eligible_for_shared_params=features_eligible_for_shared_params,
+    #     )
+    #     # Update or overwrite any feature specific hyperopt params
+    #     update_section_dict(output_feature, output_feature[NAME], parameters_dict)
+    # update_section_dict(config[COMBINER], COMBINER, parameters_dict)
+    # update_section_dict(config[TRAINER], TRAINER, parameters_dict)
+    # update_section_dict(config[PREPROCESSING], PREPROCESSING, parameters_dict)
     return config
 
 

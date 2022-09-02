@@ -42,6 +42,7 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -636,5 +637,10 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
         experiment_name="test_hyperopt_nested_params",
     )
 
-    for trial in results.experiment_analysis:
-        print(trial.parameters)
+    results_df = results.experiment_analysis.results_df
+    for _, trial_meta in results_df.iterrows():
+        trial_dir = trial_meta["trial_dir"]
+        config = load_json(
+            os.path.join(trial_dir, "test_hyperopt_nested_params_run", "model", "model_hyperparameters.json")
+        )
+        print(config)
