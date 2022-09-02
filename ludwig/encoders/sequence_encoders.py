@@ -28,13 +28,30 @@ from ludwig.modules.embedding_modules import EmbedSequence, TokenAndPositionEmbe
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.sequence_encoders import (
+    ParallelCNNConfig,
+    SequenceEmbedConfig,
+    SequencePassthroughConfig,
+    StackedCNNConfig,
+    StackedCNNRNNConfig,
+    StackedParallelCNNConfig,
+    StackedRNNConfig,
+    StackedTransformerConfig,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", [AUDIO, SEQUENCE, TEXT, TIMESERIES], default=True)
+@register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 class SequencePassthroughEncoder(Encoder):
-    def __init__(self, reduce_output: str = None, max_sequence_length: int = 256, encoding_size: int = None, **kwargs):
+    def __init__(
+        self,
+        reduce_output: str = None,
+        max_sequence_length: int = 256,
+        encoding_size: int = None,
+        encoder_config=None,
+        **kwargs,
+    ):
         """
         :param reduce_output: defines how to reduce the output tensor along
                the `s` sequence length dimension if the rank of the tensor
@@ -47,6 +64,8 @@ class SequencePassthroughEncoder(Encoder):
         :param encoding_size: The size of the encoding vector, or None if sequence elements are scalars.
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.reduce_output = reduce_output
@@ -73,6 +92,10 @@ class SequencePassthroughEncoder(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return SequencePassthroughConfig
+
 
 @register_encoder("embed", [SEQUENCE, TEXT])
 class SequenceEmbedEncoder(Encoder):
@@ -88,6 +111,7 @@ class SequenceEmbedEncoder(Encoder):
         weights_initializer=None,
         dropout=0,
         reduce_output="sum",
+        encoder_config=None,
         **kwargs,
     ):
         """
@@ -158,6 +182,8 @@ class SequenceEmbedEncoder(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
         self.embedding_size = embedding_size
         self.max_sequence_length = max_sequence_length
@@ -194,6 +220,10 @@ class SequenceEmbedEncoder(Encoder):
         embedded_sequence = self.embed_sequence(inputs, mask=mask)
         hidden = self.reduce_sequence(embedded_sequence)
         return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return SequenceEmbedConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -234,6 +264,7 @@ class ParallelCNN(Encoder):
         activation="relu",
         dropout=0,
         reduce_output="max",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: revise docstring
@@ -368,6 +399,8 @@ class ParallelCNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -486,6 +519,10 @@ class ParallelCNN(Encoder):
 
         return {"encoder_output": hidden}
 
+    @staticmethod
+    def get_schema_cls():
+        return ParallelCNNConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -534,6 +571,7 @@ class StackedCNN(Encoder):
         activation="relu",
         dropout=0,
         reduce_output="max",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: fixup docstring
@@ -668,6 +706,8 @@ class StackedCNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         if conv_layers is not None and num_conv_layers is None:
@@ -785,6 +825,10 @@ class StackedCNN(Encoder):
                 default_dropout=dropout,
             )
 
+    @staticmethod
+    def get_schema_cls():
+        return StackedCNNConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -857,6 +901,7 @@ class StackedParallelCNN(Encoder):
         activation="relu",
         dropout=0,
         reduce_output="max",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: review docstring
@@ -998,6 +1043,8 @@ class StackedParallelCNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -1090,6 +1137,10 @@ class StackedParallelCNN(Encoder):
                 default_dropout=dropout,
             )
 
+    @staticmethod
+    def get_schema_cls():
+        return StackedParallelCNNConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1166,6 +1217,7 @@ class StackedRNN(Encoder):
         fc_activation="relu",
         fc_dropout=0,
         reduce_output="last",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: fix up docstring
@@ -1289,6 +1341,8 @@ class StackedRNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -1354,6 +1408,10 @@ class StackedRNN(Encoder):
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
+
+    @staticmethod
+    def get_schema_cls():
+        return StackedRNNConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -1445,6 +1503,7 @@ class StackedCNNRNN(Encoder):
         fc_activation="relu",
         fc_dropout=0,
         reduce_output="last",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: fix up docstring
@@ -1534,6 +1593,8 @@ class StackedCNNRNN(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         if conv_layers is not None and num_conv_layers is None:
@@ -1633,6 +1694,10 @@ class StackedCNNRNN(Encoder):
                 default_dropout=fc_dropout,
             )
 
+    @staticmethod
+    def get_schema_cls():
+        return StackedCNNRNNConfig
+
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([self.max_sequence_length])
@@ -1708,6 +1773,7 @@ class StackedTransformer(Encoder):
         fc_activation="relu",
         fc_dropout=0,
         reduce_output="last",
+        encoder_config=None,
         **kwargs,
     ):
         # todo: update docstring as needed
@@ -1829,6 +1895,8 @@ class StackedTransformer(Encoder):
         :type reduce_output: str
         """
         super().__init__()
+        self.config = encoder_config
+
         logger.debug(f" {self.name}")
 
         self.max_sequence_length = max_sequence_length
@@ -1895,6 +1963,10 @@ class StackedTransformer(Encoder):
                 default_activation=fc_activation,
                 default_dropout=fc_dropout,
             )
+
+    @staticmethod
+    def get_schema_cls():
+        return StackedTransformerConfig
 
     @property
     def input_shape(self) -> torch.Size:

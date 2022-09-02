@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import LOGITS
+from ludwig.constants import DECODER, LOGITS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
@@ -31,20 +31,24 @@ TEST_NUM_FILTERS = 24
 def generate_sequence_training_data():
     input_features = [
         sequence_feature(
-            vocab_size=TEST_VOCAB_SIZE,
-            embedding_size=TEST_EMBEDDING_SIZE,
-            state_size=TEST_STATE_SIZE,
-            hidden_size=TEST_HIDDEN_SIZE,
-            num_filters=TEST_NUM_FILTERS,
-            min_len=5,
-            max_len=10,
-            encoder="rnn",
-            cell_type="lstm",
+            encoder={
+                "vocab_size": TEST_VOCAB_SIZE,
+                "embedding_size": TEST_EMBEDDING_SIZE,
+                "state_size": TEST_STATE_SIZE,
+                "hidden_size": TEST_HIDDEN_SIZE,
+                "num_filters": TEST_NUM_FILTERS,
+                "min_len": 5,
+                "max_len": 10,
+                "type": "rnn",
+                "cell_type": "lstm",
+            }
         )
     ]
 
     output_features = [
-        sequence_feature(min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau")
+        sequence_feature(
+            decoder={"type": "generator", "min_len": 5, "max_len": 10, "cell_type": "lstm", "attention": "bahdanau"}
+        )
     ]
 
     # generate synthetic data set testing
@@ -110,7 +114,7 @@ def test_sequence_decoders(
     input_features = generate_sequence_training_data[1]
     output_features = generate_sequence_training_data[2]
     output_feature_name = output_features[0]["name"]
-    output_features[0]["cell_type"] = dec_cell_type
+    output_features[0][DECODER]["cell_type"] = dec_cell_type
 
     with setup_model_scaffolding(raw_df, input_features, output_features) as (model, _):
 
@@ -135,8 +139,8 @@ def test_sequence_decoders(
 
         # gather expected components of the shape
         batch_size = combiner_outputs["hidden"].shape[0]
-        seq_size = output_features[0]["max_len"] + 2  # For start and stop symbols.
-        vocab_size = model.config["output_features"][0]["vocab_size"]
+        seq_size = output_features[0][DECODER]["max_len"] + 2  # For start and stop symbols.
+        vocab_size = model.config["output_features"][0][DECODER]["vocab_size"]
 
         # confirm shape and format of decoder output
         assert list(decoder_out[LOGITS].size()) == [batch_size, seq_size, vocab_size]
@@ -148,8 +152,12 @@ def test_sequence_decoders(
 @pytest.mark.parametrize("enc_encoder", ["embed", "rnn"])
 def test_sequence_generator(enc_encoder, enc_cell_type, dec_cell_type, csv_filename):
     # Define input and output features
-    input_features = [sequence_feature(min_len=5, max_len=10, encoder=enc_encoder, cell_type=enc_cell_type)]
-    output_features = [sequence_feature(min_len=5, max_len=10, decoder="generator", cell_type=dec_cell_type)]
+    input_features = [
+        sequence_feature(encoder={"type": enc_encoder, "min_len": 5, "max_len": 10, "cell_type": enc_cell_type})
+    ]
+    output_features = [
+        sequence_feature(decoder={"type": "generator", "min_len": 5, "max_len": 10, "cell_type": dec_cell_type})
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

@@ -1,7 +1,7 @@
 from ludwig.data import dataset_synthesizer
 
 
-def test_build_synthetic_dataset():
+def test_build_synthetic_dataset(tmpdir):
     features = [
         {"name": "text", "type": "text"},
         {"name": "category", "type": "category"},
@@ -17,4 +17,4 @@ def test_build_synthetic_dataset():
         {"name": "audio", "type": "audio"},
         {"name": "image", "type": "image"},
     ]
-    assert len(list(dataset_synthesizer.build_synthetic_dataset(100, features))) == 101  # Extra for the header.
+    assert len(list(dataset_synthesizer.build_synthetic_dataset(100, features, tmpdir))) == 101  # Extra for the header.

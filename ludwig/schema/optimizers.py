@@ -19,6 +19,8 @@ from ludwig.schema.utils import (
 )
 from ludwig.utils.registry import Registry
 
+from .metadata.parameter_metadata import convert_metadata_to_json
+
 optimizer_registry = Registry()
 
 
@@ -309,7 +311,8 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                 )
             raise ValidationError("Field should be None or dict")
 
-        def _jsonschema_type_mapping(self):
+        @staticmethod
+        def _jsonschema_type_mapping():
             # Note that this uses the same conditional pattern as combiners:
             return {
                 "type": "object",
@@ -326,7 +329,8 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
-        load_default = opt.Schema().load(default)
+        load_default = opt.Schema()
+        load_default = load_default.load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(
@@ -405,7 +409,10 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
                 allow_none=allow_none,
                 load_default=load_default,
                 dump_default=dump_default,
-                metadata={"description": description, "parameter_metadata": TRAINER_METADATA["gradient_clipping"]},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(TRAINER_METADATA["gradient_clipping"]),
+                },
             )
         },
         default_factory=lambda: load_default,

@@ -29,6 +29,7 @@ except ImportError:
 else:
     HOROVOD_AVAILABLE = True
 
+from ludwig.constants import ENCODER, TYPE
 from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature
 
 # This script will run the actual test model training in parallel
@@ -71,10 +72,10 @@ def _run_horovod(csv_filename, **ludwig_kwargs):
 
 def _prepare_data(csv_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
-    input_features[0]["encoder"] = ENCODERS[0]
+    input_features[0][ENCODER][TYPE] = ENCODERS[0]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

@@ -18,11 +18,13 @@ def test_timeseries_feature(enc_encoder):
 
     # generate feature config
     timeseries_feature_config = timeseries_feature(
-        encoder=enc_encoder,
-        max_len=SEQ_SIZE,
-        fc_layers=[{"output_size": DEFAULT_OUTPUT_SIZE}],
-        # simulated parameters determined by pre-processing
-        max_sequence_length=SEQ_SIZE,
+        encoder={
+            "type": enc_encoder,
+            "max_len": SEQ_SIZE,
+            "fc_layers": [{"output_size": DEFAULT_OUTPUT_SIZE}],
+            # simulated parameters determined by pre-processing
+            "max_sequence_length": SEQ_SIZE,
+        }
     )
 
     # instantiate input feature object

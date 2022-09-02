@@ -45,7 +45,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
         bin_str_feature,
         # binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
+        category_feature(encoder={"vocab_size": 3}),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
@@ -62,7 +62,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
         bin_str_feature,
         # binary_feature(),
         number_feature(),
-        category_feature(vocab_size=3),
+        category_feature(decoder={"vocab_size": 3}),
         # TODO: future support
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),

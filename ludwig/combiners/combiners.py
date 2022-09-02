@@ -29,16 +29,14 @@ from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.modules.tabnet_modules import TabNet
-from ludwig.schema.combiners import (
-    ComparatorCombinerConfig,
-    ConcatCombinerConfig,
-    ProjectAggregateCombinerConfig,
-    SequenceCombinerConfig,
-    SequenceConcatCombinerConfig,
-    TabNetCombinerConfig,
-    TabTransformerCombinerConfig,
-    TransformerCombinerConfig,
-)
+from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
+from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.project_aggregate import ProjectAggregateCombinerConfig
+from ludwig.schema.combiners.sequence import SequenceCombinerConfig
+from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
+from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
+from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
+from ludwig.schema.combiners.transformer import TransformerCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry, get_combiner_jsonschema, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
@@ -616,7 +614,7 @@ class TabTransformerCombiner(Combiner):
         self.unembeddable_features = []
         self.embeddable_features = []
         for i_f in input_features:
-            if input_features[i_f].type in {NUMBER, BINARY}:
+            if input_features[i_f].type() in {NUMBER, BINARY}:
                 self.unembeddable_features.append(i_f)
             else:
                 self.embeddable_features.append(i_f)

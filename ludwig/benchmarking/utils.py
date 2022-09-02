@@ -1,25 +1,21 @@
 import logging
 import os
-import shutil
-from typing import Any, Dict
+from types import ModuleType
+from typing import Any, Dict, Union
 
 import fsspec
 import pandas as pd
-from botocore.exceptions import ClientError
-
-# todo (Wael): add to ludwig.globals
-from s3fs.errors import translate_boto_error
 
 from ludwig.constants import CATEGORY
 from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.globals import CONFIG_YAML, EXPERIMENT_RUN, MODEL_HYPERPARAMETERS_FILE_NAME, REPORT_JSON
+from ludwig.globals import CONFIG_YAML
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def load_from_module(
-    dataset_module: BaseDataset, output_feature: Dict[str, str], subsample_frac: float = 1
+    dataset_module: Union[BaseDataset, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
@@ -46,46 +42,28 @@ def flatten_dict(d: Dict[str, Any], sep: str = ".") -> Dict[str, Any]:
     return flat_dict
 
 
-def export_artifacts(
-    experiment: Dict[str, str], report_path: str, experiment_output_directory: str, export_base_path: str
-) -> None:
+def export_artifacts(experiment: Dict[str, str], experiment_output_directory: str, export_base_path: str):
     """Save the experiment artifacts to the `bench_export_directory`.
 
-    experiment: experiment dict that contains "dataset_name" (e.g. ames_housing),
+    :param experiment: experiment dict that contains "dataset_name" (e.g. ames_housing),
         "experiment_name" (specified by user), and "config_path" (path to experiment config.
         Relative to ludwig/benchmarks/configs).
-    report_path: path where the experiment metrics report is
-        saved.
-    experiment_output_directory: path where the model, data,
-        and logs of the experiment are saved.
-    export_base_path: remote or local path (directory) where artifacts are
+    :param experiment_output_directory: path where the model, data, and logs of the experiment are saved.
+    :param export_base_path: remote or local path (directory) where artifacts are
         exported. (e.g. s3://benchmarking.us-west-2.ludwig.com/bench/ or your/local/bench/)
     """
     protocol, _ = fsspec.core.split_protocol(export_base_path)
     fs, _ = get_fs_and_path(export_base_path)
     try:
         export_full_path = os.path.join(export_base_path, experiment["dataset_name"], experiment["experiment_name"])
-        fs.put(report_path, os.path.join(export_full_path, REPORT_JSON), recursive=True)
+        fs.put(experiment_output_directory, export_full_path, recursive=True)
         fs.put(
             os.path.join("configs", experiment["config_path"]),
             os.path.join(export_full_path, CONFIG_YAML),
-            recursive=True,
         )
-        fs.put(
-            os.path.join(experiment["dataset_name"], EXPERIMENT_RUN, "model", MODEL_HYPERPARAMETERS_FILE_NAME),
-            os.path.join(export_full_path, MODEL_HYPERPARAMETERS_FILE_NAME),
-            recursive=True,
+        logging.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
+    except Exception:
+        logging.exception(
+            f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
+            f"dataset {experiment['dataset_name']}"
         )
-
-        # zip experiment directory to export
-        try:
-            shutil.make_archive("artifacts", "zip", experiment_output_directory)
-            fs.put("artifacts.zip", os.path.join(export_full_path, "artifacts.zip"), recursive=True)
-            os.remove("artifacts.zip")
-        except Exception as e:
-            logging.error(f"Couldn't export '{experiment_output_directory}' to bucket")
-            logging.error(e)
-
-        print("Uploaded metrics report and experiment config to\n\t", export_full_path)
-    except ClientError as e:
-        logging.error(translate_boto_error(e))

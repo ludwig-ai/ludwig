@@ -4,11 +4,12 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import CROP_OR_PAD, INTERPOLATE
+from ludwig.constants import CROP_OR_PAD, ENCODER, INTERPOLATE, TYPE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
-from ludwig.models.ecd import ECD
+from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
+DEVICE = get_torch_device()
 
 
 @pytest.fixture(scope="module")
@@ -16,37 +17,43 @@ def image_config():
     return {
         "name": "image_column_name",
         "type": "image",
-        "encoder": "stacked_cnn",
         "tied": None,
-        "conv_layers": None,
-        "num_conv_layers": None,
-        "filter_size": 3,
-        "num_filters": 256,
-        "strides": (1, 1),
-        "padding": "valid",
-        "dilation_rate": (1, 1),
-        "conv_use_bias": True,
-        "conv_weights_initializer": "xavier_uniform",
-        "conv_bias_initializer": "zeros",
-        "conv_norm": None,
-        "conv_norm_params": None,
-        "conv_activation": "relu",
-        "conv_dropout": 0,
-        "pool_function": "max",
-        "pool_size": (2, 2),
-        "pool_strides": None,
-        "fc_layers": None,
-        "num_fc_layers": 1,
-        "output_size": 16,
-        "fc_use_bias": True,
-        "fc_weights_initializer": "xavier_uniform",
-        "fc_bias_initializer": "zeros",
-        "fc_norm": None,
-        "fc_norm_params": None,
-        "fc_activation": "relu",
-        "fc_dropout": 0,
-        "scaling": "pixel_normalization",
-        "preprocessing": {"height": 28, "width": 28, "num_channels": 1},  # example pre-processing
+        "encoder": {
+            "type": "stacked_cnn",
+            "conv_layers": None,
+            "num_conv_layers": None,
+            "filter_size": 3,
+            "num_filters": 256,
+            "strides": (1, 1),
+            "padding": "valid",
+            "dilation_rate": (1, 1),
+            "conv_use_bias": True,
+            "conv_weights_initializer": "xavier_uniform",
+            "conv_bias_initializer": "zeros",
+            "conv_norm": None,
+            "conv_norm_params": None,
+            "conv_activation": "relu",
+            "conv_dropout": 0,
+            "pool_function": "max",
+            "pool_size": (2, 2),
+            "pool_strides": None,
+            "fc_layers": None,
+            "num_fc_layers": 1,
+            "output_size": 16,
+            "fc_use_bias": True,
+            "fc_weights_initializer": "xavier_uniform",
+            "fc_bias_initializer": "zeros",
+            "fc_norm": None,
+            "fc_norm_params": None,
+            "fc_activation": "relu",
+            "fc_dropout": 0,
+        },
+        "preprocessing": {
+            "height": 28,
+            "width": 28,
+            "num_channels": 1,
+            "scaling": "pixel_normalization",
+        },
     }
 
 
@@ -60,22 +67,22 @@ def image_config():
         ("vit", 224, 224, 3),
     ],
 )
-def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels) -> None:
+def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels: int) -> None:
     # setup image input feature definition
     image_def = deepcopy(image_config)
-    image_def["encoder"] = encoder
-    image_def["height"] = height
-    image_def["width"] = width
-    image_def["num_channels"] = num_channels
+    image_def[ENCODER][TYPE] = encoder
+    image_def[ENCODER]["height"] = height
+    image_def[ENCODER]["width"] = width
+    image_def[ENCODER]["num_channels"] = num_channels
 
     # pickup any other missing parameters
     ImageInputFeature.populate_defaults(image_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = ECD.build_single_input(image_def, None)
+    input_feature_obj = ImageInputFeature(image_def).to(DEVICE)
 
     # check one forward pass through input feature
-    input_tensor = torch.randint(0, 256, size=(BATCH_SIZE, num_channels, height, width), dtype=torch.uint8)
+    input_tensor = torch.randint(0, 256, size=(BATCH_SIZE, num_channels, height, width), dtype=torch.uint8).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)

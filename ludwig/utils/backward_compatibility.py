@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import warnings
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List, Union
 
 from ludwig.constants import (
     AUDIO,
@@ -23,17 +23,16 @@ from ludwig.constants import (
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
+    DECODER,
     DEFAULT_BIAS,
     DEFAULT_USE_BIAS,
     DEFAULTS,
+    ENCODER,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
-    HYPEROPT,
-    INPUT_FEATURES,
     NUM_SAMPLES,
     NUMBER,
-    OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
     PROBABILITIES,
@@ -51,11 +50,52 @@ from ludwig.constants import (
     USE_BIAS,
 )
 from ludwig.features.feature_registries import base_type_registry
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
+
+config_transformation_registry = VersionTransformationRegistry()
+
+
+def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []):
+    """This decorator registers a transformation function for a config version. Version is the first version which
+    requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
+    registered with 0.5.  from_version < version <= to_version.
+
+    Args:
+        version: The version to register this transformation with. The earliest ludwig version which requires this
+                 transformation.
+        prefixes: A list of keypath prefixes to apply this transformation to. If not specified, transforms the entire
+                  config dict. If a prefix indicates a list, i.e. "input_features", the transformation is applied to
+                  each element of the list (each input feature).
+    """
+    if isinstance(prefixes, str):
+        prefixes = [prefixes]
+
+    def wrap(fn: Callable[[Dict], Dict]):
+        config_transformation_registry.register(VersionTransformation(transform=fn, version=version, prefixes=prefixes))
+        return fn
+
+    return wrap
+
+
+def upgrade_to_latest_version(config: Dict):
+    """Updates config from an older version of Ludwig to the current version. If config does not have a
+    "ludwig_version" key, all updates are applied.
+
+    Args:
+        config: A config saved by an older version of Ludwig.
+
+    Returns A new copy of config, upgraded to the current Ludwig version. Returns config if config has no
+            "ludwig_version".
+    """
+    return config_transformation_registry.update_config(
+        config, from_version=config.get("ludwig_version", "0.0"), to_version=LUDWIG_VERSION
+    )
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
-    """Applies function f to every dictionary contained in config.
+    """Recursively applies function f to every dictionary contained in config.
 
     f should in-place modify the config dict. f will be called on leaves first, root last.
     """
@@ -68,25 +108,40 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
-def _upgrade_use_bias(config):
-    if BIAS in config:
-        warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
-        config[USE_BIAS] = config[BIAS]
-        del config[BIAS]
-    if CONV_BIAS in config:
-        warnings.warn(
-            'Parameter "conv_bias" renamed to "conv_use_bias" and will be removed in v0.6', DeprecationWarning
-        )
-        config[CONV_USE_BIAS] = config[CONV_BIAS]
-        del config[CONV_BIAS]
-    if DEFAULT_BIAS in config:
-        warnings.warn(
-            'Parameter "default_bias" renamed to "default_use_bias" and will be removed in v0.6', DeprecationWarning
-        )
-        config[DEFAULT_USE_BIAS] = config[DEFAULT_BIAS]
-        del config[DEFAULT_BIAS]
+@register_config_transformation("0.5")
+def rename_training_to_trainer(config: Dict[str, Any]):
+    if TRAINING in config:
+        warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
+        config[TRAINER] = config[TRAINING]
+        del config[TRAINING]
+    return config
 
 
+@register_config_transformation("0.5", ["input_features", "output_features"])
+def _upgrade_use_bias_in_features(feature):
+    def upgrade_use_bias(config):
+        if BIAS in config:
+            warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
+            config[USE_BIAS] = config[BIAS]
+            del config[BIAS]
+        if CONV_BIAS in config:
+            warnings.warn(
+                'Parameter "conv_bias" renamed to "conv_use_bias" and will be removed in v0.6', DeprecationWarning
+            )
+            config[CONV_USE_BIAS] = config[CONV_BIAS]
+            del config[CONV_BIAS]
+        if DEFAULT_BIAS in config:
+            warnings.warn(
+                'Parameter "default_bias" renamed to "default_use_bias" and will be removed in v0.6', DeprecationWarning
+            )
+            config[DEFAULT_USE_BIAS] = config[DEFAULT_BIAS]
+            del config[DEFAULT_BIAS]
+
+    _traverse_dicts(feature, upgrade_use_bias)
+    return feature
+
+
+@register_config_transformation("0.5", ["input_features", "output_features"])
 def _upgrade_feature(feature: Dict[str, Any]):
     """Upgrades feature config (in-place)"""
     if feature.get(TYPE) == "numerical":
@@ -103,9 +158,110 @@ def _upgrade_feature(feature: Dict[str, Any]):
             "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
             DeprecationWarning,
         )
-    _traverse_dicts(feature, _upgrade_use_bias)
+    return feature
 
 
+@register_config_transformation("0.6", ["input_features"])
+def _upgrade_encoder_params(feature: Dict[str, Any]):
+    return _upgrade_encoder_decoder_params(feature, True)
+
+
+@register_config_transformation("0.6", ["output_features"])
+def _upgrade_decoder_params(feature: Dict[str, Any]):
+    return _upgrade_encoder_decoder_params(feature, False)
+
+
+def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> Dict[str, Any]:
+    """
+    This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
+    Args:
+        feature (Dict): Feature to nest encoder/decoder params for.
+        input_feature (Bool): Whether this feature is an input feature or not.
+    """
+    input_feature_keys = [
+        "name",
+        "type",
+        "column",
+        "proc_column",
+        "encoder",
+        "tied",
+        "preprocessing",
+        "vector_size",
+    ]
+
+    output_feature_keys = [
+        "name",
+        "type",
+        "calibration",
+        "column",
+        "proc_column",
+        "decoder",
+        "num_classes",
+        "preprocessing",
+        "loss",
+        "reduce_input",
+        "dependencies",
+        "reduce_dependencies",
+        "top_k",
+        "vector_size",
+    ]
+
+    fc_layer_keys = [
+        "fc_layers",
+        "output_size",
+        "use_bias",
+        "weights_initializer",
+        "bias_initializer",
+        "norm",
+        "norm_params",
+        "activation",
+        "dropout",
+    ]
+
+    warn = False
+    if input_feature:
+        module_type = ENCODER
+    else:
+        module_type = DECODER
+
+    module = feature.get(module_type, {})
+
+    # List of keys to keep in the output feature.
+    feature_keys = input_feature_keys if module_type == ENCODER else output_feature_keys
+
+    if isinstance(module, str):
+        module = {TYPE: module}
+        feature[module_type] = module
+        warn = True
+
+    nested_params = []
+    for k, v in feature.items():
+        if k not in feature_keys:
+            module[k] = v
+            if k in fc_layer_keys and module_type == DECODER:
+                module[f"fc_{k}"] = v
+            nested_params.append(k)
+            warn = True
+
+    if module:
+        if module_type in feature:
+            feature[module_type].update(module)
+        else:
+            feature[module_type] = module
+
+    for k in nested_params:
+        del feature[k]
+
+    if warn:
+        warnings.warn(
+            f"{module_type} specific parameters should now be nested within a dictionary under the '{module_type}' "
+            f"parameter. Support for un-nested {module_type} specific parameters will be removed in v0.7",
+            DeprecationWarning,
+        )
+    return feature
+
+
+@register_config_transformation("0.5", ["hyperopt"])
 def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
     """Upgrades hyperopt config (in-place)"""
     # check for use of legacy "training" reference, if any found convert to "trainer"
@@ -175,8 +331,10 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
             'Missing "search_alg" at hyperopt top-level, adding in default value, will be flagged as error ' "in v0.6",
             DeprecationWarning,
         )
+    return hyperopt
 
 
+@register_config_transformation("0.5", ["trainer"])
 def _upgrade_trainer(trainer: Dict[str, Any]):
     """Upgrades trainer config (in-place)"""
     eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
@@ -185,15 +343,17 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
             "`trainer.eval_batch_size` value `0` changed to `None`, will be unsupported in v0.6", DeprecationWarning
         )
         trainer[EVAL_BATCH_SIZE] = None
+    return trainer
 
 
+@register_config_transformation("0.5")
 def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
     type_specific_preprocessing_params = dict()
 
     # If preprocessing section specified and it contains feature specific preprocessing parameters,
     # make a copy and delete it from the preprocessing section
-    for parameter in list(config.get(PREPROCESSING)):
+    for parameter in list(config.get(PREPROCESSING, {})):
         if parameter in base_type_registry:
             warnings.warn(
                 f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
@@ -206,27 +366,31 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
     if PREPROCESSING in config and not config[PREPROCESSING]:
         del config[PREPROCESSING]
 
-    if DEFAULTS not in config:
-        config[DEFAULTS] = dict()
-
     # Update defaults with the default feature specific preprocessing parameters
+    defaults = config.get(DEFAULTS, {})
     for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
         # If defaults was empty, then create a new key with feature type
-        if feature_type not in config.get(DEFAULTS):
+        if feature_type not in defaults:
             if PREPROCESSING in preprocessing_param:
-                config[DEFAULTS][feature_type] = preprocessing_param
+                defaults[feature_type] = preprocessing_param
             else:
-                config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_param}
+                defaults[feature_type] = {PREPROCESSING: preprocessing_param}
         # Feature type exists but preprocessing hasn't be specified
-        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
-            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+        elif PREPROCESSING not in defaults[feature_type]:
+            defaults[feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
         # Update default feature specific preprocessing with parameters from config
         else:
-            config[DEFAULTS][feature_type][PREPROCESSING].update(
-                merge_dict(config[DEFAULTS][feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
+            defaults[feature_type][PREPROCESSING].update(
+                merge_dict(defaults[feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
             )
 
+    if defaults:
+        config[DEFAULTS] = defaults
 
+    return config
+
+
+@register_config_transformation("0.5", "preprocessing")
 def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
     """Upgrade split related parameters in preprocessing."""
     split_params = {}
@@ -276,27 +440,13 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
             "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
             DeprecationWarning,
         )
+    return preprocessing
 
 
-def upgrade_deprecated_fields(config: Dict[str, Any]):
-    """Updates config (in-place) to use fields from earlier versions of Ludwig.
-
-    Logs deprecation warnings
-    """
+@register_config_transformation("0.5")
+def update_training(config):
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
         del config[TRAINING]
-
-    for feature in config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, []):
-        _upgrade_feature(feature)
-
-    if HYPEROPT in config:
-        _upgrade_hyperopt(config[HYPEROPT])
-
-    if TRAINER in config:
-        _upgrade_trainer(config[TRAINER])
-
-    if PREPROCESSING in config:
-        _upgrade_preprocessing_split(config[PREPROCESSING])
-        _upgrade_preprocessing_defaults(config)
+    return config

@@ -32,17 +32,17 @@ IMAGE_DIR = tempfile.mkdtemp()
     "input_features,output_features",
     [
         (
-            [number_feature(num_layers=2, encoder="dense", preprocessing={"normalization": "zscore"})],
+            [number_feature(encoder={"num_layers": 2, "type": "dense"}, preprocessing={"normalization": "zscore"})],
             [number_feature()],
         ),
-        ([image_feature(IMAGE_DIR, encoder="stacked_cnn")], [number_feature()]),
-        ([image_feature(IMAGE_DIR, encoder="resnet")], [category_feature()]),
+        ([image_feature(IMAGE_DIR, encoder={"type": "stacked_cnn"})], [number_feature()]),
+        ([image_feature(IMAGE_DIR, encoder={"type": "resnet"})], [category_feature()]),
         (
-            [category_feature(representation="dense")],
-            [number_feature(decoder="regressor", loss={"type": "mean_squared_error"}, num_fc_layers=5)],
+            [category_feature(encoder={"representation": "dense"})],
+            [number_feature(decoder={"type": "regressor", "num_fc_layers": 5}, loss={"type": "mean_squared_error"})],
         ),
         ([date_feature()], [binary_feature()]),
-        ([sequence_feature(encoder="parallel_cnn", cell_type="gru")], [binary_feature()]),
+        ([sequence_feature(encoder={"type": "parallel_cnn", "cell_type": "gru"})], [binary_feature()]),
         ([set_feature()], [set_feature()]),
     ],
 )
