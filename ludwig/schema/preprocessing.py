@@ -37,8 +37,4 @@ def get_preprocessing_jsonschema():
     combiner's field constraints."""
     preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(PreprocessingConfig)
     props = preproc_schema["properties"]
-    return {
-        "type": "object",
-        "properties": props,
-        "additionalProperties": False
-    }
+    return {"type": "object", "properties": props, "additionalProperties": False}

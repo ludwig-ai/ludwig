@@ -16,7 +16,7 @@ def test_config_preprocessing():
                 "type": "random",
                 "probabilities": [0.6, 0.2, 0.2],
             },
-            "oversample_minority": 0.4
+            "oversample_minority": 0.4,
         },
     }
 
