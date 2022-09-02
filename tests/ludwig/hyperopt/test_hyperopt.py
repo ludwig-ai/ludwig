@@ -42,10 +42,14 @@ def test_hyperopt_default_encoder(encoder: str):
         (
             {
                 "combiner.type": "tabnet",
+                "combiner.fc_layers": [{"output_size": 64}, {"output_size": 32}],
                 "trainer.learning_rate": 0.1,
                 "trainer.batch_size": 256,
             },
-            {"combiner": {"type": "tabnet"}, "trainer": {"learning_rate": 0.1, "batch_size": 256}},
+            {
+                "combiner": {"type": "tabnet", "fc_layers": [{"output_size": 64}, {"output_size": 32}]},
+                "trainer": {"learning_rate": 0.1, "batch_size": 256},
+            },
         ),
         (
             {

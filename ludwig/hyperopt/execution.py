@@ -1035,32 +1035,6 @@ def substitute_parameters(
     for name, value in parameters.items():
         param_dict = parameter_to_dict(name, value)
         config = merge_dict(config, param_dict)
-
-    # parameters_dict = get_parameters_dict(parameters)
-    # print("PARAMS DICT", parameters_dict)
-    # for input_feature in config[INPUT_FEATURES]:
-    #     # Update shared params
-    #     update_features_with_shared_params(
-    #         input_feature,
-    #         parameters_dict,
-    #         config_feature_group=INPUT_FEATURES,
-    #         features_eligible_for_shared_params=features_eligible_for_shared_params,
-    #     )
-    #     # Update or overwrite any feature specific hyperopt params
-    #     update_section_dict(input_feature, input_feature[NAME], parameters_dict)
-    # for output_feature in config[OUTPUT_FEATURES]:
-    #     # Update shared params
-    #     update_features_with_shared_params(
-    #         output_feature,
-    #         parameters_dict,
-    #         config_feature_group=OUTPUT_FEATURES,
-    #         features_eligible_for_shared_params=features_eligible_for_shared_params,
-    #     )
-    #     # Update or overwrite any feature specific hyperopt params
-    #     update_section_dict(output_feature, output_feature[NAME], parameters_dict)
-    # update_section_dict(config[COMBINER], COMBINER, parameters_dict)
-    # update_section_dict(config[TRAINER], TRAINER, parameters_dict)
-    # update_section_dict(config[PREPROCESSING], PREPROCESSING, parameters_dict)
     return config
 
 
