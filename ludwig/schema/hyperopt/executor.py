@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict
+from typing import Dict, Optional
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
@@ -20,7 +20,9 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
     cpu_resources_per_trial: int = schema_utils.PositiveInteger(default=1, description="")
 
-    gpu_resources_per_trial: int = schema_utils.PositiveInteger(default=1, description="")
+    gpu_resources_per_trial: int = schema_utils.NonNegativeInteger(default=0, description="")
+
+    kubernetes_namespace: Optional[str] = schema_utils.String(default=None, description="")
 
     scheduler: SchedulerConfig = SchedulerDataclassField(description="")
 

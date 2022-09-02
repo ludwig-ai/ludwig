@@ -5,13 +5,16 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.hyperopt.registry import search_algorithm_registry
 
 
 @dataclass
 class SearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
 
-    type: str = schema_utils.StringOptions(options=["hyperopt"], default="hyperopt", allow_none=False)
+    type: str = schema_utils.StringOptions(
+        options=list(search_algorithm_registry.keys()), default="hyperopt", allow_none=False
+    )
 
     time_attr: int = schema_utils.Integer(default=42)
 

@@ -9,33 +9,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import SearchAlgorithmConfig, SearchAlgorithmDataclassField
 
-# hyperopt:
-#   search_alg:
-#     type: hyperopt
-#     random_state_seed: 42
-#   executor:
-#     type: ray
-#     num_samples: 10
-#     time_budget_s: 3600
-#     scheduler:
-#       type: async_hyperband
-#       time_attr: time_total_s
-#       max_t: 3600
-#       grace_period: 72
-#       reduction_factor: 5
-#     cpu_resources_per_trial: 1
-#   parameters:
-#     trainer.learning_rate:
-#       space: choice
-#       categories:
-#         - 0.005
-#         - 0.01
-#         - 0.02
-#         - 0.025
-#   output_feature: combined
-#   goal: minimize
-#   metric: loss
-
 
 def get_hyperopt_metric_options():
     all_metrics = []

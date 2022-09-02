@@ -42,9 +42,9 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.hyperopt.results import RayTuneResults, TrialResults
-from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.hyperopt.registry import get_search_algorithm_cls
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
@@ -166,7 +166,7 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = get_search_algorithm(search_alg)
+        self.search_algorithm = get_search_algorithm_cls(search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.output_feature = output_feature
         self.metric = metric

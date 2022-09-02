@@ -1,41 +1,21 @@
 import logging
-from abc import ABC
-from importlib import import_module
 from typing import Dict
 
-from ludwig.constants import TYPE
-from ludwig.utils.misc_utils import get_from_registry
+from ludwig.hyperopt.base import _is_package_installed, SearchAlgorithm
+from ludwig.schema.hyperopt.registry import register_search_algorithm
 
 logger = logging.getLogger(__name__)
 
 
-def _is_package_installed(package_name: str, search_algo_name: str) -> bool:
-    try:
-        import_module(package_name)
-        return True
-    except ImportError:
-        raise ImportError(
-            f"Search algorithm {search_algo_name} requires package {package_name}, however package is not installed."
-            " Please refer to Ray Tune documentation for packages required for this search algorithm."
-        )
-
-
-class SearchAlgorithm(ABC):
-    def __init__(self, search_alg_dict: Dict) -> None:
-        self.search_alg_dict = search_alg_dict
-        self.random_seed_attribute_name = None
-
-    def check_for_random_seed(self, ludwig_random_seed: int) -> None:
-        if self.random_seed_attribute_name not in self.search_alg_dict:
-            self.search_alg_dict[self.random_seed_attribute_name] = ludwig_random_seed
-
-
+@register_search_algorithm("random")
+@register_search_algorithm("variant_generator")
 class BasicVariantSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         super().__init__(search_alg_dict)
         self.random_seed_attribute_name = "random_state"
 
 
+@register_search_algorithm("hyperopt")
 class HyperoptSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("hyperopt", "hyperopt")
@@ -43,6 +23,7 @@ class HyperoptSA(SearchAlgorithm):
         self.random_seed_attribute_name = "random_state_seed"
 
 
+@register_search_algorithm("bohb")
 class BOHBSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("hpbandster", "bohb")
@@ -51,6 +32,7 @@ class BOHBSA(SearchAlgorithm):
         self.random_seed_attribute_name = "seed"
 
 
+@register_search_algorithm("ax")
 class AxSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("sqlalchemy", "ax")
@@ -63,6 +45,7 @@ class AxSA(SearchAlgorithm):
         pass
 
 
+@register_search_algorithm("bayesopt")
 class BayesOptSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("bayes_opt", "bayesopt")
@@ -70,6 +53,7 @@ class BayesOptSA(SearchAlgorithm):
         self.random_seed_attribute_name = "random_state"
 
 
+@register_search_algorithm("blendsearch")
 class BlendsearchSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("flaml", "blendsearch")
@@ -81,6 +65,7 @@ class BlendsearchSA(SearchAlgorithm):
         pass
 
 
+@register_search_algorithm("cfo")
 class CFOSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("flaml", "cfo")
@@ -93,6 +78,7 @@ class CFOSA(SearchAlgorithm):
         pass
 
 
+@register_search_algorithm("dragonfly")
 class DragonflySA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("dragonfly", "dragonfly")
@@ -100,6 +86,7 @@ class DragonflySA(SearchAlgorithm):
         self.random_seed_attribute_name = "random_state_seed"
 
 
+@register_search_algorithm("hebo")
 class HEBOSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("hebo", "hebo")
@@ -107,6 +94,7 @@ class HEBOSA(SearchAlgorithm):
         self.random_seed_attribute_name = "random_state_seed"
 
 
+@register_search_algorithm("skopt")
 class SkoptSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("skopt", "skopt")
@@ -118,6 +106,7 @@ class SkoptSA(SearchAlgorithm):
         pass
 
 
+@register_search_algorithm("nevergrad")
 class NevergradSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("nevergrad", "nevergrad")
@@ -129,6 +118,7 @@ class NevergradSA(SearchAlgorithm):
         pass
 
 
+@register_search_algorithm("optuna")
 class OptunaSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("optuna", "optuna")
@@ -136,6 +126,7 @@ class OptunaSA(SearchAlgorithm):
         self.random_seed_attribute_name = "seed"
 
 
+@register_search_algorithm("zoopt")
 class ZooptSA(SearchAlgorithm):
     def __init__(self, search_alg_dict: Dict) -> None:
         _is_package_installed("zoopt", "zoopt")
@@ -145,27 +136,3 @@ class ZooptSA(SearchAlgorithm):
     # setting random seed
     def check_for_random_seed(self, ludwig_random_seed: int) -> None:
         pass
-
-
-def get_search_algorithm(search_algo):
-    search_algo_name = search_algo.get(TYPE, None)
-    return get_from_registry(search_algo_name, search_algo_registry)(search_algo)
-
-
-search_algo_registry = {
-    None: BasicVariantSA,
-    "variant_generator": BasicVariantSA,
-    "random": BasicVariantSA,
-    "hyperopt": HyperoptSA,
-    "bohb": BOHBSA,
-    "ax": AxSA,
-    "bayesopt": BayesOptSA,
-    "blendsearch": BlendsearchSA,
-    "cfo": CFOSA,
-    "dragonfly": DragonflySA,
-    "hebo": HEBOSA,
-    "skopt": SkoptSA,
-    "nevergrad": NevergradSA,
-    "optuna": OptunaSA,
-    "zoopt": ZooptSA,
-}

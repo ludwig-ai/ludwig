@@ -20,10 +20,9 @@
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
-from ludwig.constants import (
+from ludwig.constants import (  # HYPEROPT,
     COMBINER,
     DEFAULTS,
-    HYPEROPT,
     INPUT_FEATURES,
     MODEL_TYPE,
     OUTPUT_FEATURES,
@@ -32,7 +31,8 @@ from ludwig.constants import (
 )
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
-from ludwig.schema.hyperopt.hyperopt import get_hyperopt_jsonschema
+
+# from ludwig.schema.hyperopt.hyperopt import get_hyperopt_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
 
 
@@ -46,7 +46,7 @@ def get_schema():
             COMBINER: get_combiner_jsonschema(),
             TRAINER: get_trainer_jsonschema(),
             PREPROCESSING: {},
-            HYPEROPT: get_hyperopt_jsonschema(),
+            # HYPEROPT: get_hyperopt_jsonschema(),
             DEFAULTS: {},
         },
         "definitions": {},
