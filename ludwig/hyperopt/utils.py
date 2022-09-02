@@ -2,7 +2,7 @@ import dataclasses
 import json
 import logging
 import os
-from typing import Any, Dict, Set
+from typing import Any, Dict
 
 from ludwig.constants import HYPEROPT, PARAMETERS, PREPROCESSING
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
@@ -76,11 +76,7 @@ def parameter_to_dict(name, value):
 def substitute_parameters(
     config: Dict[str, Any],
     parameters: Dict[str, Any],
-    features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
 ):
-    print("!!!!! HERE !!!!!")
-    print("CONFIG", config)
-    print("PARAMETERS", parameters)
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
     for name, value in parameters.items():
         param_dict = parameter_to_dict(name, value)

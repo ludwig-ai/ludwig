@@ -25,7 +25,7 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COMBINER,
-    DECODER,
+    DEFAULTS,
     ENCODER,
     EXECUTOR,
     HYPEROPT,
@@ -427,7 +427,7 @@ def _test_hyperopt_with_shared_params_written_config(
 
         for output_feature in model_parameters[OUTPUT_FEATURES]:
             if output_feature[TYPE] == CATEGORY:
-                assert output_feature[DECODER]["reduce_input"] in reduce_input_search_space
+                assert model_parameters[DEFAULTS]["reduce_input"] in reduce_input_search_space
 
         # All category features with defaults should have the same embedding_size for this trial
         input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
