@@ -36,7 +36,6 @@ from ludwig.constants import (
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 
 
 @lru_cache(maxsize=1)
@@ -65,11 +64,17 @@ def get_validator():
     def custom_is_array(checker, instance):
         return isinstance(instance, list) or isinstance(instance, tuple)
 
+    # This creates a new class, so cache to prevent a memory leak:
+    # https://github.com/python-jsonschema/jsonschema/issues/868
     type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
     return extend(Draft7Validator, type_checker=type_checker)
 
 
 def validate_config(config):
+    # Update config from previous versions to check that backwards compatibility will enable a valid config
+    # NOTE: import here to prevent circular import
+    from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     if "ludwig_version" not in config:
         config["ludwig_version"] = "0.4"
