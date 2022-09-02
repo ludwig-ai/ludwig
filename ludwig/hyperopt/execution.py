@@ -1006,6 +1006,10 @@ def get_parameters_dict(parameters):
 
 
 def parameter_to_dict(name, value):
+    if name == ".":
+        # Parameter name ".", means top-level config
+        return value
+
     parameter_dict = {}
     curr_dict = parameter_dict
     name_list = name.split(".")
