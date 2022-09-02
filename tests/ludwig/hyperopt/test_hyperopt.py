@@ -27,8 +27,8 @@ BASE_CONFIG = {
         ),
         (
             {
-                "input_features.title.encoder.type": "bert",
-                "output_features.summary.decoder.reduce_input": "sum",
+                "title.encoder.type": "bert",
+                "summary.decoder.reduce_input": "sum",
                 "trainer.learning_rate": 0.1,
                 "trainer.batch_size": 256,
             },
@@ -74,6 +74,4 @@ BASE_CONFIG = {
 )
 def test_substitute_parameters(parameters, expected):
     actual_config = substitute_parameters(BASE_CONFIG, parameters)
-    print(actual_config)
-    print(expected)
     assert actual_config == expected

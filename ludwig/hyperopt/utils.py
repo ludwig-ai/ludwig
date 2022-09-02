@@ -112,6 +112,11 @@ def substitute_parameters(
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
 
+    # Collect the sets of names for each feature grouping so we can map feature names to
+    # groups
+    input_feature_names = {feature[NAME] for feature in config[INPUT_FEATURES]}
+    output_feature_names = {feature[NAME] for feature in config[OUTPUT_FEATURES]}
+
     # Features in the user config are provided as a list, but in hyperopt we reference
     # features by name, so convert temporarily to a dict to simplify the mergep process.
     config = feature_list_to_dict(config)
@@ -119,6 +124,16 @@ def substitute_parameters(
     # Merge parameters into the user configuration in order. As such, if there are conflicting
     # params, the later params will take precedence.
     for name, value in parameters.items():
+        # User params are provided as <feature_name>.<param>, but we group input / output features
+        # together during the merge to make it easier and unambiguous to convert back and forth
+        # TODO(travis): we should revisit the user format here, as it silently breaks situations
+        # where the user has a feature named "trainer", "combiner", etc.
+        prefix = name.split(".")[0]
+        if prefix in input_feature_names:
+            name = f"{INPUT_FEATURES}.{name}"
+        elif prefix in output_feature_names:
+            name = f"{OUTPUT_FEATURES}.{name}"
+
         param_dict = parameter_to_dict(name, value)
         config = merge_dict(config, param_dict)
 
