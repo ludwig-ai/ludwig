@@ -17,6 +17,9 @@
 #     ... <file for each combiner> ...
 #     └──  transformer.py     <-- Location of `TransformerCombinerConfig`
 #
+
+from functools import lru_cache
+
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
@@ -35,6 +38,7 @@ from ludwig.schema.features.utils import get_input_feature_jsonschema, get_outpu
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
 
 
+@lru_cache(maxsize=1)
 def get_schema():
     schema = {
         "type": "object",
@@ -54,18 +58,26 @@ def get_schema():
     return schema
 
 
-def validate_config(config):
+@lru_cache(maxsize=1)
+def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
     def custom_is_array(checker, instance):
         return isinstance(instance, list) or isinstance(instance, tuple)
 
+    # This creates a new class, so cache to prevent a memory leak:
+    # https://github.com/python-jsonschema/jsonschema/issues/868
+    type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
+    return extend(Draft7Validator, type_checker=type_checker)
+
+
+def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
+    # NOTE: import here to prevent circular import
     from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 
+    # Update config from previous versions to check that backwards compatibility will enable a valid config
     if "ludwig_version" not in config:
         config["ludwig_version"] = "0.4"
     updated_config = upgrade_to_latest_version(config)
 
-    type_checker = Draft7Validator.TYPE_CHECKER.redefine("array", custom_is_array)
-    CustomValidator = extend(Draft7Validator, type_checker=type_checker)
-    validate(instance=updated_config, schema=get_schema(), cls=CustomValidator)
+    validate(instance=updated_config, schema=get_schema(), cls=get_validator())
