@@ -536,18 +536,23 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Width of the input image.",
     )
 
-    resnet_size: Optional[int] = schema_utils.PositiveInteger(
+    pretrained_model_variant: Optional[int] = schema_utils.PositiveInteger(
         default=50,
-        description="The size of the ResNet model to use.",
+        description="Pretrained model variant to use.",
     )
 
-    use_pre_trained_weights: Optional[bool] = schema_utils.Boolean(
+    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Download model weights from pre-trained model.",
     )
 
-    pre_trained_cache_dir: str = schema_utils.String(
+    pretrained_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
+    )
+
+    remove_last_layer: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="Remove last layer of the encoder.",
     )
 
     # num_channels: Optional[int] = schema_utils.NonNegativeInteger(

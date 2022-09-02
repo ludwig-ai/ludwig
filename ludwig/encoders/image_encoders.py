@@ -18,6 +18,7 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
+
 from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
 
 from ludwig.constants import IMAGE
@@ -34,7 +35,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVResNetEncoderConfig,
     ViTEncoderConfig,
 )
-from ludwig.utils.image_utils import torchvision_pre_trained_registry
+from ludwig.utils.image_utils import torchvision_pretrained_registry
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
@@ -424,19 +425,22 @@ class ViTEncoder(Encoder):
         return torch.Size(self._output_shape)
 
 
-# TODO: Finalize constructor parameters
+# TODO: Finalize constructor parameters and finalize name fo encoder
+#       should it be model specific or generic name like tv_pretrained_encoder
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
-        self,
-        height: int,
-        width: int,
-        resnet_size: int = 50,
-        num_channels: int = 3,
-        use_pre_trained_weights: bool = True,
-        pre_trained_cache_dir: Optional[str] = None,
-        encoder_config: Optional[Dict] = None,
-        **kwargs,
+            self,
+            height: int,
+            width: int,
+            type: str = None,
+            pretrained_model_variant: int = 50,
+            num_channels: int = 3,
+            use_pretrained_weights: bool = True,
+            remove_last_layer: bool = False,
+            pretrained_cache_dir: Optional[str] = None,
+            encoder_config: Optional[Dict] = None,
+            **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -446,34 +450,41 @@ class TVResNetEncoder(Encoder):
         img_height = height
         img_width = width
         first_in_channels = num_channels
-        self.use_pre_trained_weights = use_pre_trained_weights
-        self.pre_trained_cache_dir = pre_trained_cache_dir
+        self.pretrained_model_type = type
+        self.pretrained_model_variant = pretrained_model_variant
+        self.use_pretrained_weights = use_pretrained_weights
+        self.pretrained_cache_dir = pretrained_cache_dir
 
         self._input_shape = (first_in_channels, img_height, img_width)
 
         # cache pre-trained models if requested
         # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564
-        if self.pre_trained_cache_dir is not None:
-            os.environ["TORCH_HOME"] = self.pre_trained_cache_dir
+        if self.pretrained_cache_dir is not None:
+            os.environ["TORCH_HOME"] = self.pretrained_cache_dir
 
-        resnet_model_id = f"resnet-{resnet_size}"
-        model = torchvision_pre_trained_registry[resnet_model_id][0]
-        self.pre_trained_weights = (
-            torchvision_pre_trained_registry[resnet_model_id][1].DEFAULT if self.use_pre_trained_weights else None
-        )
-        self.pre_trained_transforms = self.pre_trained_weights.transforms() if self.use_pre_trained_weights else None
+        model_id = f"{self.pretrained_model_type}-{self.pretrained_model_variant}"
+        # TODO: Do we really need self.model_type if not using train() to initialize Ludwig model
+        # save pretrained model type
+        self.model_type = torchvision_pretrained_registry[model_id][0]
+
+        # get weight specification
+        self.pretrained_weights = torchvision_pretrained_registry[model_id][
+            1].DEFAULT if self.use_pretrained_weights else None
 
         logger.debug("  ResNet")
-        if encoder_config:
-            self.resnet = model(weights=self.pre_trained_weights)
-        else:
-            self.resnet = model(weights=self.pre_trained_weights)
+        # create pretrained model with specified weights
+        self.model = self.model_type(weights=self.pretrained_weights)
+
+        # if requested, remove final classification layer and feed
+        # average pool output as output of this encoder
+        if remove_last_layer:
+            self.model.fc = torch.nn.Identity()
+
+        self.model.requires_grad = False
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs
-        if self.use_pre_trained_weights:
-            hidden = self.pre_trained_transforms(hidden)
-        return {"encoder_output": self.resnet(hidden)}
+        return {"encoder_output": self.model(hidden)}
 
     @staticmethod
     def get_schema_cls():
@@ -481,11 +492,16 @@ class TVResNetEncoder(Encoder):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.resnet.fc.out_features])
+        # create synthetic image and run through forward method
+        inputs = torch.randn([1, *self.input_shape])
+        output = self.model(inputs)
+        return torch.Size(output.shape[1:])
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(self._input_shape)
+        # resnet shape after all pre-processing
+        # [num_channels, height, width]
+        return torch.Size([3, 224, 224])
 
 
 # TODO: Finalize constructor parameters
