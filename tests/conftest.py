@@ -16,12 +16,20 @@ import contextlib
 import os
 import tempfile
 import uuid
+from unittest import mock
 
 import pytest
 
 from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+
+@pytest.fixture(autouse=True)
+def setup_tests():
+    with mock.patch("ludwig.backend.ray.init_ray_local") as mock_init_ray_local:
+        mock_init_ray_local.side_effect = RuntimeError("Ray must be initialized explicitly when running tests")
+        yield mock_init_ray_local
 
 
 @pytest.fixture()
