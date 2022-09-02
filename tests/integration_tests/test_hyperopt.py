@@ -21,7 +21,6 @@ import pytest
 import torch
 from packaging import version
 
-from ludwig.callbacks import Callback
 from ludwig.constants import (
     ACCURACY,
     CATEGORY,
@@ -590,33 +589,31 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
                 ".": {
                     "space": "choice",
                     "categories": [
-                        [
-                            {
-                                "combiner": {
-                                    "type": "tabnet",
-                                    "bn_virtual_bs": 256,
-                                },
-                                "trainer": {
-                                    "learning_rate_scaling": "sqrt",
-                                    "decay": True,
-                                    "decay_steps": 20000,
-                                    "decay_rate": 0.8,
-                                    "optimizer": {"type": "adam"},
-                                },
+                        {
+                            "combiner": {
+                                "type": "tabnet",
+                                "bn_virtual_bs": 256,
                             },
-                            {
-                                "combiner": {
-                                    "type": "concat",
-                                    "num_fc_layers": 2,
-                                },
-                                "trainer": {
-                                    "learning_rate_scaling": "linear",
-                                },
+                            "trainer": {
+                                "learning_rate_scaling": "sqrt",
+                                "decay": True,
+                                "decay_steps": 20000,
+                                "decay_rate": 0.8,
+                                "optimizer": {"type": "adam"},
                             },
-                        ]
+                        },
+                        {
+                            "combiner": {
+                                "type": "concat",
+                                "num_fc_layers": 2,
+                            },
+                            "trainer": {
+                                "learning_rate_scaling": "linear",
+                            },
+                        },
                     ],
                 },
-                "trainer.learning_rate": {"space": "choice", "categories": [0.1, 1.0]},
+                "trainer.learning_rate": {"space": "choice", "categories": [0.7, 0.42]},
             },
         },
     }
@@ -625,22 +622,35 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
     output_features = config[OUTPUT_FEATURES]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    class CollectParametersCallback(Callback):
-        def on_hyperopt_trial_start(self, parameters: Dict[str, Any]):
-            print(parameters)
-
     results = hyperopt(
         config,
         dataset=rel_path,
         output_directory=tmpdir,
-        callbacks=[CollectParametersCallback()],
         experiment_name="test_hyperopt_nested_params",
     )
 
     results_df = results.experiment_analysis.results_df
+    assert len(results_df) == 4
+
     for _, trial_meta in results_df.iterrows():
         trial_dir = trial_meta["trial_dir"]
-        config = load_json(
+        trial_config = load_json(
             os.path.join(trial_dir, "test_hyperopt_nested_params_run", "model", "model_hyperparameters.json")
         )
-        print(config)
+
+        assert len(trial_config[INPUT_FEATURES]) == len(config[INPUT_FEATURES])
+        assert len(trial_config[OUTPUT_FEATURES]) == len(config[OUTPUT_FEATURES])
+
+        assert trial_config[COMBINER][TYPE] in {"tabnet", "concat"}
+        if trial_config[COMBINER][TYPE] == "tabnet":
+            assert trial_config[COMBINER]["bn_virtual_bs"] == 256
+            assert trial_config[TRAINER]["learning_rate_scaling"] == "sqrt"
+            assert trial_config[TRAINER]["decay"] is True
+            assert trial_config[TRAINER]["decay_steps"] == 20000
+            assert trial_config[TRAINER]["decay_rate"] == 0.8
+            assert trial_config[TRAINER]["optimizer"]["type"] == "adam"
+        else:
+            assert trial_config[COMBINER]["num_fc_layers"] == 2
+            assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
+
+        assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
