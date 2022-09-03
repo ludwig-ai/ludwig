@@ -18,7 +18,6 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-
 from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
 
 from ludwig.constants import IMAGE
@@ -428,13 +427,13 @@ class ViTEncoder(Encoder):
 
 class TVPretrainedEncoder(Encoder):
     def __init__(
-            self,
-            # pretrained_model_type: str = None,
-            pretrained_model_variant: Union[str, int] = None,
-            use_pretrained_weights: bool = True,
-            remove_last_layer: bool = False,
-            pretrained_cache_dir: Optional[str] = None,
-            **kwargs,
+        self,
+        # pretrained_model_type: str = None,
+        pretrained_model_variant: Union[str, int] = None,
+        use_pretrained_weights: bool = True,
+        remove_last_layer: bool = False,
+        pretrained_cache_dir: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__()
 
@@ -491,8 +490,8 @@ class TVPretrainedEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(TVPretrainedEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.pretrained_model_type = "tv_resnet"
@@ -512,8 +511,8 @@ class TVResNetEncoder(TVPretrainedEncoder):
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVPretrainedEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.pretrained_model_type = "vgg"
@@ -534,10 +533,10 @@ class TVVGGEncoder(TVPretrainedEncoder):
 @register_encoder("hf_resnet", IMAGE)
 class HFResNetEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            resnet_size: int = 50,
+        self,
+        height: int,
+        width: int,
+        resnet_size: int = 50,
         num_channels: int = 3,
         out_channels: int = 16,
         use_pre_trained_weights: bool = True,

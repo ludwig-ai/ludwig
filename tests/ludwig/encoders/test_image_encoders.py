@@ -162,16 +162,16 @@ def test_tv_resnet_encoder(
         ("vgg", 11),
         ("vgg", 16),
         ("vgg", 19),
-    ]
+    ],
 )
 def test_tv_vgg_encoder(
-        pretrained_model_type: str,
-        pretrained_model_variant: int,
-        use_pretrained_weights: bool,
-        remove_last_layer: bool,
-        height: int,
-        width: int,
-        num_channels: int
+    pretrained_model_type: str,
+    pretrained_model_variant: int,
+    use_pretrained_weights: bool,
+    remove_last_layer: bool,
+    height: int,
+    width: int,
+    num_channels: int,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
