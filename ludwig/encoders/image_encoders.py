@@ -468,9 +468,8 @@ class TVPretrainedEncoder(Encoder):
             self.model.fc = torch.nn.Identity()
 
         # freeze parameters if requested
-        if not trainable:
-            for p in self.model.parameters():
-                p.requires_grad = False
+        for p in self.model.parameters():
+            p.requires_grad_(trainable)
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs
