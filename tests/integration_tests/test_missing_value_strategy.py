@@ -65,8 +65,13 @@ def test_missing_value_prediction(tmpdir, csv_filename):
     model.predict(dataset=dataset)
 
 
-@pytest.mark.parametrize("backend", ["local", "ray"])
-@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
 def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
