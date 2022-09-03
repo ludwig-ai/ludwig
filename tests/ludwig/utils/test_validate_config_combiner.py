@@ -51,7 +51,7 @@ def test_config_bad_combiner():
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
-        "output_features": [binary_feature(weight_regularization=None)],
+        "output_features": [binary_feature(decoder={"weight_regularization": None})],
         "combiner": {
             "type": "tabnet",
         },

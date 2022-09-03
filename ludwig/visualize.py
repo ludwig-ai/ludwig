@@ -2563,6 +2563,9 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
+    # If top_n_classes is greater than the maximum number of tokens, truncate to use max token size
+    if k > len(metadata[output_feature_name]["idx2str"]):
+        k = len(metadata[output_feature_name]["idx2str"])
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
     probs = probabilities_per_model

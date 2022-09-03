@@ -74,3 +74,8 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
         "measure. It computes accuracy but considering as a match if the true category appears in the "
         "first k predicted categories ranked by decoder's confidence.",
     )
+
+    calibration: bool = schema_utils.Boolean(
+        default=False,
+        description="Calibrate the model's output probabilities using temperature scaling.",
+    )

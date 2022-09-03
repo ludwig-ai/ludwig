@@ -34,3 +34,13 @@ def test_version_transformation_registry():
     assert "e" in transformed_0_2
     assert "f" not in transformed_0_2["e"]
     assert transformed_0_2["e"]["g"] == "f_value"
+
+
+def test_version_transformation_order():
+    v1 = VersionTransformation(transform=lambda x: x, version="0.1")
+    v2 = VersionTransformation(transform=lambda x: x, version="0.2")
+    v3 = VersionTransformation(transform=lambda x: x, version="0.10")
+
+    assert v1 < v2
+    assert v1 < v3
+    assert v2 < v3
