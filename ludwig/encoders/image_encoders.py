@@ -427,13 +427,13 @@ class ViTEncoder(Encoder):
 
 class TVPretrainedEncoder(Encoder):
     def __init__(
-            self,
-            pretrained_model_variant: Union[str, int] = None,
-            use_pretrained_weights: bool = True,
-            remove_last_layer: bool = False,
-            pretrained_cache_dir: Optional[str] = None,
-            trainable: bool = True,
-            **kwargs,
+        self,
+        pretrained_model_variant: Union[str, int] = None,
+        use_pretrained_weights: bool = True,
+        remove_last_layer: bool = False,
+        pretrained_cache_dir: Optional[str] = None,
+        trainable: bool = True,
+        **kwargs,
     ):
         super().__init__()
 

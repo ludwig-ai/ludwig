@@ -117,11 +117,11 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     ],
 )
 def test_tv_resnet_encoder(
-        pretrained_model_type: str,
-        pretrained_model_variant: int,
-        use_pretrained_weights: bool,
-        remove_last_layer: bool,
-        trainable: bool,
+    pretrained_model_type: str,
+    pretrained_model_variant: int,
+    use_pretrained_weights: bool,
+    remove_last_layer: bool,
+    trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -161,11 +161,11 @@ def test_tv_resnet_encoder(
     ],
 )
 def test_tv_vgg_encoder(
-        pretrained_model_type: str,
-        pretrained_model_variant: int,
-        use_pretrained_weights: bool,
-        remove_last_layer: bool,
-        trainable: bool,
+    pretrained_model_type: str,
+    pretrained_model_variant: int,
+    use_pretrained_weights: bool,
+    remove_last_layer: bool,
+    trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -175,7 +175,7 @@ def test_tv_vgg_encoder(
         pretrained_model_variant=pretrained_model_variant,
         remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
-        trainable=trainable
+        trainable=trainable,
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
