@@ -16,6 +16,7 @@ from typing import Dict, List, Union
 import numpy as np
 import pandas as pd
 import yaml
+from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
@@ -48,8 +49,10 @@ try:
     import dask.dataframe as dd
     import ray
     from ray.tune import ExperimentAnalysis
+
+    _ray_200 = parse_version(ray.__version__) >= parse_version("2.0.0")
 except ImportError:
-    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
+    raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 
 OUTPUT_DIR = "."
@@ -64,16 +67,17 @@ class AutoTrainResults:
         return self._experiment_analysis
 
     @property
-    def path_to_best_model(self) -> str:
-        return self._experiment_analysis.best_checkpoint
-
-    @property
     def best_trial_id(self) -> str:
         return self._experiment_analysis.best_trial.trial_id
 
     @property
     def best_model(self) -> LudwigModel:
-        return LudwigModel.load(os.path.join(self.path_to_best_model, "model"))
+        if not _ray_200:
+            checkpoint = self._experiment_analysis.best_checkpoint
+            return LudwigModel.load(os.path.join(checkpoint, "model"))
+
+        with self._experiment_analysis.best_checkpoint.as_directory() as checkpoint:
+            return LudwigModel.load(os.path.join(checkpoint, "model"))
 
 
 def auto_train(
