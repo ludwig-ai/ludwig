@@ -18,7 +18,6 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-
 from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
 
 from ludwig.constants import IMAGE
@@ -430,17 +429,17 @@ class ViTEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            pretrained_model_type: str = None,
-            pretrained_model_variant: int = 50,
-            num_channels: int = 3,
-            use_pretrained_weights: bool = True,
-            remove_last_layer: bool = False,
-            pretrained_cache_dir: Optional[str] = None,
-            encoder_config: Optional[Dict] = None,
-            **kwargs,
+        self,
+        height: int,
+        width: int,
+        pretrained_model_type: str = None,
+        pretrained_model_variant: int = 50,
+        num_channels: int = 3,
+        use_pretrained_weights: bool = True,
+        remove_last_layer: bool = False,
+        pretrained_cache_dir: Optional[str] = None,
+        encoder_config: Optional[Dict] = None,
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -468,8 +467,9 @@ class TVResNetEncoder(Encoder):
         self.model_type = torchvision_pretrained_registry[model_id][0]
 
         # get weight specification
-        self.pretrained_weights = torchvision_pretrained_registry[model_id][
-            1].DEFAULT if self.use_pretrained_weights else None
+        self.pretrained_weights = (
+            torchvision_pretrained_registry[model_id][1].DEFAULT if self.use_pretrained_weights else None
+        )
 
         logger.debug("  ResNet")
         # create pretrained model with specified weights
