@@ -108,7 +108,8 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 @pytest.mark.parametrize(
     "type, pretrained_model_variant",
     [
-        ("tv_resnet", 18), ("tv_resnet", 34), ("tv_resnet", 50), ("tv_resnet", 101), ("tv_resnet", 152)
+        ("tv_resnet", 18), ("tv_resnet", 34), ("tv_resnet", 50), ("tv_resnet", 101), ("tv_resnet", 152),
+        ("vgg", 11), ("vgg", 16), ("vgg", 19),
     ]
 )
 def test_tv_resnet_encoder(

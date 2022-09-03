@@ -34,6 +34,12 @@ from torchvision.models import (
     ResNet101_Weights,
     resnet152,
     ResNet152_Weights,
+    vgg11,
+    VGG11_Weights,
+    vgg16,
+    VGG16_Weights,
+    vgg19,
+    VGG19_Weights
 )
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
@@ -322,4 +328,7 @@ torchvision_pretrained_registry = {
     "tv_resnet-50": (resnet50, ResNet50_Weights),
     "tv_resnet-101": (resnet101, ResNet101_Weights),
     "tv_resnet-152": (resnet152, ResNet152_Weights),
+    "vgg-11": (vgg11, VGG11_Weights),
+    "vgg-16": (vgg16, VGG16_Weights),
+    "vgg-19": (vgg19, VGG19_Weights),
 }
