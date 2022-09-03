@@ -33,6 +33,7 @@ from ludwig.schema.encoders.image_encoders import (
     ResNetEncoderConfig,
     Stacked2DCNNEncoderConfig,
     TVResNetEncoderConfig,
+    TVVGGEncoderConfig,
     ViTEncoderConfig,
 )
 from ludwig.utils.image_utils import torchvision_pretrained_registry
@@ -425,37 +426,23 @@ class ViTEncoder(Encoder):
         return torch.Size(self._output_shape)
 
 
-# TODO: Finalize constructor parameters and finalize name fo encoder
-#       should it be model specific or generic name like tv_pretrained_encoder
-@register_encoder("tv_resnet", IMAGE)
-class TVResNetEncoder(Encoder):
+class TVPretrainedEncoder(Encoder):
     def __init__(
             self,
-            height: int,
-            width: int,
-            pretrained_model_type: str = None,
-            pretrained_model_variant: int = 50,
-            num_channels: int = 3,
+            # pretrained_model_type: str = None,
+            pretrained_model_variant: Union[str, int] = None,
             use_pretrained_weights: bool = True,
             remove_last_layer: bool = False,
             pretrained_cache_dir: Optional[str] = None,
-            encoder_config: Optional[Dict] = None,
             **kwargs,
     ):
         super().__init__()
-        self.config = encoder_config
 
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
-        img_height = height
-        img_width = width
-        first_in_channels = num_channels
-        self.pretrained_model_type = pretrained_model_type
         self.pretrained_model_variant = pretrained_model_variant
         self.use_pretrained_weights = use_pretrained_weights
         self.pretrained_cache_dir = pretrained_cache_dir
-
-        self._input_shape = (first_in_channels, img_height, img_width)
 
         # cache pre-trained models if requested
         # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564
@@ -480,15 +467,9 @@ class TVResNetEncoder(Encoder):
         if remove_last_layer:
             self.model.fc = torch.nn.Identity()
 
-        self.model.requires_grad = False
-
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs
         return {"encoder_output": self.model(hidden)}
-
-    @staticmethod
-    def get_schema_cls():
-        return TVResNetEncoderConfig
 
     @property
     def output_shape(self) -> torch.Size:
@@ -504,14 +485,58 @@ class TVResNetEncoder(Encoder):
         return torch.Size([3, 224, 224])
 
 
+# TODO: Finalize constructor parameters and finalize name fo encoder
+#       should it be model specific or generic name like tv_pretrained_encoder
+@register_encoder("tv_resnet", IMAGE)
+class TVResNetEncoder(TVPretrainedEncoder):
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        self.pretrained_model_type = "tv_resnet"
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return TVResNetEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        # resnet shape after all pre-processing
+        # [num_channels, height, width]
+        return torch.Size([3, 224, 224])
+
+
+@register_encoder("vgg", IMAGE)
+class TVVGGEncoder(TVPretrainedEncoder):
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        self.pretrained_model_type = "vgg"
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def get_schema_cls():
+        return TVVGGEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        # resnet shape after all pre-processing
+        # [num_channels, height, width]
+        return torch.Size([3, 224, 224])
+
+
 # TODO: Finalize constructor parameters
 @register_encoder("hf_resnet", IMAGE)
 class HFResNetEncoder(Encoder):
     def __init__(
-        self,
-        height: int,
-        width: int,
-        resnet_size: int = 50,
+            self,
+            height: int,
+            width: int,
+            resnet_size: int = 50,
         num_channels: int = 3,
         out_channels: int = 16,
         use_pre_trained_weights: bool = True,
