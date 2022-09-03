@@ -573,3 +573,51 @@ def test_ray_calibration(calibration):
         category_feature(decoder={"vocab_size": 3}, calibration=calibration),
     ]
     run_test_with_features(input_features, output_features)
+
+
+@pytest.mark.distributed
+def test_ray_distributed_predict(tmpdir):
+    preprocessing_params = {
+        "audio_file_length_limit_in_s": 3.0,
+        "missing_value_strategy": BACKFILL,
+        "in_memory": True,
+        "padding_value": 0,
+        "norm": "per_file",
+        "type": "fbank",
+        "window_length_in_s": 0.04,
+        "window_shift_in_s": 0.02,
+        "num_filter_bands": 80,
+    }
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+    input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
+    output_features = [binary_feature()]
+
+    with ray_start(num_cpus=2):
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            TRAINER: {"epochs": 2, "batch_size": 8},
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backend_config = {**RAY_BACKEND_CONFIG}
+            csv_filename = os.path.join(tmpdir, "dataset.csv")
+            dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
+            dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
+            model = LudwigModel(config, backend=backend_config)
+            output_dir = None
+
+            _, _, output_dir = model.train(
+                dataset=dataset,
+                training_set=dataset,
+                skip_save_processed_input=True,
+                skip_save_progress=True,
+                skip_save_unprocessed_output=True,
+                skip_save_log=True,
+            )
+
+            preds, _ = model.predict(dataset=dataset)
+
+            # compute the predictions
+            preds = preds.compute()
+            assert preds.iloc[1].name != preds.iloc[42].name

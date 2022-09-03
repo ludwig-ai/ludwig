@@ -109,6 +109,8 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
+    # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
+    # hyperopt scheduler to manage trial lifecycle.
     expected = -1 if use_hyperopt_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
@@ -128,13 +130,11 @@ def test_missing_outputs_drop_rows():
 
     assert output_feature_config[PREPROCESSING][MISSING_VALUE_STRATEGY] == DROP_ROW
 
+    assert global_preprocessing[input_feature_config[TYPE]][PREPROCESSING][MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
     feature_preprocessing = merge_dict(
         global_preprocessing[output_feature_config[TYPE]][PREPROCESSING], output_feature_config[PREPROCESSING]
     )
     assert feature_preprocessing[MISSING_VALUE_STRATEGY] == DROP_ROW
-
-    feature_preprocessing = global_preprocessing[input_feature_config[TYPE]][PREPROCESSING]
-    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
 
 
 def test_default_model_type():
