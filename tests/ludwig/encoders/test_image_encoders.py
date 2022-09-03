@@ -109,17 +109,21 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 @pytest.mark.parametrize(
     "pretrained_model_type, pretrained_model_variant",
     [
-        ("tv_resnet", 18), ("tv_resnet", 34), ("tv_resnet", 50), ("tv_resnet", 101), ("tv_resnet", 152),
-    ]
+        ("tv_resnet", 18),
+        ("tv_resnet", 34),
+        ("tv_resnet", 50),
+        ("tv_resnet", 101),
+        ("tv_resnet", 152),
+    ],
 )
 def test_tv_resnet_encoder(
-        pretrained_model_type: str,
-        pretrained_model_variant: int,
-        use_pretrained_weights: bool,
-        remove_last_layer: bool,
-        height: int,
-        width: int,
-        num_channels: int
+    pretrained_model_type: str,
+    pretrained_model_variant: int,
+    use_pretrained_weights: bool,
+    remove_last_layer: bool,
+    height: int,
+    width: int,
+    num_channels: int,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -155,7 +159,9 @@ def test_tv_resnet_encoder(
 @pytest.mark.parametrize(
     "pretrained_model_type, pretrained_model_variant",
     [
-        ("vgg", 11), ("vgg", 16), ("vgg", 19),
+        ("vgg", 11),
+        ("vgg", 16),
+        ("vgg", 19),
     ]
 )
 def test_tv_vgg_encoder(

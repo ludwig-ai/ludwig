@@ -58,7 +58,7 @@ from ludwig.utils.image_utils import (
     read_image_from_bytes_obj,
     read_image_from_path,
     resize_image,
-    torchvision_pretrained_registry
+    torchvision_pretrained_registry,
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
@@ -242,7 +242,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
     def _read_image_with_pretrained_transform(
         img_entry: Union[bytes, torch.Tensor, np.ndarray],
         transform_fn: Callable,
-        ) -> Optional[np.ndarray]:
+    ) -> Optional[np.ndarray]:
 
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry)
