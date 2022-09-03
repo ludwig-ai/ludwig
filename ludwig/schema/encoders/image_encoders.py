@@ -519,12 +519,6 @@ class ViTEncoderConfig(BaseEncoderConfig):
 # TODO: finalize the options
 @dataclass
 class TVResNetEncoderConfig(BaseEncoderConfig):
-    # pretrained_model_type: str = schema_utils.StringOptions(
-    #     ["tv_resnet", "vgg"],
-    #     default="tv_resnet",
-    #     allow_none=False,
-    #     description="Type of pretrained model.",
-    # )
 
     pretrained_model_variant: Optional[int] = schema_utils.PositiveInteger(
         default=50,
@@ -543,18 +537,17 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
     remove_last_layer: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Remove last layer of the encoder.",
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=True,
+        description="Is the encoder trainable.",
     )
 
 
 # TODO: finalize the options
 @dataclass
 class TVVGGEncoderConfig(BaseEncoderConfig):
-    # pretrained_model_type: str = schema_utils.StringOptions(
-    #     ["vgg"],
-    #     default="tv_resnet",
-    #     allow_none=False,
-    #     description="Type of pretrained model.",
-    # )
 
     pretrained_model_variant: Optional[int] = schema_utils.PositiveInteger(
         default=50,
@@ -573,6 +566,11 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
     remove_last_layer: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Remove last layer of the encoder.",
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=True,
+        description="Is the encoder trainable.",
     )
 
 

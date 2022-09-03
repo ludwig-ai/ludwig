@@ -427,13 +427,13 @@ class ViTEncoder(Encoder):
 
 class TVPretrainedEncoder(Encoder):
     def __init__(
-        self,
-        # pretrained_model_type: str = None,
-        pretrained_model_variant: Union[str, int] = None,
-        use_pretrained_weights: bool = True,
-        remove_last_layer: bool = False,
-        pretrained_cache_dir: Optional[str] = None,
-        **kwargs,
+            self,
+            pretrained_model_variant: Union[str, int] = None,
+            use_pretrained_weights: bool = True,
+            remove_last_layer: bool = False,
+            pretrained_cache_dir: Optional[str] = None,
+            trainable: bool = True,
+            **kwargs,
     ):
         super().__init__()
 
@@ -466,6 +466,11 @@ class TVPretrainedEncoder(Encoder):
         # average pool output as output of this encoder
         if remove_last_layer:
             self.model.fc = torch.nn.Identity()
+
+        # freeze parameters if requested
+        if not trainable:
+            for p in self.model.parameters():
+                p.requires_grad = False
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         hidden = inputs

@@ -98,7 +98,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-@pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
+@pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("remove_last_layer", [True, False])
 @pytest.mark.parametrize(
     "use_pretrained_weights",
@@ -117,27 +117,23 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     ],
 )
 def test_tv_resnet_encoder(
-    pretrained_model_type: str,
-    pretrained_model_variant: int,
-    use_pretrained_weights: bool,
-    remove_last_layer: bool,
-    height: int,
-    width: int,
-    num_channels: int,
+        pretrained_model_type: str,
+        pretrained_model_variant: int,
+        use_pretrained_weights: bool,
+        remove_last_layer: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVResNetEncoder(
-        height=height,
-        width=width,
-        num_channels=num_channels,
         pretrained_model_type=pretrained_model_type,
         pretrained_model_variant=pretrained_model_variant,
         remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
+        trainable=trainable,
     )
-    inputs = torch.rand(2, num_channels, height, width)
+    inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
@@ -148,7 +144,7 @@ def test_tv_resnet_encoder(
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-@pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
+@pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("remove_last_layer", [True, False])
 @pytest.mark.parametrize(
     "use_pretrained_weights",
@@ -165,27 +161,23 @@ def test_tv_resnet_encoder(
     ],
 )
 def test_tv_vgg_encoder(
-    pretrained_model_type: str,
-    pretrained_model_variant: int,
-    use_pretrained_weights: bool,
-    remove_last_layer: bool,
-    height: int,
-    width: int,
-    num_channels: int,
+        pretrained_model_type: str,
+        pretrained_model_variant: int,
+        use_pretrained_weights: bool,
+        remove_last_layer: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVVGGEncoder(
-        height=height,
-        width=width,
-        num_channels=num_channels,
         pretrained_model_type=pretrained_model_type,
         pretrained_model_variant=pretrained_model_variant,
         remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
+        trainable=trainable
     )
-    inputs = torch.rand(2, num_channels, height, width)
+    inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
