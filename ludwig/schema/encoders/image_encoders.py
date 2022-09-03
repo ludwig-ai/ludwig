@@ -536,6 +536,13 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Width of the input image.",
     )
 
+    pretrained_model_type: str = schema_utils.StringOptions(
+        ["tv_resnet", "vgg"],
+        default="tv_resnet",
+        allow_none=False,
+        description="Type of pretrained model.",
+    )
+
     pretrained_model_variant: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         description="Pretrained model variant to use.",

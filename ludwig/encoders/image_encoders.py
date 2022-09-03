@@ -433,7 +433,7 @@ class TVResNetEncoder(Encoder):
             self,
             height: int,
             width: int,
-            type: str = None,
+            pretrained_model_type: str = None,
             pretrained_model_variant: int = 50,
             num_channels: int = 3,
             use_pretrained_weights: bool = True,
@@ -450,7 +450,7 @@ class TVResNetEncoder(Encoder):
         img_height = height
         img_width = width
         first_in_channels = num_channels
-        self.pretrained_model_type = type
+        self.pretrained_model_type = pretrained_model_type
         self.pretrained_model_variant = pretrained_model_variant
         self.use_pretrained_weights = use_pretrained_weights
         self.pretrained_cache_dir = pretrained_cache_dir

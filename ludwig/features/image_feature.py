@@ -433,7 +433,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         if is_pre_trained_model:
-            pre_trained_model_id = f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['pretrained_model_variant']}"
+            pre_trained_model_id = f"{feature_config[ENCODER]['pretrained_model_type']}-{feature_config[ENCODER]['pretrained_model_variant']}"
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
                 transform_fn=torchvision_pretrained_registry[pre_trained_model_id][1].DEFAULT.transforms(),
