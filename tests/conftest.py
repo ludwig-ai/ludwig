@@ -108,26 +108,35 @@ def hyperopt_results():
 
 
 @pytest.fixture(scope="module")
-def ray_cluster_2cpu():
-    with _ray_start(num_cpus=2):
+def ray_cluster_2cpu(request):
+    with _ray_start(request, num_cpus=2):
         yield
 
 
 @pytest.fixture(scope="module")
-def ray_cluster_3cpu():
-    with _ray_start(num_cpus=3):
+def ray_cluster_3cpu(request):
+    with _ray_start(request, num_cpus=3):
         yield
 
 
 @pytest.fixture(scope="module")
-def ray_cluster_7cpu():
-    with _ray_start(num_cpus=7):
+def ray_cluster_7cpu(request):
+    with _ray_start(request, num_cpus=7):
         yield
 
 
 @contextlib.contextmanager
-def _ray_start(**kwargs):
-    import ray
+def _ray_start(request, **kwargs):
+    try:
+        import ray
+    except ImportError:
+        if "distributed" in request.keywords:
+            raise
+
+        # Allow this fixture to run in environments where Ray is not installed
+        # for parameterized tests that mix Ray with non-Ray backends
+        yield None
+        return
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)

@@ -117,21 +117,6 @@ def ray_cluster():
         ray.shutdown()
 
 
-@contextlib.contextmanager
-def init_backend(backend: str, num_cpus=2, num_gpus=None):
-    if backend == "local":
-        with contextlib.nullcontext():
-            yield
-            return
-
-    if backend == "ray":
-        with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
-            yield
-            return
-
-    raise ValueError(f"Unrecognized backend: {backend}")
-
-
 class LocalTestBackend(LocalBackend):
     @property
     def supports_multiprocessing(self):
