@@ -472,8 +472,7 @@ class TVPretrainedEncoder(Encoder):
             p.requires_grad_(trainable)
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-        hidden = inputs
-        return {"encoder_output": self.model(hidden)}
+        return {"encoder_output": self.model(inputs)}
 
     @property
     def output_shape(self) -> torch.Size:
