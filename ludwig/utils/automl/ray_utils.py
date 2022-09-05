@@ -1,5 +1,6 @@
-import logging
 import os
+
+from ludwig.backend.ray import initialize_ray
 
 try:
     import ray
@@ -23,8 +24,4 @@ def _ray_init():
     # Forcibly terminate trial requested to stop after this amount of time passes
     os.environ.setdefault("TUNE_FORCE_TRIAL_CLEANUP_S", "120")
 
-    try:
-        ray.init("auto", ignore_reinit_error=True)
-    except ConnectionError:
-        logging.info("Initializing new Ray cluster...")
-        ray.init()
+    initialize_ray()
