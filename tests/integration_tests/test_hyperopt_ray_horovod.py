@@ -31,6 +31,8 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
+    # Ray nightly version is always set to 3.0.0.dev0
+    _ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
     _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
     if _ray_114:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
@@ -42,6 +44,7 @@ try:
     from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
     ray = None
+    _ray_nightly = False
     RayTuneExecutor = object
 
 # Ray mocks
@@ -218,6 +221,7 @@ def run_hyperopt_executor(
     )
 
 
+@pytest.mark.skipif(_ray_nightly, reason="https://github.com/ludwig-ai/ludwig/issues/2451")
 @pytest.mark.distributed
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):

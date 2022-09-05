@@ -64,6 +64,8 @@ try:
         model = LudwigModel.load(model_dir, backend="local")
         model.predict(dataset)
 
+    # Ray nightly version is always set to 3.0.0.dev0
+    _ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
     _modin_ray_incompatible = version.parse(modin.__version__) <= version.parse("0.15.2") and version.parse(
         ray.__version__
     ) >= version.parse("1.13.0")
@@ -72,6 +74,7 @@ except ImportError:
     modin = None
     ray = None
 
+    _ray_nightly = False
     _modin_ray_incompatible = False
 
 
@@ -331,6 +334,9 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
+    if _ray_nightly and dataset_type == "pandas+numpy_images":
+        pytest.skip("https://github.com/ludwig-ai/ludwig/issues/2452")
+
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
