@@ -26,6 +26,7 @@ from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
+from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
@@ -144,12 +145,7 @@ class RayTuneExecutor:
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
-        if not ray.is_initialized():
-            try:
-                ray.init("auto", ignore_reinit_error=True)
-            except ConnectionError:
-                logger.info("Initializing new Ray cluster...")
-                ray.init(ignore_reinit_error=True)
+        initialize_ray()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal

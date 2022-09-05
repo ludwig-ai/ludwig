@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
+
 import logging
 import multiprocessing
 import os
@@ -40,11 +40,6 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils.data_utils import read_csv, replace_file_extension
-
-try:
-    import ray
-except ImportError:
-    ray = None
 
 logger = logging.getLogger(__name__)
 
@@ -88,48 +83,6 @@ RAY_BACKEND_CONFIG = {
         },
     },
 }
-
-
-@contextlib.contextmanager
-def ray_start(num_cpus=2, num_gpus=None):
-    res = ray.init(
-        num_cpus=num_cpus,
-        num_gpus=num_gpus,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
-@contextlib.contextmanager
-def ray_cluster():
-    ray.init(
-        num_cpus=2,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield
-    finally:
-        ray.shutdown()
-
-
-@contextlib.contextmanager
-def init_backend(backend: str, num_cpus=2, num_gpus=None):
-    if backend == "local":
-        with contextlib.nullcontext():
-            yield
-            return
-
-    if backend == "ray":
-        with ray_start(num_cpus=num_cpus, num_gpus=num_gpus):
-            yield
-            return
-
-    raise ValueError(f"Unrecognized backend: {backend}")
 
 
 class LocalTestBackend(LocalBackend):
