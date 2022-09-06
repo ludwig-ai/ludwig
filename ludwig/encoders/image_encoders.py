@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from abc import abstractmethod
 import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -462,10 +463,9 @@ class TVPretrainedEncoder(Encoder):
         # create pretrained model with specified weights
         self.model = self.model_type(weights=self.pretrained_weights)
 
-        # if requested, remove final classification layer and feed
-        # average pool output as output of this encoder
+        # if requested, remove final classification layer
         if remove_last_layer:
-            self.model.fc = torch.nn.Identity()
+            self._remove_last_layer()
 
         # freeze parameters if requested
         for p in self.model.parameters():
@@ -473,6 +473,10 @@ class TVPretrainedEncoder(Encoder):
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         return {"encoder_output": self.model(inputs)}
+
+    @abstractmethod
+    def _remove_last_layer(self):
+        raise NotImplementedError()
 
     @property
     def output_shape(self) -> torch.Size:
@@ -493,12 +497,15 @@ class TVPretrainedEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(TVPretrainedEncoder):
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.pretrained_model_type = "tv_resnet"
         super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
 
     @staticmethod
     def get_schema_cls():
@@ -514,12 +521,15 @@ class TVResNetEncoder(TVPretrainedEncoder):
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVPretrainedEncoder):
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.pretrained_model_type = "vgg"
         super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
     def get_schema_cls():
