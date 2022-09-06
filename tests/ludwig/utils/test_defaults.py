@@ -620,6 +620,4 @@ def test_merge_with_defaults():
     updated_config = upgrade_to_latest_version(legacy_config_format)
     merged_config = merge_with_defaults(updated_config)
 
-    print(merged_config)
-
     assert merged_config == expected_upgraded_format
