@@ -1,4 +1,3 @@
-import contextlib
 import os
 
 import pytest
@@ -12,20 +11,6 @@ from marshmallow import ValidationError
 from ludwig.api import LudwigModel
 from ludwig.constants import MODEL_TYPE, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
-
-
-@contextlib.contextmanager
-def ray_start(num_cpus=3, num_gpus=None):
-    res = _ray.init(
-        num_cpus=num_cpus,
-        num_gpus=num_gpus,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        _ray.shutdown()
 
 
 @pytest.fixture(scope="module")
@@ -75,9 +60,8 @@ def test_local_gbm_output_not_supported(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_output_not_supported(tmpdir, ray_backend):
-    with ray_start():
-        run_test_gbm_output_not_supported(tmpdir, ray_backend)
+def test_ray_gbm_output_not_supported(tmpdir, ray_backend, ray_cluster_3cpu):
+    run_test_gbm_output_not_supported(tmpdir, ray_backend)
 
 
 def run_test_gbm_multiple_outputs(tmpdir, backend_config):
@@ -109,9 +93,8 @@ def test_local_gbm_multiple_outputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_multiple_outputs(tmpdir, ray_backend):
-    with ray_start():
-        run_test_gbm_multiple_outputs(tmpdir, ray_backend)
+def test_ray_gbm_multiple_outputs(tmpdir, ray_backend, ray_cluster_3cpu):
+    run_test_gbm_multiple_outputs(tmpdir, ray_backend)
 
 
 def run_test_gbm_binary(tmpdir, backend_config):
@@ -154,9 +137,8 @@ def test_local_gbm_binary(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_binary(tmpdir, ray_backend):
-    with ray_start():
-        run_test_gbm_binary(tmpdir, ray_backend)
+def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_3cpu):
+    run_test_gbm_binary(tmpdir, ray_backend)
 
 
 def run_test_gbm_non_number_inputs(tmpdir, backend_config):
@@ -199,9 +181,8 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_non_number_inputs(tmpdir, ray_backend):
-    with ray_start():
-        run_test_gbm_non_number_inputs(tmpdir, ray_backend)
+def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_3cpu):
+    run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
 def run_test_gbm_category(tmpdir, backend_config):
@@ -246,9 +227,8 @@ def test_local_gbm_category(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_category(tmpdir, ray_backend):
-    with ray_start():
-        run_test_gbm_category(tmpdir, ray_backend)
+def test_ray_gbm_category(tmpdir, ray_backend, ray_cluster_3cpu):
+    run_test_gbm_category(tmpdir, ray_backend)
 
 
 def run_test_gbm_number(tmpdir, backend_config):
@@ -298,9 +278,8 @@ def test_local_gbm_number(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_number(tmpdir, ray_backend):
-    with ray_start():
-        run_test_gbm_number(tmpdir, ray_backend)
+def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_3cpu):
+    run_test_gbm_number(tmpdir, ray_backend)
 
 
 def run_test_gbm_schema(backend_config):
@@ -328,6 +307,5 @@ def test_local_gbm_schema(local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_schema(ray_backend):
-    with ray_start():
-        run_test_gbm_schema(ray_backend)
+def test_ray_gbm_schema(ray_backend, ray_cluster_3cpu):
+    run_test_gbm_schema(ray_backend)

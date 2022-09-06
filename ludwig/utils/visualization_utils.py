@@ -926,8 +926,8 @@ def calibration_plot(
         order = min(3, len(mean_predicted_values[i]) - 1)
 
         sns.regplot(
-            mean_predicted_values[i],
-            fraction_positives[i],
+            x=mean_predicted_values[i],
+            y=fraction_positives[i],
             order=order,
             x_estimator=np.mean,
             color=colors[i],

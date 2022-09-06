@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME, PREDICTIONS, TRAINER
@@ -36,6 +37,9 @@ from tests.integration_tests.utils import (
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Neuropod is not supported on Windows")
 @pytest.mark.skipif(sys.version_info >= (3, 9), reason="Neuropod does not support Python 3.9")
+@pytest.mark.skipif(
+    parse_version(torch.__version__) >= parse_version("1.12"), reason="Neuropod does not support PyTorch >= 1.12"
+)
 def test_neuropod_torchscript(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
 
