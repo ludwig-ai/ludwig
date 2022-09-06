@@ -836,7 +836,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         if not ready:
             raise TimeoutError(
-                f"Ray timed out in provisioning the placement group for preprocessing. {num_cpu} CPUs were requested but were unable to be provisioned"
+                "Ray timed out in provisioning the placement group for preprocessing."
+                f" {num_cpu} CPUs were requested but were unable to be provisioned."
             )
 
         logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
