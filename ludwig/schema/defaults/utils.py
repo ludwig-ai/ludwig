@@ -14,8 +14,8 @@ def DefaultsDataclassField(feature_type: str):
     """
 
     class DefaultMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid defaults config from the feature_registry and
-        creates a corresponding JSON schema for external usage."""
+        """Custom marshmallow field that deserializes a dict for a valid defaults config from the feature_registry
+        and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
