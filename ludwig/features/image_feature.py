@@ -58,7 +58,7 @@ from ludwig.utils.image_utils import (
     read_image_from_bytes_obj,
     read_image_from_path,
     resize_image,
-    torchvision_pretrained_registry,
+    torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
@@ -428,17 +428,17 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         # determine if specified encoder is a pre-trained model
-        is_pre_trained_model = any(
-            [x.startswith(feature_config[ENCODER][TYPE]) for x in torchvision_pretrained_registry]
+        is_torchvision_model = any(
+            [x.startswith(feature_config[ENCODER][TYPE]) for x in torchvision_model_registry]
         )
 
-        if is_pre_trained_model:
-            pre_trained_model_id = (
-                f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['pretrained_model_variant']}"
+        if is_torchvision_model:
+            torchvision_model_id = (
+                f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['model_variant']}"
             )
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
-                transform_fn=torchvision_pretrained_registry[pre_trained_model_id][1].DEFAULT.transforms(),
+                transform_fn=torchvision_model_registry[torchvision_model_id][1].DEFAULT.transforms(),
             )
             average_file_size = None
         else:

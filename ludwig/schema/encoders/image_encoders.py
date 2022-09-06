@@ -520,7 +520,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
 @dataclass
 class TVResNetEncoderConfig(BaseEncoderConfig):
 
-    pretrained_model_variant: Optional[int] = schema_utils.PositiveInteger(
+    model_variant: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         description="Pretrained model variant to use.",
     )
@@ -530,7 +530,7 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Download model weights from pre-trained model.",
     )
 
-    pretrained_cache_dir: str = schema_utils.String(
+    model_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
     )
 
@@ -548,8 +548,7 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
 # TODO: finalize the options
 @dataclass
 class TVVGGEncoderConfig(BaseEncoderConfig):
-
-    pretrained_model_variant: Optional[int] = schema_utils.PositiveInteger(
+    model_variant: Optional[int] = schema_utils.PositiveInteger(
         default=50,
         description="Pretrained model variant to use.",
     )
@@ -559,7 +558,7 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
         description="Download model weights from pre-trained model.",
     )
 
-    pretrained_cache_dir: str = schema_utils.String(
+    model_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
     )
 

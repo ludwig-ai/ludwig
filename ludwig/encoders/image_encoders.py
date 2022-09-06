@@ -36,7 +36,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVVGGEncoderConfig,
     ViTEncoderConfig,
 )
-from ludwig.utils.image_utils import torchvision_pretrained_registry
+from ludwig.utils.image_utils import torchvision_model_registry
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
@@ -426,37 +426,37 @@ class ViTEncoder(Encoder):
         return torch.Size(self._output_shape)
 
 
-class TVPretrainedEncoder(Encoder):
+class TVBaseEncoder(Encoder):
     def __init__(
-        self,
-        pretrained_model_variant: Union[str, int] = None,
-        use_pretrained_weights: bool = True,
-        remove_last_layer: bool = False,
-        pretrained_cache_dir: Optional[str] = None,
-        trainable: bool = True,
-        **kwargs,
+            self,
+            model_variant: Union[str, int] = None,
+            use_pretrained_weights: bool = True,
+            remove_last_layer: bool = False,
+            model_cache_dir: Optional[str] = None,
+            trainable: bool = True,
+            **kwargs,
     ):
         super().__init__()
 
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
-        self.pretrained_model_variant = pretrained_model_variant
+        self.model_variant = model_variant
         self.use_pretrained_weights = use_pretrained_weights
-        self.pretrained_cache_dir = pretrained_cache_dir
+        self.model_cache_dir = model_cache_dir
 
         # cache pre-trained models if requested
         # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564
-        if self.pretrained_cache_dir is not None:
-            os.environ["TORCH_HOME"] = self.pretrained_cache_dir
+        if self.model_cache_dir is not None:
+            os.environ["TORCH_HOME"] = self.model_cache_dir
 
-        model_id = f"{self.pretrained_model_type}-{self.pretrained_model_variant}"
+        model_id = f"{self.torchvision_model_type}-{self.model_variant}"
         # TODO: Do we really need self.model_type if not using train() to initialize Ludwig model
         # save pretrained model type
-        self.model_type = torchvision_pretrained_registry[model_id][0]
+        self.model_type = torchvision_model_registry[model_id][0]
 
         # get weight specification
         self.pretrained_weights = (
-            torchvision_pretrained_registry[model_id][1].DEFAULT if self.use_pretrained_weights else None
+            torchvision_model_registry[model_id][1].DEFAULT if self.use_pretrained_weights else None
         )
 
         logger.debug("  ResNet")
@@ -495,13 +495,13 @@ class TVPretrainedEncoder(Encoder):
 # TODO: Finalize constructor parameters and finalize name fo encoder
 #       should it be model specific or generic name like tv_pretrained_encoder
 @register_encoder("tv_resnet", IMAGE)
-class TVResNetEncoder(TVPretrainedEncoder):
+class TVResNetEncoder(TVBaseEncoder):
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         logger.debug(f" {self.name}")
-        self.pretrained_model_type = "tv_resnet"
+        self.torchvision_model_type = "tv_resnet"
         super().__init__(**kwargs)
 
     def _remove_last_layer(self):
@@ -519,13 +519,13 @@ class TVResNetEncoder(TVPretrainedEncoder):
 
 
 @register_encoder("vgg", IMAGE)
-class TVVGGEncoder(TVPretrainedEncoder):
+class TVVGGEncoder(TVBaseEncoder):
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         logger.debug(f" {self.name}")
-        self.pretrained_model_type = "vgg"
+        self.torchvision_model_type = "vgg"
         super().__init__(**kwargs)
 
     def _remove_last_layer(self):

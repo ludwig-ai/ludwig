@@ -107,7 +107,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize(
-    "pretrained_model_type, pretrained_model_variant",
+    "torchvision_model_type, model_variant",
     [
         ("tv_resnet", 18),
         ("tv_resnet", 34),
@@ -117,18 +117,18 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     ],
 )
 def test_tv_resnet_encoder(
-    pretrained_model_type: str,
-    pretrained_model_variant: int,
-    use_pretrained_weights: bool,
-    remove_last_layer: bool,
-    trainable: bool,
+        torchvision_model_type: str,
+        model_variant: int,
+        use_pretrained_weights: bool,
+        remove_last_layer: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVResNetEncoder(
-        pretrained_model_type=pretrained_model_type,
-        pretrained_model_variant=pretrained_model_variant,
+        torcvision_model_type=torchvision_model_type,
+        model_variant=model_variant,
         remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
         trainable=trainable,
@@ -153,7 +153,7 @@ def test_tv_resnet_encoder(
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize(
-    "pretrained_model_type, pretrained_model_variant",
+    "torchvision_model_type, model_variant",
     [
         ("vgg", 11),
         ("vgg", 16),
@@ -161,18 +161,18 @@ def test_tv_resnet_encoder(
     ],
 )
 def test_tv_vgg_encoder(
-    pretrained_model_type: str,
-    pretrained_model_variant: int,
-    use_pretrained_weights: bool,
-    remove_last_layer: bool,
-    trainable: bool,
+        torchvision_model_type: str,
+        model_variant: int,
+        use_pretrained_weights: bool,
+        remove_last_layer: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVVGGEncoder(
-        pretrained_model_type=pretrained_model_type,
-        pretrained_model_variant=pretrained_model_variant,
+        torchvision_model_type=torchvision_model_type,
+        model_variant=model_variant,
         remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
         trainable=trainable,
