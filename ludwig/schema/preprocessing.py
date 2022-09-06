@@ -7,8 +7,8 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
     AUDIO,
-    BFILL,
     BAG,
+    BFILL,
     BINARY,
     CATEGORY,
     DATE,
