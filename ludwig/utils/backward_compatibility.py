@@ -466,7 +466,7 @@ def upgrade_missing_value_strategy(config: Dict[str, Any]):
             return False
         return True
 
-    def __update_old_missing_value_strategies(feature_config: Dict[str, Any]):
+    def __update_old_missing_value_strategy(feature_config: Dict[str, Any]):
         missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
         replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
         feature_name = feature_config.get(NAME)
@@ -479,15 +479,14 @@ def upgrade_missing_value_strategy(config: Dict[str, Any]):
 
     for input_feature in config.get(INPUT_FEATURES, {}):
         if __is_old_missing_value_strategy(input_feature):
-            __update_old_missing_value_strategies(input_feature)
+            __update_old_missing_value_strategy(input_feature)
 
     for output_feature in config.get(OUTPUT_FEATURES, {}):
         if __is_old_missing_value_strategy(output_feature):
-            __update_old_missing_value_strategies(output_feature)
+            __update_old_missing_value_strategy(output_feature)
 
-    for feature_defaults in config.get(DEFAULTS, {}):
-        for feature_type in feature_defaults:
-            if __is_old_missing_value_strategy(config.get(DEFAULTS).get(feature_type)):
-                __update_old_missing_value_strategies(config.get(DEFAULTS).get(feature_type))
+    for feature, feature_defaults in config.get(DEFAULTS, {}).items():
+        if __is_old_missing_value_strategy(feature_defaults):
+            __update_old_missing_value_strategy(config.get(DEFAULTS).get(feature))
 
     return config
