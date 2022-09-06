@@ -424,6 +424,26 @@ def test_ray_split(ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
+def test_ray_stratify(ray_cluster_2cpu):
+    input_features = [
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(
+        input_features,
+        output_features,
+        preprocessing={
+            "split": {
+                "type": "stratify",
+                "column": output_features[0][NAME],
+            }
+        },
+    )
+
+
+@pytest.mark.distributed
 def test_ray_timeseries():
     input_features = [timeseries_feature()]
     output_features = [number_feature()]
