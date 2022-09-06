@@ -24,7 +24,6 @@ import torch
 
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
-    BACKFILL,
     BFILL,
     BINARY,
     CHECKSUM,
@@ -40,7 +39,6 @@ from ludwig.constants import (
     FULL,
     NAME,
     NUMBER,
-    PAD,
     PREPROCESSING,
     PROC_COLUMN,
     SPLIT,
@@ -1466,7 +1464,7 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in {BACKFILL, BFILL, PAD, FFILL}:
+    elif missing_value_strategy in {BFILL, FFILL}:
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
