@@ -4,7 +4,6 @@ import pytest
 from marshmallow import ValidationError
 
 from ludwig.constants import (
-    BFILL,
     CATEGORY,
     DECODER,
     DEFAULTS,
@@ -30,6 +29,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.defaults import merge_with_defaults
@@ -286,7 +286,7 @@ def test_merge_with_defaults():
 
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
-        "ludwig_version": "0.6.dev",
+        "ludwig_version": LUDWIG_VERSION,
         "input_features": [
             {
                 "type": "number",
@@ -347,7 +347,7 @@ def test_merge_with_defaults():
                 "proc_column": "number_output_feature_mZFLky",
                 "tied": None,
                 "preprocessing": {
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": "bfill",
                     "fill_value": None,
                     "computed_fill_value": None,
                     "height": None,
@@ -422,7 +422,7 @@ def test_merge_with_defaults():
             "eval_batch_size": None,
             "early_stop": 5,
             "evaluate_training_set": True,
-            "optimizer": {"type": "adadelta", "rho": 0.9, "eps": 1e-06, "lr": 1.0, "weight_decay": 0.0},
+            "optimizer": {"type": "adadelta", "lr": 1.0, "rho": 0.9, "eps": 1e-06, "weight_decay": 0.0},
             "epochs": 100,
             "train_steps": None,
             "regularization_lambda": 0.0,
@@ -540,13 +540,12 @@ def test_merge_with_defaults():
             },
             "image": {
                 "preprocessing": {
+                    "missing_value_strategy": "bfill",
                     "fill_value": None,
                     "computed_fill_value": None,
                     "height": None,
                     "width": None,
                     "num_channels": None,
-                    "missing_value_strategy": BFILL,
-                    "in_memory": True,
                     "resize_method": "interpolate",
                     "infer_image_num_channels": True,
                     "infer_image_dimensions": True,
@@ -561,7 +560,7 @@ def test_merge_with_defaults():
             "audio": {
                 "preprocessing": {
                     "audio_file_length_limit_in_s": 7.5,
-                    "missing_value_strategy": BFILL,
+                    "missing_value_strategy": "bfill",
                     "fill_value": None,
                     "computed_fill_value": None,
                     "in_memory": True,
