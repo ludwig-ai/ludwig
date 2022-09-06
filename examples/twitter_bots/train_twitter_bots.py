@@ -17,13 +17,53 @@ if __name__ == "__main__":
     shutil.rmtree(".visualizations", ignore_errors=True)
 
     # Loads the dataset
-    dataset = twitter_bots.TwitterBots(cache_dir=".")
+    dataset = twitter_bots.TwitterBots(cache_dir="./downloads")
     training_set, val_set, test_set = dataset.load(split=True)
-    # Moves profile images into local directory, so relative paths in the dataset will be resolved.
-    rename(os.path.join(dataset.processed_dataset_path, "profile_images"), "./profile_images")
 
-    with open("./config.yaml") as f:
-        config = yaml.safe_load(f.read())
+    # Moves profile images into local directory, so relative paths in the dataset will be resolved.
+    if not os.path.exists("./profile_images"):
+        rename(os.path.join(dataset.processed_dataset_path, "profile_images"), "./profile_images")
+
+    config = yaml.safe_load(
+        """
+    input_features:
+      - name: default_profile
+        type: binary
+      - name: default_profile_image
+        type: binary
+      - name: description
+        type: text
+      - name: favourites_count
+        type: number
+      - name: followers_count
+        type: number
+      - name: friends_count
+        type: number
+      - name: geo_enabled
+        type: binary
+      - name: lang
+        type: category
+      - name: location
+        type: category
+      - name: profile_background_image_path
+        type: category
+      - name: profile_image_path
+        type: image
+        preprocessing:
+          num_channels: 3
+      - name: statuses_count
+        type: number
+      - name: verified
+        type: binary
+      - name: average_tweets_per_day
+        type: number
+      - name: account_age_days
+        type: number
+    output_features:
+      - name: account_type
+        type: binary
+        """
+    )
 
     model = LudwigModel(config, logging_level=logging.INFO)
 

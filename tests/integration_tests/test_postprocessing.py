@@ -28,7 +28,6 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
-    init_backend,
     RAY_BACKEND_CONFIG,
     set_feature,
     text_feature,
@@ -52,10 +51,15 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
     return torch.tensor(logits, dtype=torch.float32)  # simulate torch model output
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
 @pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
-def test_binary_predictions(tmpdir, backend, distinct_values):
+def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]
@@ -106,10 +110,15 @@ def test_binary_predictions(tmpdir, backend, distinct_values):
         assert np.allclose(prob_0, 1 - prob_1)
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize("backend", ["local", "ray"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
 @pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
-def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values):
+def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]
@@ -202,23 +211,22 @@ def test_set_feature_saving(tmpdir, pct_positive):
 
 
 def predict_with_backend(tmpdir, config, data_csv_path, backend, patch_args=None):
-    with init_backend(backend):
-        if backend == "ray":
-            backend = RAY_BACKEND_CONFIG
-            backend["processor"]["type"] = "dask"
+    if backend == "ray":
+        backend = RAY_BACKEND_CONFIG
+        backend["processor"]["type"] = "dask"
 
-        ludwig_model = LudwigModel(config, backend=backend)
-        _, _, output_directory = ludwig_model.train(
-            dataset=data_csv_path,
-            output_directory=os.path.join(tmpdir, "output"),
-        )
-        # Check that metadata JSON saves and loads correctly
-        ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
+    ludwig_model = LudwigModel(config, backend=backend)
+    _, _, output_directory = ludwig_model.train(
+        dataset=data_csv_path,
+        output_directory=os.path.join(tmpdir, "output"),
+    )
+    # Check that metadata JSON saves and loads correctly
+    ludwig_model = LudwigModel.load(os.path.join(output_directory, "model"))
 
-        if patch_args is not None:
-            with mock.patch(*patch_args):
-                preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
-        else:
+    if patch_args is not None:
+        with mock.patch(*patch_args):
             preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
+    else:
+        preds_df, _ = ludwig_model.predict(dataset=data_csv_path)
 
     return preds_df, ludwig_model

@@ -12,15 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import os
 import tempfile
 import uuid
+from unittest import mock
 
 import pytest
 
-from ludwig.constants import TRAINER
+from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+
+@pytest.fixture(autouse=True)
+def setup_tests(request):
+    if "distributed" not in request.keywords:
+        # Only run this patch if we're running distributed tests, otherwise Ray will not be installed
+        # and this will fail.
+        # See: https://stackoverflow.com/a/38763328
+        yield
+        return
+
+    with mock.patch("ludwig.backend.ray.init_ray_local") as mock_init_ray_local:
+        mock_init_ray_local.side_effect = RuntimeError("Ray must be initialized explicitly when running tests")
+        yield mock_init_ray_local
 
 
 @pytest.fixture()
@@ -53,13 +69,13 @@ def hyperopt_results():
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
     }
 
-    output_feature_name = output_features[0]["name"]
+    output_feature_name = output_features[0][NAME]
 
     hyperopt_configs = {
         "parameters": {
@@ -68,8 +84,8 @@ def hyperopt_results():
                 "lower": 0.0001,
                 "upper": 0.01,
             },
-            output_feature_name + ".output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
+            output_feature_name + ".decoder.output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
+            output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
@@ -84,8 +100,70 @@ def hyperopt_results():
     }
 
     # add hyperopt parameter space to the config
-    config["hyperopt"] = hyperopt_configs
+    config[HYPEROPT] = hyperopt_configs
 
     hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
 
     return os.path.join(os.path.abspath("results"), "hyperopt_test")
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_2cpu(request):
+    with _ray_start(request, num_cpus=2):
+        yield
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_3cpu(request):
+    with _ray_start(request, num_cpus=3):
+        yield
+
+
+@pytest.fixture(scope="module")
+def ray_cluster_7cpu(request):
+    with _ray_start(request, num_cpus=7):
+        yield
+
+
+@contextlib.contextmanager
+def _ray_start(request, **kwargs):
+    try:
+        import ray
+    except ImportError:
+        if "distributed" in request.keywords:
+            raise
+
+        # Allow this fixture to run in environments where Ray is not installed
+        # for parameterized tests that mix Ray with non-Ray backends
+        yield None
+        return
+
+    init_kwargs = _get_default_ray_kwargs()
+    init_kwargs.update(kwargs)
+    res = ray.init(**init_kwargs)
+    try:
+        yield res
+    finally:
+        ray.shutdown()
+
+
+def _get_default_ray_kwargs():
+    system_config = _get_default_system_config()
+    ray_kwargs = {
+        "num_cpus": 1,
+        "object_store_memory": 150 * 1024 * 1024,
+        "dashboard_port": None,
+        "include_dashboard": False,
+        "namespace": "default_test_namespace",
+        "_system_config": system_config,
+    }
+    return ray_kwargs
+
+
+def _get_default_system_config():
+    system_config = {
+        "object_timeout_milliseconds": 200,
+        "num_heartbeats_timeout": 10,
+        "object_store_full_delay_ms": 100,
+    }
+    return system_config
