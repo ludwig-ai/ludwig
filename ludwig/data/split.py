@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+from ludwig.backend import initialize_backend, LOCAL
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
 from ludwig.utils.data_utils import split_dataset_ttv
@@ -108,8 +109,28 @@ class StratifySplitter(Splitter):
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         if backend.df_engine.partitioned:
-            # TODO dask: find a way to support this method
-            raise ValueError('Split type "stratify" is not supported with a partitioned dataset.')
+            # For a partitioned dataset, we can stratify split each partition individually
+            # to obtain a global stratified split.
+            single_partition_backend = initialize_backend(LOCAL)
+
+            def split_partition(part: DataFrame) -> DataFrame:
+                # Recursive call to split the partition via the non-partitioned code path
+                _, val, test = self.split(part, single_partition_backend, random_seed=random_seed)
+                part.loc[val.index, TMP_SPLIT_COL] = 1
+                part.loc[test.index, TMP_SPLIT_COL] = 2
+                return part
+
+            # Default to 0 for train
+            df[TMP_SPLIT_COL] = 0
+
+            # Recursively split each partition
+            df = backend.df_engine.map_partitions(df, split_partition, meta=df)
+
+            df_train = df[df[TMP_SPLIT_COL] == 0].drop(columns=TMP_SPLIT_COL)
+            df_val = df[df[TMP_SPLIT_COL] == 1].drop(columns=TMP_SPLIT_COL)
+            df_test = df[df[TMP_SPLIT_COL] == 2].drop(columns=TMP_SPLIT_COL)
+
+            return df_train, df_val, df_test
 
         frac_train, frac_val, frac_test = self.probabilities
 

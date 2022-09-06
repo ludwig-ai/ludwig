@@ -141,16 +141,23 @@ def test_fixed_split(df_engine):
 
 
 @pytest.mark.parametrize(
-    ("df_engine",),
+    ("df_engine", "nrows", "atol"),
     [
-        pytest.param(PandasEngine(), id="pandas"),
-        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+        pytest.param(PandasEngine(), 100, 1, id="pandas"),
+        # Splitting with a distributed engine becomes more accurate with more rows.
+        pytest.param(DaskEngine(_use_ray=False), 10000, 10, id="dask", marks=pytest.mark.distributed),
     ],
 )
-def test_stratify_split(df_engine):
-    nrows = 100
+@pytest.mark.parametrize(
+    "class_probs",
+    [
+        pytest.param(np.array([0.33, 0.33, 0.34]), id="balanced"),
+        pytest.param(np.array([0.6, 0.2, 0.2]), id="imbalanced"),
+    ],
+)
+def test_stratify_split(df_engine, nrows, atol, class_probs):
     npartitions = 10
-    thresholds = [60, 80, 100]
+    thresholds = np.cumsum((class_probs * nrows).astype(int))
 
     df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
 
@@ -179,14 +186,14 @@ def test_stratify_split(df_engine):
     splits = splitter.split(df, backend, random_seed=42)
     assert len(splits) == 3
 
-    ratios = [60, 20, 20]
+    ratios = class_probs * nrows
     for split, p in zip(splits, probs):
         if isinstance(df_engine, DaskEngine):
             split = split.compute()
         for idx, r in enumerate(ratios):
             actual = np.sum(split["category"] == idx)
             expected = int(r * p)
-            assert np.isclose(actual, expected, atol=1)
+            assert np.isclose(actual, expected, atol=atol)
 
     # Test determinism
     splits2 = splitter.split(df, backend, random_seed=7)
