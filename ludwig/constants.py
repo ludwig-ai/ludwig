@@ -161,6 +161,7 @@ SRC = "dataset_src"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
+DEFAULT_BATCH_SIZE = 128
 LEARNING_RATE = "learning_rate"
 USE_BIAS = "use_bias"
 BIAS = "bias"

@@ -23,7 +23,7 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
-from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, NAME, TRAINER
+from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, DEFAULT_BATCH_SIZE, NAME, TRAINER
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
@@ -520,8 +520,9 @@ def _run_train_gpu_load_cpu(config, data_parquet):
         ray.get(predict_cpu.remote(model_dir, data_parquet))
 
 
+# TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
-def test_tune_batch_size_lr(tmpdir, ray_cluster_2cpu):
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -536,10 +537,12 @@ def test_tune_batch_size_lr(tmpdir, ray_cluster_2cpu):
     backend_config = {**RAY_BACKEND_CONFIG}
 
     csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
+    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-    assert model.config[TRAINER]["batch_size"] != "auto"
+    assert (
+        model.config[TRAINER]["batch_size"] == DEFAULT_BATCH_SIZE
+    )  # On CPU, batch size tuning is disabled, so assert it is equal to default
     assert model.config[TRAINER]["learning_rate"] != "auto"
 
 
