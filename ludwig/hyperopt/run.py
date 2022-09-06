@@ -1,8 +1,8 @@
+import copy
 import logging
 import os
-from collections import defaultdict
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import List, Optional, Union
 
 import pandas as pd
 import yaml
@@ -12,11 +12,8 @@ from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     COMBINED,
-    DECODER,
-    ENCODER,
     EXECUTOR,
     HYPEROPT,
-    INPUT_FEATURES,
     LOSS,
     MINIMIZE,
     NAME,
@@ -28,7 +25,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
@@ -188,14 +185,11 @@ def hyperopt(
     else:
         config_dict = config
 
-    # Get mapping of input/output features that don't have an encoder for shared parameters
-    features_eligible_for_shared_params = {
-        INPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, INPUT_FEATURES),
-        OUTPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, OUTPUT_FEATURES),
-    }
-
     # backwards compatibility
     config = upgrade_to_latest_version(config_dict)
+
+    # Retain pre-merged config for hyperopt schema generation
+    premerged_config = copy.deepcopy(config)
 
     # merge config with defaults
     config = merge_with_defaults(config)
@@ -210,12 +204,6 @@ def hyperopt(
     # print hyperopt config
     logging.info("Hyperopt config")
     logging.info(pformat(hyperopt_config, indent=4))
-    logging.info("\n")
-
-    logging.info(
-        "Features that may be updated in hyperopt trials if default parameters are specified in the search space"
-    )
-    logging.info(pformat(dict(features_eligible_for_shared_params), indent=4))
     logging.info("\n")
 
     search_alg = hyperopt_config["search_alg"]
@@ -339,7 +327,7 @@ def hyperopt(
         callback.on_hyperopt_start(experiment_name)
 
     hyperopt_results = hyperopt_executor.execute(
-        config,
+        premerged_config,
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -366,7 +354,6 @@ def hyperopt(
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,
-        features_eligible_for_shared_params=features_eligible_for_shared_params,
         **kwargs,
     )
 
@@ -410,51 +397,3 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
         hyperopt_params[EXECUTOR],
         executor_defaults,
     )
-
-
-def get_features_eligible_for_shared_params(
-    config_dict: Dict[str, Any], config_feature_type: str
-) -> Dict[str, Dict[str, Set]]:
-    """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
-    default encoder for that feature type.
-
-    These features may be considered for potential shared parameter search spaces depending on the parameter space
-    defined later within the hyperopt config. This applies to both config_feature_types (input_features and
-    output_features). The shared parameters for both config_feature_types must be specified separately.
-
-    Note that shared default parameter search spaces are not applied to features with non-default encoders or
-    non-default decoders, since shared default parameter values should only apply to default modules.
-
-    Returns:
-      Dict of feature type -> set of feature names with that type that are eligible for shared parameters (they use
-      the default encoder or default decoder).
-
-    TODO(#2167): Make sure each feature has a type defined in the JSONSchema for Hyperopt
-    """
-
-    if config_feature_type not in config_dict:
-        raise ValueError(f"{config_feature_type} must be defined in Ludwig config.")
-
-    features_eligible_for_shared_params = defaultdict(set)
-
-    features = config_dict.get(config_feature_type)
-    feature_registry = input_type_registry if config_feature_type == INPUT_FEATURES else output_type_registry
-
-    for feature in features:
-        if TYPE not in feature:
-            raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
-
-        feature_schema = get_from_registry(feature.get(TYPE), feature_registry).get_schema_cls()
-
-        if config_feature_type == INPUT_FEATURES:
-            default_encoder = feature_schema().encoder.type
-            if feature.get(ENCODER, None) and feature.get(ENCODER).get(TYPE, None) != default_encoder:
-                continue
-        else:
-            default_decoder = feature_schema().decoder.type
-            if feature.get(DECODER, None) and feature.get(DECODER).get(TYPE, None) != default_decoder:
-                continue
-
-        features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
-
-    return features_eligible_for_shared_params

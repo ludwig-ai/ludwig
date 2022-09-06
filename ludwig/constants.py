@@ -84,9 +84,7 @@ FILL_WITH_CONST = "fill_with_const"
 FILL_WITH_MODE = "fill_with_mode"
 FILL_WITH_MEAN = "fill_with_mean"
 FILL_WITH_FALSE = "fill_with_false"
-BACKFILL = "backfill"
 BFILL = "bfill"
-PAD = "pad"
 FFILL = "ffill"
 DROP_ROW = "drop_row"
 MISSING_VALUE_STRATEGY = "missing_value_strategy"
@@ -94,9 +92,7 @@ MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
     FILL_WITH_MEAN,
-    BACKFILL,
     BFILL,
-    PAD,
     FFILL,
     DROP_ROW,
 ]
