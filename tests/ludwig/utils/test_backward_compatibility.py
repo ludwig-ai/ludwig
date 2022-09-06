@@ -466,13 +466,14 @@ def test_validate_old_model_config():
         validate_config(old_invalid_config)
 
 
-def test_update_missing_value_strategy():
+@pytest.mark.parametrize("missing_value_strategy", ["backfill", "pad"])
+def test_update_missing_value_strategy(missing_value_strategy: str):
     old_valid_config = {
         "input_features": [
             {
                 "name": "input_feature_1",
                 "type": "category",
-                "preprocessing": {"missing_value_strategy": BFILL},
+                "preprocessing": {"missing_value_strategy": missing_value_strategy},
             }
         ],
         "output_features": [
@@ -483,6 +484,9 @@ def test_update_missing_value_strategy():
     updated_config = upgrade_missing_value_strategy(old_valid_config)
 
     expected_config = copy.deepcopy(old_valid_config)
-    expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "bfill"
+    if missing_value_strategy == "backfill":
+        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "bfill"
+    else:
+        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "ffill"
 
     assert updated_config == expected_config
