@@ -277,9 +277,9 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)
 
-    # ===== Training =====
+    # ===== Trainer =====
     # Convert config dictionary into an instance of BaseTrainerConfig.
-    full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config[TRAINER] if TRAINER in config else {})
+    full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config.get(TRAINER, {}))
     config[TRAINER] = asdict(full_trainer_config)
 
     set_default_value(
