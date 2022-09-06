@@ -428,14 +428,10 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         # determine if specified encoder is a pre-trained model
-        is_torchvision_model = any(
-            [x.startswith(feature_config[ENCODER][TYPE]) for x in torchvision_model_registry]
-        )
+        is_torchvision_model = any([x.startswith(feature_config[ENCODER][TYPE]) for x in torchvision_model_registry])
 
         if is_torchvision_model:
-            torchvision_model_id = (
-                f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['model_variant']}"
-            )
+            torchvision_model_id = f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['model_variant']}"
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
                 transform_fn=torchvision_model_registry[torchvision_model_id][1].DEFAULT.transforms(),

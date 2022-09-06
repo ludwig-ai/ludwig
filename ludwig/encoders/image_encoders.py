@@ -428,13 +428,13 @@ class ViTEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-            self,
-            model_variant: Union[str, int] = None,
-            use_pretrained_weights: bool = True,
-            remove_last_layer: bool = False,
-            model_cache_dir: Optional[str] = None,
-            trainable: bool = True,
-            **kwargs,
+        self,
+        model_variant: Union[str, int] = None,
+        use_pretrained_weights: bool = True,
+        remove_last_layer: bool = False,
+        model_cache_dir: Optional[str] = None,
+        trainable: bool = True,
+        **kwargs,
     ):
         super().__init__()
 
@@ -497,8 +497,8 @@ class TVBaseEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.torchvision_model_type = "tv_resnet"
@@ -521,8 +521,8 @@ class TVResNetEncoder(TVBaseEncoder):
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.torchvision_model_type = "vgg"
