@@ -243,7 +243,9 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 @dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
 
-    # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Nadam
+    optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
+    """Points to `torch.optim.NAdam`."""
+
     type: str = StringOptions(["nadam"], default="nadam", allow_none=False)
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
