@@ -19,12 +19,12 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TIMESERIES, TYPE
+from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -106,10 +106,6 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return TIMESERIES
-
-    @staticmethod
-    def preprocessing_defaults():
-        return TimeseriesInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -206,12 +202,6 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_timeseries_length"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = TimeseriesInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

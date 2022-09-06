@@ -35,11 +35,8 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     TEXT,
-    TIED,
     TOKEN_ACCURACY,
-    TYPE,
 )
-from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
@@ -51,7 +48,6 @@ from ludwig.features.sequence_feature import (
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
 
@@ -62,10 +58,6 @@ class TextFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return TEXT
-
-    @staticmethod
-    def preprocessing_defaults():
-        return TextInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -223,17 +215,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         input_feature[ENCODER]["num_tokens"] = len(feature_metadata["idx2str"])
 
     @staticmethod
-    def populate_defaults(input_feature):
-        defaults = TextInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
-
-        encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])
-
-        if hasattr(encoder_class, "default_params"):
-            set_default_values(input_feature, encoder_class.default_params)
-
-    @staticmethod
     def get_schema_cls():
         return TextInputFeatureConfig
 
@@ -355,10 +336,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        SequenceOutputFeature.populate_defaults(output_feature)
 
     @staticmethod
     def get_schema_cls():

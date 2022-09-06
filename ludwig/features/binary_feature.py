@@ -23,9 +23,6 @@ from ludwig.constants import (
     ACCURACY,
     BINARY,
     COLUMN,
-    DECODER,
-    DEPENDENCIES,
-    ENCODER,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -34,12 +31,7 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
     ROC_AUC,
-    THRESHOLD,
-    TIED,
-    TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
@@ -52,7 +44,6 @@ from ludwig.utils.eval_utils import (
     roc_auc_score,
     roc_curve,
 )
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -132,10 +123,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return BINARY
-
-    @staticmethod
-    def preprocessing_defaults() -> Dict[str, Any]:
-        return BinaryInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -250,12 +237,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = BinaryInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -403,27 +384,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             )
 
         return result
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = BinaryOutputFeatureConfig()
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-                THRESHOLD: defaults.threshold,
-            },
-        )
 
     @staticmethod
     def get_schema_cls():

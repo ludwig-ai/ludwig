@@ -22,7 +22,6 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
-    DEPENDENCIES,
     ENCODER,
     HIDDEN,
     JACCARD,
@@ -32,19 +31,14 @@ from ludwig.constants import (
     PREDICTIONS,
     PROBABILITIES,
     PROC_COLUMN,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
     SET,
-    THRESHOLD,
-    TIED,
-    TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -161,10 +155,6 @@ class SetFeatureMixin(BaseFeatureMixin):
         return SET
 
     @staticmethod
-    def preprocessing_defaults():
-        return SetInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -240,12 +230,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = SetInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -374,25 +358,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SetPostprocessing(metadata)
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = SetOutputFeatureConfig()
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-                THRESHOLD: defaults.threshold,
-            },
-        )
 
     @staticmethod
     def get_schema_cls():

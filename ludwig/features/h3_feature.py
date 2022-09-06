@@ -18,12 +18,11 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, ENCODER, H3, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, H3, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -70,10 +69,6 @@ class H3FeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return H3
-
-    @staticmethod
-    def preprocessing_defaults():
-        return H3InputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -144,12 +139,6 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         pass
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = H3InputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

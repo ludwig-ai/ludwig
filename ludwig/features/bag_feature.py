@@ -20,13 +20,12 @@ from typing import Any, Dict, Union
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import BAG, COLUMN, ENCODER, NAME, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
@@ -36,10 +35,6 @@ class BagFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return BAG
-
-    @staticmethod
-    def preprocessing_defaults():
-        return BagInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -116,12 +111,6 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
         input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = BagInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

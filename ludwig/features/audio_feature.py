@@ -30,7 +30,6 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     SRC,
-    TIED,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin
@@ -53,7 +52,7 @@ from ludwig.utils.audio_utils import (
 )
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
-from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -98,10 +97,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return AUDIO
-
-    @staticmethod
-    def preprocessing_defaults():
-        return AudioInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -468,13 +463,6 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_length"]
         input_feature[ENCODER]["embedding_size"] = feature_metadata["feature_dim"]
         input_feature[ENCODER]["should_embed"] = False
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = AudioInputFeatureConfig()
-        set_default_values(
-            input_feature, {ENCODER: {TYPE: defaults.encoder.type}, PREPROCESSING: {}, TIED: defaults.tied}
-        )
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

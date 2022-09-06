@@ -75,6 +75,7 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.registry import model_type_registry
 from ludwig.schema import validate_config
+from ludwig.schema.config_object import Config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
@@ -222,6 +223,9 @@ class LudwigModel:
         # Merge upgraded config with defaults.
         self.config = merge_with_defaults(upgraded_config)
         validate_config(self.config)
+
+        # Load config object
+        self.config = Config(config_dict)
 
         # setup logging
         self.set_logging_level(logging_level)

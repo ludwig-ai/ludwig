@@ -51,11 +51,6 @@ class BaseFeatureMixin(ABC):
         raise NotImplementedError
 
     @abstractstaticmethod
-    def preprocessing_defaults() -> Dict[str, Any]:
-        """Returns dict of preprocessing defaults."""
-        raise NotImplementedError
-
-    @abstractstaticmethod
     def cast_column(column: DataFrame, backend) -> DataFrame:
         """Returns a copy of the dataset column for the given feature, potentially after a type cast.
 
