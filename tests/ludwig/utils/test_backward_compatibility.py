@@ -1,5 +1,6 @@
-import pytest
 import copy
+
+import pytest
 
 from ludwig.constants import (
     BFILL,
@@ -21,8 +22,8 @@ from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing_split,
-    upgrade_to_latest_version,
     upgrade_missing_value_strategy,
+    upgrade_to_latest_version,
 )
 from ludwig.utils.defaults import merge_with_defaults
 
