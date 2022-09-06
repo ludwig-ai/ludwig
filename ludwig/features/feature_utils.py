@@ -22,6 +22,7 @@ import torch
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.data_utils import hash_dict
 from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.schema.features.base import BaseFeatureConfig
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"
@@ -100,6 +101,17 @@ def sanitize(name):
 
 
 def compute_feature_hash(feature: dict) -> str:
+    """
+    This function computes a hash for each feature based on the preprocessing dictionary associated with each feature.
+    The input is always the feature dict, however sometimes, this is called from BaseFeature which dumps the feature
+    dict from a ConfigObject and the preprocessing key corresponds to a nested Preprocessing config. This is why it
+    includes the if/else statement.
+    Args:
+        feature: Feature dictionary
+
+    Returns: Feature hash name
+
+    """
     preproc = feature.get(PREPROCESSING, {})
     if isinstance(preproc, dict):
         preproc_hash = hash_dict(preproc)
