@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import abstractmethod
 import logging
 import os
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -497,8 +497,8 @@ class TVPretrainedEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(TVPretrainedEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.pretrained_model_type = "tv_resnet"
@@ -521,8 +521,8 @@ class TVResNetEncoder(TVPretrainedEncoder):
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVPretrainedEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         self.pretrained_model_type = "vgg"
