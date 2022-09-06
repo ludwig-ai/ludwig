@@ -281,11 +281,16 @@ def test_preprocess_cli(tmpdir, csv_filename):
     _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
-@pytest.mark.parametrize("backend", ["local", "horovod"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("horovod", id="horovod", marks=pytest.mark.distributed),
+    ],
+)
 def test_reproducible_cli_runs(
     backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:
