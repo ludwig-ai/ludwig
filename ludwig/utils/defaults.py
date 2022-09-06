@@ -300,7 +300,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
         # Express all parameters back into the config.
         full_input_feature_config, _ = load_config_with_kwargs(
-            get_from_registry(input_feature[TYPE], input_type_registry).get_schema_cls(), input_feature
+            input_type_registry[input_feature[TYPE]].get_schema_cls(), input_feature
         )
         input_feature.update(asdict(full_input_feature_config))
 
@@ -327,9 +327,9 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
 
         # Express all parameters back into the config.
         full_output_feature_config, _ = load_config_with_kwargs(
-            get_from_registry(output_feature[TYPE], output_type_registry).get_schema_cls(), output_feature
+            output_type_registry[output_feature[TYPE]].get_schema_cls(), output_feature
         )
-        input_feature.update(asdict(full_output_feature_config))
+        output_feature.update(asdict(full_output_feature_config))
 
     # ===== Hyperpot =====
     if HYPEROPT in config:

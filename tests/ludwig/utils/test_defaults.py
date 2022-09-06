@@ -303,8 +303,8 @@ def test_merge_with_defaults():
                 },
             },
             {
-                "type": "number",
-                "name": "number_output_feature",
+                "type": "image",
+                "name": "image_input_feature",
                 "encoder": {
                     "type": "stacked_cnn",
                     "height": None,
@@ -343,8 +343,8 @@ def test_merge_with_defaults():
                     "fc_activation": "relu",
                     "fc_dropout": 0.0,
                 },
-                "column": "number_output_feature",
-                "proc_column": "number_output_feature_mZFLky",
+                "column": "image_input_feature",
+                "proc_column": "image_input_feature_mZFLky",
                 "tied": None,
                 "preprocessing": {
                     "missing_value_strategy": "bfill",
@@ -363,13 +363,15 @@ def test_merge_with_defaults():
                     "in_memory": True,
                     "num_processes": 1,
                 },
-                "reduce_input": "sum",
-                "dependencies": [],
-                "reduce_dependencies": "sum",
-                "input_size": None,
-                "num_classes": None,
+            },
+        ],
+        "output_features": [
+            {
+                "type": "number",
+                "name": "number_output_feature",
+                "column": "number_output_feature",
+                "proc_column": "number_output_feature_mZFLky",
                 "loss": {"type": "mean_squared_error", "weight": 1},
-                "clip": None,
                 "decoder": {
                     "type": "regressor",
                     "fc_layers": None,
@@ -387,20 +389,13 @@ def test_merge_with_defaults():
                     "weights_initializer": "xavier_uniform",
                     "bias_initializer": "zeros",
                 },
-            },
-        ],
-        "output_features": [
-            {
-                "type": "number",
-                "name": "number_output_feature",
-                "column": "number_output_feature",
-                "proc_column": "number_output_feature_mZFLky",
-                "loss": {"type": "mean_squared_error", "weight": 1},
-                "decoder": {"type": "regressor"},
                 "dependencies": [],
                 "reduce_input": "sum",
                 "reduce_dependencies": "sum",
                 "preprocessing": {"missing_value_strategy": "drop_row"},
+                "input_size": None,
+                "num_classes": None,
+                "clip": None,
             }
         ],
         "hyperopt": {
@@ -624,5 +619,7 @@ def test_merge_with_defaults():
 
     updated_config = upgrade_to_latest_version(legacy_config_format)
     merged_config = merge_with_defaults(updated_config)
+
+    print(merged_config)
 
     assert merged_config == expected_upgraded_format
