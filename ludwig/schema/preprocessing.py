@@ -7,8 +7,8 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
     AUDIO,
-    BACKFILL,
     BAG,
+    BFILL,
     BINARY,
     CATEGORY,
     DATE,
@@ -388,7 +388,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="backfill",
+        default=BFILL,
         allow_none=False,
         description="What strategy to follow when there's a missing value in an image column",
     )
@@ -507,7 +507,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default=BACKFILL,
+        default=BFILL,
         allow_none=False,
         description="What strategy to follow when there's a missing value in an audio column",
     )
