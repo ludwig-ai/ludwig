@@ -32,7 +32,7 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
-from ray.util.placement_group import placement_group, remove_placement_group, PlacementGroup
+from ray.util.placement_group import placement_group, PlacementGroup, remove_placement_group
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
@@ -835,7 +835,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         ready = self._preprocessor_pg.wait(THREE_MINS_IN_S)
 
         if not ready:
-            raise TimeoutError(f"Ray timed out in provisioning the placement group for preprocessing. {num_cpu} CPUs were requested but were unable to be provisioned")
+            raise TimeoutError(
+                f"Ray timed out in provisioning the placement group for preprocessing. {num_cpu} CPUs were requested but were unable to be provisioned"
+            )
 
         logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
         self._update_dask_backend_with_pg(self._preprocessor_pg)
