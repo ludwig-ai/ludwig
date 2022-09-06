@@ -450,6 +450,7 @@ class Trainer(BaseTrainer):
                 f'Batch size tuning is not supported on CPU, setting batch size from "auto" to default value '
                 f"{DEFAULT_BATCH_SIZE}"
             )
+            # TODO(geoffrey): Add support for batch size tuning on CPU
             best_batch_size = DEFAULT_BATCH_SIZE
         else:
 
