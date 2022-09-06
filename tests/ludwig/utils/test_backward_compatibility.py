@@ -1,6 +1,8 @@
 import pytest
+import copy
 
 from ludwig.constants import (
+    BFILL,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
@@ -20,6 +22,7 @@ from ludwig.utils.backward_compatibility import (
     _upgrade_feature,
     _upgrade_preprocessing_split,
     upgrade_to_latest_version,
+    upgrade_missing_value_strategy,
 )
 from ludwig.utils.defaults import merge_with_defaults
 
@@ -47,7 +50,7 @@ def test_audio_feature_backward_compatibility():
         "type": "audio",
         "preprocessing": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -65,7 +68,7 @@ def test_audio_feature_backward_compatibility():
     global_preprocessing_config = {
         "audio": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -86,7 +89,7 @@ def test_audio_feature_backward_compatibility():
     assert global_preprocessing_config == {
         "audio": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -104,7 +107,7 @@ def test_audio_feature_backward_compatibility():
         "type": "audio",
         "preprocessing": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -163,7 +166,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "type": "category",
                 "top_k": 3,
                 "preprocessing": {
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": BFILL,
                 },
                 "decoder": "classifier",
                 "num_classes": 10,
@@ -248,7 +251,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "num_classes": 10,
                 "top_k": 3,
                 "preprocessing": {
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": BFILL,
                 },
                 "decoder": {
                     "type": "classifier",
@@ -460,3 +463,25 @@ def test_validate_old_model_config():
 
     with pytest.raises(Exception):
         validate_config(old_invalid_config)
+
+
+def test_update_missing_value_strategy():
+    old_valid_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+                "preprocessing": {"missing_value_strategy": BFILL},
+            }
+        ],
+        "output_features": [
+            {"name": "output_feature_1", "type": "category"},
+        ],
+    }
+
+    updated_config = upgrade_missing_value_strategy(old_valid_config)
+
+    expected_config = copy.deepcopy(old_valid_config)
+    expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "bfill"
+
+    assert updated_config == expected_config

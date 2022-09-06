@@ -31,8 +31,12 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
+    INPUT_FEATURES,
+    MISSING_VALUE_STRATEGY,
+    NAME,
     NUM_SAMPLES,
     NUMBER,
+    OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
     PROBABILITIES,
@@ -57,7 +61,7 @@ from ludwig.utils.version_transformation import VersionTransformation, VersionTr
 config_transformation_registry = VersionTransformationRegistry()
 
 
-def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []):
+def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []) -> Callable:
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
     registered with 0.5.  from_version < version <= to_version.
@@ -444,9 +448,46 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
 
 
 @register_config_transformation("0.5")
-def update_training(config):
+def update_training(config: Dict[str, Any]):
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
         del config[TRAINING]
+    return config
+
+
+@register_config_transformation("0.6")
+def upgrade_missing_value_strategy(config: Dict[str, Any]):
+    def __is_old_missing_value_strategy(feature_config: Dict[str, Any]):
+        if PREPROCESSING not in feature_config:
+            return False
+        missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY, None)
+        if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
+            return False
+        return True
+
+    def __update_old_missing_value_strategies(feature_config: Dict[str, Any]):
+        missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
+        replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
+        feature_name = feature_config.get(NAME)
+        warnings.warn(
+            f"Using `{replacement_strategy}` instead of `{missing_value_strategy}` as the missing value strategy"
+            f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in v0.8",
+            DeprecationWarning,
+        )
+        feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})
+
+    for input_feature in config.get(INPUT_FEATURES, {}):
+        if __is_old_missing_value_strategy(input_feature):
+            __update_old_missing_value_strategies(input_feature)
+
+    for output_feature in config.get(OUTPUT_FEATURES, {}):
+        if __is_old_missing_value_strategy(output_feature):
+            __update_old_missing_value_strategies(output_feature)
+
+    for feature_defaults in config.get(DEFAULTS, {}):
+        for feature_type in feature_defaults:
+            if __is_old_missing_value_strategy(config.get(DEFAULTS).get(feature_type)):
+                __update_old_missing_value_strategies(config.get(DEFAULTS).get(feature_type))
+
     return config
