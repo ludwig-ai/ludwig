@@ -43,10 +43,13 @@ class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
 
     optimizer_class: ClassVar[Optional[torch.optim.Optimizer]] = None
     "Class variable pointing to the corresponding `torch.optim.Optimizer` class."
+
     type: str
     """Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
        Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
        result in a `ValidationError`."""
+
+    lr: float = NonNegativeFloat(default=1e-03, description="Learning rate.")
 
 
 @register_optimizer(name="sgd")
@@ -236,7 +239,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
     l2_regularization_strength: float = NonNegativeFloat(default=0.0)
 
 
-# @register_optimizer(name="nadam")
+@register_optimizer(name="nadam")
 @dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
 
