@@ -113,7 +113,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
 
 
 @register_config_transformation("0.5")
-def rename_training_to_trainer(config: Dict[str, Any]):
+def rename_training_to_trainer(config: Dict[str, Any]) -> Dict[str, Any]:
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
@@ -122,7 +122,7 @@ def rename_training_to_trainer(config: Dict[str, Any]):
 
 
 @register_config_transformation("0.5", ["input_features", "output_features"])
-def _upgrade_use_bias_in_features(feature):
+def _upgrade_use_bias_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
     def upgrade_use_bias(config):
         if BIAS in config:
             warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
@@ -146,7 +146,7 @@ def _upgrade_use_bias_in_features(feature):
 
 
 @register_config_transformation("0.5", ["input_features", "output_features"])
-def _upgrade_feature(feature: Dict[str, Any]):
+def _upgrade_feature(feature: Dict[str, Any]) -> Dict[str, Any]:
     """Upgrades feature config (in-place)"""
     if feature.get(TYPE) == "numerical":
         warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
@@ -166,12 +166,12 @@ def _upgrade_feature(feature: Dict[str, Any]):
 
 
 @register_config_transformation("0.6", ["input_features"])
-def _upgrade_encoder_params(feature: Dict[str, Any]):
+def _upgrade_encoder_params(feature: Dict[str, Any]) -> Dict[str, Any]:
     return _upgrade_encoder_decoder_params(feature, True)
 
 
 @register_config_transformation("0.6", ["output_features"])
-def _upgrade_decoder_params(feature: Dict[str, Any]):
+def _upgrade_decoder_params(feature: Dict[str, Any]) -> Dict[str, Any]:
     return _upgrade_encoder_decoder_params(feature, False)
 
 
@@ -266,7 +266,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
 
 
 @register_config_transformation("0.5", ["hyperopt"])
-def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
+def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
     """Upgrades hyperopt config (in-place)"""
     # check for use of legacy "training" reference, if any found convert to "trainer"
     if PARAMETERS in hyperopt:
@@ -339,7 +339,7 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]):
 
 
 @register_config_transformation("0.5", ["trainer"])
-def _upgrade_trainer(trainer: Dict[str, Any]):
+def _upgrade_trainer(trainer: Dict[str, Any]) -> Dict[str, Any]:
     """Upgrades trainer config (in-place)"""
     eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
     if eval_batch_size == 0:
@@ -351,7 +351,7 @@ def _upgrade_trainer(trainer: Dict[str, Any]):
 
 
 @register_config_transformation("0.5")
-def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
+def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
     """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
     type_specific_preprocessing_params = dict()
 
@@ -395,7 +395,7 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]):
 
 
 @register_config_transformation("0.5", "preprocessing")
-def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
+def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]) -> Dict[str, Any]:
     """Upgrade split related parameters in preprocessing."""
     split_params = {}
 
@@ -448,7 +448,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]):
 
 
 @register_config_transformation("0.5")
-def update_training(config: Dict[str, Any]):
+def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
@@ -457,7 +457,7 @@ def update_training(config: Dict[str, Any]):
 
 
 @register_config_transformation("0.6")
-def upgrade_missing_value_strategy(config: Dict[str, Any]):
+def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
     def __is_old_missing_value_strategy(feature_config: Dict[str, Any]):
         if PREPROCESSING not in feature_config:
             return False
