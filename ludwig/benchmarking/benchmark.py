@@ -4,14 +4,11 @@ import logging
 import os
 import shutil
 from typing import Any, Dict, Union
-from pprint import pprint
-import ray
 from ludwig.api import LudwigModel
+from ludwig.hyperopt.run import hyperopt
 from ludwig.benchmarking.utils import export_artifacts, load_from_module
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils.data_utils import load_yaml
-
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
@@ -25,8 +22,7 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     return model_config
 
 
-@ray.remote
-def benchmark_one(experiment: Dict[str, str], export_artifacts_dict: Dict[str, Union[str, bool]]) -> None:
+def benchmark_one(experiment: Dict[str, str]) -> None:
     """Run a Ludwig exepriment and track metrics given a dataset name.
 
     experiment: dictionary containing the dataset name, config path, and experiment name.
@@ -41,19 +37,30 @@ def benchmark_one(experiment: Dict[str, str], export_artifacts_dict: Dict[str, U
     dataset_module = importlib.import_module(f"ludwig.datasets.{experiment['dataset_name']}")
     dataset = load_from_module(dataset_module, model_config["output_features"][0])
 
-    # running model and capturing metrics
-    model = LudwigModel(config=model_config, logging_level=logging.ERROR)
-    _, _, _, output_directory = model.experiment(
-        dataset=dataset,
-        output_directory=experiment["experiment_name"],
-        skip_save_processed_input=True,
-        skip_save_unprocessed_output=True,
-        skip_save_predictions=True,
-        skip_collect_predictions=True,
-    )
-    if export_artifacts_dict["export_artifacts"]:
-        export_base_path = export_artifacts_dict["export_base_path"]
-        export_artifacts(experiment, output_directory, export_base_path)
+    if experiment["hyperopt"]:
+        # run hyperopt
+        hyperopt(config=model_config,
+                 dataset=dataset,
+                 output_directory=experiment["experiment_name"],
+                 skip_save_model=True,
+                 skip_save_training_statistics=True,
+                 skip_save_progress=True,
+                 skip_save_log=True,
+                 skip_save_processed_input=True,
+                 skip_save_unprocessed_output=True,
+                 hyperopt_log_verbosity=0,
+                 )
+    else:
+        # run model and capture metrics
+        model = LudwigModel(config=model_config, logging_level=logging.ERROR)
+        _, _, _, output_directory = model.experiment(
+            dataset=dataset,
+            output_directory=experiment["experiment_name"],
+            skip_save_processed_input=True,
+            skip_save_unprocessed_output=True,
+            skip_save_predictions=True,
+            skip_collect_predictions=True,
+        )
 
 
 def benchmark(bench_config_path: str) -> None:
@@ -63,17 +70,26 @@ def benchmark(bench_config_path: str) -> None:
         corresponding Ludwig configs, as well as export options.
     """
     config = load_yaml(bench_config_path)
-    tasks = []
     for experiment in config["datasets"]:
         try:
             if "experiment_name" not in experiment:
                 experiment["experiment_name"] = config["global_experiment_name"]
-            tasks.append(benchmark_one.remote(experiment, config["export"][0]))
+            if "hyperopt" not in experiment:
+                experiment["hyperopt"] = config["hyperopt"]
+
+            import time
+            start_t = time.perf_counter()
+            benchmark_one(experiment)
+            print("TOOK", time.perf_counter() - start_t)
+
+            if config["export"]["export_artifacts"]:
+                export_base_path = config["export"]["export_base_path"]
+                export_artifacts(experiment, experiment["experiment_name"], export_base_path)
+
         except Exception:
             logging.exception(
                 f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
-    ray.get(tasks)
 
 
 def cli(sys_argv):
@@ -87,7 +103,4 @@ def cli(sys_argv):
     parser.add_argument("--benchmarking_config", type=str, help="The benchmarking config.")
     add_contrib_callback_args(parser)
     args = parser.parse_args(sys_argv)
-    import time
-    start_t = time.perf_counter()
     benchmark(args.benchmarking_config)
-    print("TOOK", time.perf_counter() - start_t)

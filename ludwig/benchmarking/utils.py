@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 import fsspec
 import pandas as pd
 
-from ludwig.constants import CATEGORY
+from ludwig.constants import BINARY, CATEGORY
 from ludwig.datasets.base_dataset import BaseDataset
 from ludwig.globals import CONFIG_YAML
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
@@ -27,7 +27,7 @@ def load_from_module(
     if subsample_frac < 1:
         dataset = dataset.sample(frac=subsample_frac, replace=False, random_state=default_random_seed)
 
-    if output_feature["type"] == CATEGORY:
+    if output_feature["type"] in [CATEGORY, BINARY]:
         return get_repeatable_train_val_test_split(
             dataset,
             stratify_colname=output_feature["name"],
