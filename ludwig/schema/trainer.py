@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
+from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -147,7 +147,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=128,
+        default=DEFAULT_BATCH_SIZE,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
@@ -155,7 +155,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description=""),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
