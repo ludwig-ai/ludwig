@@ -135,7 +135,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     amsgrad: bool = Boolean(
         default=False,
         description=(
-            "Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam and"
+            "Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam and "
             "Beyond'."
         ),
     )
