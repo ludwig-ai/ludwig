@@ -429,9 +429,10 @@ class ViTEncoder(Encoder):
 class TVBaseEncoder(Encoder):
     def __init__(
             self,
+            torchvision_model_type: Optional[str] = None,
             model_variant: Union[str, int] = None,
-            use_pretrained_weights: bool = True,
-            remove_last_layer: bool = False,
+            use_pretrained_weights: bool = False,
+            remove_last_layer: bool = True,
             model_cache_dir: Optional[str] = None,
             trainable: bool = True,
             **kwargs,
@@ -440,6 +441,7 @@ class TVBaseEncoder(Encoder):
 
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
+        self.torchvision_model_type = torchvision_model_type
         self.model_variant = model_variant
         self.use_pretrained_weights = use_pretrained_weights
         self.model_cache_dir = model_cache_dir
@@ -501,8 +503,7 @@ class TVResNetEncoder(TVBaseEncoder):
             **kwargs,
     ):
         logger.debug(f" {self.name}")
-        self.torchvision_model_type = "tv_resnet"
-        super().__init__(**kwargs)
+        super().__init__(torchvision_model_type="tv_resnet", **kwargs)
 
     def _remove_last_layer(self):
         self.model.fc = torch.nn.Identity()
@@ -525,8 +526,7 @@ class TVVGGEncoder(TVBaseEncoder):
             **kwargs,
     ):
         logger.debug(f" {self.name}")
-        self.torchvision_model_type = "vgg"
-        super().__init__(**kwargs)
+        super().__init__(torchvision_model_type="vgg", **kwargs)
 
     def _remove_last_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
