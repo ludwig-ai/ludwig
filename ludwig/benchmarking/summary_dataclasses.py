@@ -3,7 +3,7 @@ import logging
 import os
 from dataclasses import dataclass
 from statistics import mean
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Set, Optional, Union
 
 import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time
@@ -13,7 +13,7 @@ from ludwig.utils.data_utils import load_json
 
 
 @dataclass
-class Diff:
+class MetricDiff:
     """Diffs for a metric."""
 
     # Name of the metric.
@@ -58,7 +58,7 @@ def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
     diff = experimental_value - base_value
     diff_percentage = 100 * diff / base_value if base_value != 0 else "inf"
 
-    return Diff(
+    return MetricDiff(
         name=name,
         base_value=base_value,
         experimental_value=experimental_value,
@@ -92,7 +92,7 @@ class MetricsSummary:
     metric_to_values: Dict[str, Union[float, int]]
 
     # Names of metrics for the output feature.
-    metric_names: set
+    metric_names: Set[str]
 
 
 @dataclass
@@ -211,10 +211,10 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     output_feature_name: str = config["output_features"][0]["name"]
     metric_dict = report[output_feature_name]
     full_metric_names = get_metric_classes(output_feature_type)
-    metric_to_values: dict = {
+    metric_to_values: Dict[str, Union[float, int]] = {
         metric_name: metric_dict[metric_name] for metric_name in full_metric_names if metric_name in metric_dict
     }
-    metric_names: set = set(metric_to_values)
+    metric_names: Set[str] = set(metric_to_values)
 
     return MetricsSummary(
         experiment_local_directory=experiment_local_directory,
@@ -245,7 +245,7 @@ def build_metrics_diff(
 
     metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
 
-    metrics: List[Diff] = [
+    metrics: List[MetricDiff] = [
         build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
         for name in metrics_in_common
     ]
@@ -277,7 +277,7 @@ class ResourceUsageSummary:
     metric_to_values: Dict[str, Union[float, int]]
 
     # Names of metrics for the output feature.
-    metric_names: set
+    metric_names: Set[str]
 
 
 @dataclass
@@ -405,7 +405,7 @@ def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> Lis
 
     summary_list = []
     for code_block_tag, metric_type_dicts in summary.items():
-        merged_summary = {}
+        merged_summary: Dict[str, Union[float, int]] = {}
         for metrics in metric_type_dicts.values():
             assert "num_runs" in metrics
             assert "num_runs" not in merged_summary or metrics["num_runs"] == merged_summary["num_runs"]
@@ -441,7 +441,7 @@ def build_resource_usage_diff(
     diffs = []
     for base_summary, experimental_summary in summaries_list:
         metrics_in_common = set(base_summary.metric_names).intersection(set(experimental_summary.metric_names))
-        metrics: List[Diff] = [
+        metrics: List[MetricDiff] = [
             build_diff(name, base_summary.metric_to_values[name], experimental_summary.metric_to_values[name])
             for name in metrics_in_common
         ]
