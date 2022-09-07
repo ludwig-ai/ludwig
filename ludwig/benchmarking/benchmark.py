@@ -4,10 +4,11 @@ import logging
 import os
 import shutil
 from typing import Any, Dict, Union
+
 from ludwig.api import LudwigModel
-from ludwig.hyperopt.run import hyperopt
 from ludwig.benchmarking.utils import export_artifacts, load_from_module
 from ludwig.contrib import add_contrib_callback_args
+from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
 
 
@@ -39,17 +40,18 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
 
     if experiment["hyperopt"]:
         # run hyperopt
-        hyperopt(config=model_config,
-                 dataset=dataset,
-                 output_directory=experiment["experiment_name"],
-                 skip_save_model=True,
-                 skip_save_training_statistics=True,
-                 skip_save_progress=True,
-                 skip_save_log=True,
-                 skip_save_processed_input=True,
-                 skip_save_unprocessed_output=True,
-                 hyperopt_log_verbosity=0,
-                 )
+        hyperopt(
+            config=model_config,
+            dataset=dataset,
+            output_directory=experiment["experiment_name"],
+            skip_save_model=True,
+            skip_save_training_statistics=True,
+            skip_save_progress=True,
+            skip_save_log=True,
+            skip_save_processed_input=True,
+            skip_save_unprocessed_output=True,
+            hyperopt_log_verbosity=0,
+        )
     else:
         # run model and capture metrics
         model = LudwigModel(config=model_config, logging_level=logging.ERROR)
@@ -78,6 +80,7 @@ def benchmark(bench_config_path: str) -> None:
                 experiment["hyperopt"] = config["hyperopt"]
 
             import time
+
             start_t = time.perf_counter()
             benchmark_one(experiment)
             print("TOOK", time.perf_counter() - start_t)
