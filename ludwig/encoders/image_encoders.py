@@ -499,8 +499,8 @@ class TVBaseEncoder(Encoder):
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(torchvision_model_type="tv_resnet", **kwargs)
@@ -522,8 +522,8 @@ class TVResNetEncoder(TVBaseEncoder):
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(torchvision_model_type="vgg", **kwargs)
