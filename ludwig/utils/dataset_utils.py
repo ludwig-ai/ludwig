@@ -68,6 +68,9 @@ def get_repeatable_train_val_test_split(
             do_stratify_split = False
 
     if do_stratify_split:
+        # Make sure the `stratify_colname` doesn't have any NaNs.
+        df_input = df_input[df_input[stratify_colname].notna()]
+
         # Split original dataframe into train and temp dataframes.
         y = df_input[[stratify_colname]]  # Dataframe of just the column on which to stratify.
         df_train, df_temp, y_train, y_temp = train_test_split(
