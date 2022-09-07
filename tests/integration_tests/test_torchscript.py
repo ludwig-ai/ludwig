@@ -561,8 +561,8 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
         timeseries_feature(),
         h3_feature(),
         # TODO: future support
-        # audio_feature(),  # default BACKFILL strategy is unintuitive at inference time
-        # image_feature(),  # default BACKFILL strategy is unintuitive at inference time
+        # audio_feature(),  # default BFILL strategy is unintuitive at inference time
+        # image_feature(),  # default BFILL strategy is unintuitive at inference time
         # vector_feature(), # does not have a missing_value_strategy
         # date_feature(),   # default fill with datetime.now() strategy is not scriptable
     ],

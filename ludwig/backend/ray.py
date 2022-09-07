@@ -767,8 +767,7 @@ class RayPredictor(BasePredictor):
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
                 dataset = self._prepare_batch(df)
-                predictions = self.predict(batch=dataset)
-
+                predictions = self.predict(batch=dataset).set_index(df.index)
                 for output_feature in self.model.output_features.values():
                     predictions = output_feature.flatten(predictions)
                 ordered_predictions = predictions[self.output_columns]
@@ -803,12 +802,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         self._use_legacy = use_legacy
 
     def initialize(self):
-        if not ray.is_initialized():
-            try:
-                ray.init("auto", ignore_reinit_error=True)
-            except ConnectionError:
-                logger.info("Initializing new Ray cluster...")
-                ray.init(ignore_reinit_error=True)
+        initialize_ray()
 
         dask.config.set(scheduler=ray_dask_get)
         # Disable placement groups on dask
@@ -945,3 +939,16 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not ray.is_initialized():
             return 1
         return len(ray.nodes())
+
+
+def initialize_ray():
+    if not ray.is_initialized():
+        try:
+            ray.init("auto", ignore_reinit_error=True)
+        except ConnectionError:
+            init_ray_local()
+
+
+def init_ray_local():
+    logger.info("Initializing new Ray cluster...")
+    ray.init(ignore_reinit_error=True)

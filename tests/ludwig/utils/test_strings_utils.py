@@ -148,11 +148,25 @@ def test_create_vocabulary_single_token():
     data = pd.DataFrame(["dog", "cat", "bird", "dog", "cat", "super cat"])
     column = data[0]
 
-    vocab, str2idx, str2freq = strings_utils.create_vocabulary_single_token(column)
+    vocab, str2idx, str2freq = strings_utils.create_vocabulary_single_token(
+        column,
+        num_most_frequent=10000,
+    )
 
-    assert set(vocab) == {"dog", "cat", "bird", "super cat", strings_utils.UNKNOWN_SYMBOL}
-    assert str2freq == {"dog": 2, "cat": 2, "bird": 1, "super cat": 1, strings_utils.UNKNOWN_SYMBOL: 0}
+    assert set(vocab) == {"dog", "cat", "bird", "super cat"}
+    assert str2freq == {"dog": 2, "cat": 2, "bird": 1, "super cat": 1}
+    assert strings_utils.UNKNOWN_SYMBOL not in str2idx
+
+
+def test_create_vocabulary_single_token_small_most_frequent():
+    data = pd.DataFrame(["dog", "cat", "bird", "dog", "cat", "super cat"])
+    column = data[0]
+
+    vocab, str2idx, str2freq = strings_utils.create_vocabulary_single_token(column, num_most_frequent=2)
+
+    assert set(vocab) == {"dog", "cat", strings_utils.UNKNOWN_SYMBOL}
     assert str2idx[strings_utils.UNKNOWN_SYMBOL] == 0
+    assert str2freq == {"dog": 2, "cat": 2, strings_utils.UNKNOWN_SYMBOL: 0}
 
 
 def test_build_sequence_matrix():

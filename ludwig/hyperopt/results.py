@@ -23,8 +23,4 @@ class TrialResults:
 @dataclass
 class HyperoptResults:
     ordered_trials: List[TrialResults]
-
-
-@dataclass
-class RayTuneResults(HyperoptResults):
     experiment_analysis: ExperimentAnalysis

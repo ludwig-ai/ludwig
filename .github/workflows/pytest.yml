@@ -30,9 +30,9 @@ jobs:
             torchscript-version: 1.10.2
             ray-version: 1.13.0
           - python-version: 3.8
-            pytorch-version: 1.11.0
+            pytorch-version: 1.12.1
             torchscript-version: 1.10.2
-            ray-version: 2.0.0rc1
+            ray-version: 2.0.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
@@ -151,7 +151,7 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+          pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()

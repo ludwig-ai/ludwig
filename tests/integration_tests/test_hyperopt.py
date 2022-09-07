@@ -25,8 +25,7 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COMBINER,
-    DECODER,
-    ENCODER,
+    EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
     NAME,
@@ -37,9 +36,9 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
-from ludwig.hyperopt.results import HyperoptResults, RayTuneResults
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.utils.config_utils import get_feature_type_parameter_values_from_section
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -60,15 +59,11 @@ RANDOM_SEARCH_SIZE = 4
 HYPEROPT_CONFIG = {
     "parameters": {
         # using only float parameter as common in all search algorithms
-        "trainer.learning_rate": {
-            "space": "loguniform",
-            "lower": 0.001,
-            "upper": 0.1,
-        },
+        "trainer.learning_rate": {"space": "loguniform", "lower": 0.001, "upper": 0.1},
     },
     "goal": "minimize",
-    "executor": {"type": "ray", "num_samples": 2, "scheduler": {"type": "fifo"}},
-    "search_alg": {"type": "variant_generator"},
+    "executor": {TYPE: "ray", "num_samples": 2, "scheduler": {TYPE: "fifo"}},
+    "search_alg": {TYPE: "variant_generator"},
 }
 
 SEARCH_ALGS_FOR_TESTING = [
@@ -114,7 +109,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        COMBINER: {"type": "concat", "num_fc_layers": 2},
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
@@ -125,7 +120,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
 
 def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]:
     input_features = [
-        text_feature(name="title", encoder={"type": "parallel_cnn"}),
+        text_feature(name="title", encoder={TYPE: "parallel_cnn"}),
         text_feature(name="summary"),
         category_feature(encoder={"vocab_size": 3}),
         category_feature(encoder={"vocab_size": 3}),
@@ -161,8 +156,8 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]
             "goal": "minimize",
             "output_feature": output_features[0][NAME],
             "validation_metrics": "loss",
-            "executor": {"type": "ray", "num_samples": RANDOM_SEARCH_SIZE},
-            "search_alg": {"type": "variant_generator"},
+            "executor": {TYPE: "ray", "num_samples": RANDOM_SEARCH_SIZE},
+            "search_alg": {TYPE: "variant_generator"},
         },
     }
 
@@ -214,7 +209,7 @@ def test_hyperopt_search_alg(
     # finalize hyperopt config settings
     if search_alg == "dragonfly":
         hyperopt_config["search_alg"] = {
-            "type": search_alg,
+            TYPE: search_alg,
             "domain": "euclidean",
             "optimizer": "random",
         }
@@ -222,7 +217,7 @@ def test_hyperopt_search_alg(
         hyperopt_config["search_alg"] = {}
     else:
         hyperopt_config["search_alg"] = {
-            "type": search_alg,
+            TYPE: search_alg,
         }
 
     if validate_output_feature:
@@ -244,7 +239,7 @@ def test_hyperopt_search_alg(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
     raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
-    assert isinstance(raytune_results, RayTuneResults)
+    assert isinstance(raytune_results, HyperoptResults)
 
 
 @pytest.mark.distributed
@@ -277,12 +272,12 @@ def test_hyperopt_scheduler(
             "trainer.learning_rate": [min, max],
         }
         hyperopt_config["executor"]["scheduler"] = {
-            "type": scheduler,
+            TYPE: scheduler,
             "hyperparam_bounds": hyperparam_bounds,
         }
     else:
         hyperopt_config["executor"]["scheduler"] = {
-            "type": scheduler,
+            TYPE: scheduler,
         }
 
     if validate_output_feature:
@@ -301,7 +296,7 @@ def test_hyperopt_scheduler(
     search_alg = hyperopt_config["search_alg"]
 
     # TODO: Determine if we still need this if-then-else construct
-    if search_alg["type"] in {""}:
+    if search_alg[TYPE] in {""}:
         with pytest.raises(ImportError):
             get_build_hyperopt_executor(RAY)(
                 parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
@@ -311,7 +306,7 @@ def test_hyperopt_scheduler(
             parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
         )
         raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
-        assert isinstance(raytune_results, RayTuneResults)
+        assert isinstance(raytune_results, HyperoptResults)
 
 
 @pytest.mark.distributed
@@ -368,12 +363,12 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
-        "search_alg": {"type": "variant_generator"},
+        "executor": {TYPE: "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "search_alg": {TYPE: "variant_generator"},
     }
 
     # add hyperopt parameter space to the config
-    config["hyperopt"] = hyperopt_configs
+    config[HYPEROPT] = hyperopt_configs
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     if search_space == "random":
@@ -392,70 +387,198 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", HYPEROPT_STATISTICS_FILE_NAME))
 
 
-def _test_hyperopt_with_shared_params_trial_table(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
-):
-    # Check that hyperopt trials sample from defaults in the search space
-    for _, trial_row in hyperopt_results_df.iterrows():
-        embedding_size = _get_trial_parameter_value("defaults.category.encoder.embedding_size", trial_row)
-        num_filters = _get_trial_parameter_value("defaults.text.encoder.num_filters", trial_row)
-        reduce_input = _get_trial_parameter_value("defaults.category.decoder.reduce_input", trial_row).replace('"', "")
-        assert embedding_size in embedding_size_search_space
-        assert num_filters in num_filters_search_space
-        assert reduce_input in reduce_input_search_space
-
-
-def _test_hyperopt_with_shared_params_written_config(
-    hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
-):
-    # Check that each hyperopt trial's written input/output configs got updated
-    for _, trial_row in hyperopt_results_df.iterrows():
-        model_parameters = json.load(
-            open(os.path.join(trial_row["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"))
-        )
-
-        # Check that num_filters got updated from the sampler correctly
-        for input_feature in model_parameters[INPUT_FEATURES]:
-            if input_feature[TYPE] == TEXT:
-                assert input_feature[ENCODER]["num_filters"] in num_filters_search_space
-            elif input_feature[TYPE] == CATEGORY:
-                assert input_feature[ENCODER]["embedding_size"] in embedding_size_search_space
-
-        # All text features with defaults should have the same num_filters for this trial
-        text_input_num_filters = get_feature_type_parameter_values_from_section(
-            model_parameters, INPUT_FEATURES, TEXT, "num_filters"
-        )
-        assert len(text_input_num_filters) == 1
-
-        for output_feature in model_parameters[OUTPUT_FEATURES]:
-            if output_feature[TYPE] == CATEGORY:
-                assert output_feature[DECODER]["reduce_input"] in reduce_input_search_space
-
-        # All category features with defaults should have the same embedding_size for this trial
-        input_category_features_embedding_sizes = get_feature_type_parameter_values_from_section(
-            model_parameters, INPUT_FEATURES, CATEGORY, "embedding_size"
-        )
-
-        assert len(input_category_features_embedding_sizes) == 1
-
-
 @pytest.mark.distributed
-def test_hyperopt_with_shared_params(csv_filename, tmpdir):
-    (
-        config,
-        rel_path,
-        num_filters_search_space,
-        embedding_size_search_space,
-        reduce_input_search_space,
-    ) = _setup_ludwig_config_with_shared_params(csv_filename)
+def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster):
+    input_features = [
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(vocab_size=3),
+    ]
+
+    output_features = [category_feature(vocab_size=3)]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    filter_size_search_space = [5, 7]
+    embedding_size_search_space = [4, 8, 12]
+
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        HYPEROPT: {
+            "parameters": {
+                input_features[0][NAME]
+                + ".encoder.filter_size": {"space": "choice", "categories": filter_size_search_space},
+                input_features[1][NAME]
+                + ".encoder.embedding_size": {"space": "choice", "categories": embedding_size_search_space},
+            },
+            "goal": "minimize",
+            "output_feature": output_features[0][NAME],
+            "validation_metrics": "loss",
+            "executor": {TYPE: "ray", "num_samples": 1},
+            "search_alg": {TYPE: "variant_generator"},
+        },
+    }
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     hyperopt_results_df = hyperopt_results.experiment_analysis.results_df
 
-    _test_hyperopt_with_shared_params_trial_table(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
+    model_parameters = json.load(
+        open(
+            os.path.join(
+                hyperopt_results_df.iloc[0]["trial_dir"], "test_hyperopt_run", "model", "model_hyperparameters.json"
+            )
+        )
     )
 
-    _test_hyperopt_with_shared_params_written_config(
-        hyperopt_results_df, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
+    for input_feature in model_parameters[INPUT_FEATURES]:
+        if input_feature[TYPE] == TEXT:
+            assert input_feature["encoder"]["filter_size"] in filter_size_search_space
+        elif input_feature[TYPE] == CATEGORY:
+            assert input_feature["encoder"]["embedding_size"] in embedding_size_search_space
+
+
+@pytest.mark.distributed
+def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
+    old_config = {
+        "ludwig_version": "0.4",
+        INPUT_FEATURES: [
+            {"name": "cat1", TYPE: "category", "encoder": {"vocab_size": 2}},
+            {"name": "num1", TYPE: "number"},
+        ],
+        OUTPUT_FEATURES: [
+            {"name": "bin1", TYPE: "binary"},
+        ],
+        TRAINER: {"epochs": 2},
+        HYPEROPT: {
+            EXECUTOR: {
+                TYPE: "ray",
+                "time_budget_s": 200,
+                "cpu_resources_per_trial": 1,
+            },
+            "sampler": {
+                TYPE: "ray",
+                "scheduler": {
+                    TYPE: "async_hyperband",
+                    "max_t": 200,
+                    "time_attr": "time_total_s",
+                    "grace_period": 72,
+                    "reduction_factor": 5,
+                },
+                "search_alg": {
+                    TYPE: HYPEROPT,
+                    "random_state_seed": 42,
+                },
+                "num_samples": 2,
+            },
+            "parameters": {
+                "trainer.batch_size": {
+                    "space": "choice",
+                    "categories": [64, 128, 256],
+                },
+                "trainer.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.001,
+                    "upper": 0.1,
+                },
+            },
+        },
+    }
+
+    input_features = old_config[INPUT_FEATURES]
+    output_features = old_config[OUTPUT_FEATURES]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+
+
+@pytest.mark.distributed
+def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
+    config = {
+        INPUT_FEATURES: [
+            {"name": "cat1", TYPE: "category", "encoder": {"vocab_size": 2}},
+            {"name": "num1", TYPE: "number"},
+        ],
+        OUTPUT_FEATURES: [
+            {"name": "bin1", TYPE: "binary"},
+        ],
+        TRAINER: {"epochs": 2},
+        HYPEROPT: {
+            EXECUTOR: {
+                TYPE: "ray",
+                "time_budget_s": 200,
+                "cpu_resources_per_trial": 1,
+                "num_samples": 4,
+                "scheduler": {TYPE: "fifo"},
+            },
+            "search_alg": {TYPE: "variant_generator"},
+            "parameters": {
+                ".": {
+                    "space": "choice",
+                    "categories": [
+                        {
+                            "combiner": {
+                                "type": "tabnet",
+                                "bn_virtual_bs": 256,
+                            },
+                            "trainer": {
+                                "learning_rate_scaling": "sqrt",
+                                "decay": True,
+                                "decay_steps": 20000,
+                                "decay_rate": 0.8,
+                                "optimizer": {"type": "adam"},
+                            },
+                        },
+                        {
+                            "combiner": {
+                                "type": "concat",
+                                "num_fc_layers": 2,
+                            },
+                            "trainer": {
+                                "learning_rate_scaling": "linear",
+                            },
+                        },
+                    ],
+                },
+                "trainer.learning_rate": {"space": "choice", "categories": [0.7, 0.42]},
+            },
+        },
+    }
+
+    input_features = config[INPUT_FEATURES]
+    output_features = config[OUTPUT_FEATURES]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    results = hyperopt(
+        config,
+        dataset=rel_path,
+        output_directory=tmpdir,
+        experiment_name="test_hyperopt_nested_params",
     )
+
+    results_df = results.experiment_analysis.results_df
+    assert len(results_df) == 4
+
+    for _, trial_meta in results_df.iterrows():
+        trial_dir = trial_meta["trial_dir"]
+        trial_config = load_json(
+            os.path.join(trial_dir, "test_hyperopt_nested_params_run", "model", "model_hyperparameters.json")
+        )
+
+        assert len(trial_config[INPUT_FEATURES]) == len(config[INPUT_FEATURES])
+        assert len(trial_config[OUTPUT_FEATURES]) == len(config[OUTPUT_FEATURES])
+
+        assert trial_config[COMBINER][TYPE] in {"tabnet", "concat"}
+        if trial_config[COMBINER][TYPE] == "tabnet":
+            assert trial_config[COMBINER]["bn_virtual_bs"] == 256
+            assert trial_config[TRAINER]["learning_rate_scaling"] == "sqrt"
+            assert trial_config[TRAINER]["decay"] is True
+            assert trial_config[TRAINER]["decay_steps"] == 20000
+            assert trial_config[TRAINER]["decay_rate"] == 0.8
+            assert trial_config[TRAINER]["optimizer"]["type"] == "adam"
+        else:
+            assert trial_config[COMBINER]["num_fc_layers"] == 2
+            assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
+
+        assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}

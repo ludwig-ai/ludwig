@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import DECODER, TRAINER
 from ludwig.serve import ALL_FEATURES_PRESENT_ERROR, server
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -82,8 +82,7 @@ def output_keys_for(output_features):
             keys.append(f"{name}_predictions")
             keys.append(f"{name}_probability")
             keys.append(f"{name}_probabilities")
-            keys.append(f"{name}_probabilities_<UNK>")
-            for category in feature["idx2str"]:
+            for category in feature[DECODER]["idx2str"]:
                 keys.append(f"{name}_probabilities_{category}")
 
         elif feature["type"] == "number":

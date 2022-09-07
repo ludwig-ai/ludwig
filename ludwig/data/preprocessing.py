@@ -24,7 +24,6 @@ import torch
 
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
-    BACKFILL,
     BFILL,
     BINARY,
     CHECKSUM,
@@ -40,7 +39,6 @@ from ludwig.constants import (
     FULL,
     NAME,
     NUMBER,
-    PAD,
     PREPROCESSING,
     PROC_COLUMN,
     SPLIT,
@@ -1140,6 +1138,16 @@ def build_dataset(
 
     # Happens after preprocessing parameters are built so we can use precomputed fill values.
     logging.debug("handle missing values")
+
+    # In some cases, there can be a (temporary) mismatch between the dtype of the column and the type expected by the
+    # preprocessing config (e.g., a categorical feature represented as an int-like column). In particular, Dask
+    # may raise an error even when there are no missing values in the column itself.
+    #
+    # Since we immediately cast all columns in accordance with their expected feature types after filling missing
+    # values, we work around the above issue by temporarily treating all columns as object dtype.
+    for col_key in dataset_cols:
+        dataset_cols[col_key] = dataset_cols[col_key].astype(object)
+
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
         handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
@@ -1428,7 +1436,12 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
         # Distinct values are sorted in reverse to mirror the selection of the default fallback_true_label (in
         # binary_feature.get_feature_meta) for binary columns with unconventional boolean values, "human"/"bot".
         for v in sorted(distinct_values, reverse=True):
-            fallback_true_label = preprocessing_parameters.get("fallback_true_label", "true")
+            fallback_true_label = (
+                preprocessing_parameters["fallback_true_label"]
+                # By default, preprocessing_parameters.fallback_true_label is None.
+                if preprocessing_parameters["fallback_true_label"]
+                else "true"
+            )
             if strings_utils.str2bool(v, fallback_true_label) is False:
                 return v
         raise ValueError(
@@ -1451,7 +1464,7 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             computed_fill_value,
         )
-    elif missing_value_strategy in {BACKFILL, BFILL, PAD, FFILL}:
+    elif missing_value_strategy in {BFILL, FFILL}:
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )

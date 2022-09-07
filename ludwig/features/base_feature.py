@@ -212,18 +212,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         self.fc_stack = FCStack(
             first_layer_input_size=self.input_size,
-            layers=feature.fc_layers,
-            num_layers=feature.num_fc_layers,
-            default_output_size=feature.output_size,
-            default_use_bias=feature.use_bias,
-            default_weights_initializer=feature.weights_initializer,
-            default_bias_initializer=feature.bias_initializer,
-            default_norm=feature.norm,
-            default_norm_params=feature.norm_params,
-            default_activation=feature.activation,
-            default_dropout=feature.dropout,
+            layers=feature.decoder.fc_layers,
+            num_layers=feature.decoder.num_fc_layers,
+            default_output_size=feature.decoder.fc_output_size,
+            default_use_bias=feature.decoder.fc_use_bias,
+            default_weights_initializer=feature.decoder.fc_weights_initializer,
+            default_bias_initializer=feature.decoder.fc_bias_initializer,
+            default_norm=feature.decoder.fc_norm,
+            default_norm_params=feature.decoder.fc_norm_params,
+            default_activation=feature.decoder.fc_activation,
+            default_dropout=feature.decoder.fc_dropout,
         )
-        self._calibration_module = self.create_calibration_module(kwargs)
+        self._calibration_module = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -293,7 +293,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             },
         }
 
-    def create_calibration_module(self, feature) -> CalibrationModule:
+    def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
         """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
         return None
 
