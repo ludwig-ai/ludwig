@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -99,6 +99,25 @@ class FixedSplitter(Splitter):
         return [self.column]
 
 
+def _get_partition_splitter(splitter: Splitter, random_seed: float) -> Callable:
+    """Returns a function that splits a single partition into train, val, test.
+
+    The function returns a single DataFrame with the split column populated. Assumes that the split column is already
+    present in the partition and has a default value of 0 (train).
+    """
+    single_partition_backend = initialize_backend(LOCAL)
+
+    def split_partition(part: DataFrame) -> DataFrame:
+        # Split the partition via the non-partitioned code path
+        _, val, test = splitter.split(part, single_partition_backend, random_seed=random_seed)
+        # Split column defaults to 0 (train), so only need to update val and test
+        part.loc[val.index, TMP_SPLIT_COL] = 1
+        part.loc[test.index, TMP_SPLIT_COL] = 2
+        return part
+
+    return split_partition
+
+
 @split_registry.register("stratify")
 class StratifySplitter(Splitter):
     def __init__(self, column: str, probabilities: List[float] = DEFAULT_PROBABILITIES, **kwargs):
@@ -111,20 +130,13 @@ class StratifySplitter(Splitter):
         if backend.df_engine.partitioned:
             # For a partitioned dataset, we can stratify split each partition individually
             # to obtain a global stratified split.
-            single_partition_backend = initialize_backend(LOCAL)
-
-            def split_partition(part: DataFrame) -> DataFrame:
-                # Recursive call to split the partition via the non-partitioned code path
-                _, val, test = self.split(part, single_partition_backend, random_seed=random_seed)
-                part.loc[val.index, TMP_SPLIT_COL] = 1
-                part.loc[test.index, TMP_SPLIT_COL] = 2
-                return part
 
             # Default to 0 for train
             df[TMP_SPLIT_COL] = 0
 
             # Recursively split each partition
-            df = backend.df_engine.map_partitions(df, split_partition, meta=df)
+            partition_splitter = _get_partition_splitter(splitter=self, random_seed=random_seed)
+            df = backend.df_engine.map_partitions(df, partition_splitter, meta=df)
 
             df_train = df[df[TMP_SPLIT_COL] == 0].drop(columns=TMP_SPLIT_COL)
             df_val = df[df[TMP_SPLIT_COL] == 1].drop(columns=TMP_SPLIT_COL)
