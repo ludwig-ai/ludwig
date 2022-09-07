@@ -3,7 +3,7 @@ import logging
 import os
 from dataclasses import dataclass
 from statistics import mean
-from typing import Any, Dict, List, Set, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time
@@ -48,7 +48,7 @@ class MetricDiff:
             self.diff_str = str(self.diff)
 
 
-def build_diff(name: str, base_value: float, experimental_value: float) -> Diff:
+def build_diff(name: str, base_value: float, experimental_value: float) -> MetricDiff:
     """Build a diff between any type of metric.
 
     :param name: name assigned to the metric to be diff-ed.
@@ -118,7 +118,7 @@ class MetricsDiff:
     experimental_summary: MetricsSummary
 
     # `List[Diff]` containing diffs for metric of the two experiments.
-    metrics: List[Diff]
+    metrics: List[MetricDiff]
 
     def to_string(self):
         ret = []
@@ -162,41 +162,42 @@ def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
     :param metrics_diff: MetricsDiff object containing the diff for two experiments on a dataset.
     :param path: file name of the exported csv.
     """
-    header = [
-        "Dataset Name",
-        "Output Feature Name",
-        "Metric Name",
-        metrics_diff.base_experiment_name,
-        metrics_diff.experimental_experiment_name,
-        "Diff",
-        "Diff Percentage",
-    ]
-    rows = []
-    for metric in sorted(metrics_diff.metrics, key=lambda m: m.name):
-        output_feature_name = metrics_diff.base_summary.output_feature_name
-        metric_name = metric.name
-        experiment1_val = round(metric.base_value, 3)
-        experiment2_val = round(metric.experimental_value, 3)
-        diff = round(metric.diff, 3)
-        diff_percentage = metric.diff_percentage
-        if isinstance(diff_percentage, float):
-            diff_percentage = round(metric.diff_percentage, 3)
-        rows.append(
-            [
-                metrics_diff.dataset_name,
-                output_feature_name,
-                metric_name,
-                experiment1_val,
-                experiment2_val,
-                diff,
-                diff_percentage,
-            ]
-        )
     with open(path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(rows)
-    logging.info(f"Exported a CSV report to {path}.")
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "Dataset Name",
+                "Output Feature Name",
+                "Metric Name",
+                metrics_diff.base_experiment_name,
+                metrics_diff.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            ],
+        )
+        writer.writeheader()
+
+        for metric in sorted(metrics_diff.metrics, key=lambda m: m.name):
+            output_feature_name = metrics_diff.base_summary.output_feature_name
+            metric_name = metric.name
+            experiment1_val = round(metric.base_value, 3)
+            experiment2_val = round(metric.experimental_value, 3)
+            diff = round(metric.diff, 3)
+            diff_percentage = metric.diff_percentage
+            if isinstance(diff_percentage, float):
+                diff_percentage = round(metric.diff_percentage, 3)
+            writer.writerow(
+                {
+                    "Dataset Name": metrics_diff.dataset_name,
+                    "Output Feature Name": output_feature_name,
+                    "Metric Name": metric_name,
+                    metrics_diff.base_experiment_name: experiment1_val,
+                    metrics_diff.experimental_experiment_name: experiment2_val,
+                    "Diff": diff,
+                    "Diff Percentage": diff_percentage,
+                }
+            )
+            logging.info(f"Exported a CSV report to {path}")
 
 
 def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
@@ -294,7 +295,7 @@ class ResourceUsageDiff:
     experimental_experiment_name: str
 
     # `List[Diff]` containing diffs for metric of the two experiments.
-    metrics: List[Diff]
+    metrics: List[MetricDiff]
 
     def to_string(self):
         ret = []
@@ -331,34 +332,35 @@ def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, pa
     :param resource_usage_diff: ResourceUsageDiff object containing the diff for two experiments on a dataset.
     :param path: file name of the exported csv.
     """
-    header = [
-        "Code Block Tag",
-        "Metric Name",
-        resource_usage_diff.base_experiment_name,
-        resource_usage_diff.experimental_experiment_name,
-        "Diff",
-        "Diff Percentage",
-    ]
-    rows = []
-    for metric in sorted(resource_usage_diff.metrics, key=lambda m: m.name):
-        diff_percentage = metric.diff_percentage
-        if isinstance(metric.diff_percentage, float):
-            diff_percentage = round(metric.diff_percentage, 3)
-        rows.append(
-            [
-                resource_usage_diff.code_block_tag,
-                metric.name,
-                metric.base_value_str,
-                metric.experimental_value_str,
-                metric.diff_str,
-                diff_percentage,
-            ]
-        )
     with open(path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(rows)
-    logging.info(f"Exported a CSV report to {path}")
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "Code Block Tag",
+                "Metric Name",
+                resource_usage_diff.base_experiment_name,
+                resource_usage_diff.experimental_experiment_name,
+                "Diff",
+                "Diff Percentage",
+            ],
+        )
+        writer.writeheader()
+
+        for metric in sorted(resource_usage_diff.metrics, key=lambda m: m.name):
+            diff_percentage = metric.diff_percentage
+            if isinstance(metric.diff_percentage, float):
+                diff_percentage = round(metric.diff_percentage, 3)
+            writer.writerow(
+                {
+                    "Code Block Tag": resource_usage_diff.code_block_tag,
+                    "Metric Name": metric.name,
+                    resource_usage_diff.base_experiment_name: metric.base_value_str,
+                    resource_usage_diff.experimental_experiment_name: metric.experimental_value_str,
+                    "Diff": metric.diff_str,
+                    "Diff Percentage": diff_percentage,
+                }
+            )
+            logging.info(f"Exported a CSV report to {path}")
 
 
 def average_runs(path_to_runs_dir: str) -> Dict[str, Union[int, float]]:
