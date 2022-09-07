@@ -427,17 +427,21 @@ class ImageFeatureMixin(BaseFeatureMixin):
             lambda row: get_abs_path(src_path, row) if isinstance(row, str) and not has_remote_protocol(row) else row,
         )
 
-        # determine if specified encoder is a pre-trained model
-        is_torchvision_model = any([x.startswith(feature_config[ENCODER][TYPE]) for x in torchvision_model_registry])
+        # determine if specified encoder is a torchvision model
+        torchvision_model_id = f"{feature_config[ENCODER].get(TYPE)}-{feature_config[ENCODER].get('model_variant')}"
+        torchvision_parameters = torchvision_model_registry.get(torchvision_model_id)
 
-        if is_torchvision_model:
-            torchvision_model_id = f"{feature_config[ENCODER][TYPE]}-{feature_config[ENCODER]['model_variant']}"
+        if torchvision_parameters:
+            # torchvision_parameters is not None
+            # perform torchvision model transformations
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
-                transform_fn=torchvision_model_registry[torchvision_model_id][1].DEFAULT.transforms(),
+                transform_fn=torchvision_parameters[1].DEFAULT.transforms(),
             )
             average_file_size = None
         else:
+            # torchvision_parameters is None
+            # perform Ludwig specified transformations
             (
                 should_resize,
                 width,
