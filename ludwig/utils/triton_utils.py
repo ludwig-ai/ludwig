@@ -186,11 +186,24 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
 
 @dataclass
 class TritonArtifact:
+    """Dataclass for exported Triton artifacts."""
+
+    # Name of the model.
     model_name: str
+
+    # Model version.
     model_version: Union[int, str]
+
+    # Triton backend (e.g. "pytorch_libtorch").
     platform: str
+
+    # Model path.
     path: str
+
+    # Type of artifact (application/octet-stream, plain text, etc.)
     content_type: str
+
+    # Size of the artifact in bytes.
     content_length: int
 
 
