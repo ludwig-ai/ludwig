@@ -526,7 +526,7 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
     )
 
     use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="Download model weights from pre-trained model.",
     )
 
@@ -554,7 +554,7 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
     )
 
     use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="Download model weights from pre-trained model.",
     )
 
