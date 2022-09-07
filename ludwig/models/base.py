@@ -45,10 +45,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         super().__init__()
 
     @classmethod
-    def build_inputs(cls, input_features_def: List[Dict[str, Any]], config: Config) -> Dict[str, InputFeature]:
+    def build_inputs(cls, config: Config) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
-        input_features_def = topological_sort_feature_dependencies(input_features_def)
+        input_features_def = topological_sort_feature_dependencies(config.input_features.to_dict())
         for input_feature_def in input_features_def:
             input_features[input_feature_def[NAME]] = cls.build_single_input(
                 getattr(config, input_feature_def[NAME]),

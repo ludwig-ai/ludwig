@@ -1,15 +1,19 @@
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig
+from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
+from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
+from ludwig.schema.combiners.utils import combiner_registry
 
 from ludwig.constants import (
     COMBINER,
     DECODER,
     ENCODER,
+    MODEL_GBM,
     HYPEROPT,
     INPUT_FEATURES,
+    MODEL_TYPE,
     NAME,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -22,14 +26,18 @@ class InputFeatures:
     """
     InputFeatures is a container for all input features.
     """
-    pass
+
+    def to_dict(self):
+        return self.__dict__
 
 
 class OutputFeatures:
     """
     OutputFeatures is a container for all output features.
     """
-    pass
+
+    def to_dict(self):
+        return self.__dict__
 
 
 class Config:
@@ -43,13 +51,18 @@ class Config:
     trainer: BaseTrainerConfig = ECDTrainerConfig()
     preprocessing = PreprocessingConfig()
     hyperopt = {}
-    defaults = {}
+    defaults = DefaultsConfig()
 
     def __init__(self, config_dict):
         self.parse_input_features(config_dict[INPUT_FEATURES])
         self.parse_output_features(config_dict[OUTPUT_FEATURES])
 
+        if MODEL_TYPE in config_dict:
+            if config_dict[MODEL_TYPE] == MODEL_GBM:
+                self.trainer = GBMTrainerConfig()
+
         if COMBINER in config_dict:
+            self.combiner = combiner_registry.get(config_dict[COMBINER][TYPE])
             self.set_attributes(self.combiner, config_dict[COMBINER])
 
         if TRAINER in config_dict:
