@@ -271,8 +271,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[NumberInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
         input_feature_config.encoder.input_size = self.input_shape[-1]
 

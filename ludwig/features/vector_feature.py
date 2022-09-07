@@ -21,8 +21,6 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    DECODER,
-    DEPENDENCIES,
     ENCODER,
     ERROR,
     HIDDEN,
@@ -32,20 +30,14 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     NAME,
     PREDICTIONS,
-    PREPROCESSING,
     PROC_COLUMN,
     R2,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
-    TIED,
-    TYPE,
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -144,8 +136,7 @@ class VectorFeatureMixin:
 
 @register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[VectorInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         # input_feature_config.encoder.input_size = input_feature_config.encoder.vector_size

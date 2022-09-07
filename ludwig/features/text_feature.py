@@ -175,8 +175,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    def __init__(self, input_feature_config: Union[TextInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):

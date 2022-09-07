@@ -24,7 +24,6 @@ import torch
 from ludwig.constants import (
     COLUMN,
     DECODER,
-    DEPENDENCIES,
     EDIT_DISTANCE,
     ENCODER,
     LAST_ACCURACY,
@@ -37,13 +36,9 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    TIED,
     TOKEN_ACCURACY,
-    TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
@@ -51,7 +46,7 @@ from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, 
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
@@ -257,8 +252,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[SequenceInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:

@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -106,8 +106,7 @@ class H3FeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[H3InputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: H3InputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:

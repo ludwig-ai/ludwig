@@ -15,18 +15,17 @@
 # ==============================================================================
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, ENCODER, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -110,8 +109,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[DateInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: DateInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
