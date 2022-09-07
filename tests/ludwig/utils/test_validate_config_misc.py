@@ -38,28 +38,28 @@ from tests.integration_tests.utils import (
 
 def test_config_features():
     all_input_features = [
-        audio_feature("/tmp/destination_folder"),
-        bag_feature(),
-        binary_feature(),
-        category_feature(),
-        date_feature(),
-        h3_feature(),
-        image_feature("/tmp/destination_folder"),
-        number_feature(),
-        sequence_feature(),
-        set_feature(),
-        text_feature(),
-        timeseries_feature(),
-        vector_feature(),
+        audio_feature("/tmp/destination_folder", encoder={"type": "parallel_cnn"}),
+        bag_feature(encoder={"type": "embed"}),
+        binary_feature(encoder={"type": "passthrough"}),
+        category_feature(encoder={"type": "dense"}),
+        date_feature(encoder={"type": "embed"}),
+        h3_feature(encoder={"type": "embed"}),
+        image_feature("/tmp/destination_folder", encoder={"type": "stacked_cnn"}),
+        number_feature(encoder={"type": "passthrough"}),
+        sequence_feature(encoder={"type": "parallel_cnn"}),
+        set_feature(encoder={"type": "embed"}),
+        text_feature(encoder={"type": "parallel_cnn"}),
+        timeseries_feature(encoder={"type": "parallel_cnn"}),
+        vector_feature(encoder={"type": "dense"}),
     ]
     all_output_features = [
-        binary_feature(),
-        category_feature(),
-        number_feature(),
-        sequence_feature(),
-        set_feature(),
-        text_feature(),
-        vector_feature(),
+        binary_feature(decoder={"type": "regressor"}),
+        category_feature(decoder={"type": "classifier"}),
+        number_feature(decoder={"type": "regressor"}),
+        sequence_feature(decoder={"type": "generator"}),
+        set_feature(decoder={"type": "classifier"}),
+        text_feature(decoder={"type": "generator"}),
+        vector_feature(decoder={"type": "projector"}),
     ]
 
     # validate config with all features
@@ -92,10 +92,10 @@ def test_config_encoders():
     for encoder in ENCODERS:
         config = {
             "input_features": [
-                sequence_feature(reduce_output="sum", encoder=encoder),
+                sequence_feature(encoder={"type": encoder, "reduce_output": "sum"}),
                 image_feature("/tmp/destination_folder"),
             ],
-            "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+            "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
         }
         validate_config(config)
@@ -104,7 +104,7 @@ def test_config_encoders():
 def test_config_tabnet():
     config = {
         "input_features": [
-            category_feature(vocab_size=2, reduce_input="sum"),
+            category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
             number_feature(),
         ],
         "output_features": [binary_feature(weight_regularization=None)],
@@ -141,7 +141,7 @@ def test_config_tabnet():
 def test_config_bad_feature_type():
     config = {
         "input_features": [{"name": "foo", "type": "fake"}],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 
@@ -151,8 +151,8 @@ def test_config_bad_feature_type():
 
 def test_config_bad_encoder_name():
     config = {
-        "input_features": [sequence_feature(reduce_output="sum", encoder="fake")],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "input_features": [sequence_feature(encoder={"type": "fake", "reduce_output": "sum"})],
+        "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 
@@ -163,7 +163,7 @@ def test_config_bad_encoder_name():
 def test_config_bad_preprocessing_param():
     config = {
         "input_features": [
-            sequence_feature(reduce_output="sum", encoder="fake"),
+            sequence_feature(encoder={"type": "parallel_cnn", "reduce_output": "sum"}),
             image_feature(
                 "/tmp/destination_folder",
                 preprocessing={
@@ -175,11 +175,11 @@ def test_config_bad_preprocessing_param():
                 },
             ),
         ],
-        "output_features": [category_feature(vocab_size=2, reduce_input="sum")],
+        "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
         validate_config(config)
 
 
@@ -211,19 +211,31 @@ def test_config_fill_values():
 def test_validate_with_preprocessing_defaults():
     config = {
         "input_features": [
-            audio_feature("/tmp/destination_folder", preprocessing=AudioFeatureMixin.preprocessing_defaults()),
-            bag_feature(preprocessing=BagFeatureMixin.preprocessing_defaults()),
-            binary_feature(preprocessing=BinaryFeatureMixin.preprocessing_defaults()),
-            category_feature(preprocessing=CategoryFeatureMixin.preprocessing_defaults()),
-            date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults()),
-            h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults()),
-            image_feature("/tmp/destination_folder", preprocessing=ImageFeatureMixin.preprocessing_defaults()),
-            number_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults()),
-            sequence_feature(preprocessing=SequenceFeatureMixin.preprocessing_defaults()),
-            set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults()),
-            text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults()),
-            timeseries_feature(preprocessing=TimeseriesFeatureMixin.preprocessing_defaults()),
-            vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults()),
+            audio_feature(
+                "/tmp/destination_folder",
+                preprocessing=AudioFeatureMixin.preprocessing_defaults(),
+                encoder={"type": "parallel_cnn"},
+            ),
+            bag_feature(preprocessing=BagFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            binary_feature(preprocessing=BinaryFeatureMixin.preprocessing_defaults(), encoder={"type": "passthrough"}),
+            category_feature(preprocessing=CategoryFeatureMixin.preprocessing_defaults(), encoder={"type": "dense"}),
+            date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            image_feature(
+                "/tmp/destination_folder",
+                preprocessing=ImageFeatureMixin.preprocessing_defaults(),
+                encoder={"type": "stacked_cnn"},
+            ),
+            number_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults(), encoder={"type": "passthrough"}),
+            sequence_feature(
+                preprocessing=SequenceFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}
+            ),
+            set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}),
+            timeseries_feature(
+                preprocessing=TimeseriesFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}
+            ),
+            vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults(), encoder={"type": "dense"}),
         ],
         "output_features": [{"name": "target", "type": "category"}],
         TRAINER: {

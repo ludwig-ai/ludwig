@@ -43,7 +43,7 @@ FEATURES_TO_TEST = [
         # input feature
         [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
-        [category_feature(vocab_size=4, reduce_input="sum")],
+        [category_feature(encoder={"vocab_size": 4}, reduce_input="sum")],
     ),
     FeaturesToUse(
         # input feature
@@ -52,15 +52,26 @@ FEATURES_TO_TEST = [
         # output feature
         [
             sequence_feature(
-                min_len=5, max_len=10, decoder="generator", cell_type="lstm", attention="bahdanau", reduce_input=None
+                decoder={
+                    "min_len": 5,
+                    "max_len": 10,
+                    "type": "generator",
+                    "cell_type": "lstm",
+                    "attention": "bahdanau",
+                },
+                reduce_input=None,
             )
         ],
     ),
     FeaturesToUse(
         # input feature
-        [sequence_feature(min_len=5, max_len=10, encoder="rnn", cell_type="lstm", reduce_output=None)],
+        [
+            sequence_feature(
+                encoder={"min_len": 5, "max_len": 10, "encoder": "rnn", "cell_type": "lstm", "reduce_output": None}
+            )
+        ],
         # output feature
-        [sequence_feature(max_len=10, decoder="tagger", reduce_input=None)],
+        [sequence_feature(decoder={"max_len": 10, "decoder": "tagger"}, reduce_input=None)],
     ),
     FeaturesToUse(
         # input feature
@@ -138,7 +149,7 @@ def test_kfold_cv_api_from_file(tmpdir):
     # generate synthetic data for the test
     input_features = [number_feature(normalization="zscore"), number_feature(normalization="zscore")]
 
-    output_features = [category_feature(vocab_size=3, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 3}, reduce_input="sum")]
 
     generate_data(input_features, output_features, training_data_fp)
 

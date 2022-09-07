@@ -7,8 +7,8 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
     AUDIO,
-    BACKFILL,
     BAG,
+    BFILL,
     BINARY,
     CATEGORY,
     DATE,
@@ -94,7 +94,7 @@ class TextPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     padding_symbol: str = schema_utils.String(
-        default="<PAD>",
+        default=strings_utils.PADDING_SYMBOL,
         allow_none=False,
         description="The string used as the padding symbol for sequence features. Ignored for features using "
         "huggingface encoders, which have their own vocabulary.",
@@ -192,20 +192,20 @@ class BinaryPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
         field_options=[
-            schema_utils.FloatRange(default=None, allow_none=True, min=0, max=1),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default=None),
+            schema_utils.FloatRange(allow_none=False, default=0, min=0, max=1),
+            schema_utils.StringOptions(allow_none=True, options=strings_utils.all_bool_strs()),
         ],
     )
 
     computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=False,
+        allow_none=True,
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=PREPROCESSING_METADATA["computed_fill_value"],
         field_options=[
-            schema_utils.FloatRange(default=None, allow_none=True, min=0, max=1),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default=None),
+            schema_utils.FloatRange(allow_none=False, default=0, min=0, max=1),
+            schema_utils.StringOptions(allow_none=True, options=strings_utils.all_bool_strs()),
         ],
     )
 
@@ -335,7 +335,7 @@ class SequencePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     padding_symbol: str = schema_utils.String(
-        default="<PAD>",
+        default=strings_utils.PADDING_SYMBOL,
         allow_none=False,
         description="The string used as a padding symbol. This special token is mapped to the integer ID 0 in the "
         "vocabulary.",
@@ -388,7 +388,7 @@ class ImagePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default="backfill",
+        default=BFILL,
         allow_none=False,
         description="What strategy to follow when there's a missing value in an image column",
     )
@@ -507,7 +507,7 @@ class AudioPreprocessingConfig(schema_utils.BaseMarshmallowConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
-        default=BACKFILL,
+        default=BFILL,
         allow_none=False,
         description="What strategy to follow when there's a missing value in an audio column",
     )
@@ -800,6 +800,14 @@ def PreprocessingDataclassField(feature_type: str):
                     f"Invalid params for preprocessor: {value}, expect dict with at least a valid `type` attribute."
                 )
             raise ValidationError("Field should be None or dict")
+
+        def _serialize(self, value, attr, data, **kwargs):
+            if value is None:
+                return None
+            if feature_type in preprocessing_registry:
+                pre = preprocessing_registry[feature_type]
+                return pre.Schema().dump(value)
+            raise ValidationError(f"Invalid preprocessing feature type {feature_type}")
 
         @staticmethod
         def _jsonschema_type_mapping():

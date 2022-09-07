@@ -46,6 +46,7 @@ from ludwig.constants import (
     HYPEROPT,
     HYPEROPT_WARNING,
     LEARNING_RATE,
+    MIN_VALIDATION_SET_ROWS,
     MODEL_TYPE,
     PREPROCESSING,
     TEST,
@@ -73,10 +74,10 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema import validate_config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
+from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -96,6 +97,7 @@ from ludwig.utils.misc_utils import (
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
+from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -212,9 +214,13 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        # merge config with defaults
-        self.base_config = copy.deepcopy(config_dict)
-        self.config = merge_with_defaults(config_dict)
+        self.base_config = config_dict
+
+        # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
+        upgraded_config = upgrade_to_latest_version(config_dict)
+
+        # Merge upgraded config with defaults.
+        self.config = merge_with_defaults(upgraded_config)
         validate_config(self.config)
 
         # setup logging
@@ -566,15 +572,22 @@ class LudwigModel:
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
-                        if validation_set is not None:
-                            # Use backend.createPredictor to ensure we get ray predictor with ray backend
-                            calibrator.train_calibration(validation_set, VALIDATION)
-                        else:
+                        if validation_set is None:
                             logger.warning(
-                                "Calibration uses validation set, but not validation split specified. "
+                                "Calibration uses validation set, but no validation split specified."
                                 "Will use training set for calibration."
+                                "Recommend providing a validation set when using calibration."
                             )
                             calibrator.train_calibration(training_set, TRAINING)
+                        elif len(validation_set) < MIN_VALIDATION_SET_ROWS:
+                            logger.warning(
+                                f"Validation set size ({len(validation_set)} rows) is too small for calibration."
+                                "Will use training set for calibration."
+                                f"Validation set much have at least {MIN_VALIDATION_SET_ROWS} rows."
+                            )
+                            calibrator.train_calibration(training_set, TRAINING)
+                        else:
+                            calibrator.train_calibration(validation_set, VALIDATION)
                         if not skip_save_model:
                             self.model.save(model_dir)
 
@@ -595,44 +608,17 @@ class LudwigModel:
                         if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
                             save_json(training_stats_fn, train_stats)
 
-                    # grab the results of the model with highest validation test performance
-                    validation_field = trainer.validation_field
-                    validation_metric = trainer.validation_metric
-                    validation_field_result = train_valiset_stats[validation_field]
-
-                    best_function = get_best_function(validation_metric)
-
                     # results of the model with highest validation test performance
                     if self.backend.is_coordinator() and validation_set is not None:
                         print_boxed("TRAINING REPORT")
-                        best_vali_index, (
-                            epoch_best_validation_metric,
-                            step_best_validation_metric,
-                            best_validation_metric,
-                        ) = best_function(
-                            enumerate(validation_field_result[validation_metric]),
-                            # -1 for the last element of the TrainerMetric namedtuple.
-                            key=lambda index_epoch_step_value: index_epoch_step_value[1][-1],
+                        training_report = get_training_report(
+                            trainer.validation_field,
+                            trainer.validation_metric,
+                            test_set is not None,
+                            train_valiset_stats,
+                            train_testset_stats,
                         )
-                        logger.info(
-                            f"Best validation model step: {step_best_validation_metric}, epoch: "
-                            f"{epoch_best_validation_metric + 1}"
-                        )
-                        logger.info(
-                            f"Best validation model {validation_metric} on validation set {validation_field}: "
-                            f"{best_validation_metric}"
-                        )
-                        if test_set is not None:
-                            validation_selected_test_metric_score = train_testset_stats[validation_field][
-                                validation_metric
-                            ][best_vali_index][
-                                -1
-                            ]  # -1 for the last element of the TrainerMetric namedtuple.
-
-                            logger.info(
-                                f"Best validation model {validation_metric} on test set {validation_field}: "
-                                f"{validation_selected_test_metric_score}"
-                            )
+                        logger.info(tabulate(training_report, tablefmt="fancy_grid"))
                         logger.info(f"\nFinished: {experiment_name}_{model_name}")
                         logger.info(f"Saved to: {output_directory}")
                 finally:
@@ -1380,7 +1366,9 @@ class LudwigModel:
 
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
-        # Upgrades deprecated fields and adds new required fields, in case the config loaded from disk is old.
+        # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
+        config = upgrade_to_latest_version(config)
+        # Merge upgraded config with defaults.
         config = merge_with_defaults(config)
 
         if backend_param is None and "backend" in config:

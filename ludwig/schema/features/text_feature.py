@@ -1,11 +1,11 @@
-from typing import Optional
-
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import TEXT
-from ludwig.decoders.registry import get_decoder_classes
-from ludwig.encoders.registry import get_encoder_classes
+from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import DecoderDataclassField
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
 
@@ -16,10 +16,9 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(get_encoder_classes(TEXT).keys()),
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=TEXT,
         default="parallel_cnn",
-        description="Encoder to use for this text feature.",
     )
 
 
@@ -27,8 +26,36 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
-    decoder: Optional[str] = schema_utils.StringOptions(
-        list(get_decoder_classes(TEXT).keys()),
+    loss: dict = schema_utils.Dict(
+        default={
+            "type": SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+            "class_weights": 1,
+            "robust_lambda": 0,
+            "confidence_penalty": 0,
+            "class_similarities_temperature": 0,
+            "weight": 1,
+            "unique": False,
+        },
+        description="A dictionary containing a loss type and its hyper-parameters.",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=TEXT,
         default="generator",
-        description="Decoder to use for this text output feature.",
+    )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
     )

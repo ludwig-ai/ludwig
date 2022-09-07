@@ -24,6 +24,7 @@ from mlflow.tracking import MlflowClient
 from ludwig.constants import ACCURACY, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
+from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -32,7 +33,6 @@ try:
     import ray
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
-    from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
     ray = None
 
@@ -84,11 +84,11 @@ SCENARIOS = [
 
 def _get_config(search_alg, executor):
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     return {
         "input_features": input_features,
@@ -199,11 +199,11 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 @pytest.mark.distributed
 def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
     input_features = [
-        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-        category_feature(vocab_size=2, reduce_input="sum"),
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
@@ -282,7 +282,7 @@ def run_hyperopt(
     )
 
     # check for return results
-    assert isinstance(hyperopt_results, RayTuneResults)
+    assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))

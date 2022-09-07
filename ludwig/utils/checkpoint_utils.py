@@ -15,6 +15,7 @@ import torch
 
 from ludwig.utils.fs_utils import safe_move_file
 
+logger = logging.getLogger(__name__)
 LATEST_FNAME = "latest.ckpt"
 
 
@@ -84,7 +85,7 @@ class Checkpoint:
                 self.model.load_state_dict(state["model_weights"])
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
-                logging.info(f"Successfully loaded model weights from {save_path}.")
+                logger.info(f"Successfully loaded model weights from {save_path}.")
                 return True
             except Exception as e:
                 # there was an issue loading the state which means
@@ -95,7 +96,7 @@ class Checkpoint:
                 # rather than allowing the program to proceed.
                 raise e
         except FileNotFoundError as e:
-            logging.error(e)
+            logger.error(e)
             return False
 
     def save(self, save_path: str, global_step: int):
@@ -134,7 +135,7 @@ class Checkpoint:
                 torch.save(state, tmp_path)
 
                 safe_move_file(tmp_path, save_path)
-                logging.debug(f"Saved checkpoint at {save_path}.")
+                logger.debug(f"Saved checkpoint at {save_path}.")
         finally:
             # restore SIGINT handler
             if orig_handler is not None:
@@ -181,7 +182,7 @@ class CheckpointManager:
         if last_ckpt:
             status = self.checkpoint.restore(last_ckpt, self.device)
             if not status:
-                logging.warning("Could not restore latest checkpoint file.")
+                logger.warning("Could not restore latest checkpoint file.")
                 return 0
             self.latest_checkpoint = last_ckpt
             return self.checkpoint.global_step
@@ -207,4 +208,4 @@ class CheckpointManager:
         if last_ckpt:
             checkpoint.restore(last_ckpt, device)
         else:
-            logging.error(f"No checkpoints found in {directory}.")
+            logger.error(f"No checkpoints found in {directory}.")

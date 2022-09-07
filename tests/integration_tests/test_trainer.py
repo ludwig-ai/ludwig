@@ -7,13 +7,7 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
-from tests.integration_tests.utils import (
-    category_feature,
-    generate_data,
-    LocalTestBackend,
-    ray_cluster,
-    sequence_feature,
-)
+from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
 
 try:
     import ray
@@ -48,16 +42,10 @@ except ImportError:
     ray = None
 
 
-@pytest.fixture(scope="module")
-def ray_test_cluster():
-    with ray_cluster():
-        yield
-
-
 @pytest.mark.parametrize("eval_batch_size", ["auto", None, 128])
 def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     data_csv = generate_data(input_features, output_features, csv_filename)
@@ -118,14 +106,14 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
 
 @pytest.mark.parametrize("learning_rate_scaling, expected_lr", [("constant", 1), ("sqrt", 2), ("linear", 4)])
 @pytest.mark.distributed
-def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_test_cluster):
+def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
     base_lr = 1.0
     num_workers = 4
 
     outdir = os.path.join(tmpdir, "output")
 
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     data_csv = generate_data(input_features, output_features, csv_filename)
@@ -146,8 +134,8 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_test_cluster):
 
 
 def test_changing_parameters_on_plateau(tmpdir):
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     data_csv = generate_data(input_features, output_features, csv_filename)

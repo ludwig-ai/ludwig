@@ -97,10 +97,24 @@ def set_default_value(dictionary, key, value):
         dictionary[key] = value
 
 
-def set_default_values(dictionary, default_value_dictionary):
-    # Set multiple default values
+def set_default_values(dictionary: dict, default_value_dictionary: dict):
+    """This function sets multiple default values recursively for various areas of the config. By using the helper
+    function set_default_value, It parses input values that contain nested dictionaries, only setting values for
+    parameters that have not already been defined by the user.
+
+    Args:
+        dictionary (dict): The dictionary to set default values for, generally a section of the config.
+        default_value_dictionary (dict): The dictionary containing the default values for the config.
+    """
     for key, value in default_value_dictionary.items():
-        set_default_value(dictionary, key, value)
+        if key not in dictionary:  # Event where the key is not in the dictionary yet
+            dictionary[key] = value
+        elif value == {}:  # Event where dict is empty
+            set_default_value(dictionary, key, value)
+        elif isinstance(value, dict) and value:  # Event where dictionary is nested - recursive call
+            set_default_values(dictionary[key], value)
+        else:
+            set_default_value(dictionary, key, value)
 
 
 def get_class_attributes(c):
@@ -141,3 +155,7 @@ def set_saved_weights_in_checkpoint_flag(config):
     """
     for input_feature in config.get("input_features", []):
         input_feature["saved_weights_in_checkpoint"] = True
+
+
+def remove_empty_lines(str):
+    return "\n".join([line.rstrip() for line in str.split("\n") if line.rstrip()])

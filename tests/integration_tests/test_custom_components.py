@@ -16,6 +16,8 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
 from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.encoders.base import BaseEncoderConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -28,6 +30,22 @@ from tests.integration_tests.utils import (
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
     foo: bool = False
+
+
+@dataclass
+class CustomNumberEncoderConfig(BaseEncoderConfig):
+
+    type: str = "custom_number_encoder"
+
+    input_size: int = 0
+
+
+@dataclass
+class CustomNumberDecoderConfig(BaseDecoderConfig):
+
+    type: str = "custom_number_decoder"
+
+    input_size: int = 0
 
 
 @register_combiner(name="custom_test")
@@ -69,6 +87,10 @@ class CustomNumberEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.input_shape
 
+    @staticmethod
+    def get_schema_cls():
+        return CustomNumberEncoderConfig
+
 
 @register_decoder("custom_number_decoder", NUMBER)
 class CustomNumberDecoder(Decoder):
@@ -82,6 +104,10 @@ class CustomNumberDecoder(Decoder):
 
     def forward(self, inputs, **kwargs):
         return torch.mean(inputs, 1)
+
+    @staticmethod
+    def get_schema_cls():
+        return CustomNumberDecoderConfig
 
 
 @register_loss("custom_loss", [NUMBER])
@@ -109,11 +135,11 @@ def test_custom_combiner():
 
 def test_custom_encoder_decoder():
     input_features = [
-        sequence_feature(reduce_output="sum"),
-        number_feature(encoder="custom_number_encoder"),
+        sequence_feature(encoder={"reduce_output": "sum"}),
+        number_feature(encoder={"type": "custom_number_encoder"}),
     ]
     output_features = [
-        number_feature(decoder="custom_number_decoder"),
+        number_feature(decoder={"type": "custom_number_decoder"}),
     ]
     _run_test(input_features=input_features, output_features=output_features)
 
@@ -128,10 +154,10 @@ def test_custom_loss_metric():
 def _run_test(input_features=None, output_features=None, combiner=None):
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = input_features or [
-            sequence_feature(reduce_output="sum"),
+            sequence_feature(encoder={"reduce_output": "sum"}),
             number_feature(),
         ]
-        output_features = output_features or [category_feature(vocab_size=2, reduce_input="sum")]
+        output_features = output_features or [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
         combiner = combiner or {"type": "concat"}
 
         csv_filename = os.path.join(tmpdir, "training.csv")
