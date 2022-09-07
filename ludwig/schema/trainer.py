@@ -41,7 +41,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
         field_options=[
-            schema_utils.FloatRange(default=0.001, min=0, max=1),
+            schema_utils.NonNegativeFloat(default=0.001, allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )

@@ -1,0 +1,29 @@
+{
+	"name": "Python 3",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "/home/ray/anaconda3/bin/python"
+			},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance"
+			]
+		}
+	},
+	"postCreateCommand": "pip install .[test]",
+	"runArgs": [
+		"--network=host",
+		"--shm-size=3.55gb"
+	],
+	"remoteUser": "ray",
+	"features": {
+		"docker-in-docker": "latest",
+		"git": "latest",
+		"aws-cli": "latest"
+	}
+}

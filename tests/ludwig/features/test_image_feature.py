@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import torch
 
-from ludwig.constants import CROP_OR_PAD, ENCODER, INTERPOLATE, TYPE
+from ludwig.constants import BFILL, CROP_OR_PAD, ENCODER, INTERPOLATE, TYPE
 from ludwig.features.image_feature import _ImagePreprocessing, ImageInputFeature
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -112,7 +112,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
 def test_image_preproc_module_bad_num_channels():
     metadata = {
         "preprocessing": {
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "resize_method": "interpolate",
             "scaling": "pixel_normalization",
@@ -139,7 +139,7 @@ def test_image_preproc_module_bad_num_channels():
 def test_image_preproc_module_list_of_tensors(resize_method, num_channels, num_channels_expected):
     metadata = {
         "preprocessing": {
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "resize_method": resize_method,
             "scaling": "pixel_normalization",
@@ -167,7 +167,7 @@ def test_image_preproc_module_list_of_tensors(resize_method, num_channels, num_c
 def test_image_preproc_module_tensor(resize_method, num_channels, num_channels_expected):
     metadata = {
         "preprocessing": {
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "resize_method": resize_method,
             "scaling": "pixel_normalization",

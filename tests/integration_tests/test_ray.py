@@ -23,7 +23,7 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
-from ludwig.constants import BACKFILL, BALANCE_PERCENTAGE_TOLERANCE, COLUMN, DEFAULT_BATCH_SIZE, NAME, TRAINER
+from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, BFILL, COLUMN, DEFAULT_BATCH_SIZE, NAME, TRAINER
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
@@ -194,7 +194,7 @@ def run_test_with_features(
 def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
-        "missing_value_strategy": BACKFILL,
+        "missing_value_strategy": BFILL,
         "in_memory": True,
         "padding_value": 0,
         "norm": "per_file",
@@ -311,7 +311,7 @@ def test_ray_sequence(ray_cluster_2cpu):
 def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
-        "missing_value_strategy": BACKFILL,
+        "missing_value_strategy": BFILL,
         "in_memory": True,
         "padding_value": 0,
         "norm": "per_file",
@@ -581,7 +581,7 @@ def test_ray_calibration(calibration, ray_cluster_2cpu):
 def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
-        "missing_value_strategy": BACKFILL,
+        "missing_value_strategy": BFILL,
         "in_memory": True,
         "padding_value": 0,
         "norm": "per_file",
