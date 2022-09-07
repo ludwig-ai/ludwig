@@ -281,7 +281,7 @@ class TritonMaster:
     output_path: str
 
     # Triton model version.
-    model_version: int
+    model_version: Union[int, str]
 
     # Ludwig config.
     ludwig_config: Dict[str, Any]
@@ -327,8 +327,11 @@ class TritonMaster:
 
         Return the appropriate artifact.
         """
+        if isinstance(self.model_version, str) and self.model_version.isdigit():
+            self.model_version = int(self.model_version)
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
+        pass
 
         # wrapper.py is optional and is just for visualizing the inputs/outputs to the model exported to Triton.
         wrapper_definition = TritonModel(
@@ -412,7 +415,7 @@ class TritonEnsembleConfig:
     output_path: str
 
     # Triton model version.
-    model_version: int
+    model_version: Union[int, str]
 
     def __post_init__(self):
         self.ensemble_model_name = self.model_name
@@ -484,6 +487,8 @@ class TritonEnsembleConfig:
 
     def save_ensemble_dummy_model(self) -> TritonArtifact:
         """Scripts the model and saves it."""
+        if isinstance(self.model_version, str) and self.model_version.isdigit():
+            self.model_version = int(self.model_version)
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
         pass
