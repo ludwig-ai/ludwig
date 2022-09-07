@@ -49,8 +49,8 @@ def _run_ludwig_horovod(command, **ludwig_kwargs):
 
 def _prepare_data(csv_filename, config_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     dataset_filename = generate_data(input_features, output_features, csv_filename)
@@ -71,8 +71,8 @@ def _prepare_data(csv_filename, config_filename):
 
 def _prepare_hyperopt_data(csv_filename, config_filename):
     # Single sequence input, single category output
-    input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     # Generate test data
     dataset_filename = generate_data(input_features, output_features, csv_filename)
@@ -281,11 +281,16 @@ def test_preprocess_cli(tmpdir, csv_filename):
     _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
-@pytest.mark.parametrize("backend", ["local", "horovod"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("horovod", id="horovod", marks=pytest.mark.distributed),
+    ],
+)
 def test_reproducible_cli_runs(
     backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:

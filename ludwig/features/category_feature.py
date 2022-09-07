@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -23,7 +23,9 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COLUMN,
-    FILL_WITH_CONST,
+    DECODER,
+    DEPENDENCIES,
+    ENCODER,
     HIDDEN,
     HITS_AT_K,
     LOGITS,
@@ -34,9 +36,10 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     PROJECTION_INPUT,
-    SOFTMAX_CROSS_ENTROPY,
-    SUM,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
     TIED,
+    TOP_K,
     TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
@@ -56,7 +59,12 @@ class _CategoryPreprocessing(torch.nn.Module):
     def __init__(self, metadata: Dict[str, Any]):
         super().__init__()
         self.str2idx = metadata["str2idx"]
-        self.unk = self.str2idx[UNKNOWN_SYMBOL]
+        if UNKNOWN_SYMBOL in self.str2idx:
+            self.unk = self.str2idx[UNKNOWN_SYMBOL]
+        else:
+            # self.unk is set to 0 to comply with Torchscript type tracing and will
+            # likely not be used during training, but potentially during inference
+            self.unk = 0
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         if not torch.jit.isinstance(v, List[str]):
@@ -116,12 +124,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return {
-            "most_common": 10000,
-            "lowercase": False,
-            "missing_value_strategy": FILL_WITH_CONST,
-            "fill_value": UNKNOWN_SYMBOL,
-        }
+        return CategoryInputFeatureConfig().preprocessing.__dict__
 
     @staticmethod
     def cast_column(column, backend):
@@ -139,13 +142,41 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata):
-        return column.map(
-            lambda x: (
-                metadata["str2idx"][x.strip()]
-                if x.strip() in metadata["str2idx"]
-                else metadata["str2idx"][UNKNOWN_SYMBOL]
+        def __replace_token_with_idx(value: Any, metadata: Dict[str, Any], fallback_symbol_idx: int) -> int:
+            stripped_value = value.strip()
+            if stripped_value in metadata["str2idx"]:
+                return metadata["str2idx"][stripped_value]
+            logger.warning(
+                f"""
+                Encountered unknown symbol '{stripped_value}' for '{column.name}' during category
+                feature preprocessing. This should never happen during training. If this happens during
+                inference, this may be an indication that not all possible symbols were present in your
+                training set. Consider re-splitting your data to ensure full representation, or setting
+                preprocessing.most_common parameter to be smaller than this feature's total vocabulary
+                size, {len(metadata["str2idx"])}, which will ensure that the model is architected and
+                trained with an UNKNOWN symbol. Returning the index for the most frequent symbol,
+                {metadata["idx2str"][fallback_symbol_idx]}, instead.
+                """
             )
-        ).astype(int_type(metadata["vocab_size"]))
+            return fallback_symbol_idx
+
+        # No unknown symbol in Metadata from preprocessing means that all values
+        # should be mappable to vocabulary
+        if UNKNOWN_SYMBOL not in metadata["str2idx"]:
+            # If no unknown is defined, just use the most popular token's index as the fallback index
+            most_popular_token = max(metadata["str2freq"], key=metadata["str2freq"].get)
+            most_popular_token_idx = metadata["str2idx"].get(most_popular_token)
+            return column.map(lambda x: __replace_token_with_idx(x, metadata, most_popular_token_idx)).astype(
+                int_type(metadata["vocab_size"])
+            )
+        else:
+            return column.map(
+                lambda x: (
+                    metadata["str2idx"][x.strip()]
+                    if x.strip() in metadata["str2idx"]
+                    else metadata["str2idx"][UNKNOWN_SYMBOL]
+                )
+            ).astype(int_type(metadata["vocab_size"]))
 
     @staticmethod
     def add_feature_data(
@@ -161,15 +192,14 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 @register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    encoder = "dense"
+    def __init__(self, input_feature_config: Union[CategoryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
+        input_feature_config = self.load_config(input_feature_config)
+        super().__init__(input_feature_config, **kwargs)
 
-    def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
-        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(feature)
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
     def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
@@ -204,11 +234,13 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature["vocab"] = feature_metadata["idx2str"]
+        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
+        defaults = CategoryInputFeatureConfig()
+        set_default_value(input_feature, TIED, defaults.tied)
+        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
@@ -221,17 +253,22 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    decoder = "classifier"
-    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
-    num_classes = 0
-    top_k = 3
 
-    def __init__(self, feature, output_features: Dict[str, OutputFeature]):
-        super().__init__(feature, output_features)
-        self.overwrite_defaults(feature)
-        self.decoder_obj = self.initialize_decoder(feature)
+    def __init__(
+        self,
+        output_feature_config: Union[CategoryOutputFeatureConfig, Dict],
+        output_features: Dict[str, OutputFeature],
+        **kwargs,
+    ):
+        output_feature_config = self.load_config(output_feature_config)
+        self.num_classes = output_feature_config.num_classes
+        self.top_k = output_feature_config.top_k
+        super().__init__(output_feature_config, output_features, **kwargs)
+        if hasattr(output_feature_config.decoder, "num_classes"):
+            output_feature_config.decoder.num_classes = output_feature_config.num_classes
+        self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
         self._setup_metrics()
 
@@ -243,15 +280,15 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # hidden: shape [batch_size, size of final fully connected layer]
         return {LOGITS: self.decoder_obj(hidden), PROJECTION_INPUT: hidden}
 
-    def create_calibration_module(self, feature) -> torch.nn.Module:
+    def create_calibration_module(self, feature: CategoryOutputFeatureConfig) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
-        if feature.get("calibration"):
+        if feature.calibration:
             calibration_cls = calibration.get_calibration_cls(CATEGORY, "temperature_scaling")
-            return calibration_cls(num_classes=feature["num_classes"])
+            return calibration_cls(num_classes=self.num_classes)
         return None
 
     def create_predict_module(self) -> PredictModule:
@@ -419,24 +456,24 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
+        defaults = CategoryOutputFeatureConfig()
+
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-
         # Populate the default values for LOSS if they aren't defined already
-        set_default_values(
-            output_feature[LOSS],
-            {
-                TYPE: "softmax_cross_entropy",
-                "class_weights": 1,
-                "robust_lambda": 0,
-                "confidence_penalty": 0,
-                "class_similarities_temperature": 0,
-                "weight": 1,
-            },
-        )
+        set_default_values(output_feature[LOSS], defaults.loss)
 
         set_default_values(
-            output_feature, {"top_k": 3, "dependencies": [], "reduce_input": SUM, "reduce_dependencies": SUM}
+            output_feature,
+            {
+                DECODER: {
+                    TYPE: defaults.decoder.type,
+                },
+                TOP_K: defaults.top_k,
+                DEPENDENCIES: defaults.dependencies,
+                REDUCE_INPUT: defaults.reduce_input,
+                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
+            },
         )
 
     @staticmethod

@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Union
@@ -63,3 +64,12 @@ class ParameterMetadata:
 
     # Whether the parameter is used strictly internally.
     internal_only: bool = False
+
+
+def convert_metadata_to_json(pm: ParameterMetadata):
+    """Converts a ParameterMetadata dict to a normal JSON dict.
+
+    NOTE: Without the json.loads call, to_json() returns
+    a string repr that is improperly parsed.
+    """
+    return json.loads(pm.to_json())

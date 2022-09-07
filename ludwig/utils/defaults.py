@@ -52,11 +52,10 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
-from ludwig.utils.backward_compatibility import upgrade_deprecated_fields
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value
+from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value, set_default_values
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -225,7 +224,7 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
         default_encoder_or_decoder = get_default_encoder_or_decoder(feature_dict, config_feature_group)
         if default_params_for_feature_type[TYPE] != default_encoder_or_decoder:
             # Update type and populate defaults for the encoder or decoder type
-            feature_dict[parameter] = default_params_for_feature_type[TYPE]
+            feature_dict[parameter] = default_params_for_feature_type
             get_from_registry(feature_dict[TYPE], registry_type).populate_defaults(feature_dict)
         # Make a copy of default encoder or decoder parameters without the type key.
         default_params_for_feature_type = copy.deepcopy(default_params_for_feature_type)
@@ -244,7 +243,6 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
 
 def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
-    upgrade_deprecated_fields(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
     _set_proc_column(config)
@@ -279,9 +277,9 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Model Type =====
     set_default_value(config, MODEL_TYPE, default_model_type)
 
-    # ===== Training =====
+    # ===== Trainer =====
     # Convert config dictionary into an instance of BaseTrainerConfig.
-    full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config[TRAINER] if TRAINER in config else {})
+    full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config.get(TRAINER, {}))
     config[TRAINER] = asdict(full_trainer_config)
 
     set_default_value(
@@ -293,7 +291,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Input Features =====
     for input_feature in config[INPUT_FEATURES]:
         if config[MODEL_TYPE] == MODEL_GBM:
-            input_feature[ENCODER] = "passthrough"
+            set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
             remove_ecd_params(input_feature)
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
@@ -310,7 +308,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     # ===== Output features =====
     for output_feature in config[OUTPUT_FEATURES]:
         if config[MODEL_TYPE] == MODEL_GBM:
-            output_feature[DECODER] = "passthrough"
+            set_default_values(output_feature, {DECODER: {TYPE: "passthrough"}})
             remove_ecd_params(output_feature)
         get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
 

@@ -31,20 +31,20 @@ from tests.integration_tests.utils import (
     [
         # baseline test case
         [
-            category_feature(vocab_size=2, reduce_input="sum"),
-            sequence_feature(vocab_size=10, max_len=5),
+            category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+            sequence_feature(decoder={"vocab_size": 10, "max_len": 5}),
             number_feature(),
         ],
         # use generator as decoder
         [
-            category_feature(vocab_size=2, reduce_input="sum"),
-            sequence_feature(vocab_size=10, max_len=5, decoder="generator"),
+            category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+            sequence_feature(decoder={"vocab_size": 10, "max_len": 5, "type": "generator"}),
             number_feature(),
         ],
         # Generator decoder and reduce_input = None
         [
-            category_feature(vocab_size=2, reduce_input="sum"),
-            sequence_feature(max_len=5, decoder="generator", reduce_input=None),
+            category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+            sequence_feature(decoder={"max_len": 5, "type": "generator"}, reduce_input=None),
             number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
@@ -55,11 +55,11 @@ from tests.integration_tests.utils import (
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder="stacked_cnn"),
+        text_feature(encoder={"vocab_size": 100, "min_len": 1, "type": "stacked_cnn"}),
         number_feature(normalization="zscore"),
-        category_feature(vocab_size=10, embedding_size=5),
+        category_feature(encoder={"vocab_size": 10, "embedding_size": 5}),
         set_feature(),
-        sequence_feature(vocab_size=10, max_len=10, encoder="embed"),
+        sequence_feature(encoder={"vocab_size": 10, "max_len": 10, "type": "embed"}),
     ]
     output_features = output_features
 

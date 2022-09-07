@@ -926,8 +926,8 @@ def calibration_plot(
         order = min(3, len(mean_predicted_values[i]) - 1)
 
         sns.regplot(
-            mean_predicted_values[i],
-            fraction_positives[i],
+            x=mean_predicted_values[i],
+            y=fraction_positives[i],
             order=order,
             x_estimator=np.mean,
             color=colors[i],
@@ -961,6 +961,7 @@ def brier_plot(
     filename=None,
     callbacks=None,
 ):
+    plt.figure()
     sns.set_style("whitegrid")
 
     if title is not None:
@@ -1123,6 +1124,7 @@ def plot_matrix(
     filename=None,
     callbacks=None,
 ):
+    plt.figure()
     plt.matshow(matrix, cmap=cmap)
     visualize_callbacks(callbacks, plt.gcf())
     if filename:

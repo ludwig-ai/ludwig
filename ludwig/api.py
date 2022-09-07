@@ -46,6 +46,7 @@ from ludwig.constants import (
     HYPEROPT,
     HYPEROPT_WARNING,
     LEARNING_RATE,
+    MIN_VALIDATION_SET_ROWS,
     MODEL_TYPE,
     PREPROCESSING,
     TEST,
@@ -76,6 +77,7 @@ from ludwig.models.registry import model_type_registry
 from ludwig.schema import validate_config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
+from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -212,9 +214,13 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        # merge config with defaults
-        self.base_config = copy.deepcopy(config_dict)
-        self.config = merge_with_defaults(config_dict)
+        self.base_config = config_dict
+
+        # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
+        upgraded_config = upgrade_to_latest_version(config_dict)
+
+        # Merge upgraded config with defaults.
+        self.config = merge_with_defaults(upgraded_config)
         validate_config(self.config)
 
         # setup logging
@@ -566,15 +572,22 @@ class LudwigModel:
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
-                        if validation_set is not None:
-                            # Use backend.createPredictor to ensure we get ray predictor with ray backend
-                            calibrator.train_calibration(validation_set, VALIDATION)
-                        else:
+                        if validation_set is None:
                             logger.warning(
-                                "Calibration uses validation set, but not validation split specified. "
+                                "Calibration uses validation set, but no validation split specified."
                                 "Will use training set for calibration."
+                                "Recommend providing a validation set when using calibration."
                             )
                             calibrator.train_calibration(training_set, TRAINING)
+                        elif len(validation_set) < MIN_VALIDATION_SET_ROWS:
+                            logger.warning(
+                                f"Validation set size ({len(validation_set)} rows) is too small for calibration."
+                                "Will use training set for calibration."
+                                f"Validation set much have at least {MIN_VALIDATION_SET_ROWS} rows."
+                            )
+                            calibrator.train_calibration(training_set, TRAINING)
+                        else:
+                            calibrator.train_calibration(validation_set, VALIDATION)
                         if not skip_save_model:
                             self.model.save(model_dir)
 
@@ -1353,7 +1366,9 @@ class LudwigModel:
 
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
-        # Upgrades deprecated fields and adds new required fields, in case the config loaded from disk is old.
+        # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
+        config = upgrade_to_latest_version(config)
+        # Merge upgraded config with defaults.
         config = merge_with_defaults(config)
 
         if backend_param is None and "backend" in config:

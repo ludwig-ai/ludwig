@@ -108,7 +108,7 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
         item_len = len(value)
         if item_len != 2:
             exception_message = "Two {} should be provided - " "{} was given.".format(item, item_len)
-            logging.error(exception_message)
+            logger.error(exception_message)
             raise RuntimeError(exception_message)
 
 
@@ -130,7 +130,7 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
     try:
         stats_per_model = [loader(stats_f) for stats_f in model_file_statistics]
     except (TypeError, AttributeError):
-        logging.exception(f"Unable to open model statistics file {model_file_statistics}!")
+        logger.exception(f"Unable to open model statistics file {model_file_statistics}!")
         raise
     return stats_per_model
 
@@ -1847,7 +1847,7 @@ def compare_classifiers_multiclass_multimetric(
         for output_feature_name in output_feature_names:
             model_name_name = model_names_list[i] if model_names_list is not None and i < len(model_names_list) else ""
             if "per_class_stats" not in test_statistics[output_feature_name]:
-                logging.warning(
+                logger.warning(
                     f"The output_feature_name {output_feature_name} in test statistics does not contain "
                     + "per_class_stats, skipping it."
                 )
@@ -1932,22 +1932,22 @@ def compare_classifiers_multiclass_multimetric(
                     filename=filename,
                 )
 
-                logging.info("\n")
-                logging.info(model_name_name)
+                logger.info("\n")
+                logger.info(model_name_name)
                 tmp_str = f"{output_feature_name} best 5 classes: "
                 tmp_str += "{}"
-                logging.info(tmp_str.format(higher_f1s))
-                logging.info(f1_np[higher_f1s])
+                logger.info(tmp_str.format(higher_f1s))
+                logger.info(f1_np[higher_f1s])
                 tmp_str = f"{output_feature_name} worst 5 classes: "
                 tmp_str += "{}"
-                logging.info(tmp_str.format(lower_f1s))
-                logging.info(f1_np[lower_f1s])
+                logger.info(tmp_str.format(lower_f1s))
+                logger.info(f1_np[lower_f1s])
                 tmp_str = f"{output_feature_name} number of classes with f1 score > 0: "
                 tmp_str += "{}"
-                logging.info(tmp_str.format(np.sum(f1_np > 0)))
+                logger.info(tmp_str.format(np.sum(f1_np > 0)))
                 tmp_str = f"{output_feature_name} number of classes with f1 score = 0: "
                 tmp_str += "{}"
-                logging.info(tmp_str.format(np.sum(f1_np == 0)))
+                logger.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
 def compare_classifiers_predictions(
@@ -2563,6 +2563,9 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     filename_template_path = generate_filename_template_path(output_directory, filename_template)
     top_n_classes_list = convert_to_list(top_n_classes)
     k = top_n_classes_list[0]
+    # If top_n_classes is greater than the maximum number of tokens, truncate to use max token size
+    if k > len(metadata[output_feature_name]["idx2str"]):
+        k = len(metadata[output_feature_name]["idx2str"])
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
     probs = probabilities_per_model

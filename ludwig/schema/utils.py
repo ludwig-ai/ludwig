@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Any as TAny
+from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Tuple, Type, Union
@@ -9,18 +9,20 @@ from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.modules.reduction_modules import reduce_mode_registry
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
-def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs):  # noqa 0821
+def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     return schema.load(kwargs)
 
 
-def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
+def load_trainer_with_kwargs(
+    model_type: str, kwargs: dict
+) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
@@ -43,8 +45,11 @@ def load_trainer_with_kwargs(model_type: str, kwargs):  # noqa: F821
 
 def load_config_with_kwargs(
     cls: Type["BaseMarshmallowConfig"], kwargs_overrides
-) -> "BaseMarshmallowConfig":  # noqa 0821
-    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema."""
+) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
+    """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
+
+    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are no present in config.
+    """
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
     fields = schema.fields.keys()
@@ -136,7 +141,7 @@ def String(
                 dump_default=default,
                 metadata={"description": description},
             ),
-            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         default=default,
     )
@@ -174,7 +179,7 @@ def StringOptions(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -198,7 +203,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -226,7 +231,7 @@ def Integer(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -258,7 +263,7 @@ def PositiveInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -293,7 +298,7 @@ def NonNegativeInteger(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -332,7 +337,7 @@ def IntegerRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -365,7 +370,7 @@ def NonNegativeFloat(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -403,8 +408,145 @@ def FloatRange(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
+            )
+        },
+        default=default,
+    )
+
+
+def IntegerOrSequenceOfIntegers(
+    default: Union[None, int, Tuple[int, ...], TList[int]] = None,
+    default_integer: int = None,
+    default_sequence: Union[TList[int], Tuple[int, ...]] = None,
+    allow_none=False,
+    non_negative: bool = True,
+    description="",
+):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
+    inputs."""
+
+    class IntegerOrIntegerSequenceField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, int):
+                if non_negative:
+                    if value < 0:
+                        raise ValidationError("Value must be positive.")
+                return value
+            if isinstance(value, (tuple, list)):
+                if non_negative:
+                    for v in value:
+                        if v < 0:
+                            raise ValidationError("Values must be positive.")
+                return value
+            raise ValidationError("Field should be either an integer, tuple of integers, or a list of integers")
+
+        def _jsonschema_type_mapping(self):
+            numeric_option = {
+                "type": "integer",
+                "title": "integer_option",
+                "default": default_integer,
+                "description": "Set to a valid number.",
+            }
+            sequence_option = {
+                "type": "array",
+                "title": "sequence_option",
+                "items": {"type": "number"},
+                "default": default_sequence,
+                "description": "Set to a valid number.",
+            }
+
+            oneof_list = [
+                numeric_option,
+                sequence_option,
+            ]
+
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
+
+    return field(
+        metadata={
+            "marshmallow_field": IntegerOrIntegerSequenceField(
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+            )
+        },
+        default=default,
+    )
+
+
+def PositiveIntegerOrTupleOrStringOptions(
+    options: TList[str] = None,
+    allow_none=False,
+    default: Union[None, int, Tuple[int, ...], str] = None,
+    default_integer: Union[None, int] = None,
+    default_tuple: Union[None, Tuple[int, ...]] = None,
+    default_option: Union[None, str] = None,
+    description="",
+):
+    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
+    a string value."""
+
+    class IntegerTupleStringOptionsField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, int):
+                if value < 0:
+                    raise ValidationError("Value must be positive.")
+                return value
+            if isinstance(value, tuple):
+                for v in value:
+                    if v < 0:
+                        raise ValidationError("Values must be positive.")
+                return value
+            if isinstance(value, str):
+                if value not in options:
+                    raise ValidationError(f"String value should be one of {options}")
+                return value
+
+            raise ValidationError("Field should be either an integer, tuple of integers, or a string")
+
+        def _jsonschema_type_mapping(self):
+            if None in options and not self.allow_none:
+                raise AssertionError(
+                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
+                )
+
+            # Prepare numeric option:
+            numeric_option = {
+                "type": "integer",
+                "title": "integer_option",
+                "default": default_integer,
+                "description": "Set to a valid number.",
+            }
+            tuple_option = {
+                "type": "array",
+                "title": "tuple_option",
+                "items": [{"type": "number", "minimum": 0, "maximum": 999999}] * 2,
+                "default": default_tuple,
+                "description": "Set to a valid number.",
+            }
+
+            # Prepare string option (remove None):
+            if None in options:
+                options.remove(None)
+            string_option = {
+                "type": "string",
+                "enum": options,
+                "default": default_option,
+                "title": "preconfigured_option",
+                "description": "Choose a preconfigured option.",
+            }
+            oneof_list = [
+                numeric_option,
+                tuple_option,
+                string_option,
+            ]
+
+            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
+
+    return field(
+        metadata={
+            "marshmallow_field": IntegerTupleStringOptionsField(
+                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             )
         },
         default=default,
@@ -428,8 +570,42 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
+            )
+        },
+        default_factory=lambda: default,
+    )
+
+
+def List(
+    list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""
+):
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
+    if default is not None:
+        try:
+            assert isinstance(default, list)
+
+        except Exception:
+            raise ValidationError(f"Invalid default: `{default}`")
+
+    if list_type is str:
+        field_type = fields.String()
+    elif list_type is int:
+        field_type = fields.Integer()
+    elif list_type is float:
+        field_type = fields.Float()
+    else:
+        raise ValueError(f"Invalid list type: `{list_type}`")
+
+    return field(
+        metadata={
+            "marshmallow_field": fields.List(
+                field_type,
+                allow_none=True,
+                load_default=default,
+                dump_default=default,
+                metadata={"description": description},
             )
         },
         default_factory=lambda: default,
@@ -458,7 +634,7 @@ def DictList(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -546,13 +722,6 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
             initializers = list(initializer_registry.keys())
             return {
                 "oneOf": [
-                    {
-                        "type": "string",
-                        "enum": initializers,
-                        "default": default,
-                        "title": "initializer_preconfigured_option",
-                        "description": "Pick a preconfigured initializer.",
-                    },
                     # Note: default not provided in the custom dict option:
                     {
                         "type": "object",
@@ -563,6 +732,13 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
                         "title": "initializer_custom_option",
                         "additionalProperties": True,
                         "description": "Customize an existing initializer.",
+                    },
+                    {
+                        "type": "string",
+                        "enum": initializers,
+                        "default": default,
+                        "title": "initializer_preconfigured_option",
+                        "description": "Pick a preconfigured initializer.",
                     },
                 ],
                 "title": self.name,
@@ -580,31 +756,42 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
     )
 
 
-def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max=1, description=""):
-    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim. tuple with all values in given
-    range.
+def FloatRangeTupleDataclassField(
+    n=2, default: Tuple = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
+):
+    """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
-    In particular, inputs must be N-dimensional tuples of purely numeric values within [min, max] range, i.e. inclusive.
-    The generated JSON schema uses a restricted array type as the equivalent representation of a Python tuple.
+    tuple with all values in given range. In particular, inputs must be N-dimensional tuples of purely numeric values
+    within [min, max] range, i.e. inclusive. The generated JSON schema uses a restricted array type as the equivalent
+    representation of a Python tuple.
     """
-    if N != len(default):
-        raise ValidationError(f"Dimension of tuple '{N}' must match dimension of default val. '{default}'")
+    if default is not None and n != len(default):
+        raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
     class FloatTupleMarshmallowField(fields.Tuple):
         def _jsonschema_type_mapping(self):
-            validate_range(default)
+            if default is not None:
+                validate_range(default)
             return {
-                "type": "array",
-                "items": [
+                "oneOf": [
                     {
-                        "type": "number",
-                        "minimum": min,
-                        "maximum": max,
-                    }
-                ]
-                * N,
+                        "type": "array",
+                        "items": [
+                            {
+                                "type": "number",
+                                "minimum": min,
+                                "maximum": max,
+                            }
+                        ]
+                        * n,
+                        "default": default,
+                        "description": description,
+                    },
+                    {"type": "null", "title": "null_float_tuple_option", "description": "None"},
+                ],
+                "title": self.name,
                 "default": default,
-                "description": description,
+                "description": "Valid options for FloatRangeTupleDataclassField.",
             }
 
     def validate_range(data: Tuple):
@@ -614,18 +801,21 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
             )
-        raise ValidationError(f'Received value should be of {N}-dimensional "Tuple[float]", instead received: {data}')
+        raise ValidationError(f'Received value should be of {n}-dimensional "Tuple[float]", instead received: {data}')
 
     try:
-        validate_range(default)
+        if default is not None:
+            validate_range(default)
+        if default is None and not allow_none:
+            raise ValidationError("Default value must not be None if allow_none is False")
     except Exception:
         raise ValidationError(f"Invalid default: `{default}`")
 
     return field(
         metadata={
             "marshmallow_field": FloatTupleMarshmallowField(
-                tuple_fields=[fields.Float()] * N,
-                allow_none=False,
+                tuple_fields=[fields.Float()] * n,
+                allow_none=allow_none,
                 validate=validate_range,
                 load_default=default,
                 dump_default=default,
@@ -637,13 +827,10 @@ def FloatRangeTupleDataclassField(N=2, default: Tuple = (0.9, 0.999), min=0, max
 
 
 def OneOfOptionsField(
-    default: TAny,
-    description: str,
-    allow_none: bool,
-    field_options: TList,
-    parameter_metadata: ParameterMetadata = None,
+    default: Any, description: str, allow_none: bool, field_options: TList, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
+    field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
@@ -687,16 +874,16 @@ def OneOfOptionsField(
 
                     @m_dataclass
                     class DummyClass:
-                        tmp: TAny = option
+                        tmp: Any = option
 
                     dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
                     tmp_json_schema = dummy_schema["properties"]["tmp"]
                     oneOf["oneOf"].append(tmp_json_schema)
 
-            # Add null as an option if applicable:
+            # Add null as an option if none of the field options allow none:
             oneOf["oneOf"] += (
                 [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none
+                if allow_none and not field_options_allow_none
                 else []
             )
 
@@ -718,7 +905,7 @@ def OneOfOptionsField(
             "marshmallow_field": OneOfOptionsCombinatorialField(
                 allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
             ),
-            "parameter_metadata": parameter_metadata.to_json() if parameter_metadata else None,
+            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         **default_kwarg,
     )
