@@ -274,20 +274,17 @@ class DatasetLoader:
         """
         file_extension = os.path.splitext(file_path)[-1].lower()
         if file_extension == ".json":
-            df = pd.read_json(file_path)
+            return pd.read_json(file_path)
         elif file_extension == ".jsonl":
-            df = pd.read_json(file_path, lines=True)
+            return pd.read_json(file_path, lines=True)
         elif file_extension == ".tsv":
-            df = pd.read_table(file_path)
-        elif file_extension == ".csv" or file_extension == ".data":
-            df = pd.read_csv(file_path)
+            return pd.read_table(file_path)
+        elif file_extension in {".csv", ".data"}:
+            return pd.read_csv(file_path)
         elif file_extension == ".parquet":
-            df = pd.read_parquet(file_path)
+            return pd.read_parquet(file_path)
         else:
             raise ValueError(f"Unsupported dataset file type: {file_extension}")
-        if self.config.columns:
-            df = df.set_axis(self.config.columns, axis=1)
-        return df
 
     def load_files_to_dataframe(self, file_paths: List[str], root_dir=None) -> pd.DataFrame:
         """Loads a file or list of files and returns a dataframe.
@@ -297,6 +294,8 @@ class DatasetLoader:
         if root_dir:
             file_paths = [os.path.join(root_dir, path) for path in file_paths]
         dataframes = [self.load_file_to_dataframe(path) for path in file_paths]
+        if self.config.columns:
+            dataframes = [df.set_axis(self.config.columns, axis=1) for df in dataframes]
         return pd.concat(dataframes, ignore_index=True)
 
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
@@ -314,15 +313,15 @@ class DatasetLoader:
         dataframes = []
         if len(train_paths) > 0:
             train_df = self.load_files_to_dataframe(train_paths)
-            train_df["split"] = 0
+            train_df[SPLIT] = 0
             dataframes.append(train_df)
         if len(validation_paths) > 0:
             validation_df = self.load_files_to_dataframe(validation_paths)
-            validation_df["split"] = 1
+            validation_df[SPLIT] = 1
             dataframes.append(validation_df)
         if len(test_paths) > 0:
             test_df = self.load_files_to_dataframe(test_paths)
-            test_df["split"] = 2
+            test_df[SPLIT] = 2
             dataframes.append(test_df)
         # If we have neither train/validation/test files nor dataset_paths in the config, use data files in root dir.
         if len(dataset_paths) == len(dataframes) == 0:

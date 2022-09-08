@@ -1,0 +1,27 @@
+version: 1.0
+name: adult_census_income
+download_urls:
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+  - https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test
+train_filenames: adult.data
+test_filenames: adult.test
+columns:
+  - age
+  - workclass
+  - fnlwgt
+  - education
+  - education-num
+  - marital-status
+  - occupation
+  - relationship
+  - race
+  - sex
+  - capital-gain
+  - capital-loss
+  - hours-per-week
+  - native-country
+  - income
+loader: adult_census_income.AdultCensusIncomeLoader
+description: |
+  Predict whether income exceeds $50K/yr based on census data
+  https://archive.ics.uci.edu/ml/datasets/adult
