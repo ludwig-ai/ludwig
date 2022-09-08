@@ -117,7 +117,7 @@ class MetricsDiff:
     # `MetricsSummary` of the experimental_experiment.
     experimental_summary: MetricsSummary
 
-    # `List[Diff]` containing diffs for metric of the two experiments.
+    # `List[MetricDiff]` containing diffs for metric of the two experiments.
     metrics: List[MetricDiff]
 
     def to_string(self):
