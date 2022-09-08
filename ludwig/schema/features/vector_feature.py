@@ -1,5 +1,3 @@
-from typing import List
-
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import MEAN_SQUARED_ERROR, VECTOR
@@ -9,9 +7,14 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(VECTOR)
 @dataclass
 class VectorInputFeatureConfig(BaseInputFeatureConfig):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
@@ -31,9 +34,12 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(VECTOR)
 @dataclass
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")
 
     reduce_input: str = schema_utils.ReductionOptions(
         default=None,
@@ -52,12 +58,9 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         description="The size of the vector. If None, the vector size will be inferred from the data.",
     )
 
-    loss: dict = schema_utils.Dict(
-        default={
-            "type": MEAN_SQUARED_ERROR,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=VECTOR,
+        default=MEAN_SQUARED_ERROR,
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
@@ -65,7 +68,13 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default="projector",
     )
 
-    dependencies: List = schema_utils.List(
+    dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+    )
+
+    softmax: bool = schema_utils.Boolean(
+        default=False,
+        description="Determines whether to apply a softmax at the end of the decoder. This is useful for predicting a "
+        "vector of values that sum up to 1 and can be interpreted as probabilities.",
     )

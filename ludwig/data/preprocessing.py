@@ -1136,7 +1136,7 @@ def build_dataset(
         dataset_cols, feature_configs, global_preprocessing_parameters, backend, metadata=metadata
     )
 
-    # Happens after preprocessing parameters are built so we can use precomputed fill values.
+    # Happens after preprocessing parameters are built, so we can use precomputed fill values.
     logging.debug("handle missing values")
 
     # In some cases, there can be a (temporary) mismatch between the dtype of the column and the type expected by the

@@ -29,10 +29,23 @@ from ludwig.constants import (
     LOGITS,
     NUMBER,
     SEQUENCE,
+    SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     SET,
+    SIGMOID_CROSS_ENTROPY,
+    SOFTMAX_CROSS_ENTROPY,
     TEXT,
     TIMESERIES,
     VECTOR,
+)
+from ludwig.schema.features.loss.loss import (
+    BWCEWLossConfig,
+    MAELossConfig,
+    MSELossConfig,
+    RMSELossConfig,
+    RMSPELossConfig,
+    SequenceSoftmaxCrossEntropyLossConfig,
+    SigmoidCrossEntropyLossConfig,
+    SoftmaxCrossEntropyLossConfig,
 )
 from ludwig.utils import strings_utils
 from ludwig.utils.registry import Registry
@@ -61,6 +74,10 @@ def get_loss_cls(feature: str, name: str):
     return loss_registry[feature][name]
 
 
+def get_loss_classes(feature: str):
+    return loss_registry[feature]
+
+
 class LogitsInputsMixin:
     @classmethod
     def get_loss_inputs(cls):
@@ -75,6 +92,10 @@ class MSELoss(_MSELoss, LogitsInputsMixin):
     def __init__(self, **kwargs):
         super().__init__()
 
+    @staticmethod
+    def get_schema_cls():
+        return MSELossConfig
+
 
 @register_loss("mean_absolute_error", [NUMBER, TIMESERIES, VECTOR])
 class MAELoss(L1Loss, LogitsInputsMixin):
@@ -82,6 +103,10 @@ class MAELoss(L1Loss, LogitsInputsMixin):
 
     def __init__(self, **kwargs):
         super().__init__()
+
+    @staticmethod
+    def get_schema_cls():
+        return MAELossConfig
 
 
 @register_loss("root_mean_squared_error", [NUMBER])
@@ -95,6 +120,10 @@ class RMSELoss(nn.Module, LogitsInputsMixin):
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         return torch.sqrt(self.mse(preds, target))
 
+    @staticmethod
+    def get_schema_cls():
+        return RMSELossConfig
+
 
 @register_loss("root_mean_squared_percentage_error", [NUMBER])
 class RMSPELoss(nn.Module, LogitsInputsMixin):
@@ -106,6 +135,10 @@ class RMSPELoss(nn.Module, LogitsInputsMixin):
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         loss = utils.rmspe_loss(target, preds)
         return loss
+
+    @staticmethod
+    def get_schema_cls():
+        return RMSPELossConfig
 
 
 @register_loss(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
@@ -143,8 +176,12 @@ class BWCEWLoss(nn.Module, LogitsInputsMixin):
 
         return train_mean_loss
 
+    @staticmethod
+    def get_schema_cls():
+        return BWCEWLossConfig
 
-@register_loss("softmax_cross_entropy", [CATEGORY, VECTOR])
+
+@register_loss(SOFTMAX_CROSS_ENTROPY, [CATEGORY, VECTOR])
 class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
@@ -167,8 +204,12 @@ class SoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         target = target.long()
         return self.loss_fn(preds, target)
 
+    @staticmethod
+    def get_schema_cls():
+        return SoftmaxCrossEntropyLossConfig
 
-@register_loss("sequence_softmax_cross_entropy", [SEQUENCE, TEXT])
+
+@register_loss(SEQUENCE_SOFTMAX_CROSS_ENTROPY, [SEQUENCE, TEXT])
 class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, **kwargs):
         """
@@ -187,8 +228,12 @@ class SequenceSoftmaxCrossEntropyLoss(nn.Module, LogitsInputsMixin):
         target = target.long()
         return self.loss_fn(preds[1:].view(-1, preds.size(-1)), target[1:].view(-1))
 
+    @staticmethod
+    def get_schema_cls():
+        return SequenceSoftmaxCrossEntropyLossConfig
 
-@register_loss("sigmoid_cross_entropy", [SET])
+
+@register_loss(SIGMOID_CROSS_ENTROPY, [SET])
 class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
     def __init__(self, class_weights: Optional[Union[Tensor, List]] = None, **kwargs):
         """
@@ -206,3 +251,7 @@ class SigmoidCrossEntropyLoss(nn.Module, LogitsInputsMixin):
             raise RuntimeError("SigmoidCrossEntropyLoss currently supported for 2D tensors.")
 
         return self.loss_fn(preds.type(torch.float32), target.type(torch.float32))
+
+    @staticmethod
+    def get_schema_cls():
+        return SigmoidCrossEntropyLossConfig

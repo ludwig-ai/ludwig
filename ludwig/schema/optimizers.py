@@ -135,7 +135,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     amsgrad: bool = Boolean(
         default=False,
         description=(
-            "Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam and"
+            "Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam and "
             "Beyond'."
         ),
     )
@@ -216,9 +216,11 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     betas: Tuple[float, float] = FloatRangeTupleDataclassField(
         default=(0.9, 0.999), description="Coefficients used for computing running averages of gradient and its square."
     )
+
     eps: float = NonNegativeFloat(
         default=1e-08, description="Term added to the denominator to improve numerical stability."
     )
+
     weight_decay: float = NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 

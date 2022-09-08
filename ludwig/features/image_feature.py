@@ -131,7 +131,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return ImageInputFeatureConfig().preprocessing.__dict__
+        return ImageInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):

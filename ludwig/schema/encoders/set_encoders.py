@@ -2,10 +2,13 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import SET
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@register_encoder_config("embed", SET)
 @dataclass
 class SetSparseEncoderConfig(BaseEncoderConfig):
 
