@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import glob
 import logging
 import os
 import urllib
@@ -28,6 +28,7 @@ from ludwig.constants import SPLIT
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.kaggle import download_kaggle_dataset
+from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,13 @@ class TqdmUpTo(tqdm):
 def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
     """Helper function to accept single string or lists in config."""
     return [list_or_string] if isinstance(list_or_string, str) else list_or_string
+
+
+def _glob(pathname, root_dir=None, recursive=False):
+    """Version of glob for compatibility, since root_dir is only added in python 3.10."""
+    if root_dir:
+        pathname = os.path.join(root_dir, pathname)
+    return glob.glob(pathname, recursive=recursive)
 
 
 class DatasetState(int, Enum):
@@ -125,8 +133,6 @@ class DatasetLoader:
     @property
     def processed_dataset_filename(self):
         """Filename for processed data."""
-        from ludwig.utils.strings_utils import make_safe_filename
-
         return f"{make_safe_filename(self.config.name)}.parquet"
 
     @property
@@ -169,18 +175,6 @@ class DatasetLoader:
         if self.config.archive_filenames:
             return _list_of_strings(self.config.archive_filenames)
         return [os.path.basename(urlparse(url).path) for url in self.download_urls]
-
-    # @property
-    # def raw_dataset_filenames(self):
-    #     """Returns the set of filenames expected to be present after download and extract."""
-    #     expected_filenames = set([
-    #         *_list_of_strings(self.config.dataset_filenames),
-    #         *_list_of_strings(self.config.train_filenames),
-    #         *_list_of_strings(self.config.test_filenames),
-    #         *_list_of_strings(self.config.validation_filenames)
-    #     ])
-    #     # If no files are explicitly declared, infer filenames from download_urls.
-    #     return expected_filenames
 
     def description(self):
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
@@ -270,23 +264,93 @@ class DatasetLoader:
                 os.symlink(source_directory, dest_directory)
         return data_files
 
+    def load_file_to_dataframe(self, file_path: str) -> pd.DataFrame:
+        """Loads a file into a dataframe.
+
+        Subclasses may override this method to support other input formats (json, jsonl, tsv, csv, parquet)
+        """
+        file_extension = os.path.splitext(file_path)[-1].lower()
+        if file_extension == ".json":
+            df = pd.read_json(file_path)
+        elif file_extension == ".jsonl":
+            df = pd.read_json(file_path, lines=True)
+        elif file_extension == ".tsv":
+            df = pd.read_table(file_path)
+        elif file_extension == ".csv" or file_extension == ".data":
+            df = pd.read_csv(file_path)
+        elif file_extension == ".parquet":
+            df = pd.read_parquet(file_path)
+        else:
+            raise ValueError(f"Unsupported dataset file type: {file_extension}")
+        if self.config.columns:
+            df = df.set_axis(self.config.columns, axis=1)
+        return df
+
+    def load_files_to_dataframe(self, file_paths: List[str], root_dir=None) -> pd.DataFrame:
+        """Loads a file or list of files and returns a dataframe.
+
+        Subclasses may override this method to change the loader's behavior for groups of files.
+        """
+        if root_dir:
+            file_paths = [os.path.join(root_dir, path) for path in file_paths]
+        dataframes = [self.load_file_to_dataframe(path) for path in file_paths]
+        return pd.concat(dataframes, ignore_index=True)
+
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
-        """Load dataset files into a dataframe."""
-        if len(file_paths) == 1:
-            path_to_load = file_paths[0]
-            file_extension = os.path.splitext(path_to_load)[-1].lower()
-            if file_extension == ".parquet":
-                return pd.read_parquet(path_to_load)
-            elif file_extension == ".csv":
-                return pd.read_csv(path_to_load)
+        """Load dataset files into a dataframe.
+
+        Will use the list of data files in the dataset directory as a default if all of config's dataset_filenames,
+        train_filenames, validation_filenames, test_filenames are empty.
+        """
+        dataset_paths = set().union(
+            *[
+                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
+                for p in _list_of_strings(self.config.dataset_filenames)
+            ]
+        )
+        train_paths = set().union(
+            *[
+                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
+                for p in _list_of_strings(self.config.train_filenames)
+            ]
+        )
+        validation_paths = set().union(
+            *[
+                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
+                for p in _list_of_strings(self.config.validation_filenames)
+            ]
+        )
+        test_paths = set().union(
+            *[
+                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
+                for p in _list_of_strings(self.config.test_filenames)
+            ]
+        )
+        dataframes = []
+        if len(train_paths) > 0:
+            train_df = self.load_files_to_dataframe(train_paths)
+            train_df["split"] = 0
+            dataframes.append(train_df)
+        if len(validation_paths) > 0:
+            validation_df = self.load_files_to_dataframe(validation_paths)
+            validation_df["split"] = 1
+            dataframes.append(validation_df)
+        if len(test_paths) > 0:
+            test_df = self.load_files_to_dataframe(test_paths)
+            test_df["split"] = 2
+            dataframes.append(test_df)
+        # If we have neither train/validation/test files nor dataset_paths in the config, use data files in root dir.
+        if len(dataset_paths) == len(dataframes) == 0:
+            dataset_paths = file_paths
+        if len(dataset_paths) > 0:
+            dataframes.append(self.load_files_to_dataframe(dataset_paths))
+        return pd.concat(dataframes, ignore_index=True)
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         """Transforms a dataframe of the entire dataset.
 
         Subclasses should override this method if transformation of the dataframe is needed.
         """
-        if self.config.columns:
-            dataframe = dataframe.set_axis(self.config.columns, axis=1)
         return dataframe
 
     def save_processed(self, dataframe: pd.DataFrame):
