@@ -40,7 +40,7 @@ with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:
 
 setup(
     name="ludwig",
-    version="0.6.dev",
+    version="0.6.beta",
     description="Data-centric declarative deep learning framework",
     long_description=long_description,
     long_description_content_type="text/markdown",
