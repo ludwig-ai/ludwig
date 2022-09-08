@@ -225,6 +225,8 @@ POSTPROCESSOR = "postprocessor"
 
 S3 = "s3"
 CACHE = "cache"
-EXPERIMENT_RUN = "experiment_run"
-TRAIN_TAG = "train"
-EVAL_TAG = "evaluate"
+
+# If `use_torch_profiler=True` in LudwigProfiler, LUDWIG_TAG is prepended to the specified experiment tag
+# (LudwigProfiler(tag="...", ..)). This edited tag is passed in to `torch.profiler.record_function` so we can
+# retrieve torch ops for the tagged code blocks/functions.
+LUDWIG_TAG = "[ludwig]"
