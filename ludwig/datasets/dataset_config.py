@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 
 @dataclass
 class DatasetConfig:
-    """Data-driven way to declare a Ludwig dataset."""
+    """A config object which declares a Ludwig dataset, making it available in ludwig.datasets."""
 
     # The version of the dataset.
     version: str
@@ -42,5 +42,6 @@ class DatasetConfig:
     # already present in the dataset.
     columns: List[str] = field(default_factory=list)
 
-    # Custom dataset implementation, must be provided by @register_dataset. See datasets/registry.py
-    custom_implementation: Optional[str] = None
+    # The loader module and class to use, relative to ludwig.datasets.loaders. Only change this if the dataset requires
+    # processing which is not handled by the default loader.
+    loader: str = "dataset_loader.DatasetLoader"

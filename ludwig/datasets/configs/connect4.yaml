@@ -1,0 +1,9 @@
+version: 1.0
+name: connect-4
+kaggle_dataset_id: tbrewer/connect-4
+archive_filenames: connect-4.zip
+dataset_filenames: c4_game_database.csv
+description: |
+  Each row represents the end results of a Connect-4 game.
+  Columns 1-42 are the positions on the grid from left to right, top to bottom. Each element in these columns represent to player's piece : 1, and -1, 0 marks an empty cell.
+  Column 43 marks the winner of the game : -1, 1, and 0 for tie games.

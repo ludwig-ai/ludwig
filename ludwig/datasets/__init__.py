@@ -1,58 +1,55 @@
 import argparse
 import importlib
 import os
-import pkgutil
 import shutil
-from typing import List
+from functools import cache
+from typing import Dict, List
 
 import yaml
 
-from ludwig.datasets.registry import dataset_registry
+from ludwig.datasets import configs
+from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 
 
-def _import_submodules():
-    from ludwig import datasets
-
-    for _, name, _ in pkgutil.walk_packages(datasets.__path__):
-        if name not in {"archives", "dataset", "kaggle"} and "_workflow" not in name:
-            full_name = datasets.__name__ + "." + name
-            importlib.import_module(full_name)
+def _load_dataset_config(config_filename: str):
+    """Loads a dataset config."""
+    config_path = os.path.join(os.path.dirname(configs.__file__), config_filename)
+    with open(config_path) as f:
+        return DatasetConfig(**yaml.safe_load(f))
 
 
-def _import_dataset_configs():
-    """Generates dataset instances from config files.
-
-    Must be called after _import_submodules for those configs which require a custom implementation.
-    """
-    from ludwig.datasets import configs
-    from ludwig.datasets.dataset import Dataset, DatasetConfig
+@cache
+def _get_dataset_configs() -> Dict[str, DatasetConfig]:
+    """Returns all dataset configs indexed by name."""
+    import importlib.resources
 
     config_files = [f for f in importlib.resources.contents(configs) if f.endswith(".yaml")]
-    for config_file in config_files:
-        config_path = os.path.join(os.path.dirname(configs.__file__), config_file)
-        with open(config_path) as f:
-            dataset_config = DatasetConfig(**yaml.safe_load(f))
-            dataset_registry[dataset_config.name] = Dataset(dataset_config)
+    config_objects = [_load_dataset_config(f) for f in config_files]
+    return {c.name: c for c in config_objects}
 
 
-# _import_submodules()
-_import_dataset_configs()
-
-# TODO: generate datasets from configs
+def _instantiate_dataset_loader(dataset_name):
+    """Instantiates the dataset loader for a given dataset."""
+    config = _get_dataset_configs()[dataset_name]
+    class_name = config.loader.split(".")[-1]
+    module_name = "." + ".".join(config.loader.split(".")[:-1])
+    loader_module = importlib.import_module(module_name, package="ludwig.datasets.loaders")
+    loader_cls = getattr(loader_module, class_name)
+    return loader_cls(config)
 
 
 def list_datasets() -> List[str]:
-    return list(dataset_registry.keys())
+    return sorted(_get_dataset_configs().keys())
 
 
-def describe_dataset(dataset: str) -> str:
-    return dataset_registry[dataset].description()
+def describe_dataset(dataset_name: str) -> str:
+    return _get_dataset_configs[dataset_name].description
 
 
 def download_dataset(dataset_name: str, output_dir: str = "."):
-    dataset = dataset_registry[dataset_name]
+    dataset = _instantiate_dataset_loader(dataset_name)
     _ = dataset.load()
     processed_path = dataset.processed_dataset_dir
     _copytree(processed_path, output_dir, dirs_exist_ok=True)

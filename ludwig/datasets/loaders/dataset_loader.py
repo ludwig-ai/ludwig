@@ -68,8 +68,8 @@ class DatasetState(int, Enum):
     TRANSFORMED = 3
 
 
-class Dataset:
-    """Base class that defines the public interface for the ludwig dataset API.
+class DatasetLoader:
+    """Base class that defines the default pipeline for loading a ludwig dataset.
 
     Clients will typically call load(), which processes the dataset according to the config.
 

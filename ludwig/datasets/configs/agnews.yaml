@@ -1,0 +1,10 @@
+version: 1.0
+name: agnews
+download_urls:
+  - https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/train.csv
+  - https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/test.csv
+train_filenames: train.csv
+test_filenames: test.csv
+columns: [class_index, title, description]
+description: |
+  News articles categorized as "World", "Sports", "Business", and "Science".
