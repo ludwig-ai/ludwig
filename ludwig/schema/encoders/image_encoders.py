@@ -534,7 +534,6 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Directory path to cache pretrained model weights.",
     )
 
-
     trainable: bool = schema_utils.Boolean(
         default=True,
         description="Is the encoder trainable.",
