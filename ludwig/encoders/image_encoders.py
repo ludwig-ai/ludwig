@@ -428,14 +428,13 @@ class ViTEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-        self,
-        torchvision_model_type: Optional[str] = None,
-        model_variant: Union[str, int] = None,
-        use_pretrained_weights: bool = False,
-        remove_last_layer: bool = True,
-        model_cache_dir: Optional[str] = None,
-        trainable: bool = True,
-        **kwargs,
+            self,
+            torchvision_model_type: Optional[str] = None,
+            model_variant: Union[str, int] = None,
+            use_pretrained_weights: bool = True,
+            model_cache_dir: Optional[str] = None,
+            trainable: bool = True,
+            **kwargs,
     ):
         super().__init__()
 
@@ -465,9 +464,8 @@ class TVBaseEncoder(Encoder):
         # create pretrained model with specified weights
         self.model = self.model_type(weights=self.pretrained_weights)
 
-        # if requested, remove final classification layer
-        if remove_last_layer:
-            self._remove_last_layer()
+        # remove final classification layer
+        self._remove_last_layer()
 
         # freeze parameters if requested
         for p in self.model.parameters():

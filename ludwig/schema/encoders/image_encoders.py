@@ -526,7 +526,7 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
     )
 
     use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Download model weights from pre-trained model.",
     )
 
@@ -534,10 +534,6 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Directory path to cache pretrained model weights.",
     )
 
-    remove_last_layer: Optional[bool] = schema_utils.Boolean(
-        default=True,
-        description="Remove last layer of the encoder.",
-    )
 
     trainable: bool = schema_utils.Boolean(
         default=True,
@@ -554,17 +550,12 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
     )
 
     use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Download model weights from pre-trained model.",
     )
 
     model_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
-    )
-
-    remove_last_layer: Optional[bool] = schema_utils.Boolean(
-        default=True,
-        description="Remove last layer of the encoder.",
     )
 
     trainable: bool = schema_utils.Boolean(

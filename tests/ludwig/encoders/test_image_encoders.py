@@ -99,7 +99,6 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 
 
 @pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("remove_last_layer", [True, False])
 @pytest.mark.parametrize(
     "use_pretrained_weights",
     [
@@ -119,7 +118,6 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 def test_tv_resnet_encoder(
     model_variant: int,
     use_pretrained_weights: bool,
-    remove_last_layer: bool,
     trainable: bool,
 ):
     # make repeatable
@@ -127,7 +125,6 @@ def test_tv_resnet_encoder(
 
     pretrained_model = TVResNetEncoder(
         model_variant=model_variant,
-        remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
         trainable=trainable,
     )
@@ -143,7 +140,6 @@ def test_tv_resnet_encoder(
 
 
 @pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize("remove_last_layer", [True, False])
 @pytest.mark.parametrize(
     "use_pretrained_weights",
     [
@@ -161,7 +157,6 @@ def test_tv_resnet_encoder(
 def test_tv_vgg_encoder(
     model_variant: int,
     use_pretrained_weights: bool,
-    remove_last_layer: bool,
     trainable: bool,
 ):
     # make repeatable
@@ -169,7 +164,6 @@ def test_tv_vgg_encoder(
 
     pretrained_model = TVVGGEncoder(
         model_variant=model_variant,
-        remove_last_layer=remove_last_layer,
         use_pretrained_weights=use_pretrained_weights,
         trainable=trainable,
     )
