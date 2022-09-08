@@ -6,7 +6,7 @@ import shutil
 from typing import Any, Dict, Union
 
 from ludwig.api import LudwigModel
-from ludwig.benchmarking.utils import export_artifacts, load_from_module
+from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils.data_utils import load_yaml
 
@@ -51,6 +51,7 @@ def benchmark_one_local(experiment: Dict[str, str], export_artifacts_dict: Dict[
         skip_save_predictions=True,
         skip_collect_predictions=True,
     )
+    delete_model_checkpoints(output_directory)
     if export_artifacts_dict["export_artifacts"]:
         export_base_path = export_artifacts_dict["export_base_path"]
         export_artifacts(experiment, output_directory, export_base_path)
