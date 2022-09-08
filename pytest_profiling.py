@@ -1,4 +1,5 @@
 import pytest
+
 from ludwig.benchmarking.profiler import LudwigProfiler
 
 

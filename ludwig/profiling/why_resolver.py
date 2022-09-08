@@ -1,15 +1,16 @@
-from whylogs.core.resolvers import Resolver
-from whylogs.core.datatypes import DataType, Fractional, Integral, String
-from typing import Dict, List
-from whylogs.core.metrics import StandardMetric
-from whylogs.core.metrics.metrics import Metric, OperationResult, MetricConfig
-from whylogs.core.metrics.metric_components import FractionalComponent
-from whylogs.core.preprocessing import PreprocessedColumn
-from typing import Any
 from dataclasses import dataclass
+from typing import Any, Dict, List
+
 from whylogs.core.configs import SummaryConfig
-from ludwig.utils.image_utils import is_image_score
+from whylogs.core.datatypes import DataType, Fractional, Integral, String
+from whylogs.core.metrics import StandardMetric
+from whylogs.core.metrics.metric_components import FractionalComponent
+from whylogs.core.metrics.metrics import Metric, MetricConfig, OperationResult
+from whylogs.core.preprocessing import PreprocessedColumn
+from whylogs.core.resolvers import Resolver
+
 from ludwig.utils.audio_utils import is_audio_score
+from ludwig.utils.image_utils import is_image_score
 
 
 @dataclass(frozen=True)
@@ -73,9 +74,8 @@ class IsAudioMetric(Metric):
 
 
 class LudwigWhyResolver(Resolver):
-    """Default whylogs resolver with additional metrics for the String type to support Ludwig type inference for image
-    and audio columns.
-    """
+    """Default whylogs resolver with additional metrics for the String type to support Ludwig type inference for
+    image and audio columns."""
 
     def resolve(self, name: str, why_type: DataType, column_schema) -> Dict[str, Metric]:
         metrics: List[StandardMetric] = [StandardMetric.counts, StandardMetric.types]

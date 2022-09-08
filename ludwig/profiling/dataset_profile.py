@@ -3,15 +3,15 @@ import time
 from typing import Dict, Union
 
 import whylogs as why
+from whylogs.core.proto import ColumnMessage
 from whylogs.core.view.column_profile_view import ColumnProfileView
 from whylogs.core.view.dataset_profile_view import DatasetProfileView
-from whylogs.core.proto import ColumnMessage
 
-from ludwig.utils.types import DataFrame
-from ludwig.utils.data_utils import load_dataset
 from ludwig.profiling import dataset_profile_pb2
 from ludwig.profiling.why_schema import LudwigWhySchema
 from ludwig.utils.automl.field_info import FieldInfo
+from ludwig.utils.data_utils import load_dataset
+from ludwig.utils.types import DataFrame
 
 
 def get_dataset_profile_view(dataset: Union[str, DataFrame]) -> DatasetProfileView:

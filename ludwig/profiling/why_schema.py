@@ -1,8 +1,8 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
-from whylogs.core.resolvers import Resolver
-from whylogs.core.metrics.metrics import MetricConfig
 from whylogs.core import DatasetSchema
+from whylogs.core.metrics.metrics import MetricConfig
+from whylogs.core.resolvers import Resolver
 
 from ludwig.profiling.why_resolver import LudwigWhyResolver
 
