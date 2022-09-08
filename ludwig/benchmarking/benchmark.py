@@ -38,7 +38,6 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
     dataset_module = importlib.import_module(f"ludwig.datasets.{experiment['dataset_name']}")
     dataset = load_from_module(dataset_module, model_config["output_features"][0])
 
-
     if experiment["hyperopt"]:
         # run hyperopt
         hyperopt(
