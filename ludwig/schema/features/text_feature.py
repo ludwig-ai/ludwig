@@ -7,9 +7,14 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(TEXT)
 @dataclass
 class TextInputFeatureConfig(BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
@@ -22,21 +27,16 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(TEXT)
 @dataclass
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
-    loss: dict = schema_utils.Dict(
-        default={
-            "type": SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-            "class_weights": 1,
-            "robust_lambda": 0,
-            "confidence_penalty": 0,
-            "class_similarities_temperature": 0,
-            "weight": 1,
-            "unique": False,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=TEXT,
+        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(

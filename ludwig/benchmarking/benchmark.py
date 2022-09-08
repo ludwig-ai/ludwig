@@ -6,7 +6,7 @@ import shutil
 from typing import Any, Dict, Union
 
 from ludwig.api import LudwigModel
-from ludwig.benchmarking.utils import export_artifacts, load_from_module
+from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
@@ -38,6 +38,7 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
     dataset_module = importlib.import_module(f"ludwig.datasets.{experiment['dataset_name']}")
     dataset = load_from_module(dataset_module, model_config["output_features"][0])
 
+
     if experiment["hyperopt"]:
         # run hyperopt
         hyperopt(
@@ -63,6 +64,7 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
             skip_save_predictions=True,
             skip_collect_predictions=True,
         )
+        delete_model_checkpoints(output_directory)
 
 
 def benchmark(bench_config_path: str) -> None:

@@ -17,6 +17,7 @@ from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin
 from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema import validate_config
+from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     audio_feature,
@@ -248,4 +249,52 @@ def test_validate_with_preprocessing_defaults():
 
     validate_config(config)
     config = merge_with_defaults(config)
+    validate_config(config)
+
+
+def test_defaults_schema():
+    schema = DefaultsConfig()
+    assert schema.binary.decoder.type == "regressor"
+    assert schema.binary.encoder.type == "passthrough"
+
+    assert schema.category.top_k == 3
+    assert schema.category.encoder.dropout == 0.0
+
+
+def test_validate_defaults_schema():
+    config = {
+        "input_features": [
+            category_feature(),
+            number_feature(),
+        ],
+        "output_features": [category_feature()],
+        "defaults": {
+            "category": {
+                "preprocessing": {
+                    "missing_value_strategy": "drop_row",
+                },
+                "encoder": {
+                    "type": "sparse",
+                },
+                "decoder": {
+                    "type": "classifier",
+                    "norm_params": None,
+                    "dropout": 0.0,
+                    "use_bias": True,
+                },
+                "loss": {
+                    "type": "softmax_cross_entropy",
+                    "confidence_penalty": 0,
+                },
+            },
+            "number": {
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": 0,
+                },
+                "loss": {"type": "mean_absolute_error"},
+            },
+        },
+    }
+
     validate_config(config)

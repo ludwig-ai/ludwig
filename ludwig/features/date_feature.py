@@ -55,7 +55,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return DateInputFeatureConfig().preprocessing.__dict__
+        return DateInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):

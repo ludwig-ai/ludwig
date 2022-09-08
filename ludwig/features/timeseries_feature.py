@@ -109,7 +109,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return TimeseriesInputFeatureConfig().preprocessing.__dict__
+        return TimeseriesInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
