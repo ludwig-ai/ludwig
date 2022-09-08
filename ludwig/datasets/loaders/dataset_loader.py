@@ -18,7 +18,7 @@ import os
 import urllib
 from enum import Enum
 from pathlib import Path
-from typing import List, Union
+from typing import List, Set, Union
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -60,11 +60,14 @@ def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
     return [list_or_string] if isinstance(list_or_string, str) else list_or_string
 
 
-def _glob(pathname, root_dir=None, recursive=False):
-    """Version of glob for compatibility, since root_dir is only added in python 3.10."""
+def _glob_multiple(pathnames: List[str], root_dir: str = None, recursive: bool = True) -> Set[str]:
+    """Recursive glob multiple patterns, returns set of matches.
+
+    Note: glob's root_dir argument was added in python 3.10, not using it for compatibility.
+    """
     if root_dir:
-        pathname = os.path.join(root_dir, pathname)
-    return glob.glob(pathname, recursive=recursive)
+        pathnames = [os.path.join(root_dir, p) for p in pathnames]
+    return set().union(*[glob.glob(p, recursive=recursive) for p in pathnames])
 
 
 class DatasetState(int, Enum):
@@ -302,30 +305,12 @@ class DatasetLoader:
         Will use the list of data files in the dataset directory as a default if all of config's dataset_filenames,
         train_filenames, validation_filenames, test_filenames are empty.
         """
-        dataset_paths = set().union(
-            *[
-                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
-                for p in _list_of_strings(self.config.dataset_filenames)
-            ]
+        dataset_paths = _glob_multiple(_list_of_strings(self.config.dataset_filenames), root_dir=self.raw_dataset_dir)
+        train_paths = _glob_multiple(_list_of_strings(self.config.train_filenames), root_dir=self.raw_dataset_dir)
+        validation_paths = _glob_multiple(
+            _list_of_strings(self.config.validation_filenames), root_dir=self.raw_dataset_dir
         )
-        train_paths = set().union(
-            *[
-                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
-                for p in _list_of_strings(self.config.train_filenames)
-            ]
-        )
-        validation_paths = set().union(
-            *[
-                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
-                for p in _list_of_strings(self.config.validation_filenames)
-            ]
-        )
-        test_paths = set().union(
-            *[
-                _glob(p, root_dir=self.raw_dataset_dir, recursive=True)
-                for p in _list_of_strings(self.config.test_filenames)
-            ]
-        )
+        test_paths = _glob_multiple(_list_of_strings(self.config.test_filenames), root_dir=self.raw_dataset_dir)
         dataframes = []
         if len(train_paths) > 0:
             train_df = self.load_files_to_dataframe(train_paths)
