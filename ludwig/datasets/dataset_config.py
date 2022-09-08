@@ -28,7 +28,7 @@ class DatasetConfig:
     # example https://domain.com/archive.zip, then archive_filenames does not need to be specified.
     archive_filenames: Union[str, List[str]] = field(default_factory=list)
 
-    # The names of files in the dataset (after extraction). Glob-style patterns are supported, see:
+    # The names of files in the dataset (after extraction). Glob-style patterns are supported, see
     # https://docs.python.org/3/library/glob.html
     dataset_filenames: Union[str, List[str]] = field(default_factory=list)
 
