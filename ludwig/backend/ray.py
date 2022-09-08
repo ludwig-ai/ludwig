@@ -835,6 +835,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         ready = self._preprocessor_pg.wait(THREE_MINS_IN_S)
 
         if not ready:
+            remove_placement_group(self._preprocessor_pg)
             raise TimeoutError(
                 "Ray timed out in provisioning the placement group for preprocessing."
                 f" {num_cpu} CPUs were requested but were unable to be provisioned."
