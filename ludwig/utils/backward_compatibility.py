@@ -126,6 +126,11 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     for metric_group in ("train_metrics", "test_metrics", "validation_metrics"):
         for tgt in ret[metric_group]:
             for metric in ret[metric_group][tgt]:
+                if len(ret[metric_group][tgt][metric]) == 0 or isinstance(
+                    ret[metric_group][tgt][metric][0], (tuple, list)
+                ):
+                    continue
+
                 ret[metric_group][tgt][metric] = [
                     TrainerMetric(i + 1, (i + 1) * ret["batch_size"], val)
                     for i, val in enumerate(ret[metric_group][tgt][metric])
