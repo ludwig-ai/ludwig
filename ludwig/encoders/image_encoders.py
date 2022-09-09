@@ -428,13 +428,13 @@ class ViTEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-            self,
-            torchvision_model_type: Optional[str] = None,
-            model_variant: Union[str, int] = None,
-            use_pretrained_weights: bool = True,
-            model_cache_dir: Optional[str] = None,
-            trainable: bool = True,
-            **kwargs,
+        self,
+        torchvision_model_type: Optional[str] = None,
+        model_variant: Union[str, int] = None,
+        use_pretrained_weights: bool = True,
+        model_cache_dir: Optional[str] = None,
+        trainable: bool = True,
+        **kwargs,
     ):
         super().__init__()
 
