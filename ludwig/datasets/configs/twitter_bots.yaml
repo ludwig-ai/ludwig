@@ -3,6 +3,8 @@ name: twitter_bots
 kaggle_dataset_id: danieltreiman/twitter-human-bots-dataset
 archive_filenames: twitter-human-bots-dataset.zip
 dataset_filenames: twitter_human_bots_dataset.csv
+sha256:
+  twitter-human-bots-dataset.zip: 16ffaad719ebb9688231844a80f92901c5efb1ff96eafeb869dc5de07b323cdd
 preserve_paths:
   - profile_images
   - profile_background_images

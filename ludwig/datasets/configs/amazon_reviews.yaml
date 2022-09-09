@@ -3,6 +3,8 @@ name: amazon_reviews
 download_urls: https://s3.amazonaws.com/fast-ai-nlp/amazon_review_full_csv.tgz
 train_filenames: amazon_review_full_csv/train.csv
 test_filenames: amazon_review_full_csv/test.csv
+sha256:
+  amazon_review_full_csv.tgz: 4af62eeee139d0142e0747340b68646d23483d9475c33ea0641ee9175b423443
 columns:
   - label
   - review_title

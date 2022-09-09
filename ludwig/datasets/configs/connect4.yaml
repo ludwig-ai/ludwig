@@ -3,6 +3,8 @@ name: connect4
 kaggle_dataset_id: tbrewer/connect-4
 archive_filenames: connect-4.zip
 dataset_filenames: c4_game_database.csv
+sha256:
+  connect-4.zip: 46c33c47f2664948a4abe53bafee92a602773f31db615bc8bd239e1f98a3d2cf
 description: |
   Each row represents the end results of a Connect-4 game.
   Columns 1-42 are the positions on the grid from left to right, top to bottom. Each element in these columns represent to player's piece : 1, and -1, 0 marks an empty cell.

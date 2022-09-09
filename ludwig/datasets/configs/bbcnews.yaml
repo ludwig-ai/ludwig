@@ -4,6 +4,8 @@ kaggle_competition: learn-ai-bbc
 archive_filenames: learn-ai-bbc.zip
 train_filenames: "BBC News Train.csv"
 test_filenames: "BBC News Test.csv"
+sha256:
+  learn-ai-bbc.zip: 450dd79c6654248af15d91d94c269fe7e8001effd89389f93c7184aac6699e62
 description: |
   BBC News Classification from Kaggle.
   https://www.kaggle.com/competitions/learn-ai-bbc/overview

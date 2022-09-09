@@ -2,6 +2,8 @@ version: 1.0
 name: creditcard_fraud
 kaggle_dataset_id: mlg-ulb/creditcardfraud
 archive_filenames: creditcardfraud.zip
+sha256:
+  creditcardfraud.zip: a0360ce715992212e9ac72d8ccdca97f4be87dc1fdf2bed011358f7ab409a28a
 loader: creditcard_fraud.CreditCardFraudLoader
 description: |
   The Machine Learning Group ULB Dataset
