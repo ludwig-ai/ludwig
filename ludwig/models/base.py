@@ -198,7 +198,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_train_loss = of_obj.train_loss(targets[of_name], predictions, of_name)
-            train_loss += of_obj.loss["weight"] * of_train_loss
+            train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
         for loss in self.losses():
@@ -227,7 +227,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         eval_loss = 0
         for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
-            eval_loss += of_obj.loss["weight"] * of_eval_loss
+            eval_loss += of_obj.loss.weight * of_eval_loss
 
         additional_loss = 0
         additional_losses = self.losses()

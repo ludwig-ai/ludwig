@@ -2,10 +2,13 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class SequencePassthroughConfig(BaseEncoderConfig):
 
@@ -33,6 +36,7 @@ class SequencePassthroughConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("embed", [SEQUENCE, TEXT])
 @dataclass
 class SequenceEmbedConfig(BaseEncoderConfig):
 
@@ -99,6 +103,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class ParallelCNNConfig(BaseEncoderConfig):
 
@@ -238,6 +243,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class StackedCNNConfig(BaseEncoderConfig):
 
@@ -404,6 +410,7 @@ class StackedCNNConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class StackedParallelCNNConfig(BaseEncoderConfig):
 
@@ -561,6 +568,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class StackedRNNConfig(BaseEncoderConfig):
 
@@ -727,6 +735,7 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class StackedCNNRNNConfig(BaseEncoderConfig):
 
@@ -958,6 +967,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass
 class StackedTransformerConfig(BaseEncoderConfig):
 

@@ -637,7 +637,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
         new_data.append(" ".join(str(j) for j in old_data[i - seq_length : i]))
 
     df[new_col_name] = new_data
-    df[new_col_name] = df[new_col_name].fillna(method="backfill")
+    df[new_col_name] = df[new_col_name].fillna(method="bfill")
 
 
 def override_in_memory_flag(input_features, override_value):

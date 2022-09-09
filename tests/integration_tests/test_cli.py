@@ -169,6 +169,18 @@ def test_export_neuropod_cli(tmpdir, csv_filename):
     )
 
 
+def test_export_torchscript_cli(tmpdir, csv_filename):
+    """Test exporting Ludwig model to torchscript format."""
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    _run_ludwig(
+        "export_torchscript",
+        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        output_path=os.path.join(tmpdir, "torchscript"),
+    )
+
+
 def test_export_mlflow_cli(tmpdir, csv_filename):
     """Test export_mlflow cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -281,11 +293,16 @@ def test_preprocess_cli(tmpdir, csv_filename):
     _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
-@pytest.mark.parametrize("backend", ["local", "horovod"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("horovod", id="horovod", marks=pytest.mark.distributed),
+    ],
+)
 def test_reproducible_cli_runs(
     backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:

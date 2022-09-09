@@ -16,6 +16,8 @@
 INPUT_FEATURES = "input_features"
 OUTPUT_FEATURES = "output_features"
 
+INPUT = "input"
+OUTPUT = "output"
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"
@@ -82,9 +84,7 @@ FILL_WITH_CONST = "fill_with_const"
 FILL_WITH_MODE = "fill_with_mode"
 FILL_WITH_MEAN = "fill_with_mean"
 FILL_WITH_FALSE = "fill_with_false"
-BACKFILL = "backfill"
 BFILL = "bfill"
-PAD = "pad"
 FFILL = "ffill"
 DROP_ROW = "drop_row"
 MISSING_VALUE_STRATEGY = "missing_value_strategy"
@@ -92,9 +92,7 @@ MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
     FILL_WITH_MEAN,
-    BACKFILL,
     BFILL,
-    PAD,
     FFILL,
     DROP_ROW,
 ]
@@ -161,6 +159,7 @@ SRC = "dataset_src"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
+DEFAULT_BATCH_SIZE = 128
 LEARNING_RATE = "learning_rate"
 USE_BIAS = "use_bias"
 BIAS = "bias"
@@ -226,6 +225,8 @@ POSTPROCESSOR = "postprocessor"
 
 S3 = "s3"
 CACHE = "cache"
-EXPERIMENT_RUN = "experiment_run"
-TRAIN_TAG = "train"
-EVAL_TAG = "evaluate"
+
+# If `use_torch_profiler=True` in LudwigProfiler, LUDWIG_TAG is prepended to the specified experiment tag
+# (LudwigProfiler(tag="...", ..)). This edited tag is passed in to `torch.profiler.record_function` so we can
+# retrieve torch ops for the tagged code blocks/functions.
+LUDWIG_TAG = "[ludwig]"

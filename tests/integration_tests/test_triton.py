@@ -82,7 +82,7 @@ def test_triton_torchscript(csv_filename, tmpdir):
     # Create graph inference model (Torchscript) from trained Ludwig model.
     triton_path = os.path.join(tmpdir, "triton")
     model_name = "test_triton"
-    model_version = 1
+    model_version = "1"
     df = pd.read_csv(training_data_csv_path)
     triton_artifacts = export_triton(
         model=ludwig_model, data_example=df, model_name=model_name, output_path=triton_path, model_version=model_version

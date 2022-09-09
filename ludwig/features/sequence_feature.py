@@ -202,7 +202,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return SequenceInputFeatureConfig().preprocessing.__dict__
+        return SequenceInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -498,7 +498,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = SequenceOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)

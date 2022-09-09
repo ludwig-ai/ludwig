@@ -23,6 +23,7 @@ import torch
 from torch import nn
 
 from ludwig.constants import (
+    CLIP,
     COLUMN,
     DECODER,
     DEPENDENCIES,
@@ -228,7 +229,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return NumberInputFeatureConfig().preprocessing.__dict__
+        return NumberInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -368,12 +369,12 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if self.clip is not None and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
+        if getattr(self, "clip", None) and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumberPredict(self.clip)
+        return _NumberPredict(getattr(self, "clip", None))
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -421,13 +422,14 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = NumberOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
         set_default_values(
             output_feature,
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
                 },
+                CLIP: defaults.clip,
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
                 REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
