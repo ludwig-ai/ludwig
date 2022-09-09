@@ -523,6 +523,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
 
 
 # TODO: finalize the options
+@register_encoder_config("tv_resnet", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(BaseEncoderConfig):
 
@@ -547,6 +548,7 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
 
 
 # TODO: finalize the options
+@register_encoder_config("vgg", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(BaseEncoderConfig):
     model_variant: Optional[int] = schema_utils.PositiveInteger(
