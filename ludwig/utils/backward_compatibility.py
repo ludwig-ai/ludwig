@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import copy
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
@@ -55,6 +55,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
 
@@ -83,7 +84,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
-def upgrade_to_latest_version(config: Dict):
+def upgrade_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
 
@@ -96,6 +97,38 @@ def upgrade_to_latest_version(config: Dict):
     return config_transformation_registry.update_config(
         config, from_version=config.get("ludwig_version", "0.0"), to_version=LUDWIG_VERSION
     )
+
+
+def upgrade_model_progress(model_progress: Dict) -> Dict:
+    ret = copy.deepcopy(model_progress)
+
+    if "last_improvement_epoch" in ret:
+        ret["last_improvement_steps"] = ret["last_improvement_epoch"] * ret["batch_size"]
+        del ret["last_improvement_epoch"]
+
+    if "last_learning_rate_reduction_epoch" in ret:
+        ret["last_learning_rate_reduction_steps"] = ret["last_learning_rate_reduction_epoch"] * ret["batch_size"]
+        del ret["last_learning_rate_reduction_epoch"]
+
+    if "last_increase_batch_size_epoch" in ret:
+        ret["last_increase_batch_size_steps"] = ret["last_increase_batch_size_epoch"] * ret["batch_size"]
+        del ret["last_increase_batch_size_epoch"]
+
+    if "vali_metrics" in ret:
+        ret["validation_metrics"] = ret["vali_metrics"]
+        del ret["vali_metrics"]
+
+    for metric_group in ("train_metrics", "test_metrics", "validation_metrics"):
+        for tgt in ret[metric_group]:
+            for metric in ret[metric_group][tgt]:
+                ret[metric_group][tgt][metric] = [
+                    TrainerMetric(ret["epoch"], ret["steps"], val) for val in ret[metric_group][tgt][metric]
+                ]
+
+    if "tune_checkpoint_num" not in ret:
+        ret["tune_checkpoint_num"] = 0
+
+    return ret
 
 
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):

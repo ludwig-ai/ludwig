@@ -117,6 +117,11 @@ class ProgressTracker:
     @staticmethod
     def load(filepath):
         loaded = load_json(filepath)
+
+        from ludwig.utils.backward_compatibility import upgrade_model_progress
+
+        loaded = upgrade_model_progress(loaded)
+
         return ProgressTracker(**loaded)
 
     def log_metrics(self):
