@@ -317,7 +317,7 @@ def save_prediction_outputs(
     backend,
 ):
     postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
-    postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME))
+    postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME), schema=None)
     save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
     if not backend.df_engine.partitioned:
         # csv can only be written out for unpartitioned df format (i.e., pandas)
