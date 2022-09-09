@@ -100,6 +100,11 @@ def upgrade_to_latest_version(config: Dict) -> Dict:
 
 
 def upgrade_model_progress(model_progress: Dict) -> Dict:
+    """Updates model progress info to be compatible with latest ProgressTracker implementation.
+
+    Notably, we convert epoch-based stats to their step-based equivalents and reformat metrics into `TrainerMetric`
+    tuples.
+    """
     ret = copy.deepcopy(model_progress)
 
     if "last_improvement_epoch" in ret:
@@ -122,7 +127,8 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
         for tgt in ret[metric_group]:
             for metric in ret[metric_group][tgt]:
                 ret[metric_group][tgt][metric] = [
-                    TrainerMetric(ret["epoch"], ret["steps"], val) for val in ret[metric_group][tgt][metric]
+                    TrainerMetric(i + 1, (i + 1) * ret["batch_size"], val)
+                    for i, val in enumerate(ret[metric_group][tgt][metric])
                 ]
 
     if "tune_checkpoint_num" not in ret:
