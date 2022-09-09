@@ -553,3 +553,48 @@ def test_upgrade_model_progress():
     unchanged_metric = unchanged_model_progress["validation_metrics"]["combined"]["loss"][0]
     new_metric = new_model_progress["validation_metrics"]["combined"]["loss"][0]
     assert unchanged_metric == new_metric
+
+
+def test_upgrade_model_progress_already_valid():
+    # Verify that we don't make changes to already-valid model progress dicts.
+    valid_model_progress = {
+        "batch_size": 128,
+        "best_eval_metric": 5.541325569152832,
+        "best_increase_batch_size_eval_metric": math.inf,
+        "best_reduce_learning_rate_eval_metric": math.inf,
+        "epoch": 5,
+        "last_improvement": 0,
+        "last_improvement_steps": 25,
+        "last_increase_batch_size": 0,
+        "last_increase_batch_size_eval_metric_improvement": 0,
+        "last_increase_batch_size_steps": 0,
+        "last_learning_rate_reduction": 0,
+        "last_learning_rate_reduction_steps": 0,
+        "last_reduce_learning_rate_eval_metric_improvement": 0,
+        "learning_rate": 0.001,
+        "num_increases_batch_size": 0,
+        "num_reductions_learning_rate": 0,
+        "steps": 25,
+        "test_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.38]], "loss": [[0, 5, 7.35], [1, 10, 7.08]]},
+            "combined": {"loss": [[0, 5, 7.35], [1, 10, 6.24]]},
+        },
+        "train_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.40]], "loss": [[0, 5, 7.67], [1, 10, 6.57]]},
+            "combined": {"loss": [[0, 5, 7.67], [1, 10, 6.57]]},
+        },
+        "validation_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.38], [1, 10, 0.38]], "loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+            "combined": {"loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+        },
+        "tune_checkpoint_num": 0,
+    }
+
+    unchanged_model_progress = upgrade_model_progress(valid_model_progress)
+
+    for stat in ("improvement", "increase_batch_size", "learning_rate_reduction"):
+        assert unchanged_model_progress[f"last_{stat}_steps"] == valid_model_progress[f"last_{stat}_steps"]
+
+    unchanged_metric = unchanged_model_progress["validation_metrics"]["combined"]["loss"][0]
+    new_metric = valid_model_progress["validation_metrics"]["combined"]["loss"][0]
+    assert unchanged_metric == new_metric
