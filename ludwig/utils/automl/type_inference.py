@@ -63,8 +63,6 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     if field.key == "PRI":
         return True
 
-    print(field.name)
-    print(targets)
     if field.name in targets:
         return False
 
