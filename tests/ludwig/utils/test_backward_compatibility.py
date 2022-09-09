@@ -503,13 +503,7 @@ def test_old_class_weights_default():
             }
         ],
         "output_features": [
-            {
-                "name": "output_feature_1",
-                "type": "category",
-                "loss": {
-                    "class_weights": 1
-                }
-            },
+            {"name": "output_feature_1", "type": "category", "loss": {"class_weights": 1}},
         ],
     }
 
@@ -521,13 +515,7 @@ def test_old_class_weights_default():
             }
         ],
         "output_features": [
-            {
-                "name": "output_feature_1",
-                "type": "category",
-                "loss": {
-                    "class_weights": None
-                }
-            },
+            {"name": "output_feature_1", "type": "category", "loss": {"class_weights": None}},
         ],
     }
 
