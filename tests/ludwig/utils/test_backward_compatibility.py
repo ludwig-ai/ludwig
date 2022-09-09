@@ -546,13 +546,7 @@ def test_upgrade_model_progress():
     # To do so, we modify the batch size value and re-run the upgrade on the otherwise-valid `new_model_progress` dict.
     new_model_progress["batch_size"] = 1
     unchanged_model_progress = upgrade_model_progress(new_model_progress)
-
-    for stat in ("improvement", "increase_batch_size", "learning_rate_reduction"):
-        assert unchanged_model_progress[f"last_{stat}_steps"] == new_model_progress[f"last_{stat}_steps"]
-
-    unchanged_metric = unchanged_model_progress["validation_metrics"]["combined"]["loss"][0]
-    new_metric = new_model_progress["validation_metrics"]["combined"]["loss"][0]
-    assert unchanged_metric == new_metric
+    assert unchanged_model_progress == new_model_progress
 
 
 def test_upgrade_model_progress_already_valid():
@@ -591,10 +585,4 @@ def test_upgrade_model_progress_already_valid():
     }
 
     unchanged_model_progress = upgrade_model_progress(valid_model_progress)
-
-    for stat in ("improvement", "increase_batch_size", "learning_rate_reduction"):
-        assert unchanged_model_progress[f"last_{stat}_steps"] == valid_model_progress[f"last_{stat}_steps"]
-
-    unchanged_metric = unchanged_model_progress["validation_metrics"]["combined"]["loss"][0]
-    new_metric = valid_model_progress["validation_metrics"]["combined"]["loss"][0]
-    assert unchanged_metric == new_metric
+    assert unchanged_model_progress == valid_model_progress
