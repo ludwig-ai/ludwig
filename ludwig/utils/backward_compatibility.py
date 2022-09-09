@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Union
 from ludwig.constants import (
     AUDIO,
     BIAS,
+    CLASS_WEIGHTS,
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
@@ -32,6 +33,7 @@ from ludwig.constants import (
     EXECUTOR,
     FORCE_SPLIT,
     INPUT_FEATURES,
+    LOSS,
     MISSING_VALUE_STRATEGY,
     NAME,
     NUM_SAMPLES,
@@ -110,6 +112,17 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
     elif isinstance(config, list):
         for v in config:
             _traverse_dicts(v, f)
+
+
+@register_config_transformation("0.4", ["output_features"])
+def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
+    if LOSS in feature:
+        class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
+        if not isinstance(class_weights, list):
+            class_weights = None
+        feature[LOSS][CLASS_WEIGHTS] = class_weights
+
+    return feature
 
 
 @register_config_transformation("0.5")

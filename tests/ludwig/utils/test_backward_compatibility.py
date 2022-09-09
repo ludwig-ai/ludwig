@@ -4,10 +4,12 @@ import pytest
 
 from ludwig.constants import (
     BFILL,
+    CLASS_WEIGHTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
+    LOSS,
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -490,3 +492,52 @@ def test_update_missing_value_strategy(missing_value_strategy: str):
         expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "ffill"
 
     assert updated_config == expected_config
+
+
+def test_old_class_weights_default():
+    old_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+            }
+        ],
+        "output_features": [
+            {
+                "name": "output_feature_1",
+                "type": "category",
+                "loss": {
+                    "class_weights": 1
+                }
+            },
+        ],
+    }
+
+    new_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+            }
+        ],
+        "output_features": [
+            {
+                "name": "output_feature_1",
+                "type": "category",
+                "loss": {
+                    "class_weights": None
+                }
+            },
+        ],
+    }
+
+    upgraded_config = upgrade_to_latest_version(old_config)
+    del upgraded_config["ludwig_version"]
+    assert new_config == upgraded_config
+
+    old_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
+    new_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
+
+    upgraded_config = upgrade_to_latest_version(old_config)
+    del upgraded_config["ludwig_version"]
+    assert new_config == upgraded_config
