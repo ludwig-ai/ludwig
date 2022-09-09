@@ -817,12 +817,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
-    def _update_dask_backend_with_pg(self, pg: PlacementGroup):
-        dask.config.set(annotations={"ray_remote_args": {"placement_group": pg}})
-
-    def _clear_dask_backend_pg(self):
-        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
-
     def provision_preprocessing_workers(self):
         if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
             logger.warning(
@@ -842,10 +836,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
             )
 
         logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
-        self._update_dask_backend_with_pg(self._preprocessor_pg)
+        with dask.config.set(annotations={"ray_remote_args": {"placement_group": self._preprocessor_pg}}):
+            yield
 
     def release_preprocessing_workers(self):
-        self._clear_dask_backend_pg()
         if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
             logger.warning(
                 "Backend config has use_preprocessing_placement_group set to False or did not set it at all."

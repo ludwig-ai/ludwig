@@ -103,9 +103,7 @@ def initialize_backend(backend):
 @contextlib.contextmanager
 def provision_preprocessing_workers(backend):
     if backend.BACKEND_TYPE == RAY:
-        backend.provision_preprocessing_workers()
-    try:
+        with backend.provision_preprocessing_workers():
+            yield
+    else:
         yield
-    finally:
-        if backend.BACKEND_TYPE == RAY:
-            backend.release_preprocessing_workers()
