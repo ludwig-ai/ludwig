@@ -13,8 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 import glob
+import hashlib
 import logging
 import os
+import shutil
 import urllib
 from enum import Enum
 from pathlib import Path
@@ -68,6 +70,17 @@ def _glob_multiple(pathnames: List[str], root_dir: str = None, recursive: bool =
     if root_dir:
         pathnames = [os.path.join(root_dir, p) for p in pathnames]
     return set().union(*[glob.glob(p, recursive=recursive) for p in pathnames])
+
+
+def _sha256_digest(file_path) -> str:
+    """Returns the sha256 digest for the specified file."""
+    hash = hashlib.sha256()
+    buffer = bytearray(hash.block_size * 1024)  # Attempts to read in multiples of the hash block size (64KB).
+    mv = memoryview(buffer)
+    with open(file_path, "rb", buffering=0) as f:
+        for bytes_read in iter(lambda: f.readinto(mv), 0):
+            hash.update(mv[:bytes_read])
+    return hash.hexdigest()
 
 
 class DatasetState(int, Enum):
@@ -180,22 +193,42 @@ class DatasetLoader:
         return [os.path.basename(urlparse(url).path) for url in self.download_urls]
 
     def description(self):
+        """Returns human-readable description of the dataset."""
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
 
-    def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
+    def _get_preserved_paths(self):
+        """Gets list of files to preserve when exporting dataset, not including self.processed_dataset_path.
+
+        Returns paths relative to the dataset root directory.
+        """
+        preserved_paths = _glob_multiple(_list_of_strings(self.config.preserve_paths), root_dir=self.raw_dataset_dir)
+        return [os.path.relpath(p, start=self.raw_dataset_dir) for p in preserved_paths]
+
+    def export(self, output_directory: str):
+        """Exports the dataset (and any files required by it) into the specified directory."""
+        self._download_and_process()
+        os.makedirs(output_directory, exist_ok=True)
+        shutil.copy2(self.processed_dataset_path, os.path.join(output_directory, self.processed_dataset_filename))
+        preserve_paths = self._get_preserved_paths()
+        for relative_path in preserve_paths:
+            source = os.path.join(self.raw_dataset_dir, relative_path)
+            destination = os.path.join(output_directory, relative_path)
+            if os.path.isdir(source):
+                shutil.copytree(source, destination, symlinks=False, dirs_exist_ok=True)
+            else:
+                shutil.copy2(source, destination)
+
+    def _download_and_process(self, kaggle_username=None, kaggle_key=None):
         """Loads the dataset, downloaded and processing it if needed.
 
-        Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
-        3-tuple of train, val, test if split=True.
-
-        :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
-        0: train, 1: validation, 2: test.
+        If dataset is already processed, does nothing.
         """
         if self.state == DatasetState.NOT_LOADED:
             try:
                 self.download(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
             except Exception:
                 logger.exception("Failed to download dataset")
+        self.verify()
         if self.state == DatasetState.DOWNLOADED:
             # Extract dataset
             try:
@@ -208,6 +241,17 @@ class DatasetLoader:
                 self.transform()
             except Exception:
                 logger.exception("Failed to transform dataset")
+
+    def load(self, split=False, kaggle_username=None, kaggle_key=None) -> pd.DataFrame:
+        """Loads the dataset, downloaded and processing it if needed.
+
+        Note: This method is also responsible for splitting the data, returning a single dataframe if split=False, and a
+        3-tuple of train, val, test if split=True.
+
+        :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
+        0: train, 1: validation, 2: test.
+        """
+        self._download_and_process()
         if self.state == DatasetState.TRANSFORMED:
             dataset_df = self.load_transformed_dataset()
             if split:
@@ -232,12 +276,33 @@ class DatasetLoader:
                 with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=filename) as t:
                     urllib.request.urlretrieve(url, downloaded_file_path, t.update_to)
 
+    def verify(self):
+        """Verifies checksums for dataset."""
+        for filename, sha256sum in self.config.sha256.items():
+            digest = _sha256_digest(os.path.join(self.raw_dataset_dir, filename))
+            if digest != sha256sum:
+                raise ValueError(f"Checksum mismatch for file {filename} of {self.config.name} dataset")
+        if not self.config.sha256:
+            logger.warning(f"No sha256 digest provided for dataset {self.config.name}, cannot verify.")
+            logger.info("Contents:")
+            for filename in os.listdir(self.raw_dataset_dir):
+                path = os.path.join(self.raw_dataset_dir, filename)
+                if not os.path.isdir(path):
+                    digest = _sha256_digest(path)
+                    logger.info(f"    {filename}: {digest}")
+
     def extract(self) -> List[str]:
         extracted_files = set()
         for download_filename in self.download_filenames:
             download_path = os.path.join(self.raw_dataset_dir, download_filename)
             if is_archive(download_path):
                 extracted_files.update(extract_archive(download_path))
+            # If the archive contains archives, extract those too. For example, bnp_claims_management.
+            archive_contents = extracted_files.copy()
+            for extracted_file in archive_contents:
+                extracted_path = os.path.join(self.raw_dataset_dir, extracted_file)
+                if is_archive(extracted_path):
+                    extracted_files.update(extract_archive(extracted_path))
         return list(extracted_files)
 
     def transform(self) -> pd.DataFrame:
@@ -256,15 +321,15 @@ class DatasetLoader:
         Subclasses should override this method to process files before loading dataframe, calling the base class
         implementation first to get the list of data files.
         """
-        data_directories = [p for p in file_paths if os.path.isdir(p)]
         data_files = [p for p in file_paths if not os.path.isdir(p)]
         if not os.path.exists(self.processed_dataset_dir):
             os.makedirs(self.processed_dataset_dir)
-        # Symlinks any data directories (ex. image directories) into processed directory to avoid unnecessary copy.
-        for source_directory in data_directories:
-            dest_directory = os.path.join(self.processed_dataset_dir, os.path.basename(source_directory))
-            if not os.path.exists(dest_directory):
-                os.symlink(source_directory, dest_directory)
+        # Moves any preserved paths (ex. image directories) into processed directory to avoid unnecessary copy.
+        for rel_path in self._get_preserved_paths():
+            source_path = os.path.join(self.raw_dataset_dir, rel_path)
+            dest_path = os.path.join(self.processed_dataset_dir, rel_path)
+            if os.path.exists(source_path) and not os.path.exists(dest_path):
+                os.replace(source_path, dest_path)
         return data_files
 
     def load_file_to_dataframe(self, file_path: str) -> pd.DataFrame:

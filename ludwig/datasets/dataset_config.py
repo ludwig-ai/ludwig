@@ -1,10 +1,24 @@
+# Copyright (c) 2022 Predibase, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 
 @dataclass
 class DatasetConfig:
-    """A config object which declares a Ludwig dataset, making it available in ludwig.datasets."""
+    """The configuration of a Ludwig dataset."""
 
     # The version of the dataset.
     version: str
@@ -37,6 +51,15 @@ class DatasetConfig:
     train_filenames: Union[str, List[str]] = field(default_factory=list)
     validation_filenames: Union[str, List[str]] = field(default_factory=list)
     test_filenames: Union[str, List[str]] = field(default_factory=list)
+
+    # If the dataset contains additional referenced files or directories (ex. images or audio) list them here and they
+    # will be copied to the same location as the processed dataset. Glob-style patterns are supported,
+    # see https://docs.python.org/3/library/glob.html
+    preserve_paths: Union[str, List[str]] = field(default_factory=list)
+
+    # Optionally verify integrity of the dataset by providing sha256 checksums for important files. Maps filename to
+    # sha256 digest.  Use sha256sum <filename> on linux, shasum -a 256 <filename> on mac to get checksums.
+    sha256: Dict[str, str] = field(default_factory=dict)
 
     # List of column names, for datasets which do not have column names. If specified, will override the column names
     # already present in the dataset.

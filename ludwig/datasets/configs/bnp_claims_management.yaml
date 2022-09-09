@@ -1,0 +1,9 @@
+version: 1.0
+name: bnp_claims_management
+kaggle_competition: bnp-paribas-cardif-claims-management
+archive_filenames: bnp-paribas-cardif-claims-management.zip
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  The BNP Paribas Cardif Claims Management dataset.
+  https://www.kaggle.com/c/bnp-paribas-cardif-claims-management

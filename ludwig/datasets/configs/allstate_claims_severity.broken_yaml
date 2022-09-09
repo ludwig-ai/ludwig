@@ -1,9 +1,8 @@
 version: 1.0
-name: allstate-claims-severity
+name: allstate_claims_severity
 kaggle_competition: allstate-claims-severity
 archive_filenames: allstate-claims-severity.zip
 train_filenames: train.csv
-test_filenames: test.csv
 description: |
   Allstate Claims Severity.
   https://www.kaggle.com/c/allstate-claims-severity/overview

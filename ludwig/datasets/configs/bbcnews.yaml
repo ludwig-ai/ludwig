@@ -1,0 +1,9 @@
+version: 1.0
+name: bbcnews
+kaggle_competition: learn-ai-bbc
+archive_filenames: learn-ai-bbc.zip
+train_filenames: "BBC News Train.csv"
+test_filenames: "BBC News Test.csv"
+description: |
+  BBC News Classification from Kaggle.
+  https://www.kaggle.com/competitions/learn-ai-bbc/overview

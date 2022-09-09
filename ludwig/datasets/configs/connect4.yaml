@@ -1,5 +1,5 @@
 version: 1.0
-name: connect-4
+name: connect4
 kaggle_dataset_id: tbrewer/connect-4
 archive_filenames: connect-4.zip
 dataset_filenames: c4_game_database.csv
