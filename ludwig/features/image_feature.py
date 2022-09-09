@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 import os
+import psutil
 import warnings
 from collections import Counter
 from functools import partial
@@ -414,6 +415,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
     def add_feature_data(
         feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
     ):
+        print(
+            f"enter image add_feature_data: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB")  # todo: debug
         set_default_value(feature_config[PREPROCESSING], "in_memory", preprocessing_parameters["in_memory"])
 
         name = feature_config[NAME]
@@ -515,6 +518,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
                 "Using default image for these rows in the dataset."
             )
+        print(
+            f"exit # images {proc_col.size}, image shape: {proc_col.iloc[0].shape} , dtype: {proc_col.iloc[0].dtype} "
+            f"estimated image bytes: {np.product(proc_col.array[0].shape) * 4 * proc_col.size / (1e6):0.2f}MB "
+            f"RAM used: {psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
+        )  # todo: debug
 
         return proc_df
 
