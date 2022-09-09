@@ -153,16 +153,21 @@ def _upgrade_feature(feature: Dict[str, Any]) -> Dict[str, Any]:
         feature[TYPE] = NUMBER
     if feature.get(TYPE) == AUDIO:
         if PREPROCESSING in feature:
-            if "audio_feature" in feature[PREPROCESSING]:
-                for k, v in feature[PREPROCESSING]["audio_feature"].items():
-                    feature[PREPROCESSING][k] = v
-                del feature[PREPROCESSING]["audio_feature"]
+            feature[PREPROCESSING] = upgrade_audio_preprocessing(feature[PREPROCESSING])
         warnings.warn(
             "Parameters specified at the `audio_feature` parameter level have been unnested and should now "
             "be specified at the preprocessing level. Support for `audio_feature` will be removed in v0.7",
             DeprecationWarning,
         )
     return feature
+
+
+def upgrade_audio_preprocessing(preproc_dict: Dict[str, Any]) -> Dict[str, Any]:
+    if "audio_feature" in preproc_dict:
+        for k, v in preproc_dict["audio_feature"].items():
+            preproc_dict[k] = v
+        del preproc_dict["audio_feature"]
+    return preproc_dict
 
 
 @register_config_transformation("0.6", ["input_features"])
@@ -373,19 +378,22 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
     # Update defaults with the default feature specific preprocessing parameters
     defaults = config.get(DEFAULTS, {})
     for feature_type, preprocessing_param in type_specific_preprocessing_params.items():
+        if PREPROCESSING in preprocessing_param:
+            preprocessing_param = preprocessing_param[PREPROCESSING]
+
+        if feature_type == AUDIO:
+            preprocessing_param = upgrade_audio_preprocessing(preprocessing_param)
+
         # If defaults was empty, then create a new key with feature type
         if feature_type not in defaults:
-            if PREPROCESSING in preprocessing_param:
-                defaults[feature_type] = preprocessing_param
-            else:
-                defaults[feature_type] = {PREPROCESSING: preprocessing_param}
+            defaults[feature_type] = {PREPROCESSING: preprocessing_param}
         # Feature type exists but preprocessing hasn't be specified
         elif PREPROCESSING not in defaults[feature_type]:
-            defaults[feature_type][PREPROCESSING] = preprocessing_param[PREPROCESSING]
+            defaults[feature_type][PREPROCESSING] = preprocessing_param
         # Update default feature specific preprocessing with parameters from config
         else:
             defaults[feature_type][PREPROCESSING].update(
-                merge_dict(defaults[feature_type][PREPROCESSING], preprocessing_param[PREPROCESSING])
+                merge_dict(defaults[feature_type][PREPROCESSING], preprocessing_param)
             )
 
     if defaults:

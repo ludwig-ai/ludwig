@@ -23,6 +23,7 @@ from sklearn.model_selection import train_test_split
 from ludwig.backend import initialize_backend, LOCAL
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
+from ludwig.schema.split import DateTimeSplitConfig, FixedSplitConfig, RandomSplitConfig, StratifySplitConfig
 from ludwig.utils.data_utils import split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
@@ -80,6 +81,10 @@ class RandomSplitter(Splitter):
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
 
+    @staticmethod
+    def get_schema_cls():
+        return RandomSplitConfig
+
 
 @split_registry.register("fixed")
 class FixedSplitter(Splitter):
@@ -97,6 +102,10 @@ class FixedSplitter(Splitter):
     @property
     def required_columns(self) -> List[str]:
         return [self.column]
+
+    @staticmethod
+    def get_schema_cls():
+        return FixedSplitConfig
 
 
 def _get_partition_splitter(splitter: Splitter, random_seed: float) -> Callable:
@@ -177,6 +186,10 @@ class StratifySplitter(Splitter):
     def required_columns(self) -> List[str]:
         return [self.column]
 
+    @staticmethod
+    def get_schema_cls():
+        return StratifySplitConfig
+
 
 @split_registry.register("datetime")
 class DatetimeSplitter(Splitter):
@@ -234,6 +247,10 @@ class DatetimeSplitter(Splitter):
     @property
     def required_columns(self) -> List[str]:
         return [self.column]
+
+    @staticmethod
+    def get_schema_cls():
+        return DateTimeSplitConfig
 
 
 def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:

@@ -98,7 +98,7 @@ class VectorFeatureMixin:
 
     @staticmethod
     def preprocessing_defaults():
-        return VectorInputFeatureConfig().preprocessing.__dict__
+        return VectorInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -220,7 +220,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def loss_kwargs(self):
-        return self.loss
+        return self.loss.to_dict()
 
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
@@ -268,7 +268,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

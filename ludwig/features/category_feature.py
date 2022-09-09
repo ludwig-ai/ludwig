@@ -124,7 +124,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return CategoryInputFeatureConfig().preprocessing.__dict__
+        return CategoryInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -461,7 +461,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
         # Populate the default values for LOSS if they aren't defined already
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

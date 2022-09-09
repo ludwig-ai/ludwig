@@ -82,6 +82,13 @@ class BaseMarshmallowConfig:
         unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
+    def to_dict(self):
+        """Method for getting a dictionary representation of this dataclass.
+
+        Returns: dict for this dataclass
+        """
+        return self.__dict__
+
 
 def assert_is_a_marshmallow_class(cls):
     assert hasattr(cls, "Schema") and isinstance(
@@ -102,8 +109,8 @@ def InitializerOptions(default: str = "xavier_uniform", description=""):
     return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
 
 
-def ActivationOptions(default: str = "relu", description=""):
-    """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
+def ActivationOptions(default: Union[str, None] = "relu", description=""):
+    """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
     return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
 
 
@@ -757,7 +764,7 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-    n=2, default: Tuple = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
+    n=2, default: Union[Tuple, None] = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
@@ -853,7 +860,8 @@ def OneOfOptionsField(
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
-                    mfield_meta.validate(value)
+                    if mfield_meta.validate:
+                        mfield_meta.validate(value)
                     return mfield_meta._deserialize(value, attr, obj, **kwargs)
                 except Exception:
                     continue
