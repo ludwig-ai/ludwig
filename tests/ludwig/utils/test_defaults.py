@@ -4,6 +4,7 @@ import pytest
 from marshmallow import ValidationError
 
 from ludwig.constants import (
+    BFILL,
     CATEGORY,
     DECODER,
     DEFAULTS,
@@ -323,7 +324,8 @@ def test_merge_with_defaults():
                     "type": "regressor",
                 },
                 "proc_column": "number_output_feature_mZFLky",
-                "loss": {"type": "mean_squared_error", "weight": 1},
+                "loss": {"type": "mean_squared_error", "weight": 1.0},
+                "clip": None,
                 "dependencies": [],
                 "reduce_input": "sum",
                 "reduce_dependencies": "sum",
@@ -478,7 +480,7 @@ def test_merge_with_defaults():
                     "height": None,
                     "width": None,
                     "num_channels": None,
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": BFILL,
                     "in_memory": True,
                     "resize_method": "interpolate",
                     "scaling": "pixel_normalization",
@@ -493,7 +495,7 @@ def test_merge_with_defaults():
             "audio": {
                 PREPROCESSING: {
                     "audio_file_length_limit_in_s": 7.5,
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": BFILL,
                     "in_memory": True,
                     "padding_value": 0.0,
                     "norm": None,

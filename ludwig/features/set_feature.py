@@ -162,7 +162,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return SetInputFeatureConfig().preprocessing.__dict__
+        return SetInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -283,7 +283,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def loss_kwargs(self):
-        return self.loss
+        return self.loss.to_dict()
 
     def metric_kwargs(self) -> Dict[str, Any]:
         return {"threshold": self.threshold}
@@ -379,7 +379,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = SetOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

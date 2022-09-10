@@ -65,7 +65,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return TextInputFeatureConfig().preprocessing.__dict__
+        return TextInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):

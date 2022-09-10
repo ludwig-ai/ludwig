@@ -101,7 +101,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return AudioInputFeatureConfig().preprocessing.__dict__
+        return AudioInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
