@@ -1,4 +1,5 @@
 import copy
+import math
 
 import pytest
 
@@ -23,6 +24,7 @@ from ludwig.utils.backward_compatibility import (
     _upgrade_feature,
     _upgrade_preprocessing_split,
     upgrade_missing_value_strategy,
+    upgrade_model_progress,
     upgrade_to_latest_version,
 )
 from ludwig.utils.defaults import merge_with_defaults
@@ -490,3 +492,97 @@ def test_update_missing_value_strategy(missing_value_strategy: str):
         expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "ffill"
 
     assert updated_config == expected_config
+
+
+def test_upgrade_model_progress():
+    old_model_progress = {
+        "batch_size": 64,
+        "best_eval_metric": 0.5,
+        "best_increase_batch_size_eval_metric": math.inf,
+        "best_reduce_learning_rate_eval_metric": math.inf,
+        "epoch": 2,
+        "last_improvement": 1,
+        "last_improvement_epoch": 1,
+        "last_increase_batch_size": 0,
+        "last_increase_batch_size_epoch": 0,
+        "last_increase_batch_size_eval_metric_improvement": 0,
+        "last_learning_rate_reduction": 0,
+        "last_learning_rate_reduction_epoch": 0,
+        "last_reduce_learning_rate_eval_metric_improvement": 0,
+        "learning_rate": 0.001,
+        "num_increases_batch_size": 0,
+        "num_reductions_learning_rate": 0,
+        "steps": 224,
+        "test_metrics": {
+            "combined": {"loss": [0.59, 0.56]},
+            "delinquent": {
+                "accuracy": [0.77, 0.78],
+            },
+        },
+        "train_metrics": {"combined": {"loss": [0.58, 0.55]}, "delinquent": {"roc_auc": [0.53, 0.54]}},
+        "vali_metrics": {"combined": {"loss": [0.59, 0.60]}, "delinquent": {"roc_auc": [0.53, 0.44]}},
+    }
+
+    new_model_progress = upgrade_model_progress(old_model_progress)
+
+    for stat in ("improvement", "increase_batch_size", "learning_rate_reduction"):
+        assert f"last_{stat}_epoch" not in new_model_progress
+        assert f"last_{stat}_steps" in new_model_progress
+        assert (
+            new_model_progress[f"last_{stat}_steps"]
+            == old_model_progress[f"last_{stat}_epoch"] * old_model_progress["batch_size"]
+        )
+
+    assert "tune_checkpoint_num" in new_model_progress
+
+    assert "vali_metrics" not in new_model_progress
+    assert "validation_metrics" in new_model_progress
+
+    metric = new_model_progress["validation_metrics"]["combined"]["loss"][0]
+    assert len(metric) == 3
+    assert metric[-1] == 0.59
+
+    # Verify that we don't make changes to already-valid model progress dicts.
+    # To do so, we modify the batch size value and re-run the upgrade on the otherwise-valid `new_model_progress` dict.
+    new_model_progress["batch_size"] = 1
+    unchanged_model_progress = upgrade_model_progress(new_model_progress)
+    assert unchanged_model_progress == new_model_progress
+
+
+def test_upgrade_model_progress_already_valid():
+    # Verify that we don't make changes to already-valid model progress dicts.
+    valid_model_progress = {
+        "batch_size": 128,
+        "best_eval_metric": 5.541325569152832,
+        "best_increase_batch_size_eval_metric": math.inf,
+        "best_reduce_learning_rate_eval_metric": math.inf,
+        "epoch": 5,
+        "last_improvement": 0,
+        "last_improvement_steps": 25,
+        "last_increase_batch_size": 0,
+        "last_increase_batch_size_eval_metric_improvement": 0,
+        "last_increase_batch_size_steps": 0,
+        "last_learning_rate_reduction": 0,
+        "last_learning_rate_reduction_steps": 0,
+        "last_reduce_learning_rate_eval_metric_improvement": 0,
+        "learning_rate": 0.001,
+        "num_increases_batch_size": 0,
+        "num_reductions_learning_rate": 0,
+        "steps": 25,
+        "test_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.38]], "loss": [[0, 5, 7.35], [1, 10, 7.08]]},
+            "combined": {"loss": [[0, 5, 7.35], [1, 10, 6.24]]},
+        },
+        "train_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.40]], "loss": [[0, 5, 7.67], [1, 10, 6.57]]},
+            "combined": {"loss": [[0, 5, 7.67], [1, 10, 6.57]]},
+        },
+        "validation_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.38], [1, 10, 0.38]], "loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+            "combined": {"loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+        },
+        "tune_checkpoint_num": 0,
+    }
+
+    unchanged_model_progress = upgrade_model_progress(valid_model_progress)
+    assert unchanged_model_progress == valid_model_progress
