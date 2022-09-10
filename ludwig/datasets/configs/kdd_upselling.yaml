@@ -1,0 +1,19 @@
+version: 1.0
+name: kdd_upselling
+download_urls:
+  - https://kdd.org/cupfiles/KDDCupData/2009/orange_small_train.data.zip
+  - https://kdd.org/cupfiles/KDDCupData/2009/orange_small_test.data.zip
+  - https://kdd.org/cupfiles/KDDCupData/2009/orange_small_train_upselling.labels
+  - https://raw.githubusercontent.com/catboost/benchmarks/master/quality_benchmarks/prepare_appetency_churn_upselling/upselling/stratified_train_idx_upselling.txt
+  - https://raw.githubusercontent.com/catboost/benchmarks/master/quality_benchmarks/prepare_appetency_churn_upselling/upselling/stratified_test_idx_upselling.txt
+sha256:
+  orange_small_test.data.zip: 440ac8a350144c14f4d6947c096ad675ee84aa27b4b742071662696e333cec53
+  orange_small_train.data.zip: 31ccb810bdbb71c16e079326443166dc3dfbf73cd358fc4a4ce7440fb1bc6040
+  orange_small_train_upselling.labels: 86effe68394fe1ab21c2d855f74adf70f442990aa95dfe5c97340fc924440e68
+  stratified_train_idx_upselling.txt: 659060717872177d607fbb157e8d2142c719912771d1716da11ccdd6ff915a05
+  stratified_test_idx_upselling.txt: 64cb66ef559b4ccff096e0d7c150c7d019321ffd6cef2362c195a56c56effcb7
+dataset_filenames: orange_small_train.data
+loader: kdd_loader.KDDUpsellingLoader
+description: |
+  The KDD Cup 2009 Upselling dataset.
+  https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
