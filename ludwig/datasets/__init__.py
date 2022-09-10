@@ -2,7 +2,7 @@ import argparse
 import importlib
 import os
 from functools import cache
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import yaml
 
@@ -31,7 +31,10 @@ def _get_dataset_configs() -> Dict[str, DatasetConfig]:
 
 def _instantiate_dataset_loader(dataset_name):
     """Instantiates the dataset loader for a given dataset."""
-    config = _get_dataset_configs()[dataset_name]
+    configs = _get_dataset_configs()
+    if dataset_name not in configs:
+        raise AttributeError(f"No config found for dataset {dataset_name}")
+    config = configs[dataset_name]
     class_name = config.loader.split(".")[-1]
     module_name = "." + ".".join(config.loader.split(".")[:-1])
     loader_module = importlib.import_module(module_name, package="ludwig.datasets.loaders")
@@ -44,7 +47,7 @@ def list_datasets() -> List[str]:
 
 
 def describe_dataset(dataset_name: str) -> str:
-    return _get_dataset_configs[dataset_name].description
+    return _get_dataset_configs()[dataset_name].description
 
 
 def download_dataset(dataset_name: str, output_dir: str = "."):
@@ -89,3 +92,10 @@ def cli(sys_argv):
         download_dataset(args.dataset, args.output_dir)
     else:
         raise ValueError(f"Unrecognized command: {args.command}")
+
+
+def __getattr__(name: str) -> Any:
+    public_methods = {"list_datasets", "describe_dataset", "download_dataset", "cli"}
+    if name in public_methods:
+        return globals()[name]
+    return _instantiate_dataset_loader(name)
