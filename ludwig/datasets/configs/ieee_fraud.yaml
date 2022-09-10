@@ -1,0 +1,16 @@
+version: 1.0
+name: ieee_fraud
+kaggle_competition: ieee-fraud-detection
+archive_filenames: ieee-fraud-detection.zip
+sha256:
+  ieee-fraud-detection.zip: 4cc646da09d0a9b265983ffed775b1f9ee15af5266586df610e04d6adae0b829
+train_filenames:
+  - train_identity.csv
+  - train_transaction.csv
+test_filenames:
+  - test_identity.csv
+  - test_transaction.csv
+loader: ieee_fraud.IEEEFraudLoader
+description: |
+  The IEEE-CIS Fraud Detection Dataset
+  https://www.kaggle.com/c/ieee-fraud-detection/overview.
