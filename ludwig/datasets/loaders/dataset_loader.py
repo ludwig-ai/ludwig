@@ -408,7 +408,7 @@ class DatasetLoader:
         """Saves transformed dataframe as a flat file ludwig can load for training."""
         if not os.path.exists(self.processed_dataset_dir):
             os.makedirs(self.processed_dataset_dir)
-        dataframe.to_parquet(self.processed_dataset_path)
+        dataframe.to_parquet(self.processed_dataset_path, engine="pyarrow")
 
     def load_transformed_dataset(self):
         """Load processed dataset into a dataframe."""

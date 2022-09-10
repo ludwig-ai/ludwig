@@ -1,0 +1,13 @@
+version: 1.0
+name: ohsumed_7400
+kaggle_dataset_id: weipengfei/ohr8r52
+archive_filenames: ohr8r52.zip
+sha256:
+  ohr8r52.zip: 93c7a8817a32b994d93267506ad766281764ba9382e3f4f9d978544cebab6ca4
+train_filenames: oh/oh-train-stemmed.csv
+validation_filenames: oh/oh-dev-stemmed.csv
+test_filenames: oh/oh-test-stemmed.csv
+description: |
+  Ohsumed corpus is extracted from MEDLINE database. MEDLINE is designed for multi-label classification, we remove the
+  text with two or more labels.
+  https://www.kaggle.com/datasets/weipengfei/ohr8r52

@@ -1,0 +1,11 @@
+version: 1.0
+name: ohsumed_cmu
+download_urls: http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/ohsumed-allcats-6.zip
+sha256:
+  ohsumed-allcats-6.zip: 3f2f6c4e27faaac1c8dc179a121bed92d6adbdf91a1e11d2d124f7bd963798da
+description: |
+  OHSUMED is a well-known medical abstracts dataset. It contains 348,566 references,
+  and is still used for research and development.
+
+  This is a subset of OHSUMED containing 6 categories, from this CMU course:
+  http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/

@@ -1,0 +1,9 @@
+version: 1.0
+name: imdb
+kaggle_dataset_id: lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
+archive_filenames: imdb-dataset-of-50k-movie-reviews.zip
+sha256:
+  imdb-dataset-of-50k-movie-reviews.zip: 73a235bc5fc4df57bb5d517afa480fe6bfd4e2afc25dc5e5867fc87f2d25614d
+description: |
+  IMDB dataset having 50K movie reviews for natural language processing or Text analytics.
+  https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
