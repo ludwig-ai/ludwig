@@ -762,6 +762,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
+        print("PREPROCESSING", self.config["input_features"][3]["preprocessing"])
         dataset, _ = preprocess_for_prediction(
             self.config,
             dataset=dataset,
