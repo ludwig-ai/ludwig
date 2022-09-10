@@ -1499,7 +1499,7 @@ def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, sh
     return training_set, test_set, validation_set
 
 
-def load_metadata(metadata_file_path):
+def load_metadata(metadata_file_path: str) -> Dict[str, Any]:
     logging.info(f"Loading metadata from: {metadata_file_path}")
     training_set_metadata = data_utils.load_json(metadata_file_path)
     # TODO(travis): decouple config from training_set_metadata so we don't need to
