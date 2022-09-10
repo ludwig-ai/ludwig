@@ -2,9 +2,13 @@ import os
 import zipfile
 
 import pandas as pd
+import pytest
 import wget
 
 from ludwig.api import LudwigModel
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
+
+NUM_EXAMPLES = 25
 
 
 def test_model_loaded_from_old_config_prediction_works(tmpdir):
@@ -32,3 +36,16 @@ def test_model_loaded_from_old_config_prediction_works(tmpdir):
     predictions, _ = ludwig_model.predict(dataset=test_set)
 
     assert predictions.to_dict()["Survived_predictions"] == {0: False}
+
+
+@pytest.mark.parametrize(
+    "model_url",
+    ["/Users/tgaddair/data/twitter_bots/twitter_bots_v05", "/Users/tgaddair/data/respiratory/respiratory_v05/model"],
+    ids=["twitter_bots", "respiratory"],
+)
+def test_predict_deprecated_model(model_url, tmpdir):
+    ludwig_model = LudwigModel.load(model_url)
+    config = ludwig_model.config
+    df = build_synthetic_dataset_df(NUM_EXAMPLES, config)
+    pred_df = ludwig_model.predict(df)
+    assert len(pred_df) == NUM_EXAMPLES
