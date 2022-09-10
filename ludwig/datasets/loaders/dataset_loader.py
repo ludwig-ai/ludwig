@@ -319,7 +319,7 @@ class DatasetLoader:
         """Transform data files before loading to dataframe.
 
         Subclasses should override this method to process files before loading dataframe, calling the base class
-        implementation first to get the list of data files.
+        implementation after transformation if the results of transformation are needed by preserve_paths.
         """
         data_files = [p for p in file_paths if not os.path.isdir(p)]
         if not os.path.exists(self.processed_dataset_dir):
@@ -400,6 +400,8 @@ class DatasetLoader:
 
         Subclasses should override this method if transformation of the dataframe is needed.
         """
+        for column_name, type in self.config.column_types.items():
+            dataframe[column_name] = dataframe[column_name].astype(type)
         return dataframe
 
     def save_processed(self, dataframe: pd.DataFrame):

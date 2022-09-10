@@ -78,7 +78,7 @@ def list_archive(archive_path, archive_type: Optional[ArchiveType] = None) -> Li
         with ZipFile(archive_path) as zfile:
             return zfile.namelist()
     elif archive_type == ArchiveType.GZIP:
-        return ".".join(archive_path.split(".")[:-1])  # Path minus the .gz extention
+        return [".".join(archive_path.split(".")[:-1])]  # Path minus the .gz extension
     elif archive_type in {ArchiveType.TAR, ArchiveType.TAR_ZIP, ArchiveType.TAR_BZ2, ArchiveType.TAR_GZ}:
         with tarfile.open(archive_path) as tar_file:
             return tar_file.getnames()

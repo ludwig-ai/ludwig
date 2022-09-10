@@ -1,5 +1,4 @@
-#! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,36 +15,16 @@
 import os
 import re
 from collections import defaultdict
+from typing import List
 
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import ZipDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.registry import register_dataset
-from ludwig.utils.fs_utils import makedirs, rename
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False):
-    dataset = Flickr8k(cache_dir=cache_dir)
-    return dataset.load(split=split)
-
-
-@register_dataset(name="flickr8k")
-class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
-    """The Flickr8k dataset.
-
-    This pulls in an array of mixins for different types of functionality which belongs in the workflow for ingesting
-    and transforming training data into a destination dataframe that can fit into Ludwig's training API.
-    """
-
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="flickr8k", cache_dir=cache_dir)
-
-    def process_downloaded_dataset(self):
-        makedirs(self.processed_temp_path, exist_ok=True)
-
+class Flickr8kLoader(DatasetLoader):
+    def transform_files(self, file_paths: List[str]) -> List[str]:
         # create a dictionary matching image_path --> list of captions
         image_to_caption = defaultdict(list)
-        with open(f"{self.raw_dataset_path}/Flickr8k.token.txt") as captions_file:
+        with open(f"{self.raw_dataset_dir}/Flickr8k.token.txt") as captions_file:
             image_to_caption = defaultdict(list)
             for line in captions_file:
                 line = line.split("#")
@@ -55,23 +34,22 @@ class Flickr8k(CSVLoadMixin, ZipDownloadMixin, BaseDataset):
                 line[1] = '"' + line[1] + '"'
                 image_to_caption[line[0]].append(line[1])
         # create csv file with 7 columns: image_path, 5 captions, and split
-        with open(os.path.join(self.processed_temp_path, self.csv_filename), "w") as output_file:
+        with open(os.path.join(self.raw_dataset_dir, "flickr8k_dataset.csv"), "w") as output_file:
             output_file.write("image_path,caption0,caption1,caption2,")
             output_file.write("caption3,caption4,split\n")
             splits = ["train", "dev", "test"]
             for i in range(len(splits)):
                 split = splits[i]
-                with open(f"{self.raw_dataset_path}/Flickr_8k.{split}Images.txt") as split_file:
+                with open(f"{self.raw_dataset_dir}/Flickr_8k.{split}Images.txt") as split_file:
                     for image_name in split_file:
                         image_name = image_name.strip("\n")
                         if image_name in image_to_caption:
                             output_file.write(
                                 "{},{},{},{},{},{},{}\n".format(
                                     # Note: image folder is named Flicker8k_Dataset
-                                    f"{self.raw_dataset_path}/Flicker8k_Dataset/{image_name}",
+                                    f"{self.raw_dataset_dir}/Flicker8k_Dataset/{image_name}",
                                     *image_to_caption[image_name],
                                     i,
                                 )
                             )
-        # Note: csv is stored in /processed while images are stored in /raw
-        rename(self.processed_temp_path, self.processed_dataset_path)
+        return super().transform_files(file_paths)

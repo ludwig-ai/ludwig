@@ -65,6 +65,10 @@ class DatasetConfig:
     # already present in the dataset.
     columns: List[str] = field(default_factory=list)
 
+    # Optional dictionary which maps column name to column type. Column's will be converted to the requested type, or
+    # will be inferred from the dataset by default.
+    column_types: Dict[str, str] = field(default_factory=dict)
+
     # The loader module and class to use, relative to ludwig.datasets.loaders. Only change this if the dataset requires
     # processing which is not handled by the default loader.
     loader: str = "dataset_loader.DatasetLoader"

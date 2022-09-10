@@ -1,5 +1,0 @@
-version: 1.0
-download_urls:
-  - https://raw.githubusercontent.com/intelligence-csd-auth-gr/Ethos-Hate-Speech-Dataset/master/ethos/ethos_data/Ethos_Dataset_Binary.csv
-download_file_type: csv
-csv_filename: Ethos_Dataset_Binary.csv
