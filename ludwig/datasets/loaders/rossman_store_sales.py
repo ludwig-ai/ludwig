@@ -1,5 +1,4 @@
-#! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,58 +14,30 @@
 # ==============================================================================
 import calendar
 import os
+from typing import List
 
 import numpy as np
 import pandas as pd
 
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.kaggle import KaggleDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.registry import register_dataset
-from ludwig.utils.fs_utils import makedirs, rename
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=False, kaggle_username=None, kaggle_key=None):
-    dataset = RossmannStoreSales(cache_dir=cache_dir, kaggle_username=kaggle_username, kaggle_key=kaggle_key)
-    return dataset.load(split=split)
+class RossmanStoreSalesLoader(DatasetLoader):
+    """The Rossmann Store Sales dataset."""
 
+    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+        """Load dataset files into a dataframe."""
 
-@register_dataset(name="rossmann_store_sales")
-class RossmannStoreSales(CSVLoadMixin, KaggleDownloadMixin, BaseDataset):
-    """The Rossmann Store Sales dataset.
+        stores_df = pd.read_csv(os.path.join(self.raw_dataset_dir, "store.csv"))
 
-    This pulls in an array of mixins for different types of functionality
-    which belongs in the workflow for ingesting and transforming training data into a destination
-    dataframe that can fit into Ludwig's training API.
-
-    Using the time split from the catboost benchmark
-    https://github.com/catboost/benchmarks/tree/master/kaggle/rossmann-store-sales
-    that is used in the TabNet paper,
-    because the test set does not contain sales ground truth
-    """
-
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION, kaggle_username=None, kaggle_key=None):
-        self.kaggle_username = kaggle_username
-        self.kaggle_key = kaggle_key
-        self.is_kaggle_competition = True
-        super().__init__(dataset_name="rossmann_store_sales", cache_dir=cache_dir)
-
-    def process_downloaded_dataset(self):
-
-        stores_df = pd.read_csv(os.path.join(self.raw_dataset_path, "store.csv"))
-
-        train_df = pd.read_csv(os.path.join(self.raw_dataset_path, "train.csv"), low_memory=False)
+        train_df = pd.read_csv(os.path.join(self.raw_dataset_dir, "train.csv"), low_memory=False)
         train_df = preprocess_df(train_df, stores_df)
 
         train_df["split"] = -1
         train_df.loc[train_df["Year"] == 2014, "split"] = 0
         train_df.loc[train_df["Year"] == 2015, "split"] = 2
         train_df.drop(train_df[train_df["split"] == -1].index, inplace=True)
-        df = train_df
-
-        makedirs(self.processed_temp_path, exist_ok=True)
-        df.to_csv(os.path.join(self.processed_temp_path, self.csv_filename), index=False)
-        rename(self.processed_temp_path, self.processed_dataset_path)
+        return train_df
 
 
 def preprocess_dates(df):

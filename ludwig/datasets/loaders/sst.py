@@ -1,5 +1,4 @@
-#! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from abc import ABC, abstractmethod
-from typing import Set
+from typing import List, Set
 
 import pandas as pd
-from pandas import DataFrame
 
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import ZipDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
+from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader, DEFAULT_CACHE_LOCATION
 
 
-class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
-    """The SST2 dataset.
+class SSTLoader(DatasetLoader):
+    """The SST dataset.
 
     This dataset is constructed using the Stanford Sentiment Treebank Dataset.
     This dataset contains binary labels (positive or negative) for each sample.
@@ -36,46 +31,44 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDa
     very negative, negative, neutral, positive, very positive with
     the following cutoffs:
     [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
-
-    This class pulls in an array of mixins for different types of functionality
-    which belongs in the workflow for ingesting and transforming
-    training data into a destination dataframe that can be use by Ludwig.
     """
 
     def __init__(
         self,
-        dataset_name,
-        cache_dir=DEFAULT_CACHE_LOCATION,
+        config: DatasetConfig,
+        cache_dir: str = DEFAULT_CACHE_LOCATION,
         include_subtrees=False,
         discard_neutral=False,
         convert_parentheses=True,
         remove_duplicates=False,
     ):
-        super().__init__(dataset_name=dataset_name, cache_dir=cache_dir)
+        super().__init__(config, cache_dir=cache_dir)
         self.include_subtrees = include_subtrees
         self.discard_neutral = discard_neutral
         self.convert_parentheses = convert_parentheses
         self.remove_duplicates = remove_duplicates
 
     @staticmethod
-    @abstractmethod
     def get_sentiment_label(id2sent, phrase_id):
-        pass
+        raise NotImplementedError
 
-    def process_downloaded_dataset(self):
+    def transform_files(self, file_paths: List[str]) -> List[str]:
+        # maybe this should be
+
+        """Load dataset files into a dataframe."""
         sentences_df = pd.read_csv(
-            os.path.join(self.raw_dataset_path, "stanfordSentimentTreebank/datasetSentences.txt"),
+            os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/datasetSentences.txt"),
             sep="\t",
         )
 
         sentences_df["sentence"] = sentences_df["sentence"].apply(format_text)
 
         datasplit_df = pd.read_csv(
-            os.path.join(self.raw_dataset_path, "stanfordSentimentTreebank/datasetSplit.txt"), sep=","
+            os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/datasetSplit.txt"), sep=","
         )
 
         phrase2id = {}
-        with open(os.path.join(self.raw_dataset_path, "stanfordSentimentTreebank/dictionary.txt")) as f:
+        with open(os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/dictionary.txt")) as f:
             Lines = f.readlines()
             for line in Lines:
                 if line:
@@ -84,7 +77,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDa
                     phrase2id[phrase] = int(split_line[1])
 
         id2sent = {}
-        with open(os.path.join(self.raw_dataset_path, "stanfordSentimentTreebank/sentiment_labels.txt")) as f:
+        with open(os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/sentiment_labels.txt")) as f:
             Lines = f.readlines()
             for line in Lines:
                 if line:
@@ -99,14 +92,14 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDa
 
         if self.include_subtrees:
             trees_pointers = []
-            with open(os.path.join(self.raw_dataset_path, "stanfordSentimentTreebank/STree.txt")) as f:
+            with open(os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/STree.txt")) as f:
                 Lines = f.readlines()
                 for line in Lines:
                     if line:
                         trees_pointers.append([int(s.strip()) for s in line.split("|")])
 
             trees_phrases = []
-            with open(os.path.join(self.raw_dataset_path, "stanfordSentimentTreebank/SOStr.txt")) as f:
+            with open(os.path.join(self.raw_dataset_dir, "stanfordSentimentTreebank/SOStr.txt")) as f:
                 Lines = f.readlines()
                 for line in Lines:
                     if line:
@@ -114,6 +107,7 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDa
 
         splits = {"train": 1, "test": 2, "dev": 3}
 
+        generated_csv_filenames = []
         for split_name, split_id in splits.items():
             sentence_idcs = get_sentence_idcs_in_split(datasplit_df, split_id)
 
@@ -157,9 +151,144 @@ class SST(ABC, ZipDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDa
             final_csv.columns = ["sentence", "label"]
             if self.remove_duplicates:
                 final_csv = final_csv.drop_duplicates(subset=["sentence"])
-            final_csv.to_csv(os.path.join(self.raw_dataset_path, f"{split_name}.csv"), index=False)
+            csv_filename = os.path.join(self.raw_dataset_dir, f"{split_name}.csv")
+            generated_csv_filenames.append(csv_filename)
+            final_csv.to_csv(csv_filename, index=False)
 
-        super().process_downloaded_dataset()
+        return super().transform_files(generated_csv_filenames)
+
+
+class SST2Loader(SSTLoader):
+    """The SST2 dataset.
+
+    This dataset is constructed using the Stanford Sentiment Treebank Dataset.
+    This dataset contains binary labels (positive or negative) for each sample.
+
+    The original dataset specified 5 labels:
+    very negative, negative, neutral, positive, very positive with
+    the following cutoffs:
+    [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
+
+    In the construction of this dataset, we remove all neutral phrases
+    and assign a negative label if the original rating falls
+    into the following range: [0, 0.4] and a positive label
+    if the original rating is between (0.6, 1.0].
+    """
+
+    def __init__(
+        self,
+        config: DatasetConfig,
+        cache_dir=DEFAULT_CACHE_LOCATION,
+        include_subtrees=False,
+        convert_parentheses=True,
+        remove_duplicates=False,
+    ):
+        super().__init__(
+            config,
+            cache_dir=cache_dir,
+            include_subtrees=include_subtrees,
+            discard_neutral=True,
+            convert_parentheses=convert_parentheses,
+            remove_duplicates=remove_duplicates,
+        )
+
+    def get_sentiment_label(self, id2sent, phrase_id):
+        sentiment = id2sent[phrase_id]
+        if sentiment <= 0.4:  # negative
+            return 0
+        elif sentiment > 0.6:  # positive
+            return 1
+        return -1  # neutral
+
+
+class SST3Loader(SSTLoader):
+    """The SST3 dataset.
+
+    This dataset is constructed using the Stanford Sentiment Treebank Dataset.
+    This dataset contains five labels (very negative, negative, neutral,
+    positive, very positive) for each sample.
+
+    In the original dataset, the  5 labels: very negative, negative, neutral, positive,
+    and very positive have the following cutoffs:
+    [0, 0.4], (0.4, 0.6], (0.6, 1.0]
+
+    This class pulls in an array of mixins for different types of functionality
+    which belongs in the workflow for ingesting and transforming
+    training data into a destination dataframe that can be use by Ludwig.
+    """
+
+    def __init__(
+        self,
+        config: DatasetConfig,
+        cache_dir=DEFAULT_CACHE_LOCATION,
+        include_subtrees=False,
+        convert_parentheses=True,
+        remove_duplicates=False,
+    ):
+        super().__init__(
+            config,
+            cache_dir=cache_dir,
+            include_subtrees=include_subtrees,
+            convert_parentheses=convert_parentheses,
+            remove_duplicates=remove_duplicates,
+        )
+
+    def get_sentiment_label(self, id2sent, phrase_id):
+        sentiment = id2sent[phrase_id]
+        if sentiment <= 0.4:
+            return "negative"
+        elif sentiment <= 0.6:
+            return "neutral"
+        elif sentiment <= 1.0:
+            return "positive"
+        return "neutral"
+
+
+class SST5Loader(SSTLoader):
+    """The SST5 dataset.
+
+    This dataset is constructed using the Stanford Sentiment Treebank Dataset.
+    This dataset contains five labels (very negative, negative, neutral,
+    positive, very positive) for each sample.
+
+    In the original dataset, the  5 labels: very negative, negative, neutral, positive,
+    and very positive have the following cutoffs:
+    [0, 0.2], (0.2, 0.4], (0.4, 0.6], (0.6, 0.8], (0.8, 1.0]
+
+    This class pulls in an array of mixins for different types of functionality
+    which belongs in the workflow for ingesting and transforming
+    training data into a destination dataframe that can be use by Ludwig.
+    """
+
+    def __init__(
+        self,
+        config: DatasetConfig,
+        cache_dir=DEFAULT_CACHE_LOCATION,
+        include_subtrees=False,
+        convert_parentheses=True,
+        remove_duplicates=False,
+    ):
+        super().__init__(
+            config,
+            cache_dir=cache_dir,
+            include_subtrees=include_subtrees,
+            convert_parentheses=convert_parentheses,
+            remove_duplicates=remove_duplicates,
+        )
+
+    def get_sentiment_label(self, id2sent, phrase_id):
+        sentiment = id2sent[phrase_id]
+        if sentiment <= 0.2:
+            return "very_negative"
+        elif sentiment <= 0.4:
+            return "negative"
+        elif sentiment <= 0.6:
+            return "neutral"
+        elif sentiment <= 0.8:
+            return "positive"
+        elif sentiment <= 1.0:
+            return "very_positive"
+        return "neutral"
 
 
 def format_text(text: str):
@@ -177,13 +306,13 @@ def convert_parentheses_back(text: str):
     return text.replace("(", "-LRB-").replace(")", "-RRB-")
 
 
-def get_sentence_idcs_in_split(datasplit: DataFrame, split_id: int):
+def get_sentence_idcs_in_split(datasplit: pd.DataFrame, split_id: int):
     """Given a dataset split is (1 for train, 2 for test, 3 for dev), returns the set of corresponding sentence
     indices in sentences_df."""
     return set(datasplit[datasplit["splitset_label"] == split_id]["sentence_index"])
 
 
-def get_sentences_with_idcs(sentences: DataFrame, sentences_idcs: Set[int]):
+def get_sentences_with_idcs(sentences: pd.DataFrame, sentences_idcs: Set[int]):
     """Given a set of sentence indices, returns the corresponding sentences texts in sentences."""
     criterion = sentences["sentence_index"].map(lambda x: x in sentences_idcs)
     return sentences[criterion]["sentence"].tolist()

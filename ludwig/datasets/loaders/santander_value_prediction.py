@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import numpy as np
 import pandas as pd
 
-from ludwig.constants import SPLIT
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
-class ImbalancedInsuranceLoader(DatasetLoader):
-    """Health Insurance Cross Sell Prediction Predict Health Insurance Owners' who will be interested in Vehicle
-    Insurance https://www.kaggle.com/datasets/arashnic/imbalanced-data-practice."""
+class SantanderValuePredictionLoader(DatasetLoader):
+    """The Santander Value Prediction Challenge dataset.
+
+    https://www.kaggle.com/c/santander-value-prediction-challenge
+    """
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        df = super().transform_dataframe(dataframe)
-        df[SPLIT] = np.random.choice(3, len(df), p=(0.7, 0.1, 0.2)).astype(np.int8)
-        return df
+        processed_df = super().transform_dataframe(dataframe)
+        # Ensure feature column names are strings (some are numeric); keep special names as is
+        processed_df.columns = ["C" + str(col) for col in processed_df.columns]
+        processed_df.rename(columns={"CID": "ID", "Ctarget": "target", "Csplit": "split"}, inplace=True)
+        return processed_df

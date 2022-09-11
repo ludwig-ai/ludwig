@@ -1,5 +1,4 @@
-#! /usr/bin/env python
-# Copyright (c) 2021 Uber Technologies, Inc.
+# Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,21 +17,11 @@ import os
 import pandas as pd
 from scipy.io import loadmat
 
-from ludwig.datasets.base_dataset import BaseDataset, DEFAULT_CACHE_LOCATION
-from ludwig.datasets.mixins.download import BinaryFileDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import MultifileJoinProcessMixin
-from ludwig.datasets.registry import register_dataset
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.utils.fs_utils import open_file
 
 
-def load(cache_dir=DEFAULT_CACHE_LOCATION, split=True):
-    dataset = Sarcos(cache_dir=cache_dir)
-    return dataset.load(split=split)
-
-
-@register_dataset(name="sarcos")
-class Sarcos(BinaryFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
+class SarcosLoader(DatasetLoader):
     """The Sarcos dataset.
 
     Details:
@@ -52,18 +41,15 @@ class Sarcos(BinaryFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, B
         http://www.gaussianprocess.org/gpml/data/
     """
 
-    def __init__(self, cache_dir=DEFAULT_CACHE_LOCATION):
-        super().__init__(dataset_name="sarcos", cache_dir=cache_dir)
-
-    def read_file(self, filetype, filename, header=0):
-        with open_file(os.path.join(self.raw_dataset_path, filename)) as f:
+    def load_file_to_dataframe(self, file_path: str) -> pd.DataFrame:
+        """Loads a file into a dataframe."""
+        with open_file(file_path) as f:
             mat = loadmat(f)
-        file_df = pd.DataFrame(mat[filename.split(".")[0]])
+        file_df = pd.DataFrame(mat[os.path.basename(file_path).split(".")[0]])
         return file_df
 
-    def process_downloaded_dataset(self):
-        super().process_downloaded_dataset()
-        processed_df = pd.read_csv(os.path.join(self.processed_dataset_path, self.csv_filename))
+    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        processed_df = super().transform_dataframe(dataframe)
         columns = []
         columns += [f"position_{i}" for i in range(1, 8)]
         columns += [f"velocity_{i}" for i in range(1, 8)]
@@ -72,4 +58,4 @@ class Sarcos(BinaryFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, B
         columns += ["split"]
 
         processed_df.columns = columns
-        processed_df.to_csv(os.path.join(self.processed_dataset_path, self.csv_filename), index=False)
+        return processed_df

@@ -1,0 +1,13 @@
+version: 1.0
+name: rossman_store_sales
+kaggle_competition: rossmann-store-sales
+archive_filenames: rossmann-store-sales.zip
+sha256:
+  rossmann-store-sales.zip: 52ce715e02dc70cac16b14548580d656997f5d43ce3544220d5e574d26483cf3
+loader: rossman_store_sales.RossmanStoreSalesLoader
+description: |
+  The Rossmann Store Sales dataset.
+  Using the time split from the catboost benchmark
+  https://github.com/catboost/benchmarks/tree/master/kaggle/rossmann-store-sales
+  that is used in the TabNet paper,
+  because the test set does not contain sales ground truth.
