@@ -523,35 +523,51 @@ def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
 
 @register_config_transformation("0.6")
 def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
-    def __is_old_missing_value_strategy(feature_config: Dict[str, Any]):
-        if PREPROCESSING not in feature_config:
-            return False
-        missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY, None)
-        if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
-            return False
-        return True
+    for input_feature in config.get(INPUT_FEATURES, []):
+        if _is_old_missing_value_strategy(input_feature):
+            _update_old_missing_value_strategy(input_feature)
 
-    def __update_old_missing_value_strategy(feature_config: Dict[str, Any]):
-        missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
-        replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
-        feature_name = feature_config.get(NAME)
-        warnings.warn(
-            f"Using `{replacement_strategy}` instead of `{missing_value_strategy}` as the missing value strategy"
-            f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in v0.8",
-            DeprecationWarning,
-        )
-        feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})
-
-    for input_feature in config.get(INPUT_FEATURES, {}):
-        if __is_old_missing_value_strategy(input_feature):
-            __update_old_missing_value_strategy(input_feature)
-
-    for output_feature in config.get(OUTPUT_FEATURES, {}):
-        if __is_old_missing_value_strategy(output_feature):
-            __update_old_missing_value_strategy(output_feature)
+    for output_feature in config.get(OUTPUT_FEATURES, []):
+        if _is_old_missing_value_strategy(output_feature):
+            _update_old_missing_value_strategy(output_feature)
 
     for feature, feature_defaults in config.get(DEFAULTS, {}).items():
-        if __is_old_missing_value_strategy(feature_defaults):
-            __update_old_missing_value_strategy(config.get(DEFAULTS).get(feature))
+        if _is_old_missing_value_strategy(feature_defaults):
+            _update_old_missing_value_strategy(config.get(DEFAULTS).get(feature))
 
     return config
+
+
+def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
+    # TODO(travis): stopgap solution, we should make it so we don't need to do this
+    # by decoupling config and metadata
+    metadata = copy.deepcopy(metadata)
+    _upgrade_metadata_mising_values(metadata)
+    return metadata
+
+
+def _upgrade_metadata_mising_values(metadata: Dict[str, Any]):
+    for k, v in metadata.items():
+        if isinstance(v, dict) and _is_old_missing_value_strategy(v):
+            _update_old_missing_value_strategy(v)
+
+
+def _update_old_missing_value_strategy(feature_config: Dict[str, Any]):
+    missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
+    replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
+    feature_name = feature_config.get(NAME)
+    warnings.warn(
+        f"Using `{replacement_strategy}` instead of `{missing_value_strategy}` as the missing value strategy"
+        f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in v0.8",
+        DeprecationWarning,
+    )
+    feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})
+
+
+def _is_old_missing_value_strategy(feature_config: Dict[str, Any]):
+    if PREPROCESSING not in feature_config:
+        return False
+    missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY, None)
+    if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
+        return False
+    return True
