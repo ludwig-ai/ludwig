@@ -47,9 +47,12 @@ from ludwig.constants import (
     SAMPLER,
     SCHEDULER,
     SEARCH_ALG,
+    SEQUENCE,
     SPLIT,
     SPLIT_PROBABILITIES,
     STRATIFY,
+    TEXT,
+    TIMESERIES,
     TRAINER,
     TRAINING,
     TYPE,
@@ -167,6 +170,44 @@ def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
         feature[LOSS][CLASS_WEIGHTS] = class_weights
 
     return feature
+
+
+@register_config_transformation("0.4")
+def _drop_metadata_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    # These params are only needed in training_set_metadata, not the config
+    drop_params = {
+        "char_most_common",
+        "char_sequence_length_limit",
+        "char_tokenizer",
+        "char_vocab_file",
+        "sequence_length_limit",
+        "word_most_common",
+        "word_sequence_length_limit",
+        "word_tokenizer",
+        "word_vocab_file",
+    }
+
+    def upgrade_params(params):
+        for key in list(params.keys()):
+            if key in drop_params:
+                warnings.warn(
+                    f"Removing deprecated config preprocessing parameter {key} (moved to training_set_metadata)",
+                    DeprecationWarning,
+                )
+                del params[key]
+
+    sequence_types = [SEQUENCE, TEXT, AUDIO, TIMESERIES]
+    for dtype in sequence_types:
+        params = config.get(PREPROCESSING, {}).get(dtype, {})
+        upgrade_params(params)
+
+    for feature in config[INPUT_FEATURES]:
+        if feature.get(TYPE) not in sequence_types:
+            continue
+        params = feature.get(PREPROCESSING, {})
+        upgrade_params(params)
+
+    return config
 
 
 @register_config_transformation("0.5")

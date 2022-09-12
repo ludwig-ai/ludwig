@@ -50,7 +50,8 @@ def test_predict_deprecated_model(model_url, tmpdir):
     model_dir = os.path.join(tmpdir, "model")
     os.makedirs(model_dir)
 
-    archive_path = wget.download(model_url, tmpdir)
+    # archive_path = wget.download(model_url, tmpdir)
+    archive_path = "/Users/tgaddair/data/twitter_bots/twitter_bots_v05.zip"
     with zipfile.ZipFile(archive_path, "r") as zip_ref:
         zip_ref.extractall(model_dir)
 
