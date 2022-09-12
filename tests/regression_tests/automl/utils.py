@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import ludwig.datasets
-from ludwig.datasets.loaders import DatasetLoader
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 # Subset of Ludwig Dataset Zoo used for AutoML type inference regression tests.
 TEST_DATASET_REGISTRY = {"adult_census_income", "mnist"}

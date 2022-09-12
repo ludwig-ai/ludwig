@@ -11,7 +11,7 @@ import fsspec
 import pandas as pd
 
 from ludwig.constants import CATEGORY
-from ludwig.datasets.base_dataset import BaseDataset
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.globals import CONFIG_YAML
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
@@ -20,7 +20,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 
 
 def load_from_module(
-    dataset_module: Union[BaseDataset, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
+    dataset_module: Union[DatasetLoader, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
 ) -> pd.DataFrame:
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
