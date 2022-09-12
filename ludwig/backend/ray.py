@@ -32,7 +32,7 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
-from ray.util.placement_group import placement_group, PlacementGroup, remove_placement_group
+from ray.util.placement_group import placement_group, remove_placement_group
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
