@@ -89,7 +89,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     max_eval: int = Integer(
         default=None,
         allow_none=True,
-        description="Maximum number of function evaluations per optimization step. Default: `max_iter` * 1.25."
+        description="Maximum number of function evaluations per optimization step. Default: `max_iter` * 1.25.",
     )
     tolerance_grad: float = NonNegativeFloat(
         default=1e-07, description="Termination tolerance on first order optimality."
