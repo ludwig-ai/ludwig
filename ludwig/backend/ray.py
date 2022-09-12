@@ -74,7 +74,7 @@ if _ray112:
 else:
     from ray.train.horovod import HorovodConfig
 RAY_DEFAULT_PARALLELISM = 200
-THREE_MINS_IN_S = 180
+FIFTEEN_MINS_IN_S = 15 * 60
 
 
 # TODO: deprecated v0.5
@@ -828,7 +828,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         else:
             num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
             self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
-            ready = self._preprocessor_pg.wait(THREE_MINS_IN_S)
+            ready = self._preprocessor_pg.wait(FIFTEEN_MINS_IN_S)
 
             if not ready:
                 remove_placement_group(self._preprocessor_pg)
