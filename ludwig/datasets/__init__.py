@@ -12,7 +12,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 
 
-def _load_dataset_config(config_filename: str):
+def load_dataset_config(config_filename: str):
     """Loads a dataset config."""
     config_path = os.path.join(os.path.dirname(configs.__file__), config_filename)
     with open(config_path) as f:
@@ -25,16 +25,21 @@ def _get_dataset_configs() -> Dict[str, DatasetConfig]:
     import importlib.resources
 
     config_files = [f for f in importlib.resources.contents(configs) if f.endswith(".yaml")]
-    config_objects = [_load_dataset_config(f) for f in config_files]
+    config_objects = [load_dataset_config(f) for f in config_files]
     return {c.name: c for c in config_objects}
 
 
-def get_dataset(dataset_name, cache_dir=None):
-    """Gets an instance of the dataset loader for a given dataset."""
+def get_dataset_config(dataset_name) -> DatasetConfig:
+    """Get the config for a dataset."""
     configs = _get_dataset_configs()
     if dataset_name not in configs:
         raise AttributeError(f"No config found for dataset {dataset_name}")
-    config = configs[dataset_name]
+    return configs[dataset_name]
+
+
+def get_dataset(dataset_name, cache_dir=None) -> Any:
+    """Gets an instance of the dataset loader for a dataset."""
+    config = get_dataset_config(dataset_name)
     class_name = config.loader.split(".")[-1]
     module_name = "." + ".".join(config.loader.split(".")[:-1])
     loader_module = importlib.import_module(module_name, package="ludwig.datasets.loaders")
@@ -45,14 +50,17 @@ def get_dataset(dataset_name, cache_dir=None):
 
 
 def list_datasets() -> List[str]:
+    """Returns a list of the names of all available datasets."""
     return sorted(_get_dataset_configs().keys())
 
 
 def describe_dataset(dataset_name: str) -> str:
+    """Returns the description of the dataset."""
     return _get_dataset_configs()[dataset_name].description
 
 
 def download_dataset(dataset_name: str, output_dir: str = "."):
+    """Downloads the dataset to the specified directory."""
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
 
@@ -101,7 +109,7 @@ def __getattr__(name: str) -> Any:
 
          from ludwig.datasets import titanic
 
-    returns an instance of DatasetLoader with the titanic config.
+    returns an instance of DatasetLoader configured to load titanic.
 
     If you want to download a dataset in a non-default ludwig cache directory, there are two options:
         1. set the LUDWIG_CACHE environment variable to your desired path before importing the dataset
