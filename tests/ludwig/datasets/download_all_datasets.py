@@ -13,7 +13,9 @@ def download_all_datasets():
     """Downloads all datasets to ./downloaded_datasets."""
     dataset_names = datasets.list_datasets()
 
-    print("Datasets: " + str(dataset_names))
+    print("Datasets: ")
+    for name in dataset_names:
+        print(f"  {name}")
     print("Downloading all datasets")
 
     # Download All Datasets
