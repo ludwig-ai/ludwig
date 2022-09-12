@@ -212,61 +212,55 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
-        # self.optimizer.zero_grad()
-
-        # # Obtain model predictions and loss
-        # model_outputs = self.model((inputs, targets))
-        # loss, all_losses = self.model.train_loss(
-        #     targets, model_outputs, self.regularization_type, self.regularization_lambda
-        # )
-
-        # # Begin the backward pass
-        # variables = self.model.parameters()
-        # loss.backward()
-
-        # if self.horovod:
-        #     # Wait for gradient aggregation to complete before clipping the gradients
-        #     self.optimizer.synchronize()
-
-        # # Clip gradients
-        # self.clip_grads(variables)
-
-        # # Apply gradient updates
-        # if self.horovod:
-        #     # Because we already synchronized above, we can doing so here
-        #     with self.optimizer.skip_synchronize():
-        #         self.optimizer.step()
-        # else:
-        def get_closure() -> Callable:
-            # Convert targets to tensors.
-            for target_feature_name, target_value in targets.items():
-                if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(target_value)
-                else:
-                    targets[target_feature_name] = target_value
-
-            with torch.no_grad():
-                encoder_outputs = self.model.encode(inputs)
-                combiner_outputs = self.model.combine(encoder_outputs)
+        if isinstance(self.optimizer, torch.optim.LBFGS):
+            # NOTE: Horovod is not supported for L-BFGS.
 
             def closure():
+                # Allows L-BFGS to reevaluate the loss function
                 self.optimizer.zero_grad()
-                model_outputs = self.model.decode(combiner_outputs, targets, mask=None)
+                model_outputs = self.model((inputs, targets))
                 loss, all_losses = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
                 loss.backward()
                 return loss
 
-            return closure
+            self.optimizer.step(closure)
 
-        self.optimizer.step(get_closure() if isinstance(self.optimizer, torch.optim.LBFGS) else None)
+            # Obtain model predictions and loss
+            model_outputs = self.model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
+
+            return loss, all_losses
+
+        self.optimizer.zero_grad()
 
         # Obtain model predictions and loss
         model_outputs = self.model((inputs, targets))
         loss, all_losses = self.model.train_loss(
             targets, model_outputs, self.regularization_type, self.regularization_lambda
         )
+
+        # Begin the backward pass
+        variables = self.model.parameters()
+        loss.backward()
+
+        if self.horovod:
+            # Wait for gradient aggregation to complete before clipping the gradients
+            self.optimizer.synchronize()
+
+        # Clip gradients
+        self.clip_grads(variables)
+
+        # Apply gradient updates
+        if self.horovod:
+            # Because we already synchronized above, we can doing so here
+            with self.optimizer.skip_synchronize():
+                self.optimizer.step()
+        else:
+            self.optimizer.step()
 
         return loss, all_losses
 
