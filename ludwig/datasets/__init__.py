@@ -1,7 +1,7 @@
 import argparse
 import importlib
 import os
-from functools import cache
+from functools import lru_cache
 from typing import Any, Dict, List
 
 import yaml
@@ -19,7 +19,7 @@ def load_dataset_config(config_filename: str):
         return DatasetConfig(**yaml.safe_load(f))
 
 
-@cache
+@lru_cache(maxsize=1)
 def _get_dataset_configs() -> Dict[str, DatasetConfig]:
     """Returns all dataset configs indexed by name."""
     import importlib.resources
