@@ -20,7 +20,7 @@ import shutil
 import urllib
 from enum import Enum
 from pathlib import Path
-from typing import List, Set, Union
+from typing import List, Optional, Set, Union
 from urllib.parse import urlparse
 
 import pandas as pd
@@ -33,8 +33,6 @@ from ludwig.datasets.kaggle import download_kaggle_dataset
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_CACHE_LOCATION = str(Path.home().joinpath(".ludwig_cache"))
 
 
 class TqdmUpTo(tqdm):
@@ -55,6 +53,14 @@ class TqdmUpTo(tqdm):
         if tsize is not None:
             self.total = tsize
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
+
+
+def get_default_cache_location() -> str:
+    """Returns a path to the default LUDWIG_CACHE location, or $HOME/.ludwig_cache."""
+    if "LUDWIG_CACHE" in os.environ and os.environ["LUDWIG_CACHE"]:
+        return os.environ["LUDWIG_CACHE"]
+    else:
+        return str(Path.home().joinpath(".ludwig_cache"))
 
 
 def _list_of_strings(list_or_string: Union[str, List[str]]) -> List[str]:
@@ -113,9 +119,10 @@ class DatasetLoader:
     training.
     """
 
-    def __init__(self, config: DatasetConfig, cache_dir: str = DEFAULT_CACHE_LOCATION):
+    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None):
+        """Constructor."""
         self.config = config
-        self.cache_dir = cache_dir
+        self.cache_dir = cache_dir if cache_dir else get_default_cache_location()
 
     @property
     def name(self):

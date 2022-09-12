@@ -29,8 +29,8 @@ def _get_dataset_configs() -> Dict[str, DatasetConfig]:
     return {c.name: c for c in config_objects}
 
 
-def _instantiate_dataset_loader(dataset_name):
-    """Instantiates the dataset loader for a given dataset."""
+def get_dataset(dataset_name, cache_dir=None):
+    """Gets an instance of the dataset loader for a given dataset."""
     configs = _get_dataset_configs()
     if dataset_name not in configs:
         raise AttributeError(f"No config found for dataset {dataset_name}")
@@ -39,6 +39,8 @@ def _instantiate_dataset_loader(dataset_name):
     module_name = "." + ".".join(config.loader.split(".")[:-1])
     loader_module = importlib.import_module(module_name, package="ludwig.datasets.loaders")
     loader_cls = getattr(loader_module, class_name)
+    if cache_dir:
+        return loader_cls(config, cache_dir=cache_dir)
     return loader_cls(config)
 
 
@@ -51,7 +53,7 @@ def describe_dataset(dataset_name: str) -> str:
 
 
 def download_dataset(dataset_name: str, output_dir: str = "."):
-    dataset = _instantiate_dataset_loader(dataset_name)
+    dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
 
 
@@ -95,7 +97,17 @@ def cli(sys_argv):
 
 
 def __getattr__(name: str) -> Any:
-    public_methods = {"list_datasets", "describe_dataset", "download_dataset", "cli"}
+    """Module-level __getattr__ allows us to return an instance of a class.  For example:
+
+         from ludwig.datasets import titanic
+
+    returns an instance of DatasetLoader with the titanic config.
+
+    If you want to download a dataset in a non-default ludwig cache directory, there are two options:
+        1. set the LUDWIG_CACHE environment variable to your desired path before importing the dataset
+        2. Use ludwig.datasets.get_dataset(dataset_name, cache_dir=<CACHE_DIR>)
+    """
+    public_methods = {"list_datasets", "describe_dataset", "download_dataset", "cli", "get_dataset"}
     if name in public_methods:
         return globals()[name]
-    return _instantiate_dataset_loader(name)
+    return get_dataset(name)

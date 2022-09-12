@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import Optional
+
 import pandas as pd
 
 from ludwig.datasets.dataset_config import DatasetConfig
-from ludwig.datasets.loaders.dataset_loader import DatasetLoader, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class HiggsLoader(DatasetLoader):
-    def __init__(self, config: DatasetConfig, cache_dir: str = DEFAULT_CACHE_LOCATION, add_validation_set=True):
+    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, add_validation_set=True):
         super().__init__(config, cache_dir)
         self.add_validation_set = add_validation_set
 

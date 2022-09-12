@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from typing import Optional
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from ludwig.datasets.dataset_config import DatasetConfig
-from ludwig.datasets.loaders.dataset_loader import DatasetLoader, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class ForestCoverLoader(DatasetLoader):
-    def __init__(self, config: DatasetConfig, cache_dir: str = DEFAULT_CACHE_LOCATION, use_tabnet_split=True):
-        super().__init__(config, cache_dir)
+    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, use_tabnet_split=True):
+        super().__init__(config, cache_dir=cache_dir)
         self.use_tabnet_split = use_tabnet_split
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:

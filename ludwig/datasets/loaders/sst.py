@@ -13,12 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 import os
-from typing import List, Set
+from typing import List, Optional, Set
 
 import pandas as pd
 
 from ludwig.datasets.dataset_config import DatasetConfig
-from ludwig.datasets.loaders.dataset_loader import DatasetLoader, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 class SSTLoader(DatasetLoader):
@@ -36,7 +36,7 @@ class SSTLoader(DatasetLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir: str = DEFAULT_CACHE_LOCATION,
+        cache_dir: Optional[str] = None,
         include_subtrees=False,
         discard_neutral=False,
         convert_parentheses=True,
@@ -178,7 +178,7 @@ class SST2Loader(SSTLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir=DEFAULT_CACHE_LOCATION,
+        cache_dir: Optional[str] = None,
         include_subtrees=False,
         convert_parentheses=True,
         remove_duplicates=False,
@@ -220,7 +220,7 @@ class SST3Loader(SSTLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir=DEFAULT_CACHE_LOCATION,
+        cache_dir: Optional[str] = None,
         include_subtrees=False,
         convert_parentheses=True,
         remove_duplicates=False,
@@ -263,7 +263,7 @@ class SST5Loader(SSTLoader):
     def __init__(
         self,
         config: DatasetConfig,
-        cache_dir=DEFAULT_CACHE_LOCATION,
+        cache_dir: Optional[str] = None,
         include_subtrees=False,
         convert_parentheses=True,
         remove_duplicates=False,

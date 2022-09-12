@@ -16,14 +16,14 @@ import logging
 import os
 import struct
 from multiprocessing.pool import ThreadPool
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 import torch
 
 from ludwig.datasets.dataset_config import DatasetConfig
-from ludwig.datasets.loaders.dataset_loader import DatasetLoader, DEFAULT_CACHE_LOCATION
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.utils.fs_utils import makedirs
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ NUM_LABELS = 10
 
 
 class MNISTLoader(DatasetLoader):
-    def __init__(self, config: DatasetConfig, cache_dir: str = DEFAULT_CACHE_LOCATION):
+    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None):
         try:
             from torchvision.io import write_png
 
