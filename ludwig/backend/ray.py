@@ -824,24 +824,25 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 "Backend config has use_preprocessing_placement_group set to False or did not set it at all."
                 " provision_preprocessing_workers() is a no-op in this case."
             )
-            return
-        num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
-        self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
-        ready = self._preprocessor_pg.wait(THREE_MINS_IN_S)
+            yield
+        else:
+            num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
+            self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
+            ready = self._preprocessor_pg.wait(THREE_MINS_IN_S)
 
-        if not ready:
-            remove_placement_group(self._preprocessor_pg)
-            raise TimeoutError(
-                "Ray timed out in provisioning the placement group for preprocessing."
-                f" {num_cpu} CPUs were requested but were unable to be provisioned."
-            )
+            if not ready:
+                remove_placement_group(self._preprocessor_pg)
+                raise TimeoutError(
+                    "Ray timed out in provisioning the placement group for preprocessing."
+                    f" {num_cpu} CPUs were requested but were unable to be provisioned."
+                )
 
-        logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
-        try:
-            with dask.config.set(annotations={"ray_remote_args": {"placement_group": self._preprocessor_pg}}):
-                yield
-        finally:
-            self._release_preprocessing_workers()
+            logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
+            try:
+                with dask.config.set(annotations={"ray_remote_args": {"placement_group": self._preprocessor_pg}}):
+                    yield
+            finally:
+                self._release_preprocessing_workers()
 
     def _release_preprocessing_workers(self):
         if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
