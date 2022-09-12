@@ -3,7 +3,7 @@ import importlib
 import logging
 import os
 import shutil
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module
@@ -20,6 +20,16 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     """
     shutil.rmtree(os.path.join(experiment["experiment_name"]), ignore_errors=True)
     model_config = load_yaml(experiment["config_path"])
+
+    process_config_spec = importlib.util.spec_from_file_location("process_config_file_path.py",
+                                                                 experiment["process_config_file_path"])
+    process_module = importlib.util.module_from_spec(process_config_spec)
+    process_config_spec.loader.exec_module(process_module)
+    model_config = process_module.process_config(model_config, experiment)
+
+    from pprint import pprint
+    pprint(model_config)
+
     return model_config
 
 
@@ -44,13 +54,13 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
             config=model_config,
             dataset=dataset,
             output_directory=experiment["experiment_name"],
-            skip_save_model=True,
-            skip_save_training_statistics=True,
-            skip_save_progress=True,
-            skip_save_log=True,
-            skip_save_processed_input=True,
-            skip_save_unprocessed_output=True,
-            hyperopt_log_verbosity=0,
+            # skip_save_model=True,
+            # skip_save_training_statistics=True,
+            # skip_save_progress=True,
+            # skip_save_log=True,
+            # skip_save_processed_input=True,
+            # skip_save_unprocessed_output=True,
+            # hyperopt_log_verbosity=0,
         )
     else:
         # run model and capture metrics
@@ -72,13 +82,15 @@ def benchmark(bench_config_path: str) -> None:
     bench_config_path: config for the benchmarking tool. Specifies datasets and their
         corresponding Ludwig configs, as well as export options.
     """
-    config = load_yaml(bench_config_path)
-    for experiment in config["datasets"]:
+    benchmarking_config = load_yaml(bench_config_path)
+    for experiment in benchmarking_config["datasets"]:
         try:
             if "experiment_name" not in experiment:
-                experiment["experiment_name"] = config["global_experiment_name"]
+                experiment["experiment_name"] = benchmarking_config["global_experiment_name"]
             if "hyperopt" not in experiment:
-                experiment["hyperopt"] = config["hyperopt"]
+                experiment["hyperopt"] = benchmarking_config["hyperopt"]
+            if "process_config_file_path" in benchmarking_config:
+                experiment["process_config_file_path"] = benchmarking_config["process_config_file_path"]
 
             import time
 
@@ -86,21 +98,23 @@ def benchmark(bench_config_path: str) -> None:
             benchmark_one(experiment)
             print("TOOK", time.perf_counter() - start_t)
 
-            if config["export"]["export_artifacts"]:
-                export_base_path = config["export"]["export_base_path"]
-                export_artifacts(experiment, experiment["experiment_name"], export_base_path)
-
         except Exception:
             logging.exception(
                 f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
 
+        finally:
+            if benchmarking_config["export"]["export_artifacts"]:
+                export_base_path = benchmarking_config["export"]["export_base_path"]
+                export_artifacts(experiment, experiment["experiment_name"], export_base_path)
+
+
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description="This script runs a ludwig experiment on datasets specified in the benchmark config and exports "
-        "the experiment artifact for each of the datasets following the export parameters specified in"
-        "the benchmarking config.",
+                    "the experiment artifact for each of the datasets following the export parameters specified in"
+                    "the benchmarking config.",
         prog="ludwig benchmark",
         usage="%(prog)s [options]",
     )
