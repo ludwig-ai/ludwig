@@ -41,7 +41,7 @@ def test_model_loaded_from_old_config_prediction_works(tmpdir):
 @pytest.mark.parametrize(
     "model_url",
     [
-        "https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/ludwig_unit_tests/twitter_bots_v05.zip",
+        "https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/ludwig_unit_tests/twitter_bots_v05_1.zip",
         "https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/ludwig_unit_tests/respiratory_v05.zip",
     ],
     ids=["twitter_bots", "respiratory"],
@@ -50,8 +50,7 @@ def test_predict_deprecated_model(model_url, tmpdir):
     model_dir = os.path.join(tmpdir, "model")
     os.makedirs(model_dir)
 
-    # archive_path = wget.download(model_url, tmpdir)
-    archive_path = "/Users/tgaddair/data/twitter_bots/twitter_bots_v05.zip"
+    archive_path = wget.download(model_url, tmpdir)
     with zipfile.ZipFile(archive_path, "r") as zip_ref:
         zip_ref.extractall(model_dir)
 
