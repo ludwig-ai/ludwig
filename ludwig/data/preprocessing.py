@@ -56,6 +56,7 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils, strings_utils
+from ludwig.utils.backward_compatibility import upgrade_metadata
 from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
@@ -1498,9 +1499,13 @@ def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, sh
     return training_set, test_set, validation_set
 
 
-def load_metadata(metadata_file_path):
+def load_metadata(metadata_file_path: str) -> Dict[str, Any]:
     logging.info(f"Loading metadata from: {metadata_file_path}")
-    return data_utils.load_json(metadata_file_path)
+    training_set_metadata = data_utils.load_json(metadata_file_path)
+    # TODO(travis): decouple config from training_set_metadata so we don't need to
+    #  upgrade it over time.
+    training_set_metadata = upgrade_metadata(training_set_metadata)
+    return training_set_metadata
 
 
 def preprocess_for_training(
