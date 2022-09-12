@@ -47,9 +47,12 @@ from ludwig.constants import (
     SAMPLER,
     SCHEDULER,
     SEARCH_ALG,
+    SEQUENCE,
     SPLIT,
     SPLIT_PROBABILITIES,
     STRATIFY,
+    TEXT,
+    TIMESERIES,
     TRAINER,
     TRAINING,
     TYPE,
@@ -167,6 +170,55 @@ def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
         feature[LOSS][CLASS_WEIGHTS] = class_weights
 
     return feature
+
+
+@register_config_transformation("0.4")
+def _update_level_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
+    # Replace parameters represented as keys with params represented as values.
+    # Precedence is defined by first in the dictionary order, so if multiple
+    # provided keys map to the same value, the one that appears earlier in this
+    # dictionary will take priority.
+    drop_params = {
+        "sequence_length_limit": "max_sequence_length",
+        "word_most_common": "most_common",
+        "word_sequence_length_limit": "max_sequence_length",
+        "word_tokenizer": "tokenizer",
+        "word_vocab_file": "vocab_file",
+        "char_most_common": "most_common",
+        "char_sequence_length_limit": "max_sequence_length",
+        "char_tokenizer": "tokenizer",
+        "char_vocab_file": "vocab_file",
+    }
+
+    def upgrade_params(params):
+        for key, value in drop_params.items():
+            if key in params:
+                if value in params:
+                    warnings.warn(
+                        f"Removing deprecated config preprocessing parameter {key} as new param {value} already "
+                        f"present in the config",
+                        DeprecationWarning,
+                    )
+                else:
+                    warnings.warn(
+                        f"Renaming deprecated config preprocessing parameter {key} to {value}",
+                        DeprecationWarning,
+                    )
+                    params[value] = params[key]
+                del params[key]
+
+    sequence_types = [SEQUENCE, TEXT, AUDIO, TIMESERIES]
+    for dtype in sequence_types:
+        params = config.get(PREPROCESSING, {}).get(dtype, {})
+        upgrade_params(params)
+
+    for feature in config[INPUT_FEATURES]:
+        if feature.get(TYPE) not in sequence_types:
+            continue
+        params = feature.get(PREPROCESSING, {})
+        upgrade_params(params)
+
+    return config
 
 
 @register_config_transformation("0.5")
