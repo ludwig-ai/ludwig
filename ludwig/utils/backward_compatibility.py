@@ -173,27 +173,38 @@ def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.4")
-def _drop_metadata_from_config(config: Dict[str, Any]) -> Dict[str, Any]:
-    # These params are only needed in training_set_metadata, not the config
+def _update_level_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
+    # Replace parameters represented as keys with params represented as values.
+    # Precedence is defined by first in the dictionary order, so if multiple
+    # provided keys map to the same value, the one that appears earlier in this
+    # dictionary will take priority.
     drop_params = {
-        "char_most_common",
-        "char_sequence_length_limit",
-        "char_tokenizer",
-        "char_vocab_file",
-        "sequence_length_limit",
-        "word_most_common",
-        "word_sequence_length_limit",
-        "word_tokenizer",
-        "word_vocab_file",
+        "sequence_length_limit": "max_sequence_length",
+        "word_most_common": "most_common",
+        "word_sequence_length_limit": "max_sequence_length",
+        "word_tokenizer": "tokenizer",
+        "word_vocab_file": "vocab_file",
+        "char_most_common": "most_common",
+        "char_sequence_length_limit": "max_sequence_length",
+        "char_tokenizer": "tokenizer",
+        "char_vocab_file": "vocab_file",
     }
 
     def upgrade_params(params):
-        for key in list(params.keys()):
-            if key in drop_params:
-                warnings.warn(
-                    f"Removing deprecated config preprocessing parameter {key} (moved to training_set_metadata)",
-                    DeprecationWarning,
-                )
+        for key, value in drop_params.items():
+            if key in params:
+                if value in params:
+                    warnings.warn(
+                        f"Removing deprecated config preprocessing parameter {key} as new param {value} already "
+                        f"present in the config",
+                        DeprecationWarning,
+                    )
+                else:
+                    warnings.warn(
+                        f"Renaming deprecated config preprocessing parameter {key} to {value}",
+                        DeprecationWarning,
+                    )
+                    params[value] = params[key]
                 del params[key]
 
     sequence_types = [SEQUENCE, TEXT, AUDIO, TIMESERIES]
