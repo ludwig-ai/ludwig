@@ -43,11 +43,10 @@ def text_from_html(html_or_text):
     parser = HTMLTextExtractor()
     try:
         parser.feed(html_or_text)
-        tree = HTMLParser(html_or_text)
     except Exception as e:
         logger.warning("HTMLParser raised an exception: ", str(e))
         return html_or_text
-    body_text = tree.text()
+    body_text = parser.text()
     if not body_text:
         return html_or_text
     return body_text
@@ -80,7 +79,10 @@ def _parse_comma_separated_list(text: str) -> List[str]:
     """Parses a comma-separated list, splits on commas unless the comma is inside double-quotes."""
     s = StringIO(text)
     reader = csv.reader(s, quotechar='"', delimiter=",", quoting=csv.QUOTE_ALL, skipinitialspace=True)
-    return next(reader)
+    try:
+        return next(reader)
+    except StopIteration:
+        return []
 
 
 def features_from_message(extracted_fields, message):
