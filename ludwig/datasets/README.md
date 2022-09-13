@@ -11,10 +11,10 @@ from ludwig.datasets import titanic
 dataset_df = titanic.load()
 
 # Loads into split dataframes:
-train_df, _, test_df = titanic.load(split=True)
+train_df, test_df, _ = titanic.load(split=True)
 ```
 
-The `ludwig.datasets` API also provides functions to list, describe, and get datasets.  For example:
+The `ludwig.datasets` API alsog provides functions to list, describe, and get datasets.  For example:
 
 ```python
 import ludwig.datasets
@@ -31,7 +31,7 @@ titanic = ludwig.datasets.get_dataset("titanic")
 dataset_df = titanic.load()
 
 # Loads into split dataframes:
-train_df, _, test_df = titanic.load(split=True)
+train_df, test_df, _ = titanic.load(split=True)
 ```
 
 Some datasets are hosted on [Kaggle](https://www.kaggle.com) and require a kaggle account. To use these, you'll need to
