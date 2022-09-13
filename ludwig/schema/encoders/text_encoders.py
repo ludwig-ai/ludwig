@@ -670,7 +670,7 @@ class XLMConfig(BaseEncoderConfig):
     )
 
     embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048**-0.5,
+        default=2048 ** -0.5,
         description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
         "matrices.",
     )
@@ -2095,7 +2095,7 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
     embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048**-0.5,
+        default=2048 ** -0.5,
         description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
         "matrices.",
     )
@@ -2319,11 +2319,16 @@ class LongformerConfig(BaseEncoderConfig):
         description="Whether to use the pretrained weights for the model.",
     )
 
-    attention_window: Union[List[int], int] = schema_utils.IntegerOrSequenceOfIntegers(
+    attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
         default=512,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
         "specify a different window size for each layer, use a List[int] where len(attention_window) == "
         "num_hidden_layers.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int),
+        ],
+        allow_none=True,
     )
 
     sep_token_id: int = schema_utils.Integer(
