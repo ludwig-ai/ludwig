@@ -14,7 +14,7 @@ dataset_df = titanic.load()
 train_df, test_df, _ = titanic.load(split=True)
 ```
 
-The `ludwig.datasets` API alsog provides functions to list, describe, and get datasets.  For example:
+The `ludwig.datasets` API also provides functions to list, describe, and get datasets.  For example:
 
 ```python
 import ludwig.datasets
