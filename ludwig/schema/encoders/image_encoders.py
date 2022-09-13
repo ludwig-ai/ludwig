@@ -170,16 +170,16 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     )
 
     pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
-        default=None,
+        default=0,
         description="An integer or pair of ints specifying pooling padding (h, w).",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
     )
 
     pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
-        default=None,
+        default=1,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
