@@ -670,7 +670,7 @@ class XLMConfig(BaseEncoderConfig):
     )
 
     embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048 ** -0.5,
+        default=2048**-0.5,
         description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
         "matrices.",
     )
@@ -2095,7 +2095,7 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
     embed_init_std: float = schema_utils.NonNegativeFloat(
-        default=2048 ** -0.5,
+        default=2048**-0.5,
         description="The standard deviation of the truncated_normal_initializer for initializing the embedding "
         "matrices.",
     )
