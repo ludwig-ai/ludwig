@@ -62,7 +62,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -74,7 +73,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     padding: Optional[Union[int, Tuple[int], str]] = schema_utils.OneOfOptionsField(
@@ -86,7 +84,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.List(list_type=int),
             schema_utils.StringOptions(options=["valid", "same"]),
         ],
-        allow_none=True,
     )
 
     dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -98,7 +95,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     groups: Optional[int] = schema_utils.PositiveInteger(
@@ -161,7 +157,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -172,7 +167,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -182,7 +176,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -192,7 +185,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
@@ -308,7 +300,6 @@ class ResNetEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     conv_stride: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
@@ -318,7 +309,6 @@ class ResNetEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
@@ -328,7 +318,6 @@ class ResNetEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     first_pool_stride: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
@@ -338,7 +327,6 @@ class ResNetEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     batch_norm_momentum: float = schema_utils.NonNegativeFloat(

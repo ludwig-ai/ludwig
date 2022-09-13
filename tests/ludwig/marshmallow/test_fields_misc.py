@@ -117,10 +117,9 @@ def test_FloatRangeTupleDataclassField():
 
     # Test empty load:
     assert CustomTestSchema.Schema().load({}).foo == (0.9, 0.999)
+    assert CustomTestSchema.Schema().load({"foo": None}).foo is None
 
     # Test invalid loads (null, non-float values, wrong dimension):
-    with pytest.raises(MarshmallowValidationError):
-        CustomTestSchema.Schema().load({"foo": None})
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": [1, "test"]})
     with pytest.raises(MarshmallowValidationError):
@@ -165,7 +164,6 @@ def test_OneOfOptionsField():
         foo: Union[None, float, str] = schema_utils.OneOfOptionsField(
             default="placeholder",
             description="",
-            allow_none=True,
             field_options=[
                 schema_utils.FloatRange(default=0.001, min=0, max=1),
                 schema_utils.StringOptions(options=["placeholder"], default="placeholder"),

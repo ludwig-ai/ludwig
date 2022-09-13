@@ -24,7 +24,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
     fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=True,
         field_options=[
             schema_utils.FloatRange(default=None, allow_none=False, min=0, max=1, description=""),
             schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
@@ -35,7 +34,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
     computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=True,
         field_options=[
             schema_utils.FloatRange(default=1.0, allow_none=False, min=0, max=1, description=""),
             schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
@@ -48,7 +46,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
     fallback_true_label: str = schema_utils.String(
         default=None,
-        allow_none=True,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
         "conventional boolean value",
     )

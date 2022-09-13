@@ -2328,7 +2328,6 @@ class LongformerConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        allow_none=True,
     )
 
     sep_token_id: int = schema_utils.Integer(

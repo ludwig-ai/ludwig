@@ -697,7 +697,11 @@ def FloatRangeTupleDataclassField(
 
 
 def OneOfOptionsField(
-    default: Any, description: str, allow_none: bool, field_options: TList, parameter_metadata: ParameterMetadata = None
+    default: Any,
+    description: str,
+    field_options: TList,
+    allow_none: bool = True,
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
     field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
