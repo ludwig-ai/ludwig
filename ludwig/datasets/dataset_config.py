@@ -58,7 +58,9 @@ class DatasetConfig:
     preserve_paths: Union[str, List[str]] = field(default_factory=list)
 
     # Optionally verify integrity of the dataset by providing sha256 checksums for important files. Maps filename to
-    # sha256 digest.  Use sha256sum <filename> on linux, shasum -a 256 <filename> on mac to get checksums.
+    # sha256 digest.  Use `sha256sum <filename>` on linux, `shasum -a 256 <filename>` on Mac to get checksums.
+    # If verification fails, loading the dataset will fail with a ValueError.
+    # If no sha256 digests are in the config, a warning is logged and the dataset will load without verification.
     sha256: Dict[str, str] = field(default_factory=dict)
 
     # List of column names, for datasets which do not have column names. If specified, will override the column names
