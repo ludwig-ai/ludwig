@@ -2,6 +2,7 @@ import tempfile
 
 import pytest
 
+from ludwig.constants import TEXT
 from ludwig.utils.data_utils import read_csv
 
 try:
@@ -28,9 +29,8 @@ def test_mixed_csv_data_source():
         ds = read_csv(temp.name, dtype=None)
         df = dd.from_pandas(ds, npartitions=1)
         config = create_auto_config(dataset=df, target=[], time_limit_s=3600, tune_for_memory=False)
-        assert len(config["input_features"]) == 3
-        assert config["input_features"][0]["type"] == "text"
-        assert config["input_features"][1]["type"] == "text"
-        assert config["input_features"][2]["type"] == "binary"
+        assert len(config["input_features"]) == 2
+        assert config["input_features"][0]["type"] == TEXT
+        assert config["input_features"][1]["type"] == TEXT
     finally:
         temp.close()

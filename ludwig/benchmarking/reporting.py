@@ -212,7 +212,7 @@ def get_metrics_from_system_usage_profiler(system_usage_info: dict) -> SystemRes
             )
     return SystemResourceMetrics(
         code_block_tag=system_usage_info["code_block_tag"],
-        cpu_name=system_usage_info["cpu_name"],
+        cpu_name=system_usage_info.get("cpu_name", "unknown"),
         cpu_architecture=system_usage_info["cpu_architecture"],
         num_cpu=system_usage_info["num_cpu"],
         total_cpu_memory_size=system_usage_info["total_cpu_memory_size"],

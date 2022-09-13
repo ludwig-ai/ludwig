@@ -117,6 +117,11 @@ class ProgressTracker:
     @staticmethod
     def load(filepath):
         loaded = load_json(filepath)
+
+        from ludwig.utils.backward_compatibility import upgrade_model_progress
+
+        loaded = upgrade_model_progress(loaded)
+
         return ProgressTracker(**loaded)
 
     def log_metrics(self):
@@ -142,6 +147,8 @@ class ProgressTracker:
                     if metrics_tuples:
                         # For logging, get the latest metrics. The second "-1" indexes into the TrainerMetric
                         # namedtuple. The last element of the TrainerMetric namedtuple is the actual metric value.
+                        #
+                        # TODO: when loading an existing model, this loses metric values for all but the last epoch.
                         log_metrics[f"{metrics_dict_name}.{feature_name}.{metric_name}"] = metrics_tuples[-1][-1]
 
         return log_metrics
