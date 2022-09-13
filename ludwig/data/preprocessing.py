@@ -1330,6 +1330,7 @@ def build_data(
 ) -> Dict[str, DataFrame]:
     """Preprocesses the input dataframe columns, handles missing values, and potentially adds metadata to
     training_set_metadata.
+
     Args:
         input_cols: Input dataframe to be processed.
         feature_configs: List of feature configs.
@@ -1362,6 +1363,7 @@ def build_data(
 def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessing_parameters: Dict, backend: Backend):
     """The purpose of this function is to balance the training dataset using either over-sampling or under-
     sampling.
+
     Args:
         dataset_df: Input dataframe to be over-sampled or under-sampled.
         output_features: List of feature configs.
@@ -1406,6 +1408,7 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
 def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
     """Precomputes the fill value for a feature.
+
     NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
     NOTE: this is called before columns are cast. Modifications here must handle dtype conversion gracefully.
     """
@@ -1681,6 +1684,7 @@ def _preprocess_file_for_training(
     callbacks=None,
 ):
     """Method to pre-process csv data.
+
     :param features: list of all features (input + output)
     :param dataset: path to the data
     :param training_set:  training data
@@ -1783,6 +1787,7 @@ def _preprocess_df_for_training(
     callbacks=None,
 ):
     """Method to pre-process dataframes.
+
     This doesn't have the option to save the processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
@@ -1843,6 +1848,7 @@ def preprocess_for_prediction(
     callbacks=None,
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
+
     :param model_path: The input data that is joined with the model
            hyperparameter file to create the config file
     :param data_csv: The CSV input data file
