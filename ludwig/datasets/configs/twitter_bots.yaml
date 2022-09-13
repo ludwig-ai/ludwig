@@ -9,4 +9,5 @@ preserve_paths:
   - profile_images
   - profile_background_images
 description: |
-  An dataset for Twitter Bot account detection
+  A dataset for Twitter Bot account detection.
+  https://www.kaggle.com/datasets/davidmartngutirrez/twitter-bots-accounts
