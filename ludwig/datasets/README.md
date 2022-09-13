@@ -34,8 +34,8 @@ dataset_df = titanic.load()
 train_df, _, test_df = titanic.load(split=True)
 ```
 
-Some datasets are hosted on [https://www.kaggle.com](Kaggle) and require a kaggle account. To use these, you'll need to
+Some datasets are hosted on [Kaggle](https://www.kaggle.com) and require a kaggle account. To use these, you'll need to
 [set up Kaggle credentials](https://www.kaggle.com/docs/api) in your environment. If the dataset is part of a Kaggle
-competition, you'll need to accept the terms of the competition on the Kaggle site.
+competition, you'll need to accept the terms on the competition page.
 
 To check programmatically, datasets have an `.is_kaggle_dataset` property.
