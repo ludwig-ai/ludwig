@@ -212,6 +212,29 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
+        if isinstance(self.optimizer, torch.optim.LBFGS):
+            # NOTE: Horovod is not supported for L-BFGS.
+
+            def closure():
+                # Allows L-BFGS to reevaluate the loss function
+                self.optimizer.zero_grad()
+                model_outputs = self.model((inputs, targets))
+                loss, all_losses = self.model.train_loss(
+                    targets, model_outputs, self.regularization_type, self.regularization_lambda
+                )
+                loss.backward()
+                return loss
+
+            self.optimizer.step(closure)
+
+            # Obtain model predictions and loss
+            model_outputs = self.model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
+
+            return loss, all_losses
+
         self.optimizer.zero_grad()
 
         # Obtain model predictions and loss
