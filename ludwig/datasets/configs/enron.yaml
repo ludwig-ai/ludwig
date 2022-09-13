@@ -1,0 +1,9 @@
+version: 1.0
+name: enron
+download_urls: https://www.cs.cmu.edu/~enron/enron_mail_20150507.tar.gz
+description: |
+  517401 emails with text and headers, no labels.
+
+  Some emails are removed due to redaction requests. Also, new message IDs
+  were generated, replacing the original message IDs. This version of the
+  Enron email dataset also has sanitized headers and attachments removed.
