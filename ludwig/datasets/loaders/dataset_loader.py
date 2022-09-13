@@ -103,10 +103,11 @@ class DatasetLoader:
 
     Clients will typically call load(), which processes the dataset according to the config.
 
-    A dataset is processed in 3 phases:
+    A dataset is processed in 4 phases:
         1. Download       - The dataset files are downloaded to the cache.
+        2. Verify         - Hashes of downloaded files are verified.
         2. Extract        - The dataset files are extracted from an archive (may be a no-op if data is not archived).
-        3. Transform      - The dataset is transformed into a format usable for training and is ready to load.
+        4. Transform      - The dataset is transformed into a format usable for training and is ready to load.
             a. Transform Files      (Files -> Files)
             b. Load Dataframe       (Files -> DataFrame)
             c. Transform Dataframe  (DataFrame -> DataFrame)
