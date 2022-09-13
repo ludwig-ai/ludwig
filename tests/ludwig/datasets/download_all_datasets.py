@@ -20,9 +20,8 @@ def download_all_datasets():
 
     # Download All Datasets
     for dataset_name in dataset_names:
-        if dataset_name == "spam_assassin":
-            print(f"Downloading {dataset_name}")
-            datasets.download_dataset(dataset_name, "./downloaded_datasets")
+        print(f"Downloading {dataset_name}")
+        datasets.download_dataset(dataset_name, "./downloaded_datasets")
 
 
 if __name__ == "__main__":
