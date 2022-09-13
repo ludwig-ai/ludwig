@@ -6,6 +6,12 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
 
+# Double-check if possible to use these:
+# from ray.tune.schedulers import SCHEDULER_IMPORT
+# https://github.com/ray-project/ray/blob/137a1b12c3b31a3622fa5f721a05a64e9b559b05/python/ray/tune/schedulers/__init__.py#L28
+#
+# from ray.tune.result import DEFAULT_RESULT_KEYS
+
 # Taken from https://github.com/ray-project/ray/blob/137a1b12c3b31a3622fa5f721a05a64e9b559b05/python/ray/tune/result.py
 DEFAULT_RESULT_KEYS = (
     "training_iteration",

@@ -4,8 +4,8 @@ from typing import Dict
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.hyperopt.search_algos import search_algorithm_registry  # Double-check this implicit import.
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.hyperopt.registry import search_algorithm_registry
 
 
 @dataclass
