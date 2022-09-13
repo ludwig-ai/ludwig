@@ -1,6 +1,9 @@
 version: 1.0
 name: enron
 download_urls: https://www.cs.cmu.edu/~enron/enron_mail_20150507.tar.gz
+sha256:
+  enron_mail_20150507.tar.gz: b3da1b3fe0369ec3140bb4fbce94702c33b7da810ec15d718b3fadf5cd748ca7
+loader: email_loader.EnronLoader
 description: |
   517401 emails with text and headers, no labels.
 

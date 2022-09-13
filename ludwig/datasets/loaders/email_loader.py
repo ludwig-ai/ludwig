@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os
 from typing import List, Optional
 
@@ -22,6 +23,8 @@ from ludwig.datasets.archives import is_archive
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.datasets.loaders.email import email_features, email_parser
+
+logger = logging.getLogger(__name__)
 
 
 class EmailLoader(DatasetLoader):
@@ -42,11 +45,11 @@ class EmailLoader(DatasetLoader):
             try:
                 message = email_parser.read_email(filename)
             except Exception as e:
-                print(f"Failed to parse file, skipping: {filename}")
-                print(e)
+                logger.warning(f"Failed to parse file, skipping: {filename}", str(e))
                 continue
-            # Extracts basic columns from email message (from, to, subject...).
+            # Extracts basic columns from email message (from, to, subject...).  Does not raise exceptions.
             message_columns = email_parser.message_to_columns(message, label)
+
             # Adds engineered features to list of columns.
             message_columns.update(email_features.features_from_message(message_columns, message))
             rows.append(message_columns)
@@ -68,9 +71,6 @@ class EmailLoader(DatasetLoader):
                     file_labels.append(os.path.relpath(root, start=input_dir))
 
         df = self.load_emails_from_files(files_to_load, file_labels)
-        if self.add_binary_columns:
-            for label in df.label.unique():
-                df[label] = df.label == label
         data_file_path = os.path.join(self.raw_dataset_dir, self.processed_dataset_filename)
         df.to_parquet(data_file_path)
         return [data_file_path]
@@ -79,7 +79,30 @@ class EmailLoader(DatasetLoader):
         # Email datasets have already been packaged into a single file by transform_files.
         return self.load_file_to_dataframe(file_paths[0])
 
+    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        df = super().transform_dataframe(dataframe)
+        if self.add_binary_columns:
+            for label in df.label.unique():
+                df[label] = df.label == label
+        return df
+
+
+class SpamAssassinLoader(EmailLoader):
+    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None):
+        super().__init__(config, cache_dir=cache_dir, add_binary_columns=True)
+
+    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        # Combine labels before adding binary columns.
+        dataframe[dataframe.label == "spam_2"].label = "spam"
+        dataframe[dataframe.label == "easy_ham_2"].label = "easy_ham"
+        return super().transform_dataframe(dataframe)
+
 
 class EnronLoader(EmailLoader):
     def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None):
         super().__init__(config, cache_dir=cache_dir, add_binary_columns=False)
+
+    def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        df = super().transform_dataframe(dataframe)
+        del df["label"]  # Enron dataset has no labels
+        return df

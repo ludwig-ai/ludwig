@@ -18,6 +18,6 @@ dataset_filenames:
   - hard_ham
   - spam
   - spam_2
-loader: email_loader.EmailLoader
+loader: email_loader.SpamAssassinLoader
 description: |
   6048 emails, grouped into three categories: easy_ham, spam, hard_ham
