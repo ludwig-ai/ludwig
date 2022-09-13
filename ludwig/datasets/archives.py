@@ -41,7 +41,8 @@ class ArchiveType(str, Enum):
 
 def infer_archive_type(archive_path):
     """Try to infer archive type from file extension."""
-    _, extension = os.path.splitext(archive_path)
+    # Get the path extension including multiple extensions, ex. ".tar.gz"
+    extension = ".".join(["", *os.path.basename(archive_path).split(".")[1:]])
     extension = extension.lower()
     if extension in {".zip", ".zipx"}:
         return ArchiveType.ZIP

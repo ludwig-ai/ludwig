@@ -39,3 +39,19 @@ Some datasets are hosted on [Kaggle](https://www.kaggle.com) and require a kaggl
 competition, you'll need to accept the terms on the competition page.
 
 To check programmatically, datasets have an `.is_kaggle_dataset` property.
+
+## Downloading, Processing, and Exporting
+
+Datasets are first downloaded into `LUDWIG_CACHE`, which may be set as an environment variable and defaults to
+`$HOME/.ludwig_cache`.
+
+Datasets are automatically loaded, processed, and re-saved as parquet files.
+
+To export the processed dataset, including any files it depends on, use the `.export` method:
+
+```python
+from ludwig.datasets import twitter_bots
+
+# Exports twitter bots dataset and image files to the current working directory.
+twitter_bots.export(".")
+```
