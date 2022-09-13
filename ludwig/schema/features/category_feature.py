@@ -7,9 +7,14 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(CATEGORY)
 @dataclass
 class CategoryInputFeatureConfig(BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
@@ -30,21 +35,17 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(CATEGORY)
 @dataclass
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
-    loss: dict = schema_utils.Dict(  # TODO: Schema for loss
-        default={
-            "type": SOFTMAX_CROSS_ENTROPY,
-            "class_weights": 1,
-            "robust_lambda": 0,
-            "confidence_penalty": 0,
-            "class_similarities_temperature": 0,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=CATEGORY,
+        default=SOFTMAX_CROSS_ENTROPY,
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(

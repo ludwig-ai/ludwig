@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
+from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -41,7 +41,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
         field_options=[
-            schema_utils.FloatRange(default=0.001, min=0, max=1),
+            schema_utils.NonNegativeFloat(default=0.001, allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -147,7 +147,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=128,
+        default=DEFAULT_BATCH_SIZE,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
@@ -155,7 +155,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description=""),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -327,6 +327,17 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 
+    # NOTE: Overwritten here since GBM performs better with a different default learning rate.
+    learning_rate: Union[float, str] = schema_utils.NonNegativeFloat(
+        default=0.03,
+        allow_none=False,
+        description=(
+            "Controls how much to change the model in response to the estimated error each time the model weights are "
+            "updated."
+        ),
+        parameter_metadata=TRAINER_METADATA["learning_rate"],
+    )
+
     boosting_round_log_frequency: int = schema_utils.PositiveInteger(
         default=10, description="Number of boosting rounds per log of the training progress."
     )
@@ -345,21 +356,21 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     num_boost_round: int = schema_utils.PositiveInteger(
-        default=100, description="Number of boosting rounds to perform with GBM trainer."
+        default=1000, description="Number of boosting rounds to perform with GBM trainer."
     )
 
     num_leaves: int = schema_utils.PositiveInteger(
-        default=31, description="Number of leaves to use in the tree with GBM trainer."
+        default=82, description="Number of leaves to use in the tree with GBM trainer."
     )
 
     # LightGBM Learning Control params
     max_depth: int = schema_utils.Integer(
-        default=-1,
+        default=18,
         description="Maximum depth of a tree in the GBM trainer. A negative value means no limit.",
     )
 
     min_data_in_leaf: int = schema_utils.PositiveInteger(
-        default=20, description="Minimum number of data points in a leaf with GBM trainer."
+        default=315, description="Minimum number of data points in a leaf with GBM trainer."
     )
 
     min_sum_hessian_in_leaf: float = schema_utils.NonNegativeFloat(
@@ -367,7 +378,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     bagging_fraction: float = schema_utils.FloatRange(
-        default=1.0, min=0.0, max=1.0, description="Fraction of data to use for bagging with GBM trainer."
+        default=0.8, min=0.0, max=1.0, description="Fraction of data to use for bagging with GBM trainer."
     )
 
     pos_bagging_fraction: float = schema_utils.FloatRange(
@@ -378,12 +389,12 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=1.0, min=0.0, max=1.0, description="Fraction of negative data to use for bagging with GBM trainer."
     )
 
-    bagging_freq: int = schema_utils.NonNegativeInteger(default=0, description="Frequency of bagging with GBM trainer.")
+    bagging_freq: int = schema_utils.NonNegativeInteger(default=1, description="Frequency of bagging with GBM trainer.")
 
     bagging_seed: int = schema_utils.Integer(default=3, description="Random seed for bagging with GBM trainer.")
 
     feature_fraction: float = schema_utils.FloatRange(
-        default=1.0, min=0.0, max=1.0, description="Fraction of features to use in the GBM trainer."
+        default=0.75, min=0.0, max=1.0, description="Fraction of features to use in the GBM trainer."
     )
 
     feature_fraction_bynode: float = schema_utils.FloatRange(
@@ -412,11 +423,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     lambda_l1: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="L1 regularization factor for the GBM trainer."
+        default=0.25, description="L1 regularization factor for the GBM trainer."
     )
 
     lambda_l2: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="L2 regularization factor for the GBM trainer."
+        default=0.2, description="L2 regularization factor for the GBM trainer."
     )
 
     linear_lambda: float = schema_utils.NonNegativeFloat(
@@ -424,7 +435,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     min_gain_to_split: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="Minimum gain to split a leaf in the GBM trainer."
+        default=0.03, description="Minimum gain to split a leaf in the GBM trainer."
     )
 
     drop_rate: float = schema_utils.FloatRange(

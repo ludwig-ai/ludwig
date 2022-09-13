@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional, Union
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES, TYPE
+from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -279,8 +279,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type(), self.loss.type)(**loss_kwargs)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable

@@ -12,7 +12,7 @@ import uuid
 from functools import lru_cache
 from inspect import signature
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import ray
 from packaging import version
@@ -26,30 +26,16 @@ from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend, RAY
+from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
-from ludwig.constants import (
-    COLUMN,
-    COMBINER,
-    DECODER,
-    DEFAULTS,
-    ENCODER,
-    INPUT_FEATURES,
-    MAXIMIZE,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    TEST,
-    TRAINER,
-    TRAINING,
-    TYPE,
-    VALIDATION,
-)
-from ludwig.hyperopt.results import RayTuneResults, TrialResults
+from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
+from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
-from ludwig.hyperopt.utils import load_json_values
+from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
-from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -159,12 +145,7 @@ class RayTuneExecutor:
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
-        if not ray.is_initialized():
-            try:
-                ray.init("auto", ignore_reinit_error=True)
-            except ConnectionError:
-                logger.info("Initializing new Ray cluster...")
-                ray.init(ignore_reinit_error=True)
+        initialize_ray()
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
@@ -439,7 +420,6 @@ class RayTuneExecutor:
         checkpoint_dir,
         hyperopt_dict,
         decode_ctx,
-        features_eligible_for_shared_params,
         is_using_ray_backend=False,
     ):
         for gpu_id in ray.get_gpu_ids():
@@ -457,9 +437,9 @@ class RayTuneExecutor:
         trial_dir = Path(tune.get_trial_dir())
         driver_trial_location = ray.util.get_node_ip_address()
 
-        modified_config = substitute_parameters(
-            copy.deepcopy(hyperopt_dict["config"]), config, features_eligible_for_shared_params
-        )
+        modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
+
+        modified_config = merge_with_defaults(modified_config)
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -652,9 +632,8 @@ class RayTuneExecutor:
         random_seed=default_random_seed,
         debug=False,
         hyperopt_log_verbosity=3,
-        features_eligible_for_shared_params=None,
         **kwargs,
-    ) -> RayTuneResults:
+    ) -> HyperoptResults:
         if isinstance(dataset, str) and not has_remote_protocol(dataset) and not os.path.isabs(dataset):
             dataset = os.path.abspath(dataset)
 
@@ -748,7 +727,6 @@ class RayTuneExecutor:
                 checkpoint_dir,
                 local_hyperopt_dict,
                 self.decode_ctx,
-                features_eligible_for_shared_params,
                 _is_ray_backend(backend),
             )
 
@@ -872,7 +850,7 @@ class RayTuneExecutor:
             logger.warning("No trials reported results; check if time budget lower than epoch latency")
             ordered_trials = []
 
-        return RayTuneResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
+        return HyperoptResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
 
 
 class CallbackStopper(Stopper):
@@ -907,136 +885,6 @@ def set_values(params: Dict[str, Any], model_dict: Dict[str, Any]):
                 model_dict[key][sub_key] = sub_value
         else:
             model_dict[key] = value
-
-
-def update_features_with_shared_params(
-    section_dict: Dict[str, Any],
-    trial_parameters_dict: Dict[str, Dict[str, Any]],
-    config_feature_group: str = None,
-    features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
-):
-    """Updates the parameters of feature_name in section_dict based on hyperopt parameters sampled.
-
-    :param section_dict: Underlying config for the specific input/output feature populated with potentially a mix of
-            default and feature-specific parameters. This may be updated with values from the hyperopt search space.
-    :type section_dict: dict[str, any]
-    :param trial_parameters_dict: Config produced by the hyperopt sampler based on the parameter search space. It maps
-            the name of the feature to the sampled parameters for that feature. For default parameters, it creates
-            nested dictionaries for each feature type.
-    :type trial_parameters_dict: dict[str, dict[str, any]]
-    :param config_feature_group: Indicates whether the feature is an input feature or output feature (can be either of
-        `input_features` or `output_features`).
-    :type config_feature_group: str
-    :param features_eligible_for_shared_params: Collection of names of features that are eligible for using shared
-            parameters, keyed by `input_features` or `output_features` and then by feature type.
-    :type features_eligible_for_shared_params: dict[str, dict[str, set]]
-    """
-
-    feature_name = section_dict.get(COLUMN)
-    feature_type = section_dict.get(TYPE)
-
-    # No default parameters specified in hyperopt parameter search space
-    if DEFAULTS not in trial_parameters_dict:
-        return
-
-    # This feature type should have a sampled value from the default parameters passed in
-    if feature_type not in trial_parameters_dict.get(DEFAULTS):
-        return
-
-    # All features in Ludwig config use non-default encoders or decoders
-    if not features_eligible_for_shared_params:
-        logger.warning(
-            """
-            Default parameters specified in the hyperopt parameter search space are not being used since features
-            in Ludwig config are not using default encoders or decoders. You may consider either setting features to
-            their default encoders or decoders, or specifying feature with encoder specific parameters instead of
-            defaults in the parameter search space.
-            """
-        )
-        return
-
-    features_eligible_for_shared_params = features_eligible_for_shared_params.get(config_feature_group)
-
-    # At least one of this feature's feature type must use non-default encoders/decoders in the config
-    if feature_type not in features_eligible_for_shared_params:
-        return
-
-    # This feature must use a default encoder/decoder
-    if feature_name not in features_eligible_for_shared_params.get(feature_type):
-        return
-
-    sampled_default_shared_params = trial_parameters_dict.get(DEFAULTS).get(feature_type)
-    shared_params_copy = copy.deepcopy(sampled_default_shared_params)
-
-    # Remove encoder/decoder from output/input features
-    if config_feature_group == INPUT_FEATURES:
-        if DECODER in sampled_default_shared_params:
-            del shared_params_copy[DECODER]
-    else:
-        if ENCODER in sampled_default_shared_params:
-            del shared_params_copy[ENCODER]
-    sampled_default_shared_params = shared_params_copy
-
-    set_values(sampled_default_shared_params, section_dict)
-
-
-def update_section_dict(
-    section_dict: Dict[str, Any], parameter_name: str, trial_parameters_dict: Dict[str, Dict[str, Any]]
-):
-    """Update a parameter in section config with sampled value from hyperopt."""
-    if parameter_name not in trial_parameters_dict:
-        return
-
-    params = trial_parameters_dict[parameter_name]
-    set_values(params, section_dict)
-
-
-def get_parameters_dict(parameters):
-    parameters_dict = {}
-    for name, value in parameters.items():
-        curr_dict = parameters_dict
-        name_list = name.split(".")
-        for i, name_elem in enumerate(name_list):
-            if i == len(name_list) - 1:
-                curr_dict[name_elem] = value
-            else:
-                name_dict = curr_dict.get(name_elem, {})
-                curr_dict[name_elem] = name_dict
-                curr_dict = name_dict
-    return parameters_dict
-
-
-def substitute_parameters(
-    config: Dict[str, Any],
-    parameters: Dict[str, Any],
-    features_eligible_for_shared_params: Dict[str, Dict[str, Set]] = None,
-):
-    """Update Ludwig config with parameters sampled from the Hyperopt sampler."""
-    parameters_dict = get_parameters_dict(parameters)
-    for input_feature in config[INPUT_FEATURES]:
-        # Update shared params
-        update_features_with_shared_params(
-            input_feature,
-            parameters_dict,
-            config_feature_group=INPUT_FEATURES,
-            features_eligible_for_shared_params=features_eligible_for_shared_params,
-        )
-        # Update or overwrite any feature specific hyperopt params
-        update_section_dict(input_feature, input_feature[COLUMN], parameters_dict)
-    for output_feature in config[OUTPUT_FEATURES]:
-        # Update shared params
-        update_features_with_shared_params(
-            output_feature,
-            parameters_dict,
-            config_feature_group=OUTPUT_FEATURES,
-            features_eligible_for_shared_params=features_eligible_for_shared_params,
-        )
-        # Update or overwrite any feature specific hyperopt params
-        update_section_dict(output_feature, output_feature[COLUMN], parameters_dict)
-    update_section_dict(config[COMBINER], COMBINER, parameters_dict)
-    update_section_dict(config[TRAINER], TRAINER, parameters_dict)
-    update_section_dict(config[PREPROCESSING], PREPROCESSING, parameters_dict)
-    return config
 
 
 def run_experiment(

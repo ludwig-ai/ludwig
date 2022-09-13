@@ -2,10 +2,13 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import DATE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@register_encoder_config("embed", DATE)
 @dataclass
 class DateEmbedConfig(BaseEncoderConfig):
 
@@ -81,6 +84,7 @@ class DateEmbedConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("wave", DATE)
 @dataclass
 class DateWaveConfig(BaseEncoderConfig):
 

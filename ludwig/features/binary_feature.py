@@ -135,7 +135,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults() -> Dict[str, Any]:
-        return BinaryInputFeatureConfig().preprocessing.__dict__
+        return BinaryInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -297,9 +297,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def loss_kwargs(self):
         return dict(
-            positive_class_weight=self.loss["positive_class_weight"],
-            robust_lambda=self.loss["robust_lambda"],
-            confidence_penalty=self.loss["confidence_penalty"],
+            positive_class_weight=self.loss.positive_class_weight,
+            robust_lambda=self.loss.robust_lambda,
+            confidence_penalty=self.loss.confidence_penalty,
         )
 
     def create_calibration_module(self, feature: BinaryOutputFeatureConfig) -> torch.nn.Module:
@@ -314,7 +314,10 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
+        # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
+        # decoder is specified here which has no threshold.
+        threshold = getattr(self, "threshold", 0.5)
+        return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -407,7 +410,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

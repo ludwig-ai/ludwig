@@ -7,9 +7,14 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(BINARY)
 @dataclass
 class BinaryInputFeatureConfig(BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
@@ -29,19 +34,21 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(BINARY)
 @dataclass
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
-    loss: dict = schema_utils.Dict(  # TODO: Create schema for loss
-        default={
-            "type": BINARY_WEIGHTED_CROSS_ENTROPY,
-            "robust_lambda": 0,
-            "confidence_penalty": 0,
-            "positive_class_weight": None,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="binary_output")
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=BINARY,
+        default=BINARY_WEIGHTED_CROSS_ENTROPY,
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=BINARY,
+        default="regressor",
     )
 
     threshold: float = schema_utils.FloatRange(
@@ -50,11 +57,6 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         max=1,
         description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
         "than or equal to threshold are mapped to True.",
-    )
-
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=BINARY,
-        default="regressor",
     )
 
     reduce_input: str = schema_utils.ReductionOptions(

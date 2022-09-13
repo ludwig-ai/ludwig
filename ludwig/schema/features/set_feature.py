@@ -7,9 +7,14 @@ from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema.features.loss.utils import LossDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 
+@input_config_registry.register(SET)
 @dataclass
 class SetInputFeatureConfig(BaseInputFeatureConfig):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
@@ -29,17 +34,16 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@output_config_registry.register(SET)
 @dataclass
 class SetOutputFeatureConfig(BaseOutputFeatureConfig):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
-    loss: dict = schema_utils.Dict(
-        default={
-            "type": SIGMOID_CROSS_ENTROPY,
-            "class_weights": None,
-            "weight": 1,
-        },
-        description="A dictionary containing a loss type and its hyper-parameters.",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=SET,
+        default=SIGMOID_CROSS_ENTROPY,
     )
 
     threshold: float = schema_utils.FloatRange(

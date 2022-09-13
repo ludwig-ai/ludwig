@@ -32,7 +32,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -212,6 +212,29 @@ class Trainer(BaseTrainer):
         Returns:
             A tuple of the loss tensor and a dictionary of loss for every output feature.
         """
+        if isinstance(self.optimizer, torch.optim.LBFGS):
+            # NOTE: Horovod is not supported for L-BFGS.
+
+            def closure():
+                # Allows L-BFGS to reevaluate the loss function
+                self.optimizer.zero_grad()
+                model_outputs = self.model((inputs, targets))
+                loss, all_losses = self.model.train_loss(
+                    targets, model_outputs, self.regularization_type, self.regularization_lambda
+                )
+                loss.backward()
+                return loss
+
+            self.optimizer.step(closure)
+
+            # Obtain model predictions and loss
+            model_outputs = self.model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
+
+            return loss, all_losses
+
         self.optimizer.zero_grad()
 
         # Obtain model predictions and loss
@@ -445,46 +468,55 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
-        def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than size of ds)
-            return batch_size < len(training_set)
+        if torch.device(self.device) == torch.device("cpu"):
+            logger.warn(
+                f'Batch size tuning is not supported on CPU, setting batch size from "auto" to default value '
+                f"{DEFAULT_BATCH_SIZE}"
+            )
+            # TODO(geoffrey): Add support for batch size tuning on CPU
+            best_batch_size = DEFAULT_BATCH_SIZE
+        else:
 
-        # TODO (ASN) : Circle back on how we want to set default placeholder value
-        # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value
-        batch_size = 2
-        skip_save_model = self.skip_save_model
-        skip_save_progress = self.skip_save_progress
-        skip_save_log = self.skip_save_log
-        # Set temporary values
-        self.skip_save_model = True
-        self.skip_save_progress = True
-        self.skip_save_log = True
+            def _is_valid_batch_size(batch_size):
+                # make sure that batch size is valid (e.g. less than size of ds)
+                return batch_size < len(training_set)
 
-        best_batch_size = None
-        try:
-            count = 0
-            while count < max_trials and _is_valid_batch_size(batch_size):
-                logger.info(f"Exploring batch_size={batch_size}")
-                gc.collect()
+            # TODO (ASN) : Circle back on how we want to set default placeholder value
+            # Currently, since self.batch_size is originally set to auto, we provide a
+            # placeholder starting value
+            batch_size = 2
+            skip_save_model = self.skip_save_model
+            skip_save_progress = self.skip_save_progress
+            skip_save_log = self.skip_save_log
+            # Set temporary values
+            self.skip_save_model = True
+            self.skip_save_progress = True
+            self.skip_save_log = True
 
-                try:
-                    self.train_for_tuning(training_set, batch_size, total_steps=3)
-                    best_batch_size = batch_size
-                    count += 1
-
-                    # double batch size
-                    batch_size *= 2
-                except RuntimeError:
-                    # PyTorch only generates Runtime errors for CUDA OOM.
+            best_batch_size = None
+            try:
+                count = 0
+                while count < max_trials and _is_valid_batch_size(batch_size):
+                    logger.info(f"Exploring batch_size={batch_size}")
                     gc.collect()
-                    logger.info(f"OOM at batch_size={batch_size}")
-                    break
-        finally:
-            # Restore original parameters to defaults
-            self.skip_save_model = skip_save_model
-            self.skip_save_progress = skip_save_progress
-            self.skip_save_log = skip_save_log
+
+                    try:
+                        self.train_for_tuning(training_set, batch_size, total_steps=3)
+                        best_batch_size = batch_size
+                        count += 1
+
+                        # double batch size
+                        batch_size *= 2
+                    except RuntimeError:
+                        # PyTorch only generates Runtime errors for CUDA OOM.
+                        gc.collect()
+                        logger.info(f"OOM at batch_size={batch_size}")
+                        break
+            finally:
+                # Restore original parameters to defaults
+                self.skip_save_model = skip_save_model
+                self.skip_save_progress = skip_save_progress
+                self.skip_save_log = skip_save_log
 
         logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size

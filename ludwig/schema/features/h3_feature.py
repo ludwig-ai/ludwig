@@ -5,9 +5,12 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
-from ludwig.schema.preprocessing import BasePreprocessingConfig, PreprocessingDataclassField
+from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
+from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
+from ludwig.schema.features.utils import input_config_registry
 
 
+@input_config_registry.register(H3)
 @dataclass
 class H3InputFeatureConfig(BaseInputFeatureConfig):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""

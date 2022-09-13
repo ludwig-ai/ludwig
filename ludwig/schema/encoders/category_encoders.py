@@ -2,10 +2,13 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import CATEGORY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@register_encoder_config("dense", CATEGORY)
 @dataclass
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
@@ -87,6 +90,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("sparse", CATEGORY)
 @dataclass
 class CategoricalSparseConfig(BaseEncoderConfig):
 
