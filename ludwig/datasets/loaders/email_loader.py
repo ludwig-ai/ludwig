@@ -93,8 +93,11 @@ class SpamAssassinLoader(EmailLoader):
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
         # Combine labels before adding binary columns.
-        dataframe[dataframe.label == "spam_2"].label = "spam"
-        dataframe[dataframe.label == "easy_ham_2"].label = "easy_ham"
+        label_map = {
+            "spam_2": "spam",
+            "easy_ham_2": "easy_ham",
+        }
+        dataframe["label"] = dataframe.label.map(lambda l: label_map[l] if l in label_map else l)
         return super().transform_dataframe(dataframe)
 
 
