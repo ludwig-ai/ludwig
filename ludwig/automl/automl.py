@@ -51,7 +51,7 @@ try:
     import ray
     from ray.tune import ExperimentAnalysis
 
-    _ray_200 = parse_version(ray.__version__) >= parse_version("2.0.0")
+    _ray_113 = parse_version(ray.__version__) >= parse_version("1.13.0")
 except ImportError:
     raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
@@ -78,7 +78,7 @@ class AutoTrainResults:
             logging.warning("No best model found")
             return None
 
-        if not _ray_200:
+        if not _ray_113:
             return LudwigModel.load(os.path.join(checkpoint, "model"))
 
         with checkpoint.as_directory() as checkpoint:

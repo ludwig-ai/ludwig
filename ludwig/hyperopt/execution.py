@@ -40,9 +40,9 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
-_ray_200 = version.parse(ray.__version__) >= version.parse("2.0.0")
-_ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
-if _ray_114:
+_ray_113 = version.parse(ray.__version__) >= version.parse("1.13")
+_ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
+if _ray_200:
     from ray.tune.search import SEARCH_ALG_IMPORT
     from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
 else:
@@ -369,8 +369,8 @@ class RayTuneExecutor:
             yield None
             return
 
-        if _ray_200 and checkpoint is not None:
-            # In Ray 2.0, checkpoints have changed from strings to objects
+        if _ray_113 and checkpoint is not None:
+            # In Ray 1.13, checkpoints have changed from strings to objects
             with checkpoint.as_directory() as path:
                 yield path
         else:
@@ -762,7 +762,7 @@ class RayTuneExecutor:
         if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
             self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
-            if _ray_114:
+            if _ray_200:
                 self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
             else:
                 self.sync_client = get_cloud_sync_client(output_directory)
