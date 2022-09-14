@@ -529,7 +529,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
-    verbose: int = schema_utils.IntegerRange(default=0, min=-1, max=2, description="Verbosity level for GBM trainer.")
+    verbose: int = schema_utils.IntegerRange(default=-1, min=-1, max=2, description="Verbosity level for GBM trainer.")
 
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
