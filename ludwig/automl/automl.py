@@ -9,9 +9,10 @@ Driver script which:
 """
 import argparse
 import copy
+import logging
 import os
 import warnings
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -71,12 +72,16 @@ class AutoTrainResults:
         return self._experiment_analysis.best_trial.trial_id
 
     @property
-    def best_model(self) -> LudwigModel:
+    def best_model(self) -> Optional[LudwigModel]:
+        checkpoint = self._experiment_analysis.best_checkpoint
+        if checkpoint is None:
+            logging.warning("No best model found")
+            return None
+
         if not _ray_200:
-            checkpoint = self._experiment_analysis.best_checkpoint
             return LudwigModel.load(os.path.join(checkpoint, "model"))
 
-        with self._experiment_analysis.best_checkpoint.as_directory() as checkpoint:
+        with checkpoint.as_directory() as checkpoint:
             return LudwigModel.load(os.path.join(checkpoint, "model"))
 
 

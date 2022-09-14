@@ -1,9 +1,11 @@
 import os
+from unittest import mock
 
 import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
+from ludwig.hyperopt.execution import RayTuneExecutor
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:
@@ -13,7 +15,8 @@ except ImportError:
 
 
 @pytest.mark.distributed
-def test_train_with_config(ray_cluster_2cpu, tmpdir):
+@pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
+def test_train_with_config(time_budget, ray_cluster_2cpu, tmpdir):
     input_features = [
         number_feature(),
         number_feature(),
@@ -34,13 +37,13 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
             },
             "executor": {
                 "type": "ray",
-                "time_budget_s": 200,
+                "time_budget_s": time_budget,
                 "cpu_resources_per_trial": 1,
                 "scheduler": {
                     "type": "async_hyperband",
-                    "max_t": 200,
+                    "max_t": time_budget,
                     "time_attr": "time_total_s",
-                    "grace_period": 72,
+                    "grace_period": min(72, time_budget),
                     "reduction_factor": 5,
                 },
             },
@@ -58,8 +61,20 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
         },
     }
 
-    outdir = os.path.join(tmpdir, "output")
-    results = train_with_config(dataset, config, output_directory=outdir)
-    best_model = results.best_model
-    assert isinstance(best_model, LudwigModel)
-    assert best_model.config[TRAINER]["early_stop"] == -1
+    fn = RayTuneExecutor._evaluate_best_model
+    with mock.patch("ludwig.hyperopt.execution.RayTuneExecutor._evaluate_best_model") as mock_fn:
+        # We need to check that _evaluate_best_model is called when the time_budget is low
+        # as this code path should be triggered when the trial was early stopped
+        mock_fn.side_effect = fn
+
+        outdir = os.path.join(tmpdir, "output")
+        results = train_with_config(dataset, config, output_directory=outdir)
+        best_model = results.best_model
+
+        if time_budget > 1:
+            assert isinstance(best_model, LudwigModel)
+            assert best_model.config[TRAINER]["early_stop"] == -1
+            assert mock_fn.call_count == 0
+        else:
+            assert best_model is None
+            assert mock_fn.call_count > 0
