@@ -480,6 +480,14 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
             )
             type_specific_preprocessing_params[parameter] = config[PREPROCESSING].pop(parameter)
 
+        if parameter == "numerical":
+            warnings.warn(
+                f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
+                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
+                DeprecationWarning,
+            )
+            type_specific_preprocessing_params[NUMBER] = config[PREPROCESSING].pop(parameter)
+
     # Delete empty preprocessing section if no other preprocessing parameters specified
     if PREPROCESSING in config and not config[PREPROCESSING]:
         del config[PREPROCESSING]
