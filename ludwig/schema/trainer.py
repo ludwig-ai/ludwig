@@ -338,8 +338,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["learning_rate"],
     )
 
-    boosting_round_log_frequency: int = schema_utils.PositiveInteger(
-        default=10, description="Number of boosting rounds per log of the training progress."
+    boosting_rounds_per_checkpoint: int = schema_utils.PositiveInteger(
+        default=10, description="Number of boosting rounds per checkpoint / evaluation round."
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
