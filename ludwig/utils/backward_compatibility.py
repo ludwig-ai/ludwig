@@ -161,7 +161,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
-@register_config_transformation("0.4", ["output_features"])
+@register_config_transformation("0.6", ["output_features"])
 def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
     if LOSS in feature:
         class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
