@@ -5,11 +5,11 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
-from ludwig.hyperopt.execution import RayTuneExecutor
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:
     from ludwig.automl.automl import train_with_config
+    from ludwig.hyperopt.execution import RayTuneExecutor
 except ImportError:
     pass
 
