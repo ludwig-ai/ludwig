@@ -67,8 +67,13 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "2D convolutional kernel that will be used for each layer. ",
     )
 
-    padding: Optional[Union[int, Tuple[int], str]] = schema_utils.PositiveIntegerOrTupleOrStringOptions(
-        options=["valid", "same"],
+    padding: Optional[Union[int, Tuple[int], str]] = schema_utils.OneOfOptionsField(
+        field_options=[
+            schema_utils.PositiveInteger(description="", default=1),
+            schema_utils.FloatRangeTupleDataclassField(description="", default=(1, 1), min=0, max=99999),
+            schema_utils.StringOptions(description="", options=["valid", "same"], default="valid", allow_none=False),
+        ],
+        allow_none=True,
         default="valid",
         description="An int, pair of ints (h, w), or one of valid, same specifying the padding used for convolution "
         "kernels. ",

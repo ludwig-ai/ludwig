@@ -147,8 +147,7 @@ class ProjectorConfig(BaseDecoderConfig):
         field_options=[
             schema_utils.FloatRangeTupleDataclassField(
                 n=2,
-                default=None,
-                allow_none=True,
+                default=(0, 0),
                 min=0,
                 max=999999999,
             )

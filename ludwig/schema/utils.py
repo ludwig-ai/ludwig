@@ -481,28 +481,6 @@ def IntegerOrSequenceOfIntegers(
     )
 
 
-def PositiveIntegerOrTupleOrStringOptions(
-    options: TList[str] = None,
-    allow_none=False,
-    default: Union[None, int, Tuple[int, ...], str] = None,
-    default_integer: Union[None, int] = None,
-    default_tuple: Union[None, Tuple[int, ...]] = None,
-    default_option: Union[None, str] = None,
-    description="",
-):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
-    a string value."""
-
-    return OneOfOptionsField(
-        PositiveInteger(description="", default=default_integer),
-        FloatRangeTupleDataclassField(description="", default=default_tuple, min=0, max=99999),
-        StringOptions(description="", options=options, default=default_option, allow_none=False),
-        default=default,
-        description=description,
-        allow_none=allow_none,
-    )
-
-
 def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
@@ -529,9 +507,12 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-    list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""
+    list_type: Union[Type[str], Type[int], Type[float]] = str,
+    default: Union[None, TList[Any]] = None,
+    description="",
+    **kwargs,
 ):
-    """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
+    """Returns a dataclass field with marshmallow metadata enforcing input must be a list of primitives."""
     if default is not None:
         try:
             assert isinstance(default, list)
@@ -539,12 +520,35 @@ def List(
         except Exception:
             raise ValidationError(f"Invalid default: `{default}`")
 
+    val = None
     if list_type is str:
         field_type = fields.String()
+        if "pattern" in kwargs and isinstance(kwargs["pattern"], str):
+            val = validate.Regexp(kwargs["pattern"])
+        elif "enum" in kwargs and isinstance(kwargs["enum"], list):
+            val = validate.OneOf(kwargs["enum"])
     elif list_type is int:
         field_type = fields.Integer()
+        min = kwargs["min"] if "min" in kwargs and isinstance(kwargs["min"], int) else None
+        max = kwargs["max"] if "max" in kwargs and isinstance(kwargs["max"], int) else None
+        min_inclusive = (
+            kwargs["min_inclusive"] if "min_inclusive" in kwargs and isinstance(kwargs["min_inclusive"], bool) else True
+        )
+        max_inclusive = (
+            kwargs["max_inclusive"] if "max_inclusive" in kwargs and isinstance(kwargs["max_inclusive"], bool) else True
+        )
+        val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
     elif list_type is float:
         field_type = fields.Float()
+        min = kwargs["min"] if "min" in kwargs and isinstance(kwargs["min"], (int, float)) else None
+        max = kwargs["max"] if "max" in kwargs and isinstance(kwargs["max"], (int, float)) else None
+        min_inclusive = (
+            kwargs["min_inclusive"] if "min_inclusive" in kwargs and isinstance(kwargs["min_inclusive"], bool) else True
+        )
+        max_inclusive = (
+            kwargs["max_inclusive"] if "max_inclusive" in kwargs and isinstance(kwargs["max_inclusive"], bool) else True
+        )
+        val = validate.Range(min=min, max=max, min_inclusive=min_inclusive, max_inclusive=max_inclusive)
     else:
         raise ValueError(f"Invalid list type: `{list_type}`")
 
@@ -552,6 +556,7 @@ def List(
         metadata={
             "marshmallow_field": fields.List(
                 field_type,
+                validate=val,
                 allow_none=True,
                 load_default=default,
                 dump_default=default,
@@ -723,15 +728,18 @@ def FloatRangeTupleDataclassField(
     if default is not None and n != len(default):
         raise ValidationError(f"Dimension of tuple '{n}' must match dimension of default val. '{default}'")
 
+    min = kwargs["min"] if "min" in kwargs and isinstance(kwargs["min"], (float, int)) else None
+    max = kwargs["max"] if "max" in kwargs and isinstance(kwargs["max"], (float, int)) else None
+
     class FloatTupleMarshmallowField(fields.Tuple):
         def _jsonschema_type_mapping(self):
             if default is not None:
                 validate_range(default)
             itemSchema = {"type": "number"}
-            if "min" in kwargs and isinstance(kwargs["min"], (float, int)):
-                itemSchema["minimum"] = kwargs["min"]
-            if "max" in kwargs and isinstance(kwargs["max"], (float, int)):
-                itemSchema["maximum"] = kwargs["max"]
+            if min is not None:
+                itemSchema["minimum"] = min
+            if max is not None:
+                itemSchema["maximum"] = max
             return {
                 "type": "array",
                 "items": [itemSchema] * n,
@@ -743,10 +751,10 @@ def FloatRangeTupleDataclassField(
     def validate_range(data: Tuple):
         if isinstance(data, tuple) and all([isinstance(x, (float, int)) for x in data]):
             checks = [True]
-            if "min" in kwargs:
-                checks += all(list(map(lambda b: min <= b, data)))
-            if "max" in kwargs:
-                checks += all(list(map(lambda b: b <= max, data)))
+            if min is not None:
+                checks += [all(list(map(lambda b: min <= b, data)))]
+            if max is not None:
+                checks += [all(list(map(lambda b: b <= max, data)))]
             if all(checks):
                 return data
             raise ValidationError(

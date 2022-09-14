@@ -51,6 +51,7 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
                 max=999999999,
             )
         ],
+        allow_none=True,
         description="Clip the predicted output to the specified range.",
         default=None,
     )
