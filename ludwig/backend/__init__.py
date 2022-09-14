@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import os
 
@@ -97,3 +98,12 @@ def initialize_backend(backend):
         backend = create_backend(backend)
     backend.initialize()
     return backend
+
+
+@contextlib.contextmanager
+def provision_preprocessing_workers(backend):
+    if backend.BACKEND_TYPE == RAY:
+        with backend.provision_preprocessing_workers():
+            yield
+    else:
+        yield
