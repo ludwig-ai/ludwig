@@ -1,6 +1,11 @@
 import logging
 from collections import OrderedDict
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List, Tuple
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 from ludwig.constants import COMBINED, LOSS
 from ludwig.features.base_feature import OutputFeature
