@@ -1,3 +1,4 @@
+import contextlib
 import copy
 import datetime
 import glob
@@ -17,7 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ray
 from packaging import version
 from ray import tune
-from ray.tune import register_trainable, Stopper
+from ray.tune import ExperimentAnalysis, register_trainable, Stopper
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
 from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
 from ray.tune.utils import wait_for_gpu
@@ -39,8 +40,9 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
-_ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
-if _ray_114:
+_ray_113 = version.parse(ray.__version__) >= version.parse("1.13")
+_ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
+if _ray_200:
     from ray.tune.search import SEARCH_ALG_IMPORT
     from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
 else:
@@ -350,20 +352,29 @@ class RayTuneExecutor:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
 
-    def _get_best_model_path(self, trial_path, analysis):
+    @contextlib.contextmanager
+    def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis) -> str:
         remote_checkpoint_dir = self._get_remote_checkpoint_dir(Path(trial_path))
         if remote_checkpoint_dir is not None:
             self.sync_client.sync_down(remote_checkpoint_dir, trial_path)
             self.sync_client.wait_or_retry()
         self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
-        mod_path = None
+
         try:
-            mod_path = analysis.get_best_checkpoint(trial_path.rstrip("/"))
+            checkpoint = analysis.get_best_checkpoint(trial_path.rstrip("/"))
         except Exception:
             logger.warning(
                 f"Cannot get best model path for {trial_path} due to exception below:\n{traceback.format_exc()}"
             )
-        return mod_path
+            yield None
+            return
+
+        if _ray_113 and checkpoint is not None:
+            # In Ray 1.13, checkpoints have changed from strings to objects
+            with checkpoint.as_directory() as path:
+                yield path
+        else:
+            yield checkpoint
 
     @staticmethod
     def _evaluate_best_model(
@@ -751,7 +762,7 @@ class RayTuneExecutor:
         if has_remote_protocol(output_directory):
             run_experiment_trial = tune.durable(run_experiment_trial)
             self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
-            if _ray_114:
+            if _ray_200:
                 self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
             else:
                 self.sync_client = get_cloud_sync_client(output_directory)
@@ -823,25 +834,25 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        best_model_path = self._get_best_model_path(trial_path, analysis)
-                        if best_model_path is not None:
-                            self._evaluate_best_model(
-                                trial,
-                                trial_path,
-                                best_model_path,
-                                validation_set,
-                                data_format,
-                                skip_save_unprocessed_output,
-                                skip_save_predictions,
-                                skip_save_eval_stats,
-                                gpus,
-                                gpu_memory_limit,
-                                allow_parallel_threads,
-                                backend,
-                                debug,
-                            )
-                        else:
-                            logger.warning("Skipping evaluation as no model checkpoints were available")
+                        with self._get_best_model_path(trial_path, analysis) as best_model_path:
+                            if best_model_path is not None:
+                                self._evaluate_best_model(
+                                    trial,
+                                    trial_path,
+                                    best_model_path,
+                                    validation_set,
+                                    data_format,
+                                    skip_save_unprocessed_output,
+                                    skip_save_predictions,
+                                    skip_save_eval_stats,
+                                    gpus,
+                                    gpu_memory_limit,
+                                    allow_parallel_threads,
+                                    backend,
+                                    debug,
+                                )
+                            else:
+                                logger.warning("Skipping evaluation as no model checkpoints were available")
                     else:
                         logger.warning("Skipping evaluation as no validation set was provided")
 
