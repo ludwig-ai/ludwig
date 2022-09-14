@@ -6,6 +6,7 @@ import pytest
 from ludwig.constants import (
     BFILL,
     CLASS_WEIGHTS,
+    DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
@@ -322,12 +323,22 @@ def test_deprecated_field_aliases():
                 "search_alg": "bohb",
             },
         },
+        PREPROCESSING: {
+            "numerical": {
+                "fill_value": 2,
+                "missing_value_strategy": "fill_with_const",
+            },
+        },
     }
 
     updated_config = upgrade_to_latest_version(config)
 
     assert updated_config["input_features"][0][TYPE] == NUMBER
     assert updated_config["output_features"][0][TYPE] == NUMBER
+
+    # "numerical" preprocssing directive should be translated to "number" and moved into the defaults section.
+    assert PREPROCESSING not in updated_config
+    assert updated_config[DEFAULTS][NUMBER][PREPROCESSING]["fill_value"] == 2
 
     assert "training" not in updated_config
     assert updated_config[TRAINER]["epochs"] == 2
@@ -342,6 +353,8 @@ def test_deprecated_field_aliases():
     assert updated_config[HYPEROPT]["executor"]["type"] == "ray"
     assert "num_samples" in updated_config[HYPEROPT]["executor"]
     assert "scheduler" in updated_config[HYPEROPT]["executor"]
+
+    validate_config(updated_config)
 
 
 @pytest.mark.parametrize("force_split", [None, False, True])

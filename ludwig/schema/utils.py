@@ -736,10 +736,13 @@ def OneOfOptionsField(
 
         def _jsonschema_type_mapping(self):
             """Constructs a oneOf schema by iteratively adding the schemas of `field_options` to a list."""
-            oneOf = {"oneOf": [], "description": description, "default": default}
+            oneOf = {"oneOf": [], "description": description, "default": default, "title": self.name}
 
-            for option in field_options:
+            for idx, option in enumerate(field_options):
                 mfield_meta = option.metadata["marshmallow_field"]
+
+                # Necessary for key/name de-duplication in case a name is not supplied by the user:
+                mfield_meta_class_name = str(mfield_meta.__class__).split(".")[-1].split("'")[0].lower()
 
                 # If the option inherits from a custom dataclass-field, then use the custom jsonschema:
                 if hasattr(mfield_meta, "_jsonschema_type_mapping"):
@@ -753,6 +756,8 @@ def OneOfOptionsField(
 
                     dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
                     tmp_json_schema = dummy_schema["properties"]["tmp"]
+                    # Manually set the title, otherwise it would be 'tmp':
+                    tmp_json_schema["title"] = f"{self.name}_{mfield_meta_class_name}_option"
                     oneOf["oneOf"].append(tmp_json_schema)
 
             # Add null as an option if none of the field options allow none:

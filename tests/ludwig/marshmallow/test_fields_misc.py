@@ -176,6 +176,11 @@ def test_OneOfOptionsField():
     CustomTestSchema().foo == "placeholder"
     CustomTestSchema.Schema().load({"foo": None})
 
+    # Test title generation:
+    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    assert json["properties"]["foo"]["title"] == "foo"
+    assert json["properties"]["foo"]["oneOf"][0]["title"] == "foo_float_option"
+
     # Test invalid loads:
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "bar"})
