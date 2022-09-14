@@ -161,7 +161,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
-@register_config_transformation("0.4", ["output_features"])
+@register_config_transformation("0.6", ["output_features"])
 def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
     if LOSS in feature:
         class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
@@ -479,6 +479,14 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
                 DeprecationWarning,
             )
             type_specific_preprocessing_params[parameter] = config[PREPROCESSING].pop(parameter)
+
+        if parameter == "numerical":
+            warnings.warn(
+                f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
+                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
+                DeprecationWarning,
+            )
+            type_specific_preprocessing_params[NUMBER] = config[PREPROCESSING].pop(parameter)
 
     # Delete empty preprocessing section if no other preprocessing parameters specified
     if PREPROCESSING in config and not config[PREPROCESSING]:
