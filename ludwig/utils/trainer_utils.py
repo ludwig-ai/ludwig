@@ -156,11 +156,11 @@ class ProgressTracker:
 
 
 def append_metrics(
-    model: BaseModel, 
-    dataset_name: Literal["train", "validation", "test"], 
+    model: BaseModel,
+    dataset_name: Literal["train", "validation", "test"],
     results: Dict[str, Dict[str, float]],
-    metrics_log: Dict[str, Dict[str, List[TrainerMetric]]], 
-    tables: Dict[str, List[List[str]]], 
+    metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    tables: Dict[str, List[List[str]]],
     progress_tracker: ProgressTracker,
 ) -> Tuple[Dict[str, Dict[str, List[TrainerMetric]]], Dict[str, List[List[str]]]]:
     epoch = progress_tracker.epoch
