@@ -40,11 +40,11 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         #       seems to be required for test_api.py::test_api_training_determinism
         if random_seed is not None:
             torch.random.manual_seed(random_seed)
-        
-        self.input_features = LudwigFeatureDict()
-        self.output_features = LudwigFeatureDict()
 
         super().__init__()
+
+        self.input_features = LudwigFeatureDict()
+        self.output_features = LudwigFeatureDict()
 
     @classmethod
     def build_inputs(cls, input_features_def: List[Dict[str, Any]]) -> Dict[str, InputFeature]:

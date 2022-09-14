@@ -67,6 +67,7 @@ class LightGBMTrainer(BaseTrainer):
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
         self.skip_save_progress = skip_save_progress
+        self.skip_save_log = skip_save_log
         self.skip_save_model = skip_save_model
 
         self.eval_batch_size = config.eval_batch_size
@@ -594,17 +595,12 @@ class LightGBMTrainer(BaseTrainer):
             # use separate total steps variable to allow custom SIGINT logic
             self.total_steps = self.num_boost_round
 
-            early_stopping_steps = self.boosting_rounds_per_checkpoint * self.early_stop
-
             if self.is_coordinator():
                 logging.info(
                     f"Training for {self.total_steps} boosting round(s), approximately "
                     f"{int(self.total_steps / self.boosting_rounds_per_checkpoint)} round(s) of evaluation."
                 )
-                logging.info(
-                    f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
-                    f"boosting round(s).\n"
-                )
+                logging.info(f"Early stopping policy: {self.early_stop} boosting round(s).\n")
 
                 logging.info(f"Starting with step {progress_tracker.steps}")
             
@@ -871,16 +867,16 @@ class LightGBMRayTrainer(LightGBMTrainer):
         **kwargs,
     ):
         super().__init__(
-            config,
-            model,
-            resume,
-            skip_save_model,
-            skip_save_progress,
-            skip_save_log,
-            callbacks,
-            random_seed,
-            horovod,
-            device,
+            config=config,
+            model=model,
+            resume=resume,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            callbacks=callbacks,
+            random_seed=random_seed,
+            horovod=horovod,
+            device=device,
             **kwargs,
         )
 
