@@ -354,7 +354,7 @@ class DatasetLoader:
             return pd.read_table(file_path)
         elif file_extension in {".csv", ".data"}:
             return pd.read_csv(file_path)
-        elif file_extension == ".parquet":
+        elif file_extension in {".parquet", ".pq", ".pqt"}:
             return pd.read_parquet(file_path)
         else:
             raise ValueError(f"Unsupported dataset file type: {file_extension}")
