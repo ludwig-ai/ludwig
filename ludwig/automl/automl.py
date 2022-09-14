@@ -9,9 +9,10 @@ Driver script which:
 """
 import argparse
 import copy
+import logging
 import os
 import warnings
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -50,7 +51,7 @@ try:
     import ray
     from ray.tune import ExperimentAnalysis
 
-    _ray_200 = parse_version(ray.__version__) >= parse_version("2.0.0")
+    _ray_113 = parse_version(ray.__version__) >= parse_version("1.13.0")
 except ImportError:
     raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
@@ -71,12 +72,16 @@ class AutoTrainResults:
         return self._experiment_analysis.best_trial.trial_id
 
     @property
-    def best_model(self) -> LudwigModel:
-        if not _ray_200:
-            checkpoint = self._experiment_analysis.best_checkpoint
+    def best_model(self) -> Optional[LudwigModel]:
+        checkpoint = self._experiment_analysis.best_checkpoint
+        if checkpoint is None:
+            logging.warning("No best model found")
+            return None
+
+        if not _ray_113:
             return LudwigModel.load(os.path.join(checkpoint, "model"))
 
-        with self._experiment_analysis.best_checkpoint.as_directory() as checkpoint:
+        with checkpoint.as_directory() as checkpoint:
             return LudwigModel.load(os.path.join(checkpoint, "model"))
 
 
