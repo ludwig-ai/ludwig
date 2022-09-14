@@ -44,11 +44,11 @@ def infer_archive_type(archive_path):
     # Get the path extension including multiple extensions, ex. ".tar.gz"
     extension = ".".join(["", *os.path.basename(archive_path).split(".")[1:]])
     extension = extension.lower()
-    if extension in {".tar.z", ".tar.zip"}:
+    if extension.endswith(".tar.z") or extension.endswith(".tar.zip"):
         return ArchiveType.TAR_ZIP
-    elif extension in {".tar.bz2", ".tbz2"}:
+    elif extension.endswith(".tar.bz2") or extension.endswith(".tbz2"):
         return ArchiveType.TAR_BZ2
-    elif extension in {".tar.gz", ".tgz"}:
+    elif extension.endswith(".tar.gz") or extension.endswith(".tgz"):
         return ArchiveType.TAR_GZ
     elif extension.endswith(".tar"):
         return ArchiveType.TAR
