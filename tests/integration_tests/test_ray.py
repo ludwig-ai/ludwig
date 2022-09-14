@@ -346,9 +346,6 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
-    # if _ray_nightly and dataset_type == "pandas+numpy_images":
-    #     pytest.skip("https://github.com/ludwig-ai/ludwig/issues/2452")
-
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
