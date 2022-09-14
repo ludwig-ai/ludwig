@@ -127,7 +127,7 @@ class LightGBMTrainer(BaseTrainer):
         self.device = device
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
         # the original sigint to restore at the end of training
@@ -323,7 +323,7 @@ class LightGBMTrainer(BaseTrainer):
             # There's no validation, so we save the model.
             if self.is_coordinator() and not self.skip_save_model:
                 self.model.save(save_path)
-        
+
         # Trigger eval end callback after any model weights save for complete checkpoint
         self.callback(lambda c: c.on_eval_end(self, progress_tracker, save_path))
 
@@ -390,8 +390,13 @@ class LightGBMTrainer(BaseTrainer):
         return should_break
 
     def check_progress_on_validation(
-        self, progress_tracker: ProgressTracker, validation_output_feature_name: str, 
-        validation_metric: str, save_path: str, early_stopping_steps: int, skip_save_model: bool
+        self,
+        progress_tracker: ProgressTracker,
+        validation_output_feature_name: str,
+        validation_metric: str,
+        save_path: str,
+        early_stopping_steps: int,
+        skip_save_model: bool,
     ) -> bool:
         """Checks the history of validation scores.
 
@@ -423,7 +428,7 @@ class LightGBMTrainer(BaseTrainer):
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
                 + f"{progress_tracker.last_improvement} step(s) ago.\n"
             )
-        
+
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
@@ -446,7 +451,7 @@ class LightGBMTrainer(BaseTrainer):
                 )
             should_break = True
         return should_break
-    
+
     def train_step(
         self,
         params: Dict[str, Any],
@@ -510,7 +515,7 @@ class LightGBMTrainer(BaseTrainer):
         # TODO: only single task currently
         if len(output_features) > 1:
             raise ValueError("Only single task currently supported")
-        
+
         metrics_names = get_metric_names(output_features)
 
         # check if validation_field is valid
@@ -603,7 +608,7 @@ class LightGBMTrainer(BaseTrainer):
                 logging.info(f"Early stopping policy: {self.early_stop} boosting round(s).\n")
 
                 logging.info(f"Starting with step {progress_tracker.steps}")
-            
+
             progress_bar_config = {
                 "desc": "Training",
                 "total": self.total_steps,
@@ -620,13 +625,23 @@ class LightGBMTrainer(BaseTrainer):
                 self.model.reset_metrics()
 
                 self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
-                
+
                 should_break = self._train_loop(
-                    params, lgb_train, eval_sets, eval_names, progress_tracker, 
-                    progress_bar, save_path,
-                    training_set, validation_set, test_set, 
-                    train_summary_writer, validation_summary_writer, test_summary_writer)
-                
+                    params,
+                    lgb_train,
+                    eval_sets,
+                    eval_names,
+                    progress_tracker,
+                    progress_bar,
+                    save_path,
+                    training_set,
+                    validation_set,
+                    test_set,
+                    train_summary_writer,
+                    validation_summary_writer,
+                    test_summary_writer,
+                )
+
                 # ================ Post Training Epoch ================
                 progress_tracker.epoch += 1
                 self.callback(lambda c: c.on_epoch_end(self, progress_tracker, save_path))
@@ -634,7 +649,8 @@ class LightGBMTrainer(BaseTrainer):
                 if self.is_coordinator():
                     # ========== Save training progress ==========
                     logging.debug(
-                        f"Epoch {progress_tracker.epoch} took: {time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                        f"Epoch {progress_tracker.epoch} took: "
+                        f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                     )
                     if not self.skip_save_progress:
                         checkpoint_manager.checkpoint.model = self.model
@@ -657,25 +673,25 @@ class LightGBMTrainer(BaseTrainer):
                 validation_summary_writer.close()
             if test_summary_writer is not None:
                 test_summary_writer.close()
-            
+
             if self.is_coordinator() and not self.skip_save_progress:
                 checkpoint_manager.close()
 
         # Load the best weights from saved checkpoint
         if self.is_coordinator() and not self.skip_save_model:
             self.model.load(save_path)
-        
+
         # restore original sigint signal handler
         if self.original_sigint_handler and threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.original_sigint_handler)
-        
+
         return (
             self.model,
             progress_tracker.train_metrics,
             progress_tracker.validation_metrics,
             progress_tracker.test_metrics,
         )
-    
+
     def set_steps_to_1_or_quit(self, signum, frame):
         """Custom SIGINT handler used to elegantly exit training.
 
