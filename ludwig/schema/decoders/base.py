@@ -143,12 +143,19 @@ class ProjectorConfig(BaseDecoderConfig):
         description=" Indicates the activation function applied to the output.",
     )
 
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
-        n=2,
-        default=None,
+    clip: Union[List[int], Tuple[int]] = schema_utils.OneOfOptionsField(
+        field_options=[
+            schema_utils.FloatRangeTupleDataclassField(
+                n=2,
+                default=None,
+                allow_none=True,
+                min=0,
+                max=999999999,
+            )
+        ],
         allow_none=True,
-        min=0,
-        max=999999999,
+        default=None,
+        parameter_metadata=None,
         description="Clip the output of the decoder to be within the given range.",
     )
 

@@ -42,13 +42,17 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
         default=MEAN_SQUARED_ERROR,
     )
 
-    clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
-        n=2,
-        default=None,
-        allow_none=True,
-        min=0,
-        max=999999999,
+    clip: Union[List[int], Tuple[int]] = schema_utils.OneOfOptionsField(
+        field_options=[
+            schema_utils.FloatRangeTupleDataclassField(
+                n=2,
+                allow_none=True,
+                min=0,
+                max=999999999,
+            )
+        ],
         description="Clip the predicted output to the specified range.",
+        default=None,
     )
 
     decoder: BaseDecoderConfig = DecoderDataclassField(

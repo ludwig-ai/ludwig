@@ -452,13 +452,13 @@ def IntegerOrSequenceOfIntegers(
         def _jsonschema_type_mapping(self):
             numeric_option = {
                 "type": "integer",
-                "title": "integer_option",
+                "title": f"{self.name}_integer_option",
                 "default": default_integer,
                 "description": "Set to a valid number.",
             }
             sequence_option = {
                 "type": "array",
-                "title": "sequence_option",
+                "title": f"{self.name}_sequence_option",
                 "items": {"type": "number"},
                 "default": default_sequence,
                 "description": "Set to a valid number.",
@@ -493,70 +493,13 @@ def PositiveIntegerOrTupleOrStringOptions(
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
     a string value."""
 
-    class IntegerTupleStringOptionsField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if value < 0:
-                    raise ValidationError("Value must be positive.")
-                return value
-            if isinstance(value, tuple):
-                for v in value:
-                    if v < 0:
-                        raise ValidationError("Values must be positive.")
-                return value
-            if isinstance(value, str):
-                if value not in options:
-                    raise ValidationError(f"String value should be one of {options}")
-                return value
-
-            raise ValidationError("Field should be either an integer, tuple of integers, or a string")
-
-        def _jsonschema_type_mapping(self):
-            if None in options and not self.allow_none:
-                raise AssertionError(
-                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
-                )
-
-            # Prepare numeric option:
-            numeric_option = {
-                "type": "integer",
-                "title": "integer_option",
-                "default": default_integer,
-                "description": "Set to a valid number.",
-            }
-            tuple_option = {
-                "type": "array",
-                "title": "tuple_option",
-                "items": [{"type": "number", "minimum": 0, "maximum": 999999}] * 2,
-                "default": default_tuple,
-                "description": "Set to a valid number.",
-            }
-
-            # Prepare string option (remove None):
-            if None in options:
-                options.remove(None)
-            string_option = {
-                "type": "string",
-                "enum": options,
-                "default": default_option,
-                "title": "preconfigured_option",
-                "description": "Choose a preconfigured option.",
-            }
-            oneof_list = [
-                numeric_option,
-                tuple_option,
-                string_option,
-            ]
-
-            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
-
-    return field(
-        metadata={
-            "marshmallow_field": IntegerTupleStringOptionsField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
-            )
-        },
+    return OneOfOptionsField(
+        PositiveInteger(description="", default=default_integer),
+        FloatRangeTupleDataclassField(description="", default=default_tuple, min=0, max=99999),
+        StringOptions(description="", options=options, default=default_option, allow_none=False),
         default=default,
+        description=description,
+        allow_none=allow_none,
     )
 
 
@@ -764,7 +707,12 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-    n=2, default: Union[Tuple, None] = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
+    n=2,
+    default: Union[Tuple, None] = (0.9, 0.999),
+    allow_none: bool = False,
+    description="",
+    parameter_metadata=None,
+    **kwargs,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
@@ -779,31 +727,27 @@ def FloatRangeTupleDataclassField(
         def _jsonschema_type_mapping(self):
             if default is not None:
                 validate_range(default)
+            itemSchema = {"type": "number"}
+            if "min" in kwargs and isinstance(kwargs["min"], (float, int)):
+                itemSchema["minimum"] = kwargs["min"]
+            if "max" in kwargs and isinstance(kwargs["max"], (float, int)):
+                itemSchema["maximum"] = kwargs["max"]
             return {
-                "oneOf": [
-                    {
-                        "type": "array",
-                        "items": [
-                            {
-                                "type": "number",
-                                "minimum": min,
-                                "maximum": max,
-                            }
-                        ]
-                        * n,
-                        "default": default,
-                        "description": description,
-                    },
-                    {"type": "null", "title": "null_float_tuple_option", "description": "None"},
-                ],
-                "title": self.name,
+                "type": "array",
+                "items": [itemSchema] * n,
                 "default": default,
-                "description": "Valid options for FloatRangeTupleDataclassField.",
+                "description": description,
+                "title": self.name,
             }
 
     def validate_range(data: Tuple):
-        if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-            if all(list(map(lambda b: min <= b <= max, data))):
+        if isinstance(data, tuple) and all([isinstance(x, (float, int)) for x in data]):
+            checks = [True]
+            if "min" in kwargs:
+                checks += all(list(map(lambda b: min <= b, data)))
+            if "max" in kwargs:
+                checks += all(list(map(lambda b: b <= max, data)))
+            if all(checks):
                 return data
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
@@ -826,7 +770,10 @@ def FloatRangeTupleDataclassField(
                 validate=validate_range,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             )
         },
         default=default,
@@ -890,7 +837,7 @@ def OneOfOptionsField(
 
             # Add null as an option if none of the field options allow none:
             oneOf["oneOf"] += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
+                [{"type": "null", "title": f"{self.name}_null_option", "description": "Disable this parameter."}]
                 if allow_none and not field_options_allow_none
                 else []
             )
