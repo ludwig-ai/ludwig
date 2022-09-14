@@ -50,11 +50,11 @@ def infer_archive_type(archive_path):
         return ArchiveType.TAR_BZ2
     elif extension in {".tar.gz", ".tgz"}:
         return ArchiveType.TAR_GZ
-    elif extension == ".tar":
+    elif extension.endswith(".tar"):
         return ArchiveType.TAR
     elif extension.endswith(".zip") or extension.endswith(".zipx"):
         return ArchiveType.ZIP
-    elif extension in {".gz", ".gzip"}:
+    elif extension.endswith(".gz") or extension.endswith(".gzip"):
         return ArchiveType.GZIP
     else:
         return ArchiveType.UNKNOWN
