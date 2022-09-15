@@ -24,7 +24,7 @@ jobs:
           echo "RESULT: ${{ steps.check_pr_labels.outputs.result }}"
 
       - name: Create PR into release branch
-        if: steps.check_pr_labels.outputs.result
+        if: steps.check_pr_labels.outputs.result != 'false'
         uses: gorillio/github-action-cherry-pick@master
         with:
           pr_branch: ${{ steps.check_pr_labels.outputs.result }}
