@@ -566,8 +566,3 @@ class ViTEncoderConfig(BaseEncoderConfig):
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
         "height.",
     )
-
-    trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Is the encoder trainable.",
-    )

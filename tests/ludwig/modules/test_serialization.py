@@ -90,10 +90,11 @@ def test_load_save_encoder(tmpdir):
     restored_encoder = serialization.load(saved_path, "cpu")
     # Creates new model referencing the pre-trained encoder.
     model2_config = {
-        "input_features": [{**input_features[0], "encoder": f"file://{saved_path}", "trainable": True}],
+        "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 20},
     }
+    model2_config["input_features"][0]["encoder"]["pretrained_model"] = f"file://{saved_path}"
     model2 = LudwigModel(model2_config)
     train_stats2, _, _ = model2.train(dataset=data_csv, output_directory=tmpdir)
     # Assert that final train loss is lower for model 2 using the pre-trained encoder.

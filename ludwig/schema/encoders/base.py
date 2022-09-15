@@ -15,8 +15,20 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     Not meant to be used directly.
     """
 
+    """Name corresponding to an encoder."""
     type: str
-    "Name corresponding to an encoder."
+
+    """URL or name of a pretrained encoder."""
+    pretrained_model: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="Name or URL of a pre-trained encoder.",
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=True,
+        description="Is the encoder trainable.",
+    )
 
 
 @register_encoder_config("passthrough", [CATEGORY, NUMBER, VECTOR])
