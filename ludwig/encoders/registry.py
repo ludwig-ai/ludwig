@@ -17,9 +17,7 @@ import logging
 from typing import Dict, List, Type, Union
 
 from ludwig.encoders.base import Encoder
-from ludwig.modules import serialization
 from ludwig.modules.ludwig_module import register_module
-from ludwig.utils.fs_utils import is_url
 from ludwig.utils.registry import Registry
 
 logger = logging.getLogger(__name__)
@@ -51,23 +49,6 @@ def register_encoder(name: str, features: Union[str, List[str]]):
         return cls
 
     return wrap
-
-
-def get_encoder_default_params(feature: str, encoder_name_or_url: str) -> Dict:
-    """Get the default parameters dict for an encoder.
-
-    Encoder may be the name of an encoder, or the URL of a pre-trained encoder.
-    """
-    if is_url(encoder_name_or_url):
-        try:
-            encoder_state = serialization.load_state_from_file(encoder_name_or_url)
-            return encoder_state.config
-        except Exception as e:
-            logger.error(f"Failed to load encoder from {encoder_name_or_url}.")
-            logger.exception(e)
-    else:
-        encoder_cls = get_encoder_cls(feature, encoder_name_or_url)
-        return getattr(encoder_cls, "default_params", {})
 
 
 def get_encoder_cls(feature: str, name: str) -> Type[Encoder]:
