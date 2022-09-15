@@ -32,7 +32,7 @@ class ParameterMetadata:
     default_value_reasoning: Union[str, None] = None
 
     # Examples of other values that can be used for this parameter.
-    example_value: List[Any] = None
+    example_value: Union[List[Any], None] = None
 
     # List of related parameters that this parameter interacts with or depends on.
     related_parameters: Union[List[str], None] = None
