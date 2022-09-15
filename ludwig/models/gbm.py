@@ -10,7 +10,6 @@ from hummingbird.ml import convert
 
 from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
-from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.utils import output_feature_utils
@@ -35,7 +34,6 @@ class GBM(BaseModel):
         self._output_features_def = copy.deepcopy(output_features)
 
         # ================ Inputs ================
-        self.input_features = LudwigFeatureDict()
         try:
             self.input_features.update(self.build_inputs(self._input_features_def))
         except KeyError as e:
@@ -44,7 +42,6 @@ class GBM(BaseModel):
             )
 
         # ================ Outputs ================
-        self.output_features = LudwigFeatureDict()
         self.output_features.update(self.build_outputs(self._output_features_def, input_size=self.input_shape[-1]))
 
         # ================ Combined loss metric ================

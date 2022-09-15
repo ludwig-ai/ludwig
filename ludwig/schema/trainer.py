@@ -335,8 +335,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["learning_rate"],
     )
 
-    boosting_round_log_frequency: int = schema_utils.PositiveInteger(
-        default=10, description="Number of boosting rounds per log of the training progress."
+    boosting_rounds_per_checkpoint: int = schema_utils.PositiveInteger(
+        default=10, description="Number of boosting rounds per checkpoint / evaluation round."
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
@@ -526,7 +526,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
-    verbose: int = schema_utils.IntegerRange(default=0, min=-1, max=2, description="Verbosity level for GBM trainer.")
+    verbose: int = schema_utils.IntegerRange(default=-1, min=-1, max=2, description="Verbosity level for GBM trainer.")
 
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
