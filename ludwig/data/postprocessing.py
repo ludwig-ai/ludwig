@@ -27,6 +27,7 @@ from ludwig.utils.dataframe_utils import to_numpy_dataset
 from ludwig.utils.fs_utils import has_remote_protocol, open_file
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import make_safe_filename
+from ludwig.utils.types import DataFrame
 
 
 def postprocess(
@@ -36,7 +37,7 @@ def postprocess(
     output_directory="",
     backend=LOCAL_BACKEND,
     skip_save_unprocessed_output=False,
-):
+) -> DataFrame:
     if not backend.is_coordinator():
         # Only save unprocessed output on the coordinator
         skip_save_unprocessed_output = True
