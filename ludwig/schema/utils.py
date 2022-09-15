@@ -13,12 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import typing
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Optional, Sequence, Set, Tuple, Type, Union
+from typing import Tuple, Type, Union
 
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
@@ -804,100 +803,4 @@ def OneOfOptionsField(
             "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         **default_kwarg,
-    )
-
-
-def StringOptionsOrURL(
-    options: TList[str],
-    default: Union[None, str],
-    allow_none: bool = True,
-    schemes: Optional[Union[Sequence[str], Set[str]]] = {"http", "https", "file"},
-    description: str = "",
-    parameter_metadata: ParameterMetadata = None,
-):
-    """Returns a dataclass field with marshmallow metadata enforcing either a string from a set of options or a
-    URL.
-
-    Strings must conform to the given set of options (and None/null must be set to be allowed or not).
-    """
-    url_validator = validate.URL(relative=False, schemes=schemes)
-
-    class StringOptionsOrURLField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, str):
-                errors = []
-                url_valid = False
-                oneof_valid = False
-                try:
-                    url_valid = url_validator(value)
-                except ValidationError as err:
-                    url_valid = False
-                    if isinstance(err.messages, dict):
-                        errors.append(err.messages)
-                    else:
-                        errors.extend(typing.cast(list, err.messages))
-                if value in options:
-                    oneof_valid = True
-                    errors.append(f"Field value is not one of {options}")
-                else:
-                    oneof_valid = False
-                # Value must be one of the provided options OR a valid URL.
-                if not url_valid and not oneof_valid:
-                    raise ValidationError(errors)
-                return value
-            raise ValidationError("Field value must be a string")
-
-        def _jsonschema_type_mapping(self):
-            # Note: schemas can normally support a list of enums that includes 'None' as an option, as we currently have
-            # in 'initializers_registry'. But to make the schema here a bit more straightforward, the user must
-            # explicitly state if 'None' is going to be supported; if this conflicts with the list of enums then an
-            # error is raised and if it's going to be supported then it will be as a separate subschema rather than as
-            # part of the string subschema (see below):
-            if None in options and not self.allow_none:
-                raise AssertionError(
-                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
-                )
-
-            # Prepare string option (remove None):
-            if None in options:
-                options.remove(None)
-
-            schemes_pattern = "|".join(schemes)
-            oneof_list = [
-                {
-                    "type": "string",
-                    "enum": options,
-                    "default": default,
-                    "title": "preconfigured_option",
-                    "description": "Choose a preconfigured option.",
-                },
-                {
-                    "type": "string",
-                    "format": "uri",
-                    "pattern": f"^({schemes_pattern})://",
-                    "title": "url",
-                    "description": "Load from a specified URL.",
-                },
-            ]
-
-            # Add null as an option if applicable:
-            if allow_none:
-                oneof_list.append({"type": "null", "title": "null_option", "description": "Disable this parameter."})
-
-            return {
-                "oneOf": oneof_list,
-                "title": self.name,
-                "description": description,
-                "default": default,
-                "parameter_metadata": parameter_metadata,
-            }
-
-    return field(
-        metadata={
-            "marshmallow_field": StringOptionsOrURLField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
-            ),
-            "parameter_metadata": parameter_metadata,
-        },
-        default=default,
     )
