@@ -6,7 +6,7 @@ import shutil
 from typing import Any, Dict
 
 from ludwig.api import LudwigModel
-from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module
+from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module, save_yaml, delete_hyperopt_outputs
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
@@ -26,9 +26,7 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     process_module = importlib.util.module_from_spec(process_config_spec)
     process_config_spec.loader.exec_module(process_module)
     model_config = process_module.process_config(model_config, experiment)
-
-    from pprint import pprint
-    pprint(model_config)
+    save_yaml(experiment["config_path"], model_config)
 
     return model_config
 
@@ -62,8 +60,9 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
             skip_save_training_description=True,
-            # hyperopt_log_verbosity=0,
+            hyperopt_log_verbosity=0,
         )
+        delete_hyperopt_outputs(experiment["experiment_name"])
     else:
         # run model and capture metrics
         model = LudwigModel(config=model_config, logging_level=logging.ERROR)
