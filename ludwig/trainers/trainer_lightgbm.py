@@ -484,9 +484,6 @@ class LightGBMTrainer(BaseTrainer):
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
             evals_result=evals_result,
-            callbacks=[
-                lgb.log_evaluation(),
-            ],
         )
 
         return gbm
@@ -826,26 +823,6 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
 
-def log_eval_distributed(period: int = 1, show_stdv: bool = True) -> Callable:
-    from lightgbm_ray.tune import _TuneLGBMRank0Mixin
-
-    class LogEvalDistributed(_TuneLGBMRank0Mixin):
-        def __init__(self, period: int, show_stdv: bool = True):
-            self.period = period
-            self.show_stdv = show_stdv
-
-        def __call__(self, env: lgb.callback.CallbackEnv):
-            if not self.is_rank_0:
-                return
-            if self.period > 0 and env.evaluation_result_list and (env.iteration + 1) % self.period == 0:
-                result = "\t".join(
-                    [lgb.callback._format_eval_result(x, self.show_stdv) for x in env.evaluation_result_list]
-                )
-                lgb.callback._log_info(f"[{env.iteration + 1}]\t{result}")
-
-    return LogEvalDistributed(period=period, show_stdv=show_stdv)
-
-
 def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
     from lightgbm_ray import RayParams
 
@@ -938,9 +915,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             evals_result=evals_result,
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
-            callbacks=[
-                log_eval_distributed(10),
-            ],
             ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
         )
 
