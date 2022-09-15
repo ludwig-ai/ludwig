@@ -85,7 +85,7 @@ class LightGBMTrainer(BaseTrainer):
         self.boosting_type = config.boosting_type
         self.tree_learner = config.tree_learner
         self.num_boost_round = config.num_boost_round
-        self.boosting_rounds_per_checkpoint = config.boosting_rounds_per_checkpoint
+        self.boosting_rounds_per_checkpoint = min(self.num_boost_round, config.boosting_rounds_per_checkpoint)
         self.max_depth = config.max_depth
         self.num_leaves = config.num_leaves
         self.min_data_in_leaf = config.min_data_in_leaf
@@ -354,7 +354,7 @@ class LightGBMTrainer(BaseTrainer):
         )
 
         progress_bar.update(self.boosting_rounds_per_checkpoint)
-        progress_tracker.steps = booster.current_iteration()
+        progress_tracker.steps += self.boosting_rounds_per_checkpoint
         progress_tracker.last_improvement_steps = booster.best_iteration
 
         # convert to pytorch for inference, fine tuning
