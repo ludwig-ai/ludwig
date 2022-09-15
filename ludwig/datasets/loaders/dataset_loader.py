@@ -311,7 +311,10 @@ class DatasetLoader:
             for extracted_file in archive_contents:
                 extracted_path = os.path.join(self.raw_dataset_dir, extracted_file)
                 if is_archive(extracted_path):
-                    extracted_files.update(extract_archive(extracted_path))
+                    try:
+                        extracted_files.update(extract_archive(extracted_path))
+                    except RuntimeError as e:
+                        logger.warning(f"Error extracting {extracted_file}" + str(e))
         return list(extracted_files)
 
     def transform(self) -> pd.DataFrame:
