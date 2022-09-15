@@ -2,6 +2,7 @@ import asyncio
 import functools
 import logging
 import os
+import yaml
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from types import ModuleType
@@ -142,6 +143,19 @@ def delete_model_checkpoints(output_directory: str):
     shutil.rmtree(os.path.join(output_directory, "model", "training_checkpoints"), ignore_errors=True)
     if os.path.isfile(os.path.join(output_directory, "model", "model_weights")):
         os.remove(os.path.join(output_directory, "model", "model_weights"))
+
+
+def delete_hyperopt_outputs(output_directory: str):
+    for path, currentDirectory, files in os.walk(output_directory):
+        for file in files:
+            filename = os.path.join(path, file)
+            if file not in ["hyperopt_statistics.json", "params.json", "stderr", "stdout", "result.json", "error.txt"]:
+                os.remove(filename)
+
+
+def save_yaml(filename, dictionary):
+    with open(filename, 'w') as f:
+        yaml.dump(dictionary, f, default_flow_style=False)
 
 
 def format_time(time_us):
