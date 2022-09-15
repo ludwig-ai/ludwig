@@ -774,7 +774,12 @@ class RayTuneExecutor:
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
-        register_trainable(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params)
+
+        @ray.remote
+        def _register(name, trainable):
+            register_trainable(name, trainable)
+
+        ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
         # Note that resume="AUTO" will attempt to resume the experiment if possible, and
         # otherwise will start a new experiment:
