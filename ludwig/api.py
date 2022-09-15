@@ -484,7 +484,7 @@ class LudwigModel:
                     os.makedirs(model_dir, exist_ok=True)
                     save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
 
-                logger.info("\nDataset sizes:")
+                logger.info("\nDataset Sizes (Rows)")
                 logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
             for callback in self.callbacks:
