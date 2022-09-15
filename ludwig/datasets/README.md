@@ -1,6 +1,7 @@
 ## Ludwig Datasets API
 
-The Ludwig Dataset Zoo provides datasets that can be directly plugged into a Ludwig model.
+The Ludwig Dataset Zoo provides datasets that can be directly plugged into a Ludwig model. For each dataset, we've also
+included an example Ludwig config which should train reasonably fast on a current-generation laptop.
 
 The simplest way to use a dataset is to import it:
 
@@ -32,6 +33,9 @@ dataset_df = titanic.load()
 
 # Loads into split dataframes:
 train_df, test_df, _ = titanic.load(split=True)
+
+titanic_config = ludwig.datasets.get_model_config("titanic")
+titanic_config = titanic.basic_model_config
 ```
 
 Some datasets are hosted on [Kaggle](https://www.kaggle.com) and require a kaggle account. To use these, you'll need to
