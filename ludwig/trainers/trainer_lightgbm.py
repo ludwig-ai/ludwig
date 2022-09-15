@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import torch
@@ -357,7 +357,7 @@ class LightGBMTrainer(BaseTrainer):
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
         progress_tracker.last_improvement_steps = booster.best_iteration
 
-        # convert to pytorch for inference, fine tuning
+        # convert to pytorch for inference
         self.model.lgb_booster = booster
         self.model.compile()
         self.model = self.model.to(self.device)
@@ -919,28 +919,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
         )
 
         return gbm.booster_
-
-    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
-        from ludwig.backend.ray import _get_df_engine, RayPredictor
-
-        predictor_kwargs = self.executable_kwargs.copy()
-        if "callbacks" in predictor_kwargs:
-            # remove unused (non-serializable) callbacks
-            del predictor_kwargs["callbacks"]
-
-        predictor = RayPredictor(
-            model=self.model,
-            df_engine=_get_df_engine(None),
-            trainer_kwargs=self.trainer_kwargs,
-            data_loader_kwargs=self.data_loader_kwargs,
-            batch_size=batch_size,
-            **predictor_kwargs,
-        )
-        metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
-
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
 
     def _construct_lgb_datasets(
         self,
