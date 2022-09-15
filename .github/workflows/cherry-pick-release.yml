@@ -18,7 +18,7 @@ jobs:
         uses: shioyang/check-pr-labels-on-push-action@v1.0.6
         with:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          labels: '["release-*"]'
+          labels: '["release-0.6"]'
 
       - name: print result
         run: |
