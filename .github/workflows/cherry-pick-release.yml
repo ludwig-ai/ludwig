@@ -5,10 +5,15 @@ on:
     branches: ["auto-pick"]
 
 jobs:
-  # 1
   release_pull_requestk:
-    name: release_pull_request
+    name: cherry_pick_into_${{ matrix.release-branch }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        release-branch: [release-0.6]
+
     steps:
       - name: checkout
         uses: actions/checkout@v1
@@ -18,17 +23,17 @@ jobs:
         uses: shioyang/check-pr-labels-on-push-action@v1.0.6
         with:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          labels: '["release-0.6"]'
+          labels: '["${{ matrix.release-branch }}"]'
 
       - name: print result
         run: |
-          echo "RESULT: ${{ steps.check_pr_labels.outputs.result }}"
+          echo "RESULT: ${{ matrix.release-branch }} ${{ steps.check_pr_labels.outputs.result }}"
 
       - name: Create PR into release branch
-        if: steps.check_pr_labels.outputs.result != 'false'
+        if: steps.check_pr_labels.outputs.result == 'true'
         uses: gorillio/github-action-cherry-pick@master
         with:
-          pr_branch: ${{ steps.check_pr_labels.outputs.result }}
+          pr_branch: ${{ matrix.release-branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           DRY_RUN: true
