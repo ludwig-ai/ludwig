@@ -204,15 +204,14 @@ class DatasetLoader:
         """Returns human-readable description of the dataset."""
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
 
-    def _get_preserved_paths(self):
+    def _get_preserved_paths(self, root_dir=None):
         """Gets list of files to preserve when exporting dataset, not including self.processed_dataset_path.
 
         Returns paths relative to the dataset root directory.
         """
-        preserved_paths = _glob_multiple(
-            _list_of_strings(self.config.preserve_paths), root_dir=self.processed_dataset_dir
-        )
-        return [os.path.relpath(p, start=self.processed_dataset_dir) for p in preserved_paths]
+        root_dir = root_dir if root_dir else self.processed_dataset_dir
+        preserved_paths = _glob_multiple(_list_of_strings(self.config.preserve_paths), root_dir=root_dir)
+        return [os.path.relpath(p, start=root_dir) for p in preserved_paths]
 
     def export(self, output_directory: str):
         """Exports the dataset (and any files required by it) into the specified directory."""
@@ -335,7 +334,7 @@ class DatasetLoader:
         if not os.path.exists(self.processed_dataset_dir):
             os.makedirs(self.processed_dataset_dir)
         # Moves any preserved paths (ex. image directories) into processed directory to avoid unnecessary copy.
-        for rel_path in self._get_preserved_paths():
+        for rel_path in self._get_preserved_paths(self.raw_dataset_dir):
             source_path = os.path.join(self.raw_dataset_dir, rel_path)
             dest_path = os.path.join(self.processed_dataset_dir, rel_path)
             if os.path.exists(source_path) and not os.path.exists(dest_path):
