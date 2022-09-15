@@ -209,8 +209,10 @@ class DatasetLoader:
 
         Returns paths relative to the dataset root directory.
         """
-        preserved_paths = _glob_multiple(_list_of_strings(self.config.preserve_paths), root_dir=self.raw_dataset_dir)
-        return [os.path.relpath(p, start=self.raw_dataset_dir) for p in preserved_paths]
+        preserved_paths = _glob_multiple(
+            _list_of_strings(self.config.preserve_paths), root_dir=self.processed_dataset_dir
+        )
+        return [os.path.relpath(p, start=self.processed_dataset_dir) for p in preserved_paths]
 
     def export(self, output_directory: str):
         """Exports the dataset (and any files required by it) into the specified directory."""
@@ -219,7 +221,7 @@ class DatasetLoader:
         shutil.copy2(self.processed_dataset_path, os.path.join(output_directory, self.processed_dataset_filename))
         preserve_paths = self._get_preserved_paths()
         for relative_path in preserve_paths:
-            source = os.path.join(self.raw_dataset_dir, relative_path)
+            source = os.path.join(self.processed_dataset_dir, relative_path)
             destination = os.path.join(output_directory, relative_path)
             if os.path.isdir(source):
                 shutil.copytree(source, destination, symlinks=False, dirs_exist_ok=True)
