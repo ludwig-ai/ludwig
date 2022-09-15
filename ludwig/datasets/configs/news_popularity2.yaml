@@ -3,6 +3,9 @@ name: news_popularity2
 download_urls:
   - https://automl-mm-bench.s3.amazonaws.com/news_popularity2/train.csv
   - https://automl-mm-bench.s3.amazonaws.com/news_popularity2/test.csv
+sha256:
+  test.csv: 276effa981456e187fb1fc07abd8556d240e1a110fc5c096f2ad75a4082d1ccb
+  train.csv: 3673a07b87dbe09a9073e5ab83241681f561984269a9dc5411018fd9bca70b71
 train_filenames: train.csv
 test_filenames: test.csv
 description: |

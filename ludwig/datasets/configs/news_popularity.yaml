@@ -4,8 +4,8 @@ download_urls:
   - https://automl-mm-bench.s3.amazonaws.com/news_channel/train.csv
   - https://automl-mm-bench.s3.amazonaws.com/news_channel/test.csv
 sha256:
-  test.csv: 276effa981456e187fb1fc07abd8556d240e1a110fc5c096f2ad75a4082d1ccb
-  train.csv: 3673a07b87dbe09a9073e5ab83241681f561984269a9dc5411018fd9bca70b71
+  test.csv: d48e7261dce69964eb1163c89e05261b8732c676b10de9b40339b2d95559c9c3
+  train.csv: 46e433fcf070ec684cfaf30bada482a73637e8dd954edc3e1fe860de8e661055
 train_filenames: train.csv
 test_filenames: test.csv
 description: |
