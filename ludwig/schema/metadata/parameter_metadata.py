@@ -26,7 +26,7 @@ class ParameterMetadata:
     """Contains descriptive information that pertains to a Ludwig configuration parameter."""
 
     # How this parameter can be displayed in a human-readable form.
-    ui_display_name: str = ""
+    ui_display_name: Union[str, None] = ""
 
     # Why the default value for this parameter is the default.
     default_value_reasoning: Union[str, None] = None
