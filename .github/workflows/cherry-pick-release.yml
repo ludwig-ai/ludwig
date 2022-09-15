@@ -2,7 +2,7 @@ name: Cherry-Pick into Release Branch
 
 on:
   push:
-    branches: ["auto-pick"]
+    branches: ["master"]
 
 jobs:
   release_pull_requestk:
@@ -24,10 +24,6 @@ jobs:
         with:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           labels: '["${{ matrix.release-branch }}"]'
-
-      - name: print result
-        run: |
-          echo "RESULT: ${{ matrix.release-branch }} ${{ steps.check_pr_labels.outputs.result }}"
 
       - name: Create PR into release branch
         if: steps.check_pr_labels.outputs.result == 'true'
