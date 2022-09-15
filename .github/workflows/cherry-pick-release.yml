@@ -32,4 +32,4 @@ jobs:
           pr_branch: ${{ matrix.release-branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          DRY_RUN: true
+          DRY_RUN: false
