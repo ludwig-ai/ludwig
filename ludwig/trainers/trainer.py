@@ -57,6 +57,7 @@ from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
+    append_metrics,
     get_final_steps_per_checkpoint,
     get_new_progress_tracker,
     get_total_steps,
@@ -1050,37 +1051,13 @@ class Trainer(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
-    def append_metrics(self, dataset_name, results, metrics_log, tables, progress_tracker):
-        epoch = progress_tracker.epoch
-        steps = progress_tracker.steps
-        for output_feature in self.model.output_features:
-            scores = [dataset_name]
-
-            # collect metric names based on output features metrics to
-            # ensure consistent order of reporting metrics
-            metric_names = self.model.output_features[output_feature].metric_functions.keys()
-
-            for metric in metric_names:
-                if metric in results[output_feature]:
-                    # Some metrics may have been excepted and excluded from results.
-                    score = results[output_feature][metric]
-                    metrics_log[output_feature][metric].append(TrainerMetric(epoch=epoch, step=steps, value=score))
-                    scores.append(score)
-
-            tables[output_feature].append(scores)
-
-        metrics_log[COMBINED][LOSS].append(TrainerMetric(epoch=epoch, step=steps, value=results[COMBINED][LOSS]))
-        tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
-
-        return metrics_log, tables
-
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
             self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        self.append_metrics(dataset_name, metrics, metrics_log, tables, progress_tracker)
+        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
 
         return metrics_log, tables
 
