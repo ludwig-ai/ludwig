@@ -6,6 +6,7 @@ from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
 @register_encoder_config("albert", TEXT)
@@ -37,7 +38,9 @@ class ALBERTConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     trainable: bool = schema_utils.Boolean(
@@ -201,7 +204,9 @@ class MT5Config(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     trainable: bool = schema_utils.Boolean(
@@ -355,7 +360,9 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -433,7 +440,9 @@ class BERTConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     trainable: bool = schema_utils.Boolean(
@@ -576,7 +585,9 @@ class XLMConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     trainable: bool = schema_utils.Boolean(
@@ -787,7 +798,9 @@ class GPTConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     trainable: bool = schema_utils.Boolean(
@@ -1020,7 +1033,9 @@ class RoBERTaConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -1093,7 +1108,9 @@ class TransformerXLConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -1282,7 +1299,9 @@ class XLNetConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -1475,7 +1494,9 @@ class DistilBERTConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -1609,7 +1630,9 @@ class CTRLConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -1721,7 +1744,9 @@ class CamemBERTConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
@@ -1868,7 +1893,9 @@ class T5Config(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -1987,7 +2014,9 @@ class FlauBERTConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -2188,7 +2217,9 @@ class ELECTRAConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(
@@ -2342,7 +2373,9 @@ class LongformerConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="Whether to save the weights in the checkpoint.",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     reduce_output: str = schema_utils.String(

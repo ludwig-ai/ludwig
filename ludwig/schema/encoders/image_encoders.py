@@ -6,6 +6,7 @@ from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.utils.torch_utils import initializer_registry
 
 
@@ -504,7 +505,9 @@ class ViTEncoderConfig(BaseEncoderConfig):
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
-        description="",
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     hidden_size: int = schema_utils.PositiveInteger(
