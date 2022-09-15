@@ -19,6 +19,10 @@ jobs:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           labels: '["release-*"]'
 
+      - name: print result
+        run: |
+          echo "RESULT: ${{ steps.check_pr_labels.outputs.result }}"
+
       - name: Create PR into release branch
         if: steps.check_pr_labels.outputs.result
         uses: gorillio/github-action-cherry-pick@master
