@@ -163,7 +163,6 @@ class ParallelCNN(Encoder):
         if encoder_config.fc_layers is None and encoder_config.num_fc_layers is None:
             # use default layers with varying filter sizes
             encoder_config.fc_layers = [{"output_size": 512}, {"output_size": 256}]
-            encoder_config.num_fc_layers = 2
         elif encoder_config.fc_layers is not None and encoder_config.num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or num_fc_layers only. Not both.")
 
@@ -324,7 +323,6 @@ class StackedCNN(Encoder):
         if encoder_config.fc_layers is None and encoder_config.num_fc_layers is None:
             # use default layers with varying filter sizes
             encoder_config.fc_layers = [{"output_size": 512}, {"output_size": 256}]
-            encoder_config.num_fc_layers = 2
         elif encoder_config.fc_layers is not None and encoder_config.num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
 
@@ -474,7 +472,6 @@ class StackedParallelCNN(Encoder):
         if encoder_config.fc_layers is None and encoder_config.num_fc_layers is None:
             # use default layers with varying filter sizes
             encoder_config.fc_layers = [{"output_size": 512}, {"output_size": 256}]
-            encoder_config.num_fc_layers = 2
         elif encoder_config.fc_layers is not None and encoder_config.num_fc_layers is not None:
             raise ValueError("Invalid layer parametrization, use either fc_layers or " "num_fc_layers only. Not both.")
 
