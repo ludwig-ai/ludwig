@@ -5,6 +5,7 @@ on:
     branches: ["auto-pick"]
 
 jobs:
+  # 1
   release_pull_requestk:
     name: release_pull_request
     runs-on: ubuntu-latest
