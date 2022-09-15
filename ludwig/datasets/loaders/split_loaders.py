@@ -23,7 +23,7 @@ class RandomSplitLoader(DatasetLoader):
     """Adds a random split column to the dataset, with fixed proportions of:
      train: 70%
      validation: 10%
-     test: 10%
+     test: 20%
     ."""
 
     def transform_dataframe(self, dataframe: pd.DataFrame) -> pd.DataFrame:
