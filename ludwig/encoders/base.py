@@ -38,12 +38,14 @@ class Encoder(LudwigModule, ABC):
 
     @classmethod
     def restore_from_state(cls, state: LudwigModuleState) -> "Encoder":
-        encoder = cls(state.config)
+        schema = cls.get_schema_cls().Schema()
+        encoder_config = schema.load(state.config)
+        encoder = cls(encoder_config)
         encoder.load_state_dict({k: torch.from_numpy(v) for k, v in state.saved_weights.items()})
         return encoder
 
     def get_state(self, metadata: Dict[str, Any] = None) -> LudwigModuleState:
         return super().get_state(
-            config=self.config,
+            config=self.config.Schema().dump(self.config),
             metadata=metadata,
         )
