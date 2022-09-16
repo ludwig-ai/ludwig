@@ -36,6 +36,7 @@ import torch
 from tabulate import tabulate
 
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
+from ludwig.benchmarking.utils import format_memory
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
@@ -473,19 +474,24 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                dataset_statistics = [["Dataset", "Size"]]
-                dataset_statistics.append(["Training", len(training_set)])
+                dataset_statistics = [["Dataset", "Size (Rows)", "Size (In Memory)"]]
+                dataset_statistics.append(
+                    ["Training", len(training_set), format_memory(training_set.in_memory_size_bytes)]
+                )
                 if validation_set is not None:
-                    dataset_statistics.append(["Validation", len(validation_set)])
+                    dataset_statistics.append(
+                        ["Validation", len(validation_set), format_memory(validation_set.in_memory_size_bytes)]
+                    )
                 if test_set is not None:
-                    dataset_statistics.append(["Test", len(test_set)])
+                    dataset_statistics.append(["Test", len(test_set), format_memory(test_set.in_memory_size_bytes)])
+
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
                     save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
 
-                logger.info("\nDataset sizes:")
-                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+                logger.info("\nDataset Statistics")
+                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
             for callback in self.callbacks:
                 callback.on_train_init(

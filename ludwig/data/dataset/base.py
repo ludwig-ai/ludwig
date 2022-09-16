@@ -31,6 +31,10 @@ class Dataset(ABC):
     def to_df(self):
         raise NotImplementedError()
 
+    @property
+    def in_memory_size_bytes(self):
+        raise NotImplementedError()
+
 
 class DatasetManager(ABC):
     @abstractmethod
