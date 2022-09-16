@@ -1,0 +1,14 @@
+version: 1.0
+name: ae_price_prediction
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/ae_price_prediction/train.pq
+  - https://automl-mm-bench.s3.amazonaws.com/ae_price_prediction/test.pq
+sha256:
+    test.pq: d05242580e011f3ac5a1a8f0069fd7788ceeacd6b2fb00ca7f409991f998c95e
+    train.pq: 181cfebbedd5c6e2bdc6261706103edddfc6eeb4604b8c6ffdc3d084a6e09a4e
+train_filenames: train.pq
+test_filenames: test.pq
+description: |
+  Innerwear Data from Victoria's Secret and Others
+  600,000+ innerwear product data extracted from popular retail sites
+  https://www.kaggle.com/PromptCloudHQ/innerwear-data-from-victorias-secret-and-others
