@@ -12,6 +12,7 @@ except ImportError:
     raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
+from ludwig.backend import initialize_backend
 from ludwig.constants import (
     AUTO,
     AUTOML_DEFAULT_TEXT_ENCODER,
@@ -200,6 +201,8 @@ def _update_num_samples(num_samples, hyperparam_search_space):
 
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
 def memory_tune_config(config, dataset, model_category, row_count, backend):
+    backend = initialize_backend(backend)
+
     fits_in_memory = False
     tried_reduce_seq_len = False
     raw_config = merge_with_defaults(config)
