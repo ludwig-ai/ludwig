@@ -13,6 +13,7 @@ except ImportError:
 
 from ludwig.api import LudwigModel
 from ludwig.constants import (
+    AUTO,
     AUTOML_DEFAULT_TEXT_ENCODER,
     AUTOML_LARGE_TEXT_DATASET,
     AUTOML_MAX_ROWS_PER_CHECKPOINT,
@@ -20,6 +21,7 @@ from ludwig.constants import (
     AUTOML_SMALLER_TEXT_LENGTH,
     AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
     BATCH_SIZE,
+    DEFAULT_BATCH_SIZE,
     HYPEROPT,
     PREPROCESSING,
     SPACE,
@@ -117,7 +119,10 @@ def compute_memory_usage(config, training_set_metadata, model_category) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
     model_size = lm.get_model_size()  # number of parameters in model
-    batch_size = config[TRAINER][BATCH_SIZE]
+    batch_size = config[TRAINER].get(BATCH_SIZE, DEFAULT_BATCH_SIZE)
+    if batch_size == AUTO:
+        # Smallest valid batch size that will allow training to complete
+        batch_size = 2
     memory_usage = model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
     if model_category == TEXT:
         return _get_text_model_memory_usage(config, training_set_metadata, memory_usage)
