@@ -1,0 +1,10 @@
+version: 1.0
+name: santander_customer_satisfaction
+kaggle_competition: santander-customer-satisfaction
+archive_filenames: santander-customer-satisfaction.zip
+sha256:
+  santander-customer-satisfaction.zip: d4c2d068d8041af168d82d0eef7ad0b53ddd1d7fca9aba4e5d88fa1f957ee594
+train_filenames: train.csv
+description: |
+  Santander Customer Satisfaction Prediction.
+  https://www.kaggle.com/c/santander-customer-satisfaction/overview

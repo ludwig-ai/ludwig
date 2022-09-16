@@ -1,0 +1,9 @@
+version: 1.0
+name: irony
+download_urls: https://raw.githubusercontent.com/bwallace/ACL-2014-irony/master/irony-labeled.csv
+sha256:
+  irony-labeled.csv: 11f4d0964bd9c5c8363de2920612f5d926a4e6b3a8ab9187da2c33cfc0fdd02b
+description: |
+  The Reddit Irony dataset.
+  Source Paper: Humans Require Context to Infer Ironic Intent (so Computers Probably do, too)
+  Byron C Wallace, Do Kook Choe, Laura Kertz, and Eugene Charniak

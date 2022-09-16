@@ -1,0 +1,11 @@
+version: 1.0
+name: ames_housing
+kaggle_competition: house-prices-advanced-regression-techniques
+archive_filenames: house-prices-advanced-regression-techniques.zip
+train_filenames: train.csv
+test_filenames: test.csv
+sha256:
+  house-prices-advanced-regression-techniques.zip: 65f769a9157a2581671957ed08da8a8162d53e67b4e9970ee856b634deb11d9f
+description: |
+  The Ames Housing dataset.
+  https://www.kaggle.com/c/house-prices-advanced-regression-techniques
