@@ -21,7 +21,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
-from tabulate import tabulate
 
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
@@ -1663,16 +1662,6 @@ def preprocess_for_training(
                         "preprocessing configuration."
                     )
                     test_dataset = None
-
-        # Surface in-memory dataset sizes
-        dataset_statistics = [["Dataset", "Size In Bytes"]]
-        dataset_statistics.append(["Training", training_dataset.in_memory_size_bytes])
-        if validation_dataset:
-            dataset_statistics.append(["Validation", validation_dataset.in_memory_size_bytes])
-        if test_dataset:
-            dataset_statistics.append(["Test", test_dataset.in_memory_size_bytes])
-        logging.info("\nDataset Sizes (In Memory)")
-        logging.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 

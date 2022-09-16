@@ -77,8 +77,8 @@ class PandasDataset(Dataset):
     @property
     def in_memory_size_bytes(self):
         df = self.to_df()
-        memory_usage = df.memory_usage(deep=True).sum() if not None else 0
-        return memory_usage
+        memory_usage = df.memory_usage(deep=True).sum()
+        return memory_usage if memory_usage is not None else 0
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
