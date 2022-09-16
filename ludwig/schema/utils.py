@@ -813,7 +813,13 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-    n=2, default: Union[Tuple, None] = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
+    n=2,
+        default: Union[Tuple, None] = (0.9, 0.999),
+        allow_none: bool = False,
+        min=0,
+        max=1,
+        description="",
+        parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
@@ -875,7 +881,10 @@ def FloatRangeTupleDataclassField(
                 validate=validate_range,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             )
         },
         default=default,
