@@ -799,7 +799,6 @@ class LudwigModel:
             converted_postproc_predictions = convert_predictions(
                 postproc_predictions, self.model.output_features, return_type=return_type, backend=self.backend
             )
-
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
                     save_prediction_outputs(
