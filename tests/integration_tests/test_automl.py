@@ -35,11 +35,12 @@ def test_data():
 
 
 @pytest.mark.distributed
-def test_create_auto_config(test_data, ray_cluster_2cpu):
+@pytest.mark.parametrize("tune_for_memory", [True, False])
+def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
     input_features, output_features, dataset_csv = test_data
     targets = [feature[NAME] for feature in output_features]
     df = dd.read_csv(dataset_csv)
-    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=False)
+    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=tune_for_memory, backend="ray")
 
     def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
         return {feature[NAME] for feature in features}

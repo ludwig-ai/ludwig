@@ -70,9 +70,9 @@ BYTES_PER_WEIGHT = 4  # assumes 32-bit precision = 4 bytes
 BYTES_OPTIMIZER_PER_WEIGHT = 8  # for optimizer m and v vectors
 
 
-def get_trainingset_metadata(config, dataset):
+def get_trainingset_metadata(config, dataset, backend):
     (_, _, _, training_set_metadata) = preprocess_for_training(
-        config, dataset=dataset, preprocessing_params=config[PREPROCESSING]
+        config, dataset=dataset, preprocessing_params=config[PREPROCESSING], backend=backend
     )
     return training_set_metadata
 
@@ -194,11 +194,11 @@ def _update_num_samples(num_samples, hyperparam_search_space):
 
 
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
-def memory_tune_config(config, dataset, model_category, row_count):
+def memory_tune_config(config, dataset, model_category, row_count, backend):
     fits_in_memory = False
     tried_reduce_seq_len = False
     raw_config = merge_with_defaults(config)
-    training_set_metadata = get_trainingset_metadata(raw_config, dataset)
+    training_set_metadata = get_trainingset_metadata(raw_config, dataset, backend)
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}
     param_list = []

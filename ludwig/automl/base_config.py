@@ -21,11 +21,11 @@ import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.constants import COMBINER, EXECUTOR, HYPEROPT, SCHEDULER, SEARCH_ALG, TEXT, TYPE
-from ludwig.utils.automl.data_source import DataframeSource, DataSource
+from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
-from ludwig.utils.automl.ray_utils import _ray_init, get_available_resources
+from ludwig.utils.automl.ray_utils import get_available_resources
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
-from ludwig.utils.data_utils import load_dataset, load_yaml
+from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.defaults import default_random_seed
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -80,7 +80,7 @@ def allocate_experiment_resources(resources: dict) -> dict:
 
 
 def _create_default_config(
-    dataset: Union[str, dd.core.DataFrame, pd.DataFrame, DatasetInfo],
+    dataset_info: DatasetInfo,
     target_name: Union[str, List[str]] = None,
     time_limit_s: Union[int, float] = None,
     random_seed: int = default_random_seed,
@@ -108,13 +108,8 @@ def _create_default_config(
     :return: (dict) dictionaries contain auto train config files for all available
     combiner types
     """
-    _ray_init()
     resources = get_available_resources()
     experiment_resources = allocate_experiment_resources(resources)
-
-    dataset_info = dataset
-    if not isinstance(dataset, DatasetInfo):
-        dataset_info = get_dataset_info(dataset)
 
     input_and_output_feature_config, features_metadata = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
@@ -159,7 +154,7 @@ def _get_reference_configs() -> dict:
     return reference_configs
 
 
-def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
+def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
     inference.
 
@@ -169,13 +164,7 @@ def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> Da
     # Return
     :return: (List[FieldInfo]) list of FieldInfo objects
     """
-    dataframe = load_dataset(dataset)
-    if isinstance(dataset, dd.core.DataFrame):
-        # Limit the dataset to first 10k elements to speed up type inference
-        # TODO(travis): find a more uniform sampling strategy here
-        # Alternatively just use Whylogs for this...
-        dataframe = dataframe.head(10000)
-    source = DataframeSource(dataframe)
+    source = wrap_data_source(df)
     return get_dataset_info_from_source(source)
 
 
