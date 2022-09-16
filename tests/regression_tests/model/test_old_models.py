@@ -57,5 +57,5 @@ def test_predict_deprecated_model(model_url, tmpdir):
     ludwig_model = LudwigModel.load(model_dir)
     df = build_synthetic_dataset_df(NUM_EXAMPLES, ludwig_model.config)
 
-    pred_df = ludwig_model.predict(df)
-    assert len(pred_df) > 0
+    pred_df, _ = ludwig_model.predict(df)
+    assert len(pred_df) == 25
