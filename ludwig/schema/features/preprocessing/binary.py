@@ -2,7 +2,7 @@ from typing import Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import BINARY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS,  PREPROCESSING
+from ludwig.constants import BINARY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -20,7 +20,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         default="fill_with_false",
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary column",
-        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"]
+        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"],
     )
 
     fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
