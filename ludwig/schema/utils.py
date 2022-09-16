@@ -138,10 +138,10 @@ def ReductionOptions(default: Union[None, str] = None, description="", parameter
 
 
 def RegularizerOptions(
-        default: Union[None, str] = None,
-        allow_none: bool = True,
-        description="",
-        parameter_metadata: ParameterMetadata = None
+    default: Union[None, str] = None,
+    allow_none: bool = True,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
     return StringOptions(
@@ -478,10 +478,10 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-        list_type: Union[Type[str], Type[int], Type[float]] = str,
-        default: Union[None, TList[Any]] = None,
-        description="",
-        parameter_metadata: ParameterMetadata = None
+    list_type: Union[Type[str], Type[int], Type[float]] = str,
+    default: Union[None, TList[Any]] = None,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
     if default is not None:
@@ -509,7 +509,7 @@ def List(
                 dump_default=default,
                 metadata={
                     "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
             )
         },
@@ -605,9 +605,7 @@ def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
 
 
 def InitializerOrDict(
-        default: str = "xavier_uniform",
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None
+    default: str = "xavier_uniform", description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
 
@@ -675,12 +673,12 @@ def InitializerOrDict(
 
 def FloatRangeTupleDataclassField(
     n=2,
-        default: Union[Tuple, None] = (0.9, 0.999),
-        allow_none: bool = False,
-        min=0,
-        max=1,
-        description="",
-        parameter_metadata: ParameterMetadata = None,
+    default: Union[Tuple, None] = (0.9, 0.999),
+    allow_none: bool = False,
+    min=0,
+    max=1,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 

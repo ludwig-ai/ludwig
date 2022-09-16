@@ -13,7 +13,5 @@ class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
     reduce_output: Optional[str] = schema_utils.ReductionOptions(
-        default="mean",
-        description="",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["reduce_output"]
+        default="mean", description="", parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["reduce_output"]
     )

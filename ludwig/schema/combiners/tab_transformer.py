@@ -14,15 +14,15 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
 
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(
         description="Must be an integer, 'add', or null. If an integer, specifies the embedding size for input "
-                    "feature names. Input feature name embeddings will be concatenated to hidden representations. "
-                    "Must be less than or equal to hidden_size. If 'add', input feature names use embeddings the same "
-                    "size as hidden_size, and are added (element-wise) to the hidden representations. If null, "
-                    "input feature embeddings are not used.",
+        "feature names. Input feature name embeddings will be concatenated to hidden representations. "
+        "Must be less than or equal to hidden_size. If 'add', input feature names use embeddings the same "
+        "size as hidden_size, and are added (element-wise) to the hidden representations. If null, "
+        "input feature embeddings are not used.",
         parameter_metadata=COMBINER_METADATA["TabTransformerCombiner"]["embed_input_feature_name"],
     )
 
     reduce_output: str = schema_utils.ReductionOptions(
         default="concat",
         description="",
-        parameter_metadata=COMBINER_METADATA["TabTransformerCombiner"]["reduce_output"]
+        parameter_metadata=COMBINER_METADATA["TabTransformerCombiner"]["reduce_output"],
     )

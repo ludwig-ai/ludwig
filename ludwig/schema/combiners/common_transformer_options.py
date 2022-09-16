@@ -11,28 +11,26 @@ class CommonTransformerConfig:
     """Common transformer parameter values."""
 
     num_layers: int = schema_utils.PositiveInteger(
-        default=1,
-        description="",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_layers"]
+        default=1, description="", parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_layers"]
     )
 
     hidden_size: int = schema_utils.NonNegativeInteger(
         default=256,
-        description= "The number of hidden units of the TransformerStack as well as the dimension that each incoming "
-                     "input feature is projected to before feeding to the TransformerStack.",
+        description="The number of hidden units of the TransformerStack as well as the dimension that each incoming "
+        "input feature is projected to before feeding to the TransformerStack.",
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["hidden_size"],
     )
 
     num_heads: int = schema_utils.NonNegativeInteger(
         default=8,
         description="Number of heads of the self attention in the transformer block.",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_heads"]
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_heads"],
     )
 
     transformer_output_size: int = schema_utils.NonNegativeInteger(
         default=256,
         description="Size of the fully connected layer after self attention in the transformer block. This is usually "
-                    "the same as `hidden_size` and `embedding_size`.",
+        "the same as `hidden_size` and `embedding_size`.",
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["transformer_output_size"],
     )
 

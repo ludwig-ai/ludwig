@@ -282,7 +282,7 @@ class H3RNNConfig(BaseEncoderConfig):
     )
 
     recurrent_initializer: str = schema_utils.InitializerOptions(
-        default="orthogonal", 
+        default="orthogonal",
         description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["recurrent_initializer"],
     )
@@ -302,9 +302,9 @@ class H3RNNConfig(BaseEncoderConfig):
     )
 
     recurrent_dropout: float = schema_utils.FloatRange(
-        default=0.0, 
-        min=0, 
-        max=1, 
+        default=0.0,
+        min=0,
+        max=1,
         description="The dropout rate for the recurrent state",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["recurrent_dropout"],
     )

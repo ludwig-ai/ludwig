@@ -179,28 +179,28 @@ class ClassifierConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the input to the decoder.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["input_size"]
+        parameter_metadata=DECODER_METADATA["Classifier"]["input_size"],
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
         description="Number of classes to predict.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["num_classes"]
+        parameter_metadata=DECODER_METADATA["Classifier"]["num_classes"],
     )
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["use_bias"]
+        parameter_metadata=DECODER_METADATA["Classifier"]["use_bias"],
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
         description="Initializer for the weight matrix.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["weights_initializer"]
+        parameter_metadata=DECODER_METADATA["Classifier"]["weights_initializer"],
     )
 
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
-        parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"]
+        parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"],
     )

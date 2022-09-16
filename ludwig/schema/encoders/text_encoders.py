@@ -141,7 +141,7 @@ class ALBERTConfig(BaseEncoderConfig):
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large (e.g., 512 or 1024 or 2048).", 
+        "something large (e.g., 512 or 1024 or 2048).",
         parameter_metadata=ENCODER_METADATA["ALBERTEncoder"]["max_position_embeddings"],
     )
 
@@ -784,7 +784,7 @@ class XLMConfig(BaseEncoderConfig):
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
-                    "something large just in case (e.g., 512 or 1024 or 2048).",
+        "something large just in case (e.g., 512 or 1024 or 2048).",
         parameter_metadata=ENCODER_METADATA["XLMEncoder"]["max_position_embeddings"],
     )
 
@@ -827,7 +827,8 @@ class XLMConfig(BaseEncoderConfig):
     )
 
     unk_index: int = schema_utils.NonNegativeInteger(
-        default=3, description="The index of the unknown token in the vocabulary.",
+        default=3,
+        description="The index of the unknown token in the vocabulary.",
         parameter_metadata=ENCODER_METADATA["XLMEncoder"]["unk_index"],
     )
 
@@ -2738,7 +2739,7 @@ class LongformerConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["LongformerEncoder"]["attention_window"],
+        parameter_metadata=ENCODER_METADATA["LongformerEncoder"]["attention_window"],
     )
 
     sep_token_id: int = schema_utils.Integer(

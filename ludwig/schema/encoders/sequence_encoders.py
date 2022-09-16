@@ -154,7 +154,8 @@ class ParallelCNNConfig(BaseEncoderConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None, description="The maximum length of all sequences",
+        default=None,
+        description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["max_sequence_length"],
     )
 
@@ -319,7 +320,7 @@ class StackedCNNConfig(BaseEncoderConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None, 
+        default=None,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["max_sequence_length"],
     )
@@ -521,7 +522,8 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None, description="The maximum length of all sequences",
+        default=None,
+        description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["max_sequence_length"],
     )
 
@@ -732,13 +734,14 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
     num_layers: int = schema_utils.PositiveInteger(
-        default=1, 
+        default=1,
         description="the number of stacked recurrent layers.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["num_layers"],
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None, description="The maximum length of all sequences",
+        default=None,
+        description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["max_sequence_length"],
     )
 
@@ -784,20 +787,24 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
     recurrent_initializer: str = schema_utils.InitializerOptions(
-        default="orthogonal", description="The initializer for recurrent matrix weights",
+        default="orthogonal",
+        description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["recurrent_initializer"],
     )
 
     dropout: float = schema_utils.FloatRange(
-        default=0.0, 
-        min=0, 
-        max=1, 
+        default=0.0,
+        min=0,
+        max=1,
         description="The dropout rate",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["dropout"],
     )
 
     recurrent_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate for the recurrent state",
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate for the recurrent state",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["recurrent_dropout"],
     )
 
@@ -855,7 +862,10 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
     fc_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate for fully connected layers",
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate for fully connected layers",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["fc_dropout"],
     )
 
@@ -891,7 +901,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None, 
+        default=None,
         description="The maximum length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["max_sequence_length"],
     )
@@ -990,7 +1000,10 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     conv_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate for the convolutional layers",
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate for the convolutional layers",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["conv_dropout"],
     )
 
@@ -1020,7 +1033,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     num_rec_layers: int = schema_utils.PositiveInteger(
-        default=1, 
+        default=1,
         description="The number of stacked recurrent layers.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_rec_layers"],
     )
@@ -1067,20 +1080,24 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     recurrent_initializer: str = schema_utils.InitializerOptions(
-        default="orthogonal", description="The initializer for recurrent matrix weights",
+        default="orthogonal",
+        description="The initializer for recurrent matrix weights",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["recurrent_initializer"],
     )
 
     dropout: float = schema_utils.FloatRange(
-        default=0.0, 
-        min=0, 
-        max=1, 
+        default=0.0,
+        min=0,
+        max=1,
         description="The dropout rate",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["dropout"],
     )
 
     recurrent_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate for the recurrent state",
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate for the recurrent state",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["recurrent_dropout"],
     )
 
@@ -1138,7 +1155,10 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     fc_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate for fully connected layers",
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate for fully connected layers",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["fc_dropout"],
     )
 
@@ -1162,7 +1182,7 @@ class StackedTransformerConfig(BaseEncoderConfig):
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
-        default=None, 
+        default=None,
         description="Max length of all sequences",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["max_sequence_length"],
     )
@@ -1213,7 +1233,7 @@ class StackedTransformerConfig(BaseEncoderConfig):
     )
 
     num_layers: int = schema_utils.PositiveInteger(
-        default=1, 
+        default=1,
         description="the number of stacked recurrent layers.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["num_layers"],
     )
@@ -1301,7 +1321,10 @@ class StackedTransformerConfig(BaseEncoderConfig):
     )
 
     fc_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate for fully connected layers",
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate for fully connected layers",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["fc_dropout"],
     )
 

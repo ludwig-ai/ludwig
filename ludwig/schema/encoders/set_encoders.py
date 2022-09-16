@@ -21,7 +21,7 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
     )
 
     vocab: List[str] = schema_utils.List(
-        default=None, 
+        default=None,
         description="Vocabulary of the encoder",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["vocab"],
     )
