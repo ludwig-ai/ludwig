@@ -170,6 +170,11 @@ def get_dataset_info(dataset: Union[str, pd.DataFrame, dd.core.DataFrame]) -> Da
     :return: (List[FieldInfo]) list of FieldInfo objects
     """
     dataframe = load_dataset(dataset)
+    if isinstance(dataset, dd.core.DataFrame):
+        # Limit the dataset to first 10k elements to speed up type inference
+        # TODO(travis): find a more uniform sampling strategy here
+        # Alternatively just use Whylogs for this...
+        dataframe = dataframe.head(10000)
     source = DataframeSource(dataframe)
     return get_dataset_info_from_source(source)
 
