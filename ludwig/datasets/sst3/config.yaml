@@ -1,9 +1,0 @@
-version: 1.0
-download_urls:
-  - https://nlp.stanford.edu/~socherr/stanfordSentimentTreebank.zip
-split_filenames:
-  train_file: train.csv
-  test_file: test.csv
-  val_file: dev.csv
-download_file_type: csv
-csv_filename: sst3.csv

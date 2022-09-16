@@ -1,0 +1,11 @@
+version: 1.0
+name: titanic
+kaggle_competition: titanic
+archive_filenames: titanic.zip
+sha256:
+  titanic.zip: bb1bda464cc6819d412b41d34be69fd89d26b372dc24c09421c3dbca1b0dbe9f
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  The Titanic dataset: use machine learning to create a model
+  that predicts which passengers survived the Titanic shipwreck.

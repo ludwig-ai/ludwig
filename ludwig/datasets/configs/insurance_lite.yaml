@@ -1,0 +1,22 @@
+version: 1.0
+name: insurance_lite
+kaggle_dataset_id: infernape/fast-furious-and-insured
+archive_filenames: fast-furious-and-insured.zip
+sha256:
+  fast-furious-and-insured.zip: 3b88ada517aa88d9c9187121d7ef42f4b5539808677a2b0827b989ca0fa19600
+dataset_filenames: Fast_Furious_Insured/train.csv
+preserve_paths: Fast_Furious_Insured
+columns:
+  - image_path
+  - insurance_company
+  - cost_of_vehicle
+  - min_coverage
+  - expiry_date
+  - max_coverage
+  - condition
+  - amount
+loader: insurance_lite.InsuranceLiteLoader
+description: |
+  The dataset consists of parameters such as the images of damaged cars,
+  the price of the cars and their insurance claim, and the like.
+  Predict the insurance claim for the cars that are provided in the dataset.

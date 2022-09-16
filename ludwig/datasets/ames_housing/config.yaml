@@ -1,7 +1,0 @@
-version: 1.0
-competition: house-prices-advanced-regression-techniques
-archive_filename: house-prices-advanced-regression-techniques.zip
-split_filenames:
-  train_file: train.csv
-download_file_type: csv
-csv_filename: ames_housing.csv

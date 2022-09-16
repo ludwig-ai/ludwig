@@ -48,7 +48,7 @@ def load_config_with_kwargs(
 ) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
 
-    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are no present in config.
+    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are not present in config.
     """
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
@@ -276,7 +276,7 @@ def Integer(
 
 
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
+    description: str, default: Union[None, int], allow_none: bool = True, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -310,7 +310,7 @@ def PositiveInteger(
 def NonNegativeInteger(
     description: str,
     default: Union[None, int] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
@@ -416,7 +416,7 @@ def NonNegativeFloat(
 
 def FloatRange(
     default: Union[None, float] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
@@ -446,157 +446,6 @@ def FloatRange(
                     "description": description,
                     "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
                 },
-            )
-        },
-        default=default,
-    )
-
-
-def IntegerOrSequenceOfIntegers(
-    default: Union[None, int, Tuple[int, ...], TList[int]] = None,
-    default_integer: int = None,
-    default_sequence: Union[TList[int], Tuple[int, ...]] = None,
-    allow_none=False,
-    non_negative: bool = True,
-    description="",
-    parameter_metadata: ParameterMetadata = None,
-):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
-    inputs."""
-
-    class IntegerOrIntegerSequenceField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if non_negative:
-                    if value < 0:
-                        raise ValidationError("Value must be positive.")
-                return value
-            if isinstance(value, (tuple, list)):
-                if non_negative:
-                    for v in value:
-                        if v < 0:
-                            raise ValidationError("Values must be positive.")
-                return value
-            raise ValidationError("Field should be either an integer, tuple of integers, or a list of integers")
-
-        def _jsonschema_type_mapping(self):
-            numeric_option = {
-                "type": "integer",
-                "title": "integer_option",
-                "default": default_integer,
-                "description": "Set to a valid number.",
-            }
-            sequence_option = {
-                "type": "array",
-                "title": "sequence_option",
-                "items": {"type": "number"},
-                "default": default_sequence,
-                "description": "Set to a valid number.",
-            }
-
-            oneof_list = [
-                numeric_option,
-                sequence_option,
-            ]
-
-            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
-
-    return field(
-        metadata={
-            "marshmallow_field": IntegerOrIntegerSequenceField(
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
-                }
-            )
-        },
-        default=default,
-    )
-
-
-def PositiveIntegerOrTupleOrStringOptions(
-    options: TList[str] = None,
-    allow_none=False,
-    default: Union[None, int, Tuple[int, ...], str] = None,
-    default_integer: Union[None, int] = None,
-    default_tuple: Union[None, Tuple[int, ...]] = None,
-    default_option: Union[None, str] = None,
-    description="",
-    parameter_metadata: ParameterMetadata = None,
-):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
-    a string value."""
-
-    class IntegerTupleStringOptionsField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if value < 0:
-                    raise ValidationError("Value must be positive.")
-                return value
-            if isinstance(value, tuple):
-                for v in value:
-                    if v < 0:
-                        raise ValidationError("Values must be positive.")
-                return value
-            if isinstance(value, str):
-                if value not in options:
-                    raise ValidationError(f"String value should be one of {options}")
-                return value
-
-            raise ValidationError("Field should be either an integer, tuple of integers, or a string")
-
-        def _jsonschema_type_mapping(self):
-            if None in options and not self.allow_none:
-                raise AssertionError(
-                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
-                )
-
-            # Prepare numeric option:
-            numeric_option = {
-                "type": "integer",
-                "title": "integer_option",
-                "default": default_integer,
-                "description": "Set to a valid number.",
-            }
-            tuple_option = {
-                "type": "array",
-                "title": "tuple_option",
-                "items": [{"type": "number", "minimum": 0, "maximum": 999999}] * 2,
-                "default": default_tuple,
-                "description": "Set to a valid number.",
-            }
-
-            # Prepare string option (remove None):
-            if None in options:
-                options.remove(None)
-            string_option = {
-                "type": "string",
-                "enum": options,
-                "default": default_option,
-                "title": "preconfigured_option",
-                "description": "Choose a preconfigured option.",
-            }
-            oneof_list = [
-                numeric_option,
-                tuple_option,
-                string_option,
-            ]
-
-            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
-
-    return field(
-        metadata={
-            "marshmallow_field": IntegerTupleStringOptionsField(
-                allow_none=allow_none,
-                load_default=default,
-                dump_default=default,
-                metadata={
-                    "description": description,
-                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
-                }
             )
         },
         default=default,
@@ -904,7 +753,11 @@ def FloatRangeTupleDataclassField(
 
 
 def OneOfOptionsField(
-    default: Any, description: str, allow_none: bool, field_options: TList, parameter_metadata: ParameterMetadata = None
+    default: Any,
+    description: str,
+    field_options: TList,
+    allow_none: bool = True,
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
     field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
@@ -939,10 +792,13 @@ def OneOfOptionsField(
 
         def _jsonschema_type_mapping(self):
             """Constructs a oneOf schema by iteratively adding the schemas of `field_options` to a list."""
-            oneOf = {"oneOf": [], "description": description, "default": default}
+            oneOf = {"oneOf": [], "description": description, "default": default, "title": self.name}
 
-            for option in field_options:
+            for idx, option in enumerate(field_options):
                 mfield_meta = option.metadata["marshmallow_field"]
+
+                # Necessary for key/name de-duplication in case a name is not supplied by the user:
+                mfield_meta_class_name = str(mfield_meta.__class__).split(".")[-1].split("'")[0].lower()
 
                 # If the option inherits from a custom dataclass-field, then use the custom jsonschema:
                 if hasattr(mfield_meta, "_jsonschema_type_mapping"):
@@ -956,6 +812,8 @@ def OneOfOptionsField(
 
                     dummy_schema = unload_jsonschema_from_marshmallow_class(DummyClass)
                     tmp_json_schema = dummy_schema["properties"]["tmp"]
+                    # Manually set the title, otherwise it would be 'tmp':
+                    tmp_json_schema["title"] = f"{self.name}_{mfield_meta_class_name}_option"
                     oneOf["oneOf"].append(tmp_json_schema)
 
             # Add null as an option if none of the field options allow none:

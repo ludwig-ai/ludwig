@@ -1,0 +1,29 @@
+version: 1.0
+name: naval
+download_urls: http://archive.ics.uci.edu/ml/machine-learning-databases/00316/UCI%20CBM%20Dataset.zip
+sha256:
+  UCI%20CBM%20Dataset.zip: 91a3815da80b5ab7e2d5b82ac82f1c2cbf89182c7a65bcdf240db1e014423cb9
+dataset_filenames: UCI CBM Dataset/data.txt
+columns:
+  - lp
+  - v
+  - gtt
+  - gtn
+  - ggn
+  - ts
+  - tp
+  - t48
+  - t1
+  - t2
+  - p48
+  - p1
+  - p2
+  - pexh
+  - tic
+  - mf
+  - gtcdsc
+  - gttdsc
+loader: naval.NavalLoader
+description: |
+  Condition Based Maintenance of Naval Propulsion Plants Data Set
+  http://archive.ics.uci.edu/ml/datasets/condition+based+maintenance+of+naval+propulsion+plants
