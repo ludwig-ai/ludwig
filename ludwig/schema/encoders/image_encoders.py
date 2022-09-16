@@ -6,9 +6,9 @@ from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.utils.torch_utils import initializer_registry
-from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("stacked_cnn", IMAGE)
@@ -70,7 +70,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["kernel_size"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["kernel_size"],
     )
 
     stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -82,7 +82,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["stride"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["stride"],
     )
 
     padding: Optional[Union[int, Tuple[int], str]] = schema_utils.OneOfOptionsField(
@@ -94,7 +94,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.List(list_type=int),
             schema_utils.StringOptions(options=["valid", "same"]),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["padding"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["padding"],
     )
 
     dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -106,7 +106,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["dilation"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["dilation"],
     )
 
     groups: Optional[int] = schema_utils.PositiveInteger(
@@ -177,7 +177,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["pool_kernel_size"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_kernel_size"],
     )
 
     pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -188,7 +188,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["pool_stride"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_stride"],
     )
 
     pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
@@ -198,7 +198,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
             schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int),
         ],
-        parameter_metadata = ENCODER_METADATA["Stacked2DCNN"]["pool_padding"],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_padding"],
     )
 
     pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(

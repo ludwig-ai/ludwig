@@ -80,6 +80,6 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     residual: bool = schema_utils.Boolean(
         default=False,
         description="Whether to add a residual connection to each fully connected layer block. All fully connected "
-                    "layers must have the same size ",
+        "layers must have the same size ",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["residual"],
     )
