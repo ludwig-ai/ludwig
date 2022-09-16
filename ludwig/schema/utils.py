@@ -698,7 +698,7 @@ def DictList(
     )
 
 
-def Embed():
+def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing valid values for embedding input feature
     names.
 
@@ -741,13 +741,25 @@ def Embed():
 
     return field(
         metadata={
-            "marshmallow_field": EmbedInputFeatureNameField(allow_none=True, load_default=None, dump_default=None)
+            "marshmallow_field": EmbedInputFeatureNameField(
+                allow_none=True,
+                load_default=None,
+                dump_default=None,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
+            )
         },
         default=None,
     )
 
 
-def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
+def InitializerOrDict(
+        default: str = "xavier_uniform",
+        description: str = "",
+        parameter_metadata: ParameterMetadata = None
+):
     """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
 
     In particular, allows str or dict types; in the former case the field is equivalent to `InitializerOptions` while in

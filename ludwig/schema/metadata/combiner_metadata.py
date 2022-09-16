@@ -1,7 +1,7 @@
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterMetadata
 
 COMBINER_METADATA = {
-    "ComparatorCombinerConfig": {
+    "ComparatorCombiner": {
         "activation": ParameterMetadata(
             ui_display_name="Activation",
             default_value_reasoning="The Rectified Linear Units (ReLU) function is the standard activation function "
@@ -267,7 +267,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "ConcatCombinerConfig": {
+    "ConcatCombiner": {
         "activation": ParameterMetadata(
             ui_display_name="Activation",
             default_value_reasoning="The Rectified Linear Units (ReLU) function is the standard activation function "
@@ -533,7 +533,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "ProjectAggregateCombinerConfig": {
+    "ProjectAggregateCombiner": {
         "activation": ParameterMetadata(
             ui_display_name="Activation",
             default_value_reasoning="The Rectified Linear Units (ReLU) function is the standard activation function "
@@ -799,7 +799,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "SequenceCombinerConfig": {
+    "SequenceCombiner": {
         "encoder": ParameterMetadata(
             ui_display_name=None,
             default_value_reasoning=None,
@@ -843,7 +843,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "SequenceConcatCombinerConfig": {
+    "SequenceConcatCombiner": {
         "main_sequence_feature": ParameterMetadata(
             ui_display_name=None,
             default_value_reasoning=None,
@@ -873,7 +873,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "TabNetCombinerConfig": {
+    "TabNetCombiner": {
         "bn_epsilon": ParameterMetadata(
             ui_display_name="Batch Normalization Epsilon",
             default_value_reasoning="Default value found in popular ML packages like Keras and Tensorflow.",
@@ -1095,8 +1095,8 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "TabTransformerCombinerConfig": {
-        "Input Feature Embeddings allow the network to learn ": ParameterMetadata(
+    "TabTransformerCombiner": {
+        "embed_input_feature_name": ParameterMetadata(
             ui_display_name="Embed Input Feature Name",
             default_value_reasoning="Though the ideal embedding size depends on the task and dataset, setting the "
             "feature embedding size equal to the hidden size and adding feature embeddings to "
@@ -1470,7 +1470,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
     },
-    "TransformerCombinerConfig": {
+    "TransformerCombiner": {
         "bias_initializer": ParameterMetadata(
             ui_display_name="Bias Initializer",
             default_value_reasoning="It is possible and common to initialize the biases to be zero, since the "
