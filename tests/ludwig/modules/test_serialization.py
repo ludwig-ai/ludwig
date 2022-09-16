@@ -72,7 +72,6 @@ def test_load_save_encoder(tmpdir):
     input_features = [text_feature(reduce_output="sum")]
     output_features = [category_feature(vocab_size=5)]
     text_input_name = input_features[0]["name"]  # Auto-generated from random number by text_feature
-    category_output_name = output_features[0]["name"]  # Auto-generated from random number by category_feature
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     model1_config = {
         "input_features": input_features,
@@ -97,14 +96,7 @@ def test_load_save_encoder(tmpdir):
     model2_config["input_features"][0]["encoder"]["pretrained_model"] = f"file://{saved_path}"
     model2 = LudwigModel(model2_config)
     train_stats2, _, _ = model2.train(dataset=data_csv, output_directory=tmpdir)
-    # Assert that final train loss is lower for model 2 using the pre-trained encoder.
-    # TODO(daniel): Due to randomness, this fails sometimes. Find a better way to test transfer.
-    # Maybe train to a specified performance level and ensure that model2 gets there faster?
     assert restored_encoder is not None
-    assert (
-        train_stats2["training"][category_output_name]["loss"][-1]
-        < train_stats1["training"][category_output_name]["loss"][-1]
-    )
 
 
 def test_transfer_learning(tmpdir):
@@ -148,18 +140,16 @@ def test_transfer_learning(tmpdir):
         axis=0,
     )
     model2_config = {
-        "input_features": [{"type": "text", "name": "text_column", "encoder": f"file://{saved_path}"}],
+        "input_features": [{"type": "text", "name": "text_column"}],
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
     }
+    model2_config["input_features"][0]["encoder"] = {"pretrained_model": f"file://{saved_path}"}
     model2 = LudwigModel(model2_config)
     train_stats2, preproc_data, _ = model2.train(
         dataset=new_training_set, output_directory=os.path.join(tmpdir, "model2")
     )
-    # Assert that final train loss is lower for model 2 using the pre-trained encoder.
-    assert (
-        train_stats2["training"][category_output_name]["loss"][-1]
-        < train_stats1["training"][category_output_name]["loss"][-1]
-    )
     # Assert that vocabulary of model2 input feature matches vocabulary of model1 encoder.
-    assert model1.config["input_features"][0]["vocab"] == model2.config["input_features"][0]["vocab"]
+    model1_encoder_config = model1.config["input_features"][0]["encoder"]
+    model2_encoder_config = model2.config["input_features"][0]["encoder"]
+    assert model1_encoder_config["vocab"] == model2_encoder_config["vocab"]

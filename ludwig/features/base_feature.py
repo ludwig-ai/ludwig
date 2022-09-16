@@ -172,6 +172,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
                 encoder.train()
             else:
                 freeze_parameters(encoder)
+            return encoder
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         return encoder_cls(encoder_config)
 

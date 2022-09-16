@@ -1278,14 +1278,21 @@ def build_preprocessing_parameters(
 
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            if TYPE in feature_config[ENCODER]:
-                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
+            encoder_config = feature_config[ENCODER]
+            encoder_fixed_parameters = {}
+            if "pretrained_encoder" in encoder_config and is_url(encoder_config["pretrained_encoder"]):
+                # Since we are loading a pre-trained encoder, fix its preprocessing parameters so that we don't infer
+                # them from the dataset in preprocessing.
+                encoder_state = serialization.load_state_from_file(encoder_config["pretrained_encoder"])
+                encoder_fixed_parameters = encoder_state.metadata
+            elif TYPE in encoder_config:
+                encoder_class = get_encoder_cls(feature_config[TYPE], encoder_config[TYPE])
                 if hasattr(encoder_class, "fixed_preprocessing_parameters"):
-                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
+                    encoder_fixed_parameters = encoder_class.fixed_preprocessing_parameters
 
-                    preprocessing_parameters = merge_dict(
-                        preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                    )
+            preprocessing_parameters = merge_dict(
+                preprocessing_parameters, resolve_pointers(encoder_fixed_parameters, feature_config, "feature.")
+            )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
