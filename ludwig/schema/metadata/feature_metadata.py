@@ -1,9 +1,5 @@
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterMetadata
 
-PREPROCESSING_METADATA = {
-    "computed_fill_value": ParameterMetadata(internal_only=True),
-}
-
 FEATURE_METADATA = {
     "audio": {
         "preprocessing": {
@@ -191,7 +187,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -294,7 +290,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fallback_true_label": ParameterMetadata(
                 ui_display_name="Fallback True Label",
@@ -365,7 +361,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -454,7 +450,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "datetime_format": ParameterMetadata(
                 ui_display_name="Datetime format",
@@ -530,7 +526,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -782,7 +778,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -861,7 +857,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -1046,7 +1042,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -1376,7 +1372,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
@@ -1485,7 +1481,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=False,
+                internal_only=True,
             ),
             "fill_value": ParameterMetadata(
                 ui_display_name=None,
