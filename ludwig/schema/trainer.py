@@ -538,7 +538,13 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 def get_model_type_jsonschema():
-    return {"type": "string", "enum": [MODEL_ECD, MODEL_GBM], "default": MODEL_ECD}
+    return {
+        "type": "string",
+        "enum": [MODEL_ECD, MODEL_GBM],
+        "default": MODEL_ECD,
+        "title": "type",
+        "description": "Select the model type.",
+    }
 
 
 def get_trainer_jsonschema():
@@ -566,7 +572,12 @@ def get_trainer_jsonschema():
     return {
         "type": "object",
         "properties": {
-            "type": {"type": "string", "enum": all_trainer_types},
+            "type": {
+                "type": "string",
+                "enum": all_trainer_types,
+                "title": "type",
+                "description": "Select the trainer type.",
+            },
         },
         "title": "trainer_options",
         "allOf": conds,
