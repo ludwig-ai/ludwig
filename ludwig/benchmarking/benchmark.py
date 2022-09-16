@@ -3,10 +3,11 @@ import importlib
 import logging
 import os
 import shutil
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module, save_yaml, delete_hyperopt_outputs
+from ludwig.benchmarking.profiler_callbacks import LudwigProfilerCallback
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
@@ -31,7 +32,7 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     return model_config
 
 
-def benchmark_one(experiment: Dict[str, str]) -> None:
+def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
     """Run a Ludwig exepriment and track metrics given a dataset name.
 
     experiment: dictionary containing the dataset name, config path, and experiment name.
@@ -64,8 +65,11 @@ def benchmark_one(experiment: Dict[str, str]) -> None:
         )
         delete_hyperopt_outputs(experiment["experiment_name"])
     else:
+        ludwig_profiler_callbacks = None
+        if experiment["profiler"]["enable"]:
+            ludwig_profiler_callbacks = [LudwigProfilerCallback(experiment)]
         # run model and capture metrics
-        model = LudwigModel(config=model_config, logging_level=logging.ERROR)
+        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR)
         _, _, _, output_directory = model.experiment(
             dataset=dataset,
             output_directory=experiment["experiment_name"],
@@ -92,6 +96,8 @@ def benchmark(bench_config_path: str) -> None:
                 experiment["hyperopt"] = benchmarking_config["hyperopt"]
             if "process_config_file_path" in benchmarking_config:
                 experiment["process_config_file_path"] = benchmarking_config["process_config_file_path"]
+            if "profiler" in benchmarking_config:
+                experiment["profiler"] = benchmarking_config["profiler"]
 
             import time
 

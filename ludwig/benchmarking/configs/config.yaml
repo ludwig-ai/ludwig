@@ -1,39 +1,45 @@
-global_experiment_name: <GLOBAL_EXPERIMENT_NAME>
+global_experiment_name: example_benchmarking_run
+hyperopt: false
+process_config_file_path: /home/ray/process_config.py
+profiler:
+  enable: true
+  use_torch_profiler: false
+  logging_interval: 0.1
 export:
-  - export_artifacts: True
-    export_base_path: s3://<S3_BUCKET>/    # include the slash at the end.
+  export_artifacts: true
+  export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
 datasets:
   - dataset_name: ames_housing
-    config_path: ames_housing.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/ames_housing.yaml
   - dataset_name: protein
-    config_path: protein.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/protein.yaml
   - dataset_name: mercedes_benz_greener
-    config_path: mercedes_benz_greener.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/mercedes_benz_greener.yaml
   - dataset_name: santander_customer_satisfaction
-    config_path: santander_customer_satisfaction.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/santander_customer_satisfaction.yaml
   - dataset_name: connect4
-    config_path: connect4.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/connect4.yaml
   - dataset_name: otto_group_product
-    config_path: otto_group_product.yaml
-  - dataset_name: imbalanced_insurance
-    config_path: imbalanced_insurance.yaml
-  - dataset_name: sst2
-    config_path: sst2.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/otto_group_product.yaml
   - dataset_name: bnp_claims_management
-    config_path: bnp_claims_management.yaml
-  - dataset_name: sst3
-    config_path: sst3.yaml
-  - dataset_name: sst5
-    config_path: sst5.yaml
-  - dataset_name: porto_seguro_safe_driver
-    config_path: porto_seguro_safe_driver.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/bnp_claims_management.yaml
   - dataset_name: santander_customer_transaction
-    config_path: santander_customer_transaction.yaml
-  - dataset_name: goemotions
-    config_path: goemotions.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/santander_customer_transaction.yaml
   - dataset_name: allstate_claims_severity
-    config_path: allstate_claims_severity.yaml
-  - dataset_name: higgs
-    config_path: higgs.yaml
-  - dataset_name: ieee_fraud
-    config_path: ieee_fraud.yaml
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/allstate_claims_severity.yaml
+  - dataset_name: naval
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/naval.yaml
+  - dataset_name: sarcos
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/sarcos.yaml
+  - dataset_name: walmart_recruiting
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/walmart_recruiting.yaml
+  - dataset_name: numerai28pt6
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/numerai28pt6.yaml
+  - dataset_name: adult_census_income
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/adult_census_income.yaml
+  - dataset_name: amazon_employee_access_challenge
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/amazon_employee_access_challenge.yaml
+  - dataset_name: forest_cover
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/forest_cover.yaml
+  - dataset_name: mushroom_edibility
+    config_path: /home/ray/anaconda3/lib/python3.8/site-packages/ludwig/benchmarking/configs/mushroom_edibility.yaml
