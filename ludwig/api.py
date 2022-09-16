@@ -36,7 +36,6 @@ import torch
 from tabulate import tabulate
 
 from ludwig.backend import Backend, initialize_backend
-from ludwig.benchmarking.utils import format_memory
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
@@ -88,6 +87,7 @@ from ludwig.utils.data_utils import (
     load_yaml,
     save_json,
 )
+from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
@@ -474,16 +474,7 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                dataset_statistics = [["Dataset", "Size (Rows)", "Size (In Memory)"]]
-                dataset_statistics.append(
-                    ["Training", len(training_set), format_memory(training_set.in_memory_size_bytes)]
-                )
-                if validation_set is not None:
-                    dataset_statistics.append(
-                        ["Validation", len(validation_set), format_memory(validation_set.in_memory_size_bytes)]
-                    )
-                if test_set is not None:
-                    dataset_statistics.append(["Test", len(test_set), format_memory(test_set.in_memory_size_bytes)])
+                dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
 
                 if not skip_save_model:
                     # save train set metadata
