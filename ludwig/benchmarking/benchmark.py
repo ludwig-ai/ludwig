@@ -6,8 +6,14 @@ import shutil
 from typing import Any, Dict, Union
 
 from ludwig.api import LudwigModel
-from ludwig.benchmarking.utils import delete_model_checkpoints, export_artifacts, load_from_module, save_yaml, delete_hyperopt_outputs
 from ludwig.benchmarking.profiler_callbacks import LudwigProfilerCallback
+from ludwig.benchmarking.utils import (
+    delete_hyperopt_outputs,
+    delete_model_checkpoints,
+    export_artifacts,
+    load_from_module,
+    save_yaml,
+)
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
@@ -22,8 +28,9 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     shutil.rmtree(os.path.join(experiment["experiment_name"]), ignore_errors=True)
     model_config = load_yaml(experiment["config_path"])
 
-    process_config_spec = importlib.util.spec_from_file_location("process_config_file_path.py",
-                                                                 experiment["process_config_file_path"])
+    process_config_spec = importlib.util.spec_from_file_location(
+        "process_config_file_path.py", experiment["process_config_file_path"]
+    )
     process_module = importlib.util.module_from_spec(process_config_spec)
     process_config_spec.loader.exec_module(process_module)
     model_config = process_module.process_config(model_config, experiment)
@@ -116,12 +123,11 @@ def benchmark(bench_config_path: str) -> None:
                 export_artifacts(experiment, experiment["experiment_name"], export_base_path)
 
 
-
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description="This script runs a ludwig experiment on datasets specified in the benchmark config and exports "
-                    "the experiment artifact for each of the datasets following the export parameters specified in"
-                    "the benchmarking config.",
+        "the experiment artifact for each of the datasets following the export parameters specified in"
+        "the benchmarking config.",
         prog="ludwig benchmark",
         usage="%(prog)s [options]",
     )

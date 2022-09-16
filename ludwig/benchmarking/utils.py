@@ -2,7 +2,6 @@ import asyncio
 import functools
 import logging
 import os
-import yaml
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from types import ModuleType
@@ -10,6 +9,7 @@ from typing import Dict, List, Tuple, Union
 
 import fsspec
 import pandas as pd
+import yaml
 
 from ludwig.constants import BINARY, CATEGORY
 from ludwig.datasets.base_dataset import BaseDataset
@@ -154,7 +154,7 @@ def delete_hyperopt_outputs(output_directory: str):
 
 
 def save_yaml(filename, dictionary):
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         yaml.dump(dictionary, f, default_flow_style=False)
 
 
