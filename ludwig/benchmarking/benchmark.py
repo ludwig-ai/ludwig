@@ -28,13 +28,14 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     shutil.rmtree(os.path.join(experiment["experiment_name"]), ignore_errors=True)
     model_config = load_yaml(experiment["config_path"])
 
-    process_config_spec = importlib.util.spec_from_file_location(
-        "process_config_file_path.py", experiment["process_config_file_path"]
-    )
-    process_module = importlib.util.module_from_spec(process_config_spec)
-    process_config_spec.loader.exec_module(process_module)
-    model_config = process_module.process_config(model_config, experiment)
-    save_yaml(experiment["config_path"], model_config)
+    if "process_config_file_path" in experiment:
+        process_config_spec = importlib.util.spec_from_file_location(
+            "process_config_file_path.py", experiment["process_config_file_path"]
+        )
+        process_module = importlib.util.module_from_spec(process_config_spec)
+        process_config_spec.loader.exec_module(process_module)
+        model_config = process_module.process_config(model_config, experiment)
+        save_yaml(experiment["config_path"], model_config)
 
     return model_config
 
