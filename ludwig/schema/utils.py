@@ -104,24 +104,53 @@ def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
     return schema
 
 
-def InitializerOptions(default: str = "xavier_uniform", description=""):
+def InitializerOptions(default: str = "xavier_uniform", description="", parameter_metadata: ParameterMetadata = None):
     """Utility wrapper that returns a `StringOptions` field with keys from `initializer_registry`."""
-    return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
+    return StringOptions(
+        list(initializer_registry.keys()),
+        default=default,
+        allow_none=False,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
 
 
-def ActivationOptions(default: Union[str, None] = "relu", description=""):
+def ActivationOptions(default: Union[str, None] = "relu", description="", parameter_metadata: ParameterMetadata = None):
     """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
-    return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
+    return StringOptions(
+        list(activations.keys()),
+        default=default,
+        allow_none=True,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
 
 
-def ReductionOptions(default: Union[None, str] = None, description=""):
+def ReductionOptions(default: Union[None, str] = None, description="", parameter_metadata: ParameterMetadata = None):
     """Utility wrapper that returns a `StringOptions` field with keys from `reduce_mode_registry`."""
-    return StringOptions(list(reduce_mode_registry.keys()), default=default, allow_none=True, description=description)
+    return StringOptions(
+        list(reduce_mode_registry.keys()),
+        default=default,
+        allow_none=True,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
 
 
-def RegularizerOptions(default: Union[None, str] = None, allow_none: bool = True, description=""):
+def RegularizerOptions(
+        default: Union[None, str] = None,
+        allow_none: bool = True,
+        description="",
+        parameter_metadata: ParameterMetadata = None
+):
     """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
-    return StringOptions(["l1", "l2", "l1_l2"], default=default, allow_none=allow_none, description=description)
+    return StringOptions(
+        ["l1", "l2", "l1_l2"],
+        default=default,
+        allow_none=allow_none,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
 
 
 def String(
@@ -430,6 +459,7 @@ def IntegerOrSequenceOfIntegers(
     allow_none=False,
     non_negative: bool = True,
     description="",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
     inputs."""
@@ -474,7 +504,13 @@ def IntegerOrSequenceOfIntegers(
     return field(
         metadata={
             "marshmallow_field": IntegerOrIntegerSequenceField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                }
             )
         },
         default=default,
@@ -489,6 +525,7 @@ def PositiveIntegerOrTupleOrStringOptions(
     default_tuple: Union[None, Tuple[int, ...]] = None,
     default_option: Union[None, str] = None,
     description="",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
     a string value."""
@@ -553,7 +590,13 @@ def PositiveIntegerOrTupleOrStringOptions(
     return field(
         metadata={
             "marshmallow_field": IntegerTupleStringOptionsField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=allow_none,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                }
             )
         },
         default=default,
@@ -586,7 +629,10 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-    list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""
+        list_type: Union[Type[str], Type[int], Type[float]] = str,
+        default: Union[None, TList[Any]] = None,
+        description="",
+        parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
     if default is not None:
@@ -612,7 +658,10 @@ def List(
                 allow_none=True,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None
+                },
             )
         },
         default_factory=lambda: default,
