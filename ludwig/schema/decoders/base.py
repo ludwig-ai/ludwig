@@ -6,6 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
+from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
 @dataclass
@@ -85,20 +86,24 @@ class RegressorConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the input to the decoder.",
+
     )
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
+
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
         description="Initializer for the weight matrix.",
+
     )
 
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+
     )
 
 

@@ -119,13 +119,13 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         ["batch", "layer"],
         default=None,
         description="The default norm that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"][""],
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["norm"],
     )
 
     norm_params: dict = schema_utils.Dict(
         default=None,
         description="Parameters used if norm is either `batch` or `layer`.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"][""],
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["norm_params"],
     )
 
     activation: str = schema_utils.ActivationOptions(
@@ -138,5 +138,5 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         min=0,
         max=1,
         description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"][""],
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["dropout"],
     )
