@@ -212,6 +212,7 @@ class LightGBMTrainer(BaseTrainer):
         save_path: str,
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
+        early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -316,7 +317,7 @@ class LightGBMTrainer(BaseTrainer):
                 self.validation_field,
                 self.validation_metric,
                 save_path,
-                self.early_stop,
+                early_stopping_steps,
                 self.skip_save_model,
             )
         else:
@@ -344,6 +345,7 @@ class LightGBMTrainer(BaseTrainer):
         train_summary_writer: SummaryWriter,
         validation_summary_writer: SummaryWriter,
         test_summary_writer: SummaryWriter,
+        early_stopping_steps: int,
     ) -> bool:
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -383,6 +385,7 @@ class LightGBMTrainer(BaseTrainer):
             save_path,
             loss,
             {output_feature_name: loss},
+            early_stopping_steps,
         )
 
         self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
@@ -597,12 +600,17 @@ class LightGBMTrainer(BaseTrainer):
             # use separate total steps variable to allow custom SIGINT logic
             self.total_steps = self.num_boost_round
 
+            early_stopping_steps = self.boosting_rounds_per_checkpoint * self.early_stop
+
             if self.is_coordinator():
                 logging.info(
                     f"Training for {self.total_steps} boosting round(s), approximately "
                     f"{int(self.total_steps / self.boosting_rounds_per_checkpoint)} round(s) of evaluation."
                 )
-                logging.info(f"Early stopping policy: {self.early_stop} boosting round(s).\n")
+                logging.info(
+                    f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
+                    f"boosting round(s).\n"
+                )
 
                 logging.info(f"Starting with step {progress_tracker.steps}")
 
@@ -637,6 +645,7 @@ class LightGBMTrainer(BaseTrainer):
                     train_summary_writer,
                     validation_summary_writer,
                     test_summary_writer,
+                    early_stopping_steps,
                 )
 
                 # ================ Post Training Epoch ================
