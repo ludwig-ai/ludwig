@@ -20,13 +20,14 @@ import shutil
 import urllib
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Union
 from urllib.parse import urlparse
 
 import pandas as pd
 from tqdm import tqdm
 
 from ludwig.constants import SPLIT
+from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.kaggle import download_kaggle_dataset
@@ -203,6 +204,16 @@ class DatasetLoader:
     def description(self):
         """Returns human-readable description of the dataset."""
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
+
+    @property
+    def model_configs(self) -> Dict[str, Dict]:
+        """Returns a dictionary of built-in model configs for this dataset."""
+        return model_configs_for_dataset(self.config.name)
+
+    @property
+    def default_model_config(self) -> Optional[Dict]:
+        """Returns the default built-in model config for this dataset, or None."""
+        return self.model_configs.get("default")
 
     def _get_preserved_paths(self, root_dir=None):
         """Gets list of files to preserve when exporting dataset, not including self.processed_dataset_path.
