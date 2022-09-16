@@ -122,12 +122,12 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         description="Defines whether image dataset will reside in memory during the training process or will be "
         "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
         "of input images will be fetched from disk each training iteration.",
-        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["in_memory"]
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["in_memory"],
     )
 
     num_processes: int = schema_utils.PositiveInteger(
         default=1,
         allow_none=False,
         description="Specifies the number of processes to run for preprocessing images.",
-        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["num_processes"]
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["num_processes"],
     )
