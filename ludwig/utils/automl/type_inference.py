@@ -72,7 +72,11 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if (idx == 0 and dtype == NUMBER) or upper_name.endswith("ID") or upper_name.startswith("ID"):
+        if (
+            (idx == 0 and "INDEX" in upper_name and dtype == NUMBER)
+            or upper_name.endswith("ID")
+            or upper_name.startswith("ID")
+        ):
             return True
 
     return False
