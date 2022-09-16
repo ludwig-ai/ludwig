@@ -1665,12 +1665,12 @@ def preprocess_for_training(
                     test_dataset = None
 
         # Surface in-memory dataset sizes
-        dataset_statistics = [
-            ["Dataset", "Size In Bytes"],
-            ["Training", training_dataset.in_memory_size_bytes],
-            ["Validation", validation_dataset.in_memory_size_bytes],
-            ["Test", test_dataset.in_memory_size_bytes],
-        ]
+        dataset_statistics = [["Dataset", "Size In Bytes"]]
+        dataset_statistics.append(["Training", training_dataset.in_memory_size_bytes])
+        if validation_dataset:
+            dataset_statistics.append(["Validation", validation_dataset.in_memory_size_bytes])
+        if test_dataset:
+            dataset_statistics.append(["Test", test_dataset.in_memory_size_bytes])
         logging.info("\nDataset Sizes (In Memory)")
         logging.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
