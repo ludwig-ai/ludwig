@@ -428,14 +428,14 @@ class ViTEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-            self,
-            torchvision_model_type: Optional[str] = None,
-            model_variant: Union[str, int] = None,
-            use_pretrained_weights: bool = True,
-            saved_weights_in_checkpoint: bool = False,
-            model_cache_dir: Optional[str] = None,
-            trainable: bool = True,
-            **kwargs,
+        self,
+        torchvision_model_type: Optional[str] = None,
+        model_variant: Union[str, int] = None,
+        use_pretrained_weights: bool = True,
+        saved_weights_in_checkpoint: bool = False,
+        model_cache_dir: Optional[str] = None,
+        trainable: bool = True,
+        **kwargs,
     ):
         super().__init__()
 
@@ -540,6 +540,7 @@ class TVVGGEncoder(TVBaseEncoder):
         # resnet shape after all pre-processing
         # [num_channels, height, width]
         return torch.Size([3, 224, 224])
+
 
 # # TODO: Remove
 # @register_encoder("hf_resnet", IMAGE)
