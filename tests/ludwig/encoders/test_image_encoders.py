@@ -98,7 +98,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 
 
 @pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize('saved_weights_in_checkpoint', [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
     "use_pretrained_weights",
     [
@@ -116,10 +116,10 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     ],
 )
 def test_tv_resnet_encoder(
-        model_variant: int,
-        use_pretrained_weights: bool,
-        saved_weights_in_checkpoint: bool,
-        trainable: bool,
+    model_variant: int,
+    use_pretrained_weights: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -142,7 +142,7 @@ def test_tv_resnet_encoder(
 
 
 @pytest.mark.parametrize("trainable", [True, False])
-@pytest.mark.parametrize('saved_weights_in_checkpoint', [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
     "use_pretrained_weights",
     [
@@ -158,10 +158,10 @@ def test_tv_resnet_encoder(
     ],
 )
 def test_tv_vgg_encoder(
-        model_variant: int,
-        use_pretrained_weights: bool,
-        saved_weights_in_checkpoint: bool,
-        trainable: bool,
+    model_variant: int,
+    use_pretrained_weights: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
@@ -181,6 +181,7 @@ def test_tv_vgg_encoder(
     fpc, tpc, upc, not_updated = check_module_parameters_updated(pretrained_model, (inputs,), target)
 
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+
 
 # TODO: remove code
 # @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
