@@ -99,7 +99,7 @@ def features_from_message(extracted_fields, message):
     # Strip name, brackets, and whitespace from each address.
     receiver_emails = [strip_name_from_address(a) for a in receiver_list]
     cc_emails = [strip_name_from_address(a) for a in cc_list]
-    # Remove any entries that are '' or None
+    # Remove any entries that are empty string or None
     receiver_emails = [e for e in receiver_emails if e is not None and len(e) > 0]
     cc_emails = [e for e in cc_emails if e is not None and len(e) > 0]
 
