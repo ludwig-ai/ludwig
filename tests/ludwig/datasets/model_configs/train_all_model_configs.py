@@ -25,6 +25,7 @@ def train_all_datasets():
         config = dataset.default_model_config
         if config:
             # Train model on config
+            dataset.export(".")
             df = dataset.load()
             model = LudwigModel(config)
             train_stats, _, output_directory = model.train(dataset=df, model_name=dataset_name)
@@ -39,6 +40,7 @@ def train_all_datasets():
         else:
             dataset_names.append(dataset_name)
             has_config.append(False)
+            output_directories.append(None)
             model_metrics.append(None)
             model_performance.append(None)
     results = pd.DataFrame(
