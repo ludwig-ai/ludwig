@@ -460,7 +460,7 @@ class TVBaseEncoder(Encoder):
             torchvision_model_registry[model_id][1].DEFAULT if self.use_pretrained_weights else None
         )
 
-        logger.debug("  ResNet")
+        logger.debug(f"  {model_id}")
         # create pretrained model with specified weights
         self.model = self.model_type(weights=self.pretrained_weights)
 
