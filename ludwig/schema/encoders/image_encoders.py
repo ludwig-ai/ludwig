@@ -541,6 +541,11 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
         description="Directory path to cache pretrained model weights.",
     )
 
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to save the weights in the checkpoint.",
+    )
+
     trainable: bool = schema_utils.Boolean(
         default=True,
         description="Is the encoder trainable.",
@@ -563,6 +568,11 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
 
     model_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
+    )
+
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to save the weights in the checkpoint.",
     )
 
     trainable: bool = schema_utils.Boolean(
