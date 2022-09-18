@@ -151,11 +151,7 @@ def test_tv_resnet_encoder(
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize(
     "model_variant",
-    [
-        11,
-        16,
-        19,
-    ],
+    [11, 13, 16, 19, "11_bn", "13_bn", "16_bn", "19_bn", ]
 )
 def test_tv_vgg_encoder(
     model_variant: int,

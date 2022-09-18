@@ -608,11 +608,21 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("vgg", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(BaseEncoderConfig):
-    model_variant: Optional[int] = schema_utils.IntegerOptions(
-        [11, 16, 19],
-        default=16,
-        allow_none=False,
+    model_variant: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=11,
         description="Pretrained model variant to use.",
+        field_options=[
+            schema_utils.IntegerOptions(
+                [11, 13, 16, 19, ],
+                default=11,
+                allow_none=False,
+            ),
+            schema_utils.StringOptions(
+                ["11_bn", "13_bn", "16_bn", "19_bn", ],
+                default="11_bn",
+                allow_none=False,
+            ),
+        ],
     )
 
     use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
