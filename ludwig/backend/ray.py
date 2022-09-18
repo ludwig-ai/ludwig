@@ -819,7 +819,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if num_cpu <= 4:
             bundles = [{"CPU": num_cpu}]
         else:
-            bundles = [{"CPU": 4} for _ in range(num_cpu // 4)]
+            bundles = [{"CPU": 4} for _ in range(int(num_cpu // 4))]
             if (num_cpu % 4):
                 bundles.append({"CPU": num_cpu % 4})
         return bundles
@@ -835,6 +835,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         else:
             num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
             bundles = self.generate_bundles(num_cpu)
+            logger.info("Requesting bundles of %s for preprocessing", bundles)
             self._preprocessor_pg = placement_group(bundles)
             ready = self._preprocessor_pg.wait(FIFTEEN_MINS_IN_S)
 
