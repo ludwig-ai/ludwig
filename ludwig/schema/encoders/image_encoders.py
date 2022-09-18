@@ -526,9 +526,10 @@ class ViTEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("tv_resnet", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(BaseEncoderConfig):
-
-    model_variant: Optional[int] = schema_utils.PositiveInteger(
+    model_variant: Optional[int] = schema_utils.IntegerOptions(
+        [18, 34, 50, 101, 152],
         default=50,
+        allow_none=False,
         description="Pretrained model variant to use.",
     )
 
@@ -556,8 +557,10 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("vgg", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(BaseEncoderConfig):
-    model_variant: Optional[int] = schema_utils.PositiveInteger(
-        default=50,
+    model_variant: Optional[int] = schema_utils.IntegerOptions(
+        [11, 16, 19],
+        default=16,
+        allow_none=False,
         description="Pretrained model variant to use.",
     )
 
