@@ -820,7 +820,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             bundles = [{"CPU": num_cpu}]
         else:
             bundles = [{"CPU": 4} for _ in range(int(num_cpu // 4))]
-            if (num_cpu % 4):
+            if num_cpu % 4:
                 bundles.append({"CPU": num_cpu % 4})
         return bundles
 
