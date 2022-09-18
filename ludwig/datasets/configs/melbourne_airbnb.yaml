@@ -1,0 +1,14 @@
+version: 1.0
+name: melbourne_airbnb
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/airbnb_melbourne/train.pq
+  - https://automl-mm-bench.s3.amazonaws.com/airbnb_melbourne/test.pq
+sha256:
+  test.pq: 9fe965cfdbd24ee9af7a004a7dc8c4e535a7ffceb722dce00f8ea90a54f95aa9
+  train.pq: c158c0f497ef355ba9d5de0de7556f6eb7f9bc343a67c4c681b014f6c7412e48
+train_filenames: train.pq
+test_filenames: test.pq
+description: |
+  Melbourne Airbnb Open Data
+  Detailed and summarized data of Airbnb activity in Melbourne, VIC, Australia
+  https://www.kaggle.com/tylerx/melbourne-airbnb-open-data

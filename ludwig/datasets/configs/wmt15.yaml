@@ -1,0 +1,10 @@
+version: 1.0
+name: wmt15
+kaggle_dataset_id: dhruvildave/en-fr-translation-dataset
+archive_filenames: en-fr-translation-dataset.zip
+sha256:
+  en-fr-translation-dataset.zip: 5fb911b327f2f36ea32315b4754f6aef95e6830562eec7054d31d614dd53d93c
+description: |
+  French/English parallel texts for training translation models.
+  Over 22.5 million sentences in French and English.
+  https://www.kaggle.com/dhruvildave/en-fr-translation-dataset

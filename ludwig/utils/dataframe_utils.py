@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from ludwig.constants import DASK_MODULE_NAME
-from ludwig.datasets.base_dataset import BaseDataset
 from ludwig.utils.types import DataFrame
 
 
@@ -70,7 +69,7 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict
     return dataset
 
 
-def from_numpy_dataset(dataset: BaseDataset) -> pd.DataFrame:
+def from_numpy_dataset(dataset) -> pd.DataFrame:
     """Returns a pandas dataframe from the dataset."""
     col_mapping = {}
     for k, v in dataset.items():

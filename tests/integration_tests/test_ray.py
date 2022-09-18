@@ -23,7 +23,15 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
-from ludwig.constants import BALANCE_PERCENTAGE_TOLERANCE, BFILL, COLUMN, DEFAULT_BATCH_SIZE, NAME, TRAINER
+from ludwig.constants import (
+    BALANCE_PERCENTAGE_TOLERANCE,
+    BFILL,
+    COLUMN,
+    DEFAULT_BATCH_SIZE,
+    NAME,
+    PREPROCESSING,
+    TRAINER,
+)
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
@@ -155,13 +163,17 @@ def run_test_with_features(
     dataset_type="parquet",
     skip_save_processed_input=True,
     nan_percent=0.0,
+    preprocessing=None,
 ):
+    preprocessing = preprocessing or {}
     config = {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {"epochs": 2, "batch_size": 8},
     }
+    if preprocessing:
+        config[PREPROCESSING] = preprocessing
 
     backend_config = {**RAY_BACKEND_CONFIG}
     if df_engine:
@@ -334,9 +346,6 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
-    if _ray_nightly and dataset_type == "pandas+numpy_images":
-        pytest.skip("https://github.com/ludwig-ai/ludwig/issues/2452")
-
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(

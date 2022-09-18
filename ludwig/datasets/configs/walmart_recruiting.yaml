@@ -1,0 +1,10 @@
+version: 1.0
+name: walmart_recruiting
+kaggle_competition: walmart-recruiting-trip-type-classification
+archive_filenames: walmart-recruiting-trip-type-classification.zip
+sha256:
+  walmart-recruiting-trip-type-classification.zip: 4c0ad71034d0b907e018adcb00c7b2835d2c30abe770fde5ce8719d7b89d4de6
+train_filenames: train.csv
+description: |
+  Walmart Recruiting: Trip Type Classification
+  https://www.kaggle.com/c/walmart-recruiting-trip-type-classification

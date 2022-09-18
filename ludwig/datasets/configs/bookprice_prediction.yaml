@@ -1,0 +1,15 @@
+version: 1.0
+name: bookprice_prediction
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/machine_hack_competitions/predict_the_price_of_books/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/machine_hack_competitions/predict_the_price_of_books/test.csv
+sha256:
+  test.csv: 75bcc853efe734a53764127428e005bb9eb7585ad3dc1dce2eb284fa04313c1b
+  train.csv: dd978b591e623f9c5d4f9ade0f237200597afcad2c6417eb1e764698f1afcfcf
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  Here we explore a database of books of different genres, from thousands of authors.
+  In this challenge, participants are required to use the dataset to build a
+  Machine Learning model to predict the price of books based on a given set of features.
+  https://machinehack.com/hackathons/predict_the_price_of_books/overview

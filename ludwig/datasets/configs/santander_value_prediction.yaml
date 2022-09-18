@@ -1,0 +1,11 @@
+version: 1.0
+name: santander_value_prediction
+kaggle_competition: santander-value-prediction-challenge
+archive_filenames: santander-value-prediction-challenge.zip
+sha256:
+  santander-value-prediction-challenge.zip: a8b44a0403bff6ab42f2bd1da8d9cbaf98f1fd4b9ea7a86e47491ac996384bf4
+train_filenames: train.csv
+loader: santander_value_prediction.SantanderValuePredictionLoader
+description: |
+  The Santander Value Prediction Challenge dataset.
+  https://www.kaggle.com/c/santander-value-prediction-challenge
