@@ -41,7 +41,7 @@ def test_model_loaded_from_old_config_prediction_works(tmpdir):
 @pytest.mark.parametrize(
     "model_url",
     [
-        "https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/ludwig_unit_tests/twitter_bots_v05.zip",
+        "https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/ludwig_unit_tests/twitter_bots_v05_1.zip",
         "https://predibase-public-us-west-2.s3.us-west-2.amazonaws.com/ludwig_unit_tests/respiratory_v05.zip",
     ],
     ids=["twitter_bots", "respiratory"],
@@ -57,5 +57,5 @@ def test_predict_deprecated_model(model_url, tmpdir):
     ludwig_model = LudwigModel.load(model_dir)
     df = build_synthetic_dataset_df(NUM_EXAMPLES, ludwig_model.config)
 
-    pred_df = ludwig_model.predict(df)
-    assert len(pred_df) > 0
+    pred_df, _ = ludwig_model.predict(df)
+    assert len(pred_df) == 25

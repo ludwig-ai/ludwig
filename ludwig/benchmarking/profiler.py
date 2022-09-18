@@ -134,7 +134,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
         cpu_info = get_my_cpu_info()
         self.info["cpu_architecture"] = cpu_info["arch"]
         self.info["num_cpu"] = psutil.cpu_count()
-        self.info["cpu_name"] = cpu_info["brand_raw"]
+        self.info["cpu_name"] = cpu_info.get("brand_raw", "unknown")
         self.info["total_cpu_memory_size"] = psutil.virtual_memory().total
 
         # GPU information

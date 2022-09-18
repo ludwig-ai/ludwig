@@ -1,0 +1,10 @@
+version: 1.0
+name: talkingdata_adtrack_fraud_detection
+kaggle_competition: talkingdata-adtracking-fraud-detection
+archive_filenames: talkingdata-adtracking-fraud-detection.zip
+sha256:
+  talkingdata-adtracking-fraud-detection.zip: 4441bea984e936db153aba30627b222cb1685021efb887bd22d78771fb793735
+train_filenames: train.csv
+description: |
+  TalkingData AdTracking Fraud Detection Challenge.
+  https://www.kaggle.com/competitions/talkingdata-adtracking-fraud-detection/overview

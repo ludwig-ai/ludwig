@@ -4,22 +4,11 @@ from unittest import mock
 import pandas as pd
 import pytest
 
-from ludwig.datasets.base_dataset import BaseDataset
-from ludwig.datasets.mixins.download import UncompressedFileDownloadMixin, ZipDownloadMixin
-from ludwig.datasets.mixins.load import CSVLoadMixin
-from ludwig.datasets.mixins.process import IdentityProcessMixin, MultifileJoinProcessMixin
+import ludwig.datasets
+from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.loaders.dataset_loader import DatasetState
 
 SUPPORTED_UNCOMPRESSED_FILETYPES = ["json", "jsonl", "tsv", "csv"]
-
-
-class FakeCSVDataset(ZipDownloadMixin, IdentityProcessMixin, CSVLoadMixin, BaseDataset):
-    def __init__(self, cache_dir=None):
-        super().__init__(dataset_name="fake", cache_dir=cache_dir)
-
-
-class FakeMultiFileDataset(UncompressedFileDownloadMixin, MultifileJoinProcessMixin, CSVLoadMixin, BaseDataset):
-    def __init__(self, cache_dir=None):
-        super().__init__(dataset_name="multifiles", cache_dir=cache_dir)
 
 
 def test_load_csv_dataset(tmpdir):
@@ -33,23 +22,23 @@ def test_load_csv_dataset(tmpdir):
     archive_filename = os.path.join(tmpdir, "archive.zip")
     input_df.to_csv(archive_filename, index=False, compression=compression_opts)
 
-    config = dict(
+    config = DatasetConfig(
         version=1.0,
+        name="fake_csv_dataset",
         download_urls=["file://" + archive_filename],
-        csv_filename=extracted_filename,
     )
 
-    with mock.patch("ludwig.datasets.base_dataset.read_config", return_value=config):
-        dataset = FakeCSVDataset(tmpdir)
+    ludwig.datasets._get_dataset_configs.cache_clear()
+    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+        dataset = ludwig.datasets.get_dataset("fake_csv_dataset", cache_dir=tmpdir)
 
-        assert not dataset.is_downloaded()
-        assert not dataset.is_processed()
+        assert not dataset.state == DatasetState.DOWNLOADED
+        assert not dataset.state == DatasetState.TRANSFORMED
 
         output_df = dataset.load()
         pd.testing.assert_frame_equal(input_df, output_df)
 
-        assert dataset.is_downloaded()
-        assert dataset.is_processed()
+        assert dataset.state == DatasetState.TRANSFORMED
 
 
 @pytest.mark.parametrize("f_type", SUPPORTED_UNCOMPRESSED_FILETYPES)
@@ -92,22 +81,23 @@ def test_multifile_join_dataset(tmpdir, f_type):
         test_df.to_csv(test_filepath)
         val_df.to_csv(val_filepath)
 
-    config = {
-        "version": 1.0,
-        "download_urls": ["file://" + train_filepath, "file://" + test_filepath, "file://" + val_filepath],
-        "split_filenames": {"train_file": train_filename, "test_file": test_filename, "val_file": val_filename},
-        "download_file_type": f_type,
-        "csv_filename": "fake.csv",
-    }
+    config = DatasetConfig(
+        version=1.0,
+        name="fake_multifile_dataset",
+        download_urls=["file://" + train_filepath, "file://" + test_filepath, "file://" + val_filepath],
+        train_filenames=train_filename,
+        validation_filenames=val_filename,
+        test_filenames=test_filename,
+    )
 
-    with mock.patch("ludwig.datasets.base_dataset.read_config", return_value=config):
-        dataset = FakeMultiFileDataset(tmpdir)
+    ludwig.datasets._get_dataset_configs.cache_clear()
+    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+        dataset = ludwig.datasets.get_dataset("fake_multifile_dataset", cache_dir=tmpdir)
 
-        assert not dataset.is_downloaded()
-        assert not dataset.is_processed()
+        assert not dataset.state == DatasetState.DOWNLOADED
+        assert not dataset.state == DatasetState.TRANSFORMED
 
         output_df = dataset.load()
         assert output_df.shape[0] == train_df.shape[0] + test_df.shape[0] + val_df.shape[0]
 
-        assert dataset.is_downloaded()
-        assert dataset.is_processed()
+        assert dataset.state == DatasetState.TRANSFORMED

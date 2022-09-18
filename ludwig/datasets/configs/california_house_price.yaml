@@ -1,0 +1,16 @@
+version: 1.0
+name: california_house_price
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/kaggle-california-house-prices/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/kaggle-california-house-prices/test.csv
+sha256:
+  test.csv: b5bb9ed6e56cbdd0a410e186a19c6fe137c2ffbb50ba6b0808540434a8123dc6
+  train.csv: 907d45804e622fb136a9d55bde97269f421fb9b8f7c9f34416672cf7078ee94b
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  Predict house sale prices based on the house information, such as # of bedrooms,
+  living areas, locations, near-by schools, and the seller summary. The data consist
+  of houses sold in California in 2020, with houses in the test dataset sold after
+  the ones in the training dataset.
+  https://www.kaggle.com/c/california-house-prices

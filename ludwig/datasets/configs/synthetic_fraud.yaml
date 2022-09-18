@@ -1,0 +1,9 @@
+version: 1.0
+name: synthetic_fraud
+kaggle_dataset_id: ealaxi/paysim1
+archive_filenames: paysim1.zip
+sha256:
+  paysim1.zip: f7eef9ffad5cfa64a034143a5c9b30491d189420b273d5ad5723ca40b596613d
+description: |
+  The Synthetic Financial Datasets For Fraud Detection dataset.
+  https://www.kaggle.com/ealaxi/paysim1

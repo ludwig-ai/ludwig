@@ -1,0 +1,12 @@
+version: 1.0
+name: electricity
+download_urls: https://raw.githubusercontent.com/nimz/electricity_demand/master/elecdemand.csv
+sha256:
+  elecdemand.csv: 4fd3c8a4b8168f34703b55313c5341f8e8385810a54f1a1cdf6987c1904c9698
+description: |
+  Electricity demand dataset. Half-hourly electricity demand in Victoria, Australia during 2014, along with
+  Melbourne temperatures.
+
+  Source textbook:
+  Forecasting: Principles and Practice
+      Rob J Hyndman and George Athanasopoulos

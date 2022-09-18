@@ -68,7 +68,9 @@ def test_infer_type_explicit_date():
     "idx,num_distinct_values,dtype,name,expected",
     [
         (3, ROW_COUNT, NUMBER, "id", True),
-        (0, ROW_COUNT, NUMBER, "foo", True),
+        (0, ROW_COUNT, NUMBER, "index", True),
+        (1, ROW_COUNT, NUMBER, "index", False),
+        (0, ROW_COUNT, NUMBER, "foo", False),
         (3, ROW_COUNT, TEXT, "uuid", True),
         (0, ROW_COUNT, TEXT, "name", False),
         (0, ROW_COUNT, NUMBER, TARGET_NAME, False),

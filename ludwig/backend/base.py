@@ -176,6 +176,8 @@ class RemoteTrainingMixin:
 
 
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+    BACKEND_TYPE = "local"
+
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
 

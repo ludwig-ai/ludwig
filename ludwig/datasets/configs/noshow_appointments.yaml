@@ -1,0 +1,11 @@
+version: 1.0
+name: noshow_appointments
+kaggle_dataset_id: joniarroba/noshowappointments
+archive_filenames: noshowappointments.zip
+sha256:
+  noshowappointments.zip: 4b4f258837029bd4e61ed4c9bab2ce8a3b8a299d1a4f5bdabcc98967d5e29a43
+loader: split_loaders.RandomSplitLoader
+description: |
+  110.527 medical appointments its 14 associated variables (characteristics).
+  The most important one if the patient show-up or no-show to the appointment.
+  https://www.kaggle.com/datasets/joniarroba/noshowappointments

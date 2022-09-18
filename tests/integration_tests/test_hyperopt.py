@@ -238,8 +238,14 @@ def test_hyperopt_search_alg(
     hyperopt_executor = get_build_hyperopt_executor(RAY)(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
-    raytune_results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
-    assert isinstance(raytune_results, HyperoptResults)
+    results = hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir)
+    assert isinstance(results, HyperoptResults)
+
+    with hyperopt_executor._get_best_model_path(
+        results.experiment_analysis.best_trial.logdir, results.experiment_analysis
+    ) as path:
+        assert path is not None
+        assert isinstance(path, str)
 
 
 @pytest.mark.distributed

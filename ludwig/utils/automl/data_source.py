@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
+import dask.dataframe as dd
+import pandas as pd
+
 from ludwig.utils.audio_utils import is_audio_score
 from ludwig.utils.automl.utils import avg_num_tokens
 from ludwig.utils.image_utils import is_image_score
+from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.types import DataFrame
 
 
@@ -89,3 +93,40 @@ class DataframeSourceMixin:
 class DataframeSource(DataframeSourceMixin, DataSource):
     def __init__(self, df):
         self.df = df
+
+
+class DaskDataSource(DataframeSource):
+    @memoized_method(maxsize=1)
+    def get_sample(self) -> pd.DataFrame:
+        # TODO: uniform random sample
+        return self.df.head(10000)
+
+    @property
+    def sample(self) -> pd.DataFrame:
+        return self.get_sample()
+
+    def get_distinct_values(self, column, max_values_to_return) -> Tuple[int, List[str], float]:
+        unique_values = self.df[column].drop_duplicates().dropna().persist()
+        num_unique_values = len(unique_values)
+
+        # TODO(travis): implement imbalance ratio
+        imbalance_ratio = 1.0
+        return num_unique_values, unique_values.head(max_values_to_return), imbalance_ratio
+
+    def get_nonnull_values(self, column) -> int:
+        return self.df[column].notnull().sum().compute()
+
+    def get_image_values(self, column: str, sample_size: int = 10) -> int:
+        return int(sum(is_image_score(None, x, column) for x in self.sample[column].head(sample_size)))
+
+    def get_audio_values(self, column: str, sample_size: int = 10) -> int:
+        return int(sum(is_audio_score(x) for x in self.sample[column].head(sample_size)))
+
+    def get_avg_num_tokens(self, column) -> int:
+        return avg_num_tokens(self.sample[column])
+
+
+def wrap_data_source(df: DataFrame) -> DataSource:
+    if isinstance(df, dd.core.DataFrame):
+        return DaskDataSource(df)
+    return DataframeSource(df)

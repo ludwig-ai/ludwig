@@ -1,0 +1,40 @@
+input_features:
+  - name: RESOURCE
+    type: category
+  - name: MGR_ID
+    type: category
+  - name: ROLE_ROLLUP_1
+    type: category
+  - name: ROLE_ROLLUP_2
+    type: category
+  - name: ROLE_DEPTNAME
+    type: category
+  - name: ROLE_TITLE
+    type: category
+  - name: ROLE_FAMILY_DESC
+    type: category
+  - name: ROLE_FAMILY
+    type: category
+  - name: ROLE_CODE
+    type: category
+output_features:
+  - name: ACTION
+    type: binary
+preprocessing:
+  split:
+    type: fixed
+defaults:
+  category:
+    encoder:
+      type: sparse
+trainer:
+  batch_size: 32769 # entire training set
+  train_steps: 1
+  steps_per_checkpoint: 1
+  learning_rate: 1
+  regularization_lambda: 0.0000057
+  optimizer:
+    type: lbfgs
+    max_iter: 100
+    tolerance_grad: 0.0001
+    history_size: 10

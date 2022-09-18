@@ -1,7 +1,10 @@
+from typing import List, Tuple, Union
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
+from ludwig.data.dataset.base import Dataset
 from ludwig.utils.defaults import default_random_seed
 
 
@@ -85,3 +88,19 @@ def get_repeatable_train_val_test_split(
     df_test["split"] = TEST_SPLIT
     df_split = pd.concat([df_train, df_val, df_test], ignore_index=True)
     return df_split
+
+
+def generate_dataset_statistics(
+    training_set: Dataset, validation_set: Union[Dataset, None], test_set: Union[Dataset, None]
+) -> List[Tuple[str, int, int]]:
+    from ludwig.benchmarking.utils import format_memory
+
+    dataset_statistics = [["Dataset", "Size (Rows)", "Size (In Memory)"]]
+    dataset_statistics.append(["Training", len(training_set), format_memory(training_set.in_memory_size_bytes)])
+    if validation_set is not None:
+        dataset_statistics.append(
+            ["Validation", len(validation_set), format_memory(validation_set.in_memory_size_bytes)]
+        )
+    if test_set is not None:
+        dataset_statistics.append(["Test", len(test_set), format_memory(test_set.in_memory_size_bytes)])
+    return dataset_statistics

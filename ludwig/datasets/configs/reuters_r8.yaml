@@ -1,0 +1,11 @@
+version: 1.0
+name: reuters_r8
+kaggle_dataset_id: weipengfei/ohr8r52
+archive_filenames: ohr8r52.zip
+sha256:
+  ohr8r52.zip: 93c7a8817a32b994d93267506ad766281764ba9382e3f4f9d978544cebab6ca4
+train_filenames: r8/r8-train-stemmed.csv
+validation_filenames: r8/r8-dev-stemmed.csv
+test_filenames: r8/r8-test-stemmed.csv
+description: |
+  Reuters R8 subset of Reuters 21578 dataset from Kaggle.

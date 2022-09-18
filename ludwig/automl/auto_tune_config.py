@@ -12,7 +12,9 @@ except ImportError:
     raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 from ludwig.api import LudwigModel
+from ludwig.backend import initialize_backend
 from ludwig.constants import (
+    AUTO,
     AUTOML_DEFAULT_TEXT_ENCODER,
     AUTOML_LARGE_TEXT_DATASET,
     AUTOML_MAX_ROWS_PER_CHECKPOINT,
@@ -20,6 +22,7 @@ from ludwig.constants import (
     AUTOML_SMALLER_TEXT_LENGTH,
     AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
     BATCH_SIZE,
+    DEFAULT_BATCH_SIZE,
     HYPEROPT,
     PREPROCESSING,
     SPACE,
@@ -70,9 +73,9 @@ BYTES_PER_WEIGHT = 4  # assumes 32-bit precision = 4 bytes
 BYTES_OPTIMIZER_PER_WEIGHT = 8  # for optimizer m and v vectors
 
 
-def get_trainingset_metadata(config, dataset):
+def get_trainingset_metadata(config, dataset, backend):
     (_, _, _, training_set_metadata) = preprocess_for_training(
-        config, dataset=dataset, preprocessing_params=config[PREPROCESSING]
+        config, dataset=dataset, preprocessing_params=config[PREPROCESSING], backend=backend
     )
     return training_set_metadata
 
@@ -117,7 +120,10 @@ def compute_memory_usage(config, training_set_metadata, model_category) -> int:
     update_config_with_metadata(config, training_set_metadata)
     lm = LudwigModel.create_model(config)
     model_size = lm.get_model_size()  # number of parameters in model
-    batch_size = config[TRAINER][BATCH_SIZE]
+    batch_size = config[TRAINER].get(BATCH_SIZE, DEFAULT_BATCH_SIZE)
+    if batch_size == AUTO:
+        # Smallest valid batch size that will allow training to complete
+        batch_size = 2
     memory_usage = model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
     if model_category == TEXT:
         return _get_text_model_memory_usage(config, training_set_metadata, memory_usage)
@@ -194,11 +200,13 @@ def _update_num_samples(num_samples, hyperparam_search_space):
 
 
 # Note: if run in Ray Cluster, this method is run remote with gpu resources requested if available
-def memory_tune_config(config, dataset, model_category, row_count):
+def memory_tune_config(config, dataset, model_category, row_count, backend):
+    backend = initialize_backend(backend)
+
     fits_in_memory = False
     tried_reduce_seq_len = False
     raw_config = merge_with_defaults(config)
-    training_set_metadata = get_trainingset_metadata(raw_config, dataset)
+    training_set_metadata = get_trainingset_metadata(raw_config, dataset, backend)
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}
     param_list = []
