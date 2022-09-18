@@ -264,7 +264,10 @@ def test_model_save_reload_tv_model(tmpdir, csv_filename, tmp_path):
         image_feature(image_dest_folder),
     ]
     tv_cache_dir = os.path.join(os.environ["HOME"], ".cache", "torch")
-    input_features[0][ENCODER] = {TYPE: "tv_resnet", "model_variant": 18, }
+    input_features[0][ENCODER] = {
+        TYPE: "tv_resnet",
+        "model_variant": 18,
+    }
 
     output_features = [
         category_feature(decoder={"vocab_size": 3}),
