@@ -205,7 +205,9 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     :param experiment_local_directory: directory where the experiment artifacts live.
         e.g. local_experiment_repo/ames_housing/some_experiment/
     """
-    config = load_json(os.path.join(experiment_local_directory, "experiment_run", "model", MODEL_HYPERPARAMETERS_FILE_NAME))
+    config = load_json(
+        os.path.join(experiment_local_directory, "experiment_run", "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+    )
     report = load_json(os.path.join(experiment_local_directory, "experiment_run", "test_statistics.json"))
     output_feature_type: str = config["output_features"][0]["type"]
     output_feature_name: str = config["output_features"][0]["name"]

@@ -1,16 +1,16 @@
+import argparse
 import logging
 import os
 import shutil
-import argparse
 from typing import List, Tuple
 
 from ludwig.benchmarking.summary_dataclasses import (
     build_metrics_diff,
     build_resource_usage_diff,
+    export_metrics_diff_to_csv,
+    export_resource_usage_diff_to_csv,
     MetricsDiff,
     ResourceUsageDiff,
-    export_resource_usage_diff_to_csv,
-    export_metrics_diff_to_csv
 )
 from ludwig.benchmarking.utils import download_artifacts
 
@@ -49,30 +49,46 @@ def summarize_metrics(
     return dataset_list, metric_diffs, resource_usage_diffs
 
 
-def export_and_print(dataset_list: List[str], metric_diffs: List[MetricsDiff], resource_usage_diffs: List[List[ResourceUsageDiff]]) -> None:
+def export_and_print(
+    dataset_list: List[str], metric_diffs: List[MetricsDiff], resource_usage_diffs: List[List[ResourceUsageDiff]]
+) -> None:
     for dataset_name, experiment_metric_diff in zip(dataset_list, metric_diffs):
         output_path = os.path.join("summarize_output", "performance_metrics", dataset_name)
         os.makedirs(output_path, exist_ok=True)
 
-        logging.info("Model performance metrics for *{}* vs. *{}* on dataset *{}*".format(
-            experiment_metric_diff.base_experiment_name, experiment_metric_diff.experimental_experiment_name,
-            experiment_metric_diff.dataset_name))
+        logging.info(
+            "Model performance metrics for *{}* vs. *{}* on dataset *{}*".format(
+                experiment_metric_diff.base_experiment_name,
+                experiment_metric_diff.experimental_experiment_name,
+                experiment_metric_diff.dataset_name,
+            )
+        )
         logging.info(experiment_metric_diff.to_string())
-        filename = "-".join(
-            [experiment_metric_diff.base_experiment_name, experiment_metric_diff.experimental_experiment_name]) + ".csv"
+        filename = (
+            "-".join([experiment_metric_diff.base_experiment_name, experiment_metric_diff.experimental_experiment_name])
+            + ".csv"
+        )
         export_metrics_diff_to_csv(experiment_metric_diff, os.path.join(output_path, filename))
 
     for dataset_name, experiment_resource_diff in zip(dataset_list, resource_usage_diffs):
         output_path = os.path.join("summarize_output", "resource_usage_metrics", dataset_name)
         os.makedirs(output_path, exist_ok=True)
         for tag_diff in experiment_resource_diff:
-            logging.info("Resource usage for *{}* vs. *{}* on *{}* of dataset *{}*".format(tag_diff.base_experiment_name,
-                                                                                    tag_diff.experimental_experiment_name,
-                                                                                    tag_diff.code_block_tag,
-                                                                                    dataset_name))
+            logging.info(
+                "Resource usage for *{}* vs. *{}* on *{}* of dataset *{}*".format(
+                    tag_diff.base_experiment_name,
+                    tag_diff.experimental_experiment_name,
+                    tag_diff.code_block_tag,
+                    dataset_name,
+                )
+            )
             logging.info(tag_diff.to_string())
-            filename = "-".join([tag_diff.code_block_tag, tag_diff.base_experiment_name,
-                                 tag_diff.experimental_experiment_name]) + ".csv"
+            filename = (
+                "-".join(
+                    [tag_diff.code_block_tag, tag_diff.base_experiment_name, tag_diff.experimental_experiment_name]
+                )
+                + ".csv"
+            )
             export_resource_usage_diff_to_csv(tag_diff, os.path.join(output_path, filename))
 
 
@@ -87,4 +103,6 @@ if __name__ == "__main__":
     parser.add_argument("--experimental_experiment", type=str, help="The name of the second experiment.")
     parser.add_argument("--download_base_path", type=str, help="The base path to download experiment artifacts from.")
     args = parser.parse_args()
-    summarize_metrics(args.benchmarking_config, args.base_experiment, args.experimental_experiment, args.download_base_path)
+    summarize_metrics(
+        args.benchmarking_config, args.base_experiment, args.experimental_experiment, args.download_base_path
+    )
