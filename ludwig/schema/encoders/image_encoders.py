@@ -611,12 +611,22 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
         description="Pretrained model variant to use.",
         field_options=[
             schema_utils.IntegerOptions(
-                [11, 13, 16, 19, ],
+                [
+                    11,
+                    13,
+                    16,
+                    19,
+                ],
                 default=11,
                 allow_none=False,
             ),
             schema_utils.StringOptions(
-                ["11_bn", "13_bn", "16_bn", "19_bn", ],
+                [
+                    "11_bn",
+                    "13_bn",
+                    "16_bn",
+                    "19_bn",
+                ],
                 default="11_bn",
                 allow_none=False,
             ),
