@@ -1,5 +1,6 @@
 import logging
 import os.path
+import shutil
 from typing import List, Tuple
 
 from ludwig.benchmarking.summary_dataclasses import (
@@ -13,7 +14,7 @@ from ludwig.benchmarking.utils import download_artifacts
 
 def summarize_metrics(
     bench_config_path: str, base_experiment: str, experimental_experiment: str, download_base_path: str
-) -> Tuple[List[MetricsDiff], List[List[ResourceUsageDiff]]]:
+) -> Tuple[List[str], List[MetricsDiff], List[List[ResourceUsageDiff]]]:
     """Build metric and resource usage diffs from experiment artifacts.
 
     bench_config_path: bench config file path. Can be the same one that was used to run
@@ -32,12 +33,13 @@ def summarize_metrics(
             metric_diff = build_metrics_diff(dataset_name, base_experiment, experimental_experiment, local_dir)
             metric_diffs.append(metric_diff)
 
-            base_path = os.path.join(local_dir, dataset_name, base_experiment, "resource_usage_metrics")
-            experimental_path = os.path.join(local_dir, dataset_name, experimental_experiment, "resource_usage_metrics")
+            base_path = os.path.join(local_dir, dataset_name, base_experiment)
+            experimental_path = os.path.join(local_dir, dataset_name, experimental_experiment)
             resource_usage_diff = build_resource_usage_diff(
                 base_path, experimental_path, base_experiment, experimental_experiment
             )
             resource_usage_diffs.append(resource_usage_diff)
         except Exception:
             logging.exception(f"Exception encountered while creating diff summary for {dataset_name}.")
-    return metric_diffs, resource_usage_diffs
+    shutil.rmtree(local_dir, ignore_errors=True)
+    return dataset_list, metric_diffs, resource_usage_diffs

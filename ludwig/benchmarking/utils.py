@@ -92,7 +92,7 @@ def download_artifacts(
     os.makedirs(local_dir, exist_ok=True)
 
     coroutines = []
-    for experiment in bench_config["datasets"]:
+    for experiment in bench_config["experiments"]:
         dataset_name = experiment["dataset_name"]
         for experiment_name in [base_experiment, experimental_experiment]:
             coroutines.append(download_one(fs, download_base_path, dataset_name, experiment_name, local_dir))

@@ -35,6 +35,7 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
         process_module = importlib.util.module_from_spec(process_config_spec)
         process_config_spec.loader.exec_module(process_module)
         model_config = process_module.process_config(model_config, experiment)
+        experiment["config_path"] = experiment["config_path"].replace(".yaml", "-modified.yaml")
         save_yaml(experiment["config_path"], model_config)
 
     return model_config
@@ -77,7 +78,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         if experiment["profiler"]["enable"]:
             ludwig_profiler_callbacks = [LudwigProfilerCallback(experiment)]
         # run model and capture metrics
-        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR)
+        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.INFO)
         _, _, _, output_directory = model.experiment(
             dataset=dataset,
             output_directory=experiment["experiment_name"],
@@ -96,10 +97,10 @@ def benchmark(bench_config_path: str) -> None:
         corresponding Ludwig configs, as well as export options.
     """
     benchmarking_config = load_yaml(bench_config_path)
-    for experiment in benchmarking_config["datasets"]:
+    for experiment in benchmarking_config["experiments"]:
         try:
             if "experiment_name" not in experiment:
-                experiment["experiment_name"] = benchmarking_config["global_experiment_name"]
+                experiment["experiment_name"] = benchmarking_config["experiment_name"]
             if "hyperopt" not in experiment:
                 experiment["hyperopt"] = benchmarking_config["hyperopt"]
             if "process_config_file_path" in benchmarking_config:
