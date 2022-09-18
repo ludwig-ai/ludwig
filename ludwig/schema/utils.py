@@ -195,11 +195,11 @@ def StringOptions(
 
 
 def IntegerOptions(
-        options: TList[int],
-        default: Union[None, int] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    options: TList[int],
+    default: Union[None, int] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata that enforces integer inputs must be one of `options`.
 
