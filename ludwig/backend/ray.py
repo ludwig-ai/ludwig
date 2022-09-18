@@ -812,6 +812,18 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
+    def generate_bundles(self, num_cpu):
+        # Ray requires that each bundle be scheduleable on a single node.
+        # So a bundle of 320 cpus would never get scheduled. For now a simple heuristic
+        # to be used is to just request cpus 4 at a time. 
+        if num_cpu <= 4:
+            bundles = [{"CPU": num_cpu}]
+        else:
+            bundles = [{"CPU": 4} for _ in range(num_cpu // 4)]
+            if (num_cpu % 4):
+                bundles.append({"CPU": num_cpu % 4})
+        return bundles
+
     @contextlib.contextmanager
     def provision_preprocessing_workers(self):
         if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
@@ -822,7 +834,8 @@ class RayBackend(RemoteTrainingMixin, Backend):
             yield
         else:
             num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
-            self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
+            bundles = self.generate_bundles(num_cpu)
+            self._preprocessor_pg = placement_group(bundles)
             ready = self._preprocessor_pg.wait(FIFTEEN_MINS_IN_S)
 
             if not ready:
