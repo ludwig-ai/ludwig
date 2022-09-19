@@ -55,4 +55,3 @@ training:
   batch_size: 256
   learning_rate: .001
   epochs: 1
-  # validation_metric: accuracy

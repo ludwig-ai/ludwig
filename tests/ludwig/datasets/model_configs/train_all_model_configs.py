@@ -107,15 +107,21 @@ def train_all_datasets():
         running_processes[dataset_name] = process
         process.start()
     while len(running_processes) > 0:
+        if len(running_processes) < 4:
+            remaining_datasets = ", ".join(sorted(running_processes.keys()))
+            print(f"Finishing up, waiting for {len(running_processes)} to complete ({remaining_datasets})")
+        else:
+            print(f"Finishing up, waiting for {len(running_processes)} to complete")
         # Block until a subprocess completes, clear it out,
         next_results = results_queue.get()
         accumulated_results.append(next_results)
         process = running_processes[next_results.dataset_name]
         process.join()
         del running_processes[next_results.dataset_name]
-    results = pd.DataFrame(accumulated_results)
+    results_df = pd.DataFrame(accumulated_results)
     with pd.option_context("display.max_rows", None, "display.max_columns", None, "display.precision", 3):
-        print(results)
+        print(results_df[results_df["has_config"]])
+    results_df.to_csv("train_all_model_configs.csv", index=False)
 
 
 if __name__ == "__main__":
