@@ -18,126 +18,148 @@ Translated in [🇰🇷Korean](README_KR.md)
 
 # What is Ludwig?
 
-Ludwig is an open-source, [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
-that makes it easy to define deep learning pipelines  with a simple and flexible data-driven configuration system.
-Ludwig is suitable for a wide variety of AI tasks, and is hosted by the [Linux Foundation AI & Data](https://lfaidata.foundation/).
+Ludwig is a [declarative machine learning framework](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/what_is_ludwig/#why-declarative-machine-learning-systems)
+that makes it easy to define machine learning pipelines using a simple and
+flexible data-driven configuration system. Ludwig is suitable for a wide variety
+of AI tasks, and is hosted by the
+[Linux Foundation AI & Data](https://lfaidata.foundation/).
 
-Ludwig allows users to define their deep learning pipeline by simply providing a configuration file, which lists the
-inputs and outputs, and their respective data types. Ludwig will then assemble and train a deep learning model and based
-on the configuration file, determine how inputs and outputs are preprocessed, encoded, decoded and which metrics and
-loss criterion to use.
+The configuration declares the input and output features, with their respective
+data types. Users can also specify additional parameters to preprocess, encode,
+and decode features, load from pre-trained models, compose the internal model
+architecture, set training parameters, or run hyperparameter optimization.
 
-![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
+![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos.gif)
 
-Writing a configuration file for Ludwig is easy. The configuration file flexibility allows for full control of every
-aspect of the end-to-end pipeline. This includes exploring state-of-the-art model architectures, running a
-hyperparameter search, scaling up to larger than available memory datasets and multi-node clusters, and finally serving
-the best model in production. All of this is achieved through simple configuration file changes.
+Ludwig will build an end-to-end machine learning pipeline automatically, using
+whatever is explicitly specified in the configuration, while falling back to
+smart defaults for any parameters that are not.
 
-Finally, the use of abstract interfaces throughout the codebase makes it easy for users to extend Ludwig by adding new
-models, metrics, losses, preprocessing functions and register them to make them available immediately in the
-configuration system.
+# Declarative Machine Learning
+
+Ludwig’s declarative approach to machine learning empowers you to have full
+control of the components of the machine learning pipeline that you care about,
+while leaving it up to Ludwig to make reasonable decisions for the rest.
+
+![img](images/why_declarative.png)
+
+Analysts, scientists, engineers, and researchers use Ludwig to explore
+state-of-the-art model architectures, run hyperparameter search, scale up to
+larger than available memory datasets and multi-node clusters, and finally
+serve the best model in production.
+
+Finally, the use of abstract interfaces throughout the codebase makes it easy
+for users to extend Ludwig by adding new models, metrics, losses, and
+preprocessing functions that can be registered to make them immediately useable
+in the same unified configuration system.
 
 # Main Features
 
-- [Data-Driven configuration system](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works)
+- **[Data-Driven configuration system](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/how_ludwig_works)**
 
-  A config YAML file that describes the schema of your data (input features, output features, and their types) is all
-  you need to start training deep learning models. Ludwig uses declared features to compose a deep learning model
-  accordingly.
+    A config YAML file that describes the schema of your data (input features,
+    output features, and their types) is all you need to start training deep
+    learning models. Ludwig uses declared features to compose a deep learning
+    model accordingly.
 
-  ```yaml
-  input_features:
-    - name: data_column_1
-      type: number
-    - name: data_column_2
-      type: category
-    - name: data_column_3
-      type: text
-    - name: data_column_4
-      type: image
-    ...
+    ```yaml
+    input_features:
+        - name: data_column_1
+          type: number
+        - name: data_column_2
+          type: category
+        - name: data_column_3
+          type: text
+        - name: data_column_4
+          type: image
+        ...
 
-  output_features:
-    - name: data_column_5
-      type: number
-    - name: data_column_6
-      type: category
-    ...
-  ```
+    output_features:
+        - name: data_column_5
+          type: number
+        - name: data_column_6
+          type: category
+        ...
+    ```
 
-- [Training, prediction, and evaluation from the command line](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)
+- **[Training, prediction, and evaluation from the command line](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/command_line_interface)**
 
-  Simple commands can be used to train models and predict new data.
+    Simple commands can be used to train models and predict new data.
 
-  ```shell
-  ludwig train --config config.yaml --dataset data.csv
-  ludwig predict --model_path results/experiment_run/model --dataset test.csv
-  ludwig eval --model_path results/experiment_run/model --dataset test.csv
-  ```
+    ```shell
+    ludwig train --config config.yaml --dataset data.csv
+    ludwig predict --model_path results/experiment_run/model --dataset test.csv
+    ludwig eval --model_path results/experiment_run/model --dataset test.csv
+    ```
 
-- [Programmatic API](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel)
+- **[Programmatic API](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/api/LudwigModel)**
 
-  Ludwig also provides a simple programmatic API for all of the functionality described above and more.
+    Ludwig also provides a simple programmatic API for all of the functionality
+    described above and more.
 
-  ```python
-  from ludwig.api import LudwigModel
+    ```python
+    from ludwig.api import LudwigModel
 
-  # train a model
-  config = {
-      "input_features": [...],
-      "output_features": [...],
-  }
-  model = LudwigModel(config)
-  data = pd.read_csv("data.csv")
-  train_stats, _, model_dir = model.train(data)
+    # train a model
+    config = {
+        "input_features": [...],
+        "output_features": [...],
+    }
+    model = LudwigModel(config)
+    data = pd.read_csv("data.csv")
+    train_stats, _, model_dir = model.train(data)
 
-  # or load a model
-  model = LudwigModel.load(model_dir)
+    # or load a model
+    model = LudwigModel.load(model_dir)
 
-  # obtain predictions
-  predictions = model.predict(data)
-  ```
+    # obtain predictions
+    predictions = model.predict(data)
+    ```
 
-- [Distributed training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)
+- **[Distributed training](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/distributed_training)**
 
-  Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod), which allows training on a
-  single machine with multiple GPUs or multiple machines with multiple GPUs.
+    Train models in a distributed setting using [Horovod](https://github.com/horovod/horovod),
+    which allows training on a single machine with multiple GPUs or multiple
+    machines with multiple GPUs.
 
-- [Serving](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/serving)
+- **[Serving](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/serving)**
 
-  Serve models using FastAPI.
+    Serve models using FastAPI.
 
-  ```shell
-  ludwig serve --model_path ./results/experiment_run/model
-  curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
-  ```
+    ```shell
+    ludwig serve --model_path ./results/experiment_run/model
+    curl http://0.0.0.0:8000/predict -X POST -F "movie_title=Friends With Money" -F "content_rating=R" -F "genres=Art House & International, Comedy, Drama" -F "runtime=88.0" -F "top_critic=TRUE" -F "review_content=The cast is terrific, the movie isn't."
+    ```
 
-- [Hyperparameter optimization](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/hyperopt)
+- **[Hyperparameter optimization](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/hyperopt)**
 
-  Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
+    Run hyperparameter optimization locally or using [Ray Tune](https://docs.ray.io/en/latest/tune/index.html).
 
-  ```shell
-  ludwig hyperopt --config config.yaml --dataset data.csv
-  ```
+    ```shell
+    ludwig hyperopt --config config.yaml --dataset data.csv
+    ```
 
-- [AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl)
+- **[AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl)**
 
-  Ludwig AutoML takes a dataset, the target column, and a time budget, and returns a trained Ludwig model.
+    Ludwig AutoML takes a dataset, the target column, and a time budget, and
+    returns a trained Ludwig model.
 
-- [Third-Party integrations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/integrations)
+- **[Third-Party integrations](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/integrations)**
 
-  Ludwig provides an extendable interface to integrate with third-party systems for tracking experiments. Third-party
-  integrations exist for Comet ML, Weights & Biases, WhyLabs and MLFlow.
+    Ludwig provides an extendable interface to integrate with third-party
+    systems for tracking experiments. Third-party integrations exist for Comet
+    ML, Weights & Biases, WhyLabs, and MLFlow.
 
-- [Extensibility](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide)
+- **[Extensibility](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide)**
 
-  Ludwig is built from the ground up with extensibility in mind. It is easy to add new data types by implementing clear,
-  well-documented abstract classes that define functions to preprocess, encode, and decode data.
+    Ludwig is built from the ground up with extensibility in mind. It is easy to
+    add new data types by implementing clear, well-documented abstract classes
+    that define functions to preprocess, encode, and decode data.
 
-  Furthermore, new `torch nn.Module` models can be easily added by them to a registry. This encourages reuse and sharing
-  new models with the community. Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide)
-  for further details.
+    Furthermore, new `torch nn.Module` models can be easily added by them to a
+    registry. This encourages reuse and sharing new models with the community.
+    Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/latest/developer_guide)
+    for further details.
 
 # Quick Start
 
@@ -256,76 +278,93 @@ ludwig visualize --visualization compare_performance --test_statistics path/to/t
 
 For the full set of visualization see the [Visualization Guide](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/visualizations).
 
-## Step 6: Happy modeling!
+## Step 6: Happy modeling
 
 Try applying Ludwig to your data. [Reach out](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
 if you have any questions.
 
 # Advantages
 
-Ludwig is a profound utility for research scientists, data scientists, and machine learning engineers.
+- **Minimal machine learning boilerplate**
 
-## Minimal machine learning boilerplate
+    Ludwig takes care of the engineering complexity of machine learning out of
+    the box, enabling research scientists to focus on building models at the
+    highest level of abstraction. Data preprocessing, hyperparameter
+    optimization, device management, and distributed training for
+    `torch.nn.Module` models come completely free.
 
-Ludwig takes care of the engineering complexity of deep learning out of the box, enabling research scientists to focus on building models at the highest level of abstraction.
+- **Easily build your benchmarks**
 
-Data preprocessing, hyperparameter optimization, device management, and distributed training for newly registered `torch.nn.Module` models come completely free.
+    Creating a state-of-the-art baseline and comparing it with a new model is a
+    simple config change.
 
-## Easily build your benchmarks
+- **Easily apply new architectures to multiple problems and datasets**
 
-Creating a state-of-the-art baseline and comparing it with a new model is a simple config change.
+    Apply new models across the extensive set of tasks and datasets that Ludwig
+    supports. Ludwig includes a
+    [full benchmarking toolkit](https://arxiv.org/abs/2111.04260) accessible to
+    any user, for running experiments with multiple models across multiple
+    datasets with just a simple configuration.
 
-## Easily apply new architectures to multiple problems and datasets
+- **Highly configurable data preprocessing, modeling, and metrics**
 
-Apply new models across the extensive set of tasks and datasets that Ludwig supports. Ludwig includes a [full benchmarking toolkit](https://arxiv.org/abs/2111.04260) accessible to any user, for running experiments with multiple models across multiple datasets with just a simple configuration.
+    Any and all aspects of the model architecture, training loop, hyperparameter
+    search, and backend infrastructure can be modified as additional fields in
+    the declarative configuration to customize the pipeline to meet your
+    requirements. For details on what can be configured, check out
+    [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/)
+    docs.
 
-## Highly configurable data preprocessing, modeling, and metrics
+- **Multi-modal, multi-task learning out-of-the-box**
 
-Any and all aspects of the model architecture, training loop, hyperparameter search, and backend infrastructure can be modified as additional fields in the declarative configuration to customize the pipeline to meet your requirements.
+    Mix and match tabular data, text, images, and even audio into complex model
+    configurations without writing code.
 
-For details on what can be configured, check out [Ludwig Configuration](https://ludwig-ai.github.io/ludwig-docs/latest/configuration/) docs.
+- **Rich model exporting and tracking**
 
-## Multi-modal, multi-task learning out-of-the-box
+    Automatically track all trials and metrics with tools like Tensorboard,
+    Comet ML, Weights & Biases, MLFlow, and Aim Stack.
 
-Mix and match tabular data, text, images, and even audio into complex model configurations without writing code.
+- **Automatically scale training to multi-GPU, multi-node clusters**
 
-## Rich model exporting and tracking
+    Go from training on your local machine to the cloud without code changes.
 
-Automatically track all trials and metrics with tools like Tensorboard, Comet ML, Weights & Biases, and MLflow.
+- **Low-code interface for state-of-the-art models, including pre-trained Huggingface Transformers**
 
-## Automatically scale training to multi-GPU, multi-node clusters
+    Ludwig also natively integrates with pre-trained models, such as the ones
+    available in [Huggingface Transformers](https://huggingface.co/docs/transformers/index).
+    Users can choose from a vast collection of state-of-the-art pre-trained
+    PyTorch models to use without needing to write any code at all. For example,
+    training a BERT-based sentiment analysis model with Ludwig is as simple as:
 
-Go from training on your local machine to the cloud without code changes.
+    ```shell
+    ludwig train --dataset sst5 --config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
+    ```
 
-## Low-code interface for state-of-the-art models, including pre-trained Huggingface Transformers
+- **Low-code interface for AutoML**
 
-Ludwig also natively integrates with pre-trained models, such as the ones available in [Huggingface Transformers](https://huggingface.co/docs/transformers/index). Users can choose from a vast collection of state-of-the-art pre-trained PyTorch models to use without needing to write any code at all. For example, training a BERT-based sentiment analysis model with Ludwig is as simple as:
+    [Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/)
+    allows users to obtain trained models by providing just a dataset, the
+    target column, and a time budget.
 
-```shell
-ludwig train --dataset sst5 --config_str “{input_features: [{name: sentence, type: text, encoder: bert}], output_features: [{name: label, type: category}]}”
-```
+    ```python
+    auto_train_results = ludwig.automl.auto_train(dataset=my_dataset_df, target=target_column_name, time_limit_s=7200)
+    ```
 
-## Low-code interface for AutoML
+- **Easy productionisation**
 
-[Ludwig AutoML](https://ludwig-ai.github.io/ludwig-docs/latest/user_guide/automl/) allows users to obtain trained models by providing just a dataset, the target column, and a time budget.
+    Ludwig makes it easy to serve deep learning models, including on GPUs.
+    Launch a REST API for your trained Ludwig model.
 
-```python
-auto_train_results = ludwig.automl.auto_train(dataset=my_dataset_df, target=target_column_name, time_limit_s=7200)
-```
+    ```shell
+    ludwig serve --model_path=/path/to/model
+    ```
 
-## Easy productionisation
+    Ludwig supports exporting models to efficient Torschscript bundles.
 
-Ludwig makes it easy to serve deep learning models, including on GPUs. Launch a REST API for your trained Ludwig model.
-
-```shell
-ludwig serve --model_path=/path/to/model
-```
-
-Ludwig supports exporting models to efficient Torschscript bundles.
-
-```shell
-ludwig export_torchscript -–model_path=/path/to/model
-```
+    ```shell
+    ludwig export_torchscript -–model_path=/path/to/model
+    ```
 
 # Tutorials
 
@@ -355,8 +394,6 @@ ludwig export_torchscript -–model_path=/path/to/model
 - [Fraud Detection](https://ludwig-ai.github.io/ludwig-docs/latest/examples/fraud)
 
 # More Information
-
-[Full official documentation](https://ludwig-ai.github.io/ludwig-docs/).
 
 Read our publications on [Ludwig](https://arxiv.org/pdf/1909.07930.pdf), [declarative ML](https://arxiv.org/pdf/2107.08148.pdf), and [Ludwig’s SoTA benchmarks](https://openreview.net/pdf?id=hwjnu6qW7E4).
 
