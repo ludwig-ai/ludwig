@@ -5,6 +5,7 @@ import os
 import shutil
 from typing import Any, Dict, Union
 
+import ludwig.datasets
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.profiler_callbacks import LudwigProfilerCallback
 from ludwig.benchmarking.utils import (
@@ -53,7 +54,8 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
     model_config = setup_experiment(experiment)
 
     # loading dataset
-    dataset_module = importlib.import_module(f"ludwig.datasets.{experiment['dataset_name']}")
+    # dataset_module = importlib.import_module(f"ludwig.datasets.{experiment['dataset_name']}")
+    dataset_module = ludwig.datasets.get_dataset(experiment["dataset_name"])
     dataset = load_from_module(dataset_module, model_config["output_features"][0])
 
     if experiment["hyperopt"]:
