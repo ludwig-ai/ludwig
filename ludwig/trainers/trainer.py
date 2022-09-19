@@ -943,17 +943,14 @@ class Trainer(BaseTrainer):
                 )
 
             if self.horovod:
-                current_learning_rate = (
-                    learning_rate_warmup_distributed(
-                        current_learning_rate,
-                        progress_tracker.epoch,
-                        self.learning_rate_warmup_epochs,
-                        self.horovod.size(),
-                        batcher.step,
-                        batcher.steps_per_epoch,
-                    )
-                    * self.lr_scale_fn(self.horovod.size())
-                )
+                current_learning_rate = learning_rate_warmup_distributed(
+                    current_learning_rate,
+                    progress_tracker.epoch,
+                    self.learning_rate_warmup_epochs,
+                    self.horovod.size(),
+                    batcher.step,
+                    batcher.steps_per_epoch,
+                ) * self.lr_scale_fn(self.horovod.size())
             else:
                 current_learning_rate = learning_rate_warmup(
                     current_learning_rate,
