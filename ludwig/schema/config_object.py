@@ -9,6 +9,7 @@ from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.constants import (
     COMBINER,
     DECODER,
+    MODEL_ECD,
     ENCODER,
     MODEL_GBM,
     HYPEROPT,
@@ -45,6 +46,7 @@ class Config:
     This class is the implementation of the config object that replaces the need for a config dictionary throughout the
     project.
     """
+    model_type = MODEL_ECD
     input_features = InputFeatures()
     output_features = OutputFeatures()
     combiner: BaseCombinerConfig = ConcatCombinerConfig()
@@ -59,6 +61,7 @@ class Config:
 
         if MODEL_TYPE in config_dict:
             if config_dict[MODEL_TYPE] == MODEL_GBM:
+                self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
 
         if COMBINER in config_dict:

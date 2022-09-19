@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -39,16 +39,39 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig):
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="binary_output")
+    calibration: bool = schema_utils.Boolean(
+        default=False,
+        description="Calibrate the model's output probabilities using temperature scaling.",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=BINARY,
+        default="regressor",
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=BINARY,
         default=BINARY_WEIGHTED_CROSS_ENTROPY,
     )
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=BINARY,
-        default="regressor",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type="binary_output"
+    )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
     )
 
     threshold: float = schema_utils.FloatRange(
@@ -59,23 +82,8 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         "than or equal to threshold are mapped to True.",
     )
 
-    reduce_input: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
-        "dimension (second if you count the batch dimension)",
-    )
-
-    dependencies: list = schema_utils.List(
-        default=[],
-        description="List of input features that this feature depends on.",
-    )
-
-    reduce_dependencies: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the dependencies of the output feature.",
-    )
-
-    calibration: bool = schema_utils.Boolean(
-        default=False,
-        description="Calibrate the model's output probabilities using temperature scaling.",
+    default_validation_metric: str = schema_utils.StringOptions(
+        [ROC_AUC],
+        default=ROC_AUC,
+        description="Internal only use parameter: default validation metric for binary output feature."
     )

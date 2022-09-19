@@ -50,6 +50,7 @@ from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
 from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.config_object import Config
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
@@ -63,19 +64,6 @@ logger = logging.getLogger(__name__)
 default_random_seed = 42
 
 BASE_PREPROCESSING_SPLIT_CONFIG = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
-base_preprocessing_parameters = {
-    "split": BASE_PREPROCESSING_SPLIT_CONFIG,
-    "undersample_majority": None,
-    "oversample_minority": None,
-    "sample_ratio": 1.0,
-}
-
-default_feature_specific_preprocessing_parameters = {
-    name: base_type.preprocessing_defaults() for name, base_type in base_type_registry.items()
-}
-
-default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
-default_preprocessing_parameters.update(base_preprocessing_parameters)
 
 default_model_type = MODEL_ECD
 
@@ -241,7 +229,7 @@ def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str,
         feature_dict[LOSS].update(merge_dict(feature_dict[LOSS], default_loss_params_for_feature_type))
 
 
-def merge_with_defaults(config: dict) -> dict:  # noqa: F821
+def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
     _perform_sanity_checks(config)
     _set_feature_column(config)
@@ -249,38 +237,19 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
     _merge_hyperopt_with_trainer(config)
 
     # ===== Defaults =====
-    if DEFAULTS not in config:
-        config[DEFAULTS] = dict()
-
-    # Update defaults with the default feature specific preprocessing parameters
-    for feature_type, preprocessing_defaults in default_feature_specific_preprocessing_parameters.items():
-        # Create a new key with feature type if defaults is empty
-        if feature_type not in config.get(DEFAULTS):
-            if PREPROCESSING in preprocessing_defaults:
-                config[DEFAULTS][feature_type] = preprocessing_defaults
-            else:
-                config[DEFAULTS][feature_type] = {PREPROCESSING: preprocessing_defaults}
-        # Feature type exists but preprocessing hasn't been specified
-        elif PREPROCESSING not in config[DEFAULTS][feature_type]:
-            config[DEFAULTS][feature_type][PREPROCESSING] = preprocessing_defaults
-        # Preprocessing parameters exist for feature type, update defaults with parameters from config
-        else:
-            config[DEFAULTS][feature_type][PREPROCESSING].update(
-                merge_dict(preprocessing_defaults, config[DEFAULTS][feature_type][PREPROCESSING])
-            )
+    config[DEFAULTS] = config_obj.defaults.to_dict()
 
     # ===== Preprocessing =====
-    config[PREPROCESSING] = merge_dict(base_preprocessing_parameters, config.get(PREPROCESSING, {}))
+    config[PREPROCESSING] = config_obj.preprocessing.to_dict()
     splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
     splitter.validate(config)
 
     # ===== Model Type =====
-    set_default_value(config, MODEL_TYPE, default_model_type)
+    config[MODEL_TYPE] = config_obj.model_type
 
     # ===== Trainer =====
     # Convert config dictionary into an instance of BaseTrainerConfig.
-    full_trainer_config, _ = load_trainer_with_kwargs(config[MODEL_TYPE], config.get(TRAINER, {}))
-    config[TRAINER] = asdict(full_trainer_config)
+    config[TRAINER] = config_obj.trainer.to_dict()
 
     set_default_value(
         config[TRAINER],
@@ -299,7 +268,6 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         update_feature_from_defaults(config, input_feature, INPUT_FEATURES)
 
     # ===== Combiner =====
-    set_default_value(config, COMBINER, {TYPE: default_combiner_type})
     full_combiner_config, _ = load_config_with_kwargs(
         combiner_registry[config[COMBINER][TYPE]].get_schema_cls(), config[COMBINER]
     )
