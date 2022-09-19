@@ -480,7 +480,8 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 def List(
     list_type: Union[Type[str], Type[int], Type[float]] = str,
     default: Union[None, TList[Any]] = None,
-    description="",
+    description: str = "",
+    allow_none: bool = True,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
@@ -504,7 +505,7 @@ def List(
         metadata={
             "marshmallow_field": fields.List(
                 field_type,
-                allow_none=True,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={

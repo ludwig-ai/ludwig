@@ -3,8 +3,10 @@ from typing import Dict, Tuple, Union
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
+import jsonschema
 
 from ludwig.schema import utils as schema_utils
+from ludwig.schema import get_validator, validate
 
 
 def get_marshmallow_from_dataclass_field(dfield):
@@ -184,3 +186,53 @@ def test_OneOfOptionsField():
     # Test invalid loads:
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "bar"})
+
+
+def test_OneOfOptionsField_allows_none():
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+            default=None,
+            allow_none=True,
+            description="",
+            field_options=[
+                schema_utils.PositiveInteger(description="", default=1, allow_none=False),
+                schema_utils.List(list_type=int, allow_none=False),
+            ],
+        )
+
+    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    schema = {
+        "type": "object",
+        "properties": {
+            "hello": json,
+        },
+        "definitions": {},
+    }
+    validate(instance={"hello": {"foo": None}}, schema=schema, cls=get_validator())
+
+
+def test_OneOfOptionsField_allows_none_fails_if_multiple_fields_allow_none():
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+            default=None,
+            allow_none=True,
+            description="",
+            field_options=[
+                schema_utils.PositiveInteger(description="", default=1, allow_none=True),
+                schema_utils.List(list_type=int, allow_none=True),
+            ],
+        )
+
+    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    schema = {
+        "type": "object",
+        "properties": {
+            "hello": json,
+        },
+        "definitions": {},
+    }
+    # jsonschema.exceptions.ValidationError: None is valid under multiple fields.
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        validate(instance={"hello": {"foo": None}}, schema=schema, cls=get_validator())

@@ -389,13 +389,18 @@ def test_merge_with_defaults():
                     "weights_initializer": "xavier_uniform",
                     "bias_initializer": "zeros",
                 },
+                "clip": None,
                 "dependencies": [],
                 "reduce_input": "sum",
                 "reduce_dependencies": "sum",
-                "preprocessing": {"missing_value_strategy": "drop_row"},
+                "preprocessing": {
+                    "missing_value_strategy": "drop_row",
+                    "fill_value": 0,
+                    "computed_fill_value": 0,
+                    "normalization": None,
+                },
                 "input_size": None,
                 "num_classes": None,
-                "clip": None,
             }
         ],
         "hyperopt": {

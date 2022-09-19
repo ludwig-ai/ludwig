@@ -183,8 +183,8 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         description="An integer or pair of integers specifying the pooling stride, which is the factor by which the "
         "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=1),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_stride"],
     )
@@ -203,7 +203,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default=1,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.PositiveInteger(description="", default=None),
             schema_utils.List(list_type=int),
         ],
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_dilation"],
