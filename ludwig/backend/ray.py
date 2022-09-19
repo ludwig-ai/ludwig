@@ -147,8 +147,9 @@ _engine_registry = {
 
 
 def _get_df_engine(processor):
-    logger.info(f"Ray processor params: {processor}")
-    if processor is None:
+    if processor:
+        logger.info(f"Ray processor params: {processor}")
+    else:
         # TODO ray: find an informed way to set the parallelism, in practice
         #  it looks like Dask handles this well on its own most of the time
         return _create_dask_engine()

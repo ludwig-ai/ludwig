@@ -181,7 +181,8 @@ def run_hyperopt_executor(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
-    update_hyperopt_params_with_defaults(hyperopt_config)
+    backend = RayBackend(**RAY_BACKEND_KWARGS)
+    update_hyperopt_params_with_defaults(hyperopt_config, backend)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
@@ -196,7 +197,6 @@ def run_hyperopt_executor(
     search_alg = hyperopt_config["search_alg"]
 
     # preprocess
-    backend = RayBackend(**RAY_BACKEND_KWARGS)
     model = LudwigModel(config=config, backend=backend)
     training_set, validation_set, test_set, training_set_metadata = model.preprocess(
         dataset=dataset_parquet,
