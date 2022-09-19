@@ -8,10 +8,9 @@ import torch
 import torchmetrics
 
 from ludwig.combiners.combiners import get_combiner_class
-from ludwig.constants import MODEL_ECD, TYPE
+from ludwig.constants import MODEL_ECD
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.torch_utils import get_torch_device
@@ -50,7 +49,7 @@ class ECD(BaseModel):
         self.combiner = combiner_class(input_features=self.input_features, config=config_obj.combiner)
 
         # ================ Outputs ================
-        self.output_features.update(self.build_outputs(self._output_features_def, self.combiner))
+        self.output_features.update(self.build_outputs(config=config_obj, combiner=self.combiner))
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -152,4 +151,4 @@ class ECD(BaseModel):
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
-        return (self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed)
+        return self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed

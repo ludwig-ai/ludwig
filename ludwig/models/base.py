@@ -1,17 +1,17 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
 
 from ludwig.combiners.combiners import Combiner
-from ludwig.constants import COMBINED, LOSS, NAME, TYPE
+from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.config_object import Config
-from ludwig.schema.features.base import BaseInputFeatureConfig
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -79,28 +79,29 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return input_feature_obj
 
     @classmethod
-    def build_outputs(cls, output_features_def: List[Dict[str, Any]], combiner: Combiner) -> Dict[str, OutputFeature]:
+    def build_outputs(cls, config: Config, combiner: Combiner) -> Dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
-        output_features_def = topological_sort_feature_dependencies(output_features_def)
+        output_features_def = topological_sort_feature_dependencies(config.output_features.to_dict())
         output_features = {}
 
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
             output_feature_def["input_size"] = combiner.output_shape[-1]
-            output_feature = cls.build_single_output(output_feature_def, output_features)
-            output_features[output_feature_def[NAME]] = output_feature
-
+            output_features[output_feature_def[NAME]] = cls.build_single_output(
+                getattr(config, output_feature_def[NAME]),
+                output_features
+            )
         return output_features
 
     @staticmethod
     def build_single_output(
-        output_feature_def: Dict[str, Any], output_features: Optional[Dict[str, OutputFeature]]
+        feature_config: BaseOutputFeatureConfig, output_features: Optional[Dict[str, OutputFeature]]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
-        logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
-        output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-        output_feature_obj = output_feature_class(output_feature_def, output_features=output_features)
+        logger.debug(f"Output {feature_config.type} feature {feature_config.name}")
+        output_feature_class = get_from_registry(feature_config.type, output_type_registry)
+        output_feature_obj = output_feature_class(feature_config, output_features=output_features)
         return output_feature_obj
 
     def get_model_inputs(self):
