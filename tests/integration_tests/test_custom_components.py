@@ -21,6 +21,7 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
+from ludwig.schema import utils as schema_utils
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -32,7 +33,7 @@ from tests.integration_tests.utils import (
 
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
-    foo: bool = False
+    foo: bool = schema_utils.Boolean(default=False, description="")
 
 
 @register_encoder_config("custom_number_encoder", NUMBER)
@@ -41,7 +42,7 @@ class CustomNumberEncoderConfig(BaseEncoderConfig):
 
     type: str = "custom_number_encoder"
 
-    input_size: int = 0
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
 @register_decoder_config("custom_number_decoder", NUMBER)
@@ -50,7 +51,7 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
 
     type: str = "custom_number_decoder"
 
-    input_size: int = 0
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
 @dataclass
@@ -184,6 +185,9 @@ def _run_test(input_features=None, output_features=None, combiner=None):
             "combiner": combiner,
             TRAINER: {"epochs": 2},
         }
+        from pprint import pprint
+
+        pprint(config)
 
         model = LudwigModel(config, backend=LocalTestBackend())
         _, _, output_directory = model.train(
