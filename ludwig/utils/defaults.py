@@ -298,7 +298,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         # Update encoder parameters for output feature from global defaults
         apply_global_defaults(config, input_feature, INPUT_FEATURES)
 
-        # Express all parameters back into the config.
+        # Express all input feature parameters back into the config.
         full_input_feature_config, _ = load_config_with_kwargs(
             input_type_registry[input_feature[TYPE]].get_schema_cls(), input_feature
         )
@@ -325,7 +325,7 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         # Update decoder and loss related parameters for output feature from global defaults
         apply_global_defaults(config, output_feature, OUTPUT_FEATURES)
 
-        # Express all parameters back into the config.
+        # Express all output feature parameters back into the config.
         full_output_feature_config, _ = load_config_with_kwargs(
             output_type_registry[output_feature[TYPE]].get_schema_cls(), output_feature
         )

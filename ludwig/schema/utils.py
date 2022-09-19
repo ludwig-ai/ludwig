@@ -758,7 +758,11 @@ def OneOfOptionsField(
     allow_none: bool = True,
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
+    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
+
+    NOTE: In order for the OneOfOptionsField to support a None default value, at most one of the field_options should
+    have `allow_none=True`.
+    """
     field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
 
     class OneOfOptionsCombinatorialField(fields.Field):
