@@ -3,10 +3,12 @@ import tempfile
 from typing import Any, Dict, List, Set
 from unittest import mock
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import COLUMN, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TRAINER, TYPE
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:
@@ -47,6 +49,40 @@ def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    ("split_expected", "class_probs"),
+    [
+        pytest.param(False, np.array([0.33, 0.33, 0.34]), id="balanced"),
+        pytest.param(True, np.array([0.6, 0.2, 0.2]), id="imbalanced"),
+    ],
+)
+def test_autoconfig_preprocessing(split_expected, class_probs, ray_cluster_2cpu):
+    nrows = 1000
+    thresholds = np.cumsum((class_probs * nrows).astype(int))
+
+    df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
+
+    def get_category(v):
+        if v < thresholds[0]:
+            return 0
+        if thresholds[0] <= v < thresholds[1]:
+            return 1
+        return 2
+
+    df["category"] = df.index.map(get_category).astype(np.int8)
+
+    config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+
+    if split_expected:
+        assert PREPROCESSING in config
+        assert SPLIT in config[PREPROCESSING]
+        assert config[PREPROCESSING][SPLIT][TYPE] == "stratify"
+        assert config[PREPROCESSING][SPLIT][COLUMN] == "category"
+    else:
+        assert PREPROCESSING not in config
 
 
 @pytest.mark.distributed

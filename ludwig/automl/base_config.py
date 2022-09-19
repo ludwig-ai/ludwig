@@ -21,7 +21,18 @@ import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.backend import Backend
-from ludwig.constants import COMBINER, EXECUTOR, HYPEROPT, SCHEDULER, SEARCH_ALG, TEXT, TYPE
+from ludwig.constants import (
+    COLUMN,
+    COMBINER,
+    EXECUTOR,
+    HYPEROPT,
+    PREPROCESSING,
+    SCHEDULER,
+    SEARCH_ALG,
+    SPLIT,
+    TEXT,
+    TYPE,
+)
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
@@ -79,11 +90,23 @@ def allocate_experiment_resources(resources: Resources) -> dict:
     return experiment_resources
 
 
+def _get_stratify_split_config(field_meta: FieldMetadata) -> dict:
+    return {
+        PREPROCESSING: {
+            SPLIT: {
+                TYPE: "stratify",
+                COLUMN: field_meta.name,
+            }
+        }
+    }
+
+
 def _create_default_config(
     dataset_info: DatasetInfo,
     target_name: Union[str, List[str]],
     time_limit_s: Union[int, float],
     random_seed: int,
+    imbalance_threshold: float = 0.9,
     backend: Backend = None,
 ) -> dict:
     """Returns auto_train configs for three available combiner models. Coordinates the following tasks:
@@ -91,6 +114,8 @@ def _create_default_config(
     - extracts fields and generates list of FieldInfo objects
     - gets field metadata (i.e avg. words, total non-null entries)
     - builds input_features and output_features section of config
+    - for imbalanced datasets, a preprocessing section is added to perform stratified sampling if the imbalance ratio
+      is smaller than imbalance_threshold
     - for each combiner, adds default training, hyperopt
     - infers resource constraints and adds gpu and cpu resource allocation per
       trial
@@ -104,6 +129,7 @@ def _create_default_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
 
     # Return
     :return: (dict) dictionaries contain auto train config files for all available
@@ -129,6 +155,15 @@ def _create_default_config(
         base_automl_config[HYPEROPT][EXECUTOR][SCHEDULER]["max_t"] = time_limit_s
     base_automl_config[HYPEROPT][SEARCH_ALG]["random_state_seed"] = random_seed
     base_automl_config.update(input_and_output_feature_config)
+
+    # add preprocessing section if single output feature is imbalanced
+    outputs_metadata = [f for f in features_metadata if f.mode == "output"]
+    if len(outputs_metadata) == 1:
+        of_meta = outputs_metadata[0]
+        is_categorical = of_meta.config.type in ["category", "binary"]
+        is_imbalanced = of_meta.imbalance_ratio < imbalance_threshold
+        if is_categorical and is_imbalanced:
+            base_automl_config.update(_get_stratify_split_config(of_meta))
 
     model_configs["base_config"] = base_automl_config
 
