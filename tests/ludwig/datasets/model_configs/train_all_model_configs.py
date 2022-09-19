@@ -90,7 +90,7 @@ def _train_dataset_process(dataset_name, results_queue):
 
 def train_all_datasets():
     # Maps dataset name to current running process.
-    max_processes = multiprocessing.cpu_count()
+    max_processes = 4
     running_processes = {}
     accumulated_results = []
     # As each process completes it pushes its results onto the results_queue.
