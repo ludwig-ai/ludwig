@@ -396,6 +396,9 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
     Set max_concurrent_trials in the hyperopt executor to ensure CPU resources are available for Ray Dataset related
     tasks.
     """
+
+    # TODO: Do we need to do this for clusters with only CPUs and no GPUs?
+
     # Fallback to RayExecutor defaults
     num_samples = executor_config.get(NUM_SAMPLES, 1)
     cpu_resources_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
