@@ -1,12 +1,13 @@
 from typing import Dict, Tuple, Union
 
+import jsonschema
 import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
-import jsonschema
 
+from ludwig.schema import get_validator
 from ludwig.schema import utils as schema_utils
-from ludwig.schema import get_validator, validate
+from ludwig.schema import validate
 
 
 def get_marshmallow_from_dataclass_field(dfield):
