@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import json
 import logging
 import os.path
 
@@ -21,7 +22,22 @@ import pandas as pd
 import pytest
 from mlflow.tracking import MlflowClient
 
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.constants import (
+    ACCURACY,
+    BACKEND,
+    COMBINER,
+    CPU_RESOURCES_PER_TRIAL,
+    EXECUTOR,
+    HYPEROPT,
+    INPUT_FEATURES,
+    MAX_CONCURRENT_TRIALS,
+    NAME,
+    NUM_SAMPLES,
+    OUTPUT_FEATURES,
+    RAY,
+    TRAINER,
+    TYPE,
+)
 from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
@@ -286,3 +302,44 @@ def run_hyperopt(
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+
+
+@pytest.mark.distributed
+def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_cluster_4cpu):
+    input_features = [
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(vocab_size=3),
+    ]
+
+    output_features = [category_feature(vocab_size=3)]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # Uses local backend by default
+    config = {
+        BACKEND: {TYPE: RAY},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat"},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        HYPEROPT: {
+            "parameters": {"trainer.learning_rate": {"space": "loguniform", "lower": 0.001, "upper": 0.1}},
+            "goal": "minimize",
+            "output_feature": output_features[0][NAME],
+            "validation_metrics": "loss",
+            EXECUTOR: {
+                TYPE: RAY,
+                NUM_SAMPLES: 4,
+                CPU_RESOURCES_PER_TRIAL: 1,
+                "time_budget_s": 200,
+            },  # Need to adjust based on how many CPUs are available on the machine
+            "search_alg": {TYPE: "variant_generator"},
+        },
+    }
+
+    # If trial finishes
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
+
+    hyperopt_statistics = json.load(open(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")))
+    assert hyperopt_statistics["hyperopt_config"][EXECUTOR][MAX_CONCURRENT_TRIALS] == 3

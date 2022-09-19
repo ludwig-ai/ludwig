@@ -414,31 +414,31 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
         )
         max_concurrent_trials = num_samples
 
-    num_cpus_available = backend.num_cpus
+    num_cpus_available = int(backend.num_cpus)
     num_cpus_required = cpu_resources_per_trial * num_samples
 
     if num_cpus_required >= num_cpus_available:
-        max_possible_concurrent_trials_with_available_cpu = int(num_cpus_available // cpu_resources_per_trial)
-        leftover_free_cpu_resources = num_cpus_available % cpu_resources_per_trial
+        max_possible_concurrent_trials_with_available_cpus = int(num_cpus_available // cpu_resources_per_trial)
+        leftover_cpus = num_cpus_available % cpu_resources_per_trial
 
-        if max_possible_concurrent_trials_with_available_cpu == 0:
+        if max_possible_concurrent_trials_with_available_cpus == 0:
             # TODO(Arnav): Replace with custom LudwigConfigError in the future
             raise RuntimeError(
                 "`cpu_resources_per_trial` is greater than the number of CPUs available, so no trials can be run."
                 " Please consider increasing the number of CPUs available or decrease `cpu_resources_per_trial`."
             )
 
-        if leftover_free_cpu_resources >= 0.5:
+        if leftover_cpus >= 0.5:
             # Use min incase user defined config has a smaller value already set for max_concurrent_trials
-            max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpu, max_concurrent_trials)
+            max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpus, max_concurrent_trials)
         else:
             # Subtract 1 to ensure there's at least 1 CPU resource available for dataset read tasks
-            max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpu - 1, max_concurrent_trials)
+            max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpus - 1, max_concurrent_trials)
 
         logging.info(
-            f"{num_cpus_required} is greater than or equal to {num_cpus_available} CPUs available. "
-            f"Setting `max_concurrent_trials` to {max_concurrent_trials} to ensure CPU resources are "
-            "available for Ray Dataset related tasks."
+            f"Number of CPUs needed for hyperopt trials ({num_cpus_required}) is greater than or equal to the number "
+            f"of CPUs available ({num_cpus_available}). Setting `max_concurrent_trials` to {max_concurrent_trials} to "
+            "ensure CPU resources are available for Ray Dataset related tasks and ensure trials start."
         )
 
         # Use max to ensure max_concurrent_trials is at least 1

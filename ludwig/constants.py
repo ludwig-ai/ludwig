@@ -178,6 +178,7 @@ DEPENDENCIES = "dependencies"
 REDUCE_INPUT = "reduce_input"
 REDUCE_DEPENDENCIES = "reduce_dependencies"
 
+BACKEND = "backend"
 COMBINER = "combiner"
 
 ENCODER = "encoder"
