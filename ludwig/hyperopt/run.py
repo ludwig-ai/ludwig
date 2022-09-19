@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from pprint import pformat
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import yaml
@@ -12,11 +12,14 @@ from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     COMBINED,
+    CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
     HYPEROPT,
     LOSS,
+    MAX_CONCURRENT_TRIALS,
     MINIMIZE,
     NAME,
+    NUM_SAMPLES,
     OUTPUT_FEATURES,
     PREPROCESSING,
     TEST,
@@ -34,10 +37,14 @@ from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
 
 try:
+    from ludwig.backend.horovod import HorovodBackend
     from ludwig.backend.ray import RayBackend
 except ImportError:
 
     class RayBackend:
+        pass
+
+    class HorovodBackend:
         pass
 
 
@@ -199,9 +206,14 @@ def hyperopt(
 
     hyperopt_config = config[HYPEROPT]
 
-    update_hyperopt_params_with_defaults(hyperopt_config)
+    # Explicitly default to a local backend to avoid picking up Ray or Horovod
+    # backend from the environment.
+    backend = backend or config_dict.get("backend") or "local"
+    backend = initialize_backend(backend)
 
-    # print hyperopt config
+    update_hyperopt_params_with_defaults(hyperopt_config, backend)
+
+    # Print hyperopt config
     logging.info("Hyperopt config")
     logging.info(pformat(hyperopt_config, indent=4))
     logging.info("\n")
@@ -279,10 +291,6 @@ def hyperopt(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
-    # Explicitly default to a local backend to avoid picking up Ray or Horovod
-    # backend from the environment.
-    backend = backend or config_dict.get("backend") or "local"
-    backend = initialize_backend(backend)
     if not (
         isinstance(backend, LocalBackend)
         or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))
@@ -381,7 +389,44 @@ def hyperopt(
     return hyperopt_results
 
 
-def update_hyperopt_params_with_defaults(hyperopt_params):
+def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
+    """Datasets read tasks request 0.5 CPUs and all transformation tasks request 1 CPU, so if there are no cores
+    available, trials won't be able to run.
+
+    Set max_concurrent_trials in the hyperopt executor to ensure CPU resources are available for Ray Dataset related
+    tasks.
+    """
+
+    num_samples = executor_config.get(NUM_SAMPLES, 1)
+    cpu_resources_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
+
+    # Default to num_samples if max_concurrent_trials isn't set
+    max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS, num_samples)
+
+    num_cpus_available = backend.num_cpus
+    num_cpus_required = cpu_resources_per_trial * num_samples
+
+    if num_cpus_required >= num_cpus_available:
+        max_possible_concurrent_trials = int(num_cpus_available // cpu_resources_per_trial)
+        leftover_cpu_resources = num_cpus_available % cpu_resources_per_trial
+
+        if leftover_cpu_resources >= 0.5:
+            # Use min incase user defined config has a smaller value already set for max_concurrent_trials
+            max_concurrent_trials = min(max_possible_concurrent_trials, max_concurrent_trials)
+        else:
+            # Subtract 1 to ensure there's at least 1 CPU resource available for dataset read tasks
+            max_concurrent_trials = min(max_possible_concurrent_trials - 1, max_concurrent_trials)
+
+        logging.info(
+            f"{num_cpus_required} is greater than or equal to {num_cpus_available} CPUs available. "
+            f"Setting `max_concurrent_trials` to {max_concurrent_trials} to ensure CPU resources are "
+            "available for Ray Dataset related tasks."
+        )
+
+        executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
+
+
+def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any], backend: Backend = None) -> Dict[str, Any]:
     from ludwig.hyperopt.execution import executor_registry
 
     set_default_value(hyperopt_params, EXECUTOR, {})
@@ -391,6 +436,11 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, "goal", MINIMIZE)
 
     set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
+
+    # Set max_concurrent_trials to ensure CPU resources are available for Ray Dataset related tasks
+    # before updating executor config with other defaults
+    set_max_concurrent_trials(hyperopt_params[EXECUTOR], backend)
+
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
     set_default_values(

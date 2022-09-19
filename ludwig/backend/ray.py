@@ -982,6 +982,18 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return 1
         return len(ray.nodes())
 
+    @property
+    def num_cpus(self) -> int:
+        if not ray.is_initialized():
+            return 1
+        return ray.cluster_resources().get("CPU", 1)
+
+    @property
+    def num_gpus(self) -> int:
+        if not ray.is_initialized():
+            return 0
+        return ray.cluster_resources().get("GPU", 0)
+
 
 def initialize_ray():
     if not ray.is_initialized():

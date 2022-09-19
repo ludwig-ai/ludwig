@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -21,6 +22,7 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
+import psutil
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
@@ -98,6 +100,16 @@ class Backend(ABC):
     @property
     @abstractmethod
     def num_nodes(self) -> int:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def num_cpus(self) -> int:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def num_gpus(self) -> int:
         raise NotImplementedError()
 
 
@@ -187,3 +199,20 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     @property
     def num_nodes(self) -> int:
         return 1
+
+    @property
+    def num_cpus(self) -> int:
+        # Count of logical CPUs, i.e., cores with hyper-threading
+        cpu_count = psutil.cpu_count()
+        return cpu_count if cpu_count is not None else 1
+
+    @property
+    def num_gpus(self) -> int:
+        try:
+            import GPUtil
+
+            if GPUtil.getGPUs():
+                return len(GPUtil.getGPUs())
+        except Exception as e:
+            logging.warning(f"GPUtil is not installed. Assuming no GPUs are available. {e}")
+        return 0
