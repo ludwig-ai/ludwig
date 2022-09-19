@@ -66,7 +66,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
         "each layer.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=3),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["kernel_size"],
@@ -78,7 +78,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
         "2D convolutional kernel that will be used for each layer.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=1),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["stride"],

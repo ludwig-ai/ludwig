@@ -185,9 +185,6 @@ def _run_test(input_features=None, output_features=None, combiner=None):
             "combiner": combiner,
             TRAINER: {"epochs": 2},
         }
-        from pprint import pprint
-
-        pprint(config)
 
         model = LudwigModel(config, backend=LocalTestBackend())
         _, _, output_directory = model.train(
