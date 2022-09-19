@@ -459,8 +459,8 @@ def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any], backen
 
     set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
 
-    # Set max_concurrent_trials to ensure CPU resources are available for Ray Dataset related tasks
-    # before updating executor config with other defaults
+    # Set max_concurrent_trials to ensure trials can run
+    backend = backend or LocalBackend()
     set_max_concurrent_trials(hyperopt_params[EXECUTOR], backend)
 
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
