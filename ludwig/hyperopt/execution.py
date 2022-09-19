@@ -40,6 +40,7 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
+_ray_112 = version.parse("1.12") <= version.parse(ray.__version__) < version.parse("1.13")
 _ray_113 = version.parse(ray.__version__) >= version.parse("1.13")
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
 if _ray_200:
@@ -369,7 +370,11 @@ class RayTuneExecutor:
             yield None
             return
 
-        if _ray_113 and checkpoint is not None:
+        if _ray_112 and checkpoint is not None:
+            # In Ray 1.12 and 1.12.1, checkpoints don't have an as_directory() context manager so
+            # return the local path from the TrialCheckpoint object
+            yield checkpoint._local_path
+        elif _ray_113 and checkpoint is not None:
             # In Ray 1.13, checkpoints have changed from strings to objects
             with checkpoint.as_directory() as path:
                 yield path
