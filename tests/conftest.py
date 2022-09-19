@@ -114,8 +114,8 @@ def ray_cluster_2cpu(request):
 
 
 @pytest.fixture(scope="module")
-def ray_cluster_3cpu(request):
-    with _ray_start(request, num_cpus=3):
+def ray_cluster_4cpu(request):
+    with _ray_start(request, num_cpus=4):
         yield
 
 

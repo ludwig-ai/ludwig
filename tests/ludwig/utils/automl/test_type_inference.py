@@ -68,7 +68,9 @@ def test_infer_type_explicit_date():
     "idx,num_distinct_values,dtype,name,expected",
     [
         (3, ROW_COUNT, NUMBER, "id", True),
-        (0, ROW_COUNT, NUMBER, "foo", True),
+        (0, ROW_COUNT, NUMBER, "index", True),
+        (1, ROW_COUNT, NUMBER, "index", False),
+        (0, ROW_COUNT, NUMBER, "foo", False),
         (3, ROW_COUNT, TEXT, "uuid", True),
         (0, ROW_COUNT, TEXT, "name", False),
         (0, ROW_COUNT, NUMBER, TARGET_NAME, False),
@@ -78,4 +80,12 @@ def test_infer_type_explicit_date():
 )
 def test_should_exclude(idx, num_distinct_values, dtype, name, expected):
     field = FieldInfo(name=name, dtype=dtype, num_distinct_values=num_distinct_values)
-    assert should_exclude(idx, field, dtype, ROW_COUNT, TARGET_NAME) == expected
+    assert should_exclude(idx, field, dtype, ROW_COUNT, {TARGET_NAME}) == expected
+
+
+def test_auto_type_inference_single_value_binary_feature():
+    field = FieldInfo(
+        name="foo", dtype="object", num_distinct_values=1, distinct_values=["1" for i in range(ROW_COUNT)]
+    )
+    assert infer_type(field=field, missing_value_percent=0, row_count=ROW_COUNT) == CATEGORY
+    assert should_exclude(idx=3, field=field, dtype="object", row_count=ROW_COUNT, targets={TARGET_NAME})

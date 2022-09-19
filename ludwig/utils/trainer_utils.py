@@ -2,8 +2,14 @@ import logging
 from collections import OrderedDict
 from typing import Dict, List, Tuple
 
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
+
 from ludwig.constants import COMBINED, LOSS
 from ludwig.features.base_feature import OutputFeature
+from ludwig.models.base import BaseModel
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.metric_utils import TrainerMetric
@@ -117,6 +123,11 @@ class ProgressTracker:
     @staticmethod
     def load(filepath):
         loaded = load_json(filepath)
+
+        from ludwig.utils.backward_compatibility import upgrade_model_progress
+
+        loaded = upgrade_model_progress(loaded)
+
         return ProgressTracker(**loaded)
 
     def log_metrics(self):
@@ -142,9 +153,43 @@ class ProgressTracker:
                     if metrics_tuples:
                         # For logging, get the latest metrics. The second "-1" indexes into the TrainerMetric
                         # namedtuple. The last element of the TrainerMetric namedtuple is the actual metric value.
+                        #
+                        # TODO: when loading an existing model, this loses metric values for all but the last epoch.
                         log_metrics[f"{metrics_dict_name}.{feature_name}.{metric_name}"] = metrics_tuples[-1][-1]
 
         return log_metrics
+
+
+def append_metrics(
+    model: BaseModel,
+    dataset_name: Literal["train", "validation", "test"],
+    results: Dict[str, Dict[str, float]],
+    metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
+    tables: Dict[str, List[List[str]]],
+    progress_tracker: ProgressTracker,
+) -> Tuple[Dict[str, Dict[str, List[TrainerMetric]]], Dict[str, List[List[str]]]]:
+    epoch = progress_tracker.epoch
+    steps = progress_tracker.steps
+    for output_feature in model.output_features:
+        scores = [dataset_name]
+
+        # collect metric names based on output features metrics to
+        # ensure consistent order of reporting metrics
+        metric_names = model.output_features[output_feature].metric_functions.keys()
+
+        for metric in metric_names:
+            if metric in results[output_feature]:
+                # Some metrics may have been excepted and excluded from results.
+                score = results[output_feature][metric]
+                metrics_log[output_feature][metric].append(TrainerMetric(epoch=epoch, step=steps, value=score))
+                scores.append(score)
+
+        tables[output_feature].append(scores)
+
+    metrics_log[COMBINED][LOSS].append(TrainerMetric(epoch=epoch, step=steps, value=results[COMBINED][LOSS]))
+    tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
+
+    return metrics_log, tables
 
 
 def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):

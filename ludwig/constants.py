@@ -41,6 +41,7 @@ INFER_IMAGE_MAX_HEIGHT = "infer_image_max_height"
 INFER_IMAGE_MAX_WIDTH = "infer_image_max_width"
 INFER_IMAGE_SAMPLE_SIZE = "infer_image_sample_size"
 NUM_CHANNELS = "num_channels"
+CLASS_WEIGHTS = "class_weights"
 LOSS = "loss"
 ROC_AUC = "roc_auc"
 EVAL_LOSS = "eval_loss"
@@ -159,6 +160,7 @@ SRC = "dataset_src"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
+DEFAULT_BATCH_SIZE = 128
 LEARNING_RATE = "learning_rate"
 USE_BIAS = "use_bias"
 BIAS = "bias"
@@ -224,6 +226,8 @@ POSTPROCESSOR = "postprocessor"
 
 S3 = "s3"
 CACHE = "cache"
-EXPERIMENT_RUN = "experiment_run"
-TRAIN_TAG = "train"
-EVAL_TAG = "evaluate"
+
+# If `use_torch_profiler=True` in LudwigProfiler, LUDWIG_TAG is prepended to the specified experiment tag
+# (LudwigProfiler(tag="...", ..)). This edited tag is passed in to `torch.profiler.record_function` so we can
+# retrieve torch ops for the tagged code blocks/functions.
+LUDWIG_TAG = "[ludwig]"

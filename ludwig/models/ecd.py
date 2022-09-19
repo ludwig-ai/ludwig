@@ -9,7 +9,6 @@ import torchmetrics
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD, TYPE
-from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.utils import load_config_with_kwargs
@@ -38,7 +37,6 @@ class ECD(BaseModel):
         super().__init__(random_seed=self._random_seed)
 
         # ================ Inputs ================
-        self.input_features = LudwigFeatureDict()
         try:
             self.input_features.update(self.build_inputs(config=config_obj))
         except KeyError as e:
@@ -52,7 +50,6 @@ class ECD(BaseModel):
         self.combiner = combiner_class(input_features=self.input_features, config=config_obj.combiner)
 
         # ================ Outputs ================
-        self.output_features = LudwigFeatureDict()
         self.output_features.update(self.build_outputs(self._output_features_def, self.combiner))
 
         # ================ Combined loss metric ================

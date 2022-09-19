@@ -1,0 +1,21 @@
+version: 1.0
+name: amazon_review_polarity
+download_urls: https://s3.amazonaws.com/fast-ai-nlp/amazon_review_polarity_csv.tgz
+train_filenames: amazon_review_polarity_csv/train.csv
+test_filenames: amazon_review_polarity_csv/test.csv
+sha256:
+  amazon_review_polarity_csv.tgz: d2a3ee7a214497a5d1b8eaed7c8d7ba2737de00ada3b0ec46243983efa100361
+columns:
+  - label
+  - review_title
+  - review_text
+description: |
+  The Amazon Reviews Polarity dataset
+    Details:
+        34,686,770 Amazon reviews from 6,643,669 users on 2,441,053
+        products, from the Stanford Network Analysis Project (SNAP).
+        This dataset contains 600,000 training samples and 130,000
+        testing samples in each class.
+    Dataset source:
+        Character-level Convolutional Networks for Text Classification
+        Xiang Zhang et al., 2015

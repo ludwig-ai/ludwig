@@ -1,0 +1,22 @@
+version: 1.0
+name: yahoo_answers
+download_urls: https://s3.amazonaws.com/fast-ai-nlp/yahoo_answers_csv.tgz
+sha256:
+  yahoo_answers_csv.tgz: 2d4277855faf8b35259009425fa8f7fe1888b5644b47165508942d000f4c96ae
+train_filenames: yahoo_answers_csv/train.csv
+test_filenames: yahoo_answers_csv/test.csv
+columns:
+  - label
+  - question_title
+  - question
+  - best_answer
+description: |
+  The Yahoo Answers dataset
+  Details:
+      The 10 largest main categories from the Yahoo! Answers \
+      Comprehensive Questions and Answers version 1.0 dataset. \
+      Each class contains 140,000 training samples and 5,000 \
+      testing samples.
+  Dataset source:
+      Character-level Convolutional Networks for Text Classification
+      Xiang Zhang et al., 2015

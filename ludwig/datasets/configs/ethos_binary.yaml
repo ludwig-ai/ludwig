@@ -1,0 +1,14 @@
+version: 1.0
+name: ethos_binary
+download_urls:
+  - https://raw.githubusercontent.com/intelligence-csd-auth-gr/Ethos-Hate-Speech-Dataset/master/ethos/ethos_data/Ethos_Dataset_Binary.csv
+sha256:
+  Ethos_Dataset_Binary.csv: 0cd0050c2592afcb5eca5876df485ca15cda9d7d16fe32c269857260fd10d96c
+loader: ethos_binary.EthosBinaryLoader
+description: |
+  The Ethos Hate Speech Dataset.
+
+  Source Paper:
+      ETHOS: an Online Hate Speech Detection Dataset
+          Ioannis Mollas and Zoe Chrysopoulou and Stamatis Karlos and
+          Grigorios Tsoumakas

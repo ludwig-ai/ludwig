@@ -7,11 +7,12 @@ import numpy as np
 import torch
 
 from ludwig.combiners.combiners import Combiner
-from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.constants import COMBINED, LOSS, NAME, TYPE
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.config_object import Config
 from ludwig.schema.features.base import BaseInputFeatureConfig
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
@@ -43,6 +44,9 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             torch.random.manual_seed(random_seed)
 
         super().__init__()
+
+        self.input_features = LudwigFeatureDict()
+        self.output_features = LudwigFeatureDict()
 
     @classmethod
     def build_inputs(cls, config: Config) -> Dict[str, InputFeature]:
@@ -251,7 +255,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.eval_loss_metric.update(eval_loss)
         self.eval_additional_losses_metrics.update(additional_losses)
 
-    def get_metrics(self):
+    def get_metrics(self) -> Dict[str, Dict[str, float]]:
         """Returns a dictionary of metrics for each output feature of the model."""
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
@@ -284,11 +288,11 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
 
     @abstractmethod
-    def save(self, save_path):
+    def save(self, save_path: str):
         """Saves the model to the given path."""
 
     @abstractmethod
-    def load(self, save_path):
+    def load(self, save_path: str):
         """Loads the model from the given path."""
 
     @abstractmethod

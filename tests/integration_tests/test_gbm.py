@@ -21,7 +21,7 @@ def local_backend():
 @pytest.fixture(scope="module")
 def ray_backend():
     num_workers = 2
-    num_cpus_per_worker = 1
+    num_cpus_per_worker = 2
     return {
         "type": "ray",
         "processor": {
@@ -60,7 +60,7 @@ def test_local_gbm_output_not_supported(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_output_not_supported(tmpdir, ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_output_not_supported(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_output_not_supported(tmpdir, ray_backend)
 
 
@@ -93,7 +93,7 @@ def test_local_gbm_multiple_outputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_multiple_outputs(tmpdir, ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_multiple_outputs(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_multiple_outputs(tmpdir, ray_backend)
 
 
@@ -137,7 +137,7 @@ def test_local_gbm_binary(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_binary(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_binary(tmpdir, ray_backend)
 
 
@@ -181,7 +181,7 @@ def test_local_gbm_non_number_inputs(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
@@ -227,7 +227,7 @@ def test_local_gbm_category(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_category(tmpdir, ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_category(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_category(tmpdir, ray_backend)
 
 
@@ -278,7 +278,7 @@ def test_local_gbm_number(tmpdir, local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_number(tmpdir, ray_backend)
 
 
@@ -307,5 +307,5 @@ def test_local_gbm_schema(local_backend):
 
 
 @pytest.mark.distributed
-def test_ray_gbm_schema(ray_backend, ray_cluster_3cpu):
+def test_ray_gbm_schema(ray_backend, ray_cluster_4cpu):
     run_test_gbm_schema(ray_backend)

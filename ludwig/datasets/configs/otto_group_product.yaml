@@ -1,0 +1,10 @@
+version: 1.0
+name: otto_group_product
+kaggle_competition: otto-group-product-classification-challenge
+archive_filenames: otto-group-product-classification-challenge.zip
+sha256:
+  otto-group-product-classification-challenge.zip: 81d1fa5805036772b7a2a2425311fdc7b1568af4fbb42f0ec8f9661d0d21ce42
+train_filenames: train.csv
+description: |
+  The Otto Group Product Classification Challenge
+  https://www.kaggle.com/c/otto-group-product-classification-challenge/overview

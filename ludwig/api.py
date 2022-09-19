@@ -35,7 +35,7 @@ import pandas as pd
 import torch
 from tabulate import tabulate
 
-from ludwig.backend import Backend, initialize_backend
+from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
@@ -88,6 +88,7 @@ from ludwig.utils.data_utils import (
     load_yaml,
     save_json,
 )
+from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
@@ -477,19 +478,15 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                dataset_statistics = [["Dataset", "Size"]]
-                dataset_statistics.append(["Training", len(training_set)])
-                if validation_set is not None:
-                    dataset_statistics.append(["Validation", len(validation_set)])
-                if test_set is not None:
-                    dataset_statistics.append(["Test", len(test_set)])
+                dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
+
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
                     save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
 
-                logger.info("\nDataset sizes:")
-                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+                logger.info("\nDataset Statistics")
+                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
             for callback in self.callbacks:
                 callback.on_train_init(
@@ -683,17 +680,18 @@ class LudwigModel:
             self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
         )
 
-        training_dataset, _, _, training_set_metadata = preprocess_for_training(
-            self.config,
-            training_set=dataset,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            skip_save_processed_input=True,
-            preprocessing_params=preprocessing_params,
-            backend=self.backend,
-            random_seed=random_seed,
-            callbacks=self.callbacks,
-        )
+        with provision_preprocessing_workers(self.backend):
+            training_dataset, _, _, training_set_metadata = preprocess_for_training(
+                self.config,
+                training_set=dataset,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
+                skip_save_processed_input=True,
+                preprocessing_params=preprocessing_params,
+                backend=self.backend,
+                random_seed=random_seed,
+                callbacks=self.callbacks,
+            )
 
         if not self.training_set_metadata:
             self.training_set_metadata = training_set_metadata
@@ -802,7 +800,6 @@ class LudwigModel:
             converted_postproc_predictions = convert_predictions(
                 postproc_predictions, self.model.output_features, return_type=return_type, backend=self.backend
             )
-
             if self.backend.is_coordinator():
                 if not skip_save_predictions:
                     save_prediction_outputs(
@@ -1297,20 +1294,21 @@ class LudwigModel:
             self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
         )
 
-        preprocessed_data = preprocess_for_training(
-            self.config,
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            training_set_metadata=training_set_metadata,
-            data_format=data_format,
-            skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=preprocessing_params,
-            backend=self.backend,
-            random_seed=random_seed,
-            callbacks=self.callbacks,
-        )
+        with provision_preprocessing_workers(self.backend):
+            preprocessed_data = preprocess_for_training(
+                self.config,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
+                skip_save_processed_input=skip_save_processed_input,
+                preprocessing_params=preprocessing_params,
+                backend=self.backend,
+                random_seed=random_seed,
+                callbacks=self.callbacks,
+            )
 
         (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 

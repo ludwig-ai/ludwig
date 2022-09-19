@@ -6,6 +6,7 @@ from typing import List, Optional, Union
 
 import pandas as pd
 import yaml
+from tabulate import tabulate
 
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
@@ -29,6 +30,7 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
@@ -319,6 +321,11 @@ def hyperopt(
             random_seed=random_seed,
         )
         dataset = None
+
+        dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
+
+        logging.info("\nDataset Statistics")
+        logging.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_end(experiment_name)

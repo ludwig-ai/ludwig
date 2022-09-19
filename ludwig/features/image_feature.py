@@ -169,7 +169,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
         elif isinstance(img_entry, np.ndarray):
-            img = torch.from_numpy(img_entry).permute(2, 0, 1)
+            img = torch.from_numpy(np.array(img_entry, copy=True)).permute(2, 0, 1)
         else:
             img = img_entry
 

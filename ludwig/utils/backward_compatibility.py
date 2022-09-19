@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import copy
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
 from ludwig.constants import (
     AUDIO,
     BIAS,
+    CLASS_WEIGHTS,
     COLUMN,
     CONV_BIAS,
     CONV_USE_BIAS,
@@ -32,6 +33,7 @@ from ludwig.constants import (
     EXECUTOR,
     FORCE_SPLIT,
     INPUT_FEATURES,
+    LOSS,
     MISSING_VALUE_STRATEGY,
     NAME,
     NUM_SAMPLES,
@@ -45,9 +47,12 @@ from ludwig.constants import (
     SAMPLER,
     SCHEDULER,
     SEARCH_ALG,
+    SEQUENCE,
     SPLIT,
     SPLIT_PROBABILITIES,
     STRATIFY,
+    TEXT,
+    TIMESERIES,
     TRAINER,
     TRAINING,
     TYPE,
@@ -55,6 +60,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
 
@@ -83,7 +89,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
-def upgrade_to_latest_version(config: Dict):
+def upgrade_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
 
@@ -98,6 +104,49 @@ def upgrade_to_latest_version(config: Dict):
     )
 
 
+def upgrade_model_progress(model_progress: Dict) -> Dict:
+    """Updates model progress info to be compatible with latest ProgressTracker implementation.
+
+    Notably, we convert epoch-based stats to their step-based equivalents and reformat metrics into `TrainerMetric`
+    tuples.
+    """
+    ret = copy.deepcopy(model_progress)
+
+    if "last_improvement_epoch" in ret:
+        ret["last_improvement_steps"] = ret["last_improvement_epoch"] * ret["batch_size"]
+        del ret["last_improvement_epoch"]
+
+    if "last_learning_rate_reduction_epoch" in ret:
+        ret["last_learning_rate_reduction_steps"] = ret["last_learning_rate_reduction_epoch"] * ret["batch_size"]
+        del ret["last_learning_rate_reduction_epoch"]
+
+    if "last_increase_batch_size_epoch" in ret:
+        ret["last_increase_batch_size_steps"] = ret["last_increase_batch_size_epoch"] * ret["batch_size"]
+        del ret["last_increase_batch_size_epoch"]
+
+    if "vali_metrics" in ret:
+        ret["validation_metrics"] = ret["vali_metrics"]
+        del ret["vali_metrics"]
+
+    for metric_group in ("train_metrics", "test_metrics", "validation_metrics"):
+        for tgt in ret[metric_group]:
+            for metric in ret[metric_group][tgt]:
+                if len(ret[metric_group][tgt][metric]) == 0 or isinstance(
+                    ret[metric_group][tgt][metric][0], (tuple, list)
+                ):
+                    continue
+
+                ret[metric_group][tgt][metric] = [
+                    TrainerMetric(i + 1, (i + 1) * ret["batch_size"], val)
+                    for i, val in enumerate(ret[metric_group][tgt][metric])
+                ]
+
+    if "tune_checkpoint_num" not in ret:
+        ret["tune_checkpoint_num"] = 0
+
+    return ret
+
+
 def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
     """Recursively applies function f to every dictionary contained in config.
 
@@ -110,6 +159,66 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
     elif isinstance(config, list):
         for v in config:
             _traverse_dicts(v, f)
+
+
+@register_config_transformation("0.6", ["output_features"])
+def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
+    if LOSS in feature:
+        class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
+        if not isinstance(class_weights, list):
+            class_weights = None
+        feature[LOSS][CLASS_WEIGHTS] = class_weights
+
+    return feature
+
+
+@register_config_transformation("0.4")
+def _update_level_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
+    # Replace parameters represented as keys with params represented as values.
+    # Precedence is defined by first in the dictionary order, so if multiple
+    # provided keys map to the same value, the one that appears earlier in this
+    # dictionary will take priority.
+    drop_params = {
+        "sequence_length_limit": "max_sequence_length",
+        "word_most_common": "most_common",
+        "word_sequence_length_limit": "max_sequence_length",
+        "word_tokenizer": "tokenizer",
+        "word_vocab_file": "vocab_file",
+        "char_most_common": "most_common",
+        "char_sequence_length_limit": "max_sequence_length",
+        "char_tokenizer": "tokenizer",
+        "char_vocab_file": "vocab_file",
+    }
+
+    def upgrade_params(params):
+        for key, value in drop_params.items():
+            if key in params:
+                if value in params:
+                    warnings.warn(
+                        f"Removing deprecated config preprocessing parameter {key} as new param {value} already "
+                        f"present in the config",
+                        DeprecationWarning,
+                    )
+                else:
+                    warnings.warn(
+                        f"Renaming deprecated config preprocessing parameter {key} to {value}",
+                        DeprecationWarning,
+                    )
+                    params[value] = params[key]
+                del params[key]
+
+    sequence_types = [SEQUENCE, TEXT, AUDIO, TIMESERIES]
+    for dtype in sequence_types:
+        params = config.get(PREPROCESSING, {}).get(dtype, {})
+        upgrade_params(params)
+
+    for feature in config[INPUT_FEATURES]:
+        if feature.get(TYPE) not in sequence_types:
+            continue
+        params = feature.get(PREPROCESSING, {})
+        upgrade_params(params)
+
+    return config
 
 
 @register_config_transformation("0.5")
@@ -371,6 +480,14 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
             )
             type_specific_preprocessing_params[parameter] = config[PREPROCESSING].pop(parameter)
 
+        if parameter == "numerical":
+            warnings.warn(
+                f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
+                " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
+                DeprecationWarning,
+            )
+            type_specific_preprocessing_params[NUMBER] = config[PREPROCESSING].pop(parameter)
+
     # Delete empty preprocessing section if no other preprocessing parameters specified
     if PREPROCESSING in config and not config[PREPROCESSING]:
         del config[PREPROCESSING]
@@ -466,35 +583,51 @@ def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
 
 @register_config_transformation("0.6")
 def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
-    def __is_old_missing_value_strategy(feature_config: Dict[str, Any]):
-        if PREPROCESSING not in feature_config:
-            return False
-        missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY, None)
-        if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
-            return False
-        return True
+    for input_feature in config.get(INPUT_FEATURES, []):
+        if _is_old_missing_value_strategy(input_feature):
+            _update_old_missing_value_strategy(input_feature)
 
-    def __update_old_missing_value_strategy(feature_config: Dict[str, Any]):
-        missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
-        replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
-        feature_name = feature_config.get(NAME)
-        warnings.warn(
-            f"Using `{replacement_strategy}` instead of `{missing_value_strategy}` as the missing value strategy"
-            f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in v0.8",
-            DeprecationWarning,
-        )
-        feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})
-
-    for input_feature in config.get(INPUT_FEATURES, {}):
-        if __is_old_missing_value_strategy(input_feature):
-            __update_old_missing_value_strategy(input_feature)
-
-    for output_feature in config.get(OUTPUT_FEATURES, {}):
-        if __is_old_missing_value_strategy(output_feature):
-            __update_old_missing_value_strategy(output_feature)
+    for output_feature in config.get(OUTPUT_FEATURES, []):
+        if _is_old_missing_value_strategy(output_feature):
+            _update_old_missing_value_strategy(output_feature)
 
     for feature, feature_defaults in config.get(DEFAULTS, {}).items():
-        if __is_old_missing_value_strategy(feature_defaults):
-            __update_old_missing_value_strategy(config.get(DEFAULTS).get(feature))
+        if _is_old_missing_value_strategy(feature_defaults):
+            _update_old_missing_value_strategy(config.get(DEFAULTS).get(feature))
 
     return config
+
+
+def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
+    # TODO(travis): stopgap solution, we should make it so we don't need to do this
+    # by decoupling config and metadata
+    metadata = copy.deepcopy(metadata)
+    _upgrade_metadata_mising_values(metadata)
+    return metadata
+
+
+def _upgrade_metadata_mising_values(metadata: Dict[str, Any]):
+    for k, v in metadata.items():
+        if isinstance(v, dict) and _is_old_missing_value_strategy(v):
+            _update_old_missing_value_strategy(v)
+
+
+def _update_old_missing_value_strategy(feature_config: Dict[str, Any]):
+    missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
+    replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
+    feature_name = feature_config.get(NAME)
+    warnings.warn(
+        f"Using `{replacement_strategy}` instead of `{missing_value_strategy}` as the missing value strategy"
+        f" for `{feature_name}`. These are identical. `{missing_value_strategy}` will be removed in v0.8",
+        DeprecationWarning,
+    )
+    feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})
+
+
+def _is_old_missing_value_strategy(feature_config: Dict[str, Any]):
+    if PREPROCESSING not in feature_config:
+        return False
+    missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY, None)
+    if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
+        return False
+    return True
