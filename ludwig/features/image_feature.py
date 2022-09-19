@@ -436,7 +436,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             # perform torchvision model transformations
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
-                transform_fn=torchvision_parameters[1].DEFAULT.transforms(),
+                transform_fn=torchvision_parameters.weights_class.DEFAULT.transforms(),
             )
             average_file_size = None
         else:
