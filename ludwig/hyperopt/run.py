@@ -439,9 +439,9 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
             max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpus - 1, max_concurrent_trials)
 
         logging.info(
-            f"Number of CPUs needed for hyperopt trials ({num_cpus_required}) is greater than or equal to the number "
-            f"of CPUs available ({num_cpus_available}). Setting `max_concurrent_trials` to {max_concurrent_trials} to "
-            "ensure CPU resources are available for Ray Dataset related tasks and ensure trials start."
+            f"Number of CPUs needed for hyperopt trials ({num_cpus_required}) is greater than or equal to the total "
+            f" number of CPUs available ({num_cpus_available}). Setting `max_concurrent_trials` to "
+            "{max_concurrent_trials} to ensure there's at least 1 free CPU resource available for dataset read tasks."
         )
 
         # Use max to ensure max_concurrent_trials is at least 1

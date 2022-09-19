@@ -77,12 +77,14 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     @property
     def num_cpus(self) -> int:
+        # Since we use Horovod on Ray, return the number of CPUs on the Ray cluster.
         if not ray.is_initialized():
             return 1
         return ray.cluster_resources().get("CPU", 1)
 
     @property
     def num_gpus(self) -> int:
+        # Since we use Horovod on Ray, return the number of GPUs on the Ray cluster.
         if not ray.is_initialized():
             return 0
         return ray.cluster_resources().get("GPU", 0)
