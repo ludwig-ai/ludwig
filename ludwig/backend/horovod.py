@@ -16,6 +16,8 @@
 
 import time
 
+import ray
+
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
@@ -75,10 +77,12 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     @property
     def num_cpus(self) -> int:
-        # TODO: Implement
-        return 1
+        if not ray.is_initialized():
+            return 1
+        return ray.cluster_resources().get("CPU", 1)
 
     @property
     def num_gpus(self) -> int:
-        # TODO: Implement
-        return 0
+        if not ray.is_initialized():
+            return 0
+        return ray.cluster_resources().get("GPU", 0)
