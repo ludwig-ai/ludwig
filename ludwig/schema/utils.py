@@ -674,7 +674,7 @@ def InitializerOrDict(
 def FloatRangeTupleDataclassField(
     n=2,
     default: Union[Tuple, None] = (0.9, 0.999),
-    allow_none: bool = False,
+    allow_none: bool = True,
     min=0,
     max=1,
     description="",
