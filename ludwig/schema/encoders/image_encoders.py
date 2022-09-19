@@ -7,7 +7,6 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 from ludwig.utils.torch_utils import initializer_registry
 
 
@@ -122,7 +121,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default=True,
         description="If bias not already specified in conv_layers, specifies if the 2D convolutional kernel should "
         "have a bias term.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_use_bias"],
     )
 
     padding_mode: Optional[str] = schema_utils.StringOptions(

@@ -3,6 +3,34 @@ from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterM
 FEATURE_METADATA = {
     "audio": {
         "preprocessing": {
+            "computed_fill_value": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=True,
+            ),
+            "fill_value": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=False,
+            ),
             "type": ParameterMetadata(
                 ui_display_name="Type",
                 default_value_reasoning="The default type fbank is set based on values that we have tested and "
@@ -63,6 +91,20 @@ FEATURE_METADATA = {
                     "-deep-learning-443a2f962e0e "
                 ],
                 internal_only=False,
+            ),
+            "num_fft_points": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=True,
             ),
             "num_filter_bands": ParameterMetadata(
                 ui_display_name="Type",
@@ -170,6 +212,20 @@ FEATURE_METADATA = {
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
                 internal_only=False,
+            ),
+            "window_type": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=True,
             ),
         }
     },
@@ -567,6 +623,34 @@ FEATURE_METADATA = {
     },
     "image": {
         "preprocessing": {
+            "computed_fill_value": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=True,
+            ),
+            "fill_value": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=False,
+            ),
             "height": ParameterMetadata(
                 ui_display_name=None,
                 default_value_reasoning=None,
@@ -676,8 +760,7 @@ FEATURE_METADATA = {
                 description_implications="Determines how missing values will be handled in the dataset. Not all "
                 "strategies are valid for all datatypes. For example, `fill_with_mean` is "
                 "applicable to continuous numerical data. Note that choosing to drop rows "
-                "with "
-                "missing values could result in losing information, especially if there is a "
+                "with missing values could result in losing information, especially if there is a "
                 "high proportion of missing values in the dataset.",
                 suggested_values=None,
                 suggested_values_reasoning=None,
@@ -765,7 +848,7 @@ FEATURE_METADATA = {
         }
     },
     "number": {
-        "preprocessing:": {
+        "preprocessing": {
             "computed_fill_value": ParameterMetadata(
                 ui_display_name=None,
                 default_value_reasoning=None,
