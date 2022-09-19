@@ -658,7 +658,7 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_4cpu):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         backend_config = {**RAY_BACKEND_CONFIG}
-        backend_config['preprocessor_kwargs'] = {"num_cpu": 3}
+        backend_config["preprocessor_kwargs"] = {"num_cpu": 3}
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
         dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
@@ -672,4 +672,3 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_4cpu):
             skip_save_log=True,
         )
         preds, _ = model.predict(dataset=dataset)
-

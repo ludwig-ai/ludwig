@@ -823,8 +823,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         num_cpu = self._preprocessor_kwargs.get("num_cpu")
         if not num_cpu:
             logger.info(
-                "Backend config has num_cpu not set."
-                " provision_preprocessing_workers() is a no-op in this case."
+                "Backend config has num_cpu not set." " provision_preprocessing_workers() is a no-op in this case."
             )
             yield
         else:
