@@ -18,6 +18,8 @@ from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
+logger = logging.getLogger(__name__)
+
 
 def load_from_module(
     dataset_module: Union[DatasetLoader, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
@@ -61,7 +63,7 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
             os.path.join("configs", experiment["config_path"]),
             os.path.join(export_full_path, CONFIG_YAML),
         )
-        logging.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
+        logger.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
     except Exception:
         logging.exception(
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
