@@ -37,6 +37,7 @@ from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.system_utils import Resources
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -90,6 +91,20 @@ def allocate_experiment_resources(resources: Resources) -> dict:
     return experiment_resources
 
 
+def _get_hyperopt_config(experiment_resources, time_limit_s, random_seed):
+    executor = experiment_resources
+    executor.update({"time_budget_s": time_limit_s})
+    if time_limit_s is not None:
+        executor.update({SCHEDULER: {"max_t": time_limit_s}})
+
+    return {
+        HYPEROPT: {
+            SEARCH_ALG: {"random_state_seed": random_seed},
+            EXECUTOR: executor,
+        },
+    }
+
+
 def _get_stratify_split_config(field_meta: FieldMetadata) -> dict:
     return {
         PREPROCESSING: {
@@ -135,26 +150,26 @@ def _create_default_config(
     :return: (dict) dictionaries contain auto train config files for all available
     combiner types
     """
+    base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
+
     resources = backend.get_available_resources()
-    experiment_resources = allocate_experiment_resources(resources)
 
     input_and_output_feature_config, features_metadata = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
+    base_automl_config.update(input_and_output_feature_config)
+
     # create set of all feature types appearing in the dataset
     feature_types = [[feat[TYPE] for feat in features] for features in input_and_output_feature_config.values()]
     feature_types = set(sum(feature_types, []))
 
     model_configs = {}
 
-    # read in base config and update with experiment resources
-    base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-    base_automl_config[HYPEROPT][EXECUTOR].update(experiment_resources)
-    base_automl_config[HYPEROPT][EXECUTOR]["time_budget_s"] = time_limit_s
-    if time_limit_s is not None:
-        base_automl_config[HYPEROPT][EXECUTOR][SCHEDULER]["max_t"] = time_limit_s
-    base_automl_config[HYPEROPT][SEARCH_ALG]["random_state_seed"] = random_seed
-    base_automl_config.update(input_and_output_feature_config)
+    # update hyperopt config
+    experiment_resources = allocate_experiment_resources(resources)
+    base_automl_config = merge_dict(
+        base_automl_config, _get_hyperopt_config(experiment_resources, time_limit_s, random_seed)
+    )
 
     # add preprocessing section if single output feature is imbalanced
     outputs_metadata = [f for f in features_metadata if f.mode == "output"]
