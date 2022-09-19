@@ -1,3 +1,7 @@
+output_features:
+  - name: label
+    type: category
+
 input_features:
   - name: image_path
     type: image
@@ -18,9 +22,5 @@ input_features:
       - output_size: 128
         dropout: 0.4
 
-output_features:
-  - name: label
-    type: category
-
 trainer:
-  epochs: 5
+  epochs: 1
