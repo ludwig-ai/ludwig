@@ -64,7 +64,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=True,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
@@ -121,7 +120,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
-        allow_none=True,
         description=(
             "Maximum number of training steps the algorithm is intended to be run over. "
             + "If unset, then `epochs` is used to determine training length."
@@ -323,7 +321,6 @@ class GBMTrainerConfig(BaseTrainerConfig):
     eval_batch_size: Union[None, int, str] = schema_utils.PositiveInteger(
         default=1024,
         description=("Size of batch to pass to the model for evaluation."),
-        allow_none=True,
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 
@@ -338,8 +335,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["learning_rate"],
     )
 
-    boosting_round_log_frequency: int = schema_utils.PositiveInteger(
-        default=10, description="Number of boosting rounds per log of the training progress."
+    boosting_rounds_per_checkpoint: int = schema_utils.PositiveInteger(
+        default=10, description="Number of boosting rounds per checkpoint / evaluation round."
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
@@ -529,7 +526,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
-    verbose: int = schema_utils.IntegerRange(default=0, min=-1, max=2, description="Verbosity level for GBM trainer.")
+    verbose: int = schema_utils.IntegerRange(default=-1, min=-1, max=2, description="Verbosity level for GBM trainer.")
 
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(

@@ -1,28 +1,58 @@
 import os
+import tempfile
+from typing import Any, Dict, List, Set
+from unittest import mock
 
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:
-    from ludwig.automl.automl import train_with_config
+    import dask.dataframe as dd
+
+    from ludwig.automl.automl import create_auto_config, train_with_config
+    from ludwig.hyperopt.execution import RayTuneExecutor
 except ImportError:
     pass
 
 
-@pytest.mark.distributed
-def test_train_with_config(ray_cluster_2cpu, tmpdir):
-    input_features = [
-        number_feature(),
-        number_feature(),
-        category_feature(encoder={"vocab_size": 3}),
-        category_feature(encoder={"vocab_size": 3}),
-    ]
-    output_features = [category_feature(decoder={"vocab_size": 3})]
-    dataset = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+@pytest.fixture(scope="module")
+def test_data():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_features = [
+            number_feature(),
+            number_feature(),
+            category_feature(encoder={"vocab_size": 3}),
+            category_feature(encoder={"vocab_size": 3}),
+        ]
+        output_features = [category_feature(decoder={"vocab_size": 3})]
+        dataset_csv = generate_data(
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100
+        )
+        yield input_features, output_features, dataset_csv
 
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("tune_for_memory", [True, False])
+def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
+    input_features, output_features, dataset_csv = test_data
+    targets = [feature[NAME] for feature in output_features]
+    df = dd.read_csv(dataset_csv)
+    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=tune_for_memory, backend="ray")
+
+    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+        return {feature[NAME] for feature in features}
+
+    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
+    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
+def test_train_with_config(time_budget, test_data, ray_cluster_2cpu, tmpdir):
+    input_features, output_features, dataset_csv = test_data
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -34,13 +64,13 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
             },
             "executor": {
                 "type": "ray",
-                "time_budget_s": 200,
+                "time_budget_s": time_budget,
                 "cpu_resources_per_trial": 1,
                 "scheduler": {
                     "type": "async_hyperband",
-                    "max_t": 200,
+                    "max_t": time_budget,
                     "time_attr": "time_total_s",
-                    "grace_period": 72,
+                    "grace_period": min(72, time_budget),
                     "reduction_factor": 5,
                 },
             },
@@ -58,8 +88,20 @@ def test_train_with_config(ray_cluster_2cpu, tmpdir):
         },
     }
 
-    outdir = os.path.join(tmpdir, "output")
-    results = train_with_config(dataset, config, output_directory=outdir)
-    best_model = results.best_model
-    assert isinstance(best_model, LudwigModel)
-    assert best_model.config[TRAINER]["early_stop"] == -1
+    fn = RayTuneExecutor._evaluate_best_model
+    with mock.patch("ludwig.hyperopt.execution.RayTuneExecutor._evaluate_best_model") as mock_fn:
+        # We need to check that _evaluate_best_model is called when the time_budget is low
+        # as this code path should be triggered when the trial was early stopped
+        mock_fn.side_effect = fn
+
+        outdir = os.path.join(tmpdir, "output")
+        results = train_with_config(dataset_csv, config, output_directory=outdir)
+        best_model = results.best_model
+
+        if time_budget > 1:
+            assert isinstance(best_model, LudwigModel)
+            assert best_model.config[TRAINER]["early_stop"] == -1
+            assert mock_fn.call_count == 0
+        else:
+            assert best_model is None
+            assert mock_fn.call_count > 0

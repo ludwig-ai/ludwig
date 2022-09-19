@@ -1,0 +1,9 @@
+version: 1.0
+name: temperature
+kaggle_dataset_id: selfishgene/historical-hourly-weather-data
+archive_filenames: historical-hourly-weather-data.zip
+sha256:
+  historical-hourly-weather-data.zip: db40ffce67318f366115b82a6f693d6dc82c808f23514e2ddae56c0434f606d7
+dataset_filenames: temperature.csv
+description: |
+  Hourly temperature dataset from Kaggle

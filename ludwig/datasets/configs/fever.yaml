@@ -1,0 +1,17 @@
+version: 1.0
+name: fever
+download_urls:
+  - https://fever.ai/download/fever/train.jsonl
+  - https://fever.ai/download/fever/paper_dev.jsonl
+  - https://fever.ai/download/fever/paper_test.jsonl
+sha256:
+  train.jsonl: eba7e8f87076753f8494718b9a857827af7bf73e76c9e4b75420207d26e588b6
+  paper_test.jsonl: fb7b0280a0adc2302bbb29bfb7af37274fa585de3171bcf908f180642d11d88e
+  paper_dev.jsonl: 41158707810008747946bf23471e82df53e77a513524b9e3ec1c2e674ef5ef8c
+train_filenames: train.jsonl
+test_filenames: paper_test.jsonl
+validation_filenames: paper_dev.jsonl
+column_types:
+  evidence: str
+description: |
+  FEVER: a Large-scale Dataset for Fact Extraction and VERification

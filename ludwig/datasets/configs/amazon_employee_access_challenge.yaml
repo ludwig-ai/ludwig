@@ -1,0 +1,13 @@
+version: 1.0
+name: amazon_employee_access_challenge
+kaggle_competition: amazon-employee-access-challenge
+archive_filenames: amazon-employee-access-challenge.zip
+train_filenames: train.csv
+test_filenames: test.csv
+sha256:
+  amazon-employee-access-challenge.zip: bba1cf24bc01f390e7faf3f9cdbebd6267c875d51a36a2c625ce66e0c3e71db7
+description: |
+  There is a considerable amount of data regarding an employee’s role within an organization and the resources to which
+  they have access. Given the data related to current employees and their provisioned access, models can be built that
+  automatically determine access privileges as employees enter and leave roles within a company.
+  https://www.kaggle.com/c/amazon-employee-access-challenge

@@ -130,6 +130,12 @@ class RayDataset(Dataset):
     def size(self):
         return len(self)
 
+    @property
+    def in_memory_size_bytes(self):
+        """Memory size may be unknown, so return 0 incase size_bytes() returns None
+        https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
+        return self.ds.size_bytes() if self.ds is not None else 0
+
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
 

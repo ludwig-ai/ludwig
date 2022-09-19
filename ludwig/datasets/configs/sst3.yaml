@@ -1,0 +1,18 @@
+version: 1.0
+name: sst3
+download_urls: https://nlp.stanford.edu/~socherr/stanfordSentimentTreebank.zip
+sha256:
+  stanfordSentimentTreebank.zip: 3f5209483b46bbf129cacbbbe6ae02fe780407034f61cf6342b7833257c3f1db
+train_filenames: train.csv
+validation_filenames: dev.csv
+test_filenames: test.csv
+loader: sst.SST3Loader
+description: |
+  The SST3 dataset.
+
+  This dataset is constructed using the Stanford Sentiment Treebank Dataset.
+  The original dataset contains five labels (very negative, negative, neutral,
+  positive, very positive) for each sample.
+
+  In this dataset, the 3 labels negative, neutral, positive have the following cutoffs:
+  [0, 0.4], (0.4, 0.6], (0.6, 1.0]

@@ -1,9 +1,0 @@
-version: 1.0
-download_urls:
-  - "https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/train.csv"
-  - "https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/test.csv"
-split_filenames:
-  train_file: train.csv
-  test_file: test.csv
-download_file_type: csv
-csv_filename: agnews.csv

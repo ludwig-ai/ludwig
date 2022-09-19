@@ -3,12 +3,9 @@ import os
 import shutil
 from unittest import mock
 
-from ludwig.datasets.mnist import Mnist
-
-
-class FakeMnistDataset(Mnist):
-    def __init__(self, cache_dir=None):
-        super().__init__(cache_dir=cache_dir)
+import ludwig.datasets
+from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.loaders.dataset_loader import DatasetState
 
 
 def test_download_mnist_dataset(tmpdir):
@@ -44,13 +41,6 @@ def test_download_mnist_dataset(tmpdir):
         with gzip.open(test_labels_archive_filename + ".gz", "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
 
-    extracted_filenames = [
-        "train-images-idx3-ubyte",
-        "train-labels-idx1-ubyte",
-        "t10k-images-idx3-ubyte",
-        "t10k-labels-idx1-ubyte",
-    ]
-
     download_urls = [
         "file://" + train_image_archive_filename + ".gz",
         "file://" + train_labels_archive_filename + ".gz",
@@ -58,16 +48,17 @@ def test_download_mnist_dataset(tmpdir):
         "file://" + test_labels_archive_filename + ".gz",
     ]
 
-    config = dict(
+    config = DatasetConfig(
         version=1.0,
+        name="mnist",
         download_urls=download_urls,
-        csv_filename=extracted_filenames,
     )
 
-    with mock.patch("ludwig.datasets.base_dataset.read_config", return_value=config):
-        dataset = FakeMnistDataset(tmpdir)
-        assert not dataset.is_downloaded()
-        assert not dataset.is_processed()
+    ludwig.datasets._get_dataset_configs.cache_clear()
+    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+        dataset = ludwig.datasets.get_dataset("mnist", cache_dir=tmpdir)
+        assert not dataset.state == DatasetState.DOWNLOADED
+        assert not dataset.state == DatasetState.TRANSFORMED
         dataset.download()
 
-        assert dataset.is_downloaded()
+        assert dataset.state == DatasetState.DOWNLOADED

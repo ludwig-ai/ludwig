@@ -32,6 +32,7 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.util.dask import ray_dask_get
+from ray.util.placement_group import placement_group, remove_placement_group
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
@@ -72,9 +73,8 @@ if _ray112:
     from ludwig.backend._ray112_compat import HorovodConfig
 else:
     from ray.train.horovod import HorovodConfig
-
-
 RAY_DEFAULT_PARALLELISM = 200
+FIFTEEN_MINS_IN_S = 15 * 60
 
 
 # TODO: deprecated v0.5
@@ -793,13 +793,17 @@ class RayPredictor(BasePredictor):
 
 
 class RayBackend(RemoteTrainingMixin, Backend):
-    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, **kwargs):
+    BACKEND_TYPE = "ray"
+
+    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, preprocessor_kwargs=None, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
+        self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
         self._use_legacy = use_legacy
+        self._preprocessor_pg = None
 
     def initialize(self):
         initialize_ray()
@@ -807,6 +811,44 @@ class RayBackend(RemoteTrainingMixin, Backend):
         dask.config.set(scheduler=ray_dask_get)
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
+
+    @contextlib.contextmanager
+    def provision_preprocessing_workers(self):
+        if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
+            logger.warning(
+                "Backend config has use_preprocessing_placement_group set to False or did not set it at all."
+                " provision_preprocessing_workers() is a no-op in this case."
+            )
+            yield
+        else:
+            num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
+            self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
+            ready = self._preprocessor_pg.wait(FIFTEEN_MINS_IN_S)
+
+            if not ready:
+                remove_placement_group(self._preprocessor_pg)
+                raise TimeoutError(
+                    "Ray timed out in provisioning the placement group for preprocessing."
+                    f" {num_cpu} CPUs were requested but were unable to be provisioned."
+                )
+
+            logger.info("%s CPUs were requested and successfully provisioned", num_cpu)
+            try:
+                with dask.config.set(annotations={"ray_remote_args": {"placement_group": self._preprocessor_pg}}):
+                    yield
+            finally:
+                self._release_preprocessing_workers()
+
+    def _release_preprocessing_workers(self):
+        if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
+            logger.warning(
+                "Backend config has use_preprocessing_placement_group set to False or did not set it at all."
+                " _release_preprocessing_workers() is a no-op in this case."
+            )
+            return
+        if self._preprocessor_pg is not None:
+            remove_placement_group(self._preprocessor_pg)
+        self._preprocessor_pg = None
 
     def initialize_pytorch(self, **kwargs):
         # Make sure we don't claim any GPU resources on the head node
