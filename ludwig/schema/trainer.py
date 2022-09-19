@@ -153,7 +153,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )

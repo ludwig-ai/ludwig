@@ -13,6 +13,11 @@ from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, 
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
+def get_marshmallow_field_class_name(field):
+    """Returns a human-readable string of the marshmallow class name."""
+    return field.metadata["marshmallow_field"].__class__.__name__
+
+
 def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
@@ -763,7 +768,26 @@ def OneOfOptionsField(
     NOTE: In order for the OneOfOptionsField to support a None default value, at most one of the field_options should
     have `allow_none=True`.
     """
-    field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
+    if default is None:
+        # If the default is None, then this field allows none.
+        allow_none = True
+
+    fields_that_allow_none = [option for option in field_options if option.metadata["marshmallow_field"].allow_none]
+    if len(fields_that_allow_none) > 1 and allow_none:
+        raise ValueError(
+            f"The governing OneOf has allow_none=True, but there are some field options that themselves "
+            "allow_none=True, which is ambiguous for JSON validation. To maintain allow_none=True for the overall "
+            "field, add allow_none=False to each of the field_options: "
+            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}, and rely on the "
+            "governing OneOf's allow_none=True to set the allow_none policy."
+        )
+
+    if fields_that_allow_none and not allow_none:
+        raise ValueError(
+            "The governing OneOf has allow_none=False, while None is permitted by the following field_options: "
+            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}. This is contradictory. "
+            "Please set allow_none=False for each field option to make this consistent."
+        )
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
@@ -819,12 +843,12 @@ def OneOfOptionsField(
                     tmp_json_schema["title"] = f"{self.name}_{mfield_meta_class_name}_option"
                     oneOf["oneOf"].append(tmp_json_schema)
 
-            # Add null as an option if none of the field options allow none:
-            oneOf["oneOf"] += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none and not field_options_allow_none
-                else []
+            # Add null as an option if we want to allow none but none of the field options allow none.
+            any_field_options_allow_none = any(
+                option.metadata["marshmallow_field"].allow_none for option in field_options
             )
+            if allow_none and not any_field_options_allow_none:
+                oneOf["oneOf"] += [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
 
             return oneOf
 
