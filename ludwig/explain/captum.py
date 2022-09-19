@@ -99,6 +99,24 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
 def explain_ig(
     model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.DataFrame, target: str
 ) -> Tuple[np.array, List[float], np.array]:
+    """Explain the model's predictions using Integrated Gradients.
+
+    Args:
+        model: The LudwigModel to explain.
+        inputs_df: The input data to explain.
+        sample_df: A sample of the data to use as a baseline for the explanation.
+        target: The name of the target to explain.
+
+    Returns:
+        A tuple of (attribution, expected value, prediction):
+          attribution: (np.array) of shape [batch size, output feature cardinality, num input features]
+            Integrated gradients for each possible output feature label with respect to each input feature for each row
+            in inputs_df.
+          expected value: (List[float]) of length [output feature cardinality]
+            Average convergence delta for each possible output feature label.
+          prediction: (np.array) of shape [batch size]
+            Model prediction for each row in inputs_df.
+    """
     model.model.to(DEVICE)
 
     inputs_df, sample_df, _, target_feature_name = prepare_data(model, inputs_df, sample_df, target)
