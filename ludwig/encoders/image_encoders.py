@@ -19,7 +19,35 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from transformers import AutoFeatureExtractor, BatchFeature, ResNetConfig, ResNetForImageClassification, ResNetModel
+from torchvision.models import (
+    resnet18,
+    ResNet18_Weights,
+    resnet34,
+    ResNet34_Weights,
+    resnet50,
+    ResNet50_Weights,
+    resnet101,
+    ResNet101_Weights,
+    resnet152,
+    ResNet152_Weights,
+    vgg11,
+    VGG11_Weights,
+    vgg11_bn,
+    VGG11_BN_Weights,
+    vgg13,
+    VGG13_Weights,
+    vgg13_bn,
+    VGG13_BN_Weights,
+    vgg16,
+    VGG16_Weights,
+    vgg16_bn,
+    VGG16_BN_Weights,
+    vgg19,
+    VGG19_Weights,
+    vgg19_bn,
+    VGG19_BN_Weights,
+
+)
 
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
@@ -35,7 +63,12 @@ from ludwig.schema.encoders.image_encoders import (
     TVVGGEncoderConfig,
     ViTEncoderConfig,
 )
-from ludwig.utils.image_utils import torchvision_model_registry
+from ludwig.utils.image_utils import (
+    torchvision_model_registry,
+    register_torchvision_variant,
+    TVModelVariant,
+    TVVariantSpec
+)
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
@@ -428,7 +461,6 @@ class ViTEncoder(Encoder):
 class TVBaseEncoder(Encoder):
     def __init__(
         self,
-        torchvision_model_type: Optional[str] = None,
         model_variant: Union[str, int] = None,
         use_pretrained_weights: bool = True,
         saved_weights_in_checkpoint: bool = False,
@@ -440,7 +472,6 @@ class TVBaseEncoder(Encoder):
 
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
-        self.torchvision_model_type = torchvision_model_type
         self.model_variant = model_variant
         self.use_pretrained_weights = use_pretrained_weights
         self.model_cache_dir = model_cache_dir
@@ -451,19 +482,19 @@ class TVBaseEncoder(Encoder):
             os.environ["TORCH_HOME"] = self.model_cache_dir
 
         model_id = f"{self.torchvision_model_type}-{self.model_variant}"
-        # TODO: Do we really need self.model_type if not using train() to initialize Ludwig model
-        # save pretrained model type
-        self.model_type = torchvision_model_registry[model_id][0]
+
+        # retrieve function to create requested model
+        self.create_model = torchvision_model_registry[model_id].create_model_function
 
         # get weight specification
         if use_pretrained_weights and not saved_weights_in_checkpoint:
-            weights_specification = torchvision_model_registry[model_id][1].DEFAULT
+            weights_specification = torchvision_model_registry[model_id].weights_class.DEFAULT
         else:
             weights_specification = None
 
         logger.debug(f"  {model_id}")
         # create pretrained model with pretrained weights or None for untrained model
-        self.model = self.model_type(weights=weights_specification)
+        self.model = self.create_model(weights=weights_specification)
 
         # remove final classification layer
         self._remove_last_layer()
@@ -493,16 +524,27 @@ class TVBaseEncoder(Encoder):
         return torch.Size([3, 224, 224])
 
 
-# TODO: Finalize constructor parameters and finalize name fo encoder
-#       should it be model specific or generic name like tv_pretrained_encoder
+TV_RESNET_VARIANTS = [
+    TVModelVariant(18, TVVariantSpec(resnet18, ResNet18_Weights)),
+    TVModelVariant(34, TVVariantSpec(resnet34, ResNet34_Weights)),
+    TVModelVariant(50, TVVariantSpec(resnet50, ResNet50_Weights)),
+    TVModelVariant(101, TVVariantSpec(resnet101, ResNet101_Weights)),
+    TVModelVariant(152, TVVariantSpec(resnet152, ResNet152_Weights)),
+]
+
+
+@register_torchvision_variant(TV_RESNET_VARIANTS)
 @register_encoder("tv_resnet", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "tv_resnet"
+
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         logger.debug(f" {self.name}")
-        super().__init__(torchvision_model_type="tv_resnet", **kwargs)
+        super().__init__(**kwargs)
 
     def _remove_last_layer(self):
         self.model.fc = torch.nn.Identity()
@@ -518,14 +560,30 @@ class TVResNetEncoder(TVBaseEncoder):
         return torch.Size([3, 224, 224])
 
 
+VGG_VARIANTS = [
+    TVModelVariant(11, TVVariantSpec(vgg11, VGG11_Weights)),
+    TVModelVariant("11_bn", TVVariantSpec(vgg11_bn, VGG11_BN_Weights)),
+    TVModelVariant(13, TVVariantSpec(vgg13, VGG13_Weights)),
+    TVModelVariant("13_bn", TVVariantSpec(vgg13_bn, VGG13_BN_Weights)),
+    TVModelVariant(16, TVVariantSpec(vgg16, VGG16_Weights)),
+    TVModelVariant("16_bn", TVVariantSpec(vgg16_bn, VGG16_BN_Weights)),
+    TVModelVariant(19, TVVariantSpec(vgg19, VGG19_Weights)),
+    TVModelVariant("19_bn", TVVariantSpec(vgg19_bn, VGG19_BN_Weights)),
+]
+
+
+@register_torchvision_variant(VGG_VARIANTS)
 @register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
+    # specify base torchvison model
+    torchvision_model_type: str = "vgg"
+
     def __init__(
-        self,
-        **kwargs,
+            self,
+            **kwargs,
     ):
         logger.debug(f" {self.name}")
-        super().__init__(torchvision_model_type="vgg", **kwargs)
+        super().__init__(**kwargs)
 
     def _remove_last_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
@@ -539,78 +597,3 @@ class TVVGGEncoder(TVBaseEncoder):
         # resnet shape after all pre-processing
         # [num_channels, height, width]
         return torch.Size([3, 224, 224])
-
-
-# # TODO: Remove
-# @register_encoder("hf_resnet", IMAGE)
-# class HFResNetEncoder(Encoder):
-#     def __init__(
-#         self,
-#         height: int,
-#         width: int,
-#         resnet_size: int = 50,
-#         num_channels: int = 3,
-#         out_channels: int = 16,
-#         use_pre_trained_weights: bool = True,
-#         pre_trained_cache_dir: Optional[str] = None,
-#         encoder_config: Optional[Dict] = None,
-#         **kwargs,
-#     ):
-#         super().__init__()
-#         self.config = encoder_config
-#
-#         logger.debug(f" {self.name}")
-#         # map parameter input feature config names to internal names
-#         img_height = height
-#         img_width = width
-#         first_in_channels = num_channels
-#         self.use_pre_trained_weights = use_pre_trained_weights
-#         self.pre_trained_cache_dir = pre_trained_cache_dir
-#
-#         self._input_shape = (first_in_channels, img_height, img_width)
-#
-#         self.resnet_size = f"microsoft/resnet-{resnet_size}"
-#
-#         logger.debug("  ResNet")
-#         if self.use_pre_trained_weights:
-#             self.feature_extractor = AutoFeatureExtractor.from_pretrained(
-#                 self.resnet_size, cache_dir=self.pre_trained_cache_dir
-#             )
-#             self.resnet = ResNetForImageClassification.from_pretrained(
-#                 self.resnet_size, cache_dir=self.pre_trained_cache_dir
-#             )
-#         else:
-#             self.batch_feature = BatchFeature
-#             # TODO: need to parameterize ResNetConfig call from constructor parameters
-#             self.resnet = ResNetModel(ResNetConfig())
-#
-#     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-#         hidden = [inputs[i] for i in range(inputs.shape[0])]
-#         if self.use_pre_trained_weights:
-#             hidden = [inputs[i] for i in range(inputs.shape[0])]
-#             hidden = self.feature_extractor(hidden, return_tensors="pt")
-#             encoder_output = self.resnet(**hidden).logits
-#         else:
-#             # return as BatchFeature
-#             hidden = [inputs[i].numpy() for i in range(inputs.shape[0])]
-#             data = {"pixel_values": hidden}
-#             hidden = BatchFeature(data=data, tensor_type="pt")
-#             encoder_output = self.resnet(**hidden).pooler_output
-#             encoder_output = torch.flatten(encoder_output, start_dim=1)
-#         return {"encoder_output": encoder_output}
-#
-#     @staticmethod
-#     def get_schema_cls():
-#         return HFResNetEncoderConfig
-#
-#     @property
-#     def output_shape(self) -> torch.Size:
-#         # TODO: Review this with team
-#         if self.use_pre_trained_weights:
-#             return torch.Size([self.resnet.classifier[1].out_features])
-#         else:
-#             return torch.Size([self.resnet.encoder.stages[-1].layers[-1].layer[-1].convolution.out_channels])
-#
-#     @property
-#     def input_shape(self) -> torch.Size:
-#         return torch.Size(self._input_shape)

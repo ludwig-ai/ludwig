@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 import warnings
+from collections import namedtuple
 from collections.abc import Iterable
 from io import BytesIO
 from typing import List, Optional, Tuple, Union
@@ -23,38 +24,14 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
-from torchvision.models import (
-    resnet18,
-    ResNet18_Weights,
-    resnet34,
-    ResNet34_Weights,
-    resnet50,
-    ResNet50_Weights,
-    resnet101,
-    ResNet101_Weights,
-    resnet152,
-    ResNet152_Weights,
-    vgg11,
-    vgg11_bn,
-    VGG11_BN_Weights,
-    VGG11_Weights,
-    vgg13,
-    vgg13_bn,
-    VGG13_BN_Weights,
-    VGG13_Weights,
-    vgg16,
-    vgg16_bn,
-    VGG16_BN_Weights,
-    VGG16_Weights,
-    vgg19,
-    vgg19_bn,
-    VGG19_BN_Weights,
-    VGG19_Weights,
-)
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.registry import Registry
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
+
+TVModelVariant = namedtuple("TVModelVariant", "variant_id variant_spec")
+TVVariantSpec = namedtuple("TVVariantSpec", "create_model_function weights_class")
 
 logger = logging.getLogger(__name__)
 
@@ -332,18 +309,16 @@ def get_img_output_shape(
     return tuple(out_shape.astype(int))
 
 
-torchvision_model_registry = {
-    "tv_resnet-18": (resnet18, ResNet18_Weights),
-    "tv_resnet-34": (resnet34, ResNet34_Weights),
-    "tv_resnet-50": (resnet50, ResNet50_Weights),
-    "tv_resnet-101": (resnet101, ResNet101_Weights),
-    "tv_resnet-152": (resnet152, ResNet152_Weights),
-    "vgg-11": (vgg11, VGG11_Weights),
-    "vgg-11_bn": (vgg11_bn, VGG11_BN_Weights),
-    "vgg-13": (vgg13, VGG13_Weights),
-    "vgg-13_bn": (vgg13_bn, VGG13_BN_Weights),
-    "vgg-16": (vgg16, VGG16_Weights),
-    "vgg-16_bn": (vgg16_bn, VGG16_BN_Weights),
-    "vgg-19": (vgg19, VGG19_Weights),
-    "vgg-19_bn": (vgg19_bn, VGG19_BN_Weights),
-}
+torchvision_model_registry = Registry()
+
+
+def register_torchvision_variant(variant: Optional[Union[list, tuple]] = None):
+    if isinstance(variant, tuple):
+        variant = [variant]
+
+    def wrap(cls):
+        for v in variant:
+            torchvision_model_registry[cls.torchvision_model_type + "-" + f"{v.variant_id}"] = v.variant_spec
+        return cls
+
+    return wrap
