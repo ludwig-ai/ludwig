@@ -22,28 +22,28 @@ import torch
 from torchvision.models import (
     alexnet,
     AlexNet_Weights,
-    EfficientNet_B0_Weights,
-    EfficientNet_B1_Weights,
-    EfficientNet_B2_Weights,
-    EfficientNet_B3_Weights,
-    EfficientNet_B4_Weights,
-    EfficientNet_B5_Weights,
-    EfficientNet_B6_Weights,
-    EfficientNet_B7_Weights,
-    EfficientNet_V2_S_Weights,
-    EfficientNet_V2_M_Weights,
-    EfficientNet_V2_L_Weights,
     efficientnet_b0,
+    EfficientNet_B0_Weights,
     efficientnet_b1,
+    EfficientNet_B1_Weights,
     efficientnet_b2,
+    EfficientNet_B2_Weights,
     efficientnet_b3,
+    EfficientNet_B3_Weights,
     efficientnet_b4,
+    EfficientNet_B4_Weights,
     efficientnet_b5,
+    EfficientNet_B5_Weights,
     efficientnet_b6,
+    EfficientNet_B6_Weights,
     efficientnet_b7,
-    efficientnet_v2_s,
-    efficientnet_v2_m,
+    EfficientNet_B7_Weights,
     efficientnet_v2_l,
+    EfficientNet_V2_L_Weights,
+    efficientnet_v2_m,
+    EfficientNet_V2_M_Weights,
+    efficientnet_v2_s,
+    EfficientNet_V2_S_Weights,
     resnet18,
     ResNet18_Weights,
     resnet34,
@@ -636,8 +636,8 @@ class TVAlexNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "alexnet"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -678,8 +678,8 @@ class TVEfficientNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "efficientnet"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
