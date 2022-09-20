@@ -5,6 +5,8 @@ from ludwig.encoders.image_encoders import (
     MLPMixerEncoder,
     ResNetEncoder,
     Stacked2DCNN,
+    ALEXNET_VARIANTS,
+    TVAlexNetEncoder,
     TV_RESNET_VARIANTS,
     TVResNetEncoder,
     VGG_VARIANTS,
@@ -169,27 +171,36 @@ def test_tv_vgg_encoder(
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-# TODO: remove code
-# @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])  # todo: do we need to specify
-# @pytest.mark.parametrize("use_pre_trained_weights", [False, True])  # TODO: do we need to check download, True])
-# @pytest.mark.parametrize("resnet_size", [18, 34, 50, 101, 152])
-# def test_hf_resnet_encoder(resnet_size: int, use_pre_trained_weights: bool, height: int, width: int, num_channels: int):
-#     # make repeatable
-#     set_random_seed(RANDOM_SEED)
-#
-#     resnet = HFResNetEncoder(
-#         height=height,
-#         width=width,
-#         num_channels=num_channels,
-#         resnet_size=resnet_size,
-#         use_pre_trained_weights=use_pre_trained_weights,
-#     )
-#     inputs = torch.rand(2, num_channels, height, width)
-#     outputs = resnet(inputs)
-#     assert outputs["encoder_output"].shape[1:] == resnet.output_shape
-#
-#     # check for parameter updating
-#     target = torch.randn(outputs["encoder_output"].shape)
-#     fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
-#
-#     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+@pytest.mark.parametrize("trainable", [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+@pytest.mark.parametrize(
+    "use_pretrained_weights",
+    [
+        False,
+    ],
+)  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in ALEXNET_VARIANTS])
+def test_tv_alexnet_encoder(
+        model_variant: int,
+        use_pretrained_weights: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
+):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    pretrained_model = TVAlexNetEncoder(
+        model_variant=model_variant,
+        use_pretrained_weights=use_pretrained_weights,
+        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+        trainable=trainable,
+    )
+    inputs = torch.rand(2, *pretrained_model.input_shape)
+    outputs = pretrained_model(inputs)
+    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+    # check for parameter updating
+    target = torch.randn(outputs["encoder_output"].shape)
+    fpc, tpc, upc, not_updated = check_module_parameters_updated(pretrained_model, (inputs,), target)
+
+    assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."

@@ -651,3 +651,33 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
         default=True,
         description="Is the encoder trainable.",
     )
+
+
+@register_encoder_config("alexnet", IMAGE)
+@dataclass
+class TVAlexNetEncoderConfig(BaseEncoderConfig):
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["alexnet"],
+        default="alexnet",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+    )
+
+    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="Download model weights from pre-trained model.",
+    )
+
+    model_cache_dir: str = schema_utils.String(
+        description="Directory path to cache pretrained model weights.",
+    )
+
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to save the weights in the checkpoint.",
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=True,
+        description="Is the encoder trainable.",
+    )

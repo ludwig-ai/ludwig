@@ -20,6 +20,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from torchvision.models import (
+    alexnet,
+    AlexNet_Weights,
     resnet18,
     ResNet18_Weights,
     resnet34,
@@ -58,6 +60,7 @@ from ludwig.schema.encoders.image_encoders import (
     MLPMixerEncoderConfig,
     ResNetEncoderConfig,
     Stacked2DCNNEncoderConfig,
+    TVAlexNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
     ViTEncoderConfig,
@@ -590,6 +593,38 @@ class TVVGGEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVVGGEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        # resnet shape after all pre-processing
+        # [num_channels, height, width]
+        return torch.Size([3, 224, 224])
+
+
+ALEXNET_VARIANTS = [
+    TVModelVariant("alexnet", TVVariantSpec(alexnet, AlexNet_Weights)),
+]
+
+
+@register_torchvision_variant(ALEXNET_VARIANTS)
+@register_encoder("alexnet", IMAGE)
+class TVAlexNetEncoder(TVBaseEncoder):
+    # specify base torchvison model
+    torchvision_model_type: str = "alexnet"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVAlexNetEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:
