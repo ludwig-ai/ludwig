@@ -39,4 +39,4 @@ def test_set_encoder(
     # check for parameter updating
     target = torch.randn(outputs.shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(set_encoder, (inputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"

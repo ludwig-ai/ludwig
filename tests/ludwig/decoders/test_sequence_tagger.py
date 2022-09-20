@@ -31,4 +31,4 @@ def test_sequence_tagger(use_attention, use_bias):
     # check for parameter updating
     target = torch.randn(outputs[LOGITS].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(tagger_decoder, (decoder_inputs,), target)
-    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert upc == tpc, f"Failed to update parameters. Parameters not updated: {not_updated}"
