@@ -26,8 +26,10 @@ import sys
 import tempfile
 import traceback
 from collections import OrderedDict
+from dataclasses import dataclass
+from enum import Enum
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -102,6 +104,54 @@ from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
+
+
+class EvaluationFrequency(str, Enum):
+    """Is model evaluation performed every n epochs, or every n steps?"""
+
+    EPOCH = "epoch"
+    STEP = "step"
+
+
+@dataclass
+class TrainingStats:
+    frequency: int = 1
+    EvaluationFrequency = EvaluationFrequency.EPOCH
+
+
+@dataclass
+class PreprocessedDataset:
+    training_set: Dataset
+    validation_set: Dataset
+    test_set: Dataset
+    training_set_metadata: Dict[str, Any]
+
+    def __iter__(self):
+        return iter((self.training_set, self.validation_set, self.test_set, self.training_set_metadata))
+
+    def __getitem__(self, index):
+        return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
+
+
+@dataclass
+class TrainingResult:
+    train_stats: TrainingStats
+    preprocessed_data: PreprocessedDataset
+    output_directory: str
+
+    def __iter__(self):
+        """Supports tuple-style return value unpacking ex.
+
+        train_stats, training_set, output_dir = model.train(...)
+        """
+        return iter((self.train_stats, self.training_set, self.output_directory))
+
+    def __getitem__(self, index):
+        """Provides indexed getter ex.
+
+        train_stats = model.train(...)[0]
+        """
+        return (self.train_stats, self.training_set, self.output_directory)[index]
 
 
 class LudwigModel:
@@ -1239,7 +1289,7 @@ class LudwigModel:
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[Dataset, Dataset, Dataset, dict]:
+    ) -> PreprocessedDataset:
         """This function is used to preprocess data.
 
         # Inputs
@@ -1282,7 +1332,7 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict]) tuple containing
+        :return: (PreprocessedDataset) data structure containing
             `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
@@ -1309,7 +1359,7 @@ class LudwigModel:
 
         (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 
-        return proc_training_set, proc_validation_set, proc_test_set, training_set_metadata
+        return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
 
     @staticmethod
     def load(
