@@ -315,7 +315,6 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_clu
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    # Uses local backend by default
     config = {
         BACKEND: {TYPE: RAY},
         INPUT_FEATURES: input_features,

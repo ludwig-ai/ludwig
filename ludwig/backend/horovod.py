@@ -16,14 +16,13 @@
 
 import time
 
-import ray
-
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
+from ludwig.utils.backend_utils import get_num_cpus, get_num_gpus
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -77,14 +76,10 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     @property
     def num_cpus(self) -> int:
-        # Since we use Horovod on Ray, return the number of CPUs on the Ray cluster.
-        if not ray.is_initialized():
-            return 1
-        return ray.cluster_resources().get("CPU", 1)
+        cpu_count = get_num_cpus()
+        return self._horovod.allreduce(cpu_count)
 
     @property
     def num_gpus(self) -> int:
-        # Since we use Horovod on Ray, return the number of GPUs on the Ray cluster.
-        if not ray.is_initialized():
-            return 0
-        return ray.cluster_resources().get("GPU", 0)
+        gpu_count = get_num_gpus()
+        return self._horovod.allreduce(gpu_count)

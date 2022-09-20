@@ -630,7 +630,6 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_clu
         },
     }
 
-    # If trial finishes
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
 

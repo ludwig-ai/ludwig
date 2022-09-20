@@ -37,14 +37,10 @@ from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
 
 try:
-    from ludwig.backend.horovod import HorovodBackend
     from ludwig.backend.ray import RayBackend
 except ImportError:
 
     class RayBackend:
-        pass
-
-    class HorovodBackend:
         pass
 
 

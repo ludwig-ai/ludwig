@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -22,7 +21,6 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
-import psutil
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
@@ -30,6 +28,7 @@ from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.utils.backend_utils import get_num_cpus, get_num_gpus
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import initialize_pytorch
@@ -202,17 +201,8 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
 
     @property
     def num_cpus(self) -> int:
-        # Count of logical CPUs, i.e., cores with hyper-threading
-        cpu_count = psutil.cpu_count()
-        return cpu_count if cpu_count is not None else 1
+        return get_num_cpus()
 
     @property
     def num_gpus(self) -> int:
-        try:
-            import GPUtil
-
-            if GPUtil.getGPUs():
-                return len(GPUtil.getGPUs())
-        except Exception as e:
-            logging.warning(f"GPUtil is not installed. Assuming no GPUs are available. {e}")
-        return 0
+        return get_num_gpus()
