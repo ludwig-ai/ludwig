@@ -36,7 +36,9 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
         process_module = importlib.util.module_from_spec(process_config_spec)
         process_config_spec.loader.exec_module(process_module)
         model_config = process_module.process_config(model_config, experiment)
-        experiment["config_path"] = experiment["config_path"].replace(".yaml", "-modified.yaml")
+        experiment["config_path"] = experiment["config_path"].replace(
+            ".yaml", "-" + experiment["experiment_name"] + "-modified.yaml"
+        )
         save_yaml(experiment["config_path"], model_config)
 
     return model_config
