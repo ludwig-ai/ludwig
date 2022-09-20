@@ -5,7 +5,9 @@ from ludwig.encoders.image_encoders import (
     MLPMixerEncoder,
     ResNetEncoder,
     Stacked2DCNN,
+    TV_RESNET_VARIANTS,
     TVResNetEncoder,
+    VGG_VARIANTS,
     TVVGGEncoder,
     ViTEncoder,
 )
@@ -105,16 +107,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
         False,
     ],
 )  # TODO: do we need to check download, True])
-@pytest.mark.parametrize(
-    "model_variant",
-    [
-        18,
-        34,
-        50,
-        101,
-        152,
-    ],
-)
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in TV_RESNET_VARIANTS])
 def test_tv_resnet_encoder(
     model_variant: int,
     use_pretrained_weights: bool,
@@ -149,19 +142,7 @@ def test_tv_resnet_encoder(
         False,
     ],
 )  # TODO: do we need to check download, True])
-@pytest.mark.parametrize(
-    "model_variant",
-    [
-        11,
-        13,
-        16,
-        19,
-        "11_bn",
-        "13_bn",
-        "16_bn",
-        "19_bn",
-    ],
-)
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in VGG_VARIANTS])
 def test_tv_vgg_encoder(
     model_variant: int,
     use_pretrained_weights: bool,
