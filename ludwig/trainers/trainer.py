@@ -840,7 +840,7 @@ class Trainer(BaseTrainer):
 
                     if self.is_coordinator():
                         # ========== Save training progress ==========
-                        logging.debug(
+                        logger.debug(
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                         )

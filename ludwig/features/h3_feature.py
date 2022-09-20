@@ -80,7 +80,7 @@ class H3FeatureMixin(BaseFeatureMixin):
         try:
             return column.astype(int)
         except ValueError:
-            logging.warning("H3Feature could not be read as int directly. Reading as float and converting to int.")
+            logger.warning("H3Feature could not be read as int directly. Reading as float and converting to int.")
             return column.astype(float).astype(int)
 
     @staticmethod

@@ -29,6 +29,7 @@ from ludwig.utils.types import DataFrame
 
 split_registry = Registry()
 default_random_seed = 42
+logger = logging.getLogger(__name__)
 
 
 TMP_SPLIT_COL = "__SPLIT__"
@@ -171,7 +172,7 @@ class StratifySplitter(Splitter):
         features = config["input_features"] + config["output_features"]
         feature_names = {f[COLUMN] for f in features}
         if self.column not in feature_names:
-            logging.info(
+            logger.info(
                 f"Stratify column {self.column} is not among the features. "
                 f"Cannot establish if it is a binary or category"
             )
@@ -233,7 +234,7 @@ class DatetimeSplitter(Splitter):
         features = config["input_features"] + config["output_features"]
         feature_names = {f[COLUMN] for f in features}
         if self.column not in feature_names:
-            logging.info(
+            logger.info(
                 f"Datetime split column {self.column} is not among the features. "
                 f"Cannot establish if it is a valid datetime."
             )
