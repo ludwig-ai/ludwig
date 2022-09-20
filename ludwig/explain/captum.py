@@ -9,7 +9,8 @@ from torch.autograd import Variable
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, CATEGORY, TYPE
 from ludwig.data.preprocessing import preprocess_for_prediction
-from ludwig.explain.util import get_feature_name, get_pred_col, prepare_data
+from ludwig.explain.base import Explainer
+from ludwig.explain.util import get_pred_col
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -96,94 +97,76 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
     return data_to_predict
 
 
-def explain_ig(
-    model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.DataFrame, target: str
-) -> Tuple[np.array, List[float], np.array]:
-    """Explain the model's predictions using Integrated Gradients.
+class IntegratedGradientsExplainer(Explainer):
+    def explain(self, **kwargs) -> Tuple[np.array, List[float]]:
+        """Explain the model's predictions using Integrated Gradients.
 
-    Args:
-        model: The LudwigModel to explain.
-        inputs_df: The input data to explain.
-        sample_df: A sample of the data to use as a baseline for the explanation.
-        target: The name of the target to explain.
+        Returns:
+            A tuple of (attribution, expected value):
+            attribution: (np.array) of shape [batch size, output feature cardinality, num input features]
+                Integrated gradients for each possible output feature label with respect to each input feature for each
+                row in inputs_df.
+            expected value: (List[float]) of length [output feature cardinality]
+                Average convergence delta for each possible output feature label.
+        """
+        # Convert input data into embedding tensors from the output of the model encoders.
+        inputs_encoded = get_input_tensors(self.model, self.inputs_df)
+        sample_encoded = get_input_tensors(self.model, self.sample_df)
 
-    Returns:
-        A tuple of (attribution, expected value, prediction):
-          attribution: (np.array) of shape [batch size, output feature cardinality, num input features]
-            Integrated gradients for each possible output feature label with respect to each input feature for each row
-            in inputs_df.
-          expected value: (List[float]) of length [output feature cardinality]
-            Average convergence delta for each possible output feature label.
-          prediction: (np.array) of shape [batch size]
-            Model prediction for each row in inputs_df.
-    """
-    model.model.to(DEVICE)
+        # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
+        # TODO(travis): pre-compute this during training from the full training dataset.
+        baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in sample_encoded]
 
-    inputs_df, sample_df, _, target_feature_name = prepare_data(model, inputs_df, sample_df, target)
+        # Configure the explainer, which includes wrapping the model so its interface conforms to
+        # the format expected by Captum.
+        explanation_model = WrapperModule(self.model.model, self.target_feature_name)
+        explainer = IntegratedGradients(explanation_model)
 
-    # Convert input data into embedding tensors from the output of the model encoders.
-    inputs_encoded = get_input_tensors(model, inputs_df)
-    sample_encoded = get_input_tensors(model, sample_df)
+        # Lookup from column name to output feature
+        output_feature_map = {feature["column"]: feature for feature in self.model.config["output_features"]}
 
-    # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
-    # TODO(travis): pre-compute this during training from the full training dataset.
-    baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in sample_encoded]
+        # The second dimension of the attribution tensor corresponds to the cardinality
+        # of the output feature. For regression (number) this is 1, for binary 2, and
+        # for category it is the vocab size.
+        vocab_size = 1
+        is_category_target = output_feature_map[self.target_feature_name][TYPE] == CATEGORY
+        if is_category_target:
+            vocab_size = self.model.training_set_metadata[self.target_feature_name]["vocab_size"]
 
-    # Configure the explainer, which includes wrapping the model so its interface conforms to
-    # the format expected by Captum.
-    target_feature_name = get_feature_name(model, target)
-    explanation_model = WrapperModule(model.model, target_feature_name)
-    explainer = IntegratedGradients(explanation_model)
+        # Compute attribution for each possible output feature label separately.
+        attribution_by_label = []
+        expected_values = []
+        for target_idx in range(vocab_size):
+            attribution, delta = explainer.attribute(
+                tuple(inputs_encoded),
+                baselines=tuple(baseline),
+                target=target_idx if is_category_target else None,
+                internal_batch_size=self.model.config["trainer"]["batch_size"],
+                return_convergence_delta=True,
+            )
 
-    # Lookup from column name to output feature
-    output_feature_map = {feature["column"]: feature for feature in model.config["output_features"]}
+            # Attribution over the feature embeddings returns a vector with the same
+            # dimensions, so take the sum over this vector in order to return a single
+            # floating point attribution value per input feature.
+            attribution = np.array([t.detach().numpy().sum(1) for t in attribution])
+            attribution_by_label.append(attribution)
 
-    # The second dimension of the attribution tensor corresponds to the cardinality
-    # of the output feature. For regression (number) this is 1, for binary 2, and
-    # for category it is the vocab size.
-    vocab_size = 1
-    is_category_target = output_feature_map[target_feature_name][TYPE] == CATEGORY
-    if is_category_target:
-        vocab_size = model.training_set_metadata[target_feature_name]["vocab_size"]
+            # The convergence delta is given per row, so take the mean to compute the
+            # average delta for the feature.
+            # TODO(travis): this isn't really the expected value as it is for shap, so
+            #  find a better name.
+            expected_value = delta.detach().numpy().mean()
+            expected_values.append(expected_value)
 
-    # Compute attribution for each possible output feature label separately.
-    attribution_by_label = []
-    expected_values = []
-    for target_idx in range(vocab_size):
-        attribution, delta = explainer.attribute(
-            tuple(inputs_encoded),
-            baselines=tuple(baseline),
-            target=target_idx if is_category_target else None,
-            internal_batch_size=model.config["trainer"]["batch_size"],
-            return_convergence_delta=True,
-        )
+        # For binary outputs, add an extra attribution for the negative class (false).
+        is_binary_target = output_feature_map[self.target_feature_name][TYPE] == BINARY
+        if is_binary_target:
+            attribution_by_label.append(attribution_by_label[0] * -1)
+            expected_values.append(expected_values[0] * -1)
 
-        # Attribution over the feature embeddings returns a vector with the same
-        # dimensions, so take the sum over this vector in order to return a single
-        # floating point attribution value per input feature.
-        attribution = np.array([t.detach().numpy().sum(1) for t in attribution])
-        attribution_by_label.append(attribution)
+        # Stack the attributions into a single tensor of shape:
+        # [batch_size, output_feature_cardinality, num_input_features]
+        attribution = np.stack(attribution_by_label, axis=1)
+        attribution = np.transpose(attribution, (2, 1, 0))
 
-        # The convergence delta is given per row, so take the mean to compute the
-        # average delta for the feature.
-        # TODO(travis): this isn't really the expected value as it is for shap, so
-        #  find a better name.
-        expected_value = delta.detach().numpy().mean()
-        expected_values.append(expected_value)
-
-    # For binary outputs, add an extra attribution for the negative class (false).
-    is_binary_target = output_feature_map[target_feature_name][TYPE] == BINARY
-    if is_binary_target:
-        attribution_by_label.append(attribution_by_label[0] * -1)
-        expected_values.append(expected_values[0] * -1)
-
-    # Stack the attributions into a single tensor of shape:
-    # [batch_size, output_feature_cardinality, num_input_features]
-    attribution = np.stack(attribution_by_label, axis=1)
-    attribution = np.transpose(attribution, (2, 1, 0))
-
-    # Add in predictions as part of the result.
-    pred_df = model.predict(inputs_df, return_type=dict)[0]
-    preds = np.array(pred_df[target_feature_name]["predictions"])
-
-    return attribution, expected_values, preds
+        return attribution, expected_values
