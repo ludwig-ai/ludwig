@@ -232,7 +232,7 @@ def test_concat_combiner(
         # check for parameter updating if fully connected layer is present
         target = torch.randn(combiner_output["combiner_output"].shape)
         fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
-        assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+        assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 # test for sequence concatenation combiner
@@ -323,7 +323,7 @@ def test_sequence_combiner(
     # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize(
@@ -381,7 +381,7 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
     # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": 64}, {"output_size": 32}]])
@@ -418,7 +418,7 @@ def test_comparator_combiner(
     # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_comparator_outputs_dict,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize("output_size", [8, 16])
@@ -457,7 +457,7 @@ def test_transformer_combiner(encoder_outputs: tuple, transformer_output_size: i
     # check for parameter updating
     target = torch.randn(combiner_output["combiner_output"].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(combiner, (encoder_outputs_dict,), target)
-    assert tpc == upc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert tpc == upc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 # Magic values for the TabTransformerCombiner test
@@ -538,7 +538,7 @@ def test_tabtransformer_combiner_binary_and_number_without_category(
 
     assert upc == (
         tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
-    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    ), f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize(
@@ -614,7 +614,7 @@ def test_tabtransformer_combiner_number_and_binary_with_category(
 
     assert upc == (
         tpc - adjustment_for_single_category * (num_layers * PARAMETERS_IN_SELF_ATTENTION)
-    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    ), f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize(
@@ -689,7 +689,7 @@ def test_tabtransformer_combiner_number_or_binary_without_category(
 
     assert upc == (
         tpc - num_layers * PARAMETERS_IN_TRANSFORMER_BLOCK - (1 if embed_input_feature_name is not None else 0)
-    ), f"Failed to update parameters.  Parameters not update: {not_updated}"
+    ), f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize(
@@ -766,4 +766,4 @@ def test_tabtransformer_combiner_number_or_binary_with_category(
     # This test does not explicity test for a single categorical input feature
     # in this situation of a one categorical input feature, the query and key parameters are not updated
 
-    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert upc == tpc, f"Failed to update parameters. Parameters not updated: {not_updated}"
