@@ -27,8 +27,8 @@ from torchvision.io import decode_image, ImageReadMode
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.registry import Registry
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
+from ludwig.utils.registry import Registry
 
 TVModelVariant = namedtuple("TVModelVariant", "variant_id variant_spec")
 TVVariantSpec = namedtuple("TVVariantSpec", "create_model_function weights_class")
