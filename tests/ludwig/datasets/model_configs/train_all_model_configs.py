@@ -12,7 +12,7 @@ from typing import Optional
 
 import pandas as pd
 
-from ludwig import datasets
+from ludwig import datasets, visualize
 from ludwig.api import LudwigModel
 
 
@@ -68,6 +68,9 @@ def _train_dataset_process(dataset_name, results_queue):
         )
         evaluate_end_time = time.time()
 
+        # Visualize learning curve
+        visualize.learning_curves([train_stats], model_names=[dataset_name], output_directory=output_directory)
+
         results.output_directory = output_directory
 
         # Get metric for first output feature
@@ -95,7 +98,8 @@ def train_all_datasets():
     accumulated_results = []
     # As each process completes it pushes its results onto the results_queue.
     results_queue = multiprocessing.Queue()
-    for dataset_name in datasets.list_datasets():
+    # for dataset_name in datasets.list_datasets():
+    for dataset_name in ["adult_census_income"]:
         if len(running_processes) >= max_processes:
             # Block until a subprocess completes
             next_results = results_queue.get()
@@ -120,8 +124,10 @@ def train_all_datasets():
         del running_processes[next_results.dataset_name]
     results_df = pd.DataFrame(accumulated_results)
     with pd.option_context("display.max_rows", None, "display.max_columns", None, "display.precision", 3):
-        print(results_df[results_df["has_config"]])
-    results_df.to_csv("train_all_model_configs.csv", index=False)
+        results_to_display = results_df[results_df["has_config"]].copy()
+        del results_to_display["output_directory"]
+        print(results_to_display)
+    results_df.to_csv("train_all_model_configs_results.csv", index=False)
 
 
 if __name__ == "__main__":
