@@ -17,6 +17,24 @@ train_df, test_df, _ = titanic.load(split=True)
 
 The `ludwig.datasets` API also provides functions to list, describe, and get datasets.  For example:
 
+### ludwig.datasets.list_datasets
+
+Gets a list of the names of available datasets.
+
+`list`
+
+```python
+dataset_names = ludwig.datasets.list_datasets()
+```
+
+### ludwig.datasets.gdescribe_dataset
+
+# Get a more detailed description of a dataset
+
+# Prints the description of the titanic dataset.
+
+print(ludwig.datasets.describe_dataset("titanic"))
+
 ```python
 import ludwig.datasets
 
@@ -34,8 +52,11 @@ dataset_df = titanic.load()
 # Loads into split dataframes:
 train_df, test_df, _ = titanic.load(split=True)
 
-titanic_config = ludwig.datasets.get_model_config("titanic")
-titanic_config = titanic.basic_model_config
+# Gets a list of built-in model configs for the dataset
+titanic_configs = ludwig.datasets.model_configs_for_dataset("titanic")
+
+# Gets the
+titanic_default_config = titanic.default_model_config
 ```
 
 Some datasets are hosted on [Kaggle](https://www.kaggle.com) and require a kaggle account. To use these, you'll need to
