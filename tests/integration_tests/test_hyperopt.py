@@ -21,14 +21,19 @@ import pytest
 import torch
 from packaging import version
 
+from ludwig.backend import initialize_backend
 from ludwig.constants import (
     ACCURACY,
+    BACKEND,
     CATEGORY,
     COMBINER,
+    CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
+    MAX_CONCURRENT_TRIALS,
     NAME,
+    NUM_SAMPLES,
     OUTPUT_FEATURES,
     RAY,
     TEXT,
@@ -588,3 +593,46 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
             assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
 
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
+
+
+@pytest.mark.distributed
+def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_cluster_4cpu):
+    input_features = [
+        text_feature(name="utterance", reduce_output="sum"),
+        category_feature(vocab_size=3),
+    ]
+
+    output_features = [category_feature(vocab_size=3)]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    backend = initialize_backend("local")
+    num_samples = backend.num_cpus
+
+    config = {
+        BACKEND: {TYPE: "local"},
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat"},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        HYPEROPT: {
+            "parameters": {"trainer.learning_rate": {"space": "loguniform", "lower": 0.001, "upper": 0.1}},
+            "goal": "minimize",
+            "output_feature": output_features[0][NAME],
+            "validation_metrics": "loss",
+            EXECUTOR: {
+                TYPE: RAY,
+                NUM_SAMPLES: num_samples,
+                CPU_RESOURCES_PER_TRIAL: 1,
+                "time_budget_s": 200,
+            },
+            "search_alg": {TYPE: "variant_generator"},
+        },
+    }
+
+    # If trial finishes
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
+
+    hyperopt_statistics = json.load(open(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")))
+    assert hyperopt_statistics["hyperopt_config"][EXECUTOR][MAX_CONCURRENT_TRIALS] == num_samples - 1

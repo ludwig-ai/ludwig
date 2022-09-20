@@ -332,12 +332,11 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_clu
                 NUM_SAMPLES: 4,
                 CPU_RESOURCES_PER_TRIAL: 1,
                 "time_budget_s": 200,
-            },  # Need to adjust based on how many CPUs are available on the machine
+            },
             "search_alg": {TYPE: "variant_generator"},
         },
     }
 
-    # If trial finishes
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
 
