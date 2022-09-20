@@ -107,3 +107,4 @@ def test_download_titanic_dataset(tmpdir):
             assert len(output_train_df) == len(titanic_train_df)
             assert len(output_test_df) == len(titanic_test_df)
             assert len(output_val_df) == 0
+    ludwig.datasets._get_dataset_configs.cache_clear()

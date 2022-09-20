@@ -62,3 +62,4 @@ def test_download_mnist_dataset(tmpdir):
         dataset.download()
 
         assert dataset.state == DatasetState.DOWNLOADED
+    ludwig.datasets._get_dataset_configs.cache_clear()
