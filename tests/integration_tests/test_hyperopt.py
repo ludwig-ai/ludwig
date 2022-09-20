@@ -596,7 +596,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
 
 
 @pytest.mark.distributed
-def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_cluster_4cpu):
+def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_cluster):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
         category_feature(vocab_size=3),
