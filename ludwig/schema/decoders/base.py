@@ -6,6 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
+from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
 @dataclass
@@ -85,20 +86,24 @@ class RegressorConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the input to the decoder.",
+        parameter_metadata=DECODER_METADATA["Regressor"]["input_size"],
     )
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
+        parameter_metadata=DECODER_METADATA["Regressor"]["use_bias"],
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
         description="Initializer for the weight matrix.",
+        parameter_metadata=DECODER_METADATA["Regressor"]["weights_initializer"],
     )
 
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+        parameter_metadata=DECODER_METADATA["Regressor"]["bias_initializer"],
     )
 
 
@@ -117,30 +122,36 @@ class ProjectorConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the input to the decoder.",
+        parameter_metadata=DECODER_METADATA["Projector"]["input_size"],
     )
 
     output_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the output of the decoder.",
+        parameter_metadata=DECODER_METADATA["Projector"]["output_size"],
     )
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
+        parameter_metadata=DECODER_METADATA["Projector"]["use_bias"],
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
         description="Initializer for the weight matrix.",
+        parameter_metadata=DECODER_METADATA["Projector"]["weights_initializer"],
     )
 
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+        parameter_metadata=DECODER_METADATA["Projector"]["bias_initializer"],
     )
 
     activation: str = schema_utils.ActivationOptions(
         default=None,
         description=" Indicates the activation function applied to the output.",
+        parameter_metadata=DECODER_METADATA["Projector"]["activation"],
     )
 
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
@@ -150,6 +161,7 @@ class ProjectorConfig(BaseDecoderConfig):
         min=0,
         max=999999999,
         description="Clip the output of the decoder to be within the given range.",
+        parameter_metadata=DECODER_METADATA["Projector"]["clip"],
     )
 
 
@@ -167,23 +179,28 @@ class ClassifierConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the input to the decoder.",
+        parameter_metadata=DECODER_METADATA["Classifier"]["input_size"],
     )
 
     num_classes: int = schema_utils.PositiveInteger(
         default=None,
         description="Number of classes to predict.",
+        parameter_metadata=DECODER_METADATA["Classifier"]["num_classes"],
     )
 
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
+        parameter_metadata=DECODER_METADATA["Classifier"]["use_bias"],
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
         description="Initializer for the weight matrix.",
+        parameter_metadata=DECODER_METADATA["Classifier"]["weights_initializer"],
     )
 
     bias_initializer: str = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+        parameter_metadata=DECODER_METADATA["Classifier"]["bias_initializer"],
     )

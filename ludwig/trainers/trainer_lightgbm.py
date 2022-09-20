@@ -29,6 +29,8 @@ from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
 
+logger = logging.getLogger(__name__)
+
 
 def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
     """Helper for iterating feature names and metric names."""
@@ -212,6 +214,7 @@ class LightGBMTrainer(BaseTrainer):
         save_path: str,
         loss: torch.Tensor,
         all_losses: Dict[str, torch.Tensor],
+        early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -226,7 +229,7 @@ class LightGBMTrainer(BaseTrainer):
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
         if self.is_coordinator():
-            logging.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
+            logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
         # init tables
@@ -304,9 +307,9 @@ class LightGBMTrainer(BaseTrainer):
         elapsed_time = (time.time() - start_time) * 1000.0
 
         if self.is_coordinator():
-            logging.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
+            logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
-                logging.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # ================ Validation Logic ================
         should_break = False
@@ -316,7 +319,7 @@ class LightGBMTrainer(BaseTrainer):
                 self.validation_field,
                 self.validation_metric,
                 save_path,
-                self.early_stop,
+                early_stopping_steps,
                 self.skip_save_model,
             )
         else:
@@ -344,6 +347,7 @@ class LightGBMTrainer(BaseTrainer):
         train_summary_writer: SummaryWriter,
         validation_summary_writer: SummaryWriter,
         test_summary_writer: SummaryWriter,
+        early_stopping_steps: int,
     ) -> bool:
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -383,6 +387,7 @@ class LightGBMTrainer(BaseTrainer):
             save_path,
             loss,
             {output_feature_name: loss},
+            early_stopping_steps,
         )
 
         self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
@@ -418,13 +423,13 @@ class LightGBMTrainer(BaseTrainer):
 
             if self.is_coordinator() and not skip_save_model:
                 self.model.save(save_path)
-                logging.info(
+                logger.info(
                     f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
                 )
 
         progress_tracker.last_improvement = progress_tracker.steps - progress_tracker.last_improvement_steps
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
-            logging.info(
+            logger.info(
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
                 + f"{progress_tracker.last_improvement} step(s) ago.\n"
             )
@@ -444,7 +449,7 @@ class LightGBMTrainer(BaseTrainer):
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
             if self.is_coordinator():
-                logging.info(
+                logger.info(
                     "\nEARLY STOPPING due to lack of validation improvement. "
                     f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
                     f"last validation improvement.\n"
@@ -523,7 +528,7 @@ class LightGBMTrainer(BaseTrainer):
                 only_of = next(iter(output_features))
                 if self.validation_metric in metrics_names[only_of]:
                     self._validation_field = only_of
-                    logging.warning(
+                    logger.warning(
                         "Replacing 'combined' validation field "
                         "with '{}' as the specified validation "
                         "metric {} is invalid for 'combined' "
@@ -597,14 +602,19 @@ class LightGBMTrainer(BaseTrainer):
             # use separate total steps variable to allow custom SIGINT logic
             self.total_steps = self.num_boost_round
 
+            early_stopping_steps = self.boosting_rounds_per_checkpoint * self.early_stop
+
             if self.is_coordinator():
-                logging.info(
+                logger.info(
                     f"Training for {self.total_steps} boosting round(s), approximately "
                     f"{int(self.total_steps / self.boosting_rounds_per_checkpoint)} round(s) of evaluation."
                 )
-                logging.info(f"Early stopping policy: {self.early_stop} boosting round(s).\n")
+                logger.info(
+                    f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
+                    f"boosting round(s).\n"
+                )
 
-                logging.info(f"Starting with step {progress_tracker.steps}")
+                logger.info(f"Starting with step {progress_tracker.steps}")
 
             progress_bar_config = {
                 "desc": "Training",
@@ -637,6 +647,7 @@ class LightGBMTrainer(BaseTrainer):
                     train_summary_writer,
                     validation_summary_writer,
                     test_summary_writer,
+                    early_stopping_steps,
                 )
 
                 # ================ Post Training Epoch ================
@@ -645,7 +656,7 @@ class LightGBMTrainer(BaseTrainer):
 
                 if self.is_coordinator():
                     # ========== Save training progress ==========
-                    logging.debug(
+                    logger.debug(
                         f"Epoch {progress_tracker.epoch} took: "
                         f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                     )

@@ -1,0 +1,14 @@
+version: 1.0
+name: data_scientist_salary
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/machine_hack_competitions/predict_the_data_scientists_salary_in_india_hackathon/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/machine_hack_competitions/predict_the_data_scientists_salary_in_india_hackathon/test.csv
+sha256:
+  test.csv: 244c215f4a03cae4b107e76c7fe94269728450cabf44c943415211ce7d6437df
+  train.csv: 99d6aa80505ac1311e97f402d5723996119e859c7f3fce261350462148debe3d
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  The training data and test data comprise of 19802 samples and of 6601 samples each from the
+  Analytics India Annual Salary Study.
+  https://machinehack.com/hackathons/predict_the_data_scientists_salary_in_india_hackathon/overview

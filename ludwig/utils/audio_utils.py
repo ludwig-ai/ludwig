@@ -26,6 +26,8 @@ from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.types import TorchAudioTuple
 
+logger = logging.getLogger(__name__)
+
 # https://github.com/pytorch/audio/blob/main/torchaudio/csrc/sox/types.cpp
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
 
@@ -68,7 +70,7 @@ def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
         f = BytesIO(bytes_obj)
         return torchaudio.backend.sox_io_backend.load(f)
     except Exception as e:
-        logging.warning(e)
+        logger.warning(e)
         return None
 
 

@@ -1,0 +1,14 @@
+version: 1.0
+name: kick_starter_funding
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/kick_starter_funding/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/kick_starter_funding/test.csv
+sha256:
+  test.csv: 13c2d4b74ac8d1e258659b5f5fa74526b9d27e305f6c29ad7e853dfeeb01983c
+  train.csv: 3120b69f30bbc08c68940ab9e5d85d6cc2fbc9a65e8a24c66739179b6a60150e
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  Funding Successful Projects on Kickstarter
+  Predict if a project will get successfully funded or not using labeled data
+  https://www.kaggle.com/codename007/funding-successful-projects

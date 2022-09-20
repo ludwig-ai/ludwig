@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import yaml
+from tabulate import tabulate
 
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
@@ -32,6 +33,7 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
@@ -42,6 +44,9 @@ except ImportError:
 
     class RayBackend:
         pass
+
+
+logger = logging.getLogger(__name__)
 
 
 def hyperopt(
@@ -210,9 +215,9 @@ def hyperopt(
     update_hyperopt_params_with_defaults(hyperopt_config, backend)
 
     # Print hyperopt config
-    logging.info("Hyperopt config")
-    logging.info(pformat(hyperopt_config, indent=4))
-    logging.info("\n")
+    logger.info("Hyperopt config")
+    logger.info(pformat(hyperopt_config, indent=4))
+    logger.info("\n")
 
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config[EXECUTOR]
@@ -324,6 +329,11 @@ def hyperopt(
         )
         dataset = None
 
+        dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
+
+        logger.info("\nDataset Statistics")
+        logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
+
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_end(experiment_name)
 
@@ -374,13 +384,13 @@ def hyperopt(
             }
 
             save_hyperopt_stats(hyperopt_stats, results_directory)
-            logging.info(f"Hyperopt stats saved to: {results_directory}")
+            logger.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
         callback.on_hyperopt_finish(experiment_name)
 
-    logging.info("Finished hyperopt")
+    logger.info("Finished hyperopt")
 
     return hyperopt_results
 
@@ -407,7 +417,7 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
     max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS, num_samples)
 
     if max_concurrent_trials > num_samples:
-        logging.warning(
+        logger.warning(
             f"`max_concurrent_trials` ({max_concurrent_trials}) is greater than `num_samples` ({num_samples}). "
             "Setting `max_concurrent_trials` to `num_samples`."
         )
@@ -434,7 +444,7 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
             # Subtract 1 to ensure there's at least 1 CPU resource available for dataset read tasks
             max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpus - 1, max_concurrent_trials)
 
-        logging.info(
+        logger.info(
             f"Number of CPUs needed for hyperopt trials ({num_cpus_required}) is greater than or equal to the total "
             f"number of CPUs available ({num_cpus_available}). Setting `max_concurrent_trials` to "
             f"{max_concurrent_trials} to ensure there's at least 1 free CPU resource available for dataset read tasks."
