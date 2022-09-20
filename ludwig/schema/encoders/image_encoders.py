@@ -681,3 +681,33 @@ class TVAlexNetEncoderConfig(BaseEncoderConfig):
         default=True,
         description="Is the encoder trainable.",
     )
+
+
+@register_encoder_config("efficientnet", IMAGE)
+@dataclass
+class TVEfficientNetEncoderConfig(BaseEncoderConfig):
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "v2_", "v2_m", "v2_l", ],
+        default="b0",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+    )
+
+    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="Download model weights from pre-trained model.",
+    )
+
+    model_cache_dir: str = schema_utils.String(
+        description="Directory path to cache pretrained model weights.",
+    )
+
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to save the weights in the checkpoint.",
+    )
+
+    trainable: bool = schema_utils.Boolean(
+        default=True,
+        description="Is the encoder trainable.",
+    )

@@ -22,6 +22,28 @@ import torch
 from torchvision.models import (
     alexnet,
     AlexNet_Weights,
+    EfficientNet_B0_Weights,
+    EfficientNet_B1_Weights,
+    EfficientNet_B2_Weights,
+    EfficientNet_B3_Weights,
+    EfficientNet_B4_Weights,
+    EfficientNet_B5_Weights,
+    EfficientNet_B6_Weights,
+    EfficientNet_B7_Weights,
+    EfficientNet_V2_S_Weights,
+    EfficientNet_V2_M_Weights,
+    EfficientNet_V2_L_Weights,
+    efficientnet_b0,
+    efficientnet_b1,
+    efficientnet_b2,
+    efficientnet_b3,
+    efficientnet_b4,
+    efficientnet_b5,
+    efficientnet_b6,
+    efficientnet_b7,
+    efficientnet_v2_s,
+    efficientnet_v2_m,
+    efficientnet_v2_l,
     resnet18,
     ResNet18_Weights,
     resnet34,
@@ -61,6 +83,7 @@ from ludwig.schema.encoders.image_encoders import (
     ResNetEncoderConfig,
     Stacked2DCNNEncoderConfig,
     TVAlexNetEncoderConfig,
+    TVEfficientNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
     ViTEncoderConfig,
@@ -625,6 +648,48 @@ class TVAlexNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVAlexNetEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        # resnet shape after all pre-processing
+        # [num_channels, height, width]
+        return torch.Size([3, 224, 224])
+
+
+EFFICIENTNET_VARIANTS = [
+    TVModelVariant("b0", TVVariantSpec(efficientnet_b0, EfficientNet_B0_Weights)),
+    TVModelVariant("b1", TVVariantSpec(efficientnet_b1, EfficientNet_B1_Weights)),
+    TVModelVariant("b2", TVVariantSpec(efficientnet_b2, EfficientNet_B2_Weights)),
+    TVModelVariant("b3", TVVariantSpec(efficientnet_b3, EfficientNet_B3_Weights)),
+    TVModelVariant("b4", TVVariantSpec(efficientnet_b4, EfficientNet_B4_Weights)),
+    TVModelVariant("b5", TVVariantSpec(efficientnet_b5, EfficientNet_B5_Weights)),
+    TVModelVariant("b6", TVVariantSpec(efficientnet_b6, EfficientNet_B6_Weights)),
+    TVModelVariant("b7", TVVariantSpec(efficientnet_b7, EfficientNet_B7_Weights)),
+    TVModelVariant("v2_s", TVVariantSpec(efficientnet_v2_s, EfficientNet_V2_S_Weights)),
+    TVModelVariant("v2_m", TVVariantSpec(efficientnet_v2_m, EfficientNet_V2_M_Weights)),
+    TVModelVariant("v2_l", TVVariantSpec(efficientnet_v2_l, EfficientNet_V2_L_Weights)),
+]
+
+
+@register_torchvision_variant(EFFICIENTNET_VARIANTS)
+@register_encoder("efficientnet", IMAGE)
+class TVEfficientNetEncoder(TVBaseEncoder):
+    # specify base torchvison model
+    torchvision_model_type: str = "efficientnet"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVEfficientNetEncoderConfig
 
     @property
     def input_shape(self) -> torch.Size:
