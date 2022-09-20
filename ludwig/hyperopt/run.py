@@ -410,10 +410,8 @@ def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str,
     total_grid_search_trials = 1
 
     for _, param_info in hyperopt_parameter_config.items():
-        space = param_info.get(SPACE, None)
-        if space != GRID_SEARCH:
+        if param_info.get(SPACE, None) != GRID_SEARCH:
             return
-
         total_grid_search_trials *= len(param_info.get("values", []))
 
     if num_samples > 1:
