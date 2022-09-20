@@ -50,6 +50,9 @@ except ImportError:
         pass
 
 
+logger = logging.getLogger(__name__)
+
+
 def hyperopt(
     config: Union[str, dict],
     dataset: Union[str, dict, pd.DataFrame] = None,
@@ -211,9 +214,9 @@ def hyperopt(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # Print hyperopt config
-    logging.info("Hyperopt config")
-    logging.info(pformat(hyperopt_config, indent=4))
-    logging.info("\n")
+    logger.info("Hyperopt config")
+    logger.info(pformat(hyperopt_config, indent=4))
+    logger.info("\n")
 
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config[EXECUTOR]
@@ -334,8 +337,8 @@ def hyperopt(
 
         dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
 
-        logging.info("\nDataset Statistics")
-        logging.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
+        logger.info("\nDataset Statistics")
+        logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_end(experiment_name)
@@ -387,13 +390,13 @@ def hyperopt(
             }
 
             save_hyperopt_stats(hyperopt_stats, results_directory)
-            logging.info(f"Hyperopt stats saved to: {results_directory}")
+            logger.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
         callback.on_hyperopt_finish(experiment_name)
 
-    logging.info("Finished hyperopt")
+    logger.info("Finished hyperopt")
 
     return hyperopt_results
 

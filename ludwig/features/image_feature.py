@@ -204,7 +204,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
 
             if img_num_channels != num_channels:
-                logging.warning(
+                logger.warning(
                     "Image has {} channels, where as {} "
                     "channels are expected. Dropping/adding channels "
                     "with 0s as appropriate".format(img_num_channels, num_channels)
@@ -277,16 +277,16 @@ class ImageFeatureMixin(BaseFeatureMixin):
         else:
             # Default case: use 3 channels.
             num_channels = 3
-        logging.info(f"Inferring num_channels from the first {n_images} images.")
-        logging.info("\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())]))
+        logger.info(f"Inferring num_channels from the first {n_images} images.")
+        logger.info("\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())]))
         if num_channels == max(channel_frequency, key=channel_frequency.get):
-            logging.info(
+            logger.info(
                 f"Using {num_channels} channels because it is the majority in sample. If an image with"
                 f" a different depth is read, will attempt to convert to {num_channels} channels."
             )
         else:
-            logging.info(f"Defaulting to {num_channels} channels.")
-        logging.info(
+            logger.info(f"Defaulting to {num_channels} channels.")
+        logger.info(
             "To explicitly set the number of channels, define num_channels in the preprocessing dictionary of "
             "the image input feature config."
         )
@@ -471,7 +471,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
 
         if num_failed_image_reads > 0:
-            logging.warning(
+            logger.warning(
                 f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
                 "Using default image for these rows in the dataset."
             )

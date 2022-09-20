@@ -11,6 +11,8 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
 from ludwig.utils.data_utils import load_json
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class MetricDiff:
@@ -197,7 +199,7 @@ def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
                     "Diff Percentage": diff_percentage,
                 }
             )
-            logging.info(f"Exported a CSV report to {path}")
+            logger.info(f"Exported a CSV report to {path}")
 
 
 def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
@@ -360,7 +362,7 @@ def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, pa
                     "Diff Percentage": diff_percentage,
                 }
             )
-            logging.info(f"Exported a CSV report to {path}")
+            logger.info(f"Exported a CSV report to {path}")
 
 
 def average_runs(path_to_runs_dir: str) -> Dict[str, Union[int, float]]:
