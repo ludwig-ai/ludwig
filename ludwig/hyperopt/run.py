@@ -404,16 +404,19 @@ def hyperopt(
 def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
     """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
     duplicate trials being created."""
-    only_grid_search_space = set()
+    if num_samples == 1:
+        return
+
     total_grid_search_trials = 1
 
     for _, param_info in hyperopt_parameter_config.items():
         space = param_info.get(SPACE, None)
-        only_grid_search_space.add(space)
-        if space == GRID_SEARCH:
-            total_grid_search_trials *= len(param_info.get("values", []))
+        if space != GRID_SEARCH:
+            return
 
-    if len(only_grid_search_space) == 1 and GRID_SEARCH in only_grid_search_space and num_samples > 1:
+        total_grid_search_trials *= len(param_info.get("values", []))
+
+    if num_samples > 1:
         num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
         warnings.warn(
             "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
