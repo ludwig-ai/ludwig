@@ -11,8 +11,8 @@ from ludwig.encoders.image_encoders import (
     TVEfficientNetEncoder,
     TV_RESNET_VARIANTS,
     TVResNetEncoder,
-    VGG_VARIANTS,
     TVVGGEncoder,
+    VGG_VARIANTS,
     ViTEncoder,
 )
 from ludwig.utils.misc_utils import set_random_seed
