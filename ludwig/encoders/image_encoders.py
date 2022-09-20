@@ -31,22 +31,21 @@ from torchvision.models import (
     resnet152,
     ResNet152_Weights,
     vgg11,
-    VGG11_Weights,
     vgg11_bn,
     VGG11_BN_Weights,
+    VGG11_Weights,
     vgg13,
-    VGG13_Weights,
     vgg13_bn,
     VGG13_BN_Weights,
+    VGG13_Weights,
     vgg16,
-    VGG16_Weights,
     vgg16_bn,
     VGG16_BN_Weights,
+    VGG16_Weights,
     vgg19,
-    VGG19_Weights,
     vgg19_bn,
     VGG19_BN_Weights,
-
+    VGG19_Weights,
 )
 
 from ludwig.constants import IMAGE
@@ -64,10 +63,10 @@ from ludwig.schema.encoders.image_encoders import (
     ViTEncoderConfig,
 )
 from ludwig.utils.image_utils import (
-    torchvision_model_registry,
     register_torchvision_variant,
+    torchvision_model_registry,
     TVModelVariant,
-    TVVariantSpec
+    TVVariantSpec,
 )
 from ludwig.utils.pytorch_utils import freeze_parameters
 
@@ -540,8 +539,8 @@ class TVResNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "tv_resnet"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -579,8 +578,8 @@ class TVVGGEncoder(TVBaseEncoder):
     torchvision_model_type: str = "vgg"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
