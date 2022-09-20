@@ -80,7 +80,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         if experiment["profiler"]["enable"]:
             ludwig_profiler_callbacks = [LudwigProfilerCallback(experiment)]
         # run model and capture metrics
-        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.INFO)
+        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR)
         _, _, _, output_directory = model.experiment(
             dataset=dataset,
             output_directory=experiment["experiment_name"],
