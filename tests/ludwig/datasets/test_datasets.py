@@ -29,7 +29,7 @@ def test_load_csv_dataset(tmpdir):
     )
 
     ludwig.datasets._get_dataset_configs.cache_clear()
-    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+    with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
         dataset = ludwig.datasets.get_dataset("fake_csv_dataset", cache_dir=tmpdir)
 
         assert not dataset.state == DatasetState.DOWNLOADED
@@ -91,7 +91,7 @@ def test_multifile_join_dataset(tmpdir, f_type):
     )
 
     ludwig.datasets._get_dataset_configs.cache_clear()
-    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+    with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
         dataset = ludwig.datasets.get_dataset("fake_multifile_dataset", cache_dir=tmpdir)
 
         assert not dataset.state == DatasetState.DOWNLOADED

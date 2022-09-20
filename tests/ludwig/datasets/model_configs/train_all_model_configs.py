@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Trains a ludwig model for every dataset which has a builtin model_config.
+# Trains a ludwig model for every dataset which has a default_model_config.
 # You must have valid kaggle credentials in your environment, a few GB of disk space, and good internet bandwidth.
 # Also, for each dataset associated with a Kaggle competition you'll need to sign in to Kaggle and accept the terms of
 # the competition.
@@ -98,8 +98,7 @@ def train_all_datasets():
     accumulated_results = []
     # As each process completes it pushes its results onto the results_queue.
     results_queue = multiprocessing.Queue()
-    # for dataset_name in datasets.list_datasets():
-    for dataset_name in ["adult_census_income"]:
+    for dataset_name in datasets.list_datasets():
         if len(running_processes) >= max_processes:
             # Block until a subprocess completes
             next_results = results_queue.get()

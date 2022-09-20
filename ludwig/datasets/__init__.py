@@ -45,7 +45,7 @@ def _load_model_config(model_config_filename: str):
 
 
 @lru_cache(maxsize=3)
-def _get_model_configs(dataset_name: str) -> List[Dict]:
+def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
     """Returns all model configs for the specified dataset.
 
     Model configs are named <dataset_name>_<config_name>.yaml
@@ -149,7 +149,14 @@ def __getattr__(name: str) -> Any:
         1. set the LUDWIG_CACHE environment variable to your desired path before importing the dataset
         2. Use ludwig.datasets.get_dataset(dataset_name, cache_dir=<CACHE_DIR>)
     """
-    public_methods = {"list_datasets", "describe_dataset", "download_dataset", "cli", "get_dataset"}
+    public_methods = {
+        "list_datasets",
+        "describe_dataset",
+        "download_dataset",
+        "cli",
+        "get_dataset",
+        "model_configs_for_dataset",
+    }
     if name in public_methods:
         return globals()[name]
     return get_dataset(name)

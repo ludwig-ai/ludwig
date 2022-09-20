@@ -55,7 +55,7 @@ def test_download_mnist_dataset(tmpdir):
     )
 
     ludwig.datasets._get_dataset_configs.cache_clear()
-    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+    with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
         dataset = ludwig.datasets.get_dataset("mnist", cache_dir=tmpdir)
         assert not dataset.state == DatasetState.DOWNLOADED
         assert not dataset.state == DatasetState.TRANSFORMED
