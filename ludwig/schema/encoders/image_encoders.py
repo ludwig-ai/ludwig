@@ -687,7 +687,19 @@ class TVAlexNetEncoderConfig(BaseEncoderConfig):
 @dataclass
 class TVEfficientNetEncoderConfig(BaseEncoderConfig):
     model_variant: Optional[int] = schema_utils.StringOptions(
-        ["b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "v2_", "v2_m", "v2_l", ],
+        [
+            "b0",
+            "b1",
+            "b2",
+            "b3",
+            "b4",
+            "b5",
+            "b6",
+            "b7",
+            "v2_",
+            "v2_m",
+            "v2_l",
+        ],
         default="b0",
         allow_none=False,
         description="Pretrained model variant to use.",
