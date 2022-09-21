@@ -564,7 +564,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
-        "height.",
+                    "height.",
     )
 
     trainable: bool = schema_utils.Boolean(
@@ -573,16 +573,8 @@ class ViTEncoderConfig(BaseEncoderConfig):
     )
 
 
-@register_encoder_config("tv_resnet", IMAGE)
 @dataclass
-class TVResNetEncoderConfig(BaseEncoderConfig):
-    model_variant: Optional[int] = schema_utils.IntegerOptions(
-        [18, 34, 50, 101, 152],
-        default=50,
-        allow_none=False,
-        description="Pretrained model variant to use.",
-    )
-
+class TVBaseEncoderConfig(BaseEncoderConfig):
     use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Download model weights from pre-trained model.",
@@ -603,9 +595,34 @@ class TVResNetEncoderConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("tv_resnet", IMAGE)
+@dataclass
+class TVResNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["tv_resnet"],
+        default="tv_resnet",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.IntegerOptions(
+        [18, 34, 50, 101, 152],
+        default=50,
+        allow_none=False,
+        description="Pretrained model variant to use.",
+    )
+
+
 @register_encoder_config("vgg", IMAGE)
 @dataclass
-class TVVGGEncoderConfig(BaseEncoderConfig):
+class TVVGGEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["vgg"],
+        default="vgg",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
     model_variant: Union[int, str] = schema_utils.OneOfOptionsField(
         default=11,
         description="Pretrained model variant to use.",
@@ -633,29 +650,17 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
         ],
     )
 
-    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=True,
-        description="Download model weights from pre-trained model.",
-    )
-
-    model_cache_dir: str = schema_utils.String(
-        description="Directory path to cache pretrained model weights.",
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to save the weights in the checkpoint.",
-    )
-
-    trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Is the encoder trainable.",
-    )
-
 
 @register_encoder_config("alexnet", IMAGE)
 @dataclass
-class TVAlexNetEncoderConfig(BaseEncoderConfig):
+class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["alexnet"],
+        default="alexnet",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
     model_variant: Optional[int] = schema_utils.StringOptions(
         ["base"],
         default="base",
@@ -663,29 +668,17 @@ class TVAlexNetEncoderConfig(BaseEncoderConfig):
         description="Pretrained model variant to use.",
     )
 
-    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=True,
-        description="Download model weights from pre-trained model.",
-    )
-
-    model_cache_dir: str = schema_utils.String(
-        description="Directory path to cache pretrained model weights.",
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to save the weights in the checkpoint.",
-    )
-
-    trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Is the encoder trainable.",
-    )
-
 
 @register_encoder_config("efficientnet", IMAGE)
 @dataclass
-class TVEfficientNetEncoderConfig(BaseEncoderConfig):
+class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["efficientnet"],
+        default="efficientnet",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
     model_variant: Optional[int] = schema_utils.StringOptions(
         [
             "b0",
@@ -703,23 +696,4 @@ class TVEfficientNetEncoderConfig(BaseEncoderConfig):
         default="b0",
         allow_none=False,
         description="Pretrained model variant to use.",
-    )
-
-    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
-        default=True,
-        description="Download model weights from pre-trained model.",
-    )
-
-    model_cache_dir: str = schema_utils.String(
-        description="Directory path to cache pretrained model weights.",
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to save the weights in the checkpoint.",
-    )
-
-    trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="Is the encoder trainable.",
     )
