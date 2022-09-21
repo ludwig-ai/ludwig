@@ -211,8 +211,16 @@ class DatasetLoader:
         return model_configs_for_dataset(self.config.name)
 
     @property
+    def best_model_config(self) -> Optional[Dict]:
+        """Returns the best built-in model config for this dataset, or None."""
+        return self.model_configs.get("best")
+
+    @property
     def default_model_config(self) -> Optional[Dict]:
-        """Returns the default built-in model config for this dataset, or None."""
+        """Returns the default built-in model config for this dataset.
+
+        This is a good first model which should train in under 10m on a current laptop without GPU acceleration.
+        """
         return self.model_configs.get("default")
 
     def _get_preserved_paths(self, root_dir=None):
