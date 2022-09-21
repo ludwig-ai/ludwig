@@ -657,8 +657,8 @@ class TVVGGEncoderConfig(BaseEncoderConfig):
 @dataclass
 class TVAlexNetEncoderConfig(BaseEncoderConfig):
     model_variant: Optional[int] = schema_utils.StringOptions(
-        ["alexnet"],
-        default="alexnet",
+        ["base"],
+        default="base",
         allow_none=False,
         description="Pretrained model variant to use.",
     )

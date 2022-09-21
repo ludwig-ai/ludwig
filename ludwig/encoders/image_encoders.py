@@ -574,7 +574,7 @@ class TVVGGEncoder(TVBaseEncoder):
 
 
 ALEXNET_VARIANTS = [
-    TVModelVariant("alexnet", tvm.alexnet, tvm.AlexNet_Weights),
+    TVModelVariant("base", tvm.alexnet, tvm.AlexNet_Weights),
 ]
 
 
