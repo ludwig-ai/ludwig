@@ -1,3 +1,7 @@
+output_features:
+  - name: label
+    type: binary
+    weight_regularization: null
 input_features:
   - name: lepton_pT
     type: numerical
@@ -55,13 +59,8 @@ input_features:
     type: numerical
   - name: m_wwbb
     type: numerical
-output_features:
-  - name: label
-    type: binary
-    weight_regularization: null
 combiner:
   type: tabnet
-
   bn_momentum: 0.95
   bn_virtual_bs: 1024
   dropout: 0.05252744300130521
@@ -72,28 +71,13 @@ combiner:
   relaxation_factor: 1.5
   size: 32
   sparsity: 0.0001
-
-  # size: 24  # N_a
-  # output_size: 128  # N_d
-  # sparsity: 0.001  # lambda_sparse
-  # bn_momentum: 0.8  # m_B
-  # num_steps: 7  # N_steps
-  # relaxation_factor: 1.2  # gamma
-  # bn_virtual_bs: 256  # B_v
 training:
   batch_size: 8192
   decay_rate: 0.8
   decay_steps: 20000
   learning_rate: 0.01
-
-  # batch_size: 4096 # B
-  # learning_rate: 0.00111444
-  # decay_steps: 10000
-  # decay_rate: 0.8
-
   shuffle_buffer_size: 1000000
   should_shuffle: true
-
   eval_batch_size: 500000 #4096 # 65536 131072 262144 524288
   epochs: 300
   early_stop: 30
