@@ -30,8 +30,17 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
 
-TVModelVariant = namedtuple("TVModelVariant", "variant_id variant_spec")
+TVModelVariant = namedtuple("TVModelVariant", "variant_id create_model_function weights_class")
+# TVModelVariant(variant_id, create_model_function, model_weights)
+#   variant_id: model variant identifier
+#   create_model_function: TorchVision function to create model class
+#   model_weights: Torchvision class for model weights
+
 TVVariantSpec = namedtuple("TVVariantSpec", "create_model_function weights_class")
+# TVVariantSpec(create_model_function, model_weights)
+#   create_model_function: TorchVision function to create model class
+#   model_weights: Torchvision class for model weights
+
 
 logger = logging.getLogger(__name__)
 
@@ -318,7 +327,9 @@ def register_torchvision_variant(variant: Optional[Union[list, tuple]] = None):
 
     def wrap(cls):
         for v in variant:
-            torchvision_model_registry[cls.torchvision_model_type + "-" + f"{v.variant_id}"] = v.variant_spec
+            torchvision_model_registry[cls.torchvision_model_type + "-" + f"{v.variant_id}"] = (
+                TVVariantSpec(v.create_model_function, v.weights_class)
+            )
         return cls
 
     return wrap

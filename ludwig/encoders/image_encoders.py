@@ -19,58 +19,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from torchvision.models import (
-    alexnet,
-    AlexNet_Weights,
-    EfficientNet_B0_Weights,
-    EfficientNet_B1_Weights,
-    EfficientNet_B2_Weights,
-    EfficientNet_B3_Weights,
-    EfficientNet_B4_Weights,
-    EfficientNet_B5_Weights,
-    EfficientNet_B6_Weights,
-    EfficientNet_B7_Weights,
-    EfficientNet_V2_S_Weights,
-    EfficientNet_V2_M_Weights,
-    EfficientNet_V2_L_Weights,
-    efficientnet_b0,
-    efficientnet_b1,
-    efficientnet_b2,
-    efficientnet_b3,
-    efficientnet_b4,
-    efficientnet_b5,
-    efficientnet_b6,
-    efficientnet_b7,
-    efficientnet_v2_s,
-    efficientnet_v2_m,
-    efficientnet_v2_l,
-    resnet18,
-    ResNet18_Weights,
-    resnet34,
-    ResNet34_Weights,
-    resnet50,
-    ResNet50_Weights,
-    resnet101,
-    ResNet101_Weights,
-    resnet152,
-    ResNet152_Weights,
-    vgg11,
-    vgg11_bn,
-    VGG11_BN_Weights,
-    VGG11_Weights,
-    vgg13,
-    vgg13_bn,
-    VGG13_BN_Weights,
-    VGG13_Weights,
-    vgg16,
-    vgg16_bn,
-    VGG16_BN_Weights,
-    VGG16_Weights,
-    vgg19,
-    vgg19_bn,
-    VGG19_BN_Weights,
-    VGG19_Weights,
-)
+import torchvision.models as tvm
 
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
@@ -92,7 +41,6 @@ from ludwig.utils.image_utils import (
     register_torchvision_variant,
     torchvision_model_registry,
     TVModelVariant,
-    TVVariantSpec,
 )
 from ludwig.utils.pytorch_utils import freeze_parameters
 
@@ -549,12 +497,17 @@ class TVBaseEncoder(Encoder):
         return torch.Size([3, 224, 224])
 
 
+# TVModelVariant(variant_id, create_model_function, model_weights)
+#   variant_id: model variant identifier
+#   create_model_function: TorchVision function to create model class
+#   model_weights: Torchvision class for model weights
+
 TV_RESNET_VARIANTS = [
-    TVModelVariant(18, TVVariantSpec(resnet18, ResNet18_Weights)),
-    TVModelVariant(34, TVVariantSpec(resnet34, ResNet34_Weights)),
-    TVModelVariant(50, TVVariantSpec(resnet50, ResNet50_Weights)),
-    TVModelVariant(101, TVVariantSpec(resnet101, ResNet101_Weights)),
-    TVModelVariant(152, TVVariantSpec(resnet152, ResNet152_Weights)),
+    TVModelVariant(18, tvm.resnet18, tvm.ResNet18_Weights),
+    TVModelVariant(34, tvm.resnet34, tvm.ResNet34_Weights),
+    TVModelVariant(50, tvm.resnet50, tvm.ResNet50_Weights),
+    TVModelVariant(101, tvm.resnet101, tvm.ResNet101_Weights),
+    TVModelVariant(152, tvm.resnet152, tvm.ResNet152_Weights),
 ]
 
 
@@ -586,14 +539,14 @@ class TVResNetEncoder(TVBaseEncoder):
 
 
 VGG_VARIANTS = [
-    TVModelVariant(11, TVVariantSpec(vgg11, VGG11_Weights)),
-    TVModelVariant("11_bn", TVVariantSpec(vgg11_bn, VGG11_BN_Weights)),
-    TVModelVariant(13, TVVariantSpec(vgg13, VGG13_Weights)),
-    TVModelVariant("13_bn", TVVariantSpec(vgg13_bn, VGG13_BN_Weights)),
-    TVModelVariant(16, TVVariantSpec(vgg16, VGG16_Weights)),
-    TVModelVariant("16_bn", TVVariantSpec(vgg16_bn, VGG16_BN_Weights)),
-    TVModelVariant(19, TVVariantSpec(vgg19, VGG19_Weights)),
-    TVModelVariant("19_bn", TVVariantSpec(vgg19_bn, VGG19_BN_Weights)),
+    TVModelVariant(11, tvm.vgg11, tvm.VGG11_Weights),
+    TVModelVariant("11_bn", tvm.vgg11_bn, tvm.VGG11_BN_Weights),
+    TVModelVariant(13, tvm.vgg13, tvm.VGG13_Weights),
+    TVModelVariant("13_bn", tvm.vgg13_bn, tvm.VGG13_BN_Weights),
+    TVModelVariant(16, tvm.vgg16, tvm.VGG16_Weights),
+    TVModelVariant("16_bn", tvm.vgg16_bn, tvm.VGG16_BN_Weights),
+    TVModelVariant(19, tvm.vgg19, tvm.VGG19_Weights),
+    TVModelVariant("19_bn", tvm.vgg19_bn, tvm.VGG19_BN_Weights),
 ]
 
 
@@ -625,7 +578,7 @@ class TVVGGEncoder(TVBaseEncoder):
 
 
 ALEXNET_VARIANTS = [
-    TVModelVariant("alexnet", TVVariantSpec(alexnet, AlexNet_Weights)),
+    TVModelVariant("alexnet", tvm.alexnet, tvm.AlexNet_Weights),
 ]
 
 
@@ -657,17 +610,17 @@ class TVAlexNetEncoder(TVBaseEncoder):
 
 
 EFFICIENTNET_VARIANTS = [
-    TVModelVariant("b0", TVVariantSpec(efficientnet_b0, EfficientNet_B0_Weights)),
-    TVModelVariant("b1", TVVariantSpec(efficientnet_b1, EfficientNet_B1_Weights)),
-    TVModelVariant("b2", TVVariantSpec(efficientnet_b2, EfficientNet_B2_Weights)),
-    TVModelVariant("b3", TVVariantSpec(efficientnet_b3, EfficientNet_B3_Weights)),
-    TVModelVariant("b4", TVVariantSpec(efficientnet_b4, EfficientNet_B4_Weights)),
-    TVModelVariant("b5", TVVariantSpec(efficientnet_b5, EfficientNet_B5_Weights)),
-    TVModelVariant("b6", TVVariantSpec(efficientnet_b6, EfficientNet_B6_Weights)),
-    TVModelVariant("b7", TVVariantSpec(efficientnet_b7, EfficientNet_B7_Weights)),
-    TVModelVariant("v2_s", TVVariantSpec(efficientnet_v2_s, EfficientNet_V2_S_Weights)),
-    TVModelVariant("v2_m", TVVariantSpec(efficientnet_v2_m, EfficientNet_V2_M_Weights)),
-    TVModelVariant("v2_l", TVVariantSpec(efficientnet_v2_l, EfficientNet_V2_L_Weights)),
+    TVModelVariant("b0", tvm.efficientnet_b0, tvm.EfficientNet_B0_Weights),
+    TVModelVariant("b1", tvm.efficientnet_b1, tvm.EfficientNet_B1_Weights),
+    TVModelVariant("b2", tvm.efficientnet_b2, tvm.EfficientNet_B2_Weights),
+    TVModelVariant("b3", tvm.efficientnet_b3, tvm.EfficientNet_B3_Weights),
+    TVModelVariant("b4", tvm.efficientnet_b4, tvm.EfficientNet_B4_Weights),
+    TVModelVariant("b5", tvm.efficientnet_b5, tvm.EfficientNet_B5_Weights),
+    TVModelVariant("b6", tvm.efficientnet_b6, tvm.EfficientNet_B6_Weights),
+    TVModelVariant("b7", tvm.efficientnet_b7, tvm.EfficientNet_B7_Weights),
+    TVModelVariant("v2_s", tvm.efficientnet_v2_s, tvm.EfficientNet_V2_S_Weights),
+    TVModelVariant("v2_m", tvm.efficientnet_v2_m, tvm.EfficientNet_V2_M_Weights),
+    TVModelVariant("v2_l", tvm.efficientnet_v2_l, tvm.EfficientNet_V2_L_Weights),
 ]
 
 
