@@ -327,8 +327,8 @@ def register_torchvision_variant(variant: Optional[Union[list, tuple]] = None):
 
     def wrap(cls):
         for v in variant:
-            torchvision_model_registry[cls.torchvision_model_type + "-" + f"{v.variant_id}"] = (
-                TVVariantSpec(v.create_model_function, v.weights_class)
+            torchvision_model_registry[cls.torchvision_model_type + "-" + f"{v.variant_id}"] = TVVariantSpec(
+                v.create_model_function, v.weights_class
             )
         return cls
 

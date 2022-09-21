@@ -37,11 +37,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVVGGEncoderConfig,
     ViTEncoderConfig,
 )
-from ludwig.utils.image_utils import (
-    register_torchvision_variant,
-    torchvision_model_registry,
-    TVModelVariant,
-)
+from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
 from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
