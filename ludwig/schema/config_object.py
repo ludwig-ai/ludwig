@@ -23,7 +23,6 @@ from ludwig.constants import (
     TYPE,
     VALIDATION_METRIC,
 )
-from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
