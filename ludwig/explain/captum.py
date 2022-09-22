@@ -10,7 +10,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, CATEGORY, TYPE
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.base import Explainer
-from ludwig.explain.util import get_pred_col
+from ludwig.explain.util import Explanation, get_pred_col
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -54,6 +54,18 @@ class WrapperModule(torch.nn.Module):
 
 
 def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Variable]:
+    """Convert the input data into a list of variables, one for each input feature.
+
+    # Inputs
+
+    :param model: The LudwigModel to use for encoding.
+    :param input_set: The input data to encode of shape [batch size, num input features].
+
+    # Return
+
+    :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
+    """
+
     # Convert raw input data into preprocessed tensor data
     dataset, _ = preprocess_for_prediction(
         model.config,
@@ -98,16 +110,18 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
 
 
 class IntegratedGradientsExplainer(Explainer):
-    def explain(self, **kwargs) -> Tuple[np.array, List[float]]:
+    def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions using Integrated Gradients.
 
-        Returns:
-            A tuple of (attribution, expected value):
-            attribution: (np.array) of shape [batch size, output feature cardinality, num input features]
-                Integrated gradients for each possible output feature label with respect to each input feature for each
-                row in inputs_df.
-            expected value: (List[float]) of length [output feature cardinality]
-                Average convergence delta for each possible output feature label.
+        # Return
+
+        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
+            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            explanation contains the integrated gradients for each label in the target feature's vocab with respect to
+            each input feature.
+
+            `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
+            label in the target feature's vocab.
         """
         # Convert input data into embedding tensors from the output of the model encoders.
         inputs_encoded = get_input_tensors(self.model, self.inputs_df)
@@ -134,7 +148,6 @@ class IntegratedGradientsExplainer(Explainer):
             vocab_size = self.model.training_set_metadata[self.target_feature_name]["vocab_size"]
 
         # Compute attribution for each possible output feature label separately.
-        attribution_by_label = []
         expected_values = []
         for target_idx in range(vocab_size):
             attribution, delta = explainer.attribute(
@@ -145,11 +158,17 @@ class IntegratedGradientsExplainer(Explainer):
                 return_convergence_delta=True,
             )
 
-            # Attribution over the feature embeddings returns a vector with the same
-            # dimensions, so take the sum over this vector in order to return a single
+            # Attribution over the feature embeddings returns a vector with the same dimensions of
+            # shape [batch_size, embedding_size], so take the sum over this vector in order to return a single
             # floating point attribution value per input feature.
             attribution = np.array([t.detach().numpy().sum(1) for t in attribution])
-            attribution_by_label.append(attribution)
+
+            # Transpose to [batch_size, num_input_features]
+            attribution = attribution.T
+
+            for feature_attributions, explanation in zip(attribution, self.explanations):
+                # Add the feature attributions to the explanation object for this row.
+                explanation.add(feature_attributions)
 
             # The convergence delta is given per row, so take the mean to compute the
             # average delta for the feature.
@@ -161,12 +180,10 @@ class IntegratedGradientsExplainer(Explainer):
         # For binary outputs, add an extra attribution for the negative class (false).
         is_binary_target = output_feature_map[self.target_feature_name][TYPE] == BINARY
         if is_binary_target:
-            attribution_by_label.append(attribution_by_label[0] * -1)
+            for explanation in self.explanations:
+                le_true = explanation.label_explanations[0]
+                explanation.add(le_true.feature_attributions * -1)
+
             expected_values.append(expected_values[0] * -1)
 
-        # Stack the attributions into a single tensor of shape:
-        # [batch_size, output_feature_cardinality, num_input_features]
-        attribution = np.stack(attribution_by_label, axis=1)
-        attribution = np.transpose(attribution, (2, 1, 0))
-
-        return attribution, expected_values
+        return self.explanations, expected_values

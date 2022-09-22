@@ -1,11 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Tuple
 
-import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.explain.util import prepare_data
+from ludwig.explain.util import Explanation, prepare_data
 from ludwig.utils.torch_utils import get_torch_device
 
 DEVICE = get_torch_device()
@@ -13,13 +12,14 @@ DEVICE = get_torch_device()
 
 class Explainer(metaclass=ABCMeta):
     def __init__(self, model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.DataFrame, target: str):
-        """Initialize the explainer.
+        """Constructor for the explainer.
 
-        Args:
-            model: The LudwigModel to explain.
-            inputs_df: The input data to explain.
-            sample_df: A sample of the ground truth data.
-            target: The name of the target to explain.
+        # Inputs
+
+        :param model: (LudwigModel) The LudwigModel to explain.
+        :param inputs_df: (pd.DataFrame) The input data to explain.
+        :param sample_df: (pd.DataFrame) A sample of the ground truth data.
+        :param target: (str) The name of the target to explain.
         """
         model.model.to(DEVICE)
 
@@ -31,15 +31,18 @@ class Explainer(metaclass=ABCMeta):
             model, inputs_df, sample_df, target
         )
 
+        self.explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
+
     @abstractmethod
-    def explain(self, **kwargs) -> Tuple[np.array, List[float], np.array]:
+    def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions.
 
-        Returns:
-            A tuple of (attribution, expected values):
-            attribution: (np.array) of shape [batch size, output feature cardinality, num input features]
-                Attribution value for each possible output feature label with respect to each input feature for each
-                row in inputs_df.
-            expected values: (List[float]) of length [output feature cardinality]
-                Expected value for each possible output feature label.
+        # Return
+
+        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
+            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            explanation contains the feature attributions for each label in the target feature's vocab.
+
+            `expected_values`: (List[float]) of length [output feature cardinality] Expected value for each label in
+            the target feature's vocab.
         """
