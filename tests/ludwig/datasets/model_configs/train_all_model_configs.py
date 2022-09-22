@@ -14,12 +14,16 @@ import pandas as pd
 
 from ludwig import datasets, visualize
 from ludwig.api import LudwigModel
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.misc_utils import get_commit_hash
 
 
 @dataclass
 class TrainingResults:
     """Results of a training run for a dataset."""
 
+    ludwig_version: str
+    ludwig_commit: Optional[str]
     dataset_version: str
     dataset_name: str
     has_config: bool
@@ -43,6 +47,8 @@ def _train_dataset_process(dataset_name, results_queue):
         df["split"] = 0
     available_splits = sorted(df.split.unique())
     results = TrainingResults(
+        LUDWIG_VERSION,
+        get_commit_hash(),
         dataset.version,
         dataset.name,
         config is not None,
