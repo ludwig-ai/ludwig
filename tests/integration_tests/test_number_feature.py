@@ -10,8 +10,9 @@ def test_number_feature_zscore_normalization_error():
     output_features = [number_feature(name="num_output")]
 
     df = pd.read_csv(generate_data(input_features, output_features))
-    df["num_input"] = 1.0
-    df["num_input"] = df["num_input"].astype("float32")
+
+    # Override input number feature to have a constant value
+    df["num_input"] = 1
 
     config = {
         "input_features": input_features,

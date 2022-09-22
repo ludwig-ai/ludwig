@@ -62,7 +62,7 @@ class ZScoreTransformer(nn.Module):
         self.mu = float(mean) if mean is not None else mean
         self.sigma = float(std) if std is not None else std
         self.feature_name = kwargs.get(NAME, "")
-        if not self.sigma:
+        if self.sigma == 0:
             raise RuntimeError(
                 f"Cannot apply zscore normalization to `{self.feature_name}` since it has a standard deviation of 0. "
                 f"This is most likely because `{self.feature_name}` has a constant value of {self.mu} for all rows in "
