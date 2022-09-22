@@ -1,4 +1,3 @@
-import pytest
 from ludwig.schema.config_object import Config
 
 

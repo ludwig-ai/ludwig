@@ -17,8 +17,6 @@ import argparse
 import copy
 import logging
 import sys
-from dataclasses import asdict
-from typing import Any, Dict
 
 import yaml
 
@@ -27,14 +25,11 @@ from ludwig.constants import (
     COMBINER,
     DECODER,
     DEFAULTS,
-    DROP_ROW,
     ENCODER,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
     LOSS,
-    MODEL_ECD,
-    MODEL_GBM,
     MODEL_TYPE,
     NAME,
     OUTPUT_FEATURES,
@@ -44,21 +39,17 @@ from ludwig.constants import (
     SPLIT,
     TRAINER,
     TYPE,
-    VALIDATION_METRIC,
 )
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.data.split import get_splitter
+from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.combiners.utils import combiner_registry
-from ludwig.schema.utils import load_config_with_kwargs
-from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value, set_default_values
+from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)

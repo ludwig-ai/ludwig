@@ -23,7 +23,6 @@ import torch
 from torch import nn
 
 from ludwig.constants import (
-    CLIP,
     COLUMN,
     HIDDEN,
     LOGITS,

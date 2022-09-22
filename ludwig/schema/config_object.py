@@ -12,7 +12,6 @@ from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.decoders.utils import get_decoder_cls
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.features.feature_registries import input_type_registry
 
 from ludwig.constants import (
     BINARY,
