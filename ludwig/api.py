@@ -670,10 +670,7 @@ class LudwigModel:
         :return: (None) `None`
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
-
-        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-            self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
-        )
+        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
@@ -692,13 +689,16 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
         if not self.model:
-            update_config_with_metadata(self.config, training_set_metadata)
-            self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
+            update_config_with_metadata(self.config, self.config_obj, training_set_metadata)
+            self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
             set_saved_weights_in_checkpoint_flag(self.config)
 
         if not self._online_trainer:
-            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
-            self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
+            self._online_trainer = self.backend.create_trainer(
+                config=self.config_obj.trainer,
+                model=self.model,
+                random_seed=random_seed
+            )
 
         self.model = self._online_trainer.train_online(training_dataset)
 
@@ -761,6 +761,7 @@ class LudwigModel:
         logger.debug("Preprocessing")
         dataset, _ = preprocess_for_prediction(
             self.config,
+            self.config_obj,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -874,6 +875,7 @@ class LudwigModel:
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
             self.config,
+            self.config_obj,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1210,6 +1212,7 @@ class LudwigModel:
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
             self.config,
+            self.config_obj,
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1285,9 +1288,7 @@ class LudwigModel:
         """
         print_boxed("PREPROCESSING")
 
-        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-            self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
-        )
+        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
             preprocessed_data = preprocess_for_training(
@@ -1365,8 +1366,10 @@ class LudwigModel:
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         config = upgrade_to_latest_version(config)
+        config_obj = Config(config)
+
         # Merge upgraded config with defaults.
-        config = merge_with_defaults(config)
+        config = merge_with_defaults(config, config_obj)
 
         if backend_param is None and "backend" in config:
             # Reset backend from config
@@ -1385,7 +1388,7 @@ class LudwigModel:
 
         # generate model from config
         set_saved_weights_in_checkpoint_flag(config)
-        ludwig_model.model = LudwigModel.create_model(config)
+        ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights
         ludwig_model.load_weights(model_dir)

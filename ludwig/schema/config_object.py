@@ -36,16 +36,59 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
-class InputFeatures:
-    """InputFeatures is a container for all input features."""
+def initialize_config(config_dict):
+    """
+    Helper function for converting submodules to dictionaries during a config object to dict transformation.
+
+    Args:
+        config_dict: Top level config dictionary with un-converted submodules
+
+    Returns:
+        The fully converted config dictionary
+    """
+    for k, v in config_dict.items():
+        if isinstance(v, dict):
+            initialize_config(v)
+
+        elif isinstance(v, list):
+            for i, feature in enumerate(v):
+                if isinstance(feature, dict):
+                    initialize_config(feature)
+
+                if isinstance(feature, BaseMarshmallowConfig):
+                    config_dict[k][i] = feature.to_dict()
+                    initialize_config(config_dict[k][i])
+
+        elif isinstance(v, BaseMarshmallowConfig):
+            config_dict[k] = v.to_dict()
+            initialize_config(config_dict[k])
+
+        else:
+            continue
+
+    return config_dict
+
+
+class BaseFeatureContainer:
+    """
+    Base Feature container for input and output features.
+    """
 
     def to_dict(self):
-        return self.__dict__
+        """
+        Method for getting a dictionary representation of the input features.
+
+        Returns:
+            Dictionary of input features specified.
+        """
+        return initialize_config(self.__dict__)
 
     def to_list(self):
-        """Method for getting a list representation of the input features.
+        """
+        Method for getting a list representation of the input features.
 
         Returns:
             List of input features specified.
@@ -53,19 +96,16 @@ class InputFeatures:
         return list(self.__dict__.values())
 
 
-class OutputFeatures:
+class InputFeaturesContainer(BaseFeatureContainer):
+    """InputFeatures is a container for all input features."""
+
+    pass
+
+
+class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
-    def to_dict(self):
-        return self.__dict__
-
-    def to_list(self):
-        """Method for getting a list representation of the output features.
-
-        Returns:
-            List of output features specified.
-        """
-        return list(self.__dict__.values())
+    pass
 
 
 class Config:
@@ -73,8 +113,8 @@ class Config:
     throughout the project."""
 
     model_type = MODEL_ECD
-    input_features = InputFeatures()
-    output_features = OutputFeatures()
+    input_features = InputFeaturesContainer()
+    output_features = OutputFeaturesContainer()
     combiner: BaseCombinerConfig = ConcatCombinerConfig()
     trainer: BaseTrainerConfig = ECDTrainerConfig()
     preprocessing = PreprocessingConfig()
@@ -140,6 +180,29 @@ class Config:
         for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
             if PROC_COLUMN not in feature:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
+
+    @staticmethod
+    def get_new_config(module, config_type, feature_type):
+        """Helper function for getting the appropriate config to set in defaults section.
+
+        Args:
+            module: Which nested config module we're dealing with.
+            config_type: Which config schema to get (i.e. parallel_cnn)
+            feature_type: feature type corresponding to config schema we're grabbing
+
+        Returns:
+            Config Schema to update the defaults section with.
+        """
+        if module == ENCODER:
+            return get_encoder_cls(feature_type, config_type)
+
+        if module == DECODER:
+            return get_decoder_cls(feature_type, config_type)
+
+        if module == LOSS:
+            return get_loss_cls(feature_type, config_type)
+
+        raise ValueError("Module needs to be added to defaults parsing support")
 
     def parse_features(self, features, feature_section):
         """
@@ -226,25 +289,22 @@ class Config:
 
         return feature
 
-    @staticmethod
-    def get_new_config(module, config_type, feature_type):
-        """Helper function for getting the appropriate config to set in defaults section.
-
-        Args:
-            module: Which nested config module we're dealing with.
-            config_type: Which config schema to get (i.e. parallel_cnn)
-            feature_type: feature type corresponding to config schema we're grabbing
+    def get_config_dict(self):
+        """
+        This method converts the current config object into an equivalent dictionary representation since many parts
+        of the codebase still use the dictionary representation of the config.
 
         Returns:
-            Config Schema to update the defaults section with.
+            Config Dictionary
         """
-        if module == ENCODER:
-            return get_encoder_cls(feature_type, config_type)
-
-        if module == DECODER:
-            return get_decoder_cls(feature_type, config_type)
-
-        if module == LOSS:
-            return get_loss_cls(feature_type, config_type)
-
-        raise ValueError("Module needs to be added to defaults parsing support")
+        config_dict = {
+            "model_type": self.model_type,
+            "input_features": self.input_features.to_list(),
+            "output_features": self.output_features.to_list(),
+            "combiner": self.combiner.to_dict(),
+            "trainer": self.trainer.to_dict(),
+            "preprocessing": self.preprocessing.to_dict(),
+            "hyperopt": {},
+            "defaults": self.defaults.to_dict(),
+        }
+        return initialize_config(config_dict)

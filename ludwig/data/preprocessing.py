@@ -55,6 +55,7 @@ from ludwig.data.split import get_splitter, split_dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.schema.config_object import Config
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
 from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
@@ -1512,6 +1513,7 @@ def load_metadata(metadata_file_path: str) -> Dict[str, Any]:
 
 def preprocess_for_training(
     config,
+    config_obj,
     dataset=None,
     training_set=None,
     validation_set=None,
@@ -1775,6 +1777,7 @@ def _preprocess_file_for_training(
 
 def _preprocess_df_for_training(
     config,
+    config_obj,
     features,
     dataset=None,
     training_set=None,
@@ -1839,6 +1842,7 @@ def _preprocess_df_for_training(
 
 def preprocess_for_prediction(
     config,
+    config_obj,
     dataset,
     training_set_metadata=None,
     data_format=None,
@@ -1847,15 +1851,22 @@ def preprocess_for_prediction(
     backend=LOCAL_BACKEND,
     callbacks=None,
 ):
-    """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
+    """
+    Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 
-    :param model_path: The input data that is joined with the model
-           hyperparameter file to create the config file
-    :param data_csv: The CSV input data file
-    :param data_hdf5: The hdf5 data file if there is no csv data file
-    :param training_set_metadata: Train set metadata for the input features
-    :param split: the split of dataset to return
-    :returns: Dataset, Train set metadata
+    Args:
+        config: Config dictionary corresponding to Ludwig Model
+        config_obj: Config object corresponding to Ludwig Model
+        dataset: Dataset to be processed
+        training_set_metadata: Train set metadata for the input features
+        data_format: Format of the data
+        split: The split of dataset to return
+        include_outputs: Whether to include outputs
+        backend: Type of backend to use for preprocessing
+        callbacks: Any callbacks passed in
+
+    Returns:
+        Processed dataset along with updated training set metadata
     """
     # Sanity Check to make sure some data source is provided
     if dataset is None:
@@ -1874,9 +1885,7 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-        config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
-    )
+    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(config_obj)
     preprocessing_params = merge_dict(default_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json

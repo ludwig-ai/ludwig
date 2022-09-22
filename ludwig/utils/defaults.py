@@ -204,24 +204,7 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
-    # Initialize Submodules
-    initialize_config(config)
     return config
-
-
-def initialize_config(config_dict):
-    for k, v in config_dict.items():
-        if isinstance(v, dict):
-            initialize_config(v)
-        elif isinstance(v, list):
-            for feature in v:
-                if isinstance(feature, dict):
-                    initialize_config(feature)
-        elif isinstance(v, BaseMarshmallowConfig):
-            config_dict[k] = v.to_dict()
-            initialize_config(config_dict[k])
-        else:
-            continue
 
 
 def render_config(config=None, output=None, **kwargs):

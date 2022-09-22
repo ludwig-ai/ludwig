@@ -46,7 +46,6 @@ from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, Tex
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
 from ludwig.schema.config_object import Config
-from ludwig.utils.defaults import initialize_config
 from ludwig.utils.misc_utils import get_from_registry
 
 base_type_registry = {
@@ -101,7 +100,8 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
             training_set_metadata[input_feature[NAME]],
             config=config,
         )
-        input_feature = initialize_config(getattr(config_obj, input_feature[NAME]))
+
+        input_feature = config_obj.input_features.to_dict()[input_feature[NAME]]
 
     # populate output features fields depending on data
     for output_feature in config[OUTPUT_FEATURES]:
@@ -109,7 +109,8 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
         feature.update_config_with_metadata(
             output_feature, getattr(config_obj, output_feature[NAME]), training_set_metadata[output_feature[NAME]]
         )
-        output_feature = initialize_config(getattr(config_obj, output_feature[NAME]))
+
+        output_feature = config_obj.output_features.to_dict()[output_feature[NAME]]
 
     for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
         if PREPROCESSING in feature:
