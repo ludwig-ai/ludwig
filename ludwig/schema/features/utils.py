@@ -35,9 +35,14 @@ def get_input_feature_jsonschema():
         "items": {
             "type": "object",
             "properties": {
-                "name": {"type": "string"},
-                "type": {"type": "string", "enum": input_feature_types},
-                "column": {"type": "string"},
+                "name": {"type": "string", "title": "name", "description": "Name of the input feature."},
+                "type": {
+                    "type": "string",
+                    "enum": input_feature_types,
+                    "title": "type",
+                    "description": "Type of the input feature",
+                },
+                "column": {"type": "string", "title": "column", "description": "Name of the column."},
             },
             "additionalProperties": True,
             "allOf": get_input_feature_conds(),
@@ -76,9 +81,14 @@ def get_output_feature_jsonschema():
         "items": {
             "type": "object",
             "properties": {
-                "name": {"type": "string"},
-                "type": {"type": "string", "enum": output_feature_types},
-                "column": {"type": "string"},
+                "name": {"type": "string", "title": "name", "description": "Name of the output feature."},
+                "type": {
+                    "type": "string",
+                    "enum": output_feature_types,
+                    "title": "type",
+                    "description": "Type of the output feature",
+                },
+                "column": {"type": "string", "title": "column", "description": "Name of the column."},
             },
             "additionalProperties": True,
             "allOf": get_output_feature_conds(),

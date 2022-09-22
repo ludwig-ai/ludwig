@@ -58,6 +58,8 @@ except ImportError:
     raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 
+logger = logging.getLogger(__name__)
+
 OUTPUT_DIR = "."
 
 
@@ -77,7 +79,7 @@ class AutoTrainResults:
     def best_model(self) -> Optional[LudwigModel]:
         checkpoint = self._experiment_analysis.best_checkpoint
         if checkpoint is None:
-            logging.warning("No best model found")
+            logger.warning("No best model found")
             return None
 
         if not _ray_113:

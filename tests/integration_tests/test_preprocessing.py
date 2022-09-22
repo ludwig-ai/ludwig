@@ -371,3 +371,30 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
     ludwig_model = LudwigModel(config, backend=backend)
     with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
         ludwig_model.preprocess(dataset=df)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+
+    out_feat = binary_feature()
+    input_features = [number_feature()]
+    output_features = [out_feat]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    ludwig_model = LudwigModel(config, backend=backend)
+    training_dataset, validation_dataset, test_dataset, _ = ludwig_model.preprocess(dataset=df)
+
+    assert training_dataset.in_memory_size_bytes > 0
+    assert validation_dataset.in_memory_size_bytes > 0
+    assert test_dataset.in_memory_size_bytes > 0

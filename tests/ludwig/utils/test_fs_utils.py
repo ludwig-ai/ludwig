@@ -8,10 +8,12 @@ import pytest
 
 from ludwig.utils.fs_utils import get_fs_and_path
 
+logger = logging.getLogger(__name__)
+
 
 def create_file(url):
     _, path = get_fs_and_path(url)
-    logging.info(f"saving url '{url}' to path '{path}'")
+    logger.info(f"saving url '{url}' to path '{path}'")
     with tempfile.TemporaryDirectory() as tmpdir:
         file_path = os.path.join(tmpdir, path)
         os.makedirs(os.path.dirname(file_path))

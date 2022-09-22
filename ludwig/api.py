@@ -86,6 +86,7 @@ from ludwig.utils.data_utils import (
     load_yaml,
     save_json,
 )
+from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
@@ -473,19 +474,15 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
             if self.backend.is_coordinator():
-                dataset_statistics = [["Dataset", "Size"]]
-                dataset_statistics.append(["Training", len(training_set)])
-                if validation_set is not None:
-                    dataset_statistics.append(["Validation", len(validation_set)])
-                if test_set is not None:
-                    dataset_statistics.append(["Test", len(test_set)])
+                dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
+
                 if not skip_save_model:
                     # save train set metadata
                     os.makedirs(model_dir, exist_ok=True)
                     save_json(os.path.join(model_dir, TRAIN_SET_METADATA_FILE_NAME), training_set_metadata)
 
-                logger.info("\nDataset sizes:")
-                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+                logger.info("\nDataset Statistics")
+                logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
             for callback in self.callbacks:
                 callback.on_train_init(

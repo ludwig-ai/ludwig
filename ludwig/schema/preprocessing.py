@@ -2,6 +2,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 
 
@@ -14,7 +15,9 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     sample_ratio: float = schema_utils.NonNegativeFloat(
-        default=1.0, description="Ratio of the dataset to use for training. If 1.0, all the data is used for training."
+        default=1.0,
+        description="Ratio of the dataset to use for training. If 1.0, all the data is used for training.",
+        parameter_metadata=PREPROCESSING_METADATA["sample_ratio"],
     )
 
     oversample_minority: float = schema_utils.NonNegativeFloat(
@@ -22,6 +25,7 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="If not None, the minority class will be oversampled to reach the specified ratio respective to "
         "the majority class. ",
+        parameter_metadata=PREPROCESSING_METADATA["oversample_minority"],
     )
 
     undersample_majority: float = schema_utils.NonNegativeFloat(
@@ -29,6 +33,7 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         description="If not None, the majority class will be undersampled to reach the specified ratio respective "
         "to the minority class. ",
+        parameter_metadata=PREPROCESSING_METADATA["undersample_majority"],
     )
 
 
@@ -37,4 +42,10 @@ def get_preprocessing_jsonschema():
     combiner's field constraints."""
     preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(PreprocessingConfig)
     props = preproc_schema["properties"]
-    return {"type": "object", "properties": props, "additionalProperties": False}
+    return {
+        "type": "object",
+        "properties": props,
+        "additionalProperties": False,
+        "title": "type",
+        "description": "Select the preprocessing type.",
+    }

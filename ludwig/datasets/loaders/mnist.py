@@ -45,11 +45,14 @@ class MNISTLoader(DatasetLoader):
             raise
         super().__init__(config, cache_dir)
 
-    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
-        """Load dataset files into a dataframe."""
+    def transform_files(self, file_paths: List[str]) -> List[str]:
         for dataset in ["training", "testing"]:
             labels, images = self.read_source_dataset(dataset, self.raw_dataset_dir)
             self.write_output_dataset(labels, images, os.path.join(self.raw_dataset_dir, dataset))
+        return super().transform_files(file_paths)
+
+    def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
+        """Load dataset files into a dataframe."""
         return self.output_training_and_test_data()
 
     def read_source_dataset(self, dataset="training", path="."):
@@ -120,7 +123,7 @@ class MNISTLoader(DatasetLoader):
             splits = []
             for i in range(NUM_LABELS):
                 label_dir = f"{name}/{i}"
-                img_dir = os.path.join(self.raw_dataset_dir, label_dir)
+                img_dir = os.path.join(self.processed_dataset_dir, label_dir)
                 for file in os.listdir(img_dir):
                     if file.endswith(".png"):
                         labels.append(str(i))

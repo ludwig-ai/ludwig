@@ -1,0 +1,14 @@
+version: 1.0
+name: women_clothing_review
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/women_clothing_review/train.pq
+  - https://automl-mm-bench.s3.amazonaws.com/women_clothing_review/test.pq
+sha256:
+  test.pq: 477de72fe7e672ef87e1eca00de312f55ba884a9b80fbd04fa79c0d0159e5593
+  train.pq: 1b3d248397cee76a6ccff814560f29ae3d66eeb26a6e97ac0837e021629bc740
+train_filenames: train.pq
+test_filenames: test.pq
+description: |
+  Women's E-Commerce Clothing Reviews
+  23,000 Customer Reviews and Ratings
+  https://www.kaggle.com/nicapotato/womens-ecommerce-clothing-reviews

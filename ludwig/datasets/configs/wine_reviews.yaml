@@ -1,0 +1,14 @@
+version: 1.0
+name: wine_reviews
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/wine_reviews/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/wine_reviews/test.csv
+sha256:
+  test.csv: c862d1af572659406ab39356a25c7d5e9b7c8570a89e069311fca1abb6bf1849
+  train.csv: c54101bb07571a3df0723e93a5f7c48123dd792b316396db4404a04bcf1809cb
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  Wine Reviews
+  130k wine reviews with variety, location, winery, price, and description
+  https://www.kaggle.com/datasets/zynicide/wine-reviews
