@@ -197,6 +197,7 @@ def get_commit_hash():
             is_a_git_repo = subprocess.call(["git", "branch"], stderr=subprocess.STDOUT, stdout=devnull) == 0
         if is_a_git_repo:
             commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8")
+            return commit_hash
     except:  # noqa: E722
-        return None
-    return commit_hash
+        pass
+    return None
