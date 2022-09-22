@@ -229,7 +229,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 @register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
-    default_validation_metric = LOSS
 
     def __init__(
         self,

@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import SET, SIGMOID_CROSS_ENTROPY
+from ludwig.constants import JACCARD, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -12,6 +12,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(SET)
@@ -39,24 +40,35 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
 class SetOutputFeatureConfig(BaseOutputFeatureConfig):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=SET,
+        default="classifier",
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [JACCARD],
+        default=JACCARD,
+        description="Internal only use parameter: default validation metric for set output feature.",
+        parameter_metadata=INTERNAL_ONLY
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=SET,
         default=SIGMOID_CROSS_ENTROPY,
     )
 
-    threshold: float = schema_utils.FloatRange(
-        default=0.5,
-        min=0,
-        max=1,
-        description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
-        "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type="set_output"
     )
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=SET,
-        default="classifier",
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
@@ -65,12 +77,10 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig):
         "dimension (second if you count the batch dimension)",
     )
 
-    dependencies: list = schema_utils.List(
-        default=[],
-        description="List of input features that this feature depends on.",
-    )
-
-    reduce_dependencies: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the dependencies of the output feature.",
+    threshold: float = schema_utils.FloatRange(
+        default=0.5,
+        min=0,
+        max=1,
+        description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
+        "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
     )

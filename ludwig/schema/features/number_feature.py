@@ -14,6 +14,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(NUMBER)
@@ -35,13 +36,6 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=NUMBER,
-        default=MEAN_SQUARED_ERROR,
-    )
-
     clip: Union[List[int], Tuple[int]] = schema_utils.FloatRangeTupleDataclassField(
         n=2,
         default=None,
@@ -56,10 +50,11 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
         default="regressor",
     )
 
-    reduce_input: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
-        "dimension (second if you count the batch dimension)",
+    default_validation_metric: str = schema_utils.StringOptions(
+        [MEAN_SQUARED_ERROR],
+        default=MEAN_SQUARED_ERROR,
+        description="Internal only use parameter: default validation metric for number output feature.",
+        parameter_metadata=INTERNAL_ONLY
     )
 
     dependencies: list = schema_utils.List(
@@ -67,7 +62,20 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
         description="List of input features that this feature depends on.",
     )
 
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=NUMBER,
+        default=MEAN_SQUARED_ERROR,
+    )
+
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
     )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")

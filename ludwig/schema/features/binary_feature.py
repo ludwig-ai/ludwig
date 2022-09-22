@@ -12,6 +12,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(BINARY)
@@ -49,6 +50,13 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         default="regressor",
     )
 
+    default_validation_metric: str = schema_utils.StringOptions(
+        [ROC_AUC],
+        default=ROC_AUC,
+        description="Internal only use parameter: default validation metric for binary output feature.",
+        parameter_metadata=INTERNAL_ONLY
+    )
+
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
@@ -63,15 +71,15 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         feature_type="binary_output"
     )
 
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
+    )
+
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
-    )
-
-    reduce_dependencies: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the dependencies of the output feature.",
     )
 
     threshold: float = schema_utils.FloatRange(
@@ -80,10 +88,4 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         max=1,
         description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
         "than or equal to threshold are mapped to True.",
-    )
-
-    default_validation_metric: str = schema_utils.StringOptions(
-        [ROC_AUC],
-        default=ROC_AUC,
-        description="Internal only use parameter: default validation metric for binary output feature."
     )

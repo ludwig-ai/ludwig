@@ -32,8 +32,9 @@ from ludwig.constants import (
 )
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.schema.split import RandomSplitConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.defaults import BASE_PREPROCESSING_SPLIT_CONFIG, merge_with_defaults
+from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
     binary_feature,
@@ -380,7 +381,7 @@ def test_merge_with_defaults():
             "learning_rate_scaling": "linear",
         },
         PREPROCESSING: {
-            "split": BASE_PREPROCESSING_SPLIT_CONFIG,
+            "split": RandomSplitConfig().to_dict(),
             "undersample_majority": None,
             "oversample_minority": None,
             "sample_ratio": 1.0,

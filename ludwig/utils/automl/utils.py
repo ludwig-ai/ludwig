@@ -20,8 +20,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import output_type_registry
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.modules.metric_registry import metric_registry
-from ludwig.utils.defaults import default_combiner_type
 
 
 def avg_num_tokens(field: Series) -> int:
@@ -44,6 +44,7 @@ def get_model_type(config: dict) -> str:
     elif COMBINER in config and TYPE in config[COMBINER]:
         model_type = config[COMBINER][TYPE]
     else:
+        default_combiner_type = get_combiner_jsonschema()["properties"]["default"]
         model_type = default_combiner_type
     return model_type
 

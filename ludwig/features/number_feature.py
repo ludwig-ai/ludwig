@@ -331,7 +331,6 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
         R2: None,
     }
-    default_validation_metric = MEAN_SQUARED_ERROR
 
     def __init__(
         self,

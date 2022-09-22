@@ -11,11 +11,24 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
-    entity_1: List[str]
-    """TODO: Document parameters."""
+    type: str = schema_utils.StringOptions(
+        ["comparator"],
+        default="comparator",
+        allow_none=False,
+        description="Type of combiner.",
+    )
 
-    entity_2: List[str]
-    """TODO: Document parameters."""
+    entity_1: List[str] = schema_utils.List(
+        str,
+        default=None,
+        description="List of input features that compose the first entity to be compared."
+    )
+
+    entity_2: List[str] = schema_utils.List(
+        str,
+        default=None,
+        description="List of input features that compose the second entity to be compared."
+    )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
         description="",

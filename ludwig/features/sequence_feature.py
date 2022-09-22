@@ -308,7 +308,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         PERPLEXITY: None,
         EDIT_DISTANCE: None,
     }
-    default_validation_metric = LOSS
 
     def __init__(
         self,

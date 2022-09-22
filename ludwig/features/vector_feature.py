@@ -178,7 +178,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 @register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
-    default_validation_metric = MEAN_SQUARED_ERROR
 
     def __init__(
         self,

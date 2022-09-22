@@ -256,7 +256,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 @register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
-    default_validation_metric = ROC_AUC
 
     def __init__(
         self,

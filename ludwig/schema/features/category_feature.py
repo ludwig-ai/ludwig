@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import CATEGORY, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -12,6 +12,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(CATEGORY)
@@ -41,16 +42,40 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")
+    calibration: bool = schema_utils.Boolean(
+        default=False,
+        description="Calibrate the model's output probabilities using temperature scaling.",
+    )
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=CATEGORY,
+        default="classifier",
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [ACCURACY],
+        default=ACCURACY,
+        description="Internal only use parameter: default validation metric for category output feature.",
+        parameter_metadata=INTERNAL_ONLY
+    )
+
+    dependencies: list = schema_utils.List(
+        default=[],
+        description="List of input features that this feature depends on.",
+    )
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=CATEGORY,
         default=SOFTMAX_CROSS_ENTROPY,
     )
 
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=CATEGORY,
-        default="classifier",
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type="category_output"
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default="sum",
+        description="How to reduce the dependencies of the output feature.",
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
@@ -59,24 +84,9 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
         "dimension (second if you count the batch dimension)",
     )
 
-    dependencies: list = schema_utils.List(
-        default=[],
-        description="List of input features that this feature depends on.",
-    )
-
-    reduce_dependencies: str = schema_utils.ReductionOptions(
-        default="sum",
-        description="How to reduce the dependencies of the output feature.",
-    )
-
     top_k: int = schema_utils.NonNegativeInteger(
         default=3,
         description="Determines the parameter k, the number of categories to consider when computing the top_k "
         "measure. It computes accuracy but considering as a match if the true category appears in the "
         "first k predicted categories ranked by decoder's confidence.",
-    )
-
-    calibration: bool = schema_utils.Boolean(
-        default=False,
-        description="Calibrate the model's output probabilities using temperature scaling.",
     )

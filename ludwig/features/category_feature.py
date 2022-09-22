@@ -235,7 +235,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 @register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
-    default_validation_metric = ACCURACY
 
     def __init__(
         self,

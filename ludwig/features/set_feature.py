@@ -246,7 +246,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 @register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, JACCARD: None}
-    default_validation_metric = JACCARD
 
     def __init__(
         self,

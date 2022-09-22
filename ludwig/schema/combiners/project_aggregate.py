@@ -10,6 +10,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 @dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
 
+    type: str = schema_utils.StringOptions(
+        ["project_aggregate"],
+        default="project_aggregate",
+        allow_none=False,
+        description="Type of combiner.",
+    )
+
     projection_size: int = schema_utils.PositiveInteger(
         default=128,
         description="All combiner inputs are projected to this size before being aggregated.",

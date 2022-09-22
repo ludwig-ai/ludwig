@@ -11,6 +11,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
+    type: str = schema_utils.StringOptions(
+        ["concat"],
+        default="concat",
+        allow_none=False,
+        description="Type of combiner.",
+    )
+
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["fc_layers"],

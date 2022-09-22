@@ -11,13 +11,9 @@ from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 @dataclass
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for decoders.
-
-    Not meant to be used directly.
-    """
+    """Base class for decoders."""
 
     type: str
-    "Name corresponding to a decoder."
 
     fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
         default=None, description="List of dictionaries containing the parameters for each fully connected layer."

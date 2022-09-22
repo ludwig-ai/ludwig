@@ -44,15 +44,17 @@ from ludwig.constants import (
     SPLIT,
     TRAINER,
     TYPE,
+    VALIDATION_METRIC,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
-from ludwig.features.feature_registries import base_type_registry, input_type_registry, output_type_registry
+from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.config_object import Config
+from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.combiners.utils import combiner_registry
-from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
@@ -63,11 +65,12 @@ logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
-BASE_PREPROCESSING_SPLIT_CONFIG = {"type": "random", "probabilities": list(DEFAULT_PROBABILITIES)}
+# Still needed for preprocessing  TODO(Connor): Refactor ludwig/data/preprocessing to use schema
+default_feature_specific_preprocessing_parameters = {name: preproc_sect.get_schema_cls()().preprocessing.to_dict() for
+                                                     name, preproc_sect in input_type_registry.items()}
 
-default_model_type = MODEL_ECD
-
-default_combiner_type = "concat"
+default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
+default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 
 def _perform_sanity_checks(config):
@@ -184,51 +187,6 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
-    """Updates feature_dict belonging to an input or output feature using global encoder, decoder and loss related
-    default parameters specified in the Ludwig config.
-
-    :param config: Ludwig configuration containing parameters for different sections, including global default
-        parameters for preprocessing, encoder, decoder and loss.
-    :type config: dict[str, any]
-    :param feature_dict: Underlying config for the specific input/output feature. This may be updated with values
-        from the global defaults specified in config.
-    :type feature_dict: dict[str, any]
-    :param config_feature_group: Indicates whether the feature is an input feature or output feature (can be either of
-        `input_features` or `output_features`).
-    :type config_feature_group: str
-    """
-    parameter = ENCODER if config_feature_group == INPUT_FEATURES else DECODER
-    registry_type = input_type_registry if config_feature_group == INPUT_FEATURES else output_type_registry
-
-    default_params_for_feature_type = get_defaults_section_for_feature_type(
-        feature_dict[TYPE], config[DEFAULTS], parameter
-    )
-
-    # Update input feature encoder or output feature decoder if it is specified in global defaults
-    # TODO(#2125): This code block needs some refactoring.
-    if TYPE in default_params_for_feature_type:
-        # Only update encoder or decoder if the feature isn't already using a default encoder or decoder
-        default_encoder_or_decoder = get_default_encoder_or_decoder(feature_dict, config_feature_group)
-        if default_params_for_feature_type[TYPE] != default_encoder_or_decoder:
-            # Update type and populate defaults for the encoder or decoder type
-            feature_dict[parameter] = default_params_for_feature_type
-            get_from_registry(feature_dict[TYPE], registry_type).populate_defaults(feature_dict)
-        # Make a copy of default encoder or decoder parameters without the type key.
-        default_params_for_feature_type = copy.deepcopy(default_params_for_feature_type)
-        default_params_for_feature_type.pop(TYPE, None)
-
-    # Update encoder or decoder with other encoder/decoder related parameters
-    feature_dict.update(merge_dict(feature_dict, default_params_for_feature_type))
-
-    # Update loss parameters for output feature from global defaults
-    if parameter == DECODER:
-        default_loss_params_for_feature_type = get_defaults_section_for_feature_type(
-            feature_dict[TYPE], config[DEFAULTS], LOSS
-        )
-        feature_dict[LOSS].update(merge_dict(feature_dict[LOSS], default_loss_params_for_feature_type))
-
-
 def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
     _perform_sanity_checks(config)
@@ -251,74 +209,21 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     # Convert config dictionary into an instance of BaseTrainerConfig.
     config[TRAINER] = config_obj.trainer.to_dict()
 
-    set_default_value(
-        config[TRAINER],
-        "validation_metric",
-        output_type_registry[config[OUTPUT_FEATURES][0][TYPE]].default_validation_metric,
-    )
-
     # ===== Input Features =====
-    for input_feature in config[INPUT_FEATURES]:
-        if config[MODEL_TYPE] == MODEL_GBM:
-            set_default_values(input_feature, {ENCODER: {TYPE: "passthrough"}})
-            remove_ecd_params(input_feature)
-        get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
-
-        # Update encoder parameters for output feature from global defaults
-        update_feature_from_defaults(config, input_feature, INPUT_FEATURES)
+    config[INPUT_FEATURES] = [getattr(config_obj.input_features, feat[NAME]).to_dict()
+                              for feat in config[INPUT_FEATURES]]
 
     # ===== Combiner =====
-    full_combiner_config, _ = load_config_with_kwargs(
-        combiner_registry[config[COMBINER][TYPE]].get_schema_cls(), config[COMBINER]
-    )
-    config[COMBINER].update(asdict(full_combiner_config))
+    config[COMBINER] = config_obj.combiner.to_dict()
 
     # ===== Output features =====
-    for output_feature in config[OUTPUT_FEATURES]:
-        if config[MODEL_TYPE] == MODEL_GBM:
-            set_default_values(output_feature, {DECODER: {TYPE: "passthrough"}})
-            remove_ecd_params(output_feature)
-        get_from_registry(output_feature[TYPE], output_type_registry).populate_defaults(output_feature)
-
-        # By default, drop rows with missing output features
-        set_default_value(output_feature, PREPROCESSING, {})
-        set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
-
-        # Update decoder and loss related parameters for output feature from global defaults
-        update_feature_from_defaults(config, output_feature, OUTPUT_FEATURES)
+    config[OUTPUT_FEATURES] = [getattr(config_obj.output_features, feat[NAME]).to_dict()
+                               for feat in config[OUTPUT_FEATURES]]
 
     # ===== Hyperpot =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
     return config
-
-
-def remove_ecd_params(feature):
-    feature.pop("tied", None)
-    feature.pop("fc_layers", None)
-    feature.pop("num_layers", None)
-    feature.pop("output_size", None)
-    feature.pop("use_bias", None)
-    feature.pop("weights_initializer", None)
-    feature.pop("bias_initializer", None)
-    feature.pop("norm", None)
-    feature.pop("norm_params", None)
-    feature.pop("activation", None)
-    feature.pop("dropout", None)
-    feature.pop("embedding_size", None)
-    feature.pop("embeddings_on_cpu", None)
-    feature.pop("pretrained_embeddings", None)
-    feature.pop("embeddings_trainable", None)
-    feature.pop("embedding_initializer", None)
-    # decoder params
-    feature.pop("reduce_input", None)
-    feature.pop("dependencies", None)
-    feature.pop("reduce_dependencies", None)
-    feature.pop("loss", None)
-    feature.pop("num_fc_layers", None)
-    feature.pop("threshold", None)
-    feature.pop("clip", None)
-    feature.pop("top_k", None)
 
 
 def render_config(config=None, output=None, **kwargs):

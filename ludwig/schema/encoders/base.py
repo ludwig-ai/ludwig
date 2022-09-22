@@ -10,13 +10,9 @@ from ludwig.schema.encoders.utils import register_encoder_config
 
 @dataclass
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for encoders.
-
-    Not meant to be used directly.
-    """
+    """Base class for encoders."""
 
     type: str
-    "Name corresponding to an encoder."
 
 
 @register_encoder_config("passthrough", [CATEGORY, NUMBER, VECTOR])

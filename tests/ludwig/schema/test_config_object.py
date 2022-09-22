@@ -85,3 +85,67 @@ def test_config_object():
     assert config_object.trainer.optimizer.beta1 == 0.8
     assert config_object.trainer.optimizer.beta2 == 0.999
     assert config_object.trainer.optimizer.epsilon == 5e-09
+
+
+def test_config_object_defaults():
+    config = {
+        "input_features": [
+            {
+                "name": "number_feature",
+                "type": "number"
+            },
+            {
+                "name": "text_feature_1",
+                "type": "text",
+                "encoder": {
+                    "type": "rnn",
+                    "activation": "sigmoid",
+                },
+            },
+            {
+                "name": "text_feature_2",
+                "type": "text",
+            },
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+        "defaults": {
+            "number": {
+                "preprocessing": {
+                    "missing_value_strategy": "drop_row"
+                },
+                "encoder": {
+                    "type": "dense"
+                }
+            },
+            "text": {
+                "preprocessing": {
+                    "missing_value_strategy": "drop_row",
+                },
+                "encoder": {
+                    "type": "stacked_parallel_cnn",
+                    "activation": "tanh",
+                },
+            }
+        }
+    }
+
+    config_object = Config(config)
+    assert config_object.input_features.number_feature.preprocessing.missing_value_strategy == "drop_row"
+    assert config_object.input_features.number_feature.encoder.type == "dense"
+
+    assert config_object.input_features.text_feature_1.encoder.type == "rnn"
+    assert config_object.input_features.text_feature_1.encoder.activation == "sigmoid"
+    assert config_object.input_features.text_feature_1.preprocessing.missing_value_strategy == "drop_row"
+
+    assert config_object.input_features.text_feature_2.encoder.type == "stacked_parallel_cnn"
+    assert config_object.input_features.text_feature_2.encoder.activation == "tanh"
+    assert config_object.input_features.text_feature_2.preprocessing.missing_value_strategy == "drop_row"
+
+
+def test_config_object_gbm():
+    pass

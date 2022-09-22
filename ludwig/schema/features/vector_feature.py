@@ -12,6 +12,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(VECTOR)
@@ -39,30 +40,6 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")
-
-    reduce_input: str = schema_utils.ReductionOptions(
-        default=None,
-        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
-        "dimension (second if you count the batch dimension)",
-    )
-
-    reduce_dependencies: str = schema_utils.ReductionOptions(
-        default=None,
-        description="How to reduce the dependencies of the output feature.",
-    )
-
-    vector_size: int = schema_utils.PositiveInteger(
-        default=None,
-        allow_none=True,
-        description="The size of the vector. If None, the vector size will be inferred from the data.",
-    )
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=VECTOR,
-        default=MEAN_SQUARED_ERROR,
-    )
-
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
         default="projector",
@@ -73,8 +50,41 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         description="List of input features that this feature depends on.",
     )
 
+    default_validation_metric: str = schema_utils.StringOptions(
+        [MEAN_SQUARED_ERROR],
+        default=MEAN_SQUARED_ERROR,
+        description="Internal only use parameter: default validation metric for binary output feature.",
+        parameter_metadata=INTERNAL_ONLY
+    )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=VECTOR,
+        default=MEAN_SQUARED_ERROR,
+    )
+
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
+        feature_type="vector_output"
+    )
+
+    reduce_dependencies: str = schema_utils.ReductionOptions(
+        default=None,
+        description="How to reduce the dependencies of the output feature.",
+    )
+
+    reduce_input: str = schema_utils.ReductionOptions(
+        default=None,
+        description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
+        "dimension (second if you count the batch dimension)",
+    )
+
     softmax: bool = schema_utils.Boolean(
         default=False,
         description="Determines whether to apply a softmax at the end of the decoder. This is useful for predicting a "
         "vector of values that sum up to 1 and can be interpreted as probabilities.",
+    )
+
+    vector_size: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The size of the vector. If None, the vector size will be inferred from the data.",
     )
