@@ -1,20 +1,5 @@
 from marshmallow import ValidationError
 
-from ludwig.features.feature_registries import input_type_registry
-from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.concat import ConcatCombinerConfig
-from ludwig.schema.combiners.utils import combiner_registry
-from ludwig.schema.decoders.utils import get_decoder_cls
-from ludwig.schema.defaults.defaults import DefaultsConfig
-from ludwig.schema.encoders.base import PassthroughEncoderConfig
-from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
-from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import input_type_registry, output_type_registry
-from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-
 from ludwig.constants import (
     BINARY,
     CATEGORY,
@@ -38,6 +23,20 @@ from ludwig.constants import (
     TYPE,
     VALIDATION_METRIC,
 )
+from ludwig.features.feature_registries import input_type_registry
+from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.utils import combiner_registry
+from ludwig.schema.decoders.utils import get_decoder_cls
+from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.encoders.base import PassthroughEncoderConfig
+from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
+from ludwig.schema.encoders.utils import get_encoder_cls
+from ludwig.schema.features.utils import input_type_registry, output_type_registry
+from ludwig.schema.preprocessing import PreprocessingConfig
+from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 
 
 class InputFeatures:
