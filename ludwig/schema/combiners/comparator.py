@@ -19,15 +19,11 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     )
 
     entity_1: List[str] = schema_utils.List(
-        str,
-        default=None,
-        description="List of input features that compose the first entity to be compared."
+        str, default=None, description="List of input features that compose the first entity to be compared."
     )
 
     entity_2: List[str] = schema_utils.List(
-        str,
-        default=None,
-        description="List of input features that compose the second entity to be compared."
+        str, default=None, description="List of input features that compose the second entity to be compared."
     )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(

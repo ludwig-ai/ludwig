@@ -51,9 +51,9 @@ from ludwig.data.split import DEFAULT_PROBABILITIES, get_splitter
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
@@ -66,8 +66,9 @@ logger = logging.getLogger(__name__)
 default_random_seed = 42
 
 # Still needed for preprocessing  TODO(Connor): Refactor ludwig/data/preprocessing to use schema
-default_feature_specific_preprocessing_parameters = {name: preproc_sect.get_schema_cls()().preprocessing.to_dict() for
-                                                     name, preproc_sect in input_type_registry.items()}
+default_feature_specific_preprocessing_parameters = {
+    name: preproc_sect.get_schema_cls()().preprocessing.to_dict() for name, preproc_sect in input_type_registry.items()
+}
 
 default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
@@ -210,15 +211,17 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     config[TRAINER] = config_obj.trainer.to_dict()
 
     # ===== Input Features =====
-    config[INPUT_FEATURES] = [getattr(config_obj.input_features, feat[NAME]).to_dict()
-                              for feat in config[INPUT_FEATURES]]
+    config[INPUT_FEATURES] = [
+        getattr(config_obj.input_features, feat[NAME]).to_dict() for feat in config[INPUT_FEATURES]
+    ]
 
     # ===== Combiner =====
     config[COMBINER] = config_obj.combiner.to_dict()
 
     # ===== Output features =====
-    config[OUTPUT_FEATURES] = [getattr(config_obj.output_features, feat[NAME]).to_dict()
-                               for feat in config[OUTPUT_FEATURES]]
+    config[OUTPUT_FEATURES] = [
+        getattr(config_obj.output_features, feat[NAME]).to_dict() for feat in config[OUTPUT_FEATURES]
+    ]
 
     # ===== Hyperpot =====
     if HYPEROPT in config:

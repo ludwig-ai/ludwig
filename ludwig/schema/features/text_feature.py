@@ -42,7 +42,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig):
         [LOSS],
         default=LOSS,
         description="Internal only use parameter: default validation metric for binary output feature.",
-        parameter_metadata=INTERNAL_ONLY
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(
@@ -55,9 +55,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig):
         default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     )
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type="text_output"
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",

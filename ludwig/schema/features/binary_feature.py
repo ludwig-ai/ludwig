@@ -54,7 +54,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         [ROC_AUC],
         default=ROC_AUC,
         description="Internal only use parameter: default validation metric for binary output feature.",
-        parameter_metadata=INTERNAL_ONLY
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(
@@ -67,9 +67,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
         default=BINARY_WEIGHTED_CROSS_ENTROPY,
     )
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type="binary_output"
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="binary_output")
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",

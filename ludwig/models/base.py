@@ -10,9 +10,9 @@ from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.config_object import Config
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
-from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
@@ -55,15 +55,13 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         input_features_def = topological_sort_feature_dependencies(config.input_features.to_dict())
         for input_feature_def in input_features_def:
             input_features[input_feature_def[NAME]] = cls.build_single_input(
-                getattr(config, input_feature_def[NAME]),
-                input_features
+                getattr(config, input_feature_def[NAME]), input_features
             )
         return input_features
 
     @staticmethod
     def build_single_input(
-        feature_config: BaseInputFeatureConfig,
-        other_input_features: Optional[Dict[str, InputFeature]]
+        feature_config: BaseInputFeatureConfig, other_input_features: Optional[Dict[str, InputFeature]]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
         logger.debug(f"Input {feature_config.type} feature {feature_config.name}")
@@ -89,8 +87,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             # for seq2seq.
             output_feature_def["input_size"] = combiner.output_shape[-1]
             output_features[output_feature_def[NAME]] = cls.build_single_output(
-                getattr(config, output_feature_def[NAME]),
-                output_features
+                getattr(config, output_feature_def[NAME]), output_features
             )
         return output_features
 

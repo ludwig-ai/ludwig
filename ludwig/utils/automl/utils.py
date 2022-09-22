@@ -20,8 +20,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.modules.metric_registry import metric_registry
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
 
 
 def avg_num_tokens(field: Series) -> int:
