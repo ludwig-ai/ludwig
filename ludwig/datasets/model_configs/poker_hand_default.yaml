@@ -1,0 +1,33 @@
+output_features:
+  - name: hand
+    type: category
+input_features:
+  - name: S1
+    type: category
+  - name: C1
+    type: category
+  - name: S2
+    type: category
+  - name: C2
+    type: category
+  - name: S3
+    type: category
+  - name: C3
+    type: category
+  - name: S4
+    type: category
+  - name: C4
+    type: category
+  - name: S5
+    type: category
+  - name: C5
+    type: category
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

@@ -17,6 +17,7 @@ import copy
 import functools
 import os
 import random
+import subprocess
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
@@ -184,3 +185,19 @@ def memoized_method(*lru_args, **lru_kwargs):
         return wrapped_func
 
     return decorator
+
+
+def get_commit_hash():
+    """If Ludwig is run from a git repository, get the commit hash of the current HEAD.
+
+    Returns None if git is not executable in the current environment or Ludwig is not run in a git repo.
+    """
+    try:
+        with open(os.devnull, "w") as devnull:
+            is_a_git_repo = subprocess.call(["git", "branch"], stderr=subprocess.STDOUT, stdout=devnull) == 0
+        if is_a_git_repo:
+            commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8")
+            return commit_hash
+    except:  # noqa: E722
+        pass
+    return None

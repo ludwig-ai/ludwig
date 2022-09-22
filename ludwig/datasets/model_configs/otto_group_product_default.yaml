@@ -1,0 +1,199 @@
+output_features:
+  - name: target
+    type: category
+input_features:
+  - name: feat_1
+    type: numerical
+  - name: feat_2
+    type: numerical
+  - name: feat_3
+    type: numerical
+  - name: feat_4
+    type: numerical
+  - name: feat_5
+    type: numerical
+  - name: feat_6
+    type: numerical
+  - name: feat_7
+    type: numerical
+  - name: feat_8
+    type: numerical
+  - name: feat_9
+    type: numerical
+  - name: feat_10
+    type: numerical
+  - name: feat_11
+    type: numerical
+  - name: feat_12
+    type: numerical
+  - name: feat_13
+    type: numerical
+  - name: feat_14
+    type: numerical
+  - name: feat_15
+    type: numerical
+  - name: feat_16
+    type: numerical
+  - name: feat_17
+    type: numerical
+  - name: feat_18
+    type: numerical
+  - name: feat_19
+    type: numerical
+  - name: feat_20
+    type: numerical
+  - name: feat_21
+    type: numerical
+  - name: feat_22
+    type: numerical
+  - name: feat_23
+    type: numerical
+  - name: feat_24
+    type: numerical
+  - name: feat_25
+    type: numerical
+  - name: feat_26
+    type: numerical
+  - name: feat_27
+    type: numerical
+  - name: feat_28
+    type: numerical
+  - name: feat_29
+    type: numerical
+  - name: feat_30
+    type: numerical
+  - name: feat_31
+    type: numerical
+  - name: feat_32
+    type: numerical
+  - name: feat_33
+    type: numerical
+  - name: feat_34
+    type: numerical
+  - name: feat_35
+    type: numerical
+  - name: feat_36
+    type: numerical
+  - name: feat_37
+    type: numerical
+  - name: feat_38
+    type: numerical
+  - name: feat_39
+    type: numerical
+  - name: feat_40
+    type: numerical
+  - name: feat_41
+    type: numerical
+  - name: feat_42
+    type: numerical
+  - name: feat_43
+    type: numerical
+  - name: feat_44
+    type: numerical
+  - name: feat_45
+    type: numerical
+  - name: feat_46
+    type: numerical
+  - name: feat_47
+    type: numerical
+  - name: feat_48
+    type: numerical
+  - name: feat_49
+    type: numerical
+  - name: feat_50
+    type: numerical
+  - name: feat_51
+    type: numerical
+  - name: feat_52
+    type: numerical
+  - name: feat_53
+    type: numerical
+  - name: feat_54
+    type: numerical
+  - name: feat_55
+    type: numerical
+  - name: feat_56
+    type: numerical
+  - name: feat_57
+    type: numerical
+  - name: feat_58
+    type: numerical
+  - name: feat_59
+    type: numerical
+  - name: feat_60
+    type: numerical
+  - name: feat_61
+    type: numerical
+  - name: feat_62
+    type: numerical
+  - name: feat_63
+    type: numerical
+  - name: feat_64
+    type: numerical
+  - name: feat_65
+    type: numerical
+  - name: feat_66
+    type: numerical
+  - name: feat_67
+    type: numerical
+  - name: feat_68
+    type: numerical
+  - name: feat_69
+    type: numerical
+  - name: feat_70
+    type: numerical
+  - name: feat_71
+    type: numerical
+  - name: feat_72
+    type: numerical
+  - name: feat_73
+    type: numerical
+  - name: feat_74
+    type: numerical
+  - name: feat_75
+    type: numerical
+  - name: feat_76
+    type: numerical
+  - name: feat_77
+    type: numerical
+  - name: feat_78
+    type: numerical
+  - name: feat_79
+    type: numerical
+  - name: feat_80
+    type: numerical
+  - name: feat_81
+    type: numerical
+  - name: feat_82
+    type: numerical
+  - name: feat_83
+    type: numerical
+  - name: feat_84
+    type: numerical
+  - name: feat_85
+    type: numerical
+  - name: feat_86
+    type: numerical
+  - name: feat_87
+    type: numerical
+  - name: feat_88
+    type: numerical
+  - name: feat_89
+    type: numerical
+  - name: feat_90
+    type: numerical
+  - name: feat_91
+    type: numerical
+  - name: feat_92
+    type: numerical
+  - name: feat_93
+    type: numerical
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1
