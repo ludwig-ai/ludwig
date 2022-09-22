@@ -1,6 +1,7 @@
 from marshmallow import ValidationError
 
 from ludwig.features.feature_registries import input_type_registry
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -17,6 +18,7 @@ from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTraine
 from ludwig.constants import (
     BINARY,
     CATEGORY,
+    COLUMN,
     COMBINER,
     DECODER,
     DEFAULTS,
@@ -31,6 +33,7 @@ from ludwig.constants import (
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    PROC_COLUMN,
     TRAINER,
     TYPE,
     VALIDATION_METRIC,
@@ -69,6 +72,8 @@ class Config:
         if DEFAULTS in config_dict:
             self.set_attributes(self.defaults, config_dict[DEFAULTS])
 
+        self._set_feature_column(config_dict)
+        self._set_proc_column(config_dict)
         self.parse_features(config_dict[INPUT_FEATURES], INPUT_FEATURES)
         self.parse_features(config_dict[OUTPUT_FEATURES], OUTPUT_FEATURES)
 
@@ -108,7 +113,19 @@ class Config:
 
         if HYPEROPT in config_dict:
             pass
-            # self.set_attributes(self.hyperopt, config_dict[HYPEROPT])
+            # self.set_attributes(self.hyperopt, config_dict[HYPEROPT])  # TODO: Schemify Hyperopt
+
+    @staticmethod
+    def _set_feature_column(config: dict) -> None:
+        for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
+            if COLUMN not in feature:
+                feature[COLUMN] = feature[NAME]
+
+    @staticmethod
+    def _set_proc_column(config: dict) -> None:
+        for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
+            if PROC_COLUMN not in feature:
+                feature[PROC_COLUMN] = compute_feature_hash(feature)
 
     def parse_features(self, features, feature_section):
         """

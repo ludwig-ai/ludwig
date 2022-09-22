@@ -21,7 +21,6 @@ import sys
 import yaml
 
 from ludwig.constants import (
-    COLUMN,
     COMBINER,
     DECODER,
     DEFAULTS,
@@ -34,17 +33,17 @@ from ludwig.constants import (
     NAME,
     OUTPUT_FEATURES,
     PREPROCESSING,
-    PROC_COLUMN,
     RAY,
     SPLIT,
     TRAINER,
     TYPE,
 )
+from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import input_type_registry
-from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
@@ -126,18 +125,6 @@ def _perform_sanity_checks(config):
                  sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
-def _set_feature_column(config: dict) -> None:
-    for feature in config["input_features"] + config["output_features"]:
-        if COLUMN not in feature:
-            feature[COLUMN] = feature[NAME]
-
-
-def _set_proc_column(config: dict) -> None:
-    for feature in config["input_features"] + config["output_features"]:
-        if PROC_COLUMN not in feature:
-            feature[PROC_COLUMN] = compute_feature_hash(feature)
-
-
 def _merge_hyperopt_with_trainer(config: dict) -> None:
     if "hyperopt" not in config:
         return
@@ -182,8 +169,6 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
 def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     config = copy.deepcopy(config)
     _perform_sanity_checks(config)
-    _set_feature_column(config)
-    _set_proc_column(config)
     _merge_hyperopt_with_trainer(config)
 
     # ===== Defaults =====
@@ -221,7 +206,11 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
 
 
 def render_config(config=None, output=None, **kwargs):
-    output_config = merge_with_defaults(config)
+    upgraded_config = upgrade_to_latest_version(config)
+    config_obj = Config(upgraded_config)
+    output_config = merge_with_defaults(upgraded_config, config_obj)
+    validate_config(output_config)
+
     if output is None:
         print(yaml.safe_dump(output_config, None, sort_keys=False))
     else:
