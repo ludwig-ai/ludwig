@@ -125,7 +125,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         list,
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
-                    "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. "
+        "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
     )
 
     class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
@@ -158,7 +158,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         list,
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
-                    "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. "
+        "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
     )
 
     class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")

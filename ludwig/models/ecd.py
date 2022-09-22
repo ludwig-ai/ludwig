@@ -11,10 +11,10 @@ from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.schema.config_object import Config
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.schema.config_object import Config
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,10 @@ class ECD(BaseModel):
         return MODEL_ECD
 
     def __init__(
-            self,
-            config_obj: Config,
-            random_seed=None,
-            **_kwargs,
+        self,
+        config_obj: Config,
+        random_seed=None,
+        **_kwargs,
     ):
         self.config_obj = config_obj
         self._random_seed = random_seed
@@ -59,10 +59,10 @@ class ECD(BaseModel):
         clear_data_cache()
 
     def encode(
-            self,
-            inputs: Union[
-                Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-            ],
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
     ):
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
@@ -102,11 +102,11 @@ class ECD(BaseModel):
         return output_logits
 
     def forward(
-            self,
-            inputs: Union[
-                Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-            ],
-            mask=None,
+        self,
+        inputs: Union[
+            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+        ],
+        mask=None,
     ) -> Dict[str, torch.Tensor]:
         """Forward pass of the model.
 
@@ -151,5 +151,9 @@ class ECD(BaseModel):
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
-        return (self.config_obj.input_features.to_list(), self.config_obj.combiner.to_dict(),
-                self.config_obj.output_features.to_list(), self._random_seed)
+        return (
+            self.config_obj.input_features.to_list(),
+            self.config_obj.combiner.to_dict(),
+            self.config_obj.output_features.to_list(),
+            self._random_seed,
+        )

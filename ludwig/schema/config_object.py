@@ -45,8 +45,7 @@ class InputFeatures:
         return self.__dict__
 
     def to_list(self):
-        """
-        Method for getting a list representation of the input features.
+        """Method for getting a list representation of the input features.
 
         Returns:
             List of input features specified.
@@ -61,8 +60,7 @@ class OutputFeatures:
         return self.__dict__
 
     def to_list(self):
-        """
-        Method for getting a list representation of the output features.
+        """Method for getting a list representation of the output features.
 
         Returns:
             List of output features specified.

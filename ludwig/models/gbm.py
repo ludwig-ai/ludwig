@@ -12,9 +12,9 @@ from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
+from ludwig.schema.config_object import Config
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.schema.config_object import Config
 
 
 class GBM(BaseModel):
@@ -62,9 +62,7 @@ class GBM(BaseModel):
         output_features = {}
 
         output_feature_def["input_size"] = input_size
-        output_feature = cls.build_single_output(
-                getattr(config, output_feature_def[NAME]), output_features
-            )
+        output_feature = cls.build_single_output(getattr(config, output_feature_def[NAME]), output_features)
         output_features[output_feature_def[NAME]] = output_feature
 
         return output_features

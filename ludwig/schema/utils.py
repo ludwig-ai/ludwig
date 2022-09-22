@@ -453,10 +453,10 @@ def FloatRange(
 
 
 def Dict(
-        default: Union[None, TDict] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None
+    default: Union[None, TDict] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     allow_none = allow_none or default is None
