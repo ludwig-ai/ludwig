@@ -812,17 +812,24 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Disable placement groups on dask
         dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
+    def generate_bundles(self, num_cpu):
+        # Ray requires that each bundle be scheduleable on a single node.
+        # So a bundle of 320 cpus would never get scheduled. For now a simple heuristic
+        # to be used is to just request 1 cpu at a time.
+        return [{"CPU": 1} for _ in range(int(num_cpu))]
+
     @contextlib.contextmanager
     def provision_preprocessing_workers(self):
-        if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
-            logger.warning(
-                "Backend config has use_preprocessing_placement_group set to False or did not set it at all."
-                " provision_preprocessing_workers() is a no-op in this case."
+        num_cpu = self._preprocessor_kwargs.get("num_cpu")
+        if not num_cpu:
+            logger.info(
+                "Backend config has num_cpu not set." " provision_preprocessing_workers() is a no-op in this case."
             )
             yield
         else:
-            num_cpu = self._preprocessor_kwargs["num_cpu_workers"]
-            self._preprocessor_pg = placement_group([{"CPU": num_cpu}])
+            bundles = self.generate_bundles(num_cpu)
+            logger.info("Requesting bundles of %s for preprocessing", bundles)
+            self._preprocessor_pg = placement_group(bundles)
             ready = self._preprocessor_pg.wait(FIFTEEN_MINS_IN_S)
 
             if not ready:
@@ -840,12 +847,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
                 self._release_preprocessing_workers()
 
     def _release_preprocessing_workers(self):
-        if not self._preprocessor_kwargs.get("use_preprocessing_placement_group", False):
-            logger.warning(
-                "Backend config has use_preprocessing_placement_group set to False or did not set it at all."
-                " _release_preprocessing_workers() is a no-op in this case."
-            )
-            return
         if self._preprocessor_pg is not None:
             remove_placement_group(self._preprocessor_pg)
         self._preprocessor_pg = None

@@ -3889,7 +3889,7 @@ def cli(sys_argv):
     try:
         vis_func = visualizations_registry[args.visualization]
     except KeyError:
-        logging.info("Visualization argument not recognized")
+        logger.info("Visualization argument not recognized")
         raise
     vis_func(**vars(args))
 

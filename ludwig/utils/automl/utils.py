@@ -23,6 +23,8 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 
+logger = logging.getLogger(__name__)
+
 
 def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
@@ -69,7 +71,7 @@ def _add_transfer_config(base_config: Dict, ref_configs: Dict) -> Dict:
                 min_dataset = dataset
 
     if min_dataset is not None:
-        logging.info("Transfer config from dataset {}".format(min_dataset["name"]))
+        logger.info("Transfer config from dataset {}".format(min_dataset["name"]))
         min_dataset_config = min_dataset[CONFIG]
         hyperopt_params = base_config[HYPEROPT][PARAMETERS]
         point_to_evaluate = {}
@@ -137,7 +139,7 @@ def has_imbalanced_output(base_config, features_metadata) -> bool:
             for feature_metadata in features_metadata:
                 if output_feature[NAME] == feature_metadata.name:
                     if feature_metadata.imbalance_ratio < IMBALANCE_DETECTION_RATIO:
-                        logging.info(
+                        logger.info(
                             f"Imbalance in {output_feature[NAME]}: minority/majority={feature_metadata.imbalance_ratio}"
                         )
                         imbalanced_output = True

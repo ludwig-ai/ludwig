@@ -150,7 +150,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
         except RuntimeError:
-            logging.info("Unable to process audio files provided")
+            logger.info("Unable to process audio files provided")
             raise RuntimeError
 
         raw_audio = df_engine.map_objects(raw_audio, lambda row: row if is_torch_audio_tuple(row) else default_audio)

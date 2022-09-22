@@ -19,7 +19,13 @@ def get_combiner_jsonschema():
     return {
         "type": "object",
         "properties": {
-            "type": {"type": "string", "enum": combiner_types, "default": "concat"},
+            "type": {
+                "type": "string",
+                "enum": combiner_types,
+                "default": "concat",
+                "title": "type",
+                "description": "Select the combiner type.",
+            },
         },
         "allOf": get_combiner_conds(),
         "required": ["type"],
