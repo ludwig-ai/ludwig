@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 import random
 from typing import Any, Dict, Union
@@ -60,6 +61,14 @@ class ZScoreTransformer(nn.Module):
         super().__init__()
         self.mu = float(mean) if mean is not None else mean
         self.sigma = float(std) if std is not None else std
+        self.feature_name = kwargs.get(NAME, "")
+        if not self.sigma:
+            raise RuntimeError(
+                f"Cannot apply zscore normalization to `{self.feature_name}` since it has a standard deviation of 0. "
+                f"This is most likely because `{self.feature_name}` has a constant value of {self.mu} for all rows in "
+                "the dataset. Consider removing this feature from your Ludwig config since it is not useful for "
+                "your machine learning model."
+            )
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.mu) / self.sigma
@@ -264,8 +273,11 @@ class NumberFeatureMixin(BaseFeatureMixin):
         #     return series
 
         def normalize(series: pd.Series) -> pd.Series:
+            _feature_metadata = copy.deepcopy(metadata[feature_config[NAME]])
+            _feature_metadata.update({NAME: feature_config[NAME]})
+
             # retrieve request numeric transformer
-            numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
+            numeric_transformer = get_transformer(_feature_metadata, preprocessing_parameters)
 
             # transform input numeric values with specified transformer
             transformed_values = numeric_transformer.transform(series.values)
