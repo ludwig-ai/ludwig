@@ -45,7 +45,7 @@ ______________________________________________________________________
 
 ### get_dataset
 
-Get a dataset by name
+Get a dataset module by name
 
 **Example:**
 
