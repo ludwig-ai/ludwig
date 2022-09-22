@@ -88,6 +88,12 @@ def _train_dataset_process(dataset_name, results_queue):
         elif "root_mean_squared_error" in stats:
             results.metric = "root_mean_squared_error"
             results.performance = stats["root_mean_squared_error"]
+        elif "mean_squared_error" in stats:
+            results.metric = "mean_squared_error"
+            results.performance = stats["mean_squared_error"]
+        elif "mean_absolute_error" in stats:
+            results.metric = "mean_absolute_error"
+            results.performance = stats["mean_absolute_error"]
         elif "loss" in stats:
             results.metric = "loss"
             results.performance = stats["loss"]
