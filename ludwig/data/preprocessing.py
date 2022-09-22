@@ -1851,8 +1851,7 @@ def preprocess_for_prediction(
     backend=LOCAL_BACKEND,
     callbacks=None,
 ):
-    """
-    Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
+    """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 
     Args:
         config: Config dictionary corresponding to Ludwig Model
