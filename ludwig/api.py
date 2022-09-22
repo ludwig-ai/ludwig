@@ -501,18 +501,15 @@ class LudwigModel:
             if not self.model:
                 if self.backend.is_coordinator():
                     print_boxed("MODEL")
-                # update config with metadata properties
-                update_config_with_metadata(self.config, training_set_metadata)
+                # update config and config object with metadata properties
+                update_config_with_metadata(self.config, self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
-                self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
+                self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
                 set_saved_weights_in_checkpoint_flag(self.config)
-
-            # Convert config dictionary into an instance of BaseTrainerConfig.
-            trainer_config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
 
             with self.backend.create_trainer(
                 model=self.model,
-                config=trainer_config,
+                config=self.config_obj.trainer,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -1528,11 +1525,11 @@ class LudwigModel:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config: dict, random_seed: int = default_random_seed) -> BaseModel:
+    def create_model(config_obj: Config, random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
 
         # Inputs
-        :param config: (dict) Ludwig config
+        :param config_obj: (Config) Ludwig config object
         :param random_seed: (int, default: ludwig default random seed) Random
             seed used for weights initialization,
             splits and any other random function.
@@ -1540,8 +1537,8 @@ class LudwigModel:
         # Return
         :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
-        model_type = get_from_registry(config[MODEL_TYPE], model_type_registry)
-        return model_type(**config, random_seed=random_seed)
+        model_type = get_from_registry(config_obj.model_type, model_type_registry)
+        return model_type(config_obj, random_seed=random_seed)
 
     @staticmethod
     def set_logging_level(logging_level: int) -> None:

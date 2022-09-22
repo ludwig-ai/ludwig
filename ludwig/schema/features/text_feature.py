@@ -33,6 +33,13 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
+    class_similarities: list = schema_utils.List(
+        list,
+        default=None,
+        description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
+                    "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. "
+    )
+
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=TEXT,
         default="generator",

@@ -45,6 +45,8 @@ from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOut
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
+from ludwig.schema.config_object import Config
+from ludwig.utils.defaults import initialize_config
 from ludwig.utils.misc_utils import get_from_registry
 
 base_type_registry = {
@@ -88,20 +90,34 @@ output_type_registry = {
 }
 
 
-def update_config_with_metadata(config, training_set_metadata):
+def update_config_with_metadata(config: dict, config_obj: Config, training_set_metadata):
     # populate input features fields depending on data
     # config = merge_with_defaults(config)
     for input_feature in config[INPUT_FEATURES]:
         feature = get_from_registry(input_feature[TYPE], input_type_registry)
-        feature.populate_defaults(input_feature)
-        feature.update_config_with_metadata(input_feature, training_set_metadata[input_feature[NAME]], config=config)
+        feature.update_config_with_metadata(
+            input_feature,
+            getattr(config_obj, input_feature[NAME]),
+            training_set_metadata[input_feature[NAME]],
+            config=config
+        )
+        input_feature = initialize_config(getattr(config_obj, input_feature[NAME]))
 
     # populate output features fields depending on data
     for output_feature in config[OUTPUT_FEATURES]:
         feature = get_from_registry(output_feature[TYPE], output_type_registry)
-        feature.populate_defaults(output_feature)
-        feature.update_config_with_metadata(output_feature, training_set_metadata[output_feature[NAME]])
+        feature.update_config_with_metadata(
+            output_feature,
+            getattr(config_obj, output_feature[NAME]),
+            training_set_metadata[output_feature[NAME]]
+        )
+        output_feature = initialize_config(getattr(config_obj, output_feature[NAME]))
 
     for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
         if PREPROCESSING in feature:
             feature[PREPROCESSING] = training_set_metadata[feature[NAME]][PREPROCESSING]
+            config_obj.set_attributes(
+                getattr(config_obj, feature[NAME]).preprocessing,
+                feature[PREPROCESSING],
+                feature_type=feature[TYPE]
+            )

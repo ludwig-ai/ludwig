@@ -199,8 +199,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return torch.float32
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_timeseries_length"]
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.max_sequence_length = feature_metadata["max_timeseries_length"]
 
     @staticmethod
     def get_schema_cls():

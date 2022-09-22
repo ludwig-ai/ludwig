@@ -108,8 +108,8 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
 
     @staticmethod
     def get_schema_cls():

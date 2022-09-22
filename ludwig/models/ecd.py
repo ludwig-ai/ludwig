@@ -14,6 +14,7 @@ from ludwig.models.base import BaseModel
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.torch_utils import get_torch_device
+from ludwig.schema.config_object import Config
 
 logger = logging.getLogger(__name__)
 
@@ -24,32 +25,31 @@ class ECD(BaseModel):
         return MODEL_ECD
 
     def __init__(
-        self,
-        config_obj,
-        random_seed=None,
-        **_kwargs,
+            self,
+            config_obj: Config,
+            random_seed=None,
+            **_kwargs,
     ):
-        self._output_features_def = copy.deepcopy(config_obj.output_features.Schema().dump(config_obj.output_features))
-
+        self.config_obj = config_obj
         self._random_seed = random_seed
 
         super().__init__(random_seed=self._random_seed)
 
         # ================ Inputs ================
         try:
-            self.input_features.update(self.build_inputs(config=config_obj))
+            self.input_features.update(self.build_inputs(config=self.config_obj))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
         # ================ Combiner ================
-        logger.debug(f"Combiner {config_obj.combiner.type}")
-        combiner_class = get_combiner_class(config_obj.combiner.type)
-        self.combiner = combiner_class(input_features=self.input_features, config=config_obj.combiner)
+        logger.debug(f"Combiner {self.config_obj.combiner.type}")
+        combiner_class = get_combiner_class(self.config_obj.combiner.type)
+        self.combiner = combiner_class(input_features=self.input_features, config=self.config_obj.combiner)
 
         # ================ Outputs ================
-        self.output_features.update(self.build_outputs(config=config_obj, combiner=self.combiner))
+        self.output_features.update(self.build_outputs(config=self.config_obj, combiner=self.combiner))
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -59,10 +59,10 @@ class ECD(BaseModel):
         clear_data_cache()
 
     def encode(
-        self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
+            self,
+            inputs: Union[
+                Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            ],
     ):
         # Convert inputs to tensors.
         for input_feature_name, input_values in inputs.items():
@@ -102,11 +102,11 @@ class ECD(BaseModel):
         return output_logits
 
     def forward(
-        self,
-        inputs: Union[
-            Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
-        ],
-        mask=None,
+            self,
+            inputs: Union[
+                Dict[str, torch.Tensor], Dict[str, np.ndarray], Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]
+            ],
+            mask=None,
     ) -> Dict[str, torch.Tensor]:
         """Forward pass of the model.
 
@@ -151,4 +151,5 @@ class ECD(BaseModel):
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
-        return self._input_features_df, self._combiner_def, self._output_features_df, self._random_seed
+        return (self.config_obj.input_features.to_list(), self.config_obj.combiner.to_dict(),
+                self.config_obj.output_features.to_list(), self._random_seed)

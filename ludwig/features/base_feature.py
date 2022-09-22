@@ -150,7 +150,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -448,7 +448,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod

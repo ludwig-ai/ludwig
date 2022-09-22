@@ -206,12 +206,12 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        input_feature[ENCODER]["pad_idx"] = feature_metadata["pad_idx"]
-        input_feature[ENCODER]["num_tokens"] = len(feature_metadata["idx2str"])
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
+        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
+        feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
 
     @staticmethod
     def get_schema_cls():
@@ -248,32 +248,32 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.decoder.vocab_size = feature_metadata["vocab_size"]
+        feature_config.decoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
             # [0, 0] for UNK and PAD
-            output_feature[LOSS]["class_weights"] = [0, 0] + output_feature[LOSS]["class_weights"]
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
+            feature_config.loss.class_weights = [0, 0] + feature_config.loss.class_weights
+            if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({})".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature[DECODER]["vocab_size"]
+                        len(feature_config.loss.class_weights), feature_config.decoder.vocab_size
                     )
                 )
 
-        if output_feature[LOSS]["class_similarities_temperature"] > 0:
-            if "class_similarities" in output_feature:
-                distances = output_feature["class_similarities"]
-                temperature = output_feature[LOSS]["class_similarities_temperature"]
+        if feature_config.loss.class_similarities_temperature > 0:
+            if feature_config.class_similarities:
+                distances = feature_config.class_similarities
+                temperature = feature_config.loss.class_similarities_temperature
                 for i in range(len(distances)):
                     distances[i, :] = softmax(distances[i, :], temperature=temperature)
-                output_feature[LOSS]["class_similarities"] = distances
+                feature_config.loss.class_similarities = distances
             else:
                 raise ValueError(
                     "class_similarities_temperature > 0,"
                     "but no class similarities are provided "
-                    "for feature {}".format(output_feature[COLUMN])
+                    "for feature {}".format(feature_config.column)
                 )
 
     @staticmethod

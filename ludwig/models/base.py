@@ -52,7 +52,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     def build_inputs(cls, config: Config) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
-        input_features_def = topological_sort_feature_dependencies(config.input_features.to_dict())
+        input_features_def = topological_sort_feature_dependencies(config.input_features.to_list())
         for input_feature_def in input_features_def:
             input_features[input_feature_def[NAME]] = cls.build_single_input(
                 getattr(config, input_feature_def[NAME]), input_features
@@ -79,7 +79,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     @classmethod
     def build_outputs(cls, config: Config, combiner: Combiner) -> Dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
-        output_features_def = topological_sort_feature_dependencies(config.output_features.to_dict())
+        output_features_def = topological_sort_feature_dependencies(config.output_features.to_list())
         output_features = {}
 
         for output_feature_def in output_features_def:

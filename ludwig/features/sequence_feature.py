@@ -276,10 +276,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return torch.int32
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
+        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
 
     @staticmethod
     def get_schema_cls():
@@ -344,27 +344,27 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.deccoder.vocab_size = feature_metadata["vocab_size"]
+        feature_config.deccoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
+            if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
-                        len(output_feature[LOSS]["class_weights"]),
-                        output_feature[DECODER]["vocab_size"],
-                        output_feature[COLUMN],
+                        len(feature_config.loss.class_weights),
+                        feature_config.decoder.vocab_size,
+                        feature_config.column,
                     )
                 )
 
-        if output_feature[LOSS]["class_similarities_temperature"] > 0:
-            if "class_similarities" in output_feature[LOSS]:
-                similarities = output_feature[LOSS]["class_similarities"]
-                temperature = output_feature[LOSS]["class_similarities_temperature"]
+        if feature_config.loss.class_similarities_temperature > 0:
+            if "class_similarities" in feature_config.loss:
+                similarities = feature_config.loss.class_similarities
+                temperature = feature_config.loss.class_similarities_temperature
 
                 curr_row = 0
                 first_row_length = 0
@@ -382,7 +382,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                                 "of {} is {}, different from the length of "
                                 "the first row {}. All rows must have "
                                 "the same length.".format(
-                                    curr_row, output_feature[COLUMN], curr_row_length, first_row_length
+                                    curr_row, feature_config.column, curr_row_length, first_row_length
                                 )
                             )
                         else:
@@ -394,30 +394,30 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         "The class_similarities matrix of {} has "
                         "{} rows and {} columns, "
                         "their number must be identical.".format(
-                            output_feature[COLUMN], len(similarities), all_rows_length
+                            feature_config.column, len(similarities), all_rows_length
                         )
                     )
 
-                if all_rows_length != output_feature[DECODER]["vocab_size"]:
+                if all_rows_length != feature_config.decoder.vocab_size:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> and <PAD> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature[DECODER]["vocab_size"]
+                            feature_config.column, all_rows_length, feature_config.decoder.vocab_size
                         )
                     )
 
                 similarities = np.array(similarities, dtype=np.float32)
                 for i in range(len(similarities)):
                     similarities[i, :] = softmax(similarities[i, :], temperature=temperature)
-                output_feature[LOSS]["class_similarities"] = similarities
+                feature_config.loss.class_similarities = similarities
             else:
                 raise ValueError(
                     "class_similarities_temperature > 0, "
                     "but no class_similarities are provided "
-                    "for feature {}".format(output_feature[COLUMN])
+                    "for feature {}".format(feature_config.column)
                 )
 
     @staticmethod

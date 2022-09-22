@@ -64,6 +64,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
+        allow_none=True,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
@@ -153,7 +154,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )

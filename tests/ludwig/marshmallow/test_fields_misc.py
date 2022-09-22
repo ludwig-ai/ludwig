@@ -143,7 +143,7 @@ def test_OneOfOptionsField():
             description="",
             allow_none=False,
             field_options=[
-                schema_utils.FloatRange(default=0.001, min=0, max=1),
+                schema_utils.FloatRange(default=0.001, min=0, max=1, allow_none=False),
                 schema_utils.StringOptions(options=["placeholder"], default="placeholder", allow_none=False),
             ],
         )
@@ -165,7 +165,7 @@ def test_OneOfOptionsField():
             default="placeholder",
             description="",
             field_options=[
-                schema_utils.FloatRange(default=0.001, min=0, max=1),
+                schema_utils.FloatRange(default=0.001, min=0, max=1, allow_none=False),
                 schema_utils.StringOptions(options=["placeholder"], default="placeholder"),
             ],
         )

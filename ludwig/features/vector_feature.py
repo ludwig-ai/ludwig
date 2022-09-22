@@ -21,7 +21,6 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    ENCODER,
     ERROR,
     HIDDEN,
     LOGITS,
@@ -163,8 +162,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["input_size"] = feature_metadata["vector_size"]
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.input_size = feature_metadata["vector_size"]
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
@@ -223,8 +222,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return torch.Size([self.input_size])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vector_size"] = feature_metadata["vector_size"]
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.vector_size = feature_metadata["vector_size"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):

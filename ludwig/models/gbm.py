@@ -14,6 +14,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import get_torch_device
+from ludwig.schema.config_object import Config
 
 
 class GBM(BaseModel):
@@ -23,26 +24,25 @@ class GBM(BaseModel):
 
     def __init__(
         self,
-        input_features: List[Dict[str, Any]],
-        output_features: List[Dict[str, Any]],
+        config_obj: Config,
         random_seed: int = None,
         **_kwargs,
     ):
-        super().__init__(random_seed=random_seed)
+        self.config_obj = config_obj
+        self._random_seed = random_seed
 
-        self._input_features_def = copy.deepcopy(input_features)
-        self._output_features_def = copy.deepcopy(output_features)
+        super().__init__(random_seed=self._random_seed)
 
         # ================ Inputs ================
         try:
-            self.input_features.update(self.build_inputs(self._input_features_def))
+            self.input_features.update(self.build_inputs(config=self.config_obj))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
         # ================ Outputs ================
-        self.output_features.update(self.build_outputs(self._output_features_def, input_size=self.input_shape[-1]))
+        self.output_features.update(self.build_outputs(config=self.config_obj, input_size=self.input_shape[-1]))
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -52,17 +52,19 @@ class GBM(BaseModel):
         self.compiled_model: torch.nn.Module = None
 
     @classmethod
-    def build_outputs(cls, output_features_def: List[Dict[str, Any]], input_size: int) -> Dict[str, OutputFeature]:
+    def build_outputs(cls, config: Config, input_size: int) -> Dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
-        if len(output_features_def) > 1:
+        if len(config.output_features.to_dict()) > 1:
             raise ValueError("Only single task currently supported")
 
-        output_feature_def = output_features_def[0]
+        output_feature_def = config.output_features.to_list()[0]
         output_features = {}
 
         output_feature_def["input_size"] = input_size
-        output_feature = cls.build_single_output(output_feature_def, output_features)
+        output_feature = cls.build_single_output(
+                getattr(config, output_feature_def[NAME]), output_features
+            )
         output_features[output_feature_def[NAME]] = output_feature
 
         return output_features
@@ -169,4 +171,4 @@ class GBM(BaseModel):
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
-        return (self._input_features_df, self._output_features_df, self._random_seed)
+        return self.config_obj.input_features.to_list(), self.config_obj.output_features.to_list(), self._random_seed

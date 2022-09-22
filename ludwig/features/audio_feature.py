@@ -448,10 +448,10 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         return torch.float32
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_length"]
-        input_feature[ENCODER]["embedding_size"] = feature_metadata["feature_dim"]
-        input_feature[ENCODER]["should_embed"] = False
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.max_sequence_length = feature_metadata["max_length"]
+        feature_config.encoder.embedding_size = feature_metadata["feature_dim"]
+        feature_config.encoder.should_embed = False
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:

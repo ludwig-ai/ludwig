@@ -44,12 +44,30 @@ class InputFeatures:
     def to_dict(self):
         return self.__dict__
 
+    def to_list(self):
+        """
+        Method for getting a list representation of the input features.
+
+        Returns:
+            List of input features specified.
+        """
+        return list(self.__dict__.values())
+
 
 class OutputFeatures:
     """OutputFeatures is a container for all output features."""
 
     def to_dict(self):
         return self.__dict__
+
+    def to_list(self):
+        """
+        Method for getting a list representation of the output features.
+
+        Returns:
+            List of output features specified.
+        """
+        return list(self.__dict__.values())
 
 
 class Config:

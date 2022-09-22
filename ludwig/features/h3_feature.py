@@ -136,7 +136,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
