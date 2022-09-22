@@ -134,10 +134,13 @@ def train_all_datasets():
         process.join()
         del running_processes[next_results.dataset_name]
     results_df = pd.DataFrame(accumulated_results)
-    with pd.option_context("display.max_rows", None, "display.max_columns", None, "display.precision", 3):
+    with pd.option_context(
+        "display.max_rows", None, "display.max_columns", None, "display.precision", 3, "display.width", 120
+    ):
         results_to_display = results_df[results_df["has_config"]].copy()
-        del results_to_display["output_directory"]
-        del results_to_display["ludwig_commit"]
+        results_to_display = results_to_display.drop(
+            columns=["dataset_version", "output_directory", "ludwig_version", "ludwig_commit", "has_config"]
+        )
         print(results_to_display)
     results_df.to_csv("train_all_model_configs_results.csv", index=False)
 
