@@ -136,24 +136,13 @@ class IntegratedGradientsExplainer(Explainer):
         explanation_model = WrapperModule(self.model.model, self.target_feature_name)
         explainer = IntegratedGradients(explanation_model)
 
-        # Lookup from column name to output feature
-        output_feature_map = {feature["column"]: feature for feature in self.model.config["output_features"]}
-
-        # The second dimension of the attribution tensor corresponds to the cardinality
-        # of the output feature. For regression (number) this is 1, for binary 2, and
-        # for category it is the vocab size.
-        vocab_size = 1
-        is_category_target = output_feature_map[self.target_feature_name][TYPE] == CATEGORY
-        if is_category_target:
-            vocab_size = self.model.training_set_metadata[self.target_feature_name]["vocab_size"]
-
         # Compute attribution for each possible output feature label separately.
         expected_values = []
-        for target_idx in range(vocab_size):
+        for target_idx in range(self.vocab_size):
             attribution, delta = explainer.attribute(
                 tuple(inputs_encoded),
                 baselines=tuple(baseline),
-                target=target_idx if is_category_target else None,
+                target=target_idx if self.is_category_target else None,
                 internal_batch_size=self.model.config["trainer"]["batch_size"],
                 return_convergence_delta=True,
             )
@@ -177,9 +166,12 @@ class IntegratedGradientsExplainer(Explainer):
             expected_value = delta.detach().numpy().mean()
             expected_values.append(expected_value)
 
-        # For binary outputs, add an extra attribution for the negative class (false).
-        is_binary_target = output_feature_map[self.target_feature_name][TYPE] == BINARY
-        if is_binary_target:
+            if self.is_binary_target:
+                # For binary targets, we only need to compute attribution for the positive class (see below).
+                break
+
+        # For binary targets, add an extra attribution for the negative class (false).
+        if self.is_binary_target:
             for explanation in self.explanations:
                 le_true = explanation.label_explanations[0]
                 explanation.add(le_true.feature_attributions * -1)

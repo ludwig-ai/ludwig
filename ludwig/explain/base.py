@@ -4,6 +4,7 @@ from typing import List, Tuple
 import pandas as pd
 
 from ludwig.api import LudwigModel
+from ludwig.constants import BINARY, CATEGORY, TYPE
 from ludwig.explain.util import Explanation, prepare_data
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -32,6 +33,31 @@ class Explainer(metaclass=ABCMeta):
         )
 
         self.explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
+
+        # Lookup from column name to output feature
+        self.output_feature_map = {feature["column"]: feature for feature in self.model.config["output_features"]}
+
+    @property
+    def is_binary_target(self) -> bool:
+        """Whether the target is binary."""
+        return self.output_feature_map[self.target_feature_name][TYPE] == BINARY
+
+    @property
+    def is_category_target(self) -> bool:
+        """Whether the target is categorical."""
+        return self.output_feature_map[self.target_feature_name][TYPE] == CATEGORY
+
+    @property
+    def vocab_size(self) -> int:
+        """The vocab size of the target feature.
+
+        For regression (number) this is 1, for binary it is 2, and for category it is the vocab size.
+        """
+        if self.is_category_target:
+            return self.model.training_set_metadata[self.target_feature_name]["vocab_size"]
+        elif self.is_binary_target:
+            return 2
+        return 1
 
     @abstractmethod
     def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:

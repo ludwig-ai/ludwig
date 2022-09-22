@@ -1,22 +1,22 @@
 from typing import List, Tuple
 
-import numpy as np
-
 from ludwig.explain.base import Explainer
+from ludwig.explain.util import Explanation
 from ludwig.models.gbm import GBM
 
 
 class GBMExplainer(Explainer):
-    def explain(self, **kwargs) -> Tuple[np.array, List[float]]:
-        """Explain the model's predictions using Integrated Gradients.
+    def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:
+        """Explain the model's predictions. Uses the feature importances from the model.
 
-        Returns:
-            A tuple of (attribution, expected values):
-            attribution: (np.array) of shape [batch size, output feature cardinality, num input features]
-                Attribution value for each possible output feature label with respect to each input feature for each row
-                in inputs_df.
-            expected values: (List[float]) of length [output feature cardinality]
-                Expected value for each possible output feature label.
+        # Return
+
+        :return: (Tuple[List[Explanation], List[float]]) `(explanations, expected_values)`
+            `explanations`: (List[Explanation]) A list of explanations, one for each row in the input data. Each
+            explanation contains the feature attributions for each label in the target feature's vocab.
+
+            `expected_values`: (List[float]) of length [output feature cardinality] Expected value for each label in
+            the target feature's vocab.
         """
         base_model: GBM = self.model.model
         bst = base_model.lgb_booster
@@ -24,10 +24,17 @@ class GBMExplainer(Explainer):
             raise ValueError("Model has not been trained yet.")
 
         # Get global feature importance from the model, use it for each row in the batch.
-        feature_importance = bst.feature_importance(importance_type="split")
-        feature_importance = feature_importance / feature_importance.sum()
+        feat_imp = bst.feature_importance(importance_type="gain")
+        # Scale the feature importance to sum to 1.
+        feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
-        attribution = None
-        expected_values = None
+        expected_values = []
+        for target_idx in range(self.vocab_size):
+            for explanation in self.explanations:
+                # Add the feature attributions to the explanation object for this row.
+                explanation.add(feat_imp)
 
-        return attribution, expected_values
+            # TODO:
+            expected_values.append(0.0)
+
+        return self.explanations, expected_values
