@@ -1,17 +1,18 @@
 from marshmallow import ValidationError
 
-from ludwig.schema.combiners.concat import ConcatCombinerConfig
-from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
-from ludwig.schema.encoders.base import PassthroughEncoderConfig
-from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.defaults.defaults import DefaultsConfig
-from ludwig.schema.features.utils import input_type_registry, output_type_registry
-from ludwig.schema.combiners.utils import combiner_registry
-from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.decoders.utils import get_decoder_cls
+from ludwig.features.feature_registries import input_type_registry
 from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.schema.combiners.base import BaseCombinerConfig
+from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.utils import combiner_registry
+from ludwig.schema.decoders.utils import get_decoder_cls
+from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.encoders.base import PassthroughEncoderConfig
+from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
+from ludwig.schema.encoders.utils import get_encoder_cls
+from ludwig.schema.features.utils import input_type_registry, output_type_registry
+from ludwig.schema.preprocessing import PreprocessingConfig
+from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 
 from ludwig.constants import (
     BINARY,
@@ -19,15 +20,15 @@ from ludwig.constants import (
     COMBINER,
     DECODER,
     DEFAULTS,
-    MODEL_ECD,
     ENCODER,
-    LOSS,
-    NUMBER,
-    MODEL_GBM,
     HYPEROPT,
     INPUT_FEATURES,
+    LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
     MODEL_TYPE,
     NAME,
+    NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
     TRAINER,
@@ -37,28 +38,23 @@ from ludwig.constants import (
 
 
 class InputFeatures:
-    """
-    InputFeatures is a container for all input features.
-    """
+    """InputFeatures is a container for all input features."""
 
     def to_dict(self):
         return self.__dict__
 
 
 class OutputFeatures:
-    """
-    OutputFeatures is a container for all output features.
-    """
+    """OutputFeatures is a container for all output features."""
 
     def to_dict(self):
         return self.__dict__
 
 
 class Config:
-    """
-    This class is the implementation of the config object that replaces the need for a config dictionary throughout the
-    project.
-    """
+    """This class is the implementation of the config object that replaces the need for a config dictionary
+    throughout the project."""
+
     model_type = MODEL_ECD
     input_features = InputFeatures()
     output_features = OutputFeatures()
@@ -82,7 +78,7 @@ class Config:
                 self.trainer = GBMTrainerConfig()
 
                 for feature in dir(self.input_features):
-                    if feature.startswith('__'):
+                    if feature.startswith("__"):
                         continue
                     else:
                         feature_cls = getattr(self.input_features, feature)
@@ -91,8 +87,9 @@ class Config:
                         elif feature_cls.type in [CATEGORY, NUMBER]:
                             feature_cls.encoder = PassthroughEncoderConfig()
                         else:
-                            raise ValidationError("GBM Models currently only support Binary, Category, and Number "
-                                                  "features")
+                            raise ValidationError(
+                                "GBM Models currently only support Binary, Category, and Number " "features"
+                            )
 
         if COMBINER in config_dict:
             if self.combiner.type != config_dict[COMBINER][TYPE]:
@@ -102,8 +99,7 @@ class Config:
         if TRAINER in config_dict:
             if VALIDATION_METRIC not in config_dict[TRAINER]:
                 self.trainer.validation_metric = getattr(
-                    self.output_features,
-                    config_dict[OUTPUT_FEATURES][0][NAME]
+                    self.output_features, config_dict[OUTPUT_FEATURES][0][NAME]
                 ).default_validation_metric
             self.set_attributes(self.trainer, config_dict[TRAINER])
 
@@ -141,9 +137,7 @@ class Config:
             feature_schema = self.update_global_defaults(feature_schema(), feature[TYPE])
             setattr(getattr(self, feature_section), feature[NAME], feature_schema)
             self.set_attributes(
-                getattr(getattr(self, feature_section), feature[NAME]),
-                feature,
-                feature_type=feature[TYPE]
+                getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
             )
 
     def set_attributes(self, config_obj_lvl, config_dict_lvl, feature_type=None):
@@ -183,9 +177,8 @@ class Config:
                 setattr(config_obj_lvl, key, val)
 
     def update_global_defaults(self, feature, feat_type):
-        """
-        This purpose of this function is to set the attributes of the features that are specified in the defaults
-        section of the config.
+        """This purpose of this function is to set the attributes of the features that are specified in the
+        defaults section of the config.
 
         Args:
             feature: The feature with attributes to be set from specified defaults.
@@ -193,7 +186,6 @@ class Config:
 
         Returns:
             The feature with defaults set.
-
         """
         type_defaults = getattr(self.defaults, feat_type)
         config_sections = feature.to_dict().keys()
@@ -205,8 +197,7 @@ class Config:
 
     @staticmethod
     def get_new_config(module, config_type, feature_type):
-        """
-        Helper function for getting the appropriate config to set in defaults section.
+        """Helper function for getting the appropriate config to set in defaults section.
 
         Args:
             module: Which nested config module we're dealing with.
@@ -215,7 +206,6 @@ class Config:
 
         Returns:
             Config Schema to update the defaults section with.
-
         """
         if module == ENCODER:
             return get_encoder_cls(feature_type, config_type)

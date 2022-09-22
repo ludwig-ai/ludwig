@@ -49,7 +49,7 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig):
         [JACCARD],
         default=JACCARD,
         description="Internal only use parameter: default validation metric for set output feature.",
-        parameter_metadata=INTERNAL_ONLY
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(
@@ -62,9 +62,7 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig):
         default=SIGMOID_CROSS_ENTROPY,
     )
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type="set_output"
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",

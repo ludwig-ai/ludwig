@@ -62,7 +62,7 @@ def test_config_object():
                 "beta1": 0.8,
                 "beta2": 0.999,
                 "epsilon": 5e-09,
-            }
+            },
         },
     }
 
@@ -89,10 +89,7 @@ def test_config_object():
 def test_config_object_defaults():
     config = {
         "input_features": [
-            {
-                "name": "number_feature",
-                "type": "number"
-            },
+            {"name": "number_feature", "type": "number"},
             {
                 "name": "text_feature_1",
                 "type": "text",
@@ -113,14 +110,7 @@ def test_config_object_defaults():
             },
         ],
         "defaults": {
-            "number": {
-                "preprocessing": {
-                    "missing_value_strategy": "drop_row"
-                },
-                "encoder": {
-                    "type": "dense"
-                }
-            },
+            "number": {"preprocessing": {"missing_value_strategy": "drop_row"}, "encoder": {"type": "dense"}},
             "text": {
                 "preprocessing": {
                     "missing_value_strategy": "drop_row",
@@ -129,8 +119,8 @@ def test_config_object_defaults():
                     "type": "stacked_parallel_cnn",
                     "activation": "tanh",
                 },
-            }
-        }
+            },
+        },
     }
 
     config_object = Config(config)

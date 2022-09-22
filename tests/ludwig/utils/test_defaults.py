@@ -31,8 +31,8 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.schema.split import RandomSplitConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc_utils import merge_dict, set_default_values

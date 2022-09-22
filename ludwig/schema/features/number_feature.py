@@ -54,7 +54,7 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
         [MEAN_SQUARED_ERROR],
         default=MEAN_SQUARED_ERROR,
         description="Internal only use parameter: default validation metric for number output feature.",
-        parameter_metadata=INTERNAL_ONLY
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(

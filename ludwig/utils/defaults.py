@@ -57,8 +57,9 @@ logger = logging.getLogger(__name__)
 default_random_seed = 42
 
 # Still needed for preprocessing  TODO(Connor): Refactor ludwig/data/preprocessing to use schema
-default_feature_specific_preprocessing_parameters = {name: preproc_sect.get_schema_cls()().preprocessing.to_dict() for
-                                                     name, preproc_sect in input_type_registry.items()}
+default_feature_specific_preprocessing_parameters = {
+    name: preproc_sect.get_schema_cls()().preprocessing.to_dict() for name, preproc_sect in input_type_registry.items()
+}
 
 default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)
 default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
@@ -201,15 +202,17 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     config[TRAINER] = config_obj.trainer.to_dict()
 
     # ===== Input Features =====
-    config[INPUT_FEATURES] = [getattr(config_obj.input_features, feat[NAME]).to_dict()
-                              for feat in config[INPUT_FEATURES]]
+    config[INPUT_FEATURES] = [
+        getattr(config_obj.input_features, feat[NAME]).to_dict() for feat in config[INPUT_FEATURES]
+    ]
 
     # ===== Combiner =====
     config[COMBINER] = config_obj.combiner.to_dict()
 
     # ===== Output features =====
-    config[OUTPUT_FEATURES] = [getattr(config_obj.output_features, feat[NAME]).to_dict()
-                               for feat in config[OUTPUT_FEATURES]]
+    config[OUTPUT_FEATURES] = [
+        getattr(config_obj.output_features, feat[NAME]).to_dict() for feat in config[OUTPUT_FEATURES]
+    ]
 
     # ===== Hyperpot =====
     if HYPEROPT in config:

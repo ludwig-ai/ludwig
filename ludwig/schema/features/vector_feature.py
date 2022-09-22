@@ -54,7 +54,7 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         [MEAN_SQUARED_ERROR],
         default=MEAN_SQUARED_ERROR,
         description="Internal only use parameter: default validation metric for binary output feature.",
-        parameter_metadata=INTERNAL_ONLY
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     loss: BaseLossConfig = LossDataclassField(
@@ -62,9 +62,7 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default=MEAN_SQUARED_ERROR,
     )
 
-    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(
-        feature_type="vector_output"
-    )
+    preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default=None,
