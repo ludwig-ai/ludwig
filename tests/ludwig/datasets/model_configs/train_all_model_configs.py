@@ -137,6 +137,7 @@ def train_all_datasets():
     with pd.option_context("display.max_rows", None, "display.max_columns", None, "display.precision", 3):
         results_to_display = results_df[results_df["has_config"]].copy()
         del results_to_display["output_directory"]
+        del results_to_display["ludwig_commit"]
         print(results_to_display)
     results_df.to_csv("train_all_model_configs_results.csv", index=False)
 
