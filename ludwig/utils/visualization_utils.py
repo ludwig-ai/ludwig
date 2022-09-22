@@ -898,6 +898,7 @@ def calibration_plot(
     fraction_positives,
     mean_predicted_values,
     algorithm_names=None,
+    class_name=None,
     filename=None,
     callbacks=None,
 ):
@@ -944,7 +945,10 @@ def calibration_plot(
     plt.ylim([-0.05, 1.05])
     plt.yticks(ticks)
     plt.legend(loc="lower right")
-    plt.title("Calibration (reliability curve)")
+    if class_name is not None:
+        plt.title(f"{class_name}: Calibration (reliability curve)")
+    else:
+        plt.title("Calibration (reliability curve)")
 
     plt.tight_layout()
     visualize_callbacks(callbacks, plt.gcf())

@@ -3232,9 +3232,9 @@ def calibration_1_vs_all(
 
     :return: (None)
     """
+    feature_metadata = metadata[output_feature_name]
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
-        feature_metadata = metadata[output_feature_name]
         ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
@@ -3261,7 +3261,7 @@ def calibration_1_vs_all(
         probs_class = []
         brier_scores_class = []
         for prob in probs:
-            # ground_truth is an vector of integers, each integer is a class
+            # ground_truth is a vector of integers, each integer is a class
             # index to have a [0,1] vector we have to check if the value equals
             # the input class index and convert the resulting boolean vector
             # into an integer vector probabilities is a n x c matrix, n is the
@@ -3293,8 +3293,13 @@ def calibration_1_vs_all(
             os.makedirs(output_directory, exist_ok=True)
             filename = filename_template_path.format(class_idx)
 
+        class_name = feature_metadata["idx2str"][class_idx]
         visualization_utils.calibration_plot(
-            fraction_positives_class, mean_predicted_vals_class, model_names_list, filename=filename
+            fraction_positives_class,
+            mean_predicted_vals_class,
+            model_names_list,
+            class_name=class_name,
+            filename=filename,
         )
 
         filename = None
