@@ -46,6 +46,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
+from ludwig.schema.utils import BaseMarshmallowConfig
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import set_default_value
@@ -176,7 +177,7 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
 
     # ===== Preprocessing =====
     config[PREPROCESSING] = config_obj.preprocessing.to_dict()
-    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
+    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}).to_dict())
     splitter.validate(config)
 
     # ===== Model Type =====
@@ -202,7 +203,25 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
     # ===== Hyperpot =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
+
+    # Initialize Submodules
+    initialize_config(config)
     return config
+
+
+def initialize_config(config_dict):
+    for k, v in config_dict.items():
+        if isinstance(v, dict):
+            initialize_config(v)
+        elif isinstance(v, list):
+            for feature in v:
+                if isinstance(feature, dict):
+                    initialize_config(feature)
+        elif isinstance(v, BaseMarshmallowConfig):
+            config_dict[k] = v.to_dict()
+            initialize_config(config_dict[k])
+        else:
+            continue
 
 
 def render_config(config=None, output=None, **kwargs):
