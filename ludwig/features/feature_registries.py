@@ -109,7 +109,7 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
         feature.update_config_with_metadata(
             getattr(config_obj.output_features, output_feature[NAME]),
             training_set_metadata[output_feature[NAME]],
-            config=config
+            config=config,
         )
 
         output_feature = config_obj.output_features.to_dict()[output_feature[NAME]]
