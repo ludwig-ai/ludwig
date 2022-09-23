@@ -40,12 +40,13 @@ def get_defaults_section_for_feature_type(
     return config_defaults[feature_type][config_defaults_section]
 
 
-def merge_config_preprocessing_with_feature_specific_defaults(config_obj: Config) -> Dict[str, Any]:
+def get_preprocessing_params(config_obj: Config) -> Dict[str, Any]:
     """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
     parameters from config defaults."""
     preprocessing_params = {}
     preprocessing_params.update(config_obj.preprocessing.to_dict())
-    preprocessing_params.update(config_obj.defaults.to_dict())
+    for feat_type in input_type_registry.keys():
+        preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
     return preprocessing_params
 
 

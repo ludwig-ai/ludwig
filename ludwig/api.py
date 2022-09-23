@@ -79,7 +79,7 @@ from ludwig.schema.config_object import Config
 from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
+from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
     figure_data_format,
     generate_kfold_splits,
@@ -670,7 +670,7 @@ class LudwigModel:
         :return: (None) `None`
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
-        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(self.config_obj)
+        preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
@@ -1287,7 +1287,7 @@ class LudwigModel:
         """
         print_boxed("PREPROCESSING")
 
-        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(self.config_obj)
+        preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
             preprocessed_data = preprocess_for_training(

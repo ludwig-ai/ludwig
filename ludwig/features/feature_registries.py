@@ -101,7 +101,7 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
         )
 
         input_feature.update(config_obj.input_features.to_dict()[input_feature[NAME]])
-        # feature[PREPROCESSING] = training_set_metadata[input_feature[NAME]][PREPROCESSING]
+        input_feature[PREPROCESSING] = training_set_metadata[input_feature[NAME]][PREPROCESSING]
 
     # populate output features fields depending on data
     for output_feature in config[OUTPUT_FEATURES]:
@@ -112,11 +112,5 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
             config=config
         )
 
-        output_feature = config_obj.output_features.to_dict()[output_feature[NAME]]
-
-    for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
-        if PREPROCESSING in feature:
-            feature[PREPROCESSING] = training_set_metadata[feature[NAME]][PREPROCESSING]
-            config_obj.set_attributes(
-                getattr(config_obj, feature[NAME]).preprocessing, feature[PREPROCESSING], feature_type=feature[TYPE]
-            )
+        output_feature.update(config_obj.output_features.to_dict()[output_feature[NAME]])
+        output_feature[PREPROCESSING] = training_set_metadata[output_feature[NAME]][PREPROCESSING]

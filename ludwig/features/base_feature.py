@@ -153,11 +153,6 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
-    @staticmethod
-    @abstractmethod
-    def populate_defaults(input_feature):
-        pass
-
     def initialize_encoder(self, encoder_config):
         encoder_cls = get_encoder_cls(self.type(), encoder_config.type)
         encoder_schema = encoder_cls.get_schema_cls().Schema()
@@ -425,11 +420,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             **logits,
         }
 
-    @property
-    @abstractmethod
-    def default_validation_metric(self):
-        pass
-
     @abstractmethod
     def postprocess_predictions(
         self,
@@ -454,11 +444,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     @staticmethod
     @abstractmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def populate_defaults(input_feature):
         pass
 
     def output_specific_fully_connected(self, inputs, mask=None):

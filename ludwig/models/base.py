@@ -55,7 +55,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         input_features_def = topological_sort_feature_dependencies(config.input_features.to_list())
         for input_feature_def in input_features_def:
             input_features[input_feature_def[NAME]] = cls.build_single_input(
-                getattr(config, input_feature_def[NAME]), input_features
+                getattr(config.input_features, input_feature_def[NAME]), input_features
             )
         return input_features
 
@@ -87,7 +87,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             # for seq2seq.
             output_feature_def["input_size"] = combiner.output_shape[-1]
             output_features[output_feature_def[NAME]] = cls.build_single_output(
-                getattr(config, output_feature_def[NAME]), output_features
+                getattr(config.output_features, output_feature_def[NAME]), output_features
             )
         return output_features
 

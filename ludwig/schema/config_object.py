@@ -56,7 +56,7 @@ class BaseFeatureContainer:
         Returns:
             List of input features specified.
         """
-        return list(self.__dict__.values())
+        return list(initialize_config(self.__dict__).values())
 
 
 class InputFeaturesContainer(BaseFeatureContainer):
