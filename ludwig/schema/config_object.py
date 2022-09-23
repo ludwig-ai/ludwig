@@ -119,10 +119,10 @@ class Config:
             self.set_attributes(self.combiner, config_dict[COMBINER])
 
         if TRAINER in config_dict:
-            if VALIDATION_METRIC not in config_dict[TRAINER]:
-                self.trainer.validation_metric = getattr(
-                    self.output_features, config_dict[OUTPUT_FEATURES][0][NAME]
-                ).default_validation_metric
+            # if VALIDATION_METRIC not in config_dict[TRAINER]:
+            #     self.trainer.validation_metric = getattr(
+            #         self.output_features, config_dict[OUTPUT_FEATURES][0][NAME]
+            #     ).default_validation_metric
             self.set_attributes(self.trainer, config_dict[TRAINER])
 
         if PREPROCESSING in config_dict:
