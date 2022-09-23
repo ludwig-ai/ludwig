@@ -1167,8 +1167,8 @@ tokenizer_registry.update(
 def get_tokenizer_from_registry(tokenizer_name: str) -> torch.nn.Module:
     """Returns the appropriate tokenizer from the tokenizer registry.
 
-    Raises a KeyError if a tokenizer that does not exist in the registry is requested, with additional help text if
-    the requested tokenizer would be available for a different version of torchtext.
+    Raises a KeyError if a tokenizer that does not exist in the registry is requested, with additional help text if the
+    requested tokenizer would be available for a different version of torchtext.
     """
     if tokenizer_name in tokenizer_registry:
         return tokenizer_registry[tokenizer_name]

@@ -25,7 +25,7 @@ from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value, set_default_values
-from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS, get_tokenizer_from_registry
+from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
