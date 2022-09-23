@@ -132,6 +132,7 @@ class BaseFeature:
             feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
         self.proc_column = feature.proc_column
 
+
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
