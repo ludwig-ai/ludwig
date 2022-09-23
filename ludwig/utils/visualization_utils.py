@@ -981,7 +981,7 @@ def brier_plot(
 
     max_width = 0.35
     bar_width = min(0.5 / n_algorithms, max_width)
-    bar_left = -bar_width * (n_algorithms // 2) + (bar_width / 2)
+    bar_left = -bar_width * (n_algorithms // 2) + ((bar_width / 2) if (n_algorithms % 2) == 0 else 0)
 
     ax.grid(which="both")
     ax.grid(which="minor", alpha=0.5)
@@ -990,6 +990,8 @@ def brier_plot(
     ax.set_ylabel("brier score")
     if class_names is not None:
         ax.set_xticks(x, class_names)
+    else:
+        ax.set_xticks(x, [str(i) for i in range(n_classes)])
 
     for i in range(n_algorithms):
         # Plot bar for each class
