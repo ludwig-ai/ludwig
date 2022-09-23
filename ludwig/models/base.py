@@ -85,7 +85,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
-            output_feature_def["input_size"] = combiner.output_shape[-1]
+            setattr(getattr(config.output_features, output_feature_def[NAME]), "input_size", combiner.output_shape[-1])
             output_features[output_feature_def[NAME]] = cls.build_single_output(
                 getattr(config.output_features, output_feature_def[NAME]), output_features
             )
