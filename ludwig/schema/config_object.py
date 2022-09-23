@@ -38,7 +38,7 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import convert_submodules, BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
 
 class BaseFeatureContainer:
