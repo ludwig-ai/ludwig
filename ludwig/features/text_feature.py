@@ -236,7 +236,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
 
     @classmethod

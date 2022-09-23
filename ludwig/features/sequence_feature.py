@@ -315,7 +315,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()

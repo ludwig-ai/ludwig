@@ -242,7 +242,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
         super().__init__(output_feature_config, output_features, **kwargs)

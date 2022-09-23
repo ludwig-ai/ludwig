@@ -132,15 +132,6 @@ class BaseFeature:
             feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
         self.proc_column = feature.proc_column
 
-    @classmethod
-    def load_config(cls, feature: Union[BaseFeatureConfig, Dict]) -> BaseFeatureConfig:
-        if isinstance(feature, dict):
-            schema_cls = cls.get_schema_cls()
-            assert_is_a_marshmallow_class(schema_cls)
-            return schema_cls.Schema().load(feature)
-        return feature
-
-
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 

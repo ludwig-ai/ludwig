@@ -184,7 +184,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         self.vector_size = output_feature_config.vector_size
         super().__init__(output_feature_config, output_features, **kwargs)
         output_feature_config.decoder.output_size = self.vector_size
