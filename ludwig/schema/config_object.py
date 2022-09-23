@@ -1,3 +1,5 @@
+import copy
+
 from marshmallow import ValidationError
 
 from ludwig.constants import (
@@ -36,7 +38,7 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import initialize_config
+from ludwig.schema.utils import convert_submodules, BaseMarshmallowConfig
 
 
 class BaseFeatureContainer:
@@ -48,7 +50,7 @@ class BaseFeatureContainer:
         Returns:
             Dictionary of input features specified.
         """
-        return initialize_config(self.__dict__)
+        return convert_submodules(self.__dict__)
 
     def to_list(self):
         """Method for getting a list representation of the input features.
@@ -56,7 +58,7 @@ class BaseFeatureContainer:
         Returns:
             List of input features specified.
         """
-        return list(initialize_config(self.__dict__).values())
+        return list(convert_submodules(self.__dict__).values())
 
 
 class InputFeaturesContainer(BaseFeatureContainer):
@@ -75,25 +77,28 @@ class Config:
     """This class is the implementation of the config object that replaces the need for a config dictionary
     throughout the project."""
 
-    model_type = MODEL_ECD
-    input_features = InputFeaturesContainer()
-    output_features = OutputFeaturesContainer()
-    combiner: BaseCombinerConfig = ConcatCombinerConfig()
-    trainer: BaseTrainerConfig = ECDTrainerConfig()
-    preprocessing = PreprocessingConfig()
-    hyperopt = {}
-    defaults = DefaultsConfig()
-
     def __init__(self, config_dict):
 
+        self.model_type = MODEL_ECD
+        self.input_features: InputFeaturesContainer = InputFeaturesContainer()
+        self.output_features: OutputFeaturesContainer = OutputFeaturesContainer()
+        self.combiner: BaseCombinerConfig = ConcatCombinerConfig()
+        self.trainer: BaseTrainerConfig = ECDTrainerConfig()
+        self.preprocessing: PreprocessingConfig = PreprocessingConfig()
+        self.hyperopt = {}
+        self.defaults: DefaultsConfig = DefaultsConfig()
+
+        # ===== Defaults =====
         if DEFAULTS in config_dict:
             self.set_attributes(self.defaults, config_dict[DEFAULTS])
 
+        # ===== Features =====
         self._set_feature_column(config_dict)
         self._set_proc_column(config_dict)
         self.parse_features(config_dict[INPUT_FEATURES], INPUT_FEATURES)
         self.parse_features(config_dict[OUTPUT_FEATURES], OUTPUT_FEATURES)
 
+        # ===== Model Type =====
         if MODEL_TYPE in config_dict:
             if config_dict[MODEL_TYPE] == MODEL_GBM:
                 self.model_type = MODEL_GBM
@@ -113,11 +118,13 @@ class Config:
                                 "GBM Models currently only support Binary, Category, and Number " "features"
                             )
 
+        # ===== Combiner =====
         if COMBINER in config_dict:
             if self.combiner.type != config_dict[COMBINER][TYPE]:
                 self.combiner = combiner_registry.get(config_dict[COMBINER][TYPE]).get_schema_cls()()
             self.set_attributes(self.combiner, config_dict[COMBINER])
 
+        # ===== Trainer =====
         if TRAINER in config_dict:
             # if VALIDATION_METRIC not in config_dict[TRAINER]:
             #     self.trainer.validation_metric = getattr(
@@ -125,12 +132,16 @@ class Config:
             #     ).default_validation_metric
             self.set_attributes(self.trainer, config_dict[TRAINER])
 
+        # ===== Global Preprocessing =====
         if PREPROCESSING in config_dict:
             self.set_attributes(self.preprocessing, config_dict[PREPROCESSING])
 
+        # ===== Hyperopt =====
         if HYPEROPT in config_dict:
             pass
             # self.set_attributes(self.hyperopt, config_dict[HYPEROPT])  # TODO: Schemify Hyperopt
+
+        # self.initialize_config(self)
 
     @staticmethod
     def _set_feature_column(config: dict) -> None:
@@ -248,9 +259,15 @@ class Config:
         config_sections = feature.to_dict().keys()
 
         for section in config_sections:
-            setattr(feature, section, getattr(type_defaults, section))
+            setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
         return feature
+
+    # def initialize_config(self, config_section):
+    #     for module in [mod for mod in dir(config_section) if not mod.startswith('__')]:
+    #         if isinstance(getattr(config_section, module), BaseMarshmallowConfig):
+    #             setattr(config_section, module, getattr(config_section, module)())
+    #             self.initialize_config(getattr(config_section, module))
 
     def get_config_dict(self):
         """This method converts the current config object into an equivalent dictionary representation since many
@@ -269,4 +286,4 @@ class Config:
             "hyperopt": {},
             "defaults": self.defaults.to_dict(),
         }
-        return initialize_config(config_dict)
+        return convert_submodules(config_dict)

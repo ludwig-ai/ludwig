@@ -59,7 +59,7 @@ def load_config_with_kwargs(
     }
 
 
-def initialize_config(config_dict):
+def convert_submodules(config_dict):
     """Helper function for converting submodules to dictionaries during a config object to dict transformation.
 
     Args:
@@ -72,20 +72,20 @@ def initialize_config(config_dict):
 
     for k, v in output_dict.items():
         if isinstance(v, dict):
-            initialize_config(v)
+            convert_submodules(v)
 
         elif isinstance(v, list):
             for i, feature in enumerate(v):
                 if isinstance(feature, dict):
-                    initialize_config(feature)
+                    convert_submodules(feature)
 
                 if isinstance(feature, BaseMarshmallowConfig):
                     output_dict[k][i] = feature.to_dict()
-                    initialize_config(output_dict[k][i])
+                    convert_submodules(output_dict[k][i])
 
         elif isinstance(v, BaseMarshmallowConfig):
             output_dict[k] = v.to_dict()
-            initialize_config(output_dict[k])
+            convert_submodules(output_dict[k])
 
         else:
             continue
@@ -122,7 +122,7 @@ class BaseMarshmallowConfig:
 
         Returns: dict for this dataclass
         """
-        return initialize_config(self.__dict__)
+        return convert_submodules(self.__dict__)
 
 
 def assert_is_a_marshmallow_class(cls):
