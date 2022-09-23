@@ -106,7 +106,10 @@ jobs:
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+
+              # Pin version to September 20, 2022 to get tests to pass
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/a182d3c9e478ef4c169ccf7459764768996110f/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
               pip install ray==$RAY_VERSION
             fi
