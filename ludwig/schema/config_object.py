@@ -40,13 +40,10 @@ from ludwig.schema.utils import initialize_config
 
 
 class BaseFeatureContainer:
-    """
-    Base Feature container for input and output features.
-    """
+    """Base Feature container for input and output features."""
 
     def to_dict(self):
-        """
-        Method for getting a dictionary representation of the input features.
+        """Method for getting a dictionary representation of the input features.
 
         Returns:
             Dictionary of input features specified.
@@ -54,8 +51,7 @@ class BaseFeatureContainer:
         return initialize_config(self.__dict__)
 
     def to_list(self):
-        """
-        Method for getting a list representation of the input features.
+        """Method for getting a list representation of the input features.
 
         Returns:
             List of input features specified.
@@ -257,9 +253,8 @@ class Config:
         return feature
 
     def get_config_dict(self):
-        """
-        This method converts the current config object into an equivalent dictionary representation since many parts
-        of the codebase still use the dictionary representation of the config.
+        """This method converts the current config object into an equivalent dictionary representation since many
+        parts of the codebase still use the dictionary representation of the config.
 
         Returns:
             Config Dictionary
