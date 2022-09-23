@@ -24,7 +24,7 @@ from collections.abc import Mapping
 import numpy
 import torch
 
-from ludwig.constants import PROC_COLUMN
+from ludwig.constants import ENCODER, PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
@@ -82,6 +82,10 @@ def resolve_pointers(dict1, dict2, dict2_name):
             if key_in_dict2 in dict2.keys():
                 value = dict2[key_in_dict2]
                 resolved_dict[key] = value
+            if ENCODER in dict2.keys():  # Temporary fix, this whole function should be removed during preproc refactor
+                if key_in_dict2 in dict2[ENCODER].keys():
+                    value = dict2[ENCODER][key_in_dict2]
+                    resolved_dict[key] = value
     return resolved_dict
 
 
