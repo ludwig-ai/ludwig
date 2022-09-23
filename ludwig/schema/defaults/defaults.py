@@ -1,6 +1,20 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    DATE,
+    H3,
+    IMAGE,
+    NUMBER,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.utils import DefaultsDataclassField
 from ludwig.schema.features.base import BaseFeatureConfig
