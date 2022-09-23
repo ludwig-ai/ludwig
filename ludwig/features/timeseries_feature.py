@@ -24,9 +24,8 @@ from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
-from ludwig.utils.strings_utils import tokenizer_registry
-from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS, get_tokenizer_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ class _TimeseriesPreprocessing(torch.nn.Module):
                 f"{metadata['preprocessing']['tokenizer']} is not supported by torchscript. Please use "
                 f"one of {TORCHSCRIPT_COMPATIBLE_TOKENIZERS}."
             )
-        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.tokenizer = get_tokenizer_from_registry(metadata["preprocessing"]["tokenizer"])()
         self.padding = metadata["preprocessing"]["padding"]
         self.padding_value = float(metadata["preprocessing"]["padding_value"])
         self.max_timeseries_length = int(metadata["max_timeseries_length"])
@@ -118,7 +117,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters, backend):
         column = column.astype(str)
-        tokenizer = get_from_registry(preprocessing_parameters["tokenizer"], tokenizer_registry)()
+        tokenizer = get_tokenizer_from_registry(preprocessing_parameters["tokenizer"])()
         max_length = 0
         for timeseries in column:
             processed_line = tokenizer(timeseries)
@@ -129,7 +128,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def build_matrix(timeseries, tokenizer_name, length_limit, padding_value, padding, backend):
-        tokenizer = get_from_registry(tokenizer_name, tokenizer_registry)()
+        tokenizer = get_tokenizer_from_registry(tokenizer_name)()
 
         ts_vectors = backend.df_engine.map_objects(timeseries, lambda ts: np.array(tokenizer(ts)).astype(np.float32))
 

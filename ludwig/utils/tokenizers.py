@@ -1017,10 +1017,7 @@ try:
         raise ImportError
 
 except ImportError:
-    logger.warning(
-        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
-        f"{TORCHTEXT_0_12_0_TOKENIZERS}"
-    )
+    pass
 
 
 try:
@@ -1126,10 +1123,7 @@ try:
     TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_13_0_TOKENIZERS)
 
 except ImportError:
-    logger.warning(
-        f"torchtext>=0.13.0 is not installed, so the following tokenizers are not available: "
-        f"{TORCHTEXT_0_13_0_TOKENIZERS}"
-    )
+    pass
 
 
 def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
@@ -1168,3 +1162,31 @@ tokenizer_registry.update(
         "hf_tokenizer": get_hf_tokenizer,
     }
 )
+
+
+def get_tokenizer_from_registry(tokenizer_name: str) -> torch.nn.Module:
+    """Returns the appropriate tokenizer from the tokenizer registry."""
+    if (
+        torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0)
+        and tokenizer_name in TORCHTEXT_0_12_0_TOKENIZERS
+    ):
+        raise ValueError(
+            f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
+            f"{TORCHTEXT_0_12_0_TOKENIZERS}"
+        )
+
+    if (
+        torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0)
+        and tokenizer_name in TORCHTEXT_0_13_0_TOKENIZERS
+    ):
+        raise ValueError(
+            f"torchtext>=0.13.0 is not installed, so the following tokenizers are not available: "
+            f"{TORCHTEXT_0_13_0_TOKENIZERS}"
+        )
+
+    if tokenizer_name not in tokenizer_registry:
+        raise ValueError(
+            f"Invalid tokenizer name: '{tokenizer_name}'. Available tokenizers: {tokenizer_registry.keys()}"
+        )
+
+    return tokenizer_registry[tokenizer_name]
