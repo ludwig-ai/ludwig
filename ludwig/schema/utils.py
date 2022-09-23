@@ -1,3 +1,4 @@
+import copy
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -58,6 +59,41 @@ def load_config_with_kwargs(
     }
 
 
+def initialize_config(config_dict):
+    """
+    Helper function for converting submodules to dictionaries during a config object to dict transformation.
+
+    Args:
+        config_dict: Top level config dictionary with un-converted submodules
+
+    Returns:
+        The fully converted config dictionary
+    """
+    output_dict = copy.deepcopy(config_dict)
+
+    for k, v in output_dict.items():
+        if isinstance(v, dict):
+            initialize_config(v)
+
+        elif isinstance(v, list):
+            for i, feature in enumerate(v):
+                if isinstance(feature, dict):
+                    initialize_config(feature)
+
+                if isinstance(feature, BaseMarshmallowConfig):
+                    output_dict[k][i] = feature.to_dict()
+                    initialize_config(output_dict[k][i])
+
+        elif isinstance(v, BaseMarshmallowConfig):
+            output_dict[k] = v.to_dict()
+            initialize_config(output_dict[k])
+
+        else:
+            continue
+
+    return output_dict
+
+
 def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
@@ -87,7 +123,7 @@ class BaseMarshmallowConfig:
 
         Returns: dict for this dataclass
         """
-        return self.__dict__
+        return initialize_config(self.__dict__)
 
 
 def assert_is_a_marshmallow_class(cls):

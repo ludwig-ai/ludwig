@@ -675,6 +675,7 @@ class LudwigModel:
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
                 self.config,
+                self.config_obj,
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
@@ -1293,6 +1294,7 @@ class LudwigModel:
         with provision_preprocessing_workers(self.backend):
             preprocessed_data = preprocess_for_training(
                 self.config,
+                self.config_obj,
                 dataset=dataset,
                 training_set=training_set,
                 validation_set=validation_set,

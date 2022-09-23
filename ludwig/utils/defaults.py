@@ -177,7 +177,7 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
 
     # ===== Preprocessing =====
     config[PREPROCESSING] = config_obj.preprocessing.to_dict()
-    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}).to_dict())
+    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
     splitter.validate(config)
 
     # ===== Model Type =====

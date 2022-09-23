@@ -36,40 +36,7 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig
-
-
-def initialize_config(config_dict):
-    """
-    Helper function for converting submodules to dictionaries during a config object to dict transformation.
-
-    Args:
-        config_dict: Top level config dictionary with un-converted submodules
-
-    Returns:
-        The fully converted config dictionary
-    """
-    for k, v in config_dict.items():
-        if isinstance(v, dict):
-            initialize_config(v)
-
-        elif isinstance(v, list):
-            for i, feature in enumerate(v):
-                if isinstance(feature, dict):
-                    initialize_config(feature)
-
-                if isinstance(feature, BaseMarshmallowConfig):
-                    config_dict[k][i] = feature.to_dict()
-                    initialize_config(config_dict[k][i])
-
-        elif isinstance(v, BaseMarshmallowConfig):
-            config_dict[k] = v.to_dict()
-            initialize_config(config_dict[k])
-
-        else:
-            continue
-
-    return config_dict
+from ludwig.schema.utils import initialize_config
 
 
 class BaseFeatureContainer:

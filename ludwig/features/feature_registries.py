@@ -95,19 +95,21 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
     for input_feature in config[INPUT_FEATURES]:
         feature = get_from_registry(input_feature[TYPE], input_type_registry)
         feature.update_config_with_metadata(
-            input_feature,
-            getattr(config_obj, input_feature[NAME]),
+            getattr(config_obj.input_features, input_feature[NAME]),
             training_set_metadata[input_feature[NAME]],
             config=config,
         )
 
-        input_feature = config_obj.input_features.to_dict()[input_feature[NAME]]
+        input_feature.update(config_obj.input_features.to_dict()[input_feature[NAME]])
+        # feature[PREPROCESSING] = training_set_metadata[input_feature[NAME]][PREPROCESSING]
 
     # populate output features fields depending on data
     for output_feature in config[OUTPUT_FEATURES]:
         feature = get_from_registry(output_feature[TYPE], output_type_registry)
         feature.update_config_with_metadata(
-            output_feature, getattr(config_obj, output_feature[NAME]), training_set_metadata[output_feature[NAME]]
+            getattr(config_obj.output_features, output_feature[NAME]),
+            training_set_metadata[output_feature[NAME]],
+            config=config
         )
 
         output_feature = config_obj.output_features.to_dict()[output_feature[NAME]]
