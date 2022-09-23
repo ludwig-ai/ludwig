@@ -959,7 +959,7 @@ def calibration_plot(
 
 
 def brier_plot(
-    brier_scores,  # Expected to be organized as [score, score]
+    brier_scores,
     algorithm_names=None,
     class_names=None,
     title=None,
@@ -995,7 +995,7 @@ def brier_plot(
 
     for i in range(n_algorithms):
         # Plot bar for each class
-        label = algorithm_names[i] if algorithm_names is not None else None
+        label = algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else f"Model {i}"
         ax.bar(x + bar_left + (bar_width * i), brier_scores[:, i], bar_width, color=colors[i], label=label)
 
     ax.legend()
