@@ -60,8 +60,7 @@ def load_config_with_kwargs(
 
 
 def initialize_config(config_dict):
-    """
-    Helper function for converting submodules to dictionaries during a config object to dict transformation.
+    """Helper function for converting submodules to dictionaries during a config object to dict transformation.
 
     Args:
         config_dict: Top level config dictionary with un-converted submodules
