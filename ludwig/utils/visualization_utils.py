@@ -934,7 +934,7 @@ def calibration_plot(
             color=colors[i],
             marker="o",
             scatter_kws={"s": 40},
-            label=algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else "",
+            label=algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else f"Model {i}",
         )
 
     ticks = np.linspace(0.0, 1.0, num=11)
