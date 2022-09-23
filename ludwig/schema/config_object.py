@@ -184,7 +184,7 @@ class Config:
         Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
               obj, so we make sure to check and remove inappropriate modules.
         Args:
-            features: List of input feature definitions in user defined config dict.
+            features: List of feature definitions in user defined config dict.
             feature_section: Indication of input features vs. output features.
 
         Returns:
@@ -207,6 +207,10 @@ class Config:
             self.set_attributes(
                 getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
             )
+
+            if feature_section == OUTPUT_FEATURES:
+                if getattr(getattr(self, feature_section), feature[NAME]).decoder.type == "tagger":
+                    getattr(getattr(self, feature_section), feature[NAME]).reduce_input = None
 
     def set_attributes(self, config_obj_lvl, config_dict_lvl, feature_type=None):
         """
