@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Set
 import pytest
 import yaml
 
-from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
@@ -41,7 +41,7 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["python", "-m", "ludwig.cli", command]
+    commands = ["ludwig", command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
@@ -403,3 +403,33 @@ def test_init_config(tmpdir):
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+def test_render_config(tmpdir):
+    """Test rendering a full config from a partial user config."""
+    user_config_path = os.path.join(tmpdir, "config.yaml")
+    input_features = [
+        number_feature(),
+        number_feature(),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+
+    user_config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+    }
+
+    with open(user_config_path, "w") as f:
+        yaml.dump(user_config, f)
+
+    output_config_path = os.path.join(tmpdir, "rendered.yaml")
+    _run_ludwig("render_config", config=user_config_path, output=output_config_path)
+
+    rendered_config = load_yaml(output_config_path)
+    assert len(rendered_config[INPUT_FEATURES]) == len(user_config[INPUT_FEATURES])
+    assert len(rendered_config[OUTPUT_FEATURES]) == len(user_config[OUTPUT_FEATURES])
+    assert TRAINER in rendered_config
+    assert COMBINER in rendered_config
+    assert PREPROCESSING in rendered_config
