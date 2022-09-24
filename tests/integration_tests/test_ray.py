@@ -251,7 +251,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_save_inputs_and_outputs(tmpdir, dataset_type, ray_cluster_2cpu):
+def test_ray_save_inputs_and_outputs_with_nans(tmpdir, dataset_type, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
@@ -282,9 +282,10 @@ def test_ray_save_inputs_and_outputs(tmpdir, dataset_type, ray_cluster_2cpu):
         bag_feature(),
         text_feature(),
         timeseries_feature(),
-        # TODO: future support
+        # TODO: NaN handling not supported
         # date_feature(),    # NaNs are filled with datetime.now(), which leads to non-equal results between backends
         # vector_feature(),  # NaNs are not supported by the feature
+        # TODO: feature type not supported
         # h3_feature(),      # ValueError thrown trying to cast large int strings (e.g. '5.864041857092157e+17') to int
     ]
     output_features = [
@@ -293,8 +294,8 @@ def test_ray_save_inputs_and_outputs(tmpdir, dataset_type, ray_cluster_2cpu):
         number_feature(),
         set_feature(decoder={"vocab_size": 3}),
         vector_feature(),
-        # TODO: future support
-        # sequence_feature(decoder={"vocab_size": 3}),
+        # TODO: future type not supported
+        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-XX
         # text_feature(decoder={"vocab_size": 3}),
     ]
     run_test_with_features(
@@ -306,6 +307,31 @@ def test_ray_save_inputs_and_outputs(tmpdir, dataset_type, ray_cluster_2cpu):
         skip_save_processed_input=False,
         skip_save_predictions=False,
         nan_percent=0.1,
+    )
+
+
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.distributed
+def test_ray_save_inputs_and_outputs_without_nans(tmpdir, dataset_type, ray_cluster_2cpu):
+    input_features = [
+        date_feature(),
+        vector_feature(),
+    ]
+    output_features = [
+        category_feature(decoder={"vocab_size": 5}),  # Regression test for #1991 requires multi-class predictions.
+        binary_feature(),
+        number_feature(),
+        set_feature(decoder={"vocab_size": 3}),
+        vector_feature(),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        predict=True,
+        skip_save_processed_input=False,
+        skip_save_predictions=False,
     )
 
 
