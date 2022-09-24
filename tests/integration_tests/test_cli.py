@@ -12,18 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 import json
 import os
 import os.path
 import pathlib
 import shutil
 import subprocess
+from typing import Any, Dict, List, Set
 
 import pytest
 import yaml
 
-from ludwig.constants import TRAINER
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
+from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.utils.data_utils import load_json
+from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
 
 def _run_commands(commands, **ludwig_kwargs):
@@ -38,7 +41,7 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["ludwig", command]
+    commands = ["python", "-m", "ludwig.cli", command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
@@ -377,3 +380,26 @@ def test_reproducible_cli_runs(
         else:
             # non-zero second_seed_offset uses different seeds and should result in different output
             assert test1 != test2
+
+
+def test_init_config(tmpdir):
+    """Test initializing a config from a dataset and a target."""
+    input_features = [
+        number_feature(),
+        number_feature(),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+    dataset_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100)
+    output_config_path = os.path.join(tmpdir, "config.yaml")
+
+    _run_ludwig("init_config", dataset=dataset_csv, target=output_features[0][NAME], output=output_config_path)
+
+    config = load_json(output_config_path)
+
+    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+        return {feature[NAME] for feature in features}
+
+    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
+    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
