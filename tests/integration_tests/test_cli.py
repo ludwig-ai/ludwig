@@ -25,7 +25,7 @@ import pytest
 import yaml
 
 from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
 
@@ -396,7 +396,7 @@ def test_init_config(tmpdir):
 
     _run_ludwig("init_config", dataset=dataset_csv, target=output_features[0][NAME], output=output_config_path)
 
-    config = load_json(output_config_path)
+    config = load_yaml(output_config_path)
 
     def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
         return {feature[NAME] for feature in features}
