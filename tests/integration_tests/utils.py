@@ -771,6 +771,7 @@ def train_with_backend(
     evaluate=True,
     callbacks=None,
     skip_save_processed_input=True,
+    skip_save_predictions=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     output_dir = None
@@ -791,7 +792,7 @@ def train_with_backend(
             dataset = training_set
 
         if predict:
-            preds, _ = model.predict(dataset=dataset)
+            preds, _ = model.predict(dataset=dataset, skip_save_predictions=skip_save_predictions)
             assert preds is not None
 
         if evaluate:

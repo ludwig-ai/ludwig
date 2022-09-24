@@ -23,7 +23,7 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import split_by_slices
+from ludwig.utils.data_utils import split_by_slices, get_pa_schema
 from ludwig.utils.dataframe_utils import set_index_name
 
 TMP_COLUMN = "__TMP_COLUMN__"
@@ -186,12 +186,13 @@ class DaskEngine(DataFrameEngine):
         return df
 
     def to_parquet(self, df, path, index=False):
+        schema = get_pa_schema(df)
         with ProgressBar():
             df.to_parquet(
                 path,
                 engine="pyarrow",
                 write_index=index,
-                schema="infer",
+                schema=schema,
             )
 
     def to_ray_dataset(self, df):

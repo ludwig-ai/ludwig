@@ -22,7 +22,7 @@ from ludwig.globals import (
 )
 from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
-from ludwig.utils.data_utils import save_csv, save_json
+from ludwig.utils.data_utils import save_csv, save_json, get_pa_schema
 from ludwig.utils.dataframe_utils import flatten_df, from_numpy_dataset
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
@@ -317,7 +317,8 @@ def save_prediction_outputs(
     backend,
 ):
     postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
-    postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME), schema=None)
+    schema = get_pa_schema(postprocessed_output)
+    postprocessed_output.to_parquet(os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME), schema=schema)
     save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
     if not backend.df_engine.partitioned:
         # csv can only be written out for unpartitioned df format (i.e., pandas)

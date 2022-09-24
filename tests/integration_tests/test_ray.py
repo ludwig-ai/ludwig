@@ -86,7 +86,9 @@ except ImportError:
     _modin_ray_incompatible = False
 
 
-def run_api_experiment(config, dataset, backend_config, skip_save_processed_input=True):
+def run_api_experiment(
+    config, dataset, backend_config, predict=False, skip_save_processed_input=True, skip_save_predictions=True
+):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
     if torch.cuda.device_count() > 0:
@@ -102,8 +104,9 @@ def run_api_experiment(config, dataset, backend_config, skip_save_processed_inpu
         config,
         dataset=dataset,
         evaluate=True,
-        predict=False,
+        predict=predict,
         skip_save_processed_input=skip_save_processed_input,
+        skip_save_predictions=skip_save_predictions,
     )
 
     assert isinstance(model.backend, RayBackend)
@@ -161,7 +164,9 @@ def run_test_with_features(
     expect_error=False,
     df_engine=None,
     dataset_type="parquet",
+    predict=False,
     skip_save_processed_input=True,
+    skip_save_predictions=True,
     nan_percent=0.0,
     preprocessing=None,
 ):
@@ -190,14 +195,18 @@ def run_test_with_features(
                     config,
                     dataset=dataset,
                     backend_config=backend_config,
+                    predict=predict,
                     skip_save_processed_input=skip_save_processed_input,
+                    skip_save_predictions=skip_save_predictions,
                 )
         else:
             run_fn(
                 config,
                 dataset=dataset,
                 backend_config=backend_config,
+                predict=predict,
                 skip_save_processed_input=skip_save_processed_input,
+                skip_save_predictions=skip_save_predictions,
             )
 
 
@@ -242,19 +251,60 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_save_processed_input(dataset_type, ray_cluster_2cpu):
+def test_ray_save_inputs_and_outputs(tmpdir, dataset_type, ray_cluster_2cpu):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
+            encoder={"output_size": 16, "num_filters": 8},
+        ),
+        audio_feature(
+            folder=audio_dest_folder,
+            preprocessing={
+                "audio_file_length_limit_in_s": 3.0,
+                "missing_value_strategy": BFILL,
+                "in_memory": True,
+                "padding_value": 0,
+                "norm": "per_file",
+                "type": "fbank",
+                "window_length_in_s": 0.04,
+                "window_shift_in_s": 0.02,
+                "num_filter_bands": 80,
+            },
+        ),
+        sequence_feature(encoder={"reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+        bag_feature(),
+        text_feature(),
+        timeseries_feature(),
+        # TODO: future support
+        # date_feature(),    # NaNs are filled with datetime.now(), which leads to non-equal results between backends
+        # vector_feature(),  # NaNs are not supported by the feature
+        # h3_feature(),      # ValueError thrown trying to cast large int strings (e.g. '5.864041857092157e+17') to int
     ]
     output_features = [
         category_feature(decoder={"vocab_size": 5}),  # Regression test for #1991 requires multi-class predictions.
+        binary_feature(),
+        number_feature(),
+        set_feature(decoder={"vocab_size": 3}),
+        vector_feature(),
+        # TODO: future support
+        # sequence_feature(decoder={"vocab_size": 3}),
+        # text_feature(decoder={"vocab_size": 3}),
     ]
     run_test_with_features(
         input_features,
         output_features,
         df_engine="dask",
         dataset_type=dataset_type,
+        predict=True,
         skip_save_processed_input=False,
+        skip_save_predictions=False,
         nan_percent=0.1,
     )
 

@@ -33,6 +33,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import yaml
 from fsspec.config import conf, set_conf_files
 from pandas.errors import ParserError
@@ -43,6 +44,7 @@ from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_num
 from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.math_utils import cumsum
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.types import DataFrame
 
 try:
     import dask
@@ -825,6 +827,24 @@ def string2ndarray(parm_string):
 def is_ludwig_ndarray_string(parm_string):
     # tests if parameter is a Ludwig custom ndarray string
     return isinstance(parm_string, str) and parm_string[:11] == "__ndarray__"
+
+
+def get_pa_dtype(obj: Any):
+    if np.isscalar(obj):
+        return pa.from_numpy_dtype(np.array(obj).dtype)
+    elif isinstance(obj, np.ndarray) or isinstance(obj, list) or isinstance(obj, tuple):
+        return pa.list_(get_pa_dtype(obj[0]))
+    else:
+        raise ValueError("Unsupported type for pyarrow dtype: {}".format(type(obj)))
+
+
+def get_pa_schema(df: DataFrame):
+    head = df.head(1)
+    schema = {}
+    for k, v in head.items():
+        v = v.values
+        schema[k] = get_pa_dtype(v[0])
+    return schema
 
 
 external_data_reader_registry = {
