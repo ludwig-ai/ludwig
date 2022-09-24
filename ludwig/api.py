@@ -369,7 +369,7 @@ class LudwigModel:
 
         if model_resume_path is None:
             if self.backend.is_coordinator():
-                output_directory = get_output_directory(output_directory, experiment_name, model_name)
+                output_directory = get_output_directory(output_directory, experiment_name, model_name, self.backend)
             else:
                 output_directory = None
 
@@ -551,6 +551,7 @@ class LudwigModel:
                         model=self.model,
                         config=self.config,
                         config_fp=self.config_fp,
+                        save_path=model_dir,
                     )
 
                 try:
@@ -1424,7 +1425,7 @@ class LudwigModel:
         self.backend.sync_model(self.model)
 
     def save(self, save_path: str) -> None:
-        """This function allows to save models on disk.
+        """This function allows saving models on disk.
 
         # Inputs
 

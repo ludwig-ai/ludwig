@@ -23,9 +23,11 @@ from ludwig.constants import (
     MINIMIZE,
     NAME,
     OUTPUT_FEATURES,
+    PARAMETERS,
     PREPROCESSING,
     RAY,
     SPACE,
+    SEARCH_ALG,
     SPLIT,
     TEST,
     TRAINING,
@@ -38,6 +40,7 @@ from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
+from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
@@ -218,12 +221,12 @@ def hyperopt(
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info("\n")
 
-    search_alg = hyperopt_config["search_alg"]
+    search_alg = hyperopt_config[SEARCH_ALG]
     executor = hyperopt_config[EXECUTOR]
-    parameters = hyperopt_config["parameters"]
-    split = hyperopt_config["split"]
+    parameters = hyperopt_config[PARAMETERS]
+    split = hyperopt_config[SPLIT]
     output_feature = hyperopt_config["output_feature"]
-    metric = hyperopt_config["metric"]
+    metric = hyperopt_config[METRIC]
     goal = hyperopt_config["goal"]
 
     # Check if all features are grid type parameters and log UserWarning if needed
@@ -290,8 +293,19 @@ def hyperopt(
                 )
             )
 
+    sync_function_template = kwargs.get("sync_function_template", None)
+    delete_function_template = kwargs.get("delete_function_template", None)
+
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
-        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        parameters,
+        output_feature,
+        metric,
+        goal,
+        split,
+        search_alg=search_alg,
+        sync_function_template=sync_function_template,
+        delete_function_template=delete_function_template,
+        **executor,
     )
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
@@ -382,15 +396,17 @@ def hyperopt(
 
         if not skip_save_hyperopt_statistics:
             results_directory = os.path.join(output_directory, experiment_name)
-            makedirs(results_directory, exist_ok=True)
 
-            hyperopt_stats = {
-                "hyperopt_config": hyperopt_config,
-                "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
-            }
+            with use_credentials(backend.hyperopt_sync_manager.credentials):
+                makedirs(results_directory, exist_ok=True)
 
-            save_hyperopt_stats(hyperopt_stats, results_directory)
-            logger.info(f"Hyperopt stats saved to: {results_directory}")
+                hyperopt_stats = {
+                    "hyperopt_config": hyperopt_config,
+                    "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
+                }
+
+                save_hyperopt_stats(hyperopt_stats, results_directory)
+                logging.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)

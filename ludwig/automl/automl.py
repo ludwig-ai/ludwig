@@ -72,12 +72,36 @@ class AutoTrainResults:
         return self._experiment_analysis
 
     @property
+    def best_trial(self):
+        return self._experiment_analysis.best_trial
+
+    @property
     def best_trial_id(self) -> str:
         return self._experiment_analysis.best_trial.trial_id
 
     @property
+    def best_checkpoint(self) -> str:
+        return self._experiment_analysis.best_checkpoint
+
+    @property
+    def best_checkpoint_local_path(self) -> str:
+        checkpoint = self.best_checkpoint
+        if checkpoint is None:
+            logging.warning("No best checkpoint found")
+            return None
+        return self._experiment_analysis.best_checkpoint.local_path
+
+    @property
+    def best_checkpoint_cloud_path(self) -> str:
+        checkpoint = self.best_checkpoint
+        if checkpoint is None:
+            logging.warning("No best checkpoint found")
+            return None
+        return self._experiment_analysis.best_checkpoint.cloud_path
+
+    @property
     def best_model(self) -> Optional[LudwigModel]:
-        checkpoint = self._experiment_analysis.best_checkpoint
+        checkpoint = self.best_checkpoint
         if checkpoint is None:
             logger.warning("No best model found")
             return None
@@ -206,6 +230,7 @@ def create_auto_config(
 def train_with_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     config: dict,
+    backend: Optional[Backend] = None,
     output_directory: str = OUTPUT_DIR,
     random_seed: int = default_random_seed,
     **kwargs,
@@ -231,7 +256,13 @@ def train_with_config(
 
     model_type = get_model_type(config)
     hyperopt_results = _train(
-        config, dataset, output_directory=output_directory, model_name=model_type, random_seed=random_seed, **kwargs
+        config,
+        dataset,
+        backend=backend,
+        output_directory=output_directory,
+        model_name=model_type,
+        random_seed=random_seed,
+        **kwargs,
     )
     # catch edge case where metric_score is nan
     # TODO (ASN): Decide how we want to proceed if at least one trial has
@@ -325,10 +356,12 @@ def _train(
     output_directory: str,
     model_name: str,
     random_seed: int,
+    backend: Optional[Backend] = None,
     **kwargs,
 ):
     hyperopt_results = hyperopt(
         config,
+        backend=backend,
         dataset=dataset,
         output_directory=output_directory,
         model_name=model_name,

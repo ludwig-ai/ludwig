@@ -155,3 +155,23 @@ class CacheManager:
     @property
     def credentials(self) -> Optional[dict]:
         return self._cache_credentials
+
+
+class HyperoptSyncManager:
+    def __init__(
+        self,
+        hyperopt_sync_dir: Optional[str] = None,
+        hyperopt_sync_credentials: Optional[Union[str, dict]] = None,
+    ):
+        self._hyperopt_sync_dir = hyperopt_sync_dir
+        if isinstance(hyperopt_sync_credentials, str):
+            hyperopt_sync_credentials = data_utils.load_json(hyperopt_sync_credentials)
+        self._hyperopt_sync_credentials = hyperopt_sync_credentials
+
+    @property
+    def credentials(self) -> Union[dict, None]:
+        return self._hyperopt_sync_credentials
+
+    @property
+    def sync_dir(self) -> Union[str, None]:
+        return self._hyperopt_sync_dir

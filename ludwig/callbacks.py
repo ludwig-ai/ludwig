@@ -138,6 +138,7 @@ class Callback(ABC):
         model,
         config: Dict[str, Any],
         config_fp: Union[str, None],
+        save_path: Union[str, None] = None,
     ):
         """Called after creation of trainer, before the start of training.
 

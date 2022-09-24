@@ -125,9 +125,14 @@ def get_class_attributes(c):
     return {i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_")}
 
 
-def get_output_directory(output_directory, experiment_name, model_name="run"):
+def get_output_directory(output_directory, experiment_name, model_name="run", backend=None):
+    from ludwig.utils.data_utils import use_credentials
+
     base_dir_name = os.path.join(output_directory, experiment_name + ("_" if model_name else "") + (model_name or ""))
-    return fs_utils.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
+    if backend is not None:
+        with use_credentials(backend.cache.credentials):
+            return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
+    return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
 def get_file_names(output_directory):

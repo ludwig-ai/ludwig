@@ -147,16 +147,22 @@ class ECD(BaseModel):
         combiner_outputs = self.combine(encoder_outputs)
         return self.decode(combiner_outputs, targets, mask)
 
-    def save(self, save_path):
+    def save(self, save_path: str):
         """Saves the model to the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        torch.save(self.state_dict(), weights_save_path)
+        try:
+            torch.save(self.state_dict(), weights_save_path)
+        except Exception as e:
+            raise RuntimeError(f"Error saving model weights to {weights_save_path}: {e}")
 
-    def load(self, save_path):
+    def load(self, load_path: str):
         """Loads the model from the given path."""
-        weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        weights_load_path = os.path.join(load_path, MODEL_WEIGHTS_FILE_NAME)
         device = torch.device(get_torch_device())
-        self.load_state_dict(torch.load(weights_save_path, map_location=device))
+        try:
+            self.load_state_dict(torch.load(weights_load_path, map_location=device))
+        except Exception as e:
+            raise RuntimeError(f"Error loading model weights from {weights_load_path}: {e}")
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

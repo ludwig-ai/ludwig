@@ -796,8 +796,23 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     BACKEND_TYPE = "ray"
 
-    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, preprocessor_kwargs=None, **kwargs):
-        super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
+    def __init__(
+        self,
+        processor=None,
+        trainer=None,
+        loader=None,
+        use_legacy=False,
+        preprocessor_kwargs=None,
+        hyperopt_sync_dir: Optional[str] = None,
+        hyperopt_sync_credentials: Optional[Union[str, dict]] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            dataset_manager=RayDatasetManager(self),
+            hyperopt_sync_dir=hyperopt_sync_dir,
+            hyperopt_sync_credentials=hyperopt_sync_credentials,
+            **kwargs,
+        )
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}

@@ -20,7 +20,6 @@ def print_hyperopt_results(hyperopt_results: HyperoptResults):
     for trial_results in hyperopt_results.ordered_trials:
         if not isinstance(trial_results.metric_score, str):
             logger.info(f"score: {trial_results.metric_score:.6f} | parameters: {trial_results.parameters}")
-    logger.info("")
 
 
 def save_hyperopt_stats(hyperopt_stats, hyperopt_dir_name):
@@ -33,7 +32,7 @@ def load_json_value(v):
         return json.loads(v)
     except Exception as e:
         logger.warning(f"While loading json, encountered exception: {e}")
-        return v
+    return v
 
 
 # define set containing names to return for TrialResults

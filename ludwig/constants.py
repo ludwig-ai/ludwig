@@ -230,6 +230,8 @@ POSTPROCESSOR = "postprocessor"
 S3 = "s3"
 CACHE = "cache"
 
+HYPEROPT_LOCAL_DIR = "~/ray_results"
+
 # If `use_torch_profiler=True` in LudwigProfiler, LUDWIG_TAG is prepended to the specified experiment tag
 # (LudwigProfiler(tag="...", ..)). This edited tag is passed in to `torch.profiler.record_function` so we can
 # retrieve torch ops for the tagged code blocks/functions.

@@ -173,7 +173,7 @@ class GBM(BaseModel):
 
         return output_logits
 
-    def save(self, save_path):
+    def save(self, save_path: str):
         """Saves the model to the given path."""
         if self.lgbm_model is None:
             raise ValueError("Model has not been trained yet.")
@@ -183,7 +183,7 @@ class GBM(BaseModel):
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         joblib.dump(self.lgbm_model, weights_save_path)
 
-    def load(self, save_path):
+    def load(self, load_path: str):
         """Loads the model from the given path."""
         import joblib
 
