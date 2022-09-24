@@ -344,8 +344,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        feature_config.deccoder.vocab_size = feature_metadata["vocab_size"]
-        feature_config.deccoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        feature_config.decoder.vocab_size = feature_metadata["vocab_size"]
+        feature_config.decoder.max_sequence_length = feature_metadata["max_sequence_length"]
         if isinstance(feature_config.loss.class_weights, (list, tuple)):
             if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
