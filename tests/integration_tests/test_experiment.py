@@ -179,8 +179,8 @@ def test_experiment_multi_input_intent_classification(csv_filename, encoder):
 
 
 def test_experiment_with_torch_module_dict_feature_name(csv_filename):
-    input_features = [{"type": "category", "name": "type"}]
-    output_features = [{"type": "category", "name": "to"}]
+    input_features = [category_feature(name="type")]
+    output_features = [category_feature(name="to", output_feature=True)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
