@@ -35,7 +35,7 @@ from ludwig.constants import (
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.automl.ray_utils import _ray_init, get_available_resources
+from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import (
     _add_transfer_config,
     get_model_type,
@@ -169,15 +169,17 @@ def create_auto_config(
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
-    default_configs, features_metadata = _create_default_config(dataset_info, target, time_limit_s, random_seed)
+    default_configs, features_metadata = _create_default_config(
+        dataset_info, target, time_limit_s, random_seed, backend
+    )
     model_config, model_category, row_count = _model_select(
         dataset_info, default_configs, features_metadata, user_config, use_reference_config
     )
     if tune_for_memory:
         args = (model_config, dataset, model_category, row_count, backend)
         if ray.is_initialized():
-            resources = get_available_resources()  # check if cluster has GPUS
-            if resources["gpu"] > 0:
+            resources = backend.get_available_resources()  # check if cluster has GPUS
+            if resources.gpus > 0:
                 model_config, fits_in_memory = ray.get(
                     ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(*args)
                 )
