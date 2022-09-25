@@ -382,6 +382,7 @@ def test_reproducible_cli_runs(
             assert test1 != test2
 
 
+@pytest.mark.distributed
 def test_init_config(tmpdir):
     """Test initializing a config from a dataset and a target."""
     input_features = [
