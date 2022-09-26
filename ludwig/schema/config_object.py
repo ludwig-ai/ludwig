@@ -196,19 +196,21 @@ class Config:
                 if DECODER in feature:  # Ensure input feature doesn't have decoder specs
                     del feature[DECODER]
                 feature_schema = input_type_registry[feature[TYPE]].get_schema_cls()
+                feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
+                setattr(self.input_features, feature[NAME], feature_schema)
+                self._set_attributes(
+                    getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE]
+                )
 
             else:
                 if ENCODER in feature:  # Ensure output feature doesn't have encoder specs
                     del feature[ENCODER]
                 feature_schema = output_type_registry[feature[TYPE]].get_schema_cls()
-
-            feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE])
-            setattr(getattr(self, feature_section), feature[NAME], feature_schema)
-            self._set_attributes(
-                getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
-            )
-
-            if feature_section == OUTPUT_FEATURES:
+                feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
+                setattr(self.output_features, feature[NAME], feature_schema)
+                self._set_attributes(
+                    getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
+                )
                 if getattr(getattr(self, feature_section), feature[NAME]).decoder.type == "tagger":
                     getattr(getattr(self, feature_section), feature[NAME]).reduce_input = None
 
@@ -248,7 +250,7 @@ class Config:
             else:
                 setattr(config_obj_lvl, key, val)
 
-    def _update_global_defaults(self, feature, feat_type):
+    def _update_global_defaults(self, feature, feat_type, feature_section):
         """This purpose of this function is to set the attributes of the features that are specified in the
         defaults section of the config.
 
@@ -263,10 +265,14 @@ class Config:
         config_sections = feature.to_dict().keys()
 
         for section in config_sections:
-            setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
+            if feature_section == INPUT_FEATURES:
+                if section in {ENCODER, PREPROCESSING}:
+                    setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
+            else:
+                if section in {DECODER, LOSS}:
+                    setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
         return feature
-
     # def _remove_excess_attributes(self):
     #     """
     #     This function is intended to remove excess attributes set on the global defaults sections. Since the schema

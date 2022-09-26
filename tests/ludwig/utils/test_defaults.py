@@ -190,23 +190,6 @@ def test_overwrite_trainer_type():
     assert merged_config[TRAINER][TYPE] == expected_trainer_type
 
 
-@pytest.mark.parametrize(
-    "model_type",
-    [MODEL_ECD, MODEL_GBM],
-)
-def test_invalid_trainer_type(model_type):
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-        "trainer": {"type": "invalid_trainer"},
-    }
-
-    with pytest.raises(ValidationError):
-        config_obj = Config(config)
-        merge_with_defaults(config, config_obj)
-
-
 def test_set_default_values():
     config = {
         INPUT_FEATURES: [number_feature(encoder={"max_sequence_length": 10})],
