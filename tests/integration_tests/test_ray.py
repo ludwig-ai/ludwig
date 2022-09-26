@@ -321,7 +321,7 @@ def test_ray_save_inputs_without_nans(dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_save_outputs(tmpdir, dataset_type, ray_cluster_2cpu):
+def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
