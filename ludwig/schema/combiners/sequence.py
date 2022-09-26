@@ -4,9 +4,9 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.constants import SEQUENCE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
