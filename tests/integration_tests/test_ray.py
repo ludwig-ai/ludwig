@@ -36,6 +36,7 @@ from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
+    augment_dataset_with_none,
     bag_feature,
     binary_feature,
     category_feature,
@@ -164,6 +165,9 @@ def run_test_with_features(
     skip_save_processed_input=True,
     nan_percent=0.0,
     preprocessing=None,
+    first_row_none=False,
+    last_row_none=False,
+    nan_cols=[],
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -183,8 +187,7 @@ def run_test_with_features(
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
         dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
-        # cols = dataset.columns
-        # dataset.iloc[-1, dataset.columns.get_loc(cols[0])] = np.nan
+        dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
         if expect_error:
             with pytest.raises(ValueError):
@@ -367,9 +370,40 @@ def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
     )
 
 
-# @pytest.mark.distributed
-# def test_ray_image_with_bfill_last_row_nan(tmpdir, dataset_type, ray_cluster_2cpu):
-#     pass
+@pytest.mark.parametrize(
+    "settings",
+    [(True, False, "ffill"), (False, True, "bfill"), (True, True, "bfill"), (True, True, "ffill")],
+    ids=["first_row_none", "last_row_none", "first_and_last_row_none_bfill", "first_and_last_row_none_ffill"],
+)
+@pytest.mark.distributed
+def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2cpu):
+    first_row_none, last_row_none, missing_value_strategy = settings
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            preprocessing={
+                "in_memory": True,
+                "height": 12,
+                "width": 12,
+                "num_channels": 3,
+                "num_processes": 5,
+                "missing_value_strategy": missing_value_strategy,
+            },
+            encoder={"output_size": 16, "num_filters": 8},
+        ),
+    ]
+    output_features = [binary_feature()]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type="pandas+numpy_images",
+        skip_save_processed_input=False,
+        first_row_none=first_row_none,
+        last_row_none=last_row_none,
+        nan_cols=[input_features[0][NAME]],
+    )
 
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized

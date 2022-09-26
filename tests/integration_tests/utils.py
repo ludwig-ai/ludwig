@@ -760,6 +760,18 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     return dataset_to_use
 
 
+def augment_dataset_with_none(
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: List = []
+) -> pd.DataFrame:
+    if first_row_none:
+        for col in nan_cols:
+            df.iloc[0, df.columns.get_loc(col)] = np.nan
+    if last_row_none:
+        for col in nan_cols:
+            df.iloc[-1, df.columns.get_loc(col)] = np.nan
+    return df
+
+
 def train_with_backend(
     backend,
     config,
