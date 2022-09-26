@@ -7,9 +7,8 @@ from ludwig.utils.misc_utils import get_from_registry
 
 
 def remove_excess_params(config):
-    """
-    This is a helper function for removing excess params that end up on the config after setting the defaults via
-    the config object.
+    """This is a helper function for removing excess params that end up on the config after setting the defaults
+    via the config object.
 
     Args:
         config: Config dictionary with excess params to remove
