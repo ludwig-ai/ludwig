@@ -282,7 +282,7 @@ def test_ray_save_inputs_and_outputs_with_nans(tmpdir, dataset_type, ray_cluster
         bag_feature(),
         text_feature(),
         timeseries_feature(),
-        # TODO: NaN handling not supported
+        # TODO: NaN handling not supported. See `test_ray_save_inputs_and_outputs_without_nans` below.
         # date_feature(),    # NaNs are filled with datetime.now(), which leads to non-equal results between backends
         # vector_feature(),  # NaNs are not supported by the feature
         # TODO: feature type not supported

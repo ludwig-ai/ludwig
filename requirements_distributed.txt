@@ -1,5 +1,5 @@
 # requirements for dask
-dask[dataframe,distributed]==2022.8.0
+dask[dataframe]
 pyarrow==6.0.1 # https://github.com/ray-project/ray/issues/22310
 
 # requirements for horovod
