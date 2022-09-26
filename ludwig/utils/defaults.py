@@ -49,7 +49,7 @@ from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.config_utils import remove_excess_params
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.misc_utils import set_default_value, merge_dict
+from ludwig.utils.misc_utils import merge_dict, set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
