@@ -1,9 +1,29 @@
 from typing import Any, Dict, Set, Union
 
-from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, TYPE
+from ludwig.constants import DECODER, DEFAULTS, ENCODER, INPUT_FEATURES, LOSS, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.config_object import Config
 from ludwig.utils.misc_utils import get_from_registry
+
+
+def remove_excess_params(config):
+    """
+    This is a helper function for removing excess params that end up on the config after setting the defaults via
+    the config object.
+
+    Args:
+        config: Config dictionary with excess params to remove
+
+    Returns:
+        None -> Modifies config dict
+    """
+    for feature_type in config[DEFAULTS].keys():
+        excess_params = []
+        for module in config[DEFAULTS][feature_type]:
+            if module not in {PREPROCESSING, ENCODER, DECODER, LOSS}:
+                excess_params.append(module)
+        for param in excess_params:
+            del config[DEFAULTS][feature_type][param]
 
 
 def get_feature_type_parameter_values_from_section(

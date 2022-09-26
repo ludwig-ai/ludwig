@@ -46,6 +46,7 @@ from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+from ludwig.utils.config_utils import remove_excess_params
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import set_default_value
@@ -115,14 +116,17 @@ def _perform_sanity_checks(config):
             ), f"""Defaults specified for `{feature_type}` but `{feature_type}` is
                 not a feature type recognised by Ludwig."""
 
-            for feature_type_param in config.get(DEFAULTS).get(feature_type).keys():
-                assert feature_type_param in {
-                    PREPROCESSING,
-                    ENCODER,
-                    DECODER,
-                    LOSS,
-                }, f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default config
-                 sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
+            defaults_section = config.get(DEFAULTS).get(feature_type)
+
+            for feature_type_param in defaults_section.keys():
+                if defaults_section.get(feature_type_param):
+                    assert feature_type_param in {
+                        PREPROCESSING,
+                        ENCODER,
+                        DECODER,
+                        LOSS,
+                    }, f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default config
+                     sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
 def _merge_hyperopt_with_trainer(config: dict) -> None:
@@ -173,6 +177,7 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
 
     # ===== Defaults =====
     config[DEFAULTS] = config_obj.defaults.to_dict()
+    remove_excess_params(config)
 
     # ===== Preprocessing =====
     config[PREPROCESSING] = config_obj.preprocessing.to_dict()

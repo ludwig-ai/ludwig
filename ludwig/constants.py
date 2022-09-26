@@ -186,6 +186,7 @@ DECODER = "decoder"
 
 DEFAULTS = "defaults"
 DEFAULT = "default"
+DEFAULT_VALIDATION_METRIC = "default_validation_metric"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05

@@ -9,6 +9,7 @@ from ludwig.constants import (
     COMBINER,
     DECODER,
     DEFAULTS,
+    DEFAULT_VALIDATION_METRIC,
     ENCODER,
     HYPEROPT,
     INPUT_FEATURES,
@@ -22,6 +23,7 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     SEQUENCE,
+    TIED,
     TRAINER,
     TYPE,
 )
@@ -39,6 +41,9 @@ from ludwig.schema.features.utils import input_type_registry, output_type_regist
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import convert_submodules
+
+
+DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
 
 class BaseFeatureContainer:
@@ -90,13 +95,14 @@ class Config:
 
         # ===== Defaults =====
         if DEFAULTS in config_dict:
-            self.set_attributes(self.defaults, config_dict[DEFAULTS])
+            self._set_attributes(self.defaults, config_dict[DEFAULTS])
+        # self._remove_excess_attributes()
 
         # ===== Features =====
         self._set_feature_column(config_dict)
         self._set_proc_column(config_dict)
-        self.parse_features(config_dict[INPUT_FEATURES], INPUT_FEATURES)
-        self.parse_features(config_dict[OUTPUT_FEATURES], OUTPUT_FEATURES)
+        self._parse_features(config_dict[INPUT_FEATURES], INPUT_FEATURES)
+        self._parse_features(config_dict[OUTPUT_FEATURES], OUTPUT_FEATURES)
 
         # ===== Model Type =====
         if MODEL_TYPE in config_dict:
@@ -127,15 +133,15 @@ class Config:
                 encoder_family = SEQUENCE
             else:
                 encoder_family = None
-            self.set_attributes(self.combiner, config_dict[COMBINER], feature_type=encoder_family)
+            self._set_attributes(self.combiner, config_dict[COMBINER], feature_type=encoder_family)
 
         # ===== Trainer =====
         if TRAINER in config_dict:
-            self.set_attributes(self.trainer, config_dict[TRAINER])
+            self._set_attributes(self.trainer, config_dict[TRAINER])
 
         # ===== Global Preprocessing =====
         if PREPROCESSING in config_dict:
-            self.set_attributes(self.preprocessing, config_dict[PREPROCESSING])
+            self._set_attributes(self.preprocessing, config_dict[PREPROCESSING])
 
         # ===== Hyperopt =====
         if HYPEROPT in config_dict:
@@ -154,7 +160,7 @@ class Config:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
 
     @staticmethod
-    def get_new_config(module, config_type, feature_type):
+    def _get_new_config(module, config_type, feature_type):
         """Helper function for getting the appropriate config to set in defaults section.
 
         Args:
@@ -176,8 +182,8 @@ class Config:
 
         raise ValueError("Module needs to be added to defaults parsing support")
 
-    def parse_features(self, features, feature_section):
-        """
+    def _parse_features(self, features, feature_section):
+        """This function sets the values on the config object that are specified in the user defined config dictionary.
 
         Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
               obj, so we make sure to check and remove inappropriate modules.
@@ -200,9 +206,9 @@ class Config:
                     del feature[ENCODER]
                 feature_schema = output_type_registry[feature[TYPE]].get_schema_cls()
 
-            feature_schema = self.update_global_defaults(feature_schema(), feature[TYPE])
+            feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE])
             setattr(getattr(self, feature_section), feature[NAME], feature_schema)
-            self.set_attributes(
+            self._set_attributes(
                 getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
             )
 
@@ -210,7 +216,7 @@ class Config:
                 if getattr(getattr(self, feature_section), feature[NAME]).decoder.type == "tagger":
                     getattr(getattr(self, feature_section), feature[NAME]).reduce_input = None
 
-    def set_attributes(self, config_obj_lvl, config_dict_lvl, feature_type=None):
+    def _set_attributes(self, config_obj_lvl, config_dict_lvl, feature_type=None):
         """
         This function recursively parses both config object from the point that's passed in and the config dictionary to
         make sure the config obj section in question matches the corresponding user specified config section.
@@ -234,19 +240,19 @@ class Config:
 
                 # Check if submodule needs update
                 if TYPE in val and module.type != val[TYPE]:
-                    new_config = self.get_new_config(key, val[TYPE], feature_type)()
+                    new_config = self._get_new_config(key, val[TYPE], feature_type)()
                     setattr(config_obj_lvl, key, new_config)
 
                 #  Now set the other defaults specified in the module
-                self.set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
+                self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             elif isinstance(val, dict):
-                self.set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
+                self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             else:
                 setattr(config_obj_lvl, key, val)
 
-    def update_global_defaults(self, feature, feat_type):
+    def _update_global_defaults(self, feature, feat_type):
         """This purpose of this function is to set the attributes of the features that are specified in the
         defaults section of the config.
 
@@ -264,6 +270,22 @@ class Config:
             setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
         return feature
+
+    # def _remove_excess_attributes(self):
+    #     """
+    #     This function is intended to remove excess attributes set on the global defaults sections. Since the schema
+    #     creates the global defaults sections by pulling together the corresponding feature schemas, some extra
+    #     attributes are hanging around such as name and column. This function removes them.
+    #
+    #     Returns:
+    #         None -> Modifies config object
+    #     """
+    #
+    #     for feature_type in self.defaults.to_dict().keys():
+    #         section = getattr(self.defaults, feature_type)
+    #         for attr in dir(section):
+    #             if attr in DEFAULTS_MODULES and getattr(section, attr):
+    #                 delattr(section, attr)
 
     def get_config_dict(self):
         """This method converts the current config object into an equivalent dictionary representation since many

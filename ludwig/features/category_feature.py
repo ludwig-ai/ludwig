@@ -23,7 +23,6 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COLUMN,
-    ENCODER,
     HIDDEN,
     HITS_AT_K,
     LOGITS,
