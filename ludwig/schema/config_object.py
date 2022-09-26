@@ -110,19 +110,16 @@ class Config:
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
 
-                for feature in dir(self.input_features):
-                    if feature.startswith("__"):
-                        continue
+                for feature in self.input_features.to_dict().keys():
+                    feature_cls = getattr(self.input_features, feature)
+                    if feature_cls.type == BINARY:
+                        feature_cls.encoder = BinaryPassthroughEncoderConfig()
+                    elif feature_cls.type in [CATEGORY, NUMBER]:
+                        feature_cls.encoder = PassthroughEncoderConfig()
                     else:
-                        feature_cls = getattr(self.input_features, feature)
-                        if feature_cls.type == BINARY:
-                            feature_cls.encoder = BinaryPassthroughEncoderConfig()
-                        elif feature_cls.type in [CATEGORY, NUMBER]:
-                            feature_cls.encoder = PassthroughEncoderConfig()
-                        else:
-                            raise ValidationError(
-                                "GBM Models currently only support Binary, Category, and Number " "features"
-                            )
+                        raise ValidationError(
+                            "GBM Models currently only support Binary, Category, and Number " "features"
+                        )
 
         # ===== Combiner =====
         if COMBINER in config_dict:
