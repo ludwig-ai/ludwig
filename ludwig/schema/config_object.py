@@ -8,8 +8,8 @@ from ludwig.constants import (
     COLUMN,
     COMBINER,
     DECODER,
-    DEFAULTS,
     DEFAULT_VALIDATION_METRIC,
+    DEFAULTS,
     ENCODER,
     HYPEROPT,
     INPUT_FEATURES,
@@ -41,7 +41,6 @@ from ludwig.schema.features.utils import input_type_registry, output_type_regist
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import convert_submodules
-
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
@@ -180,7 +179,8 @@ class Config:
         raise ValueError("Module needs to be added to defaults parsing support")
 
     def _parse_features(self, features, feature_section):
-        """This function sets the values on the config object that are specified in the user defined config dictionary.
+        """This function sets the values on the config object that are specified in the user defined config
+        dictionary.
 
         Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
               obj, so we make sure to check and remove inappropriate modules.
@@ -190,7 +190,6 @@ class Config:
 
         Returns:
             None -> Updates config object.
-
         """
         for feature in features:
             if feature_section == INPUT_FEATURES:
