@@ -844,7 +844,7 @@ def get_pa_schema(df: DataFrame):
     for k, v in head.items():
         v = v.values
         schema[k] = get_pa_dtype(v[0])
-    return schema
+    return pa.schema(list(schema.items()))
 
 
 external_data_reader_registry = {
