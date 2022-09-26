@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: null
 input_features:
 - name: var3
   type: number
@@ -737,10 +742,22 @@ input_features:
   type: number
 - name: var38
   type: number
-model_type: gbm
 output_features:
 - name: TARGET
   type: binary
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.27526035994784703
+  bagging_freq: 2
+  early_stop: 7
+  feature_fraction: 0.05794498286689369
+  lambda_l1: 8.88987210633595e-06
+  lambda_l2: 0.002228130368185499
+  learning_rate: 0.013954896734379982
+  max_bin: 28670
+  max_depth: 81
+  min_data_in_leaf: 199
+  min_gain_to_split: 0.0974199280848831
+  min_sum_hessian_in_leaf: 7
+  num_boost_round: 5469
+  num_leaves: 326
+type: gbm

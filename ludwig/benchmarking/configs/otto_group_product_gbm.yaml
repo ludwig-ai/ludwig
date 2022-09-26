@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: null
 input_features:
 - name: feat_1
   type: number
@@ -185,10 +190,22 @@ input_features:
   type: number
 - name: feat_93
   type: number
-model_type: gbm
 output_features:
 - name: target
   type: category
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.37819514074939947
+  bagging_freq: 9
+  early_stop: 7
+  feature_fraction: 0.3022047512387084
+  lambda_l1: 0.0003236782602128808
+  lambda_l2: 556.4719507782441
+  learning_rate: 0.0014418907431332391
+  max_bin: 38377
+  max_depth: 80
+  min_data_in_leaf: 107
+  min_gain_to_split: 0.06947250977063474
+  min_sum_hessian_in_leaf: 5
+  num_boost_round: 2442
+  num_leaves: 309
+type: gbm

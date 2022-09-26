@@ -1,0 +1,43 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: null
+input_features:
+- name: RESOURCE
+  type: category
+- name: MGR_ID
+  type: category
+- name: ROLE_ROLLUP_1
+  type: category
+- name: ROLE_ROLLUP_2
+  type: category
+- name: ROLE_DEPTNAME
+  type: category
+- name: ROLE_TITLE
+  type: category
+- name: ROLE_FAMILY_DESC
+  type: category
+- name: ROLE_FAMILY
+  type: category
+- name: ROLE_CODE
+  type: category
+output_features:
+- name: ACTION
+  type: binary
+trainer:
+  bagging_fraction: 0.549573064483937
+  bagging_freq: 4
+  early_stop: 7
+  feature_fraction: 0.12446911029786624
+  lambda_l1: 0.027909444969656704
+  lambda_l2: 75.7334381505226
+  learning_rate: 0.0023196004022577963
+  max_bin: 95619
+  max_depth: 237
+  min_data_in_leaf: 168
+  min_gain_to_split: 0.018029342230763024
+  min_sum_hessian_in_leaf: 6
+  num_boost_round: 9115
+  num_leaves: 10
+type: gbm

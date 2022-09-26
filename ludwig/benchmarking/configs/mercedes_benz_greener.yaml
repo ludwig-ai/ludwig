@@ -756,26 +756,15 @@ input_features:
   type: binary
 combiner:
   type: tabnet
-  size: 128
-  output_size: 8
-  sparsity: 0.1
-  bn_momentum: 0.9
-  num_steps: 9
-  relaxation_factor: 1
-  bn_virtual_bs: 256
 trainer:
-  batch_size: 256
-  #batch_size: 2560
-  eval_batch_size: 0
-  epochs: 300
-  early_stop: 30
-  learning_rate: 0.005
-  optimizer:
-    type: adam
-  decay: true
-  decay_steps: 500
-  decay_rate: 0.95
-  validation_metric: root_mean_squared_error
-preprocessing:
-  split:
-    type: fixed
+  early_stop: 7
+  eval_batch_size: 16384
+  evaluate_training_set: false
+  learning_rate: 0.020634
+  batch_size: 1220
+  decay: false
+defaults:
+  number:
+    preprocessing:
+      normalization: zscore
+      missing_value_strategy: fill_with_mean

@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
 input_features:
 - column: cat1
   name: cat1
@@ -389,10 +394,22 @@ input_features:
 - column: cont14
   name: cont14
   type: number
-model_type: gbm
 output_features:
 - name: loss
   type: number
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.4003980215581768
+  bagging_freq: 7
+  early_stop: 7
+  feature_fraction: 0.8028961905376485
+  lambda_l1: 0.03590377060451974
+  lambda_l2: 72.41873612812154
+  learning_rate: 0.0010386666669456024
+  max_bin: 77949
+  max_depth: 168
+  min_data_in_leaf: 86
+  min_gain_to_split: 0.08010780425526064
+  min_sum_hessian_in_leaf: 3
+  num_boost_round: 7839
+  num_leaves: 54
+type: gbm

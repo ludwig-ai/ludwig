@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
 input_features:
 - name: MSSubClass
   type: category
@@ -157,10 +162,22 @@ input_features:
   type: category
 - name: SaleCondition
   type: category
-model_type: gbm
 output_features:
 - name: SalePrice
   type: number
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.7925429351003006
+  bagging_freq: 5
+  early_stop: 7
+  feature_fraction: 0.27415808723459245
+  lambda_l1: 0.022375232612754044
+  lambda_l2: 8.912279997111555e-06
+  learning_rate: 0.020201425564166584
+  max_bin: 8719
+  max_depth: 252
+  min_data_in_leaf: 113
+  min_gain_to_split: 0.14244116890585484
+  min_sum_hessian_in_leaf: 2
+  num_boost_round: 7893
+  num_leaves: 438
+type: gbm

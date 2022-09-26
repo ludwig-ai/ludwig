@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_const
+      normalization: zscore
 input_features:
 - name: v1
   type: number
@@ -261,10 +266,22 @@ input_features:
   type: number
 - name: v131
   type: number
-model_type: gbm
 output_features:
 - name: target
   type: binary
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.7176682121909159
+  bagging_freq: 8
+  early_stop: 7
+  feature_fraction: 0.28573490859948114
+  lambda_l1: 9.979077681188212e-06
+  lambda_l2: 1.1045385434120825e-09
+  learning_rate: 0.0016515312853269707
+  max_bin: 73333
+  max_depth: 295
+  min_data_in_leaf: 129
+  min_gain_to_split: 0.1253086696122411
+  min_sum_hessian_in_leaf: 2
+  num_boost_round: 4074
+  num_leaves: 424
+type: gbm

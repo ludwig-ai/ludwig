@@ -1,0 +1,52 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+input_features:
+- name: Elevation
+  type: number
+- name: Aspect
+  type: number
+- name: Slope
+  type: number
+- name: Horizontal_Distance_To_Hydrology
+  type: number
+- name: Vertical_Distance_To_Hydrology
+  type: number
+- name: Horizontal_Distance_To_Roadways
+  type: number
+- name: Hillshade_9am
+  type: number
+- name: Hillshade_Noon
+  type: number
+- name: Hillshade_3pm
+  type: number
+- name: Horizontal_Distance_To_Fire_Points
+  type: number
+- encoder: sparse
+  name: Wilderness_Area
+  type: category
+- encoder: sparse
+  name: Soil_Type
+  type: category
+output_features:
+- encoder: sparse
+  name: Cover_Type
+  type: category
+trainer:
+  bagging_fraction: 0.5855570755953406
+  bagging_freq: 5
+  early_stop: 7
+  feature_fraction: 0.3596217088676454
+  lambda_l1: 2.6433056749928426e-08
+  lambda_l2: 0.057813374242111824
+  learning_rate: 0.00903280656719805
+  max_bin: 78118
+  max_depth: 259
+  min_data_in_leaf: 47
+  min_gain_to_split: 0.27231899124125963
+  min_sum_hessian_in_leaf: 2
+  num_boost_round: 2706
+  num_leaves: 317
+type: gbm

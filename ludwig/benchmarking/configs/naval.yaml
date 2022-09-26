@@ -1,0 +1,109 @@
+combiner:
+  type: tabnet
+hyperopt:
+  executor:
+    num_samples: 896
+    type: ray
+  goal: maximize
+  metric: r2
+  output_feature: gtcdsc
+  parameters:
+    combiner.type:
+      categories:
+      - tabnet
+      - concat
+      space: choice
+    defaults.number.preprocessing.missing_value_strategy:
+      categories:
+      - fill_with_const
+      - fill_with_mean
+      space: choice
+    defaults.number.preprocessing.normalization:
+      categories:
+      - zscore
+      - null
+      space: choice
+    trainer.batch_size:
+      lower: 32
+      space: randint
+      upper: 2048
+    trainer.decay:
+      categories:
+      - true
+      - false
+      space: choice
+    trainer.decay_rate:
+      lower: 0.4
+      space: uniform
+      upper: 0.96
+    trainer.learning_rate:
+      lower: 0.0001
+      space: loguniform
+      upper: 0.1
+  scheduler:
+    reduction_factor: 2
+    type: async_hyperband
+  search_alg:
+    type: hyperopt
+  split: validation
+input_features:
+- column: lp
+  name: lp
+  type: number
+- column: v
+  name: v
+  type: number
+- column: gtt
+  name: gtt
+  type: number
+- column: gtn
+  name: gtn
+  type: number
+- column: ggn
+  name: ggn
+  type: number
+- column: ts
+  name: ts
+  type: number
+- column: tp
+  name: tp
+  type: number
+- column: t48
+  name: t48
+  type: number
+- column: t1
+  name: t1
+  type: category
+- column: t2
+  name: t2
+  type: number
+- column: p48
+  name: p48
+  type: number
+- column: p1
+  name: p1
+  type: number
+- column: p2
+  name: p2
+  type: number
+- column: pexh
+  name: pexh
+  type: number
+- column: tic
+  name: tic
+  type: number
+- column: mf
+  name: mf
+  type: number
+- column: gttdsc
+  name: gttdsc
+  type: number
+output_features:
+- column: gtcdsc
+  name: gtcdsc
+  type: number
+trainer:
+  early_stop: 16
+  epochs: 1024
+  eval_batch_size: 16384
+  evaluate_training_set: false

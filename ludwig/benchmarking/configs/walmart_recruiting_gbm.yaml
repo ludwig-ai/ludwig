@@ -1,0 +1,44 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+input_features:
+- column: VisitNumber
+  name: VisitNumber
+  type: number
+- column: Weekday
+  name: Weekday
+  type: category
+- column: Upc
+  name: Upc
+  type: number
+- column: ScanCount
+  name: ScanCount
+  type: number
+- column: DepartmentDescription
+  name: DepartmentDescription
+  type: category
+- column: FinelineNumber
+  name: FinelineNumber
+  type: number
+output_features:
+- column: TripType
+  name: TripType
+  type: category
+trainer:
+  bagging_fraction: 0.9513418098853386
+  bagging_freq: 3
+  early_stop: 7
+  feature_fraction: 0.17633656750980267
+  lambda_l1: 2.7375549452315875e-05
+  lambda_l2: 9.888145537710124e-06
+  learning_rate: 0.0016062813281416397
+  max_bin: 91255
+  max_depth: 123
+  min_data_in_leaf: 26
+  min_gain_to_split: 0.14558779584380044
+  min_sum_hessian_in_leaf: 7
+  num_boost_round: 7445
+  num_leaves: 320
+type: gbm

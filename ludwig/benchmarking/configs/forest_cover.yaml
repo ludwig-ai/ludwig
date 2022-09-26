@@ -1,0 +1,43 @@
+combiner:
+  type: tabnet
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+input_features:
+- name: Elevation
+  type: number
+- name: Aspect
+  type: number
+- name: Slope
+  type: number
+- name: Horizontal_Distance_To_Hydrology
+  type: number
+- name: Vertical_Distance_To_Hydrology
+  type: number
+- name: Horizontal_Distance_To_Roadways
+  type: number
+- name: Hillshade_9am
+  type: number
+- name: Hillshade_Noon
+  type: number
+- name: Hillshade_3pm
+  type: number
+- name: Horizontal_Distance_To_Fire_Points
+  type: number
+- name: Wilderness_Area
+  type: category
+- name: Soil_Type
+  type: category
+output_features:
+- name: Cover_Type
+  type: category
+trainer:
+  batch_size: 1170
+  decay: true
+  decay_rate: 0.450321
+  early_stop: 16
+  eval_batch_size: 16384
+  evaluate_training_set: false
+  learning_rate: 0.067247

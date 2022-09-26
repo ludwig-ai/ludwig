@@ -1,0 +1,77 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: null
+input_features:
+- column: lp
+  name: lp
+  type: number
+- column: v
+  name: v
+  type: number
+- column: gtt
+  name: gtt
+  type: number
+- column: gtn
+  name: gtn
+  type: number
+- column: ggn
+  name: ggn
+  type: number
+- column: ts
+  name: ts
+  type: number
+- column: tp
+  name: tp
+  type: number
+- column: t48
+  name: t48
+  type: number
+- column: t1
+  name: t1
+  type: category
+- column: t2
+  name: t2
+  type: number
+- column: p48
+  name: p48
+  type: number
+- column: p1
+  name: p1
+  type: number
+- column: p2
+  name: p2
+  type: number
+- column: pexh
+  name: pexh
+  type: number
+- column: tic
+  name: tic
+  type: number
+- column: mf
+  name: mf
+  type: number
+- column: gttdsc
+  name: gttdsc
+  type: number
+output_features:
+- column: gtcdsc
+  name: gtcdsc
+  type: number
+trainer:
+  bagging_fraction: 0.5326992438544833
+  bagging_freq: 4
+  early_stop: 7
+  feature_fraction: 0.3960201281093666
+  lambda_l1: 4.537540335593776e-05
+  lambda_l2: 5.787297350750033
+  learning_rate: 0.001806074044642047
+  max_bin: 27105
+  max_depth: 315
+  min_data_in_leaf: 82
+  min_gain_to_split: 0.22732487875599455
+  min_sum_hessian_in_leaf: 4
+  num_boost_round: 4779
+  num_leaves: 164
+type: gbm

@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: null
 input_features:
 - name: pos_01
   type: category
@@ -83,10 +88,22 @@ input_features:
   type: category
 - name: pos_42
   type: category
-model_type: gbm
 output_features:
 - name: winner
   type: category
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.2665518969617237
+  bagging_freq: 9
+  early_stop: 7
+  feature_fraction: 0.4420024236005874
+  lambda_l1: 2.615124924808822e-06
+  lambda_l2: 61.37781194865465
+  learning_rate: 0.001000086502833375
+  max_bin: 50438
+  max_depth: 149
+  min_data_in_leaf: 78
+  min_gain_to_split: 0.08187804299152442
+  min_sum_hessian_in_leaf: 5
+  num_boost_round: 20
+  num_leaves: 313
+type: gbm

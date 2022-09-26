@@ -1,6 +1,10 @@
-output_features:
-- name: target
-  type: binary
+combiner:
+  type: concat
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_const
+      normalization: zscore
 input_features:
 - name: var_0
   type: number
@@ -402,27 +406,14 @@ input_features:
   type: number
 - name: var_199
   type: number
-combiner:
-  type: tabnet
-  size: 8
-  output_size: 8
-  sparsity: 0
-  bn_momentum: 0.6
-  num_steps: 3
-  relaxation_factor: 2
-  bn_virtual_bs: 256
+output_features:
+- name: target
+  type: binary
 trainer:
-  batch_size: 256
-  eval_batch_size: 0
-  epochs: 300
-  early_stop: 30
-  learning_rate: 0.005
-  optimizer:
-    type: adam
+  batch_size: 1782
   decay: true
-  decay_steps: 20000
-  decay_rate: 0.95
-  validation_metric: accuracy
-preprocessing:
-  split:
-    type: fixed
+  decay_rate: 0.717826
+  early_stop: 16
+  eval_batch_size: 16384
+  evaluate_training_set: false
+  learning_rate: 0.006627

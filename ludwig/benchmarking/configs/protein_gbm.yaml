@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
 input_features:
 - name: F1
   type: number
@@ -19,10 +24,22 @@ input_features:
   type: number
 - name: F1
   type: number
-model_type: gbm
 output_features:
 - name: RMSD
   type: number
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.597708911965363
+  bagging_freq: 0
+  early_stop: 7
+  feature_fraction: 0.742028259091312
+  lambda_l1: 0.6238254864134898
+  lambda_l2: 3.913684846923848e-06
+  learning_rate: 0.023986973670470115
+  max_bin: 89776
+  max_depth: 477
+  min_data_in_leaf: 111
+  min_gain_to_split: 0.06708256033463586
+  min_sum_hessian_in_leaf: 5
+  num_boost_round: 3911
+  num_leaves: 314
+type: gbm

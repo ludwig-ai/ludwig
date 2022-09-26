@@ -1,0 +1,38 @@
+combiner:
+  type: tabnet
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
+input_features:
+- column: VisitNumber
+  name: VisitNumber
+  type: number
+- column: Weekday
+  name: Weekday
+  type: category
+- column: Upc
+  name: Upc
+  type: number
+- column: ScanCount
+  name: ScanCount
+  type: number
+- column: DepartmentDescription
+  name: DepartmentDescription
+  type: category
+- column: FinelineNumber
+  name: FinelineNumber
+  type: number
+output_features:
+- column: TripType
+  name: TripType
+  type: category
+trainer:
+  batch_size: 1675
+  decay: true
+  decay_rate: 0.547861
+  early_stop: 16
+  eval_batch_size: 16384
+  evaluate_training_set: false
+  learning_rate: 0.005119

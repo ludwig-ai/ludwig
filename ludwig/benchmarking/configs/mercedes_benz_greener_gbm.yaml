@@ -1,3 +1,8 @@
+defaults:
+  number:
+    preprocessing:
+      missing_value_strategy: fill_with_mean
+      normalization: zscore
 input_features:
 - name: X0
   type: category
@@ -751,10 +756,22 @@ input_features:
   type: binary
 - name: X385
   type: binary
-model_type: gbm
 output_features:
 - name: y
   type: number
-preprocessing:
-  split:
-    type: fixed
+trainer:
+  bagging_fraction: 0.1548845522346049
+  bagging_freq: 8
+  early_stop: 7
+  feature_fraction: 0.12333754304191082
+  lambda_l1: 0.0003330403377079255
+  lambda_l2: 0.0012238444578222523
+  learning_rate: 0.0011531560682102905
+  max_bin: 68805
+  max_depth: 97
+  min_data_in_leaf: 116
+  min_gain_to_split: 0.10609225861833575
+  min_sum_hessian_in_leaf: 5
+  num_boost_round: 3980
+  num_leaves: 310
+type: gbm
