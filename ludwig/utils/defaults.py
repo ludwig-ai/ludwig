@@ -125,7 +125,7 @@ def _perform_sanity_checks(config):
                         ENCODER,
                         DECODER,
                         LOSS,
-                    }, f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default 
+                    }, f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default
                      config sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
