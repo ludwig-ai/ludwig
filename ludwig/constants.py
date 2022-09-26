@@ -160,6 +160,7 @@ PARQUET = "parquet"
 
 SRC = "dataset_src"
 
+EARLY_STOP = "early_stop"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
