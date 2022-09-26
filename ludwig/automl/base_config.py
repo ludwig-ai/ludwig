@@ -20,13 +20,13 @@ import numpy as np
 import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
+from ludwig.backend import Backend
 from ludwig.constants import COMBINER, EXECUTOR, HYPEROPT, SCHEDULER, SEARCH_ALG, TEXT, TYPE
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
-from ludwig.utils.automl.ray_utils import get_available_resources
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
-from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.system_utils import Resources
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
@@ -54,7 +54,7 @@ class DatasetInfo:
     size_bytes: int = -1
 
 
-def allocate_experiment_resources(resources: dict) -> dict:
+def allocate_experiment_resources(resources: Resources) -> dict:
     """Allocates ray trial resources based on available resources.
 
     # Inputs
@@ -69,7 +69,7 @@ def allocate_experiment_resources(resources: dict) -> dict:
     # (2) add support for kubernetes namespace (if applicable)
     # (3) add support for smarter allocation based on size of GPU memory
     experiment_resources = {"cpu_resources_per_trial": 1}
-    gpu_count, cpu_count = resources["gpu"], resources["cpu"]
+    gpu_count, cpu_count = resources.gpus, resources.cpus
     if gpu_count > 0:
         experiment_resources.update({"gpu_resources_per_trial": 1})
         if cpu_count > 1:
@@ -81,9 +81,10 @@ def allocate_experiment_resources(resources: dict) -> dict:
 
 def _create_default_config(
     dataset_info: DatasetInfo,
-    target_name: Union[str, List[str]] = None,
-    time_limit_s: Union[int, float] = None,
-    random_seed: int = default_random_seed,
+    target_name: Union[str, List[str]],
+    time_limit_s: Union[int, float],
+    random_seed: int,
+    backend: Backend = None,
 ) -> dict:
     """Returns auto_train configs for three available combiner models. Coordinates the following tasks:
 
@@ -108,7 +109,7 @@ def _create_default_config(
     :return: (dict) dictionaries contain auto train config files for all available
     combiner types
     """
-    resources = get_available_resources()
+    resources = backend.get_available_resources()
     experiment_resources = allocate_experiment_resources(resources)
 
     input_and_output_feature_config, features_metadata = get_features_config(
@@ -310,7 +311,7 @@ def get_field_metadata(
     input_count = sum(not meta.excluded and meta.mode == "input" and meta.config.type != TEXT for meta in metadata) - 1
 
     # Exclude text fields if no GPUs are available
-    if resources["gpu"] == 0:
+    if resources.gpus == 0:
         for meta in metadata:
             if input_count > 2 and meta.config.type == TEXT:
                 # By default, exclude text inputs when there are other candidate inputs
