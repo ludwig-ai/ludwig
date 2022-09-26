@@ -100,7 +100,6 @@ from ludwig.utils.data_utils import (
     TSV_FORMATS,
     use_credentials,
 )
-from ludwig.utils.dataframe_utils import is_dask_series
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
@@ -1154,7 +1153,7 @@ def build_dataset(
 
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
-        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1345,7 +1344,7 @@ def build_data(
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values
-        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+        handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
@@ -1455,7 +1454,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     return None
 
 
-def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
+def handle_missing_values(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
 
     # Check for the precomputed fill value in the metadata
@@ -1469,24 +1468,15 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
             computed_fill_value,
         )
     elif missing_value_strategy in {BFILL, FFILL}:
-        # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
-        # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
-        # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
-        # up with the other missing value strategy (ffill) to ensure all NaNs are filled
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
 
-        # Add conditional check since executing another missing value strategy is expensive
-        requires_secondary_fill = False
-        if is_dask_series(dataset_cols[feature[COLUMN]]):
-            if dataset_cols[feature[COLUMN]].isna().sum().compute() > 0:
-                requires_secondary_fill = True
-        else:
-            if dataset_cols[feature[COLUMN]].isna().sum() > 0:
-                requires_secondary_fill = True
-
-        if requires_secondary_fill:
+        # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
+        # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
+        # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
+        # up with the other missing value strategy (ffill) to ensure all NaNs are filled
+        if backend.df_engine.compute(dataset_cols[feature[COLUMN]].isna().sum()) > 0:
             dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
                 method=BFILL if missing_value_strategy == FFILL else FFILL,
             )

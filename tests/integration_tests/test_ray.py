@@ -183,6 +183,8 @@ def run_test_with_features(
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
         dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
+        # cols = dataset.columns
+        # dataset.iloc[-1, dataset.columns.get_loc(cols[0])] = np.nan
 
         if expect_error:
             with pytest.raises(ValueError):
@@ -363,6 +365,11 @@ def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
         skip_save_processed_input=False,
         nan_percent=0.1,
     )
+
+
+# @pytest.mark.distributed
+# def test_ray_image_with_bfill_last_row_nan(tmpdir, dataset_type, ray_cluster_2cpu):
+#     pass
 
 
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized

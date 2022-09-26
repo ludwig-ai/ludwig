@@ -17,16 +17,6 @@ def is_dask_backend(backend: Optional["Backend"]) -> bool:  # noqa: F821
     return backend is not None and is_dask_lib(backend.df_engine.df_lib)
 
 
-def is_dask_series(series) -> bool:
-    """Returns whether the series is a dask series."""
-    try:
-        import dask.dataframe as dd
-
-        return isinstance(series, dd.Series)
-    except ImportError:
-        return False
-
-
 def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  # noqa: F821
     if is_dask_backend(backend):
         import dask.dataframe as dd
