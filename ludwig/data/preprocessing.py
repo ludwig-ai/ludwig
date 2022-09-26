@@ -100,6 +100,7 @@ from ludwig.utils.data_utils import (
     TSV_FORMATS,
     use_credentials,
 )
+from ludwig.utils.dataframe_utils import is_dask_series
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
@@ -1472,13 +1473,23 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
         # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
         # up with the other missing value strategy (ffill) to ensure all NaNs are filled
-        secondary_missing_value_strategy = BFILL if missing_value_strategy == FFILL else FFILL
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
-        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
-            method=secondary_missing_value_strategy,
-        )
+
+        # Add conditional check since executing another missing value strategy is expensive
+        requires_secondary_fill = False
+        if is_dask_series(dataset_cols[feature[COLUMN]]):
+            if dataset_cols[feature[COLUMN]].isna().sum().compute() > 0:
+                requires_secondary_fill = True
+        else:
+            if dataset_cols[feature[COLUMN]].isna().sum() > 0:
+                requires_secondary_fill = True
+
+        if requires_secondary_fill:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
+                method=BFILL if missing_value_strategy == FFILL else FFILL,
+            )
     elif missing_value_strategy == DROP_ROW:
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will

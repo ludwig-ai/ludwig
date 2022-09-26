@@ -183,8 +183,6 @@ def run_test_with_features(
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=num_examples)
         dataset = create_data_set_to_use(dataset_type, dataset_csv, nan_percent=nan_percent)
-        # cols = dataset.columns
-        # dataset.iloc[-1, dataset.columns.get_loc(cols[0])] = np.nan
 
         if expect_error:
             with pytest.raises(ValueError):
@@ -348,9 +346,6 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
 def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
-    # if dataset_type == "pandas+numpy_images":
-    #     pytest.skip("https://github.com/ludwig-ai/ludwig/issues/2452")
-
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
