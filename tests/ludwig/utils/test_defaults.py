@@ -3,7 +3,6 @@ import copy
 import pytest
 
 from ludwig.constants import (
-    BFILL,
     CATEGORY,
     COMBINER,
     DECODER,
@@ -32,9 +31,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.config_object import Config
-from ludwig.schema.split import RandomSplitConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.defaults import merge_with_defaults
