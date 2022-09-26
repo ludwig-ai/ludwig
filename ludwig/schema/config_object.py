@@ -24,7 +24,6 @@ from ludwig.constants import (
     SEQUENCE,
     TRAINER,
     TYPE,
-    VALIDATION_METRIC,
 )
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
@@ -39,7 +38,7 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.schema.utils import convert_submodules
 
 
 class BaseFeatureContainer:
@@ -132,10 +131,6 @@ class Config:
 
         # ===== Trainer =====
         if TRAINER in config_dict:
-            # if VALIDATION_METRIC not in config_dict[TRAINER]:
-            #     self.trainer.validation_metric = getattr(
-            #         self.output_features, config_dict[OUTPUT_FEATURES][0][NAME]
-            #     ).default_validation_metric
             self.set_attributes(self.trainer, config_dict[TRAINER])
 
         # ===== Global Preprocessing =====
@@ -144,10 +139,7 @@ class Config:
 
         # ===== Hyperopt =====
         if HYPEROPT in config_dict:
-            pass
-            # self.set_attributes(self.hyperopt, config_dict[HYPEROPT])  # TODO: Schemify Hyperopt
-
-        # self.initialize_config(self)
+            pass  # TODO: Schemify Hyperopt
 
     @staticmethod
     def _set_feature_column(config: dict) -> None:
@@ -272,12 +264,6 @@ class Config:
             setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
         return feature
-
-    # def initialize_config(self, config_section):
-    #     for module in [mod for mod in dir(config_section) if not mod.startswith('__')]:
-    #         if isinstance(getattr(config_section, module), BaseMarshmallowConfig):
-    #             setattr(config_section, module, getattr(config_section, module)())
-    #             self.initialize_config(getattr(config_section, module))
 
     def get_config_dict(self):
         """This method converts the current config object into an equivalent dictionary representation since many

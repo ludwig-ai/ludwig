@@ -23,9 +23,7 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    DECODER,
     EDIT_DISTANCE,
-    ENCODER,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,

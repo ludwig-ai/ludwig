@@ -20,7 +20,7 @@ from typing import Any, Dict
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, ENCODER, NAME, PROC_COLUMN
+from ludwig.constants import BAG, COLUMN, NAME, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing

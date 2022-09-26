@@ -40,15 +40,12 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
     BATCH_SIZE,
-    DEFAULTS,
     EVAL_BATCH_SIZE,
     FULL,
     HYPEROPT,
     HYPEROPT_WARNING,
     LEARNING_RATE,
     MIN_VALIDATION_SET_ROWS,
-    MODEL_TYPE,
-    PREPROCESSING,
     TEST,
     TRAINER,
     TRAINING,
@@ -76,7 +73,6 @@ from ludwig.models.predictor import (
 from ludwig.models.registry import model_type_registry
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
-from ludwig.schema.utils import load_trainer_with_kwargs
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params

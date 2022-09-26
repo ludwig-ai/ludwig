@@ -45,7 +45,6 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.utils import BaseMarshmallowConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file

@@ -1,6 +1,5 @@
-import copy
 import os
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import lightgbm as lgb
 import numpy as np

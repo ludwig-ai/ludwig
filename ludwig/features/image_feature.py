@@ -27,7 +27,6 @@ import torchvision
 from ludwig.constants import (
     CHECKSUM,
     COLUMN,
-    ENCODER,
     HEIGHT,
     IMAGE,
     INFER_IMAGE_DIMENSIONS,

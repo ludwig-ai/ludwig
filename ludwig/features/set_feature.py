@@ -21,8 +21,6 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    DECODER,
-    ENCODER,
     HIDDEN,
     JACCARD,
     LOGITS,

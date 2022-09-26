@@ -28,7 +28,6 @@ from ludwig.constants import (
     BINARY,
     CHECKSUM,
     COLUMN,
-    DEFAULTS,
     DROP_ROW,
     ENCODER,
     FFILL,
@@ -55,7 +54,6 @@ from ludwig.data.split import get_splitter, split_dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.schema.config_object import Config
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
 from ludwig.utils.config_utils import get_preprocessing_params

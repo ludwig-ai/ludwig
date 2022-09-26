@@ -21,7 +21,7 @@ import numpy as np
 import torch
 import torchaudio
 
-from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, ENCODER, NAME, PREPROCESSING, PROC_COLUMN, SRC, TYPE
+from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESSING, PROC_COLUMN, SRC, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
