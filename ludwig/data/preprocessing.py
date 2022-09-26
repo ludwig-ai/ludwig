@@ -1468,8 +1468,16 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
             computed_fill_value,
         )
     elif missing_value_strategy in {BFILL, FFILL}:
+        # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
+        # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
+        # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
+        # up with the other missing value strategy (ffill) to ensure all NaNs are filled
+        secondary_missing_value_strategy = BFILL if missing_value_strategy == FFILL else FFILL
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
+        )
+        dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
+            method=secondary_missing_value_strategy,
         )
     elif missing_value_strategy == DROP_ROW:
         # Here we only drop from this series, but after preprocessing we'll do a second
