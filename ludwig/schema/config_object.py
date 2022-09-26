@@ -198,9 +198,7 @@ class Config:
                 feature_schema = input_type_registry[feature[TYPE]].get_schema_cls()
                 feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
                 setattr(self.input_features, feature[NAME], feature_schema)
-                self._set_attributes(
-                    getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE]
-                )
+                self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
 
             else:
                 if ENCODER in feature:  # Ensure output feature doesn't have encoder specs
@@ -273,6 +271,7 @@ class Config:
                     setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
         return feature
+
     # def _remove_excess_attributes(self):
     #     """
     #     This function is intended to remove excess attributes set on the global defaults sections. Since the schema
