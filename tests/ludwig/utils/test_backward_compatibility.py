@@ -21,6 +21,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema import validate_config
+from ludwig.schema.config_object import Config
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,
@@ -448,7 +449,8 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
     if use_scheduler:
         assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
 
-    merged_config = merge_with_defaults(updated_config)
+    config_obj = Config(updated_config)
+    merged_config = merge_with_defaults(updated_config, config_obj)
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.
