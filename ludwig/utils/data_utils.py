@@ -835,7 +835,7 @@ def get_pa_dtype(obj: Any):
     elif isinstance(obj, np.ndarray) or isinstance(obj, list) or isinstance(obj, tuple):
         return pa.list_(get_pa_dtype(obj[0]))
     else:
-        raise ValueError("Unsupported type for pyarrow dtype: {}".format(type(obj)))
+        raise ValueError(f"Unsupported type for pyarrow dtype: {type(obj)}")
 
 
 def get_pa_schema(df: DataFrame):
