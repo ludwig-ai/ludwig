@@ -2,8 +2,10 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.encoders.registry import sequence_encoder_registry
+from ludwig.constants import SEQUENCE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
@@ -31,9 +33,7 @@ class SequenceCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["reduce_output"],
     )
 
-    encoder: Optional[str] = schema_utils.StringOptions(
-        list(sequence_encoder_registry.keys()),
-        default=None,
-        description="",
-        parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["encoder"],
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=SEQUENCE,
+        default="parallel_cnn",
     )

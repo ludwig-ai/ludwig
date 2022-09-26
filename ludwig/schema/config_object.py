@@ -21,6 +21,7 @@ from ludwig.constants import (
     OUTPUT_FEATURES,
     PREPROCESSING,
     PROC_COLUMN,
+    SEQUENCE,
     TRAINER,
     TYPE,
     VALIDATION_METRIC,
@@ -122,7 +123,12 @@ class Config:
         if COMBINER in config_dict:
             if self.combiner.type != config_dict[COMBINER][TYPE]:
                 self.combiner = combiner_registry.get(config_dict[COMBINER][TYPE]).get_schema_cls()()
-            self.set_attributes(self.combiner, config_dict[COMBINER])
+
+            if self.combiner.type == SEQUENCE:
+                encoder_family = SEQUENCE
+            else:
+                encoder_family = None
+            self.set_attributes(self.combiner, config_dict[COMBINER], feature_type=encoder_family)
 
         # ===== Trainer =====
         if TRAINER in config_dict:
@@ -235,7 +241,7 @@ class Config:
                 module = getattr(config_obj_lvl, key)
 
                 # Check if submodule needs update
-                if module.type != val[TYPE]:
+                if TYPE in val and module.type != val[TYPE]:
                     new_config = self.get_new_config(key, val[TYPE], feature_type)()
                     setattr(config_obj_lvl, key, new_config)
 

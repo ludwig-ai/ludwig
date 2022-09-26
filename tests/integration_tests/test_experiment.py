@@ -458,7 +458,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
     # raised for different data set formats and in_memory setting
 
     input_features = [number_feature(), category_feature()]
-    output_features = [category_feature(), number_feature()]
+    output_features = [category_feature(output_feature=True), number_feature()]
 
     config = {
         "input_features": input_features,
@@ -578,7 +578,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
         TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
-            "encoder": "rnn",
+            "encoder": {"type": "rnn"},
             "main_sequence_feature": "seq1",
             "reduce_output": None,
         },
@@ -623,7 +623,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
         TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
-            "encoder": "rnn",
+            "encoder": {"type": "rnn"},
             "main_sequence_feature": "seq1",
             "reduce_output": None,
         },

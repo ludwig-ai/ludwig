@@ -328,7 +328,7 @@ class SequenceCombiner(Combiner):
             f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape}"
         )
 
-        self.encoder_obj = get_from_registry(config.encoder, sequence_encoder_registry)(
+        self.encoder_obj = get_from_registry(config.encoder.type, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=config.reduce_output,
             embedding_size=self.combiner.output_shape[1],

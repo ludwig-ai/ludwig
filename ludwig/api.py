@@ -1292,7 +1292,6 @@ class LudwigModel:
         with provision_preprocessing_workers(self.backend):
             preprocessed_data = preprocess_for_training(
                 self.config,
-                self.config_obj,
                 dataset=dataset,
                 training_set=training_set,
                 validation_set=validation_set,

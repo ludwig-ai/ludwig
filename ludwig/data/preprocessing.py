@@ -1513,7 +1513,6 @@ def load_metadata(metadata_file_path: str) -> Dict[str, Any]:
 
 def preprocess_for_training(
     config,
-    config_obj,
     dataset=None,
     training_set=None,
     validation_set=None,
@@ -1777,7 +1776,6 @@ def _preprocess_file_for_training(
 
 def _preprocess_df_for_training(
     config,
-    config_obj,
     features,
     dataset=None,
     training_set=None,
