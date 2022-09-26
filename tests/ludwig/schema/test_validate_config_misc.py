@@ -2,12 +2,15 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
+from ludwig.features.feature_registries import output_type_registry
+from ludwig.schema import validate_config
+from ludwig.schema.config_object import Config
+from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
 from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
 from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
 from ludwig.schema.features.preprocessing.date import DatePreprocessingConfig
-from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema.features.preprocessing.h3 import H3PreprocessingConfig
 from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
 from ludwig.schema.features.preprocessing.number import NumberPreprocessingConfig
@@ -16,9 +19,6 @@ from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
-from ludwig.schema import validate_config
-from ludwig.schema.config_object import Config
-from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     audio_feature,
@@ -231,9 +231,7 @@ def test_validate_with_preprocessing_defaults():
                 encoder={"type": "stacked_cnn"},
             ),
             number_feature(preprocessing=NumberPreprocessingConfig().to_dict(), encoder={"type": "passthrough"}),
-            sequence_feature(
-                preprocessing=SequencePreprocessingConfig().to_dict(), encoder={"type": "parallel_cnn"}
-            ),
+            sequence_feature(preprocessing=SequencePreprocessingConfig().to_dict(), encoder={"type": "parallel_cnn"}),
             set_feature(preprocessing=SetPreprocessingConfig().to_dict(), encoder={"type": "embed"}),
             text_feature(preprocessing=TextPreprocessingConfig().to_dict(), encoder={"type": "parallel_cnn"}),
             timeseries_feature(
