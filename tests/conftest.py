@@ -56,7 +56,7 @@ def yaml_filename():
 
 
 @pytest.fixture(scope="module")
-def hyperopt_results():
+def hyperopt_results(request):
     """This function generates hyperopt results."""
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
@@ -77,16 +77,23 @@ def hyperopt_results():
 
     output_feature_name = output_features[0][NAME]
 
-    hyperopt_configs = {
-        "parameters": {
-            "trainer.learning_rate": {
-                "space": "loguniform",
-                "lower": 0.0001,
-                "upper": 0.01,
-            },
-            output_feature_name + ".decoder.output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
-            output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
+    parameters = {
+        "trainer.learning_rate": {
+            "space": "loguniform",
+            "lower": 0.0001,
+            "upper": 0.01,
         },
+    }
+    if not request.param:
+        parameters.update(
+            {
+                output_feature_name + ".decoder.output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
+                output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
+            }
+        )
+
+    hyperopt_configs = {
+        "parameters": parameters,
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",

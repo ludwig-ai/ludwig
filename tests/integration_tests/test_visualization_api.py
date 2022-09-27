@@ -844,6 +844,7 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
 
 
 @pytest.mark.distributed
+@pytest.mark.parametrize("hyperopt_results", [False], indirect=True)
 def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
@@ -857,6 +858,7 @@ def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
 
 
 @pytest.mark.distributed
+@pytest.mark.parametrize("hyperopt_results", [False], indirect=True)
 def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
@@ -867,3 +869,16 @@ def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
 
     # test for generatated html page
     assert os.path.isfile(os.path.join(vis_dir, "hyperopt_hiplot.html"))
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("hyperopt_results", [True], indirect=True)
+def test_hyperopt_report_vis_api_no_pairplot(hyperopt_results, tmpdir):
+    vis_dir = os.path.join(tmpdir, "visualizations")
+
+    visualize.hyperopt_report(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)
+
+    figure_cnt = glob.glob(os.path.join(vis_dir, "*"))
+
+    # Only create plot for single parameter and skip pairplot creation
+    assert len(figure_cnt) == 1

@@ -1402,6 +1402,10 @@ def hyperopt_pair_plot(hyperopt_results_df, metric, title, filename):
     params.remove(metric)
     num_param = len(params)
 
+    # Can't create a pair plot with only 1 parameter
+    if num_param == 1:
+        return
+
     sns.set_style("white")
     fig = plt.figure(figsize=(20, 20))
     fig.suptitle(title)
