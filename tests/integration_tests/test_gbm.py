@@ -6,7 +6,6 @@ try:
     import ray as _ray
 except ImportError:
     _ray = None
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import MODEL_TYPE, TRAINER

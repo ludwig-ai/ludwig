@@ -24,6 +24,7 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     SEQUENCE,
+    SPLIT,
     TIED,
     TRAINER,
     TYPE,
@@ -41,6 +42,7 @@ from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
+from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import convert_submodules
 
@@ -183,6 +185,9 @@ class Config:
         if module == OPTIMIZER:
             return get_optimizer_cls(config_type)
 
+        if module == SPLIT:
+            return get_split_cls(config_type)
+
         raise ValueError("Module needs to be added to parsing support")
 
     def _parse_features(self, features, feature_section):
@@ -238,7 +243,7 @@ class Config:
                 feature_type = key
 
             #  Update logic for nested feature fields
-            if key in [ENCODER, DECODER, LOSS, OPTIMIZER]:
+            if key in [ENCODER, DECODER, LOSS, OPTIMIZER, SPLIT]:
                 module = getattr(config_obj_lvl, key)
 
                 # Check if submodule needs update

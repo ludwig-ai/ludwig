@@ -11,6 +11,10 @@ split_config_registry = Registry()
 DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
 
 
+def get_split_cls(name: str):
+    return split_config_registry[name]
+
+
 @dataclass
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""

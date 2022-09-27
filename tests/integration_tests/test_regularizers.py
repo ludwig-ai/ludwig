@@ -36,14 +36,14 @@ IMAGE_DIR = tempfile.mkdtemp()
             [number_feature()],
         ),
         ([image_feature(IMAGE_DIR, encoder={"type": "stacked_cnn"})], [number_feature()]),
-        ([image_feature(IMAGE_DIR, encoder={"type": "resnet"})], [category_feature()]),
+        ([image_feature(IMAGE_DIR, encoder={"type": "resnet"})], [category_feature(output_feature=True)]),
         (
             [category_feature(encoder={"representation": "dense"})],
             [number_feature(decoder={"type": "regressor", "num_fc_layers": 5}, loss={"type": "mean_squared_error"})],
         ),
         ([date_feature()], [binary_feature()]),
         ([sequence_feature(encoder={"type": "parallel_cnn", "cell_type": "gru"})], [binary_feature()]),
-        ([set_feature()], [set_feature()]),
+        ([set_feature()], [set_feature(output_feature=True)]),
     ],
 )
 def test_regularizers(

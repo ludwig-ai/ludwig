@@ -73,8 +73,8 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
         config, training_set=raw_df, skip_save_processed_input=True
     )
     model.training_set_metadata = training_set_metadata
-    update_config_with_metadata(model.config, training_set_metadata)
-    model.model = model.create_model(model.config)
+    update_config_with_metadata(model.config, model.config_obj, training_set_metadata)
+    model.model = model.create_model(model.config_obj)
 
     # setup batcher to go through synthetic data
     with training_set.initialize_batcher() as batcher:

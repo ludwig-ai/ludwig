@@ -110,7 +110,7 @@ def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
         "trainer": {
             "epochs": 2,
         },
-        "preprocessing": {"split": {"type": "fixed"}},
+        "preprocessing": {"split": {"type": "fixed", "column": "split"}},
     }
 
     model = LudwigModel(config, backend=backend)
