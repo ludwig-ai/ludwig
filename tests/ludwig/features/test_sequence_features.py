@@ -97,9 +97,9 @@ def test_sequence_output_feature(sequence_type: str):
     output_feature_def[TYPE] = sequence_type
     sequence_config, _ = load_config_with_kwargs(SequenceOutputFeatureConfig, output_feature_def)
     output_feature_obj = SequenceOutputFeature(sequence_config, {}).to(DEVICE)
-    combiner_outputs = {"combiner_output": torch.randn([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE], dtype=torch.float32).to(
-        DEVICE
-    )}
+    combiner_outputs = {
+        "combiner_output": torch.randn([BATCH_SIZE, SEQ_SIZE, VOCAB_SIZE], dtype=torch.float32).to(DEVICE)
+    }
 
     text_output = output_feature_obj(combiner_outputs, {})
 

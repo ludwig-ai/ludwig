@@ -8,8 +8,8 @@ from ludwig.constants import ENCODER, TYPE
 from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
-from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
 DEVICE = get_torch_device()
