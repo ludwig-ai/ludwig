@@ -109,7 +109,7 @@ def hyperopt_results():
 
 @pytest.fixture(scope="module")
 def ray_cluster_2cpu(request):
-    with _ray_start(request, num_cpus=None, num_gpus=None, object_store_memory=None, _system_config=None):
+    with _ray_start(request, num_cpus=2):
         yield
 
 
