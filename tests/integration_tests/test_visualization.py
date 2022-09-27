@@ -95,7 +95,7 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     :return: None
     """
     input_features = [text_feature(encoder={"type": "parallel_cnn"})]
-    output_features = [category_feature()]
+    output_features = [category_feature(output_feature=True)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

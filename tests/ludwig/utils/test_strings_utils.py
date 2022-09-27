@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.features.text_feature import TextFeatureMixin
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.utils import strings_utils
 
