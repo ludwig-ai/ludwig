@@ -112,7 +112,7 @@ class Config:
             if config_dict[MODEL_TYPE] == MODEL_GBM:
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
-                if TYPE in config_dict[TRAINER]:
+                if TYPE in config_dict.get(TRAINER, {}):
                     assert config_dict[TRAINER][TYPE] == "lightgbm_trainer"
 
                 for feature in self.input_features.to_dict().keys():
