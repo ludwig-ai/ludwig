@@ -19,7 +19,14 @@ from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
-HYPEROPT_OUTDIR_RETAINED_FILES = ["hyperopt_statistics.json", "params.json", "stderr", "stdout", "result.json", "error.txt"]
+HYPEROPT_OUTDIR_RETAINED_FILES = [
+    "hyperopt_statistics.json",
+    "params.json",
+    "stderr",
+    "stdout",
+    "result.json",
+    "error.txt",
+]
 logger = logging.getLogger(__name__)
 
 

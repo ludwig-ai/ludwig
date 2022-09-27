@@ -1,14 +1,18 @@
-# this function will take in a Ludwig config, strip away all its parameters except input and output features
-# and add some other parameters to run logistic regression hyperopt.
+"""This function will take in a Ludwig config, strip away all its parameters except input and output featuresand
+add some other parameters to run logistic regression hyperopt."""
 
 
 def process_config(ludwig_config: dict, experiment_dict: dict) -> dict:
-    """Modify a Ludwig config.
+    """Modify a Ludwig config by programmatically adding elements to the config dictionary.
+
+    The purpose is to apply changes for all datasets that are the same or are based on the
+     attributes of `experiment_dict` (e.g. dataset_name) removing the need to manually apply
+     small changes to configs on many datasets.
 
     :param ludwig_config: a Ludwig config.
     :param experiment_dict: a benchmarking config experiment dictionary.
 
-    returns: a modified Ludwig config.
+    Returns: a modified Ludwig config.
     """
 
     # only keep input_features and output_features

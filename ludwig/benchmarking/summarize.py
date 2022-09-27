@@ -13,6 +13,7 @@ from ludwig.benchmarking.summary_dataclasses import (
     ResourceUsageDiff,
 )
 from ludwig.benchmarking.utils import download_artifacts
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,8 +54,7 @@ def summarize_metrics(
 def export_and_print(
     dataset_list: List[str], metric_diffs: List[MetricsDiff], resource_usage_diffs: List[List[ResourceUsageDiff]]
 ) -> None:
-    """
-    Export to CSV and print a diff of performance and resource usage metrics of two experiments.
+    """Export to CSV and print a diff of performance and resource usage metrics of two experiments.
 
     :param dataset_list: list of datasets for which to print the diffs.
     :param metric_diffs: Diffs for the performance metrics by dataset.
