@@ -91,7 +91,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
     "test_case",
     [
         TestCase([number_feature(), number_feature()], []),
-        TestCase([category_feature(output_feature=True), number_feature()], [])
+        TestCase([category_feature(output_feature=True), number_feature()], []),
     ],
 )
 def test_validation_metrics_mulitiple_output(test_case: TestCase, csv_filename: str):
