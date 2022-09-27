@@ -62,8 +62,7 @@ class GBM(BaseModel):
 
         output_feature_def["input_size"] = input_size
         output_feature = cls.build_single_output(
-            getattr(config.output_features, output_feature_def[NAME]),
-            output_features
+            getattr(config.output_features, output_feature_def[NAME]), output_features
         )
         output_features[output_feature_def[NAME]] = output_feature
 

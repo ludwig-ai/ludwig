@@ -6,6 +6,7 @@ import torch
 from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
+import ludwig.schema.utils as schema_utils
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
 from ludwig.constants import NUMBER, TRAINER
@@ -21,7 +22,6 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
-import ludwig.schema.utils as schema_utils
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
