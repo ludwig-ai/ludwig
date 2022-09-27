@@ -30,6 +30,7 @@ f.close()
 sys.stdout = sys.__stdout__
 
 STOP_MESSAGE = "stop"
+logger = logging.getLogger(__name__)
 
 
 def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
@@ -188,7 +189,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.launched = True
         except Exception:
             self.launched = False
-            logging.exception("Encountered exception when launching tracker thread.")
+            logger.exception("Encountered exception when launching tracker thread.")
 
         return self
 
@@ -203,7 +204,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
             self.launched = False
         except Exception:
-            logging.exception("Encountered exception when joining tracker thread.")
+            logger.exception("Encountered exception when joining tracker thread.")
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()

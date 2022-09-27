@@ -19,6 +19,8 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
 
+logger = logging.getLogger(__name__)
+
 
 def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     """Set up the backend and load the Ludwig config.
@@ -50,7 +52,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
     experiment: dictionary containing the dataset name, config path, and experiment name.
     export_artifacts_dict: dictionary containing an export boolean flag and a path to export to.
     """
-    logging.info(f"\nRunning experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}*")
+    logger.info(f"\nRunning experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}*")
 
     # configuring backend and paths
     model_config = setup_experiment(experiment)
@@ -119,7 +121,7 @@ def benchmark(bench_config_path: str) -> None:
             print("TOOK", time.perf_counter() - start_t)
 
         except Exception:
-            logging.exception(
+            logger.exception(
                 f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
 

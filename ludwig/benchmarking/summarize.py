@@ -13,6 +13,7 @@ from ludwig.benchmarking.summary_dataclasses import (
     ResourceUsageDiff,
 )
 from ludwig.benchmarking.utils import download_artifacts
+logger = logging.getLogger(__name__)
 
 
 def summarize_metrics(
@@ -43,7 +44,7 @@ def summarize_metrics(
             )
             resource_usage_diffs.append(resource_usage_diff)
         except Exception:
-            logging.exception(f"Exception encountered while creating diff summary for {dataset_name}.")
+            logger.exception(f"Exception encountered while creating diff summary for {dataset_name}.")
     shutil.rmtree(local_dir, ignore_errors=True)
     export_and_print(dataset_list, metric_diffs, resource_usage_diffs)
     return dataset_list, metric_diffs, resource_usage_diffs
@@ -63,14 +64,14 @@ def export_and_print(
         output_path = os.path.join("summarize_output", "performance_metrics", dataset_name)
         os.makedirs(output_path, exist_ok=True)
 
-        logging.info(
+        logger.info(
             "Model performance metrics for *{}* vs. *{}* on dataset *{}*".format(
                 experiment_metric_diff.base_experiment_name,
                 experiment_metric_diff.experimental_experiment_name,
                 experiment_metric_diff.dataset_name,
             )
         )
-        logging.info(experiment_metric_diff.to_string())
+        logger.info(experiment_metric_diff.to_string())
         filename = (
             "-".join([experiment_metric_diff.base_experiment_name, experiment_metric_diff.experimental_experiment_name])
             + ".csv"
@@ -81,7 +82,7 @@ def export_and_print(
         output_path = os.path.join("summarize_output", "resource_usage_metrics", dataset_name)
         os.makedirs(output_path, exist_ok=True)
         for tag_diff in experiment_resource_diff:
-            logging.info(
+            logger.info(
                 "Resource usage for *{}* vs. *{}* on *{}* of dataset *{}*".format(
                     tag_diff.base_experiment_name,
                     tag_diff.experimental_experiment_name,
@@ -89,7 +90,7 @@ def export_and_print(
                     dataset_name,
                 )
             )
-            logging.info(tag_diff.to_string())
+            logger.info(tag_diff.to_string())
             filename = (
                 "-".join(
                     [tag_diff.code_block_tag, tag_diff.base_experiment_name, tag_diff.experimental_experiment_name]

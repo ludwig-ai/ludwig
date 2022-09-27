@@ -20,6 +20,8 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
 HYPEROPT_OUTDIR_RETAINED_FILES = ["hyperopt_statistics.json", "params.json", "stderr", "stdout", "result.json", "error.txt"]
+logger = logging.getLogger(__name__)
+
 
 def load_from_module(
     dataset_module: Union[DatasetLoader, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
@@ -63,9 +65,9 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
             os.path.join(experiment["config_path"]),
             os.path.join(export_full_path, CONFIG_YAML),
         )
-        logging.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
+        logger.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
     except Exception:
-        logging.exception(
+        logger.exception(
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
             f"dataset {experiment['dataset_name']}"
         )
@@ -135,7 +137,7 @@ async def download_one(
             )
             await loop.run_in_executor(pool, func)
     except Exception:
-        logging.exception(f"Couldn't download experiment *{experiment_name}* of dataset *{dataset_name}*.")
+        logger.exception(f"Couldn't download experiment *{experiment_name}* of dataset *{dataset_name}*.")
         return "", local_dir
     return dataset_name, local_dir
 
