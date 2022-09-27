@@ -99,7 +99,7 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_seq_seq_generator(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "generator"})]
+    output_features = [text_feature(decoder={"type": "generator"}, output_feature=True)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)

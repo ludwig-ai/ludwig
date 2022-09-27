@@ -121,7 +121,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 def test_missing_outputs_drop_rows():
     config = {
         INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature(output_feature=True)],
         DEFAULTS: {CATEGORY: {PREPROCESSING: {MISSING_VALUE_STRATEGY: FILL_WITH_MODE}}},
     }
 
