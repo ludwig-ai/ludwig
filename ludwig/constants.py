@@ -104,6 +104,7 @@ INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
 TRAINER = "trainer"
+OPTIMIZER = "optimizer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"

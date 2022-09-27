@@ -19,6 +19,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     NAME,
     NUMBER,
+    OPTIMIZER,
     OUTPUT_FEATURES,
     PREPROCESSING,
     PROC_COLUMN,
@@ -38,6 +39,7 @@ from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import input_type_registry, output_type_registry
+from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import convert_submodules
@@ -178,7 +180,10 @@ class Config:
         if module == LOSS:
             return get_loss_cls(feature_type, config_type).get_schema_cls()
 
-        raise ValueError("Module needs to be added to defaults parsing support")
+        if module == OPTIMIZER:
+            return get_optimizer_cls(config_type)
+
+        raise ValueError("Module needs to be added to parsing support")
 
     def _parse_features(self, features, feature_section):
         """This function sets the values on the config object that are specified in the user defined config
@@ -233,7 +238,7 @@ class Config:
                 feature_type = key
 
             #  Update logic for nested feature fields
-            if key in [ENCODER, DECODER, LOSS]:
+            if key in [ENCODER, DECODER, LOSS, OPTIMIZER]:
                 module = getattr(config_obj_lvl, key)
 
                 # Check if submodule needs update

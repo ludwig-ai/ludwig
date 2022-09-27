@@ -33,6 +33,10 @@ def register_optimizer(name: str):
     return wrap
 
 
+def get_optimizer_cls(name: str):
+    return optimizer_registry[name][1]
+
+
 @dataclass
 class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
