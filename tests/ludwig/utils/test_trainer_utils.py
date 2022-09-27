@@ -3,8 +3,8 @@ import pytest
 from ludwig.constants import COMBINED, LOSS
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.schema.features.category_feature import CategoryOutputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import trainer_utils
 from ludwig.utils.metric_utils import TrainerMetric
 
@@ -20,7 +20,8 @@ def test_progress_tracker_empty():
             },
             "num_classes": 3,
             "input_size": 10,
-        })
+        },
+    )
     output_features["category_feature"] = CategoryOutputFeature(category_feature, {})
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
@@ -56,7 +57,8 @@ def test_progress_tracker():
             },
             "num_classes": 3,
             "input_size": 10,
-        })
+        },
+    )
     output_features["category_feature"] = CategoryOutputFeature(category_feature, {})
 
     progress_tracker = trainer_utils.get_new_progress_tracker(

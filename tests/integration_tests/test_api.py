@@ -616,12 +616,9 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
 def test_api_save_torchscript(tmpdir):
     """Tests successful saving and loading of model in TorchScript format."""
     input_features = [category_feature(encoder={"vocab_size": 5})]
-    output_features = [category_feature(
-        name="class",
-        decoder={"vocab_size": 5},
-        reduce_input="sum",
-        output_feature=True
-    )]
+    output_features = [
+        category_feature(name="class", decoder={"vocab_size": 5}, reduce_input="sum", output_feature=True)
+    ]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
