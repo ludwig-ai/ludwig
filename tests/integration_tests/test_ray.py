@@ -335,7 +335,7 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
         # text_feature(decoder={"vocab_size": 3}),      # Error having to do with a missing key: MLI-70
     ]
     # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
-    # flakiness in the test having to do with uneven allocation of samples between Ray workers.s
+    # flakiness in the test having to do with uneven allocation of samples between Ray workers.
     run_test_with_features(
         input_features,
         output_features,
