@@ -52,6 +52,13 @@ def summarize_metrics(
 def export_and_print(
     dataset_list: List[str], metric_diffs: List[MetricsDiff], resource_usage_diffs: List[List[ResourceUsageDiff]]
 ) -> None:
+    """
+    Export to CSV and print a diff of performance and resource usage metrics of two experiments.
+
+    :param dataset_list: list of datasets for which to print the diffs.
+    :param metric_diffs: Diffs for the performance metrics by dataset.
+    :param resource_usage_diffs: Diffs for the resource usage metrics per dataset per LudwigProfiler tag.
+    """
     for dataset_name, experiment_metric_diff in zip(dataset_list, metric_diffs):
         output_path = os.path.join("summarize_output", "performance_metrics", dataset_name)
         os.makedirs(output_path, exist_ok=True)
