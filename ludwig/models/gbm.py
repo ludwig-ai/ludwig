@@ -60,7 +60,7 @@ class GBM(BaseModel):
         output_feature_def = config.output_features.to_list()[0]
         output_features = {}
 
-        output_feature_def["input_size"] = input_size
+        setattr(getattr(config.output_features, output_feature_def[NAME]), "input_size", input_size)
         output_feature = cls.build_single_output(
             getattr(config.output_features, output_feature_def[NAME]), output_features
         )

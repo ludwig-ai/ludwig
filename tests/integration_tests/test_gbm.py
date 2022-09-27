@@ -297,7 +297,7 @@ def run_test_gbm_schema(backend_config):
             "type": invalid_trainer,
         },
     }
-    with pytest.raises(ValidationError):
+    with pytest.raises(AssertionError):
         # Then I should get a schema validation error
         LudwigModel(config, backend=backend_config)
 

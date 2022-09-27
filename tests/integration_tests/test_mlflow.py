@@ -92,7 +92,7 @@ def test_mlflow(tmpdir):
     num_examples = 32
 
     input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum", output_feature=True)]
 
     config = {
         "input_features": input_features,
@@ -121,7 +121,7 @@ def test_export_mlflow_local(tmpdir):
     num_examples = 32
 
     input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum", output_feature=True)]
 
     config = {
         "input_features": input_features,
