@@ -104,6 +104,7 @@ from ludwig.utils.defaults import default_preprocessing_parameters, default_rand
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
 from ludwig.utils.types import DataFrame, Series
+from ludwig.types import LudwigFeature, TrainingSetMetadata, LudwigPreprocessingConfig
 
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 
@@ -1245,8 +1246,8 @@ def cast_columns(dataset_cols, features, backend) -> None:
 
 
 def merge_preprocessing(
-    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
-) -> Dict[str, Any]:
+    feature_config: LudwigFeature, global_preprocessing_parameters: LudwigPreprocessingConfig
+) -> LudwigFeature:
     if PREPROCESSING not in feature_config:
         return global_preprocessing_parameters[feature_config[TYPE]]
 
@@ -1255,8 +1256,8 @@ def merge_preprocessing(
 
 def build_preprocessing_parameters(
     dataset_cols: Dict[str, Series],
-    feature_configs: List[Dict[str, Any]],
-    global_preprocessing_parameters: Dict[str, Any],
+    feature_configs: List[LudwigFeature],
+    global_preprocessing_parameters: LudwigPreprocessingConfig,
     backend: Backend,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
@@ -1296,12 +1297,12 @@ def build_preprocessing_parameters(
 
 
 def build_metadata(
-    metadata: Dict[str, Any],
-    feature_name_to_preprocessing_parameters: Dict[str, Any],
+    metadata: TrainingSetMetadata,
+    feature_name_to_preprocessing_parameters: Dict[str, LudwigPreprocessingConfig],
     dataset_cols: Dict[str, Series],
-    feature_configs: List[Dict[str, Any]],
+    feature_configs: List[LudwigFeature],
     backend: Backend,
-) -> Dict[str, Any]:
+) -> TrainingSetMetadata:
     for feature_config in feature_configs:
         feature_name = feature_config[NAME]
         if feature_name in metadata:
@@ -1501,7 +1502,7 @@ def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, sh
     return training_set, test_set, validation_set
 
 
-def load_metadata(metadata_file_path: str) -> Dict[str, Any]:
+def load_metadata(metadata_file_path: str) -> TrainingSetMetadata:
     logger.info(f"Loading metadata from: {metadata_file_path}")
     training_set_metadata = data_utils.load_json(metadata_file_path)
     # TODO(travis): decouple config from training_set_metadata so we don't need to

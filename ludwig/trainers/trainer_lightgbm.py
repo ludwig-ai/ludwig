@@ -28,6 +28,7 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
+from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +143,7 @@ class LightGBMTrainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: LudwigConfig,
         training_set: "Dataset",  # noqa: F821
         random_seed: int,
         max_trials: int = 10,

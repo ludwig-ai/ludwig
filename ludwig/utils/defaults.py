@@ -18,7 +18,7 @@ import copy
 import logging
 import sys
 from dataclasses import asdict
-from typing import Any, Dict
+from typing import Dict
 
 import yaml
 
@@ -57,6 +57,7 @@ from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value, set_default_values
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.types import LudwigConfig, LudwigFeature
 
 logger = logging.getLogger(__name__)
 
@@ -143,19 +144,19 @@ def _perform_sanity_checks(config):
                  sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
 
 
-def _set_feature_column(config: dict) -> None:
+def _set_feature_column(config: LudwigConfig) -> None:
     for feature in config["input_features"] + config["output_features"]:
         if COLUMN not in feature:
             feature[COLUMN] = feature[NAME]
 
 
-def _set_proc_column(config: dict) -> None:
+def _set_proc_column(config: LudwigConfig) -> None:
     for feature in config["input_features"] + config["output_features"]:
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
 
 
-def _merge_hyperopt_with_trainer(config: dict) -> None:
+def _merge_hyperopt_with_trainer(config: LudwigConfig) -> None:
     if "hyperopt" not in config:
         return
 
@@ -196,16 +197,17 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
-    """Updates feature_dict belonging to an input or output feature using global encoder, decoder and loss related
-    default parameters specified in the Ludwig config.
+def update_feature_from_defaults(
+    config: LudwigConfig, feature_dict: Dict[str, LudwigFeature], config_feature_group: str
+):
+    """Updates feature_dict using the Ludwig config's feature type defaults for encoders, decoders, and loss.
 
     :param config: Ludwig configuration containing parameters for different sections, including global default
         parameters for preprocessing, encoder, decoder and loss.
-    :type config: dict[str, any]
+    :type config: LudwigConfig
     :param feature_dict: Underlying config for the specific input/output feature. This may be updated with values
         from the global defaults specified in config.
-    :type feature_dict: dict[str, any]
+    :type feature_dict: Dict[str, LudwigFeature]
     :param config_feature_group: Indicates whether the feature is an input feature or output feature (can be either of
         `input_features` or `output_features`).
     :type config_feature_group: str

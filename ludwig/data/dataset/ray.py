@@ -18,7 +18,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -37,6 +37,7 @@ from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
+from ludwig.types import LudwigFeature, TrainingSetMetadata, LudwigConfig
 
 _ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
 _ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
@@ -68,8 +69,8 @@ class RayDataset(Dataset):
     def __init__(
         self,
         df: Union[str, DataFrame],
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: Dict[str, LudwigFeature],
+        training_set_metadata: TrainingSetMetadata,
         backend: Backend,
     ):
         self.df_engine = backend.df_engine
@@ -144,15 +145,15 @@ class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def create(self, dataset: Union[str, DataFrame], config: LudwigConfig, training_set_metadata: TrainingSetMetadata):
         return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
 
     def save(
         self,
         cache_path: str,
         dataset: DataFrame,
-        config: Dict[str, Any],
-        training_set_metadata: Dict[str, Any],
+        config: LudwigConfig,
+        training_set_metadata: TrainingSetMetadata,
         tag: str,
     ):
         self.backend.df_engine.to_parquet(dataset, cache_path)
@@ -170,8 +171,8 @@ class RayDatasetShard(Dataset):
     def __init__(
         self,
         dataset_shard: DatasetPipeline,
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: Dict[str, LudwigFeature],
+        training_set_metadata: TrainingSetMetadata,
     ):
         self.dataset_shard = dataset_shard
         self.features = features
@@ -203,7 +204,7 @@ class RayDatasetBatcher(Batcher):
         self,
         dataset_epoch_iterator: Iterator[DatasetPipeline],
         features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        training_set_metadata: TrainingSetMetadata,
         batch_size: int,
         samples_per_epoch: int,
     ):

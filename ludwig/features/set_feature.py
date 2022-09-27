@@ -48,6 +48,7 @@ from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_de
 from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class _SetPreprocessing(torch.nn.Module):
     multi-hot vector for each sample indicating presence of each token.
     """
 
-    def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
+    def __init__(self, metadata: TrainingSetMetadata, is_bag: bool = False):
         super().__init__()
         if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
@@ -109,7 +110,7 @@ class _SetPreprocessing(torch.nn.Module):
 class _SetPostprocessing(torch.nn.Module):
     """Torchscript-enabled version of postprocessing done by SetFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
         self.predictions_key = PREDICTIONS
@@ -256,7 +257,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SetPreprocessing(metadata)
 
 
@@ -372,7 +373,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return result
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SetPostprocessing(metadata)
 
     @staticmethod

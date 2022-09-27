@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -55,6 +55,7 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class _AudioPreprocessing(torch.nn.Module):
 
     audio_feature_dict: Dict[str, Union[float, int, str]]
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         self.audio_feature_dict = {
             key: value
@@ -477,7 +478,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         )
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _AudioPreprocessing(metadata)
 
     @staticmethod

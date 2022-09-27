@@ -3,10 +3,11 @@ from typing import Any, Dict, Set, Union
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.types import LudwigConfig
 
 
 def get_feature_type_parameter_values_from_section(
-    config: Dict[str, Any], features_section: str, feature_type: str, parameter_name: str
+    config: LudwigConfig, features_section: str, feature_type: str, parameter_name: str
 ) -> Set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""

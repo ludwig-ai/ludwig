@@ -24,7 +24,7 @@ import sys
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
@@ -63,6 +63,7 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
+from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 
@@ -461,7 +462,7 @@ class Trainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: LudwigConfig,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,

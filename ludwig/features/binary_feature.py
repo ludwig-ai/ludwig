@@ -54,12 +54,13 @@ from ludwig.utils.eval_utils import (
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata, LudwigFeature, LudwigPreprocessingConfig
 
 logger = logging.getLogger(__name__)
 
 
 class _BinaryPreprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         str2bool = metadata.get("str2bool")
         self.str2bool = str2bool or {v: True for v in strings_utils.BOOL_TRUE_STRS}
@@ -83,7 +84,7 @@ class _BinaryPreprocessing(torch.nn.Module):
 
 
 class _BinaryPostprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         bool2str = metadata.get("bool2str")
         self.bool2str = {i: v for i, v in enumerate(bool2str)} if bool2str is not None else None
@@ -160,7 +161,9 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
+    def get_feature_meta(
+        column: DataFrame, preprocessing_parameters: LudwigPreprocessingConfig, backend
+    ) -> Dict[str, Any]:
         if column.dtype != object:
             return {}
 
@@ -192,11 +195,11 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config: Dict[str, Any],
+        feature_config: LudwigFeature,
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
-        metadata: Dict[str, Any],
-        preprocessing_parameters: Dict[str, Any],
+        metadata: TrainingSetMetadata,
+        preprocessing_parameters: LudwigPreprocessingConfig,
         backend,
         skip_save_processed_input: bool,
     ) -> None:
@@ -265,11 +268,11 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return torch.Tensor([True, False])
 
     @classmethod
-    def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
+    def get_preproc_input_dtype(cls, metadata: TrainingSetMetadata) -> str:
         return "string" if metadata.get("str2bool") else "int32"
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _BinaryPreprocessing(metadata)
 
 
@@ -430,9 +433,9 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return BinaryOutputFeatureConfig
 
     @classmethod
-    def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
+    def get_postproc_output_dtype(cls, metadata: TrainingSetMetadata) -> str:
         return "string" if metadata.get("bool2str") else "int32"
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _BinaryPostprocessing(metadata)

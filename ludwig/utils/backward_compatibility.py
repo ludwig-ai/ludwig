@@ -63,6 +63,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
+from ludwig.types import LudwigFeature, LudwigConfig, TrainingSetMetadata
 
 config_transformation_registry = VersionTransformationRegistry()
 
@@ -173,7 +174,7 @@ def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.4")
-def _update_level_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
+def _update_level_metadata(config: LudwigConfig) -> Dict[str, Any]:
     # Replace parameters represented as keys with params represented as values.
     # Precedence is defined by first in the dictionary order, so if multiple
     # provided keys map to the same value, the one that appears earlier in this
@@ -222,7 +223,7 @@ def _update_level_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.5")
-def rename_training_to_trainer(config: Dict[str, Any]) -> Dict[str, Any]:
+def rename_training_to_trainer(config: LudwigConfig) -> Dict[str, Any]:
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
@@ -465,7 +466,7 @@ def _upgrade_trainer(trainer: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.5")
-def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_preprocessing_defaults(config: LudwigConfig) -> LudwigConfig:
     """Move feature-specific preprocessing parameters into defaults in config (in-place)"""
     type_specific_preprocessing_params = dict()
 
@@ -573,7 +574,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]) -> Dict[str, Any
 
 
 @register_config_transformation("0.5")
-def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
+def update_training(config: LudwigConfig) -> LudwigConfig:
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
@@ -582,7 +583,7 @@ def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.6")
-def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
+def upgrade_missing_value_strategy(config: LudwigFeature) -> LudwigFeature:
     for input_feature in config.get(INPUT_FEATURES, []):
         if _is_old_missing_value_strategy(input_feature):
             _update_old_missing_value_strategy(input_feature)
@@ -598,7 +599,7 @@ def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
-def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
+def upgrade_metadata(metadata: TrainingSetMetadata) -> TrainingSetMetadata:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata
     metadata = copy.deepcopy(metadata)
@@ -606,13 +607,13 @@ def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     return metadata
 
 
-def _upgrade_metadata_mising_values(metadata: Dict[str, Any]):
+def _upgrade_metadata_mising_values(metadata: TrainingSetMetadata):
     for k, v in metadata.items():
         if isinstance(v, dict) and _is_old_missing_value_strategy(v):
             _update_old_missing_value_strategy(v)
 
 
-def _update_old_missing_value_strategy(feature_config: Dict[str, Any]):
+def _update_old_missing_value_strategy(feature_config: LudwigFeature):
     missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY)
     replacement_strategy = "bfill" if missing_value_strategy == "backfill" else "ffill"
     feature_name = feature_config.get(NAME)
@@ -624,7 +625,7 @@ def _update_old_missing_value_strategy(feature_config: Dict[str, Any]):
     feature_config[PREPROCESSING].update({MISSING_VALUE_STRATEGY: replacement_strategy})
 
 
-def _is_old_missing_value_strategy(feature_config: Dict[str, Any]):
+def _is_old_missing_value_strategy(feature_config: LudwigFeature):
     if PREPROCESSING not in feature_config:
         return False
     missing_value_strategy = feature_config.get(PREPROCESSING).get(MISSING_VALUE_STRATEGY, None)

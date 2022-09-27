@@ -1,14 +1,15 @@
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import numpy as np
 
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.types import DataFrame
+from ludwig.types import LudwigFeature
 
 
 def convert_to_dict(
     predictions: DataFrame,
-    output_features: Dict[str, Any],
+    output_features: Dict[str, LudwigFeature],
     backend: Optional["Backend"] = None,  # noqa: F821
 ):
     """Convert predictions from DataFrame format to a dictionary."""

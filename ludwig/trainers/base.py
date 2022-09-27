@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 from ludwig.data.dataset.base import Dataset
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.defaults import default_random_seed
+from ludwig.types import LudwigConfig
 
 
 class BaseTrainer(ABC):
@@ -21,7 +21,7 @@ class BaseTrainer(ABC):
     @abstractmethod
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: LudwigConfig,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 10,

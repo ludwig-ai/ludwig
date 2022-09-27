@@ -9,6 +9,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
 from ludwig.utils.fs_utils import open_file
+from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class GeneratedInferenceModule(torch.nn.Module):
 """
 
 
-def _get_input_signature(config: Dict[str, Any]) -> str:
+def _get_input_signature(config: LudwigConfig) -> str:
     args = []
     for feature in config["input_features"]:
         name = feature[NAME]
@@ -38,7 +39,7 @@ def _get_input_signature(config: Dict[str, Any]) -> str:
     return ", ".join(args)
 
 
-def _get_input_dict(config: Dict[str, Any]) -> str:
+def _get_input_dict(config: LudwigConfig) -> str:
     elems = []
     for feature in config["input_features"]:
         name = feature[NAME]
@@ -46,7 +47,7 @@ def _get_input_dict(config: Dict[str, Any]) -> str:
     return "{" + ", ".join(elems) + "}"
 
 
-def _get_output_dicts(config: Dict[str, Any]) -> str:
+def _get_output_dicts(config: LudwigConfig) -> str:
     results = []
     for feature in config["output_features"]:
         name = feature[NAME]

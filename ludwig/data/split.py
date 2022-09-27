@@ -15,7 +15,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -26,6 +26,7 @@ from ludwig.schema.split import DateTimeSplitConfig, FixedSplitConfig, RandomSpl
 from ludwig.utils.data_utils import split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
+from ludwig.types import LudwigPreprocessingConfig, LudwigConfig
 
 split_registry = Registry()
 default_random_seed = 42
@@ -43,7 +44,7 @@ class Splitter(ABC):
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         pass
 
-    def validate(self, config: Dict[str, Any]):
+    def validate(self, config: LudwigConfig):
         pass
 
     def has_split(self, split_index: int) -> bool:
@@ -168,7 +169,7 @@ class StratifySplitter(Splitter):
 
         return df_train, df_val, df_test
 
-    def validate(self, config: Dict[str, Any]):
+    def validate(self, config: LudwigConfig):
         features = config["input_features"] + config["output_features"]
         feature_names = {f[COLUMN] for f in features}
         if self.column not in feature_names:
@@ -230,7 +231,7 @@ class DatetimeSplitter(Splitter):
         # For Dask, split by partition, as splitting by row is very inefficient.
         return tuple(backend.df_engine.split(df, self.probabilities))
 
-    def validate(self, config: Dict[str, Any]):
+    def validate(self, config: LudwigConfig):
         features = config["input_features"] + config["output_features"]
         feature_names = {f[COLUMN] for f in features}
         if self.column not in feature_names:
@@ -262,7 +263,7 @@ def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
 
 def split_dataset(
     df: DataFrame,
-    global_preprocessing_parameters: Dict[str, Any],
+    global_preprocessing_parameters: LudwigPreprocessingConfig,
     backend: Backend,
     random_seed: float = default_random_seed,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:

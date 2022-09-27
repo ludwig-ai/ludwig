@@ -11,6 +11,7 @@ from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_boxed
+from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ def parameter_to_dict(name, value):
     return parameter_dict
 
 
-def feature_list_to_dict(config: Dict[str, Any]) -> Dict[str, Any]:
+def feature_list_to_dict(config: LudwigConfig) -> LudwigConfig:
     input_features_dict = {}
     for feature in config[INPUT_FEATURES]:
         input_features_dict[feature[NAME]] = feature
@@ -89,7 +90,7 @@ def feature_list_to_dict(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
-def feature_dict_to_list(config: Dict[str, Any]) -> Dict[str, Any]:
+def feature_dict_to_list(config: LudwigConfig) -> Dict[str, Any]:
     # This works because Python dicts are order-preserving, so we do not need to
     # do anything special to map from a key in the dict to an index in a list
     input_features_list = []
@@ -107,7 +108,7 @@ def feature_dict_to_list(config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def substitute_parameters(
-    config: Dict[str, Any],
+    config: LudwigConfig,
     parameters: Dict[str, Any],
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""

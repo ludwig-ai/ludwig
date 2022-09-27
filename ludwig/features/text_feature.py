@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from functools import partial
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 import torch
 
@@ -54,6 +54,7 @@ from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +243,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SequencePreprocessing(metadata)
 
 
@@ -353,7 +354,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         return result
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
 
     @staticmethod

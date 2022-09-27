@@ -56,6 +56,7 @@ from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,7 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset_df(dataset_size: int, config: Dict[str, Any]) -> pd.DataFrame:
+def build_synthetic_dataset_df(dataset_size: int, config: LudwigConfig) -> pd.DataFrame:
     features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
     df = build_synthetic_dataset(dataset_size, features)
     data = [next(df) for _ in range(dataset_size + 1)]

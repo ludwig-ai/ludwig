@@ -18,7 +18,7 @@ import os
 import warnings
 from collections import Counter
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -61,6 +61,7 @@ from ludwig.utils.image_utils import (
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ image_scaling_registry = {
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         self.height = metadata["preprocessing"]["height"]
         self.width = metadata["preprocessing"]["width"]
@@ -532,5 +533,5 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return ImageInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _ImagePreprocessing(metadata)

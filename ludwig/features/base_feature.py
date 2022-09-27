@@ -35,6 +35,7 @@ from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
+from ludwig.types import TrainingSetMetadata, LudwigFeature, LudwigPreprocessingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,9 @@ class BaseFeatureMixin(ABC):
         raise NotImplementedError
 
     @abstractstaticmethod
-    def get_feature_meta(column: DataFrame, preprocessing_parameters: Dict[str, Any], backend) -> Dict[str, Any]:
+    def get_feature_meta(
+        column: DataFrame, preprocessing_parameters: LudwigPreprocessingConfig, backend
+    ) -> Dict[str, Any]:
         """Returns a dictionary of feature metadata.
 
         Args:
@@ -78,11 +81,11 @@ class BaseFeatureMixin(ABC):
 
     @abstractstaticmethod
     def add_feature_data(
-        feature_config: Dict[str, Any],
+        feature_config: LudwigFeature,
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
-        metadata: Dict[str, Any],
-        preprocessing_parameters: Dict[str, Any],
+        metadata: TrainingSetMetadata,
+        preprocessing_parameters: LudwigPreprocessingConfig,
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
     ) -> None:
@@ -170,11 +173,11 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         return encoder_cls(encoder_config=encoder_config, **encoder_params_dict)
 
     @classmethod
-    def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
+    def get_preproc_input_dtype(cls, metadata: TrainingSetMetadata) -> str:
         return "string"
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
 
 
@@ -439,16 +442,16 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def postprocess_predictions(
         self,
         result: Dict[str, Tensor],
-        metadata: Dict[str, Any],
+        metadata: TrainingSetMetadata,
     ):
         raise NotImplementedError
 
     @classmethod
-    def get_postproc_output_dtype(cls, metadata: Dict[str, Any]) -> str:
+    def get_postproc_output_dtype(cls, metadata: TrainingSetMetadata) -> str:
         return "string"
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
 
     @staticmethod

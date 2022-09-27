@@ -47,6 +47,7 @@ from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, Vect
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -187,7 +188,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         set_default_value(input_feature, PREPROCESSING, {})
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _VectorPreprocessing()
 
     @staticmethod
@@ -283,7 +284,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         )
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _VectorPostprocessing()
 
     @staticmethod

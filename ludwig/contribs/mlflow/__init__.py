@@ -2,7 +2,6 @@ import logging
 import os
 import queue
 import threading
-from typing import Any, Dict
 
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
@@ -10,6 +9,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
 from ludwig.utils.package_utils import LazyLoader
+from ludwig.types import TrainingSetMetadata
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
 
@@ -47,7 +47,11 @@ class MlflowCallback(Callback):
         return _get_or_create_experiment_id(experiment_name)
 
     def on_preprocess_end(
-        self, training_set: Dataset, validation_set: Dataset, test_set: Dataset, training_set_metadata: Dict[str, Any]
+        self,
+        training_set: Dataset,
+        validation_set: Dataset,
+        test_set: Dataset,
+        training_set_metadata: TrainingSetMetadata,
     ):
         self.training_set_metadata = training_set_metadata
 

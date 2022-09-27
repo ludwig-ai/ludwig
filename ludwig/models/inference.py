@@ -19,6 +19,7 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.output_feature_utils import get_feature_name_from_concat_name, get_tensor_name_from_concat_name
 from ludwig.utils.torch_utils import DEVICE
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata, LudwigConfig
 
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
@@ -93,8 +94,8 @@ class InferenceModule(nn.Module):
     def from_ludwig_model(
         cls: "InferenceModule",
         model: "BaseModel",
-        config: Dict[str, Any],
-        training_set_metadata: Dict[str, Any],
+        config: LudwigConfig,
+        training_set_metadata: TrainingSetMetadata,
         device: Optional[TorchDevice] = None,
     ):
         """Create an InferenceModule from a trained LudwigModel."""
@@ -150,7 +151,7 @@ class _InferencePreprocessor(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
+    def __init__(self, config: LudwigConfig, training_set_metadata: TrainingSetMetadata):
         super().__init__()
         self.preproc_modules = nn.ModuleDict()
         for feature_config in config["input_features"]:
@@ -209,7 +210,7 @@ class _InferencePostprocessor(nn.Module):
     get_module_dict_key_from_name and get_name_from_module_dict_key usage.
     """
 
-    def __init__(self, model: "BaseModel", training_set_metadata: Dict[str, Any]):
+    def __init__(self, model: "BaseModel", training_set_metadata: TrainingSetMetadata):
         super().__init__()
         self.postproc_modules = nn.ModuleDict()
         for feature_name, feature in model.output_features.items():
@@ -232,8 +233,8 @@ class _InferencePostprocessor(nn.Module):
 def save_ludwig_model_for_inference(
     save_path: str,
     model: "BaseModel",
-    config: Dict[str, Any],
-    training_set_metadata: Dict[str, Any],
+    config: LudwigConfig,
+    training_set_metadata: TrainingSetMetadata,
     device: Optional[TorchDevice] = None,
     model_only: bool = False,
 ) -> None:
@@ -285,8 +286,8 @@ def _init_inference_stages_from_directory(
 
 def _init_inference_stages_from_ludwig_model(
     model: "BaseModel",
-    config: Dict[str, Any],
-    training_set_metadata: Dict[str, Any],
+    config: LudwigConfig,
+    training_set_metadata: TrainingSetMetadata,
     device: TorchDevice,
     scripted: bool = True,
 ) -> Dict[str, torch.nn.Module]:

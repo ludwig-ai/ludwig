@@ -62,6 +62,7 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ logger = logging.getLogger(__name__)
 class _SequencePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by SequenceFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
@@ -148,7 +149,7 @@ class _SequencePreprocessing(torch.nn.Module):
 
 
 class _SequencePostprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadata):
         super().__init__()
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.idx2str = metadata["idx2str"]
@@ -310,7 +311,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SequencePreprocessing(metadata)
 
 
@@ -516,7 +517,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         )
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
 
     @staticmethod

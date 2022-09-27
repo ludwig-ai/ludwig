@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from collections import Counter
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 import numpy as np
 import torch
@@ -28,6 +28,7 @@ from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -128,5 +129,5 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
         return BagInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
         return _SetPreprocessing(metadata, is_bag=True)
