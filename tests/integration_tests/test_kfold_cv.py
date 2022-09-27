@@ -60,7 +60,7 @@ FEATURES_TO_TEST = [
                     "attention": "bahdanau",
                 },
                 reduce_input=None,
-                output_feature=True
+                output_feature=True,
             )
         ],
     ),
