@@ -174,7 +174,7 @@ class Config:
             return get_decoder_cls(feature_type, config_type)
 
         if module == LOSS:
-            return get_loss_cls(feature_type, config_type)
+            return get_loss_cls(feature_type, config_type).get_schema_cls()
 
         raise ValueError("Module needs to be added to defaults parsing support")
 

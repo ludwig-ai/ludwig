@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import Dict
+from typing import Dict, Union
 
 import torch
 from marshmallow_dataclass import dataclass
@@ -21,6 +21,7 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.features.loss.loss import BaseLossConfig
+import ludwig.schema.utils as schema_utils
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -32,6 +33,9 @@ from tests.integration_tests.utils import (
 
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
+
+    type: str = "custom_combiner"
+
     foo: bool = False
 
 
@@ -41,7 +45,11 @@ class CustomNumberEncoderConfig(BaseEncoderConfig):
 
     type: str = "custom_number_encoder"
 
-    input_size: int = 0
+    input_size: Union[int, None] = schema_utils.NonNegativeInteger(
+        default=0,
+        allow_none=True,
+        description="Size of the input to the encoder.",
+    )
 
 
 @register_decoder_config("custom_number_decoder", NUMBER)
@@ -50,7 +58,11 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
 
     type: str = "custom_number_decoder"
 
-    input_size: int = 0
+    input_size: Union[int, None] = schema_utils.NonNegativeInteger(
+        default=0,
+        allow_none=True,
+        description="Size of the input to the decoder.",
+    )
 
 
 @dataclass

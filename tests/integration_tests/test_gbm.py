@@ -41,7 +41,7 @@ def ray_backend():
 def run_test_gbm_output_not_supported(tmpdir, backend_config):
     """Test that an error is raised when the output feature is not supported by the model."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [text_feature()]
+    output_features = [text_feature(output_feature=True)]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
