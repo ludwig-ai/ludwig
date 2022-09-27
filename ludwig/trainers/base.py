@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from ludwig.data.dataset.base import Dataset
 from ludwig.schema.trainer import BaseTrainerConfig
-from ludwig.utils.defaults import default_random_seed
 from ludwig.types import LudwigConfig
+from ludwig.utils.defaults import default_random_seed
 
 
 class BaseTrainer(ABC):

@@ -55,6 +55,7 @@ from ludwig.data.split import get_splitter, split_dataset
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.types import LudwigFeature, LudwigPreprocessingConfig, TrainingSetMetadata
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
 from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
@@ -104,7 +105,6 @@ from ludwig.utils.defaults import default_preprocessing_parameters, default_rand
 from ludwig.utils.fs_utils import file_lock, path_exists
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
 from ludwig.utils.types import DataFrame, Series
-from ludwig.types import LudwigFeature, TrainingSetMetadata, LudwigPreprocessingConfig
 
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
 

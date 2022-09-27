@@ -16,6 +16,7 @@
 
 from abc import ABC
 from typing import Any, Callable, Dict, List, Union
+
 from ludwig.types import LudwigConfig, TrainingSetMetadata
 
 

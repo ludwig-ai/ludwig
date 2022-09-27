@@ -8,10 +8,10 @@ from typing import Any, Dict
 from ludwig.constants import HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PARAMETERS, PREPROCESSING
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
+from ludwig.types import LudwigConfig
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_boxed
-from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 

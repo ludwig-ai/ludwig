@@ -50,11 +50,11 @@ from ludwig.features.sequence_feature import (
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 

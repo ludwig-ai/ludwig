@@ -23,12 +23,12 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
+from ludwig.types import LudwigConfig
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.image_utils import read_image_from_path
 from ludwig.utils.torch_utils import place_on_device
 from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
-from ludwig.types import LudwigConfig
 
 FEATURES_TO_CAST_AS_STRINGS = {BINARY, CATEGORY, BAG, SET, TEXT, SEQUENCE, TIMESERIES, VECTOR}
 

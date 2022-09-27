@@ -8,8 +8,8 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
-from ludwig.utils.fs_utils import open_file
 from ludwig.types import LudwigConfig
+from ludwig.utils.fs_utils import open_file
 
 logger = logging.getLogger(__name__)
 

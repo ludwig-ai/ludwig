@@ -30,12 +30,12 @@ from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.utils import assert_is_a_marshmallow_class
+from ludwig.types import LudwigFeature, LudwigPreprocessingConfig, TrainingSetMetadata
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
-from ludwig.types import TrainingSetMetadata, LudwigFeature, LudwigPreprocessingConfig
 
 logger = logging.getLogger(__name__)
 

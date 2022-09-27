@@ -52,12 +52,12 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.utils import load_config_with_kwargs, load_trainer_with_kwargs
+from ludwig.types import LudwigConfig, LudwigFeature
 from ludwig.utils.config_utils import get_default_encoder_or_decoder, get_defaults_section_for_feature_type
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import get_from_registry, merge_dict, set_default_value, set_default_values
 from ludwig.utils.print_utils import print_ludwig
-from ludwig.types import LudwigConfig, LudwigFeature
 
 logger = logging.getLogger(__name__)
 

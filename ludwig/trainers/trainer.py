@@ -48,6 +48,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
+from ludwig.types import LudwigConfig
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -63,7 +64,6 @@ from ludwig.utils.trainer_utils import (
     get_total_steps,
     ProgressTracker,
 )
-from ludwig.types import LudwigConfig
 
 logger = logging.getLogger(__name__)
 

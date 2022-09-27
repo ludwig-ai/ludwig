@@ -9,8 +9,8 @@ import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
-from ludwig.utils.data_utils import load_json
 from ludwig.types import LudwigConfig
+from ludwig.utils.data_utils import load_json
 
 logger = logging.getLogger(__name__)
 

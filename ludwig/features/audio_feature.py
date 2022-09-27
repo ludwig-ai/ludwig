@@ -37,6 +37,7 @@ from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -55,7 +56,6 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 

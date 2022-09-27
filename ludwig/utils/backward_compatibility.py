@@ -60,10 +60,10 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.types import LudwigConfig, LudwigFeature, TrainingSetMetadata
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
-from ludwig.types import LudwigFeature, LudwigConfig, TrainingSetMetadata
 
 config_transformation_registry = VersionTransformationRegistry()
 

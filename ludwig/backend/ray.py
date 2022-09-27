@@ -48,7 +48,7 @@ from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
-from ludwig.types import TrainingSetMetadata, LudwigConfig, LudwigFeature
+from ludwig.types import LudwigConfig, LudwigFeature, TrainingSetMetadata
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path

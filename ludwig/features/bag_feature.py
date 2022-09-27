@@ -26,9 +26,9 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 

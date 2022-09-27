@@ -2,9 +2,9 @@ from typing import Dict, Optional
 
 import numpy as np
 
+from ludwig.types import LudwigFeature
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.types import DataFrame
-from ludwig.types import LudwigFeature
 
 
 def convert_to_dict(

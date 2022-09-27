@@ -23,10 +23,10 @@ from sklearn.model_selection import train_test_split
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
 from ludwig.schema.split import DateTimeSplitConfig, FixedSplitConfig, RandomSplitConfig, StratifySplitConfig
+from ludwig.types import LudwigConfig, LudwigPreprocessingConfig
 from ludwig.utils.data_utils import split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
-from ludwig.types import LudwigPreprocessingConfig, LudwigConfig
 
 split_registry = Registry()
 default_random_seed = 42

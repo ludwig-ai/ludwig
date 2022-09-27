@@ -49,10 +49,10 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 

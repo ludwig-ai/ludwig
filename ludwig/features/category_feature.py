@@ -45,13 +45,13 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
 from ludwig.utils.types import TorchscriptPreprocessingInput
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 

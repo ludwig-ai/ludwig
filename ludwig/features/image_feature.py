@@ -48,6 +48,7 @@ from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -61,7 +62,6 @@ from ludwig.utils.image_utils import (
 )
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 

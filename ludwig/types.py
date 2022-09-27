@@ -1,6 +1,5 @@
 """Public Ludwig types."""
-from typing import Dict, Any
-
+from typing import Any, Dict
 
 LudwigFeature = Dict[str, Any]
 LudwigConfig = Dict[str, Any]

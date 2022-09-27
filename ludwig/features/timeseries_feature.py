@@ -24,11 +24,11 @@ from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature
+from ludwig.types import TrainingSetMetadata
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
-from ludwig.types import TrainingSetMetadata
 
 logger = logging.getLogger(__name__)
 
