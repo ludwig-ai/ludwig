@@ -59,8 +59,8 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
         "each layer.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=3),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -70,8 +70,8 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
         "2D convolutional kernel that will be used for each layer.",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.PositiveInteger(allow_none=False, description="", default=1),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -81,8 +81,8 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "convolution kernels.",
         field_options=[
             schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
-            schema_utils.StringOptions(options=["valid", "same"]),
+            schema_utils.List(list_type=int, allow_none=False),
+            schema_utils.StringOptions(options=["valid", "same"], default="valid", allow_none=False),
         ],
     )
 
@@ -93,7 +93,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "kernel that will be used for each layer.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -155,7 +155,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "in conv_layers this is the default value that will be used for each layer.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -165,7 +165,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -174,7 +174,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         description="An integer or pair of ints specifying pooling padding (h, w).",
         field_options=[
             schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -182,8 +182,8 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default=1,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
         field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.PositiveInteger(description="", default=None, allow_none=False),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -298,7 +298,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         "each layer.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -307,7 +307,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         description="An integer or pair of integers specifying the stride of the initial convolutional layer.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -316,7 +316,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         description="Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 
@@ -325,7 +325,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         description="Stride for first pooling layer. If null, defaults to first_pool_kernel_size.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
     )
 

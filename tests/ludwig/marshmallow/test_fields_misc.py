@@ -170,6 +170,7 @@ def test_OneOfOptionsField():
                 schema_utils.FloatRange(default=0.001, min=0, max=1, allow_none=False),
                 schema_utils.StringOptions(options=["placeholder"], default="placeholder", allow_none=False),
             ],
+            allow_none=True,
         )
 
     # Test valid loads:
