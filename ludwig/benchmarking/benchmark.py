@@ -9,6 +9,7 @@ import ludwig.datasets
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.profiler_callbacks import LudwigProfilerCallback
 from ludwig.benchmarking.utils import (
+    create_default_config,
     delete_hyperopt_outputs,
     delete_model_checkpoints,
     export_artifacts,
@@ -29,6 +30,8 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     Returns a Ludwig config.
     """
     shutil.rmtree(os.path.join(experiment["experiment_name"]), ignore_errors=True)
+    if "config_path" not in experiment:
+        experiment["config_path"] = create_default_config(experiment)
     model_config = load_yaml(experiment["config_path"])
 
     if "process_config_file_path" in experiment:
@@ -113,13 +116,7 @@ def benchmark(bench_config_path: str) -> None:
                 experiment["process_config_file_path"] = benchmarking_config["process_config_file_path"]
             if "profiler" in benchmarking_config:
                 experiment["profiler"] = benchmarking_config["profiler"]
-
-            import time
-
-            start_t = time.perf_counter()
             benchmark_one(experiment)
-            print("TOOK", time.perf_counter() - start_t)
-
         except Exception:
             logger.exception(
                 f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"

@@ -5,14 +5,16 @@ import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from types import ModuleType
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
 
 import fsspec
 import pandas as pd
 import yaml
+import uuid
 
 from ludwig.constants import BINARY, CATEGORY
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
+from ludwig.datasets import model_configs_for_dataset
 from ludwig.globals import CONFIG_YAML
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
@@ -147,6 +149,25 @@ async def download_one(
         logger.exception(f"Couldn't download experiment *{experiment_name}* of dataset *{dataset_name}*.")
         return "", local_dir
     return dataset_name, local_dir
+
+
+def create_default_config(experiment: Dict[str, Any]) -> str:
+    """Create a Ludwig config that only contains input and output features.
+
+    :param dataset_name: name of the dataset to load the config for.
+
+    return: path where the default config is saved.
+    """
+    model_config = model_configs_for_dataset(experiment["dataset_name"])["default"]
+
+    # only keep input_features and output_features
+    main_config_keys = list(model_config.keys())
+    for key in main_config_keys:
+        if key not in ["input_features", "output_features"]:
+            del model_config[key]
+    config_path = f"{experiment['dataset_name']}-{uuid.uuid4().hex}.yaml"
+    save_yaml(config_path, model_config)
+    return config_path
 
 
 def delete_model_checkpoints(output_directory: str):
