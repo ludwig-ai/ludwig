@@ -3,8 +3,8 @@ import torch
 
 from ludwig.features.audio_feature import AudioInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from tests.integration_tests.utils import audio_feature
 from ludwig.schema.utils import load_config_with_kwargs
+from tests.integration_tests.utils import audio_feature
 
 BATCH_SIZE = 2
 SEQ_SIZE = 20
