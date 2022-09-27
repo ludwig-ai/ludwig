@@ -1,13 +1,5 @@
+from ludwig.constants import COMBINER, DEFAULTS, HYPEROPT, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER
 from ludwig.schema.config_object import Config
-from ludwig.constants import (
-    INPUT_FEATURES,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    TRAINER,
-    COMBINER,
-    DEFAULTS,
-    HYPEROPT,
-)
 
 
 def test_config_object():
