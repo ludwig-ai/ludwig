@@ -57,7 +57,11 @@ def yaml_filename():
 
 @pytest.fixture(scope="module")
 def hyperopt_results(request):
-    """This function generates hyperopt results."""
+    """This function generates hyperopt results.
+
+    The request argument is used to allow indirect passing of parameters. In this test, it is a boolean that indicates
+    whether to use a single parameter or multiple parameters.
+    """
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
