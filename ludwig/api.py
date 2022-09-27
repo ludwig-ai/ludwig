@@ -22,7 +22,6 @@
 import copy
 import logging
 import os
-import subprocess
 import sys
 import tempfile
 import traceback
@@ -88,6 +87,7 @@ from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
+    get_commit_hash,
     get_file_names,
     get_from_registry,
     get_output_directory,
@@ -1792,13 +1792,9 @@ def get_experiment_description(
     description["ludwig_version"] = LUDWIG_VERSION
     description["command"] = " ".join(sys.argv)
 
-    try:
-        with open(os.devnull, "w") as devnull:
-            is_a_git_repo = subprocess.call(["git", "branch"], stderr=subprocess.STDOUT, stdout=devnull) == 0
-        if is_a_git_repo:
-            description["commit_hash"] = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8")[:12]
-    except:  # noqa: E722
-        pass
+    commit_hash = get_commit_hash()
+    if commit_hash is not None:
+        description["commit_hash"] = commit_hash[:12]
 
     if random_seed is not None:
         description["random_seed"] = random_seed

@@ -21,6 +21,8 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
+import psutil
+import torch
 
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
@@ -30,6 +32,7 @@ from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import Series
 
@@ -98,6 +101,10 @@ class Backend(ABC):
     @property
     @abstractmethod
     def num_nodes(self) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_available_resources(self) -> Resources:
         raise NotImplementedError()
 
 
@@ -187,3 +194,6 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     @property
     def num_nodes(self) -> int:
         return 1
+
+    def get_available_resources(self) -> Resources:
+        return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())

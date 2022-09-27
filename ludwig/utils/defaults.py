@@ -204,7 +204,7 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
         getattr(config_obj.output_features, feat[NAME]).to_dict() for feat in config[OUTPUT_FEATURES]
     ]
 
-    # ===== Hyperpot =====
+    # ===== Hyperopt =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 

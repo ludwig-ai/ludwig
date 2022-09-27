@@ -1,12 +1,11 @@
 import os
 import tempfile
-from typing import Dict, Union
+from typing import Dict
 
 import torch
 from marshmallow_dataclass import dataclass
 from torch import nn, Tensor
 
-import ludwig.schema.utils as schema_utils
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
 from ludwig.constants import NUMBER, TRAINER
@@ -16,6 +15,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -36,7 +36,7 @@ class CustomTestCombinerConfig(BaseCombinerConfig):
 
     type: str = "custom_combiner"
 
-    foo: bool = False
+    foo: bool = schema_utils.Boolean(default=False, description="")
 
 
 @register_encoder_config("custom_number_encoder", NUMBER)
@@ -45,11 +45,7 @@ class CustomNumberEncoderConfig(BaseEncoderConfig):
 
     type: str = "custom_number_encoder"
 
-    input_size: Union[int, None] = schema_utils.NonNegativeInteger(
-        default=0,
-        allow_none=True,
-        description="Size of the input to the encoder.",
-    )
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
 @register_decoder_config("custom_number_decoder", NUMBER)
@@ -58,11 +54,7 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
 
     type: str = "custom_number_decoder"
 
-    input_size: Union[int, None] = schema_utils.NonNegativeInteger(
-        default=0,
-        allow_none=True,
-        description="Size of the input to the decoder.",
-    )
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
 @dataclass

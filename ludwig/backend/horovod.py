@@ -16,6 +16,9 @@
 
 import time
 
+import psutil
+import torch
+
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
 from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
@@ -23,6 +26,7 @@ from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils.horovod_utils import initialize_horovod
+from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 
 
@@ -70,3 +74,12 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     @property
     def num_nodes(self) -> int:
         return self._horovod.size()
+
+    def get_available_resources(self) -> Resources:
+        cpus = torch.as_tensor([psutil.cpu_count()], dtype=torch.int)
+        cpus = self._horovod.allreduce(cpus, op=self._horovod.Sum).item()
+
+        gpus = torch.as_tensor([torch.cuda.device_count()], dtype=torch.int)
+        gpus = self._horovod.allreduce(gpus, op=self._horovod.Sum).item()
+
+        return Resources(cpus=cpus, gpus=gpus)
