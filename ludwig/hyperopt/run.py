@@ -1,8 +1,9 @@
 import copy
 import logging
 import os
+import warnings
 from pprint import pformat
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import yaml
@@ -14,12 +15,18 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     COMBINED,
     EXECUTOR,
+    GOAL,
+    GRID_SEARCH,
     HYPEROPT,
     LOSS,
+    METRIC,
     MINIMIZE,
     NAME,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    RAY,
+    SPACE,
+    SPLIT,
     TEST,
     TRAINING,
     TYPE,
@@ -41,6 +48,9 @@ except ImportError:
 
     class RayBackend:
         pass
+
+
+logger = logging.getLogger(__name__)
 
 
 def hyperopt(
@@ -203,10 +213,10 @@ def hyperopt(
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
-    # print hyperopt config
-    logging.info("Hyperopt config")
-    logging.info(pformat(hyperopt_config, indent=4))
-    logging.info("\n")
+    # Print hyperopt config
+    logger.info("Hyperopt config")
+    logger.info(pformat(hyperopt_config, indent=4))
+    logger.info("\n")
 
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config[EXECUTOR]
@@ -215,6 +225,9 @@ def hyperopt(
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
+
+    # Check if all features are grid type parameters and log UserWarning if needed
+    log_warning_if_all_grid_type_parameters(parameters, executor.get("num_samples"))
 
     ######################
     # check validity of output_feature / metric/ split combination
@@ -324,8 +337,8 @@ def hyperopt(
 
         dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
 
-        logging.info("\nDataset Statistics")
-        logging.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
+        logger.info("\nDataset Statistics")
+        logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
 
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_end(experiment_name)
@@ -377,27 +390,49 @@ def hyperopt(
             }
 
             save_hyperopt_stats(hyperopt_stats, results_directory)
-            logging.info(f"Hyperopt stats saved to: {results_directory}")
+            logger.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
         callback.on_hyperopt_finish(experiment_name)
 
-    logging.info("Finished hyperopt")
+    logger.info("Finished hyperopt")
 
     return hyperopt_results
+
+
+def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
+    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
+    duplicate trials being created."""
+    if num_samples == 1:
+        return
+
+    total_grid_search_trials = 1
+
+    for _, param_info in hyperopt_parameter_config.items():
+        if param_info.get(SPACE, None) != GRID_SEARCH:
+            return
+        total_grid_search_trials *= len(param_info.get("values", []))
+
+    num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
+    warnings.warn(
+        "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
+        f"({num_samples}) is greater than 1. This will result in {num_duplicate_trials} duplicate trials being "
+        "created. Consider setting `num_samples` to 1 in the hyperopt executor to prevent trial duplication.",
+        RuntimeWarning,
+    )
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params):
     from ludwig.hyperopt.execution import executor_registry
 
     set_default_value(hyperopt_params, EXECUTOR, {})
-    set_default_value(hyperopt_params, "split", VALIDATION)
+    set_default_value(hyperopt_params, SPLIT, VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
-    set_default_value(hyperopt_params, "metric", LOSS)
-    set_default_value(hyperopt_params, "goal", MINIMIZE)
+    set_default_value(hyperopt_params, METRIC, LOSS)
+    set_default_value(hyperopt_params, GOAL, MINIMIZE)
 
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: RAY, "num_samples": 1})
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
     set_default_values(

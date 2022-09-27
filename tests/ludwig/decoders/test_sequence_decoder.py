@@ -75,7 +75,7 @@ def test_sequence_rnn_decoder(cell_type, num_layers, batch_size):
     # check for parameter updating
     target = torch.randn(output.shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(sequence_rnn_decoder, (combiner_outputs, None), target)
-    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert upc == tpc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize("num_layers", [1, 2])
@@ -100,7 +100,7 @@ def test_sequence_lstm_decoder(num_layers, batch_size):
     fpc, tpc, upc, not_updated = check_module_parameters_updated(
         sequence_lstm_decoder, (combiner_outputs, None), target
     )
-    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert upc == tpc, f"Failed to update parameters. Parameters not updated: {not_updated}"
 
 
 @pytest.mark.parametrize("cell_type", ["rnn", "gru", "lstm"])
@@ -130,4 +130,4 @@ def test_sequence_generator_decoder(cell_type, num_layers, batch_size):
     # check for parameter updating
     target = torch.randn(output[LOGITS].shape)
     fpc, tpc, upc, not_updated = check_module_parameters_updated(sequence_rnn_decoder, (combiner_outputs, None), target)
-    assert upc == tpc, f"Failed to update parameters.  Parameters not update: {not_updated}"
+    assert upc == tpc, f"Failed to update parameters. Parameters not updated: {not_updated}"

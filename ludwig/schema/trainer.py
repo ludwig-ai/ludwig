@@ -71,7 +71,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -153,7 +153,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -535,7 +535,13 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 def get_model_type_jsonschema():
-    return {"type": "string", "enum": [MODEL_ECD, MODEL_GBM], "default": MODEL_ECD}
+    return {
+        "type": "string",
+        "enum": [MODEL_ECD, MODEL_GBM],
+        "default": MODEL_ECD,
+        "title": "type",
+        "description": "Select the model type.",
+    }
 
 
 def get_trainer_jsonschema():
@@ -563,7 +569,12 @@ def get_trainer_jsonschema():
     return {
         "type": "object",
         "properties": {
-            "type": {"type": "string", "enum": all_trainer_types},
+            "type": {
+                "type": "string",
+                "enum": all_trainer_types,
+                "title": "type",
+                "description": "Select the trainer type.",
+            },
         },
         "title": "trainer_options",
         "allOf": conds,

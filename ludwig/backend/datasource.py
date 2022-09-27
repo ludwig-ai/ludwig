@@ -110,7 +110,7 @@ class BinaryIgnoreNoneTypeDatasource(BinaryDatasource):
             try:
                 data = get_bytes_obj_from_http_path(path)
             except urllib3.exceptions.HTTPError as e:
-                logging.warning(e)
+                logger.warning(e)
                 data = None
         else:
             super_result = super()._read_file(f, path, **reader_args)[0]

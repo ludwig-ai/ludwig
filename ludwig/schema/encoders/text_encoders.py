@@ -2737,7 +2737,7 @@ class LongformerConfig(BaseEncoderConfig):
         "num_hidden_layers.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int),
+            schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["LongformerEncoder"]["attention_window"],
     )
