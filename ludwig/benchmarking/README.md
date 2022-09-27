@@ -31,11 +31,11 @@ multiple use cases.
 The benchmarking config is where you can specify
 
 1. The datasets you want to run the benchmarks on and their configs.
-2. Whether these experiments are hyperopt or regular train and eval experiments.
-3. The name of the experiment.
-4. A python script to edit the specified Ludwig configs programmatically/on the fly.
-5. The export path of these experiment's artifacts. (remotely or locally)
-6. Whether to use `LudwigProfiler` to track resource
+1. Whether these experiments are hyperopt or regular train and eval experiments.
+1. The name of the experiment.
+1. A python script to edit the specified Ludwig configs programmatically/on the fly.
+1. The export path of these experiment's artifacts. (remotely or locally)
+1. Whether to use `LudwigProfiler` to track resource
    usage for preprocessing, training, and evaluation of the experiment.
 
 You can find an example of a benchmarking config in the `examples/` directory.
@@ -71,8 +71,8 @@ For each experiment:
 
 - `dataset_name`: name of the dataset in `ludwig.datasets` to run the benchmark on.
 - `config_path` (optional): path to Ludwig config. If not specified, this will load
-the config corresponding to the dataset only containing `input_features` and 
-`output_features`.
+  the config corresponding to the dataset only containing `input_features` and
+  `output_features`.
 
 This will run `LudwigModel.experiment` on the datasets with their specified configs.
 If these configs contain a hyperopt section and you'd like to run hyperopt, change
