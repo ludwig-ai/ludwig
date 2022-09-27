@@ -33,6 +33,9 @@ with open(path.join(here, "requirements_tree.txt"), encoding="utf-8") as f:
 with open(path.join(here, "requirements_explain.txt"), encoding="utf-8") as f:
     extra_requirements["explain"] = [line.strip() for line in f if line]
 
+with open(path.join(here, "requirements_benchmarking.txt"), encoding="utf-8") as f:
+    extra_requirements["benchmarking"] = [line.strip() for line in f if line]
+
 extra_requirements["full"] = [item for sublist in extra_requirements.values() for item in sublist]
 
 with open(path.join(here, "requirements_test.txt"), encoding="utf-8") as f:

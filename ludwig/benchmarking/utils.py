@@ -19,6 +19,7 @@ from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
+HYPEROPT_OUTDIR_RETAINED_FILES = ["hyperopt_statistics.json", "params.json", "stderr", "stdout", "result.json", "error.txt"]
 
 def load_from_module(
     dataset_module: Union[DatasetLoader, ModuleType], output_feature: Dict[str, str], subsample_frac: float = 1
@@ -149,7 +150,7 @@ def delete_hyperopt_outputs(output_directory: str):
     for path, currentDirectory, files in os.walk(output_directory):
         for file in files:
             filename = os.path.join(path, file)
-            if file not in ["hyperopt_statistics.json", "params.json", "stderr", "stdout", "result.json", "error.txt"]:
+            if file not in HYPEROPT_OUTDIR_RETAINED_FILES:
                 os.remove(filename)
 
 
