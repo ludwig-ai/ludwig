@@ -17,7 +17,6 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.feature_registries import input_type_registry
 from ludwig.schema.config_object import Config
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, run_experiment, text_feature
