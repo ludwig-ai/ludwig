@@ -209,7 +209,7 @@ class Config:
                     del feature[DECODER]
                 feature_schema = input_type_registry[feature[TYPE]].get_schema_cls()
                 feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
-                setattr(self.input_features, feature[NAME], feature_schema)
+                setattr(self.input_features, feature[NAME], copy.deepcopy(feature_schema))
                 self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
 
             else:
@@ -217,7 +217,7 @@ class Config:
                     del feature[ENCODER]
                 feature_schema = output_type_registry[feature[TYPE]].get_schema_cls()
                 feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
-                setattr(self.output_features, feature[NAME], feature_schema)
+                setattr(self.output_features, feature[NAME], copy.deepcopy(feature_schema))
                 self._set_attributes(
                     getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
                 )
@@ -249,7 +249,7 @@ class Config:
                 # Check if submodule needs update
                 if TYPE in val and module.type != val[TYPE]:
                     new_config = self._get_new_config(key, val[TYPE], feature_type)()
-                    setattr(config_obj_lvl, key, new_config)
+                    setattr(config_obj_lvl, key, copy.deepcopy(new_config))
 
                 #  Now set the other defaults specified in the module
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
@@ -258,7 +258,7 @@ class Config:
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             else:
-                setattr(config_obj_lvl, key, val)
+                setattr(config_obj_lvl, key, copy.deepcopy(val))
 
     def _update_global_defaults(self, feature, feat_type, feature_section):
         """This purpose of this function is to set the attributes of the features that are specified in the
