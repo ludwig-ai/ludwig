@@ -141,6 +141,8 @@ NUM_SAMPLES = "num_samples"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+GOAL = "goal"
+GRID_SEARCH = "grid_search"
 
 NAME = "name"
 COLUMN = "column"

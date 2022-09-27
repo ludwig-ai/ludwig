@@ -35,6 +35,8 @@ from ludwig.utils.automl.utils import get_model_type
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.torch_utils import initialize_pytorch
 
+logger = logging.getLogger(__name__)
+
 # maps variable search space that can be modified to minimum permissible value for the range
 RANKED_MODIFIABLE_PARAM_LIST = {
     "tabnet": OrderedDict(
@@ -228,7 +230,7 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
             if reduce_text_feature_max_length(config, training_set_metadata):
                 reduce_text_feature_max_length(temp_config, training_set_metadata)
                 mem_use = compute_memory_usage(temp_config, training_set_metadata, model_category)
-        logging.info(f"Checking model estimated mem use {mem_use} against memory size {max_memory}")
+        logger.info(f"Checking model estimated mem use {mem_use} against memory size {max_memory}")
         if mem_use <= max_memory:
             fits_in_memory = True
             break

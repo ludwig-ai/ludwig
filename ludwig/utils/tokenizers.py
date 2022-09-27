@@ -1148,7 +1148,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
             pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
             and pretrained_model_name_or_path not in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
         ):
-            logging.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
+            logger.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
             vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][pretrained_model_name_or_path]
             init_kwargs = PRETRAINED_INIT_CONFIGURATION.get(pretrained_model_name_or_path, {})
             return BERTTokenizer(
@@ -1159,7 +1159,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
     # If pretrained_model_name_or_path does not have a torchtext equivalent implementation, load the
     # HuggingFace implementation.
-    logging.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
+    logger.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
     return HFTokenizer(pretrained_model_name_or_path)
 
 

@@ -14,6 +14,8 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.metric_utils import TrainerMetric
 
+logger = logging.getLogger(__name__)
+
 
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
@@ -219,7 +221,7 @@ def get_final_steps_per_checkpoint(
     # Cap steps_per_checkpoint at steps_per_epoch.
     if steps_per_checkpoint > steps_per_epoch:
         if should_log:
-            logging.info(
+            logger.info(
                 f"Note: steps_per_checkpoint (was {steps_per_checkpoint}) is now set to the number of "
                 f"steps per epoch: {steps_per_epoch}.\n"
             )

@@ -898,6 +898,7 @@ def calibration_plot(
     fraction_positives,
     mean_predicted_values,
     algorithm_names=None,
+    class_name=None,
     filename=None,
     callbacks=None,
 ):
@@ -933,7 +934,7 @@ def calibration_plot(
             color=colors[i],
             marker="o",
             scatter_kws={"s": 40},
-            label=algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else "",
+            label=algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else f"Model {i}",
         )
 
     ticks = np.linspace(0.0, 1.0, num=11)
@@ -944,7 +945,10 @@ def calibration_plot(
     plt.ylim([-0.05, 1.05])
     plt.yticks(ticks)
     plt.legend(loc="lower right")
-    plt.title("Calibration (reliability curve)")
+    if class_name is not None:
+        plt.title(f"{class_name}: Calibration (reliability curve)")
+    else:
+        plt.title("Calibration (reliability curve)")
 
     plt.tight_layout()
     visualize_callbacks(callbacks, plt.gcf())
@@ -957,11 +961,13 @@ def calibration_plot(
 def brier_plot(
     brier_scores,
     algorithm_names=None,
+    class_names=None,
     title=None,
     filename=None,
     callbacks=None,
 ):
-    plt.figure()
+
+    fig, ax = plt.subplots()
     sns.set_style("whitegrid")
 
     if title is not None:
@@ -969,22 +975,31 @@ def brier_plot(
 
     colors = plt.get_cmap("tab10").colors
 
-    plt.grid(which="both")
-    plt.grid(which="minor", alpha=0.5)
-    plt.grid(which="major", alpha=0.75)
-    plt.xlabel("class")
-    plt.ylabel("brier")
+    n_algorithms = brier_scores.shape[1]
+    n_classes = brier_scores.shape[0]
+    x = np.arange(n_classes)
 
-    for i in range(brier_scores.shape[1]):
-        plt.plot(
-            brier_scores[:, i],
-            label=algorithm_names[i] + " " if algorithm_names is not None and i < len(algorithm_names) else "",
-            color=colors[i],
-            linewidth=3,
-        )
+    max_width = 0.35
+    bar_width = min(0.5 / n_algorithms, max_width)
+    bar_left = -bar_width * (n_algorithms // 2) + ((bar_width / 2) if (n_algorithms % 2) == 0 else 0)
 
-    plt.legend()
-    plt.tight_layout()
+    ax.grid(which="both")
+    ax.grid(which="minor", alpha=0.5)
+    ax.grid(which="major", alpha=0.75)
+    ax.set_xlabel("class")
+    ax.set_ylabel("brier score")
+    if class_names is not None:
+        ax.set_xticks(x, class_names)
+    else:
+        ax.set_xticks(x, [str(i) for i in range(n_classes)])
+
+    for i in range(n_algorithms):
+        # Plot bar for each class
+        label = algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else f"Model {i}"
+        ax.bar(x + bar_left + (bar_width * i), brier_scores[:, i], bar_width, color=colors[i], label=label)
+
+    ax.legend()
+    fig.tight_layout()
     visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
