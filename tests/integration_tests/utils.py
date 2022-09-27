@@ -763,7 +763,8 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 def augment_dataset_with_none(
     df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: List = []
 ) -> pd.DataFrame:
-    """
+    """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
+
     :param df: dataframe containg input features/output features
     :type df: pd.DataFrame
     :param first_row_none: indicates whether to set the first rowin the dataframe to np.nan
