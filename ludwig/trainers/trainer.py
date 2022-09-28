@@ -66,6 +66,8 @@ from ludwig.utils.trainer_utils import (
 
 logger = logging.getLogger(__name__)
 
+print("ASDFASDFASDF NEW TRAINER.PY")
+
 
 @register_trainer("trainer", MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
@@ -477,10 +479,14 @@ class Trainer(BaseTrainer):
             # TODO(geoffrey): Add support for batch size tuning on CPU
             best_batch_size = DEFAULT_BATCH_SIZE
         else:
+            ceiling = config["trainer"].get("tune_batch_size_ceiling")
 
             def _is_valid_batch_size(batch_size):
                 # make sure that batch size is valid (e.g. less than size of ds)
-                return batch_size < len(training_set)
+                is_valid = batch_size < len(training_set)
+                if ceiling:
+                    is_valid = is_valid and batch_size <= ceiling
+                return is_valid
 
             # TODO (ASN) : Circle back on how we want to set default placeholder value
             # Currently, since self.batch_size is originally set to auto, we provide a
