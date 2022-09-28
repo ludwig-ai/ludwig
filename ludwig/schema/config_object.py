@@ -99,7 +99,6 @@ class Config:
         # ===== Defaults =====
         if DEFAULTS in config_dict:
             self._set_attributes(self.defaults, config_dict[DEFAULTS])
-        # self._remove_excess_attributes()
 
         # ===== Features =====
         self._set_feature_column(config_dict)
@@ -283,22 +282,6 @@ class Config:
                     setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
         return feature
-
-    # def _remove_excess_attributes(self):
-    #     """
-    #     This function is intended to remove excess attributes set on the global defaults sections. Since the schema
-    #     creates the global defaults sections by pulling together the corresponding feature schemas, some extra
-    #     attributes are hanging around such as name and column. This function removes them.
-    #
-    #     Returns:
-    #         None -> Modifies config object
-    #     """
-    #
-    #     for feature_type in self.defaults.to_dict().keys():
-    #         section = getattr(self.defaults, feature_type)
-    #         for attr in dir(section):
-    #             if attr in DEFAULTS_MODULES and getattr(section, attr):
-    #                 delattr(section, attr)
 
     def get_config_dict(self):
         """This method converts the current config object into an equivalent dictionary representation since many
