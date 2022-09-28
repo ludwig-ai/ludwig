@@ -88,13 +88,13 @@ class Config:
     def __init__(self, config_dict):
 
         self.model_type = MODEL_ECD
-        self.input_features: InputFeaturesContainer = InputFeaturesContainer()
-        self.output_features: OutputFeaturesContainer = OutputFeaturesContainer()
-        self.combiner: BaseCombinerConfig = ConcatCombinerConfig()
-        self.trainer: BaseTrainerConfig = ECDTrainerConfig()
-        self.preprocessing: PreprocessingConfig = PreprocessingConfig()
+        self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
+        self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
+        self.combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
+        self.trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
+        self.preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
         self.hyperopt = {}
-        self.defaults: DefaultsConfig = DefaultsConfig()
+        self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
 
         # ===== Defaults =====
         if DEFAULTS in config_dict:
