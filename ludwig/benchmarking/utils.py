@@ -69,6 +69,10 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
     fs, _ = get_fs_and_path(export_base_path)
     try:
         export_full_path = os.path.join(export_base_path, experiment["dataset_name"], experiment["experiment_name"])
+
+        # override previous experiment with the same name
+        if fs.exists(export_full_path):
+            fs.rm(export_full_path, recursive=True)
         fs.put(experiment_output_directory, export_full_path, recursive=True)
         fs.put(
             os.path.join(experiment["config_path"]),
