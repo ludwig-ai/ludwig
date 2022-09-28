@@ -78,9 +78,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
 
     @classmethod
     def build_outputs(
-            cls,
-            output_feature_configs: OutputFeaturesContainer,
-            combiner: Combiner
+        cls, output_feature_configs: OutputFeaturesContainer, combiner: Combiner
     ) -> Dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
         output_features_def = topological_sort_feature_dependencies(output_feature_configs.to_list())
