@@ -11,7 +11,7 @@ from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.schema.config_object import Config, InputFeaturesContainer, OutputFeaturesContainer
+from ludwig.schema.config_object import InputFeaturesContainer, OutputFeaturesContainer
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
