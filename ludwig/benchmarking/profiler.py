@@ -30,6 +30,7 @@ f.close()
 sys.stdout = sys.__stdout__
 
 STOP_MESSAGE = "stop"
+logger = logging.getLogger()
 
 
 def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:
@@ -140,9 +141,10 @@ class LudwigProfiler(contextlib.ContextDecorator):
         # GPU information
         if self.cuda_is_available:
             gpu_infos = get_gpu_info()
+            gpu_usage = GPUStatCollection.new_query()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"cuda_{i}"
-                self.info[f"{gpu_key}_memory_used"] = []
+                self.info[f"{gpu_key}_memory_used"] = [gpu_usage[i].memory_used]
                 self.info[f"{gpu_key}_name"] = gpu_info["name"]
                 self.info[f"{gpu_key}_total_memory"] = gpu_info["total_memory"]
                 self.info[f"{gpu_key}_driver_version"] = gpu_info["driver_version"]
@@ -188,7 +190,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.launched = True
         except Exception:
             self.launched = False
-            logging.exception("Encountered exception when launching tracker thread.")
+            logger.exception("Encountered exception when launching tracker thread.")
 
         return self
 
@@ -203,7 +205,7 @@ class LudwigProfiler(contextlib.ContextDecorator):
             self.info["end_disk_usage"] = shutil.disk_usage(os.path.expanduser("~")).used
             self.launched = False
         except Exception:
-            logging.exception("Encountered exception when joining tracker thread.")
+            logger.exception("Encountered exception when joining tracker thread.")
         finally:
             if self.use_torch_profiler:
                 self._ctx_exit_stack.close()

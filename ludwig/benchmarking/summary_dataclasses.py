@@ -11,7 +11,7 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
 from ludwig.utils.data_utils import load_json
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @dataclass
@@ -124,8 +124,7 @@ class MetricsDiff:
 
     def to_string(self):
         ret = []
-        spacing_str = "{:<20} {:<23} {:<13} {:<13} {:<13} {:<5}"
-        ret.append(f"\nMetrics for dataset: {self.dataset_name}")
+        spacing_str = "{:<20} {:<33} {:<13} {:<13} {:<13} {:<5}"
         ret.append(
             spacing_str.format(
                 "Output Feature Name",
@@ -199,7 +198,7 @@ def export_metrics_diff_to_csv(metrics_diff: MetricsDiff, path: str):
                     "Diff Percentage": diff_percentage,
                 }
             )
-            logger.info(f"Exported a CSV report to {path}")
+        logger.info(f"Exported a CSV report to {path}\n")
 
 
 def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
@@ -208,8 +207,10 @@ def build_metrics_summary(experiment_local_directory: str) -> MetricsSummary:
     :param experiment_local_directory: directory where the experiment artifacts live.
         e.g. local_experiment_repo/ames_housing/some_experiment/
     """
-    config = load_json(os.path.join(experiment_local_directory, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
-    report = load_json(os.path.join(experiment_local_directory, "test_statistics.json"))
+    config = load_json(
+        os.path.join(experiment_local_directory, "experiment_run", "model", MODEL_HYPERPARAMETERS_FILE_NAME)
+    )
+    report = load_json(os.path.join(experiment_local_directory, "experiment_run", "test_statistics.json"))
     output_feature_type: str = config["output_features"][0]["type"]
     output_feature_name: str = config["output_features"][0]["name"]
     metric_dict = report[output_feature_name]
@@ -301,8 +302,7 @@ class ResourceUsageDiff:
 
     def to_string(self):
         ret = []
-        spacing_str = "{:<30} {:<20} {:<20} {:<20} {:<5}"
-        ret.append(f"\nResource usage for: {self.code_block_tag}")
+        spacing_str = "{:<36} {:<20} {:<20} {:<20} {:<5}"
         ret.append(
             spacing_str.format(
                 "Metric Name",
@@ -362,7 +362,7 @@ def export_resource_usage_diff_to_csv(resource_usage_diff: ResourceUsageDiff, pa
                     "Diff Percentage": diff_percentage,
                 }
             )
-            logger.info(f"Exported a CSV report to {path}")
+        logger.info(f"Exported a CSV report to {path}\n")
 
 
 def average_runs(path_to_runs_dir: str) -> Dict[str, Union[int, float]]:
@@ -395,7 +395,8 @@ def summarize_resource_usage(path: str, tags: Optional[List[str]] = None) -> Lis
     """
     summary = dict()
     # metric types: system_resource_usage, torch_ops_resource_usage.
-    for metric_type in os.listdir(path):
+    all_metric_types = {"system_resource_usage", "torch_ops_resource_usage"}
+    for metric_type in all_metric_types.intersection(os.listdir(path)):
         metric_type_path = os.path.join(path, metric_type)
         # code block tags correspond to the `tag` argument in ResourceUsageTracker.
         for code_block_tag in os.listdir(metric_type_path):

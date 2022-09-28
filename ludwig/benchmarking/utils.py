@@ -3,14 +3,17 @@ import functools
 import logging
 import os
 import shutil
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from types import ModuleType
-from typing import Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import fsspec
 import pandas as pd
+import yaml
 
-from ludwig.constants import CATEGORY
+from ludwig.constants import BINARY, CATEGORY
+from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.globals import CONFIG_YAML
 from ludwig.utils.data_utils import load_yaml
@@ -18,7 +21,15 @@ from ludwig.utils.dataset_utils import get_repeatable_train_val_test_split
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 
-logger = logging.getLogger(__name__)
+HYPEROPT_OUTDIR_RETAINED_FILES = [
+    "hyperopt_statistics.json",
+    "params.json",
+    "stderr",
+    "stdout",
+    "result.json",
+    "error.txt",
+]
+logger = logging.getLogger()
 
 
 def load_from_module(
@@ -34,7 +45,7 @@ def load_from_module(
     if subsample_frac < 1:
         dataset = dataset.sample(frac=subsample_frac, replace=False, random_state=default_random_seed)
 
-    if output_feature["type"] == CATEGORY:
+    if output_feature["type"] in [CATEGORY, BINARY]:
         return get_repeatable_train_val_test_split(
             dataset,
             stratify_colname=output_feature["name"],
@@ -58,14 +69,18 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
     fs, _ = get_fs_and_path(export_base_path)
     try:
         export_full_path = os.path.join(export_base_path, experiment["dataset_name"], experiment["experiment_name"])
+
+        # override previous experiment with the same name
+        if fs.exists(export_full_path):
+            fs.rm(export_full_path, recursive=True)
         fs.put(experiment_output_directory, export_full_path, recursive=True)
         fs.put(
-            os.path.join("configs", experiment["config_path"]),
+            os.path.join(experiment["config_path"]),
             os.path.join(export_full_path, CONFIG_YAML),
         )
         logger.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
     except Exception:
-        logging.exception(
+        logger.exception(
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
             f"dataset {experiment['dataset_name']}"
         )
@@ -93,7 +108,7 @@ def download_artifacts(
     os.makedirs(local_dir, exist_ok=True)
 
     coroutines = []
-    for experiment in bench_config["datasets"]:
+    for experiment in bench_config["experiments"]:
         dataset_name = experiment["dataset_name"]
         for experiment_name in [base_experiment, experimental_experiment]:
             coroutines.append(download_one(fs, download_base_path, dataset_name, experiment_name, local_dir))
@@ -135,15 +150,47 @@ async def download_one(
             )
             await loop.run_in_executor(pool, func)
     except Exception:
-        logging.exception(f"Couldn't download experiment *{experiment_name}* of dataset *{dataset_name}*.")
+        logger.exception(f"Couldn't download experiment *{experiment_name}* of dataset *{dataset_name}*.")
         return "", local_dir
     return dataset_name, local_dir
+
+
+def create_default_config(experiment: Dict[str, Any]) -> str:
+    """Create a Ludwig config that only contains input and output features.
+
+    :param dataset_name: name of the dataset to load the config for.
+
+    return: path where the default config is saved.
+    """
+    model_config = model_configs_for_dataset(experiment["dataset_name"])["default"]
+
+    # only keep input_features and output_features
+    main_config_keys = list(model_config.keys())
+    for key in main_config_keys:
+        if key not in ["input_features", "output_features"]:
+            del model_config[key]
+    config_path = f"{experiment['dataset_name']}-{uuid.uuid4().hex}.yaml"
+    save_yaml(config_path, model_config)
+    return config_path
 
 
 def delete_model_checkpoints(output_directory: str):
     shutil.rmtree(os.path.join(output_directory, "model", "training_checkpoints"), ignore_errors=True)
     if os.path.isfile(os.path.join(output_directory, "model", "model_weights")):
         os.remove(os.path.join(output_directory, "model", "model_weights"))
+
+
+def delete_hyperopt_outputs(output_directory: str):
+    for path, currentDirectory, files in os.walk(output_directory):
+        for file in files:
+            filename = os.path.join(path, file)
+            if file not in HYPEROPT_OUTDIR_RETAINED_FILES:
+                os.remove(filename)
+
+
+def save_yaml(filename, dictionary):
+    with open(filename, "w") as f:
+        yaml.dump(dictionary, f, default_flow_style=False)
 
 
 def format_time(time_us):
