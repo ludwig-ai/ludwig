@@ -3,25 +3,25 @@ output_features:
     type: category
 input_features:
   - name: Elevation
-    type: numerical
+    type: number
   - name: Aspect
-    type: numerical
+    type: number
   - name: Slope
-    type: numerical
+    type: number
   - name: Horizontal_Distance_To_Hydrology
-    type: numerical
+    type: number
   - name: Vertical_Distance_To_Hydrology
-    type: numerical
+    type: number
   - name: Horizontal_Distance_To_Roadways
-    type: numerical
+    type: number
   - name: Hillshade_9am
-    type: numerical
+    type: number
   - name: Hillshade_Noon
-    type: numerical
+    type: number
   - name: Hillshade_3pm
-    type: numerical
+    type: number
   - name: Horizontal_Distance_To_Fire_Points
-    type: numerical
+    type: number
   - name: Wilderness_Area
     type: category
   - name: Soil_Type
