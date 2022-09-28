@@ -91,7 +91,9 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
             backend = "local"
             logger.info("Currently, only local backend is supported with LudwigProfiler.")
         # run model and capture metrics
-        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR, backend=backend)
+        model = LudwigModel(
+            config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR, backend=backend
+        )
         _, _, _, output_directory = model.experiment(
             dataset=dataset,
             output_directory=experiment["experiment_name"],
