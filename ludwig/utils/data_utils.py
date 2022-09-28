@@ -839,12 +839,12 @@ def get_pa_dtype(obj: Any):
 
 
 def get_pa_schema(df: DataFrame):
-    head = df.head(100)
+    head = df.head(100).fillna(np.nan).replace([np.nan], [None])  # normalize NaNs to None
     schema = {}
     for k, v in head.items():
         v = v.values
         for i in range(len(v)):
-            if k not in schema:
+            if v[i] is not None and k not in schema:
                 schema[k] = get_pa_dtype(v[i])
                 break
     return pa.schema(list(schema.items()))
