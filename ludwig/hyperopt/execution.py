@@ -34,6 +34,7 @@ from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.config_object import Config
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -455,7 +456,7 @@ class RayTuneExecutor:
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        modified_config = merge_with_defaults(modified_config)
+        modified_config = merge_with_defaults(modified_config, Config(modified_config))
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
