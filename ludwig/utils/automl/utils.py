@@ -46,7 +46,6 @@ def get_model_type(config: dict) -> str:
     elif COMBINER in config and TYPE in config[COMBINER]:
         model_type = config[COMBINER][TYPE]
     else:
-        test = get_combiner_jsonschema()
         default_combiner_type = get_combiner_jsonschema()["properties"]["type"]["default"]
         model_type = default_combiner_type
     return model_type
