@@ -216,9 +216,11 @@ class LudwigModel:
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         upgraded_config = upgrade_to_latest_version(config_dict)
+
+        # Initialize the config object
         self.config_obj = Config(upgraded_config)
 
-        # Merge upgraded config with defaults.
+        # Set default values on config dictionary
         self.config = merge_with_defaults(upgraded_config, self.config_obj)
         validate_config(self.config)
 

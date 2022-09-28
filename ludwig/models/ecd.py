@@ -36,7 +36,7 @@ class ECD(BaseModel):
 
         # ================ Inputs ================
         try:
-            self.input_features.update(self.build_inputs(config=self.config_obj))
+            self.input_features.update(self.build_inputs(input_feature_configs=self.config_obj.input_features))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
@@ -48,7 +48,10 @@ class ECD(BaseModel):
         self.combiner = combiner_class(input_features=self.input_features, config=self.config_obj.combiner)
 
         # ================ Outputs ================
-        self.output_features.update(self.build_outputs(config=self.config_obj, combiner=self.combiner))
+        self.output_features.update(self.build_outputs(
+            output_feature_configs=self.config_obj.output_features,
+            combiner=self.combiner)
+        )
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()

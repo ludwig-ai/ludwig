@@ -11,7 +11,7 @@ from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import Config, InputFeaturesContainer, OutputFeaturesContainer
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -49,13 +49,13 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.output_features = LudwigFeatureDict()
 
     @classmethod
-    def build_inputs(cls, config: Config) -> Dict[str, InputFeature]:
+    def build_inputs(cls, input_feature_configs: InputFeaturesContainer) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
-        input_features_def = topological_sort_feature_dependencies(config.input_features.to_list())
+        input_features_def = topological_sort_feature_dependencies(input_feature_configs.to_list())
         for input_feature_def in input_features_def:
             input_features[input_feature_def[NAME]] = cls.build_single_input(
-                getattr(config.input_features, input_feature_def[NAME]), input_features
+                getattr(input_feature_configs, input_feature_def[NAME]), input_features
             )
         return input_features
 
@@ -77,17 +77,21 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         return input_feature_obj
 
     @classmethod
-    def build_outputs(cls, config: Config, combiner: Combiner) -> Dict[str, OutputFeature]:
+    def build_outputs(
+            cls,
+            output_feature_configs: OutputFeaturesContainer,
+            combiner: Combiner
+    ) -> Dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
-        output_features_def = topological_sort_feature_dependencies(config.output_features.to_list())
+        output_features_def = topological_sort_feature_dependencies(output_feature_configs.to_list())
         output_features = {}
 
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
-            setattr(getattr(config.output_features, output_feature_def[NAME]), "input_size", combiner.output_shape[-1])
+            setattr(getattr(output_feature_configs, output_feature_def[NAME]), "input_size", combiner.output_shape[-1])
             output_features[output_feature_def[NAME]] = cls.build_single_output(
-                getattr(config.output_features, output_feature_def[NAME]), output_features
+                getattr(output_feature_configs, output_feature_def[NAME]), output_features
             )
         return output_features
 
