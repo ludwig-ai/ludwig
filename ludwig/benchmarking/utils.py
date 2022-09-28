@@ -29,7 +29,7 @@ HYPEROPT_OUTDIR_RETAINED_FILES = [
     "result.json",
     "error.txt",
 ]
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def load_from_module(

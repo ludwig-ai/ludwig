@@ -30,7 +30,7 @@ f.close()
 sys.stdout = sys.__stdout__
 
 STOP_MESSAGE = "stop"
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def monitor(queue: Queue, info: Dict[str, Any], logging_interval: int, cuda_is_available: bool) -> None:

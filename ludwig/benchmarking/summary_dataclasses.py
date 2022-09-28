@@ -11,7 +11,7 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
 from ludwig.utils.data_utils import load_json
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 @dataclass

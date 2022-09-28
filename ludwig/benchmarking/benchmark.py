@@ -20,7 +20,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
 from ludwig.utils.data_utils import load_yaml
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:

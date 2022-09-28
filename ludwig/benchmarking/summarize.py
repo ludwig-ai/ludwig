@@ -14,7 +14,7 @@ from ludwig.benchmarking.summary_dataclasses import (
 )
 from ludwig.benchmarking.utils import download_artifacts
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def summarize_metrics(
