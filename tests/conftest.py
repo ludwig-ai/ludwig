@@ -77,7 +77,8 @@ def hyperopt_results_single_parameter():
             "type": "variant_generator",
         },
     }
-    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
+    # Prevent resume from failure since this results in failures in other tests
+    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test", resume=False)
     return os.path.join(os.path.abspath("results"), "hyperopt_test")
 
 
@@ -106,7 +107,8 @@ def hyperopt_results_multiple_parameters():
             "type": "variant_generator",
         },
     }
-    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
+    # Prevent resume from failure since this results in failures in other tests
+    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test", resume=False)
     return os.path.join(os.path.abspath("results"), "hyperopt_test")
 
 

@@ -847,6 +847,11 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
 def test_hyperopt_report_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
+    # Ensure visualizations directory is empty before creating plots
+    if os.path.exists(vis_dir):
+        for f in os.listdir(vis_dir):
+            os.remove(os.path.join(vis_dir, f))
+
     visualize.hyperopt_report(
         os.path.join(hyperopt_results_multiple_parameters, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir
     )
@@ -862,6 +867,11 @@ def test_hyperopt_report_vis_api(hyperopt_results_multiple_parameters, tmpdir):
 def test_hyperopt_hiplot_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
+    # Ensure visualizations directory is empty before creating plots
+    if os.path.exists(vis_dir):
+        for f in os.listdir(vis_dir):
+            os.remove(os.path.join(vis_dir, f))
+
     visualize.hyperopt_hiplot(
         os.path.join(hyperopt_results_multiple_parameters, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir
     )
@@ -876,6 +886,11 @@ def test_hyperopt_hiplot_vis_api(hyperopt_results_multiple_parameters, tmpdir):
 @pytest.mark.distributed
 def test_hyperopt_report_vis_api_no_pairplot(hyperopt_results_single_parameter, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
+
+    # Ensure visualizations directory is empty before creating plots
+    if os.path.exists(vis_dir):
+        for f in os.listdir(vis_dir):
+            os.remove(os.path.join(vis_dir, f))
 
     visualize.hyperopt_report(
         os.path.join(hyperopt_results_single_parameter, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir
