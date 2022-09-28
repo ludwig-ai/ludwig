@@ -839,11 +839,14 @@ def get_pa_dtype(obj: Any):
 
 
 def get_pa_schema(df: DataFrame):
-    head = df.head(1)
+    head = df.head(100)
     schema = {}
     for k, v in head.items():
         v = v.values
-        schema[k] = get_pa_dtype(v[0])
+        for i in range(len(v)):
+            if k not in schema:
+                schema[k] = get_pa_dtype(v[i])
+                break
     return pa.schema(list(schema.items()))
 
 
