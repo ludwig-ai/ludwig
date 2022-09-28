@@ -141,9 +141,10 @@ class LudwigProfiler(contextlib.ContextDecorator):
         # GPU information
         if self.cuda_is_available:
             gpu_infos = get_gpu_info()
+            gpu_usage = GPUStatCollection.new_query()
             for i, gpu_info in enumerate(gpu_infos):
                 gpu_key = f"cuda_{i}"
-                self.info[f"{gpu_key}_memory_used"] = []
+                self.info[f"{gpu_key}_memory_used"] = [gpu_usage[i].memory_used]
                 self.info[f"{gpu_key}_name"] = gpu_info["name"]
                 self.info[f"{gpu_key}_total_memory"] = gpu_info["total_memory"]
                 self.info[f"{gpu_key}_driver_version"] = gpu_info["driver_version"]

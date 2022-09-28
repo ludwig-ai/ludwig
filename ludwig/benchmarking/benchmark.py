@@ -83,11 +83,15 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         )
         delete_hyperopt_outputs(experiment["experiment_name"])
     else:
+        backend = "ray"
         ludwig_profiler_callbacks = None
         if experiment["profiler"]["enable"]:
             ludwig_profiler_callbacks = [LudwigProfilerCallback(experiment)]
+            # Currently, only local backend is supported with LudwigProfiler.
+            backend = "local"
+            logger.info("Currently, only local backend is supported with LudwigProfiler.")
         # run model and capture metrics
-        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR)
+        model = LudwigModel(config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR, backend=backend)
         _, _, _, output_directory = model.experiment(
             dataset=dataset,
             output_directory=experiment["experiment_name"],
