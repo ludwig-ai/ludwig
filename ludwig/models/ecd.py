@@ -48,9 +48,8 @@ class ECD(BaseModel):
         self.combiner = combiner_class(input_features=self.input_features, config=self.config_obj.combiner)
 
         # ================ Outputs ================
-        self.output_features.update(self.build_outputs(
-            output_feature_configs=self.config_obj.output_features,
-            combiner=self.combiner)
+        self.output_features.update(
+            self.build_outputs(output_feature_configs=self.config_obj.output_features, combiner=self.combiner)
         )
 
         # ================ Combined loss metric ================
