@@ -3618,7 +3618,7 @@ def frequency_vs_f1(
 
             # get np arrays of frequencies, f1s and labels
             idx2freq = {metadata[of_name]["str2idx"][key]: val for key, val in metadata[of_name]["str2freq"].items()}
-            freq_np = np.array([idx2freq[class_id] for class_id in sorted(idx2freq)], dtype=np.int32)
+            freq_np = np.array([idx2freq[class_id] for class_id in sorted(idx2freq)][:k], dtype=np.int32)
             f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
             labels_np = np.array(labels)
 
