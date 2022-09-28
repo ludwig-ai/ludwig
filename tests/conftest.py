@@ -56,48 +56,45 @@ def yaml_filename():
 
 
 @pytest.fixture(scope="module")
-def hyperopt_results(request):
-    """This function generates hyperopt results.
-
-    The request argument is used to allow indirect passing of parameters. In this test, it is a boolean that indicates
-    whether to use a single parameter or multiple parameters.
-    """
-    input_features = [
-        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
-        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
-    ]
-
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
-
-    csv_filename = uuid.uuid4().hex[:10].upper() + ".csv"
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    config = {
-        INPUT_FEATURES: input_features,
-        OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
-    }
-
-    output_feature_name = output_features[0][NAME]
-
-    parameters = {
-        "trainer.learning_rate": {
-            "space": "loguniform",
-            "lower": 0.0001,
-            "upper": 0.01,
+def hyperopt_results_single_parameter():
+    config, rel_path = _get_sample_config()
+    config[HYPEROPT] = {
+        "parameters": {
+            "trainer.learning_rate": {
+                "space": "loguniform",
+                "lower": 0.0001,
+                "upper": 0.01,
+            }
+        },
+        "goal": "minimize",
+        "output_feature": config[OUTPUT_FEATURES][0][NAME],
+        "validation_metrics": "loss",
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+        },
+        "search_alg": {
+            "type": "variant_generator",
         },
     }
-    if not request.param:
-        parameters.update(
-            {
-                output_feature_name + ".decoder.output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
-                output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
-            }
-        )
+    hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
+    return os.path.join(os.path.abspath("results"), "hyperopt_test")
 
-    hyperopt_configs = {
-        "parameters": parameters,
+
+@pytest.fixture(scope="module")
+def hyperopt_results_multiple_parameters():
+    config, rel_path = _get_sample_config()
+    output_feature_name = config[OUTPUT_FEATURES][0][NAME]
+    config[HYPEROPT] = {
+        "parameters": {
+            "trainer.learning_rate": {
+                "space": "loguniform",
+                "lower": 0.0001,
+                "upper": 0.01,
+            },
+            output_feature_name + ".decoder.output_size": {"space": "choice", "categories": [32, 64, 128, 256]},
+            output_feature_name + ".decoder.num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
+        },
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
@@ -109,12 +106,7 @@ def hyperopt_results(request):
             "type": "variant_generator",
         },
     }
-
-    # add hyperopt parameter space to the config
-    config[HYPEROPT] = hyperopt_configs
-
     hyperopt(config, dataset=rel_path, output_directory="results", experiment_name="hyperopt_test")
-
     return os.path.join(os.path.abspath("results"), "hyperopt_test")
 
 
@@ -178,3 +170,21 @@ def _get_default_system_config():
         "object_store_full_delay_ms": 100,
     }
     return system_config
+
+
+def _get_sample_config():
+    """Returns a sample config."""
+    input_features = [
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    csv_filename = uuid.uuid4().hex[:10].upper() + ".csv"
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
+    }
+    return config, rel_path
