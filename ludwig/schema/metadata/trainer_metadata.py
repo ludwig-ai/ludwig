@@ -24,6 +24,22 @@ TRAINER_METADATA = (
                                      expected_impact=ExpectedImpact.HIGH,
                                      literature_references=None,
                                      internal_only=False),
+      'auto_batch_size_ceiling': ParameterMetadata(ui_display_name='Auto Batch Size Ceiling',
+                                                  default_value_reasoning='Not typically required.',
+                                                  example_value=None,
+                                                  related_parameters=['batch_size'],
+                                                  description_implications='Value used internally for workflow retries '
+                                                                           'for Cuda OOM errors when using "auto" '
+                                                                           'batch size. These likely occur because of '
+                                                                           '(1) a memory leak, (2) large GPU tensors '
+                                                                           'introduced at runtime, or (3) overly '
+                                                                           'aggressive prefetching.',
+                                                  suggested_values=None,
+                                                  suggested_values_reasoning=None,
+                                                  commonly_used=False,
+                                                  expected_impact=ExpectedImpact.MEDIUM,
+                                                  literature_references=None,
+                                                  internal_only=True),                
      'checkpoints_per_epoch': ParameterMetadata(ui_display_name='Checkpoints per epoch',
                                                 default_value_reasoning='Per-epoch behavior, which scales according '
                                                                         'to the '
