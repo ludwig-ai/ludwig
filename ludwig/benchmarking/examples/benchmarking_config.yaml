@@ -1,4 +1,4 @@
-global_experiment_name: example_benchmarking_run
+experiment_name: example_benchmarking_run
 hyperopt: false
 process_config_file_path: /home/ray/process_config.py
 profiler:
