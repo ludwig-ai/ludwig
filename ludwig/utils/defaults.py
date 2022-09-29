@@ -64,8 +64,10 @@ def merge_hyperopt_with_trainer(config: dict) -> None:
     trainer = config[TRAINER]
     early_stop = trainer.get("early_stop")
     if early_stop is not None and early_stop != -1:
-        warnings.warn("Cannot set trainer parameter `early_stop` when using a hyperopt scheduler. We are unsetting "
-                      "this parameter in your config in order to allow hyperopt scheduler to continue.")
+        warnings.warn(
+            "Cannot set trainer parameter `early_stop` when using a hyperopt scheduler. We are unsetting "
+            "this parameter in your config in order to allow hyperopt scheduler to continue."
+        )
     trainer["early_stop"] = -1
 
     max_t = scheduler.get("max_t")
