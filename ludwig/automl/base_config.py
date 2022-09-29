@@ -225,7 +225,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
 def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
-    resources: dict,
+    resources: Resources,
     target_name: Union[str, List[str]] = None,
 ) -> dict:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
@@ -275,7 +275,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
 
 
 def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: dict, targets: Set[str] = None
+    fields: List[FieldInfo], row_count: int, resources: Resources, targets: Set[str] = None
 ) -> List[FieldMetadata]:
     """Computes metadata for each field in dataset.
 
