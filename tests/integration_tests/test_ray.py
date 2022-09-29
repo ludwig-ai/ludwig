@@ -254,43 +254,49 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
-# TODO(geoffrey): Add dataset_type="csv" back to parameters if we can prevent CI timeouts.
-@pytest.mark.parametrize("dataset_type", ["parquet"])
 @pytest.mark.distributed
-def test_ray_save_inputs_with_nans(tmpdir, dataset_type, ray_cluster_2cpu):
-    image_dest_folder = os.path.join(tmpdir, "generated_images")
-    audio_dest_folder = os.path.join(tmpdir, "generated_audio")
+@pytest.mark.parametrize(
+    "df_engine",
+    [
+        "dask",
+        pytest.param(
+            "modin",
+            marks=pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
+        ),
+    ],
+)
+def test_ray_tabular(df_engine, ray_cluster_2cpu):
     input_features = [
-        image_feature(
-            folder=image_dest_folder,
-            preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
-            encoder={"output_size": 16, "num_filters": 8},
-        ),
-        audio_feature(
-            folder=audio_dest_folder,
-            preprocessing={
-                "audio_file_length_limit_in_s": 3.0,
-                "missing_value_strategy": BFILL,
-                "in_memory": True,
-                "padding_value": 0,
-                "norm": "per_file",
-                "type": "fbank",
-                "window_length_in_s": 0.04,
-                "window_shift_in_s": 0.02,
-                "num_filter_bands": 80,
-            },
-        ),
-        sequence_feature(encoder={"reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
         number_feature(normalization="zscore"),
         set_feature(),
         binary_feature(),
         bag_feature(),
-        text_feature(),
-        timeseries_feature(),
+        h3_feature(),
         date_feature(),
-        # TODO: NaN handling not supported. See `test_ray_save_inputs_and_outputs_without_nans` below.
-        # vector_feature(),  # NaNs are not supported by the feature
+    ]
+    output_features = [
+        binary_feature(bool2str=["No", "Yes"]),
+        binary_feature(),
+        number_feature(normalization="zscore"),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine=df_engine,
+    )
+
+
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.distributed
+def test_ray_tabular_save_inputs(dataset_type, ray_cluster_2cpu):
+    input_features = [
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+        bag_feature(),
+        date_feature(),
         # TODO: feature type not yet supported
         # h3_feature(),  # ValueError casting large int strings (e.g. '5.864041857092157e+17') to int: MLI-72
     ]
@@ -309,24 +315,6 @@ def test_ray_save_inputs_with_nans(tmpdir, dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_save_inputs_without_nans(dataset_type, ray_cluster_2cpu):
-    input_features = [
-        vector_feature(),
-    ]
-    output_features = [
-        binary_feature(),
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-        dataset_type=dataset_type,
-        skip_save_processed_input=False,
-    )
-
-
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.distributed
 def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
@@ -337,8 +325,6 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
         vector_feature(),
         # TODO: feature type not yet supported
         # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors: MLI-71
-        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
-        # text_feature(decoder={"vocab_size": 3}),      # Error having to do with a missing key: MLI-70
     ]
     # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
     # flakiness in the test having to do with uneven allocation of samples between Ray workers.
@@ -353,62 +339,81 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize(
-    "df_engine",
-    [
-        "dask",
-        pytest.param(
-            "modin",
-            marks=pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
-        ),
-    ],
-)
-def test_ray_tabular(df_engine, ray_cluster_2cpu):
-    input_features = [
-        sequence_feature(encoder={"reduce_output": "sum"}),
-        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
-        number_feature(normalization="zscore"),
-        set_feature(),
-        binary_feature(),
-        bag_feature(),
-        vector_feature(),
-        h3_feature(),
-        date_feature(),
-    ]
-    output_features = [
-        binary_feature(bool2str=["No", "Yes"]),
-        binary_feature(),
-        number_feature(normalization="zscore"),
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine=df_engine,
-    )
-
-
-@pytest.mark.skip(reason="TODO torch")
-@pytest.mark.distributed
-def test_ray_text(ray_cluster_2cpu):
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+def test_ray_text(ray_cluster_2cpu, dataset_type):
     input_features = [
         text_feature(),
     ]
     output_features = [
-        text_feature(reduce_input=None, decoder={"type": "tagger"}),
+        binary_feature(),
+        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
     ]
-    run_test_with_features(input_features, output_features)
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        skip_save_processed_input=False,
+        nan_percent=0.1,
+    )
 
 
-@pytest.mark.skip(reason="TODO torch")
 @pytest.mark.distributed
-def test_ray_sequence(ray_cluster_2cpu):
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+def test_ray_sequence(ray_cluster_2cpu, dataset_type):
     input_features = [
-        sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": "lstm", "reduce_output": None})
+        sequence_feature(encoder={"reduce_output": "sum"}),
     ]
     output_features = [
-        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": False}, reduce_input=None)
+        binary_feature(),
+        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
     ]
-    run_test_with_features(input_features, output_features)
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        skip_save_processed_input=False,
+        nan_percent=0.1,
+    )
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+def test_ray_timeseries(ray_cluster_2cpu, dataset_type):
+    input_features = [
+        timeseries_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        skip_save_processed_input=False,
+        nan_percent=0.1,
+    )
+
+
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.distributed
+def test_ray_vector(dataset_type, ray_cluster_2cpu):
+    input_features = [
+        vector_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+    ]
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        skip_save_processed_input=False,
+        nan_percent=0.0,  # NaN handling not supported for vectors.
+    )
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
@@ -427,11 +432,15 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
     }
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(
         input_features,
         output_features,
+        df_engine="dask",
         dataset_type=dataset_type,
+        skip_save_processed_input=False,
         nan_percent=0.1,
     )
 
@@ -447,7 +456,9 @@ def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
             encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(
         input_features,
         output_features,
@@ -506,7 +517,9 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
         ),
     ]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(
         input_features,
         output_features,
@@ -530,7 +543,9 @@ def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
             encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(
         input_features,
         output_features,
@@ -557,13 +572,6 @@ def test_ray_split(ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_timeseries(ray_cluster_2cpu):
-    input_features = [timeseries_feature()]
-    output_features = [number_feature()]
-    run_test_with_features(input_features, output_features)
-
-
-@pytest.mark.distributed
 def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
@@ -574,7 +582,9 @@ def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
             },
         )
     ]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(input_features, output_features, expect_error=True)
 
 
@@ -588,7 +598,9 @@ def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
             preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
         ),
     ]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(input_features, output_features, expect_error=True)
 
 
@@ -730,7 +742,9 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
     }
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
 
     config = {
         "input_features": input_features,
@@ -777,7 +791,9 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
     }
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [audio_feature(folder=audio_dest_folder, preprocessing=preprocessing_params)]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
 
     config = {
         "input_features": input_features,
