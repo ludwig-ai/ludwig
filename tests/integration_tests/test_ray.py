@@ -340,52 +340,16 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_text(ray_cluster_2cpu, dataset_type):
+def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
     input_features = [
         text_feature(),
-    ]
-    output_features = [
-        binary_feature(),
-        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-        dataset_type=dataset_type,
-        skip_save_processed_input=False,
-        nan_percent=0.1,
-    )
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_sequence(ray_cluster_2cpu, dataset_type):
-    input_features = [
         sequence_feature(encoder={"reduce_output": "sum"}),
-    ]
-    output_features = [
-        binary_feature(),
-        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-        dataset_type=dataset_type,
-        skip_save_processed_input=False,
-        nan_percent=0.1,
-    )
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_timeseries(ray_cluster_2cpu, dataset_type):
-    input_features = [
         timeseries_feature(),
     ]
     output_features = [
         binary_feature(),
+        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
+        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
     ]
     run_test_with_features(
         input_features,
