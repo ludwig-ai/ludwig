@@ -1,26 +1,27 @@
-import pytest
+import json
 import logging
 import os
-import json
 
-from ludwig.utils.data_utils import NumpyEncoder
+import pytest
+
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
+from ludwig.utils.data_utils import NumpyEncoder
 from tests.integration_tests.utils import (
+    audio_feature,
+    bag_feature,
     binary_feature,
     category_feature,
+    date_feature,
     generate_data,
+    h3_feature,
+    image_feature,
     number_feature,
     sequence_feature,
     set_feature,
     text_feature,
-    vector_feature,
     timeseries_feature,
-    h3_feature,
-    bag_feature,
-    image_feature,
-    audio_feature,
-    date_feature
+    vector_feature,
 )
 
 
@@ -77,9 +78,9 @@ def test_training_determinism(csv_filename, backend, tmpdir):
         skip_save_processed_input=True,
     )
 
-    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(eval_stats_2,
-                                                                                              cls=NumpyEncoder,
-                                                                                              sort_keys=True, indent=4)
-    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(train_stats_2,
-                                                                                               cls=NumpyEncoder,
-                                                                                               sort_keys=True, indent=4)
+    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
+        eval_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
+    )
+    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
+        train_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
+    )
