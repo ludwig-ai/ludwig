@@ -53,6 +53,7 @@ from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
@@ -989,6 +990,10 @@ class RayBackend(RemoteTrainingMixin, Backend):
         if not ray.is_initialized():
             return 1
         return len(ray.nodes())
+
+    def get_available_resources(self) -> Resources:
+        resources = ray.cluster_resources()
+        return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
 
 
 def initialize_ray():

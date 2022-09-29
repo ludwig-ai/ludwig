@@ -44,9 +44,9 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
-from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
-from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class _SetPreprocessing(torch.nn.Module):
             )
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
-        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.tokenizer = get_tokenizer_from_registry(metadata["preprocessing"]["tokenizer"])()
         self.vocab_size = metadata["vocab_size"]
         self.unknown_symbol = UNKNOWN_SYMBOL
         self.unit_to_id = metadata["str2idx"]

@@ -1,6 +1,7 @@
 ## Ludwig Datasets API
 
-The Ludwig Dataset Zoo provides datasets that can be directly plugged into a Ludwig model.
+The Ludwig Dataset Zoo provides datasets that can be directly plugged into a Ludwig model. For each dataset, we've also
+included an example Ludwig config which should train reasonably fast on a current-generation laptop.
 
 The simplest way to use a dataset is to import it:
 
@@ -14,24 +15,82 @@ dataset_df = titanic.load()
 train_df, test_df, _ = titanic.load(split=True)
 ```
 
-The `ludwig.datasets` API also provides functions to list, describe, and get datasets.  For example:
+The `ludwig.datasets` API provides functions to list, describe, and get datasets:
+
+______________________________________________________________________
+
+### list_datasets
+
+Gets a list of the names of available datasets.
+
+**Example:**
 
 ```python
-import ludwig.datasets
-
-# Gets a list of all available dataset names.
 dataset_names = ludwig.datasets.list_datasets()
+```
 
-# Prints the description of the titanic dataset.
+______________________________________________________________________
+
+### describe_dataset
+
+Gets a human-readable description string for a dataset
+
+**Example:**
+
+```python
 print(ludwig.datasets.describe_dataset("titanic"))
+```
+
+______________________________________________________________________
+
+### get_dataset
+
+Get a dataset module by name
+
+**Example:**
+
+```python
+titanic_dataset = ludwig.datasets.get_dataset("titanic")
+```
+
+______________________________________________________________________
+
+### model_configs_for_dataset
+
+Gets a dictionary of model configs for the specified dataset.  Keys are the config names, and may
+contain the special keys:
+
+- `default` - The default config for the dataset.  Should train to decent performance under 10 minutes on a tyipcal
+  laptop without GPU.
+- `best` - The best known config for the dataset.  Should be replaced when a better config is found.  This is a good
+  opportunity for contributions, if you find a better one please check it in and open a PR!
+
+**Example:**
+
+```python
+configs = ludwig.datasets.model_configs_for_dataset("higgs")
+default_higgs_config = configs["default"]
+best_higgs_config = configs["best"]
+```
+
+______________________________________________________________________
+
+## Training a model using builtin dataset and config
+
+This example code trains a model on the Titanic dataset using the default config:
+
+```python
+from ludwig.api import LudwigModel
+import ludwig.datasets
 
 titanic = ludwig.datasets.get_dataset("titanic")
 
-# Loads into single dataframe with a 'split' column:
 dataset_df = titanic.load()
 
-# Loads into split dataframes:
-train_df, test_df, _ = titanic.load(split=True)
+titanic_config = titanic.default_model_config
+
+model = LudwigModel(titanic_config)
+model.train(dataset_df)
 ```
 
 Some datasets are hosted on [Kaggle](https://www.kaggle.com) and require a kaggle account. To use these, you'll need to

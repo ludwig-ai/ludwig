@@ -1,0 +1,273 @@
+output_features:
+  - name: loss
+    type: number
+input_features:
+  - name: cat1
+    type: category
+  - name: cat2
+    type: category
+  - name: cat3
+    type: category
+  - name: cat4
+    type: category
+  - name: cat5
+    type: category
+  - name: cat6
+    type: category
+  - name: cat7
+    type: category
+  - name: cat8
+    type: category
+  - name: cat9
+    type: category
+  - name: cat10
+    type: category
+  - name: cat11
+    type: category
+  - name: cat12
+    type: category
+  - name: cat13
+    type: category
+  - name: cat14
+    type: category
+  - name: cat15
+    type: category
+  - name: cat16
+    type: category
+  - name: cat17
+    type: category
+  - name: cat18
+    type: category
+  - name: cat19
+    type: category
+  - name: cat20
+    type: category
+  - name: cat21
+    type: category
+  - name: cat22
+    type: category
+  - name: cat23
+    type: category
+  - name: cat24
+    type: category
+  - name: cat25
+    type: category
+  - name: cat26
+    type: category
+  - name: cat27
+    type: category
+  - name: cat28
+    type: category
+  - name: cat29
+    type: category
+  - name: cat30
+    type: category
+  - name: cat31
+    type: category
+  - name: cat32
+    type: category
+  - name: cat33
+    type: category
+  - name: cat34
+    type: category
+  - name: cat35
+    type: category
+  - name: cat36
+    type: category
+  - name: cat37
+    type: category
+  - name: cat38
+    type: category
+  - name: cat39
+    type: category
+  - name: cat40
+    type: category
+  - name: cat41
+    type: category
+  - name: cat42
+    type: category
+  - name: cat43
+    type: category
+  - name: cat44
+    type: category
+  - name: cat45
+    type: category
+  - name: cat46
+    type: category
+  - name: cat47
+    type: category
+  - name: cat48
+    type: category
+  - name: cat49
+    type: category
+  - name: cat50
+    type: category
+  - name: cat51
+    type: category
+  - name: cat52
+    type: category
+  - name: cat53
+    type: category
+  - name: cat54
+    type: category
+  - name: cat55
+    type: category
+  - name: cat56
+    type: category
+  - name: cat57
+    type: category
+  - name: cat58
+    type: category
+  - name: cat59
+    type: category
+  - name: cat60
+    type: category
+  - name: cat61
+    type: category
+  - name: cat62
+    type: category
+  - name: cat63
+    type: category
+  - name: cat64
+    type: category
+  - name: cat65
+    type: category
+  - name: cat66
+    type: category
+  - name: cat67
+    type: category
+  - name: cat68
+    type: category
+  - name: cat69
+    type: category
+  - name: cat70
+    type: category
+  - name: cat71
+    type: category
+  - name: cat72
+    type: category
+  - name: cat73
+    type: category
+  - name: cat74
+    type: category
+  - name: cat75
+    type: category
+  - name: cat76
+    type: category
+  - name: cat77
+    type: category
+  - name: cat78
+    type: category
+  - name: cat79
+    type: category
+  - name: cat80
+    type: category
+  - name: cat81
+    type: category
+  - name: cat82
+    type: category
+  - name: cat83
+    type: category
+  - name: cat84
+    type: category
+  - name: cat85
+    type: category
+  - name: cat86
+    type: category
+  - name: cat87
+    type: category
+  - name: cat88
+    type: category
+  - name: cat89
+    type: category
+  - name: cat90
+    type: category
+  - name: cat91
+    type: category
+  - name: cat92
+    type: category
+  - name: cat93
+    type: category
+  - name: cat94
+    type: category
+  - name: cat95
+    type: category
+  - name: cat96
+    type: category
+  - name: cat97
+    type: category
+  - name: cat98
+    type: category
+  - name: cat99
+    type: category
+  - name: cat100
+    type: category
+  - name: cat101
+    type: category
+  - name: cat102
+    type: category
+  - name: cat103
+    type: category
+  - name: cat104
+    type: category
+  - name: cat105
+    type: category
+  - name: cat106
+    type: category
+  - name: cat107
+    type: category
+  - name: cat108
+    type: category
+  - name: cat109
+    type: category
+  - name: cat110
+    type: category
+  - name: cat111
+    type: category
+  - name: cat112
+    type: category
+  - name: cat113
+    type: category
+  - name: cat114
+    type: category
+  - name: cat115
+    type: category
+  - name: cat116
+    type: category
+  - name: cont1
+    type: number
+  - name: cont2
+    type: number
+  - name: cont3
+    type: number
+  - name: cont4
+    type: number
+  - name: cont5
+    type: number
+  - name: cont6
+    type: number
+  - name: cont7
+    type: number
+  - name: cont8
+    type: number
+  - name: cont9
+    type: number
+  - name: cont10
+    type: number
+  - name: cont11
+    type: number
+  - name: cont12
+    type: number
+  - name: cont13
+    type: number
+  - name: cont14
+    type: number
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

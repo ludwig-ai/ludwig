@@ -1153,7 +1153,7 @@ def build_dataset(
 
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
-        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1344,7 +1344,7 @@ def build_data(
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values
-        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+        handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
@@ -1454,7 +1454,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     return None
 
 
-def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
+def handle_missing_values(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
 
     # Check for the precomputed fill value in the metadata
@@ -1471,6 +1471,15 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
+
+        # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
+        # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
+        # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
+        # up with the other missing value strategy (ffill) to ensure all NaNs are filled
+        if backend.df_engine.compute(dataset_cols[feature[COLUMN]].isna().sum()) > 0:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
+                method=BFILL if missing_value_strategy == FFILL else FFILL,
+            )
     elif missing_value_strategy == DROP_ROW:
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will

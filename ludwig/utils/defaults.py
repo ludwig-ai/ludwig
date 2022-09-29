@@ -196,7 +196,7 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def update_feature_from_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
+def apply_global_defaults(config: Dict[str, Any], feature_dict: Dict[str, Any], config_feature_group: str):
     """Updates feature_dict belonging to an input or output feature using global encoder, decoder and loss related
     default parameters specified in the Ludwig config.
 
@@ -296,7 +296,13 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         get_from_registry(input_feature[TYPE], input_type_registry).populate_defaults(input_feature)
 
         # Update encoder parameters for output feature from global defaults
-        update_feature_from_defaults(config, input_feature, INPUT_FEATURES)
+        apply_global_defaults(config, input_feature, INPUT_FEATURES)
+
+        # Express all input feature parameters back into the config.
+        full_input_feature_config, _ = load_config_with_kwargs(
+            input_type_registry[input_feature[TYPE]].get_schema_cls(), input_feature
+        )
+        input_feature.update(asdict(full_input_feature_config))
 
     # ===== Combiner =====
     set_default_value(config, COMBINER, {TYPE: default_combiner_type})
@@ -317,7 +323,13 @@ def merge_with_defaults(config: dict) -> dict:  # noqa: F821
         set_default_value(output_feature[PREPROCESSING], "missing_value_strategy", DROP_ROW)
 
         # Update decoder and loss related parameters for output feature from global defaults
-        update_feature_from_defaults(config, output_feature, OUTPUT_FEATURES)
+        apply_global_defaults(config, output_feature, OUTPUT_FEATURES)
+
+        # Express all output feature parameters back into the config.
+        full_output_feature_config, _ = load_config_with_kwargs(
+            output_type_registry[output_feature[TYPE]].get_schema_cls(), output_feature
+        )
+        output_feature.update(asdict(full_output_feature_config))
 
     # ===== Hyperpot =====
     if HYPEROPT in config:
