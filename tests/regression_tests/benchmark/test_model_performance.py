@@ -1,8 +1,10 @@
 import os
+from pprint import pprint
+
 import pytest
+
 from ludwig.benchmarking.benchmark import benchmark
 from ludwig.utils.data_utils import load_json, load_yaml
-from pprint import pprint
 
 BENCHMARKING_CONFIG = """
 experiment_name: {experiment_name}
@@ -20,15 +22,13 @@ experiments:
     config_path: {config_path}
 """
 
-dataset_name_to_metric = {"ames_housing": "r2",
-                          "mercedes_benz_greener": "r2",
-                          "protein": "r2",
-                          }
+dataset_name_to_metric = {
+    "ames_housing": "r2",
+    "mercedes_benz_greener": "r2",
+    "protein": "r2",
+}
 
-dataset_to_expected_performance = {"ames_housing": 0.69,
-                                   "mercedes_benz_greener": 0.49,
-                                   "protein": 0.51
-                                   }
+dataset_to_expected_performance = {"ames_housing": 0.69, "mercedes_benz_greener": 0.49, "protein": 0.51}
 
 
 @pytest.mark.benchmark
@@ -39,12 +39,13 @@ def test_performance(dataset, tmpdir):
     config_path = os.path.join(benchmark_directory, f"{dataset}.yaml")
     process_config_file_path = os.path.join(benchmark_directory, "process_config.py")
 
-    benchmarking_config = BENCHMARKING_CONFIG.format(experiment_name=experiment_name,
-                                                     process_config_file_path=process_config_file_path,
-                                                     export_base_path=tmpdir,
-                                                     dataset=dataset,
-                                                     config_path=config_path,
-                                                     )
+    benchmarking_config = BENCHMARKING_CONFIG.format(
+        experiment_name=experiment_name,
+        process_config_file_path=process_config_file_path,
+        export_base_path=tmpdir,
+        dataset=dataset,
+        config_path=config_path,
+    )
 
     benchmarking_config_fp = tmpdir + "/benchmarking_config.yaml"
     with open(benchmarking_config_fp, "w") as f:
