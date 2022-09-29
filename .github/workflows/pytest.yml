@@ -191,7 +191,7 @@ jobs:
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
 
-    name: benchmark-py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+    name: benchmark, py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ray-${{ matrix.ray-version }}, ${{ matrix.os }}
 
     timeout-minutes: 60
     steps:
@@ -230,22 +230,20 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
-
+          # skip installation of some requirements
           echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
-
+          echo > requirements-temp && mv requirements-temp requirements_serve.txt
+          echo > requirements-temp && mv requirements-temp requirements_viz.txt
+          echo > requirements-temp && mv requirements-temp requirements_explain.txt
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
-
           pip install ray==$RAY_VERSION
           ray_expected=$(python -c "import ray; print(ray.__version__)")
-
           torch_expected=$(python -c "import torch; print(torch.__version__)")
-
           pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
-
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
           python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
@@ -273,6 +271,9 @@ jobs:
         shell: bash
 
       - name: Tests
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
           pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests
 

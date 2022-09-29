@@ -26,13 +26,22 @@ dataset_name_to_metric = {
     "ames_housing": "r2",
     "mercedes_benz_greener": "r2",
     "protein": "r2",
+    "naval": "r2",
+    "sarcos": "r2",
+    "adult_census_income": "accuracy",
 }
 
-dataset_to_expected_performance = {"ames_housing": 0.69, "mercedes_benz_greener": 0.49, "protein": 0.51}
+dataset_to_expected_performance = {"ames_housing": 0.49,
+                                   "mercedes_benz_greener": 0.49,
+                                   "protein": 0.51,
+                                   "sarcos": 0,
+                                   "naval": 0,
+                                   "adult_census_income": 0
+                                   }
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("dataset", ["protein", "sarcos", "naval"])
+@pytest.mark.parametrize("dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"])
 def test_performance(dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"
@@ -55,9 +64,9 @@ def test_performance(dataset, tmpdir):
 
     test_statistics_fp = os.path.join(tmpdir, dataset, experiment_name, "experiment_run", "test_statistics.json")
     test_statistics = load_json(test_statistics_fp)
-    output_feature_name = load_yaml(config_path)["output_features"][0]["name"]
-    metric_name = dataset_name_to_metric[dataset]
-    expected_performance = dataset_to_expected_performance[dataset]
+    # output_feature_name = load_yaml(config_path)["output_features"][0]["name"]
+    # metric_name = dataset_name_to_metric[dataset]
+    # expected_performance = dataset_to_expected_performance[dataset]
     pprint(test_statistics)
     # assert test_statistics[output_feature_name][metric_name] > expected_performance
 
@@ -79,6 +88,6 @@ def test_performance(dataset, tmpdir):
     print()
     pprint(preprocessing_resource_usage)
     print()
-    print(training_resource_usage)
+    pprint(training_resource_usage)
     print()
-    print(evaluation_resource_usage)
+    pprint(evaluation_resource_usage)
