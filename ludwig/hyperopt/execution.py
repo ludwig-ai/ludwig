@@ -63,6 +63,8 @@ try:
             return backend == RAY
         return isinstance(backend, RayBackend)
 
+    import dask
+
 except ImportError as e:
     logger.warning(
         f"ImportError (execution.py) failed to import RayBackend with error: \n\t{e}. "
@@ -297,7 +299,7 @@ class RayTuneExecutor:
 
     @property
     def _cpu_resources_per_trial_non_none(self):
-        return self.cpu_resources_per_trial if self.cpu_resources_per_trial is not None else 1
+        return self.cpu_resources_per_trial if self.cpu_resources_per_trial is not None else 2
 
     @property
     def _gpu_resources_per_trial_non_none(self):
@@ -548,7 +550,8 @@ class RayTuneExecutor:
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
             num_gpus = resources.required_resources.get("GPU", 0)
-            num_cpus = resources.required_resources.get("CPU", 1) if num_gpus == 0 else 0
+            # Leave 1 CPU to ensure resources for Dask operations and use the result for Horovod
+            num_cpus = resources.required_resources.get("CPU", 1) - 1 if num_gpus == 0 else 0
 
             hvd_kwargs = {
                 "num_workers": int(num_gpus) if use_gpu else 1,
@@ -565,12 +568,23 @@ class RayTuneExecutor:
         stats = []
 
         def _run():
-            train_stats, eval_stats = run_experiment(
-                **hyperopt_dict,
-                model_resume_path=checkpoint_dir,
-                parameters=config,
-            )
-            stats.append((train_stats, eval_stats))
+            # TODO: Refactor into a function that yields the context manager if required
+            if is_using_ray_backend:
+                with dask.config.set(annotations={"ray_remote_args": {"placement_group": None, "num_cpus": 1}}):
+                    print("Created Dask Context Manager")
+                    train_stats, eval_stats = run_experiment(
+                        **hyperopt_dict,
+                        model_resume_path=checkpoint_dir,
+                        parameters=config,
+                    )
+                    stats.append((train_stats, eval_stats))
+            else:
+                train_stats, eval_stats = run_experiment(
+                    **hyperopt_dict,
+                    model_resume_path=checkpoint_dir,
+                    parameters=config,
+                )
+                stats.append((train_stats, eval_stats))
 
         if is_using_ray_backend:
             # We have to pull the results to the trial actor
@@ -732,10 +746,29 @@ class RayTuneExecutor:
             else:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
+        # Set resources per trial (local)
         resources_per_trial = {
             "cpu": self._cpu_resources_per_trial_non_none,
             "gpu": self._gpu_resources_per_trial_non_none,
         }
+
+        # Allocate enough resources for the trial when using a RayBackend
+        if _is_ray_backend(backend):
+            # Trainable doesn't require resources
+            resources_for_trainable = [{}]
+
+            # For now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
+            # but we do want to enable it when GPUs are specified
+            if self._gpu_resources_per_trial_non_none:
+                resources_for_dataset_tasks = [{"CPU": 1, "GPU": 0}] * self._cpu_resources_per_trial_non_none
+                resources_for_trainer = [{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none
+            else:
+                resources_for_dataset_tasks = [{"CPU": 1}]
+                resources_for_trainer = [{"CPU": 1}] * (self._cpu_resources_per_trial_non_none - 1)
+
+            resources_per_trial = PlacementGroupFactory(
+                resources_for_trainable + resources_for_dataset_tasks + resources_for_trainer
+            )
 
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
             return self._run_experiment(
@@ -753,15 +786,6 @@ class RayTuneExecutor:
                 run_experiment_trial,
                 tune_config,
                 tune_callbacks,
-            )
-
-        if _is_ray_backend(backend):
-            # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
-            # but we do want to enable it when GPUs are specified
-            resources_per_trial = PlacementGroupFactory(
-                [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
-                if self._gpu_resources_per_trial_non_none
-                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}]
             )
 
         if has_remote_protocol(output_directory):
