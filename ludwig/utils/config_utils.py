@@ -1,6 +1,6 @@
 from typing import Any, Dict, Set, Union
 
-from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, TYPE
+from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.config_object import Config
 from ludwig.utils.misc_utils import get_from_registry
@@ -47,6 +47,18 @@ def get_preprocessing_params(config_obj: Config) -> Dict[str, Any]:
     preprocessing_params.update(config_obj.preprocessing.to_dict())
     for feat_type in input_type_registry.keys():
         preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
+    return preprocessing_params
+
+
+def merge_config_preprocessing_with_feature_specific_defaults(
+    config_preprocessing: Dict[str, Any], config_defaults: Dict[str, Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
+    parameters from config defaults."""
+    preprocessing_params = {}
+    preprocessing_params.update(config_preprocessing)
+    for feature_type in config_defaults:
+        preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
     return preprocessing_params
 
 

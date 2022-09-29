@@ -28,6 +28,7 @@ from ludwig.constants import (
     BINARY,
     CHECKSUM,
     COLUMN,
+    DEFAULTS,
     DROP_ROW,
     ENCODER,
     FFILL,
@@ -56,7 +57,7 @@ from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.config_utils import get_preprocessing_params
+from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -1888,7 +1889,9 @@ def preprocess_for_prediction(
         if num_overrides > 0:
             logger.warning("Using in_memory = False is not supported " "with {} data format.".format(data_format))
 
-    preprocessing_params = get_preprocessing_params(config_obj)
+    preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
+        config.get(PREPROCESSING, {}), config.get(DEFAULTS, {})
+    )
     preprocessing_params = merge_dict(default_preprocessing_parameters, preprocessing_params)
 
     # if training_set_metadata is a string, assume it's a path to load the json
