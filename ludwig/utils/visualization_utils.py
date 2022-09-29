@@ -21,6 +21,7 @@ from sys import platform
 
 import numpy as np
 import pandas as pd
+import ptitprince as pt
 from packaging import version
 
 from ludwig.constants import SPACE, TRAINING, VALIDATION
@@ -1369,7 +1370,27 @@ def hyperopt_float_plot(hyperopt_results_df, hp_name, metric, title, filename, l
 def hyperopt_category_plot(hyperopt_results_df, hp_name, metric, title, filename, log_scale=True):
     sns.set_style("whitegrid")
     plt.figure()
-    seaborn_figure = sns.violinplot(x=hp_name, y=metric, data=hyperopt_results_df, fit_reg=False)
+
+    # Ensure that all parameter values have at least 2 trials, otherwise the Raincloud Plot will create awkward
+    # looking "flat clouds" in the cloud part of the plot (the "rain" part is ok with 1 trial). In this case,
+    # just use stripplots since they are categorical scatter plots.
+    parameter_to_trial_count = hyperopt_results_df[hp_name].value_counts()
+    parameter_to_trial_count = parameter_to_trial_count[parameter_to_trial_count < 2]
+
+    if len(parameter_to_trial_count) != 0:
+        seaborn_figure = sns.stripplot(x=hp_name, y=metric, data=hyperopt_results_df, size=5)
+    else:
+        seaborn_figure = pt.RainCloud(
+            x=hp_name,
+            y=metric,
+            data=hyperopt_results_df,
+            palette="Set2",
+            bw=0.2,
+            width_viol=0.7,
+            point_size=6,
+            cut=1,
+        )
+
     seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     sns.despine()
@@ -1386,6 +1407,10 @@ def hyperopt_pair_plot(hyperopt_results_df, metric, title, filename):
     params = sorted(list(hyperopt_results_df.keys()))
     params.remove(metric)
     num_param = len(params)
+
+    # Pair plot is empty if there's only 1 parameter, so skip creating a pair plot
+    if num_param == 1:
+        return
 
     sns.set_style("white")
     fig = plt.figure(figsize=(20, 20))
