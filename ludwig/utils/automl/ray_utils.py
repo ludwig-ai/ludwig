@@ -9,7 +9,7 @@ except ImportError:
     raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
 
 
-def get_available_resources() -> dict:
+def get_available_resources() -> Resources:
     # returns total number of gpus and cpus
     resources = ray.cluster_resources()
     gpus = resources.get("GPU", 0)
