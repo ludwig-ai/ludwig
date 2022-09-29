@@ -1,6 +1,7 @@
 import os
 
 from ludwig.backend.ray import initialize_ray
+from ludwig.utils.system_utils import Resources
 
 try:
     import ray
@@ -13,8 +14,7 @@ def get_available_resources() -> dict:
     resources = ray.cluster_resources()
     gpus = resources.get("GPU", 0)
     cpus = resources.get("CPU", 0)
-    resources = {"gpu": gpus, "cpu": cpus}
-    return resources
+    return Resources(cpus=cpus, gpus=gpus)
 
 
 def _ray_init():
