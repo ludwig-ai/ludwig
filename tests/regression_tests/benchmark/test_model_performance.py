@@ -62,13 +62,23 @@ def test_performance(dataset, tmpdir):
     assert test_statistics[output_feature_name][metric_name] > expected_performance
 
     # todo (wael): enable profiler and add resource usage asserts (esp. time and memory usage)
-    # preprocessing_resource_usage_fp = os.path.join(tmpdir, dataset, experiment_name, "system_resource_usage",
-    #                                                "preprocessing", "run_0.json")
-    # training_resource_usage_fp = os.path.join(tmpdir, dataset, experiment_name, "system_resource_usage", "training",
-    #                                           "run_0.json")
-    # evaluation_resource_usage_fp = os.path.join(tmpdir, dataset, experiment_name, "system_resource_usage", "evaluation",
-    #                                             "run_0.json")
-    #
-    # preprocessing_resource_usage = load_json(preprocessing_resource_usage_fp)
-    # training_resource_usage = load_json(training_resource_usage_fp)
-    # evaluation_resource_usage = load_json(evaluation_resource_usage_fp)
+    preprocessing_resource_usage_fp = os.path.join(
+        tmpdir, dataset, experiment_name, "system_resource_usage", "preprocessing", "run_0.json"
+    )
+    training_resource_usage_fp = os.path.join(
+        tmpdir, dataset, experiment_name, "system_resource_usage", "training", "run_0.json"
+    )
+    evaluation_resource_usage_fp = os.path.join(
+        tmpdir, dataset, experiment_name, "system_resource_usage", "evaluation", "run_0.json"
+    )
+
+    preprocessing_resource_usage = load_json(preprocessing_resource_usage_fp)
+    training_resource_usage = load_json(training_resource_usage_fp)
+    evaluation_resource_usage = load_json(evaluation_resource_usage_fp)
+
+    print()
+    pprint(preprocessing_resource_usage)
+    print()
+    print(training_resource_usage)
+    print()
+    print(evaluation_resource_usage)
