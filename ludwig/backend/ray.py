@@ -168,17 +168,20 @@ def train_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
+    print("Inside train_fn of runner")
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     try:
         initialize_pytorch(horovod=hvd)
 
+        print("Getting train shard")
         train_shard = RayDatasetShard(
             rt.get_dataset_shard("train"),
             features,
             training_set_metadata,
         )
 
+        print("Getting val shard")
         try:
             val_shard = rt.get_dataset_shard("val")
         except KeyError:
@@ -191,6 +194,7 @@ def train_fn(
                 training_set_metadata,
             )
 
+        print("Getting Test Shard")
         try:
             test_shard = rt.get_dataset_shard("test")
         except KeyError:
@@ -203,6 +207,7 @@ def train_fn(
                 training_set_metadata,
             )
 
+        print("Getting reference to model")
         model = ray.get(model_ref)
         device = get_torch_device()
         model = model.to(device)
@@ -353,6 +358,7 @@ class RayTrainerV2(BaseTrainer):
 
     @contextlib.contextmanager
     def create_runner(self):
+        print(f"Creating Ray Trainer with args: {get_trainer_kwargs()}")
         trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
         trainer.start()
         try:
@@ -809,8 +815,9 @@ class RayBackend(RemoteTrainingMixin, Backend):
         initialize_ray()
 
         dask.config.set(scheduler=ray_dask_get)
+
         # Disable placement groups on dask
-        dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
+        # dask.config.set(annotations={"ray_remote_args": {"placement_group": None}})
 
     def generate_bundles(self, num_cpu):
         # Ray requires that each bundle be scheduleable on a single node.
