@@ -24,7 +24,6 @@ from dateutil.parser import parse
 from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -107,7 +106,6 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: DateInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)

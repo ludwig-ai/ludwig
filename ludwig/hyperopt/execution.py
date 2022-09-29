@@ -37,7 +37,7 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.config_object import Config
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -456,7 +456,7 @@ class RayTuneExecutor:
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        modified_config = merge_with_defaults(modified_config, Config(modified_config))
+        modified_config = Config(modified_config).get_config_dict()
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'

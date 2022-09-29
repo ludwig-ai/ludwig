@@ -34,7 +34,6 @@ from ludwig.constants import (
 from ludwig.schema.config_object import Config
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
     binary_feature,
@@ -109,8 +108,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
         # hyperopt scheduler cannot be used with early stopping
         config[HYPEROPT][EXECUTOR][SCHEDULER] = SCHEDULER_DICT
 
-    config_obj = Config(config)
-    merged_config = merge_with_defaults(config, config_obj)
+    merged_config = Config(config).get_config_dict()
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.
@@ -125,8 +123,7 @@ def test_missing_outputs_drop_rows():
         DEFAULTS: {CATEGORY: {PREPROCESSING: {MISSING_VALUE_STRATEGY: FILL_WITH_MODE}}},
     }
 
-    config_obj = Config(config)
-    merged_config = merge_with_defaults(config, config_obj)
+    merged_config = Config(config).get_config_dict()
 
     global_preprocessing = merged_config[DEFAULTS]
     input_feature_config = merged_config[INPUT_FEATURES][0]
@@ -147,8 +144,7 @@ def test_default_model_type():
         OUTPUT_FEATURES: [category_feature()],
     }
 
-    config_obj = Config(config)
-    merged_config = merge_with_defaults(config, config_obj)
+    merged_config = Config(config).get_config_dict()
 
     assert merged_config[MODEL_TYPE] == MODEL_ECD
 
@@ -168,8 +164,7 @@ def test_default_trainer_type(model_trainer_type):
         MODEL_TYPE: model_type,
     }
 
-    config_obj = Config(config)
-    merged_config = merge_with_defaults(config, config_obj)
+    merged_config = Config(config).get_config_dict()
 
     assert merged_config[TRAINER][TYPE] == expected_trainer_type
 
@@ -183,8 +178,7 @@ def test_overwrite_trainer_type():
         "trainer": {"type": expected_trainer_type},
     }
 
-    config_obj = Config(config)
-    merged_config = merge_with_defaults(config, config_obj)
+    merged_config = Config(config).get_config_dict()
 
     assert merged_config[TRAINER][TYPE] == expected_trainer_type
 
@@ -276,8 +270,7 @@ def test_merge_with_defaults():
     }
 
     updated_config = upgrade_to_latest_version(legacy_config_format)
-    config_obj = Config(updated_config)
-    merged_config = merge_with_defaults(updated_config, config_obj)
+    merged_config = Config(updated_config).get_config_dict()
 
     assert len(merged_config[DEFAULTS]) == 13
     assert ENCODER in merged_config[DEFAULTS][CATEGORY]

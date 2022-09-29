@@ -33,7 +33,6 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.schema.config_object import Config
 from ludwig.utils.automl.utils import get_model_type
-from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.torch_utils import initialize_pytorch
 
 logger = logging.getLogger(__name__)
@@ -209,7 +208,7 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
     fits_in_memory = False
     tried_reduce_seq_len = False
     config_obj = Config(config)
-    raw_config = merge_with_defaults(config, config_obj)
+    raw_config = config_obj.get_config_dict()
     training_set_metadata = get_trainingset_metadata(raw_config, dataset, backend)
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}

@@ -27,7 +27,6 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.schema.config_object import Config
-from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 try:
@@ -140,8 +139,7 @@ def run_hyperopt_executor(
         df["split"] = 0
         df.to_csv(rel_path)
 
-    config_obj = Config(config)
-    config = merge_with_defaults(config, config_obj)
+    config = Config(config).get_config_dict()
 
     hyperopt_config = config["hyperopt"]
 

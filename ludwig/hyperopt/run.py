@@ -39,7 +39,7 @@ from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, s
 from ludwig.schema.config_object import Config
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
 
@@ -198,20 +198,20 @@ def hyperopt(
     else:
         config_dict = config
 
-    # backwards compatibility
-    config = upgrade_to_latest_version(config_dict)
-    config_obj = Config(config)
-
-    # Retain pre-merged config for hyperopt schema generation
-    premerged_config = copy.deepcopy(config)
-
-    # merge config with defaults
-    config = merge_with_defaults(config, config_obj)
-
     if HYPEROPT not in config:
         raise ValueError("Hyperopt Section not present in config")
 
-    hyperopt_config = config[HYPEROPT]
+    # backwards compatibility
+    upgraded_config = upgrade_to_latest_version(config_dict)
+    config_obj = Config(upgraded_config)
+
+    # Retain pre-merged config for hyperopt schema generation
+    premerged_config = copy.deepcopy(upgraded_config)
+
+    # Get full config with defaults
+    full_config = config_obj.get_config_dict()
+
+    hyperopt_config = full_config[HYPEROPT]
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
@@ -234,7 +234,7 @@ def hyperopt(
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
-    splitter = get_splitter(**config[PREPROCESSING]["split"])
+    splitter = get_splitter(**full_config[PREPROCESSING]["split"])
     if split == TRAINING:
         if training_set is None and not splitter.has_split(0):
             raise ValueError(
@@ -267,7 +267,7 @@ def hyperopt(
         if metric != LOSS:
             raise ValueError('The only valid metric for "combined" output feature is "loss"')
     else:
-        output_feature_names = {of[NAME] for of in config[OUTPUT_FEATURES]}
+        output_feature_names = {of[NAME] for of in full_config[OUTPUT_FEATURES]}
         if output_feature not in output_feature_names:
             raise ValueError(
                 'The output feature specified for hyperopt "{}" '
@@ -276,7 +276,7 @@ def hyperopt(
             )
 
         output_feature_type = None
-        for of in config[OUTPUT_FEATURES]:
+        for of in full_config[OUTPUT_FEATURES]:
             if of[NAME] == output_feature:
                 output_feature_type = of[TYPE]
         feature_class = get_from_registry(output_feature_type, output_type_registry)
@@ -311,13 +311,13 @@ def hyperopt(
     for callback in callbacks or []:
         callback.on_hyperopt_init(experiment_name)
 
-    if not should_tune_preprocessing(config):
+    if not should_tune_preprocessing(full_config):
         # preprocessing is not being tuned, so generate it once before starting trials
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_start(experiment_name)
 
         model = LudwigModel(
-            config=config,
+            config=full_config,
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,

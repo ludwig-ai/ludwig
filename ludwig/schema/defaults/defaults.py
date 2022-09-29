@@ -53,4 +53,4 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
 def get_defaults_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
-    return schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
+    return schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig, additional_properties=False)

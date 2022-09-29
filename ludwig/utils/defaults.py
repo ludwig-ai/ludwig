@@ -17,39 +17,27 @@ import argparse
 import copy
 import logging
 import sys
+from typing import Dict
 
 import yaml
 
 from ludwig.constants import (
-    COMBINER,
-    DECODER,
-    DEFAULTS,
-    ENCODER,
     EXECUTOR,
     HYPEROPT,
-    INPUT_FEATURES,
-    LOSS,
-    MODEL_TYPE,
-    NAME,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
     RAY,
-    SPLIT,
     TRAINER,
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.config_utils import remove_excess_params
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.misc_utils import merge_dict, set_default_value
+from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -65,71 +53,7 @@ default_preprocessing_parameters = copy.deepcopy(default_feature_specific_prepro
 default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 
-def _perform_sanity_checks(config):
-    assert INPUT_FEATURES in config, "config does not define any input features"
-
-    assert OUTPUT_FEATURES in config, "config does not define any output features"
-
-    assert isinstance(config[INPUT_FEATURES], list), (
-        "Ludwig expects input features in a list. Check your model " "config format"
-    )
-
-    assert isinstance(config[OUTPUT_FEATURES], list), (
-        "Ludwig expects output features in a list. Check your model " "config format"
-    )
-
-    assert len(config[INPUT_FEATURES]) > 0, "config needs to have at least one input feature"
-
-    assert len(config[OUTPUT_FEATURES]) > 0, "config needs to have at least one output feature"
-
-    if TRAINER in config:
-        assert isinstance(config[TRAINER], dict), (
-            "There is an issue while reading the training section of the "
-            "config. The parameters are expected to be"
-            "read as a dictionary. Please check your config format."
-        )
-
-    if PREPROCESSING in config:
-        assert isinstance(config[PREPROCESSING], dict), (
-            "There is an issue while reading the preprocessing section of the "
-            "config. The parameters are expected to be read"
-            "as a dictionary. Please check your config format."
-        )
-
-    if COMBINER in config:
-        assert isinstance(config[COMBINER], dict), (
-            "There is an issue while reading the combiner section of the "
-            "config. The parameters are expected to be read"
-            "as a dictionary. Please check your config format."
-        )
-
-    if MODEL_TYPE in config:
-        assert isinstance(
-            config[MODEL_TYPE], str
-        ), "Ludwig expects model type as a string. Please check your model config format."
-
-    if DEFAULTS in config:
-        for feature_type in config.get(DEFAULTS).keys():
-            # output_feature_types is a subset of input_feature_types so just check input_feature_types
-            assert feature_type in set(
-                input_type_registry.keys()
-            ), f"""Defaults specified for `{feature_type}` but `{feature_type}` is
-                not a feature type recognised by Ludwig."""
-
-            defaults_section = config.get(DEFAULTS).get(feature_type)
-
-            for feature_type_param in defaults_section.keys():
-                if defaults_section.get(feature_type_param):
-                    assert feature_type_param in {
-                        PREPROCESSING,
-                        ENCODER,
-                        DECODER,
-                        LOSS,
-                    }, f"""`{feature_type_param}` is not a recognised subsection of Ludwig defaults. Valid default
-                     config sections are {PREPROCESSING}, {ENCODER}, {DECODER} and {LOSS}."""
-
-
-def _merge_hyperopt_with_trainer(config: dict) -> None:
+def merge_hyperopt_with_trainer(config: dict) -> None:
     if "hyperopt" not in config:
         return
 
@@ -170,41 +94,20 @@ def _merge_hyperopt_with_trainer(config: dict) -> None:
         scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
 
-def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
-    config = copy.deepcopy(config)
-    _perform_sanity_checks(config)
-    _merge_hyperopt_with_trainer(config)
+def set_hyperopt_defaults(config: dict) -> Dict[str, any]:
+    """
+    This function is intended to set the defaults for hyperopt on the user defined config. This is a temporary function
+    that should be removed once Hyperopt has been reconfigured to use the config object instead of a config dictionary.
 
-    # ===== Defaults =====
-    config[DEFAULTS] = config_obj.defaults.to_dict()
-    remove_excess_params(config)
+    Args:
+        config: User defined config dictionary
 
-    # ===== Preprocessing =====
-    config[PREPROCESSING] = config_obj.preprocessing.to_dict()
-    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
-    splitter.validate(config)
+    Returns:
+        Updated user defined config dictionary
+    """
 
-    # ===== Model Type =====
-    config[MODEL_TYPE] = config_obj.model_type
+    merge_hyperopt_with_trainer(config)
 
-    # ===== Trainer =====
-    # Convert config dictionary into an instance of BaseTrainerConfig.
-    config[TRAINER] = merge_dict(config_obj.trainer.to_dict(), config.get(TRAINER, {}))
-
-    # ===== Input Features =====
-    config[INPUT_FEATURES] = [
-        getattr(config_obj.input_features, feat[NAME]).to_dict() for feat in config[INPUT_FEATURES]
-    ]
-
-    # ===== Combiner =====
-    config[COMBINER] = config_obj.combiner.to_dict()
-
-    # ===== Output features =====
-    config[OUTPUT_FEATURES] = [
-        getattr(config_obj.output_features, feat[NAME]).to_dict() for feat in config[OUTPUT_FEATURES]
-    ]
-
-    # ===== Hyperopt =====
     if HYPEROPT in config:
         set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
 
@@ -213,8 +116,7 @@ def merge_with_defaults(config: dict, config_obj: Config) -> dict:  # noqa: F821
 
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_to_latest_version(config)
-    config_obj = Config(upgraded_config)
-    output_config = merge_with_defaults(upgraded_config, config_obj)
+    output_config = Config(upgraded_config).get_config_dict()
     validate_config(output_config)
 
     if output is None:

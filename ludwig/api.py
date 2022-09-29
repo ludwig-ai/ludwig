@@ -84,13 +84,14 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.dataset_utils import generate_dataset_statistics
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed, set_hyperopt_defaults
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
     get_commit_hash,
     get_file_names,
     get_from_registry,
     get_output_directory,
+    merge_dict,
     set_saved_weights_in_checkpoint_flag,
 )
 from ludwig.utils.print_utils import print_boxed
@@ -217,12 +218,17 @@ class LudwigModel:
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         upgraded_config = upgrade_to_latest_version(config_dict)
 
+        # validate config dict
+        validate_config(upgraded_config)
+
+        # Set defaults for hyperopt -> Can be removed after hyperopt is schemafied and in config obj
+        self.config = set_hyperopt_defaults(upgraded_config)
+
         # Initialize the config object
         self.config_obj = Config(upgraded_config)
 
-        # Set default values on config dictionary
-        self.config = merge_with_defaults(upgraded_config, self.config_obj)
-        validate_config(self.config)
+        # ===== TEMPORARY - TO REMOVE =====
+        self.config[TRAINER] = merge_dict(self.config_obj.trainer.to_dict(), config.get(TRAINER, {}))  # TODO: Remove
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -756,8 +762,7 @@ class LudwigModel:
         # preprocessing
         logger.debug("Preprocessing")
         dataset, _ = preprocess_for_prediction(
-            self.config,
-            self.config_obj,
+            self.config_obj.get_config_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1361,11 +1366,8 @@ class LudwigModel:
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        config = upgrade_to_latest_version(config)
-        config_obj = Config(config)
-
-        # Merge upgraded config with defaults.
-        config = merge_with_defaults(config, config_obj)
+        upgraded_config = upgrade_to_latest_version(config)
+        config_obj = Config(upgraded_config)
 
         if backend_param is None and "backend" in config:
             # Reset backend from config
@@ -1373,7 +1375,7 @@ class LudwigModel:
 
         # initialize model
         ludwig_model = LudwigModel(
-            config,
+            upgraded_config,
             logging_level=logging_level,
             backend=backend,
             gpus=gpus,
@@ -1383,7 +1385,7 @@ class LudwigModel:
         )
 
         # generate model from config
-        set_saved_weights_in_checkpoint_flag(config)
+        set_saved_weights_in_checkpoint_flag(upgraded_config)
         ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights

@@ -25,7 +25,6 @@ from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESS
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -420,7 +419,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f"{feature_type} is not recognized.")
 
 
-@register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: AudioInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)

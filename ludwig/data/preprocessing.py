@@ -1847,7 +1847,6 @@ def _preprocess_df_for_training(
 
 def preprocess_for_prediction(
     config,
-    config_obj,
     dataset,
     training_set_metadata=None,
     data_format=None,

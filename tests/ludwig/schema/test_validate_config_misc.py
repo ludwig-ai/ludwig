@@ -19,7 +19,6 @@ from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
-from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -73,8 +72,7 @@ def test_config_features():
 
     # make sure all defaults provided also registers as valid
 
-    config_obj = Config(config)
-    config = merge_with_defaults(config, config_obj)
+    config = Config(config).get_config_dict()
     validate_config(config)
 
     # test various invalid output features
@@ -249,8 +247,7 @@ def test_validate_with_preprocessing_defaults():
     }
 
     validate_config(config)
-    config_obj = Config(config)
-    config = merge_with_defaults(config, config_obj)
+    config = Config(config).get_config_dict()
     validate_config(config)
 
 

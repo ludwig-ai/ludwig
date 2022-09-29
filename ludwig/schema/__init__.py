@@ -31,8 +31,10 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    SPLIT,
     TRAINER,
 )
+from ludwig.data.split import get_splitter
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
@@ -79,5 +81,8 @@ def validate_config(config):
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     updated_config = upgrade_to_latest_version(config)
+
+    splitter = get_splitter(**config[PREPROCESSING].get(SPLIT, {}))
+    splitter.validate(config)
 
     validate(instance=updated_config, schema=get_schema(), cls=get_validator())

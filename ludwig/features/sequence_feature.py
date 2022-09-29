@@ -41,7 +41,6 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.misc_utils import get_from_registry
@@ -248,7 +247,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
@@ -296,7 +294,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
-@register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     metric_functions = {
         LOSS: None,

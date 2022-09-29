@@ -1,4 +1,5 @@
 import copy
+import yaml
 
 from marshmallow import ValidationError
 
@@ -39,7 +40,7 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import input_type_registry, output_type_registry
+from ludwig.schema.features.utils import get_input_feature_cls, get_output_feature_cls, input_config_registry
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -88,8 +89,8 @@ class Config:
     def __init__(self, config_dict):
 
         self.model_type = MODEL_ECD
-        self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
-        self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
+        self.input_features: InputFeaturesContainer = InputFeaturesContainer()
+        self.output_features: OutputFeaturesContainer = OutputFeaturesContainer()
         self.combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
         self.trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
         self.preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
@@ -147,6 +148,12 @@ class Config:
         # ===== Hyperopt =====
         if HYPEROPT in config_dict:
             pass  # TODO: Schemify Hyperopt
+
+    def __repr__(self):
+        output = ""
+        output += f"Model Type: {self.model_type}\n"
+        output += f"Input Features: {yaml.dump()}"
+        return output
 
     @staticmethod
     def _set_feature_column(config: dict) -> None:
@@ -206,17 +213,25 @@ class Config:
             if feature_section == INPUT_FEATURES:
                 if DECODER in feature:  # Ensure input feature doesn't have decoder specs
                     del feature[DECODER]
-                feature_schema = input_type_registry[feature[TYPE]].get_schema_cls()
-                feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
-                setattr(self.input_features, feature[NAME], copy.deepcopy(feature_schema))
+                feature_config = get_input_feature_cls(feature[TYPE])()  # name something else
+                updated_feature_config = self._update_with_global_defaults(
+                    feature_config,
+                    feature[TYPE],
+                    feature_section
+                )
+                setattr(self.input_features, feature[NAME], updated_feature_config)
                 self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
 
             else:
                 if ENCODER in feature:  # Ensure output feature doesn't have encoder specs
                     del feature[ENCODER]
-                feature_schema = output_type_registry[feature[TYPE]].get_schema_cls()
-                feature_schema = self._update_global_defaults(feature_schema(), feature[TYPE], feature_section)
-                setattr(self.output_features, feature[NAME], copy.deepcopy(feature_schema))
+                feature_config = get_output_feature_cls(feature[TYPE])()
+                updated_feature_config = self._update_with_global_defaults(
+                    feature_config,
+                    feature[TYPE],
+                    feature_section
+                )
+                setattr(self.output_features, feature[NAME], updated_feature_config)
                 self._set_attributes(
                     getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
                 )
@@ -238,7 +253,7 @@ class Config:
         for key, val in config_dict_lvl.items():
 
             # Persist feature type for getting schemas from registries
-            if key in input_type_registry.keys():
+            if key in input_config_registry.keys():
                 feature_type = key
 
             #  Update logic for nested feature fields
@@ -248,7 +263,7 @@ class Config:
                 # Check if submodule needs update
                 if TYPE in val and module.type != val[TYPE]:
                     new_config = self._get_new_config(key, val[TYPE], feature_type)()
-                    setattr(config_obj_lvl, key, copy.deepcopy(new_config))
+                    setattr(config_obj_lvl, key, new_config)
 
                 #  Now set the other defaults specified in the module
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
@@ -257,9 +272,9 @@ class Config:
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             else:
-                setattr(config_obj_lvl, key, copy.deepcopy(val))
+                setattr(config_obj_lvl, key, val)
 
-    def _update_global_defaults(self, feature, feat_type, feature_section):
+    def _update_with_global_defaults(self, feature, feat_type, feature_section):  # TODO: RENAME
         """This purpose of this function is to set the attributes of the features that are specified in the
         defaults section of the config.
 

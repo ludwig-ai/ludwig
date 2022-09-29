@@ -34,7 +34,6 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -133,7 +132,6 @@ class VectorFeatureMixin:
         return proc_df
 
 
-@register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
@@ -174,7 +172,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return VectorInputFeatureConfig
 
 
-@register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
 

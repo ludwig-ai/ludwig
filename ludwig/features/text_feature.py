@@ -44,7 +44,6 @@ from ludwig.features.sequence_feature import (
     SequenceOutputFeature,
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
@@ -171,7 +170,6 @@ class TextFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(TEXT)
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
@@ -224,7 +222,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return _SequencePreprocessing(metadata)
 
 
-@register_output_feature(TEXT)
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
 

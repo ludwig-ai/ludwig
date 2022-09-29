@@ -2,6 +2,12 @@ from dataclasses import field
 
 from marshmallow import fields, ValidationError
 
+from ludwig.constants import (
+    DECODER,
+    ENCODER,
+    LOSS,
+    PREPROCESSING,
+)
 import ludwig.schema.utils as schema_utils
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
@@ -40,14 +46,17 @@ def DefaultsDataclassField(feature_type: str):
             input_feature_cls = input_config_registry.get(feature_type)
             output_feature_cls = output_config_registry.get(feature_type, None)
             input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
+            input_props_filtered = {key: val for key, val in input_props.items() if key in [ENCODER, PREPROCESSING]}
             if output_feature_cls:
                 output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
-                combined_props = {**output_props, **input_props}
+                output_props_filtered = {key: val for key, val in output_props.items() if key in [DECODER, LOSS]}
+                combined_props = {**output_props_filtered, **input_props_filtered}
             else:
-                combined_props = input_props
+                combined_props = input_props_filtered
             return {
                 "type": "object",
                 "properties": combined_props,
+                "additionalProperties": False,
                 "title": "defaults_options",
             }
 

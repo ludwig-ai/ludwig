@@ -136,11 +136,11 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
-    schema["additionalProperties"] = True
+    schema["additionalProperties"] = additional_properties
     return schema
 
 

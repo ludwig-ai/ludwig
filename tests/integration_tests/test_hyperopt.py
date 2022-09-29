@@ -41,7 +41,6 @@ from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.schema.config_object import Config
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 try:
@@ -115,8 +114,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
-    config_obj = Config(config)
-    config = merge_with_defaults(config, config_obj)
+    config = Config(config).get_config_dict()
 
     return config, rel_path
 

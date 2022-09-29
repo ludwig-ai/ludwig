@@ -21,7 +21,6 @@ import torch
 from ludwig.constants import COLUMN, H3, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -104,7 +103,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
     def __init__(self, input_feature_config: H3InputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)

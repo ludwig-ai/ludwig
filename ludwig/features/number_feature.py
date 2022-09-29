@@ -40,7 +40,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -281,7 +280,6 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: NumberInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
@@ -332,7 +330,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return _NumberPreprocessing(metadata)
 
 
-@register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     metric_functions = {
         LOSS: None,
