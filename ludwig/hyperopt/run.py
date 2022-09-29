@@ -33,6 +33,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
+from ludwig.utils.defaults import set_hyperopt_defaults
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
@@ -203,6 +204,11 @@ def hyperopt(
 
     # backwards compatibility
     upgraded_config = upgrade_to_latest_version(config_dict)
+
+    # Set default hyperopt params
+    set_hyperopt_defaults(upgraded_config)
+
+    # Initialize config object
     config_obj = Config(upgraded_config)
 
     # Retain pre-merged config for hyperopt schema generation

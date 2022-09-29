@@ -94,7 +94,7 @@ class Config:
         self.combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
         self.trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
         self.preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
-        self.hyperopt = {}
+        self.hyperopt = config_dict.get(HYPEROPT, {})
         self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
 
         # ===== Defaults =====
@@ -312,7 +312,7 @@ class Config:
             "combiner": self.combiner.to_dict(),
             "trainer": self.trainer.to_dict(),
             "preprocessing": self.preprocessing.to_dict(),
-            "hyperopt": {},
+            "hyperopt": self.hyperopt,
             "defaults": self.defaults.to_dict(),
         }
         return convert_submodules(config_dict)
