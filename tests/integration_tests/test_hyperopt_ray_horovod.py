@@ -80,7 +80,7 @@ HYPEROPT_CONFIG = {
 
 SCENARIOS = [
     {
-        "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1},
+        "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 2},
         "search_alg": {"type": "variant_generator"},
     },
     # TODO(shreya): Uncomment when https://github.com/ludwig-ai/ludwig/issues/2039 is fixed.
@@ -103,7 +103,7 @@ SCENARIOS = [
                 "time_attr": "training_iteration",
                 "reduction_factor": 4,
             },
-            "cpu_resources_per_trial": 1,
+            "cpu_resources_per_trial": 2,
         },
         "search_alg": {"type": "bohb"},
     },

@@ -427,7 +427,7 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
             "executor": {
                 "type": "ray",
                 "time_budget_s": 200,
-                "cpu_resources_per_trial": 1,
+                "cpu_resources_per_trial": 2,
             },
             "sampler": sampler,
             "parameters": {

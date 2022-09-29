@@ -462,7 +462,7 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
             EXECUTOR: {
                 TYPE: "ray",
                 "time_budget_s": 200,
-                "cpu_resources_per_trial": 1,
+                "cpu_resources_per_trial": 2,
             },
             "sampler": {
                 TYPE: "ray",
@@ -515,7 +515,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
             EXECUTOR: {
                 TYPE: "ray",
                 "time_budget_s": 200,
-                "cpu_resources_per_trial": 1,
+                "cpu_resources_per_trial": 2,
                 "num_samples": 4,
                 "scheduler": {TYPE: "fifo"},
             },

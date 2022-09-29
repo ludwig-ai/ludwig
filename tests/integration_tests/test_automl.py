@@ -65,7 +65,7 @@ def test_train_with_config(time_budget, test_data, ray_cluster_2cpu, tmpdir):
             "executor": {
                 "type": "ray",
                 "time_budget_s": time_budget,
-                "cpu_resources_per_trial": 1,
+                "cpu_resources_per_trial": 2,
                 "scheduler": {
                     "type": "async_hyperband",
                     "max_t": time_budget,
