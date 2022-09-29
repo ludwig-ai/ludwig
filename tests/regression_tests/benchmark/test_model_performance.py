@@ -4,7 +4,7 @@ from pprint import pprint
 import pytest
 
 from ludwig.benchmarking.benchmark import benchmark
-from ludwig.utils.data_utils import load_json, load_yaml
+from ludwig.utils.data_utils import load_json  # , load_yaml
 
 BENCHMARKING_CONFIG = """
 experiment_name: {experiment_name}
@@ -31,17 +31,20 @@ dataset_name_to_metric = {
     "adult_census_income": "accuracy",
 }
 
-dataset_to_expected_performance = {"ames_housing": 0.49,
-                                   "mercedes_benz_greener": 0.49,
-                                   "protein": 0.51,
-                                   "sarcos": 0,
-                                   "naval": 0,
-                                   "adult_census_income": 0
-                                   }
+dataset_to_expected_performance = {
+    "ames_housing": 0.49,
+    "mercedes_benz_greener": 0.49,
+    "protein": 0.51,
+    "sarcos": 0,
+    "naval": 0,
+    "adult_census_income": 0,
+}
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"])
+@pytest.mark.parametrize(
+    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
+)
 def test_performance(dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"

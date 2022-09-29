@@ -275,7 +275,7 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests
+          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests/regression_tests/benchmark
 
       - name: Upload Unit Test Results
         if: always()
