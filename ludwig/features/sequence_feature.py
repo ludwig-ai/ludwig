@@ -43,16 +43,15 @@ from ludwig.features.feature_utils import compute_sequence_probability, compute_
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
-    tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class _SequencePreprocessing(torch.nn.Module):
         super().__init__()
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
-        self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
+        self.tokenizer = get_tokenizer_from_registry(self.tokenizer_type)(
             pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
 

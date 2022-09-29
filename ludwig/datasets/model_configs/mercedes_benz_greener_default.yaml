@@ -1,6 +1,6 @@
 output_features:
   - name: y
-    type: numerical
+    type: number
 input_features:
   - name: X0
     type: category

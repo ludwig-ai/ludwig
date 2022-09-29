@@ -70,7 +70,7 @@ class DateFeatureMixin(BaseFeatureMixin):
                 datetime_obj = parse(date_str)
         except Exception as e:
             logger.error(
-                f"Error parsing date: {date_str} with error {e} "
+                f"Error parsing date: '{date_str}' with error '{e}' "
                 "Please provide a datetime format that parses it "
                 "in the preprocessing section of the date feature "
                 "in the config. "

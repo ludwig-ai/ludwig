@@ -1,6 +1,6 @@
 output_features:
   - name: loss
-    type: numerical
+    type: number
 input_features:
   - name: cat1
     type: category
@@ -235,33 +235,33 @@ input_features:
   - name: cat116
     type: category
   - name: cont1
-    type: numerical
+    type: number
   - name: cont2
-    type: numerical
+    type: number
   - name: cont3
-    type: numerical
+    type: number
   - name: cont4
-    type: numerical
+    type: number
   - name: cont5
-    type: numerical
+    type: number
   - name: cont6
-    type: numerical
+    type: number
   - name: cont7
-    type: numerical
+    type: number
   - name: cont8
-    type: numerical
+    type: number
   - name: cont9
-    type: numerical
+    type: number
   - name: cont10
-    type: numerical
+    type: number
   - name: cont11
-    type: numerical
+    type: number
   - name: cont12
-    type: numerical
+    type: number
   - name: cont13
-    type: numerical
+    type: number
   - name: cont14
-    type: numerical
+    type: number
 combiner:
   type: concat
   num_fc_layers: 3

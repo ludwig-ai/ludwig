@@ -3,19 +3,19 @@ output_features:
     type: binary
 input_features:
   - name: step
-    type: numerical
+    type: number
   - name: type
     type: category
   - name: amount
-    type: numerical
+    type: number
   - name: oldbalanceOrg
-    type: numerical
+    type: number
   - name: newbalanceOrig
-    type: numerical
+    type: number
   - name: oldbalanceDest
-    type: numerical
+    type: number
   - name: newbalanceDest
-    type: numerical
+    type: number
 combiner:
   type: concat
   num_fc_layers: 3
