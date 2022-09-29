@@ -2,13 +2,8 @@ from dataclasses import field
 
 from marshmallow import fields, ValidationError
 
-from ludwig.constants import (
-    DECODER,
-    ENCODER,
-    LOSS,
-    PREPROCESSING,
-)
 import ludwig.schema.utils as schema_utils
+from ludwig.constants import DECODER, ENCODER, LOSS, PREPROCESSING
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
 
 

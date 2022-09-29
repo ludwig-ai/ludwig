@@ -22,13 +22,7 @@ from typing import Dict
 
 import yaml
 
-from ludwig.constants import (
-    EXECUTOR,
-    HYPEROPT,
-    RAY,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import EXECUTOR, HYPEROPT, RAY, TRAINER, TYPE
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.globals import LUDWIG_VERSION
@@ -94,9 +88,9 @@ def merge_hyperopt_with_trainer(config: dict) -> None:
 
 
 def set_hyperopt_defaults(config: dict) -> Dict[str, any]:
-    """
-    This function is intended to set the defaults for hyperopt on the user defined config. This is a temporary function
-    that should be removed once Hyperopt has been reconfigured to use the config object instead of a config dictionary.
+    """This function is intended to set the defaults for hyperopt on the user defined config. This is a temporary
+    function that should be removed once Hyperopt has been reconfigured to use the config object instead of a
+    config dictionary.
 
     Args:
         config: User defined config dictionary

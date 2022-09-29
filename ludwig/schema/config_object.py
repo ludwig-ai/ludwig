@@ -1,6 +1,6 @@
 import copy
-import yaml
 
+import yaml
 from marshmallow import ValidationError
 
 from ludwig.constants import (
@@ -215,9 +215,7 @@ class Config:
                     del feature[DECODER]
                 feature_config = get_input_feature_cls(feature[TYPE])()  # name something else
                 updated_feature_config = self._update_with_global_defaults(
-                    feature_config,
-                    feature[TYPE],
-                    feature_section
+                    feature_config, feature[TYPE], feature_section
                 )
                 setattr(self.input_features, feature[NAME], updated_feature_config)
                 self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
@@ -227,9 +225,7 @@ class Config:
                     del feature[ENCODER]
                 feature_config = get_output_feature_cls(feature[TYPE])()
                 updated_feature_config = self._update_with_global_defaults(
-                    feature_config,
-                    feature[TYPE],
-                    feature_section
+                    feature_config, feature[TYPE], feature_section
                 )
                 setattr(self.output_features, feature[NAME], updated_feature_config)
                 self._set_attributes(
