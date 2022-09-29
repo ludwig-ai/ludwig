@@ -25,8 +25,36 @@ from tests.integration_tests.utils import (
 )
 
 
-@pytest.mark.parametrize("backend", ["ray", "local"])
-def test_training_determinism(csv_filename, backend, tmpdir):
+@pytest.mark.distributed
+def test_training_determinism_ray_backend(csv_filename, tmpdir):
+    experiment_output_1, experiment_output_2 = train_twice("ray", csv_filename, tmpdir)
+
+    eval_stats_1, train_stats_1, _, _ = experiment_output_1
+    eval_stats_2, train_stats_2, _, _ = experiment_output_2
+
+    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
+        eval_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
+    )
+    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
+        train_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
+    )
+
+
+def test_training_determinism_local_backend(csv_filename, tmpdir):
+    experiment_output_1, experiment_output_2 = train_twice("local", csv_filename, tmpdir)
+
+    eval_stats_1, train_stats_1, _, _ = experiment_output_1
+    eval_stats_2, train_stats_2, _, _ = experiment_output_2
+
+    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
+        eval_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
+    )
+    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
+        train_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
+    )
+
+
+def train_twice(backend, csv_filename, tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
 
@@ -59,7 +87,7 @@ def test_training_determinism(csv_filename, backend, tmpdir):
 
     ludwig_model_1 = LudwigModel(config, logging_level=logging.ERROR, backend=backend)
     ludwig_model_2 = LudwigModel(config, logging_level=logging.ERROR, backend=backend)
-    eval_stats_1, train_stats_1, preprocessed_data_1, _ = ludwig_model_1.experiment(
+    experiment_output_1 = ludwig_model_1.experiment(
         dataset=training_data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
@@ -68,7 +96,7 @@ def test_training_determinism(csv_filename, backend, tmpdir):
         skip_save_log=True,
         skip_save_processed_input=True,
     )
-    eval_stats_2, train_stats_2, preprocessed_data_2, _ = ludwig_model_2.experiment(
+    experiment_output_2 = ludwig_model_2.experiment(
         dataset=training_data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
@@ -78,9 +106,4 @@ def test_training_determinism(csv_filename, backend, tmpdir):
         skip_save_processed_input=True,
     )
 
-    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
-        eval_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
-    )
-    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
-        train_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
-    )
+    return experiment_output_1, experiment_output_2
