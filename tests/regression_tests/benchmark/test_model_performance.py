@@ -32,7 +32,7 @@ dataset_to_expected_performance = {"ames_housing": 0.69, "mercedes_benz_greener"
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("dataset", ["ames_housing", "protein", "mercedes_benz_greener"])
+@pytest.mark.parametrize("dataset", ["protein", "sarcos", "naval"])
 def test_performance(dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"
