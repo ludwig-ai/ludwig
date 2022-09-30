@@ -140,7 +140,7 @@ def test_sequence_decoders(
         # gather expected components of the shape
         batch_size = combiner_outputs["hidden"].shape[0]
         seq_size = output_features[0][DECODER]["max_len"] + 2  # For start and stop symbols.
-        vocab_size = model.config["output_features"][0][DECODER]["vocab_size"]
+        vocab_size = model.config_obj.output_features.to_list()[0][DECODER]["vocab_size"]
 
         # confirm shape and format of decoder output
         assert list(decoder_out[LOGITS].size()) == [batch_size, seq_size, vocab_size]
