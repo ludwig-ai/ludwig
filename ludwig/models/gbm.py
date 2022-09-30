@@ -7,8 +7,9 @@ import numpy as np
 import torch
 import torchmetrics
 from hummingbird.ml import convert
+from hummingbird.ml.operator_converters import constants as hb_constants
 
-from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER, TYPE
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -28,6 +29,12 @@ class GBM(BaseModel):
         random_seed: int = None,
         **_kwargs,
     ):
+        if len(output_features) > 1:
+            raise ValueError("Only single task currently supported")
+        feat_types = {f[TYPE] for f in output_features + input_features}
+        if len(feat_types - {NUMBER, CATEGORY, BINARY}) != 0:
+            raise ValueError("Model type GBM only supports numerical, categorical, or binary features")
+
         super().__init__(random_seed=random_seed)
 
         self._input_features_def = copy.deepcopy(input_features)
@@ -72,8 +79,13 @@ class GBM(BaseModel):
         if self.lgbm_model is None:
             raise ValueError("Model has not been trained yet.")
 
-        hb_model = convert(self.lgbm_model, "torch")
-        self.compiled_model = hb_model.model
+        # explicitly use sigmoid for classification, so we can invert to logits at inference time
+        extra_config = (
+            {hb_constants.POST_TRANSFORM: hb_constants.SIGMOID}
+            if isinstance(self.lgbm_model, lgb.LGBMClassifier)
+            else {}
+        )
+        self.compiled_model = convert(self.lgbm_model, "torch", extra_config=extra_config)
 
     def forward(
         self,
@@ -129,19 +141,29 @@ class GBM(BaseModel):
             f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
             f"but got {inputs.shape} of type {inputs.dtype}"
         )
-        preds = self.compiled_model(inputs)
 
         if output_feature.type() == NUMBER:
             # regression
-            if len(preds.shape) == 2:
-                preds = preds.squeeze(1)
-            logits = preds
+            preds = self.compiled_model.predict(inputs)
+            logits = torch.from_numpy(preds)
         else:
             # classification
-            _, probs = preds
-            # keep positive class only for binary feature
-            probs = probs[:, 1] if output_feature.type() == BINARY else probs
+            probs = self.compiled_model.predict_proba(inputs)
+            probs = torch.from_numpy(probs)
+
+            if output_feature.type() == BINARY:
+                # keep positive class only for binary feature
+                probs = probs[:, 1]  # shape (batch_size,)
+            elif output_feature.num_classes > 2:
+                probs = probs.view(-1, 2, output_feature.num_classes)  # shape (batch_size, 2, num_classes)
+                probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
+
+                # probabilities for belonging to each class
+                probs = probs[:, :, 1]  # shape (batch_size, num_classes)
+
+            # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
             logits = torch.logit(probs)
+
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
         return output_logits

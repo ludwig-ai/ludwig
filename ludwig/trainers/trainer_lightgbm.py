@@ -521,10 +521,6 @@ class LightGBMTrainer(BaseTrainer):
 
         # TODO: construct new datasets by running encoders (for text, image)
 
-        # TODO: only single task currently
-        if len(output_features) > 1:
-            raise ValueError("Only single task currently supported")
-
         metrics_names = get_metric_names(output_features)
 
         # check if validation_field is valid
@@ -726,7 +722,7 @@ class LightGBMTrainer(BaseTrainer):
     def _construct_lgb_params(self) -> Tuple[dict, dict]:
         output_params = {}
         feature = next(iter(self.model.output_features.values()))
-        if feature.type() == BINARY or feature.num_classes == 2:
+        if feature.type() == BINARY or (hasattr(feature, "num_classes") and feature.num_classes == 2):
             output_params = {
                 "objective": "binary",
                 "metric": ["binary_logloss"],
