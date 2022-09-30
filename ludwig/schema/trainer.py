@@ -467,7 +467,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     uniform_drop: bool = schema_utils.Boolean(
         default=False,
-        description=("Whether to use uniform dropout in the GBM trainer. Used only with boosting_type 'dart'."),
+        description="Whether to use uniform dropout in the GBM trainer. Used only with boosting_type 'dart'.",
     )
 
     drop_seed: int = schema_utils.Integer(

@@ -449,8 +449,8 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
     if use_scheduler:
         assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
 
-    upgraded_config = set_hyperopt_defaults(config)
-    merged_config = Config(upgraded_config).get_config_dict()
+    upgraded_hyperopt_config = set_hyperopt_defaults(updated_config)
+    merged_config = Config(upgraded_hyperopt_config).get_config_dict()
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.
