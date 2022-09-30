@@ -34,11 +34,7 @@ class GBM(BaseModel):
 
         # ================ Inputs ================
         try:
-            self.input_features.update(
-                self.build_inputs(
-                    input_feature_configs=self.config_obj.input_features
-                )
-            )
+            self.input_features.update(self.build_inputs(input_feature_configs=self.config_obj.input_features))
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
@@ -46,10 +42,7 @@ class GBM(BaseModel):
 
         # ================ Outputs ================
         self.output_features.update(
-            self.build_outputs(
-                output_feature_configs=self.config_obj.output_features,
-                input_size=self.input_shape[-1]
-            )
+            self.build_outputs(output_feature_configs=self.config_obj.output_features, input_size=self.input_shape[-1])
         )
 
         # ================ Combined loss metric ================
@@ -61,9 +54,7 @@ class GBM(BaseModel):
 
     @classmethod
     def build_outputs(
-            cls,
-            output_feature_configs: OutputFeaturesContainer,
-            input_size: int
+        cls, output_feature_configs: OutputFeaturesContainer, input_size: int
     ) -> Dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently

@@ -23,7 +23,6 @@ from ludwig.constants import (
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.utils.defaults import set_hyperopt_defaults
 from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
@@ -32,6 +31,7 @@ from ludwig.utils.backward_compatibility import (
     upgrade_model_progress,
     upgrade_to_latest_version,
 )
+from ludwig.utils.defaults import set_hyperopt_defaults
 
 
 def test_preprocessing_backward_compatibility():
