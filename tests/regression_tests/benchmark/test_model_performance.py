@@ -32,12 +32,12 @@ dataset_name_to_metric = {
 }
 
 dataset_to_expected_performance = {
-    "ames_housing": 0.49,
-    "mercedes_benz_greener": 0.49,
-    "protein": 0.51,
-    "sarcos": 0,
-    "naval": 0,
-    "adult_census_income": 0,
+    "ames_housing": 0.75,  # 0.7970725297927856
+    "mercedes_benz_greener": 0.48,  # 0.5187778472900391
+    "protein": 0.47,  # 0.5056926012039185
+    "sarcos": 0.94,  # 0.984712541103363
+    "naval": 0.65,  # 0.7076969146728516
+    "adult_census_income": 0.81,  # 0.8583128452301025
 }
 
 
