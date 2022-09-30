@@ -509,7 +509,7 @@ class LudwigModel:
                 update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
-                set_saved_weights_in_checkpoint_flag(self.config_obj.get_config_dict())
+                set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             with self.backend.create_trainer(
                 model=self.model,
@@ -702,7 +702,7 @@ class LudwigModel:
         if not self.model:
             update_config_with_metadata(self.config_obj, training_set_metadata)
             self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
-            set_saved_weights_in_checkpoint_flag(self.config_obj.get_config_dict())
+            set_saved_weights_in_checkpoint_flag(self.config_obj)
 
         if not self._online_trainer:
             self._online_trainer = self.backend.create_trainer(
@@ -1390,7 +1390,7 @@ class LudwigModel:
         )
 
         # generate model from config
-        set_saved_weights_in_checkpoint_flag(upgraded_config)
+        set_saved_weights_in_checkpoint_flag(config_obj)
         ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights

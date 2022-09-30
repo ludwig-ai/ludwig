@@ -25,7 +25,7 @@ from collections.abc import Mapping
 import numpy
 import torch
 
-from ludwig.constants import ENCODER, PROC_COLUMN
+from ludwig.constants import ENCODER, NAME, PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
@@ -154,14 +154,14 @@ def get_proc_features_from_lists(*args):
     return {feature[PROC_COLUMN]: feature for features in args for feature in features}
 
 
-def set_saved_weights_in_checkpoint_flag(config):
+def set_saved_weights_in_checkpoint_flag(config_obj):
     """Adds a flag to all input features indicating that the weights are saved in the checkpoint.
 
     Next time the model is loaded we will restore pre-trained encoder weights from ludwig model (and not load from cache
     or model hub).
     """
-    for input_feature in config.get("input_features", []):
-        input_feature["saved_weights_in_checkpoint"] = True
+    for input_feature in config_obj.input_features.to_list():
+        setattr(getattr(config_obj.input_features, input_feature[NAME]), "saved_weights_in_checkpoint", True)
 
 
 def remove_empty_lines(str):
