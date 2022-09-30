@@ -43,7 +43,6 @@ from ludwig.constants import (
     FULL,
     HYPEROPT,
     HYPEROPT_WARNING,
-    LEARNING_RATE,
     MIN_VALIDATION_SET_ROWS,
     TEST,
     TRAINER,
