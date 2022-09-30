@@ -11,7 +11,7 @@ from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import Config, OutputFeaturesContainer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -34,14 +34,23 @@ class GBM(BaseModel):
 
         # ================ Inputs ================
         try:
-            self.input_features.update(self.build_inputs(config=self.config_obj))
+            self.input_features.update(
+                self.build_inputs(
+                    input_feature_configs=self.config_obj.input_features
+                )
+            )
         except KeyError as e:
             raise KeyError(
                 f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
             )
 
         # ================ Outputs ================
-        self.output_features.update(self.build_outputs(config=self.config_obj, input_size=self.input_shape[-1]))
+        self.output_features.update(
+            self.build_outputs(
+                output_feature_configs=self.config_obj.output_features,
+                input_size=self.input_shape[-1]
+            )
+        )
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = torchmetrics.MeanMetric()
@@ -51,18 +60,22 @@ class GBM(BaseModel):
         self.compiled_model: torch.nn.Module = None
 
     @classmethod
-    def build_outputs(cls, config: Config, input_size: int) -> Dict[str, OutputFeature]:
+    def build_outputs(
+            cls,
+            output_feature_configs: OutputFeaturesContainer,
+            input_size: int
+    ) -> Dict[str, OutputFeature]:
         """Builds and returns output feature."""
         # TODO: only single task currently
-        if len(config.output_features.to_dict()) > 1:
+        if len(output_feature_configs.to_dict()) > 1:
             raise ValueError("Only single task currently supported")
 
-        output_feature_def = config.output_features.to_list()[0]
+        output_feature_def = output_feature_configs.to_list()[0]
         output_features = {}
 
-        setattr(getattr(config.output_features, output_feature_def[NAME]), "input_size", input_size)
+        setattr(getattr(output_feature_configs, output_feature_def[NAME]), "input_size", input_size)
         output_feature = cls.build_single_output(
-            getattr(config.output_features, output_feature_def[NAME]), output_features
+            getattr(output_feature_configs, output_feature_def[NAME]), output_features
         )
         output_features[output_feature_def[NAME]] = output_feature
 

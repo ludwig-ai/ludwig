@@ -228,7 +228,7 @@ class LudwigModel:
         self.config_obj = Config(upgraded_config)
 
         # ===== TEMPORARY - TO REMOVE =====
-        self.config[TRAINER] = merge_dict(self.config_obj.trainer.to_dict(), config.get(TRAINER, {}))  # TODO: Remove
+        self.config[TRAINER] = merge_dict(self.config_obj.trainer.to_dict(), self.config.get(TRAINER, {}))
 
         # setup logging
         self.set_logging_level(logging_level)

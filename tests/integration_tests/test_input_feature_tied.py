@@ -107,7 +107,7 @@ def test_tied_micro_level(input_feature_options):
         {"input_features": input_feature_configs, "output_features": [{"name": "dummy_feature", "type": "binary"}]}
     )
 
-    input_features = BaseModel.build_inputs(config_obj)
+    input_features = BaseModel.build_inputs(input_feature_configs=config_obj.input_features)
 
     if input_feature_options.tie_features:
         # should be same encoder
