@@ -522,14 +522,14 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                if self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO or \
-                        self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO:
+                if (
+                    self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
+                    or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
+                ):
                     # TODO (ASN): add support for substitute_with_max parameter
                     # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
                     tuned_batch_size = trainer.tune_batch_size(
-                        self.config_obj.get_config_dict(),
-                        training_set,
-                        random_seed=random_seed
+                        self.config_obj.get_config_dict(), training_set, random_seed=random_seed
                     )
 
                     # TODO(travis): pass these in as args to trainer when we call train,
@@ -545,9 +545,7 @@ class LudwigModel:
                 # auto tune learning rate
                 if self.config_obj.trainer.learning_rate == AUTO:
                     tuned_learning_rate = trainer.tune_learning_rate(
-                        self.config_obj.get_config_dict(),
-                        training_set,
-                        random_seed=random_seed
+                        self.config_obj.get_config_dict(), training_set, random_seed=random_seed
                     )
                     self.config_obj.trainer.learning_rate = tuned_learning_rate
                     trainer.set_base_learning_rate(tuned_learning_rate)
