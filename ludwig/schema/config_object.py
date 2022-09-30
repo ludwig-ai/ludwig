@@ -2,6 +2,7 @@ import copy
 
 import yaml
 from marshmallow import ValidationError
+from typing import List, Dict
 
 from ludwig.constants import (
     BINARY,
@@ -40,12 +41,13 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
+from ludwig.schema.features.base import BaseFeatureConfig
 from ludwig.schema.features.utils import get_input_feature_cls, get_output_feature_cls, input_config_registry
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import convert_submodules
+from ludwig.schema.utils import convert_submodules, BaseMarshmallowConfig
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
@@ -86,7 +88,7 @@ class Config:
     """This class is the implementation of the config object that replaces the need for a config dictionary
     throughout the project."""
 
-    def __init__(self, config_dict):
+    def __init__(self, config_dict: dict):
 
         self.model_type = MODEL_ECD
         self.input_features: InputFeaturesContainer = InputFeaturesContainer()
@@ -168,7 +170,11 @@ class Config:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
 
     @staticmethod
-    def _get_new_config(module, config_type, feature_type):
+    def _get_new_config(
+            module: str,
+            config_type: str,
+            feature_type: str
+    ) -> BaseMarshmallowConfig:
         """Helper function for getting the appropriate config to set in defaults section.
 
         Args:
@@ -196,7 +202,12 @@ class Config:
 
         raise ValueError("Module needs to be added to parsing support")
 
-    def _parse_features(self, features, feature_section):
+    def _parse_features(
+            self,
+            features: List[dict],
+            feature_section: str,
+            initialize: bool = True
+    ):
         """This function sets the values on the config object that are specified in the user defined config
         dictionary.
 
@@ -214,27 +225,34 @@ class Config:
                 if DECODER in feature:  # Ensure input feature doesn't have decoder specs
                     del feature[DECODER]
                 feature_config = get_input_feature_cls(feature[TYPE])()  # name something else
-                updated_feature_config = self._update_with_global_defaults(
-                    feature_config, feature[TYPE], feature_section
-                )
-                setattr(self.input_features, feature[NAME], updated_feature_config)
+                if initialize:
+                    updated_feature_config = self._update_with_global_defaults(
+                        feature_config, feature[TYPE], feature_section
+                    )
+                    setattr(self.input_features, feature[NAME], updated_feature_config)
                 self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
 
             else:
                 if ENCODER in feature:  # Ensure output feature doesn't have encoder specs
                     del feature[ENCODER]
                 feature_config = get_output_feature_cls(feature[TYPE])()
-                updated_feature_config = self._update_with_global_defaults(
-                    feature_config, feature[TYPE], feature_section
-                )
-                setattr(self.output_features, feature[NAME], updated_feature_config)
+                if initialize:
+                    updated_feature_config = self._update_with_global_defaults(
+                        feature_config, feature[TYPE], feature_section
+                    )
+                    setattr(self.output_features, feature[NAME], updated_feature_config)
                 self._set_attributes(
                     getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
                 )
                 if getattr(getattr(self, feature_section), feature[NAME]).decoder.type == "tagger":
                     getattr(getattr(self, feature_section), feature[NAME]).reduce_input = None
 
-    def _set_attributes(self, config_obj_lvl, config_dict_lvl, feature_type=None):
+    def _set_attributes(
+            self,
+            config_obj_lvl: BaseMarshmallowConfig,
+            config_dict_lvl: dict,
+            feature_type: str = None
+    ):
         """
         This function recursively parses both config object from the point that's passed in and the config dictionary to
         make sure the config obj section in question matches the corresponding user specified config section.
@@ -270,13 +288,19 @@ class Config:
             else:
                 setattr(config_obj_lvl, key, val)
 
-    def _update_with_global_defaults(self, feature, feat_type, feature_section):  # TODO: RENAME
+    def _update_with_global_defaults(
+            self,
+            feature: BaseFeatureConfig,
+            feat_type: str,
+            feature_section: str
+    ) -> BaseFeatureConfig:
         """This purpose of this function is to set the attributes of the features that are specified in the
         defaults section of the config.
 
         Args:
             feature: The feature with attributes to be set from specified defaults.
             feat_type: The feature type use to get the defaults to use for parameter setting.
+            feature_section: Input features or Output features switch
 
         Returns:
             The feature with defaults set.
@@ -294,7 +318,37 @@ class Config:
 
         return feature
 
-    def get_config_dict(self):
+    def update_config_object(self, config_dict: dict):
+        """
+        This function enables the functionality to update the config object with the config dict in case it has been
+        altered by a particular section of the Ludwig pipeline. For example, preprocessing/auto_tune_config make changes
+        to the config dict that need to be reconciled with the config obj. This function will ideally be removed once
+        the entire codebase conforms to the config object, but until then, it will be very helpful!
+
+        Args:
+            config_dict: Altered config dict to use when reconciling changes
+
+        Returns:
+            None -> Alters config object
+
+        """
+        # ==== Update Features ====
+        self._parse_features(config_dict[INPUT_FEATURES], INPUT_FEATURES, initialize=False)
+        self._parse_features(config_dict[OUTPUT_FEATURES], OUTPUT_FEATURES, initialize=False)
+
+        # ==== Combiner ====
+        if COMBINER in config_dict:
+            if self.combiner.type == SEQUENCE:
+                encoder_family = SEQUENCE
+            else:
+                encoder_family = None
+            self._set_attributes(self.combiner, config_dict[COMBINER], feature_type=encoder_family)
+
+        # ==== Update Trainer ====
+        if TRAINER in config_dict:
+            self._set_attributes(self.trainer, config_dict[TRAINER])
+
+    def get_config_dict(self) -> Dict[str, any]:
         """This method converts the current config object into an equivalent dictionary representation since many
         parts of the codebase still use the dictionary representation of the config.
 

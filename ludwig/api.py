@@ -417,7 +417,7 @@ class LudwigModel:
                 # save description
                 if self.backend.is_coordinator():
                     description = get_experiment_description(
-                        self.config,
+                        self.config_obj.get_config_dict(),
                         dataset=dataset,
                         training_set=training_set,
                         validation_set=validation_set,
@@ -446,10 +446,10 @@ class LudwigModel:
                         logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
                         print_boxed("LUDWIG CONFIG")
-                        logger.info(pformat(self.config, indent=4))
+                        logger.info(pformat(self.config_obj.get_config_dict(), indent=4))
 
                 for callback in self.callbacks:
-                    callback.on_preprocess_start(self.config)
+                    callback.on_preprocess_start(self.config_obj.get_config_dict())
 
                 try:
                     preprocessed_data = self.preprocess(
@@ -506,10 +506,10 @@ class LudwigModel:
                 if self.backend.is_coordinator():
                     print_boxed("MODEL")
                 # update config and config object with metadata properties
-                update_config_with_metadata(self.config, self.config_obj, training_set_metadata)
+                update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
-                set_saved_weights_in_checkpoint_flag(self.config)
+                set_saved_weights_in_checkpoint_flag(self.config_obj.get_config_dict())
 
             with self.backend.create_trainer(
                 model=self.model,
@@ -693,9 +693,9 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
         if not self.model:
-            update_config_with_metadata(self.config, self.config_obj, training_set_metadata)
+            update_config_with_metadata(self.config_obj, training_set_metadata)
             self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
-            set_saved_weights_in_checkpoint_flag(self.config)
+            set_saved_weights_in_checkpoint_flag(self.config_obj.get_config_dict())
 
         if not self._online_trainer:
             self._online_trainer = self.backend.create_trainer(
@@ -887,7 +887,8 @@ class LudwigModel:
 
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
-            batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]
+            batch_size = self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) or \
+                         self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
@@ -1126,10 +1127,8 @@ class LudwigModel:
             logger.warning(f"Eval split {eval_split} not supported. " f"Using validation set instead")
 
         if eval_set is not None:
-            if self.config[TRAINER]["eval_batch_size"]:
-                batch_size = self.config[TRAINER]["eval_batch_size"]
-            else:
-                batch_size = self.config[TRAINER]["batch_size"]
+            trainer_dict = self.config_obj.trainer.to_dict()
+            batch_size = trainer_dict.get(EVAL_BATCH_SIZE, trainer_dict.get(BATCH_SIZE, None))
 
             # predict
             try:
@@ -1211,8 +1210,7 @@ class LudwigModel:
         # preprocessing
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
-            self.config,
-            self.config_obj,
+            self.config_obj.get_config_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1292,7 +1290,7 @@ class LudwigModel:
 
         with provision_preprocessing_workers(self.backend):
             preprocessed_data = preprocess_for_training(
-                self.config,
+                self.config_obj.get_config_dict(),
                 dataset=dataset,
                 training_set=training_set,
                 validation_set=validation_set,
@@ -1466,7 +1464,7 @@ class LudwigModel:
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-        save_json(model_hyperparameters_path, self.config)
+        save_json(model_hyperparameters_path, self.config_obj.get_config_dict())
 
     def to_torchscript(
         self,
@@ -1491,7 +1489,7 @@ class LudwigModel:
             return self.model.to_torchscript(device)
         else:
             inference_module = InferenceModule.from_ludwig_model(
-                self.model, self.config, self.training_set_metadata, device=device
+                self.model, self.config_obj.get_config_dict(), self.training_set_metadata, device=device
             )
             return torch.jit.script(inference_module)
 
@@ -1514,7 +1512,7 @@ class LudwigModel:
         save_ludwig_model_for_inference(
             save_path,
             self.model,
-            self.config,
+            self.config_obj.get_config_dict(),
             self.training_set_metadata,
             model_only=model_only,
             device=device,

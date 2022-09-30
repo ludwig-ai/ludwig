@@ -21,8 +21,6 @@ from ludwig.constants import (
     AUTOML_SMALLER_TEXT_ENCODER,
     AUTOML_SMALLER_TEXT_LENGTH,
     AUTOML_TEXT_ENCODER_MAX_TOKEN_LEN,
-    BATCH_SIZE,
-    DEFAULT_BATCH_SIZE,
     HYPEROPT,
     PREPROCESSING,
     SPACE,
@@ -118,17 +116,17 @@ def _get_text_model_memory_usage(config, training_set_metadata, memory_usage) ->
     return memory_usage
 
 
-def compute_memory_usage(config, config_obj, training_set_metadata, model_category) -> int:
-    update_config_with_metadata(config, config_obj, training_set_metadata)
+def compute_memory_usage(config_obj, training_set_metadata, model_category) -> int:
+    update_config_with_metadata(config_obj, training_set_metadata)
     lm = LudwigModel.create_model(config_obj)
     model_size = lm.get_model_size()  # number of parameters in model
-    batch_size = config[TRAINER].get(BATCH_SIZE, DEFAULT_BATCH_SIZE)
+    batch_size = config_obj.trainer.batch_size
     if batch_size == AUTO:
         # Smallest valid batch size that will allow training to complete
         batch_size = 2
     memory_usage = model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
     if model_category == TEXT:
-        return _get_text_model_memory_usage(config, training_set_metadata, memory_usage)
+        return _get_text_model_memory_usage(config_obj.get_config_dict(), training_set_metadata, memory_usage)
     else:
         return memory_usage
 
@@ -225,12 +223,14 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
         # compute memory utilization
         current_param_values = get_new_params(current_param_values, modified_hyperparam_search_space, params_to_modify)
         temp_config = sub_new_params(raw_config, current_param_values)
-        mem_use = compute_memory_usage(temp_config, config_obj, training_set_metadata, model_category)
+        config_obj.update_config_object(temp_config)
+        mem_use = compute_memory_usage(config_obj, training_set_metadata, model_category)
         if mem_use > max_memory and model_category == TEXT and not tried_reduce_seq_len:
             tried_reduce_seq_len = True
             if reduce_text_feature_max_length(config, training_set_metadata):
                 reduce_text_feature_max_length(temp_config, training_set_metadata)
-                mem_use = compute_memory_usage(temp_config, config_obj, training_set_metadata, model_category)
+                config_obj.update_config_object(temp_config)
+                mem_use = compute_memory_usage(config_obj, training_set_metadata, model_category)
         logger.info(f"Checking model estimated mem use {mem_use} against memory size {max_memory}")
         if mem_use <= max_memory:
             fits_in_memory = True

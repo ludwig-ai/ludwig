@@ -161,3 +161,44 @@ def test_config_object_to_config_dict():
     assert DEFAULTS in config_dict
     assert len(config_dict[DEFAULTS]) == 13
     assert HYPEROPT in config_dict
+
+
+def test_update_config_object():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_object = Config(config)
+
+    assert config_object.input_features.text_feature.encoder.type == "parallel_cnn"
+    assert config_object.input_features.text_feature.encoder.max_sequence_length is None
+
+    temp_config = {
+        "input_features": [
+            {"name": "text_feature",
+             "type": "text",
+             "encoder": {
+                 "type": "parallel_cnn",
+                 "max_sequence_length": 10
+             }
+             },
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_object.update_config_object(temp_config)
+
+    assert config_object.input_features.text_feature.encoder.max_sequence_length == 10

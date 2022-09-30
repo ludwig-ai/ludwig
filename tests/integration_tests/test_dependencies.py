@@ -129,9 +129,9 @@ def test_construct_output_features_with_dependencies(output_feature_defs):
         "combiner": {"type": "concat", "output_size": 1},
     }
     config_obj = Config(config)
-    input_features = BaseModel.build_inputs(config_obj)
+    input_features = BaseModel.build_inputs(config_obj.input_features)
     combiner = ConcatCombiner(input_features=input_features, config=config_obj.combiner)
-    output_features = BaseModel.build_outputs(config_obj, combiner)
+    output_features = BaseModel.build_outputs(config_obj.output_features, combiner)
     # Gets the output feature object which has dependencies.
     feature_with_deps = output_features[dep_feature_name]
     n_dependencies = len(feature_with_deps.dependencies)

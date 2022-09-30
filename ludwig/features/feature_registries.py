@@ -89,10 +89,10 @@ output_type_registry = {
 }
 
 
-def update_config_with_metadata(config: dict, config_obj: Config, training_set_metadata):
+def update_config_with_metadata(config_obj: Config, training_set_metadata):
     # populate input features fields depending on data
     # config = merge_with_defaults(config)
-    for input_feature in config[INPUT_FEATURES]:
+    for input_feature in config_obj.input_features.to_list():
         feature = get_from_registry(input_feature[TYPE], input_type_registry)
         feature.update_config_with_metadata(
             getattr(config_obj.input_features, input_feature[NAME]),
@@ -103,7 +103,7 @@ def update_config_with_metadata(config: dict, config_obj: Config, training_set_m
         input_feature[PREPROCESSING] = training_set_metadata[input_feature[NAME]][PREPROCESSING]
 
     # populate output features fields depending on data
-    for output_feature in config[OUTPUT_FEATURES]:
+    for output_feature in config_obj.output_features.to_list():
         feature = get_from_registry(output_feature[TYPE], output_type_registry)
         feature.update_config_with_metadata(
             getattr(config_obj.output_features, output_feature[NAME]),
