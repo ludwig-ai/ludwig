@@ -183,13 +183,7 @@ def test_update_config_object():
 
     temp_config = {
         "input_features": [
-            {"name": "text_feature",
-             "type": "text",
-             "encoder": {
-                 "type": "parallel_cnn",
-                 "max_sequence_length": 10
-             }
-             },
+            {"name": "text_feature", "type": "text", "encoder": {"type": "parallel_cnn", "max_sequence_length": 10}},
         ],
         "output_features": [
             {

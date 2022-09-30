@@ -887,8 +887,9 @@ class LudwigModel:
 
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
-            batch_size = self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) or \
-                         self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
+            batch_size = self.config_obj.trainer.to_dict().get(
+                EVAL_BATCH_SIZE, None
+            ) or self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
