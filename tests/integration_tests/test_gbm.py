@@ -149,6 +149,87 @@ def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
+def run_test_gbm_category(vocab_size, tmpdir, backend_config):
+    """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    output_feature = category_feature(decoder={"vocab_size": vocab_size})
+    output_features = [output_feature]
+
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
+
+    prob_col = preds[output_feature["name"] + "_probabilities"]
+    if backend_config["type"] == "ray":
+        prob_col = prob_col.compute()
+    assert len(prob_col.iloc[0]) == vocab_size
+    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("vocab_size", [2, 3])
+def test_local_gbm_category(vocab_size, tmpdir, local_backend):
+    run_test_gbm_category(vocab_size, tmpdir, local_backend)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("vocab_size", [2, 3])
+def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_4cpu):
+    run_test_gbm_category(vocab_size, tmpdir, ray_backend)
+
+
+def run_test_gbm_number(tmpdir, backend_config):
+    """Test that the GBM model can train and predict a numerical output (regression)."""
+    # Given a dataset with a single input feature and a single output feature,
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    output_feature = number_feature()
+    output_features = [output_feature]
+
+    # When we train a GBM model on the dataset,
+    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
+
+    # Then the predictions should be included in the output
+    pred_col = preds[output_feature["name"] + "_predictions"]
+    if backend_config["type"] == "ray":
+        pred_col = pred_col.compute()
+    assert pred_col.dtype == float
+
+
+def test_local_gbm_number(tmpdir, local_backend):
+    run_test_gbm_number(tmpdir, local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
+    run_test_gbm_number(tmpdir, ray_backend)
+
+
+def run_test_gbm_schema(backend_config):
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    # When I pass an invalid trainer configuration,
+    invalid_trainer = "trainer"
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {
+            "num_boost_round": 2,
+            "type": invalid_trainer,
+        },
+    }
+    with pytest.raises(ValidationError):
+        # Then I should get a schema validation error
+        LudwigModel(config, backend=backend_config)
+
+
+def test_local_gbm_schema(local_backend):
+    run_test_gbm_schema(local_backend)
+
+
+@pytest.mark.distributed
+def test_ray_gbm_schema(ray_backend, ray_cluster_4cpu):
+    run_test_gbm_schema(ray_backend)
+
+
 def test_hummingbird_conversion_binary(tmpdir, local_backend):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [binary_feature()]
@@ -255,84 +336,3 @@ def test_save_load(tmpdir, local_backend):
     preds, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
     assert init_preds.equals(preds)
-
-
-def run_test_gbm_category(vocab_size, tmpdir, backend_config):
-    """Test that the GBM model can train and predict a categorical output (multiclass classification)."""
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_feature = category_feature(decoder={"vocab_size": vocab_size})
-    output_features = [output_feature]
-
-    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
-
-    prob_col = preds[output_feature["name"] + "_probabilities"]
-    if backend_config["type"] == "ray":
-        prob_col = prob_col.compute()
-    assert len(prob_col.iloc[0]) == vocab_size
-    assert prob_col.apply(sum).mean() == pytest.approx(1.0)
-
-
-@pytest.mark.parametrize("vocab_size", [2, 3])
-def test_local_gbm_category(vocab_size, tmpdir, local_backend):
-    run_test_gbm_category(vocab_size, tmpdir, local_backend)
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize("vocab_size", [2, 3])
-def test_ray_gbm_category(vocab_size, tmpdir, ray_backend, ray_cluster_4cpu):
-    run_test_gbm_category(vocab_size, tmpdir, ray_backend)
-
-
-def run_test_gbm_number(tmpdir, backend_config):
-    """Test that the GBM model can train and predict a numerical output (regression)."""
-    # Given a dataset with a single input feature and a single output feature,
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_feature = number_feature()
-    output_features = [output_feature]
-
-    # When we train a GBM model on the dataset,
-    preds, _ = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
-
-    # Then the predictions should be included in the output
-    pred_col = preds[output_feature["name"] + "_predictions"]
-    if backend_config["type"] == "ray":
-        pred_col = pred_col.compute()
-    assert pred_col.dtype == float
-
-
-def test_local_gbm_number(tmpdir, local_backend):
-    run_test_gbm_number(tmpdir, local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
-    run_test_gbm_number(tmpdir, ray_backend)
-
-
-def run_test_gbm_schema(backend_config):
-    input_features = [number_feature()]
-    output_features = [binary_feature()]
-
-    # When I pass an invalid trainer configuration,
-    invalid_trainer = "trainer"
-    config = {
-        MODEL_TYPE: "gbm",
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {
-            "num_boost_round": 2,
-            "type": invalid_trainer,
-        },
-    }
-    with pytest.raises(ValidationError):
-        # Then I should get a schema validation error
-        LudwigModel(config, backend=backend_config)
-
-
-def test_local_gbm_schema(local_backend):
-    run_test_gbm_schema(local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_schema(ray_backend, ray_cluster_4cpu):
-    run_test_gbm_schema(ray_backend)
