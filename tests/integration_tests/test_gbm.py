@@ -149,11 +149,11 @@ def test_ray_gbm_non_number_inputs(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_non_number_inputs(tmpdir, ray_backend)
 
 
-def run_test_hummingbird_conversion_binary(tmpdir, backend_config):
+def test_hummingbird_conversion_binary(tmpdir, local_backend):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [binary_feature()]
 
-    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
+    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
 
     _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
     test_inputs = test.to_df(model.model.input_features.values())
@@ -167,11 +167,11 @@ def run_test_hummingbird_conversion_binary(tmpdir, backend_config):
     assert np.allclose(np.stack(probs_hb.values), probs_lgbm, atol=1e-8)
 
 
-def run_test_hummingbird_conversion_regression(tmpdir, backend_config):
+def test_hummingbird_conversion_regression(tmpdir, local_backend):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [number_feature()]
 
-    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
+    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
 
     _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
     test_inputs = test.to_df(model.model.input_features.values())
@@ -181,11 +181,12 @@ def run_test_hummingbird_conversion_regression(tmpdir, backend_config):
     assert np.allclose(preds_hb.values, preds_lgbm)
 
 
-def run_test_hummingbird_conversion_category(vocab_size, tmpdir, backend_config):
+@pytest.mark.parametrize("vocab_size", [2, 3])
+def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": vocab_size})]
 
-    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
+    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
 
     _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
     test_inputs = test.to_df(model.model.input_features.values())
@@ -207,22 +208,53 @@ def run_test_hummingbird_conversion_category(vocab_size, tmpdir, backend_config)
     assert np.allclose(np.stack(probs_hb.values), probs_lgbm, atol=1e-4)
 
 
-def test_local_hummingbird_conversion_binary(tmpdir, local_backend):
-    run_test_hummingbird_conversion_binary(tmpdir, local_backend)
+def test_loss_decreases(tmpdir, local_backend):
+    from ludwig.datasets import get_dataset, model_configs_for_dataset
+
+    default_config = model_configs_for_dataset("adult_census_income")["default"]
+    config = {
+        MODEL_TYPE: "gbm",
+        "input_features": default_config["input_features"][:3],  # only use first 3 features
+        "output_features": default_config["output_features"],
+        TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1},
+    }
+
+    df = get_dataset("adult_census_income").load(split=False)
+    # reduce dataset size to speed up test
+    df = df.loc[:10, [f["name"] for f in config["input_features"] + config["output_features"]]]
+
+    model = LudwigModel(config, backend=local_backend)
+    train_stats, _, _ = model.train(
+        dataset=df,
+        output_directory=tmpdir,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_log=True,
+    )
+
+    # retrieve training losses for first and last entries.
+    train_losses = train_stats["training"]["combined"]["loss"]
+    last_entry = len(train_losses)
+
+    # ensure train loss for last entry is less than or equal to the first entry.
+    assert train_losses[last_entry - 1] <= train_losses[0]
 
 
-def test_local_hummingbird_conversion_regression(tmpdir, local_backend):
-    run_test_hummingbird_conversion_regression(tmpdir, local_backend)
+def test_save_load(tmpdir, local_backend):
+    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    output_features = [binary_feature()]
 
+    init_preds, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
 
-@pytest.mark.parametrize("vocab_size", [2, 3])
-def test_local_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
-    run_test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend)
+    # save model
+    model.save(tmpdir)
 
+    # load model
+    model = LudwigModel.load(tmpdir)
+    preds, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
-# TODO: tests for loss going down
-
-# TODO: saving, loading, continuing training
+    assert init_preds.equals(preds)
 
 
 def run_test_gbm_category(vocab_size, tmpdir, backend_config):
