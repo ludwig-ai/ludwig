@@ -726,16 +726,16 @@ class LightGBMTrainer(BaseTrainer):
     def _construct_lgb_params(self) -> Tuple[dict, dict]:
         output_params = {}
         feature = next(iter(self.model.output_features.values()))
-        if feature.type() == CATEGORY:
+        if feature.type() == BINARY or feature.num_classes == 2:
+            output_params = {
+                "objective": "binary",
+                "metric": ["binary_logloss"],
+            }
+        elif feature.type() == CATEGORY:
             output_params = {
                 "objective": "multiclass",
                 "metric": ["multi_logloss"],
                 "num_class": feature.num_classes,
-            }
-        elif feature.type() == BINARY:
-            output_params = {
-                "objective": "binary",
-                "metric": ["binary_logloss"],
             }
         elif feature.type() == NUMBER:
             output_params = {
