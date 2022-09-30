@@ -411,7 +411,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     )
     model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
-    model.config["input_features"][0]["preprocessing"]["in_memory"] = test_in_memory
+    model.config_obj.input_features.to_list()[0]["preprocessing"]["in_memory"] = test_in_memory
 
     # setup test data format to test
     test_data = generate_data(input_features, output_features, test_csv_filename)
