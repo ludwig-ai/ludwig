@@ -48,7 +48,7 @@ class GBM(BaseModel):
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
-        self.lgb_booster: lgb.Booster = None
+        self.lgbm_model: lgb.LGBMModel = None
         self.compiled_model: torch.nn.Module = None
 
     @classmethod
@@ -69,23 +69,10 @@ class GBM(BaseModel):
 
     def compile(self):
         """Convert the LightGBM model to a PyTorch model and store internally."""
-        if self.lgb_booster is None:
+        if self.lgbm_model is None:
             raise ValueError("Model has not been trained yet.")
 
-        output_feature_name = self.output_features.keys()[0]
-        output_feature = self.output_features[output_feature_name]
-
-        # https://github.com/microsoft/LightGBM/issues/1942#issuecomment-453975607
-        gbm_sklearn_cls = lgb.LGBMRegressor if output_feature.type() == NUMBER else lgb.LGBMClassifier
-        gbm_sklearn = gbm_sklearn_cls(feature_name=list(self.input_features.keys()))  # , **params)
-        gbm_sklearn._Booster = self.lgb_booster
-        gbm_sklearn.fitted_ = True
-        gbm_sklearn._n_features = len(self.input_features)
-        if isinstance(gbm_sklearn, lgb.LGBMClassifier):
-            gbm_sklearn._n_classes = output_feature.num_classes if output_feature.type() == CATEGORY else 2
-
-        hb_model = convert(gbm_sklearn, "torch", extra_config={"tree_implementation": "gemm"})
-
+        hb_model = convert(self.lgbm_model, "torch")
         self.compiled_model = hb_model.model
 
     def forward(
@@ -133,6 +120,15 @@ class GBM(BaseModel):
         output_feature_name = self.output_features.keys()[0]
         output_feature = self.output_features[output_feature_name]
 
+        assert (
+            type(inputs) is torch.Tensor
+            and inputs.dtype == torch.float32
+            and inputs.ndim == 2
+            and inputs.shape[1] == len(self.input_features)
+        ), (
+            f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
+            f"but got {inputs.shape} of type {inputs.dtype}"
+        )
         preds = self.compiled_model(inputs)
 
         if output_feature.type() == NUMBER:
@@ -152,16 +148,21 @@ class GBM(BaseModel):
 
     def save(self, save_path):
         """Saves the model to the given path."""
-        if self.lgb_booster is None:
+        if self.lgbm_model is None:
             raise ValueError("Model has not been trained yet.")
 
+        import joblib
+
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        self.lgb_booster.save_model(weights_save_path, num_iteration=self.lgb_booster.best_iteration)
+        joblib.dump(self.lgbm_model, weights_save_path)
 
     def load(self, save_path):
         """Loads the model from the given path."""
+        import joblib
+
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        self.lgb_booster = lgb.Booster(model_file=weights_save_path)
+        self.lgbm_model = joblib.load(weights_save_path)
+
         self.compile()
 
         device = torch.device(get_torch_device())
