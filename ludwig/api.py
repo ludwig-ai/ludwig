@@ -218,14 +218,14 @@ class LudwigModel:
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         upgraded_config = upgrade_to_latest_version(config_dict)
 
-        # validate config dict
-        validate_config(upgraded_config)
-
         # Set defaults for hyperopt -> Can be removed after hyperopt is schemafied and in config obj
         self.config = set_hyperopt_defaults(upgraded_config)
 
         # Initialize the config object
         self.config_obj = Config(upgraded_config)
+
+        # validate config dict
+        validate_config(self.config_obj.get_config_dict())
 
         # ===== TEMPORARY - TO REMOVE =====
         self.config[TRAINER] = merge_dict(self.config_obj.trainer.to_dict(), self.config.get(TRAINER, {}))
@@ -522,25 +522,34 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                if self.config[TRAINER].get(BATCH_SIZE, None) == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
+                if self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO or \
+                        self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO:
                     # TODO (ASN): add support for substitute_with_max parameter
                     # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-                    tuned_batch_size = trainer.tune_batch_size(self.config, training_set, random_seed=random_seed)
+                    tuned_batch_size = trainer.tune_batch_size(
+                        self.config_obj.get_config_dict(),
+                        training_set,
+                        random_seed=random_seed
+                    )
 
                     # TODO(travis): pass these in as args to trainer when we call train,
                     #  to avoid setting state on possibly remote trainer
-                    if self.config[TRAINER][BATCH_SIZE] == AUTO:
-                        self.config[TRAINER][BATCH_SIZE] = tuned_batch_size
+                    if self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO:
+                        self.config_obj.trainer.batch_size = tuned_batch_size
                         trainer.batch_size = tuned_batch_size
 
-                    if self.config[TRAINER][EVAL_BATCH_SIZE] in {AUTO, None}:
-                        self.config[TRAINER][EVAL_BATCH_SIZE] = tuned_batch_size
+                    if self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) in {AUTO, None}:
+                        self.config_obj.trainer.eval_batch_size = tuned_batch_size
                         trainer.eval_batch_size = tuned_batch_size
 
                 # auto tune learning rate
-                if self.config[TRAINER][LEARNING_RATE] == AUTO:
-                    tuned_learning_rate = trainer.tune_learning_rate(self.config, training_set, random_seed=random_seed)
-                    self.config[TRAINER][LEARNING_RATE] = tuned_learning_rate
+                if self.config_obj.trainer.learning_rate == AUTO:
+                    tuned_learning_rate = trainer.tune_learning_rate(
+                        self.config_obj.get_config_dict(),
+                        training_set,
+                        random_seed=random_seed
+                    )
+                    self.config_obj.trainer.learning_rate = tuned_learning_rate
                     trainer.set_base_learning_rate(tuned_learning_rate)
 
                 # train model
@@ -552,7 +561,7 @@ class LudwigModel:
                 for callback in self.callbacks:
                     callback.on_train_start(
                         model=self.model,
-                        config=self.config,
+                        config=self.config_obj.get_config_dict(),
                         config_fp=self.config_fp,
                     )
 
@@ -678,7 +687,7 @@ class LudwigModel:
 
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
-                self.config,
+                self.config_obj.get_config_dict(),
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
