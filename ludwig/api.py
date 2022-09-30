@@ -106,17 +106,45 @@ from ludwig.utils.types import TorchDevice
 logger = logging.getLogger(__name__)
 
 
-class EvaluationFrequency(str, Enum):
-    """Is model evaluation performed every n epochs, or every n steps?"""
+class EvaluationPeriod(str, Enum):
+    """The unit that the period between model evaluations is expressed in."""
 
-    EPOCH = "epoch"
-    STEP = "step"
+    EPOCH = "epoch"  # One epoch is a single pass through the training set.
+    STEP = "step"  # One step is training on one mini-batch.
+
+
+@dataclass
+class EvaluationFrequency(str, Enum):
+    """Represents the frequency of periodic evaluation of a metric during training. For example:
+
+    "every epoch"
+    frequency: 1, period: EPOCH
+
+    "every 50 steps".
+    frequency: 50, period: STEP
+    """
+
+    frequency: float
+    period: EvaluationPeriod
 
 
 @dataclass
 class TrainingStats:
-    frequency: int = 1
-    EvaluationFrequency = EvaluationFrequency.EPOCH
+    training: Dict[str, Any]
+    validation: Dict[str, Any]
+    test: Dict[str, Any]
+    evaluation_frequency: EvaluationFrequency
+
+    def __iter__(self):
+        return iter((self.training, self.test, self.validation))
+
+    def __getitem__(self, key):
+        # Support dict-style accessory for compatibility.
+        return {
+            TRAINING: self.training_set,
+            VALIDATION: self.validation_set,
+            TEST: self.test_set,
+        }[key]
 
 
 @dataclass
@@ -134,7 +162,7 @@ class PreprocessedDataset:
 
 
 @dataclass
-class TrainingResult:
+class TrainingResults:
     train_stats: TrainingStats
     preprocessed_data: PreprocessedDataset
     output_directory: str
@@ -313,7 +341,7 @@ class LudwigModel:
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+    ) -> TrainingResults:
         """This function is used to perform a full training of the model on the specified dataset.
 
         During training if the skip parameters are False
@@ -639,17 +667,30 @@ class LudwigModel:
                         if not skip_save_model:
                             self.model.save(model_dir)
 
+                    # Evaluation Frequency
+                    if self.config.get("steps_per_checkpoint", None):
+                        evaluation_frequency = EvaluationFrequency(
+                            self.config["steps_per_checkpoint"], metric_utils.EvaluationPeriod.STEP
+                        )
+                    elif self.config.get("checkpoints_per_epoch", None):
+                        evaluation_frequency = EvaluationFrequency(
+                            1.0 / self.config["checkpoints_per_epoch"], metric_utils.EvaluationPeriod.EPOCH
+                        )
+                    else:
+                        evaluation_frequency = EvaluationFrequency(1, metric_utils.EvaluationPeriod.EPOCH)
+
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
                     # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
                     # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
                     # Tune.
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
-                    train_stats = {
-                        TRAINING: metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
-                        VALIDATION: metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
-                        TEST: metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
-                    }
+                    train_stats = TrainingStats(
+                        metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
+                        metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
+                        metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
+                        evaluation_frequency,
+                    )
 
                     # save training statistics
                     if self.backend.is_coordinator():
@@ -683,7 +724,7 @@ class LudwigModel:
                 self.backend.sync_model(self.model)
 
                 print_boxed("FINISHED")
-                return train_stats, preprocessed_data, output_url
+                return TrainingResults(train_stats, preprocessed_data, output_url)
 
     def train_online(
         self,
