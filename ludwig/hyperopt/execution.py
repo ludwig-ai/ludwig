@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ray
 from packaging import version
 from ray import tune
+from ray.air import Checkpoint
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
 from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
@@ -40,8 +41,6 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import has_remote_protocol
 from ludwig.utils.misc_utils import get_from_registry
 
-_ray_112 = version.parse("1.12") <= version.parse(ray.__version__) < version.parse("1.13")
-_ray_113 = version.parse(ray.__version__) >= version.parse("1.13")
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
 if _ray_200:
     from ray.tune.search import SEARCH_ALG_IMPORT
@@ -370,12 +369,7 @@ class RayTuneExecutor:
             yield None
             return
 
-        if _ray_112 and checkpoint is not None:
-            # In Ray 1.12 and 1.12.1, checkpoints don't have an as_directory() context manager so
-            # return the local path from the TrialCheckpoint object
-            yield checkpoint._local_path
-        elif _ray_113 and checkpoint is not None:
-            # In Ray 1.13, checkpoints have changed from strings to objects
+        if checkpoint is not None:
             with checkpoint.as_directory() as path:
                 yield path
         else:
@@ -491,6 +485,7 @@ class RayTuneExecutor:
             def __init__(self):
                 super().__init__()
                 self.last_steps = 0
+                self.resume_ckpt_ref = None
 
             def _get_remote_checkpoint_dir(self) -> Optional[Union[str, Tuple[str, str]]]:
                 # sync client has to be recreated to avoid issues with serialization
@@ -499,29 +494,27 @@ class RayTuneExecutor:
             def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
                 """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
-                    save_path = Path(save_path)
-                    remote_checkpoint_dir = self._get_remote_checkpoint_dir()
-                    if remote_checkpoint_dir is not None:
-                        sync_client = tune_executor.sync_client
-                        sync_client.sync_up(str(save_path.parent.parent.absolute()), remote_checkpoint_dir)
-                        sync_client.wait_or_retry()
-                    ray_queue.put((progress_tracker, str(save_path)))
+                    trainer_ckpt = Checkpoint.from_directory(save_path)
+                    ckpt_ref = trainer_ckpt.to_object_ref()
+                    ray_queue.put((progress_tracker, ckpt_ref))
                     return
                 checkpoint(progress_tracker, save_path)
 
+            def on_train_start(self, model, config: Dict[str, Any], config_fp: Union[str, None]):
+                if is_using_ray_backend and checkpoint_dir:
+                    # When using the Ray backend and resuming from a previous checkpoint, we must sync
+                    # the checkpoint files from the trial driver to the trainer worker.
+                    resume_ckpt = Checkpoint.from_directory(checkpoint_dir)
+                    self.resume_ckpt_ref = resume_ckpt.to_object_ref()
+
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
-                if is_using_ray_backend and checkpoint_dir and driver_trial_location != ray.util.get_node_ip_address():
-                    save_path = Path(save_path)
-
-                    for path in trial_dir.glob("checkpoint*"):
-                        if path not in (save_path.parent, checkpoint_dir):
-                            shutil.rmtree(path, ignore_errors=True)
-
-                    remote_checkpoint_dir = self._get_remote_checkpoint_dir()
-                    if remote_checkpoint_dir is not None:
-                        sync_client = tune_executor.sync_client
-                        sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
-                        sync_client.wait_or_retry()
+                if self.resume_ckpt_ref is not None and driver_trial_location != ray.util.get_node_ip_address():
+                    # The resume checkpoint is not None, so we are resuming from a previous state, and the
+                    # node of the trainer worker is not the same as the trial driver, otherwise the files would
+                    # not need to be synced as they would share the same local filesystem.
+                    trainer_ckpt = Checkpoint.from_object_ref(self.resume_ckpt_ref)
+                    with trainer_ckpt.as_directory() as ckpt_path:
+                        os.rename(ckpt_path, save_path)
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
@@ -580,18 +573,14 @@ class RayTuneExecutor:
             thread.daemon = True
             thread.start()
 
-            if self.sync_config is not None:
-                remote_checkpoint_dir = self._get_remote_checkpoint_dir(trial_dir)
-
             def check_queue():
                 qsize = ray_queue.qsize()
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
-                    if self.sync_client is not None:
-                        self.sync_client.sync_down(remote_checkpoint_dir, str(trial_dir.absolute()))
-                        self.sync_client.wait()
-                    for progress_tracker, save_path in results:
-                        checkpoint(progress_tracker, str(trial_dir.joinpath(Path(save_path))))
+                    for progress_tracker, ckpt_ref in results:
+                        trainer_ckpt = Checkpoint.from_object_ref(ckpt_ref)
+                        with trainer_ckpt.as_directory() as save_path:
+                            checkpoint(progress_tracker, save_path)
                         report(progress_tracker)
 
             while thread.is_alive():
