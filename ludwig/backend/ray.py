@@ -169,7 +169,6 @@ def train_fn(
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
-    print("Inside train_fn of runner")
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
     try:
@@ -208,7 +207,6 @@ def train_fn(
                 training_set_metadata,
             )
 
-        print("Getting reference to model")
         model = ray.get(model_ref)
         device = get_torch_device()
         model = model.to(device)

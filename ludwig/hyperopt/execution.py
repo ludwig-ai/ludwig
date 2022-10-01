@@ -63,7 +63,7 @@ try:
             return backend == RAY
         return isinstance(backend, RayBackend)
 
-    import dask
+    # import dask
 
 except ImportError as e:
     logger.warning(
@@ -570,14 +570,13 @@ class RayTuneExecutor:
         def _run():
             # TODO: Refactor into a function that yields the context manager if required
             if is_using_ray_backend:
-                with dask.config.set(annotations={"ray_remote_args": {"placement_group": None, "num_cpus": 1}}):
-                    print("Created Dask Context Manager")
-                    train_stats, eval_stats = run_experiment(
-                        **hyperopt_dict,
-                        model_resume_path=checkpoint_dir,
-                        parameters=config,
-                    )
-                    stats.append((train_stats, eval_stats))
+                # with dask.config.set(annotations={"ray_remote_args": {"placement_group": None, "num_cpus": 1}}):
+                train_stats, eval_stats = run_experiment(
+                    **hyperopt_dict,
+                    model_resume_path=checkpoint_dir,
+                    parameters=config,
+                )
+                stats.append((train_stats, eval_stats))
             else:
                 train_stats, eval_stats = run_experiment(
                     **hyperopt_dict,
@@ -789,8 +788,8 @@ class RayTuneExecutor:
             )
 
         if has_remote_protocol(output_directory):
-            run_experiment_trial = tune.durable(run_experiment_trial)
-            self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
+            # run_experiment_trial = tune.durable(run_experiment_trial)
+            self.sync_config = tune.SyncConfig(upload_dir=output_directory)  # sync_to_driver=False,
             if _ray_200:
                 self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
             else:
