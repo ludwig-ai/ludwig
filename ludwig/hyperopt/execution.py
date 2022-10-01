@@ -550,7 +550,7 @@ class RayTuneExecutor:
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
             num_gpus = resources.required_resources.get("GPU", 0)
-            # Leave 1 CPU to ensure resources for Dask operations and use the result for Horovod
+            # Leave 1 CPU to ensure resources for Dask operations and use the rest for Horovod
             num_cpus = resources.required_resources.get("CPU", 1) - 1 if num_gpus == 0 else 0
 
             hvd_kwargs = {
@@ -569,21 +569,21 @@ class RayTuneExecutor:
 
         def _run():
             # TODO: Refactor into a function that yields the context manager if required
-            if is_using_ray_backend:
-                # with dask.config.set(annotations={"ray_remote_args": {"placement_group": None, "num_cpus": 1}}):
-                train_stats, eval_stats = run_experiment(
-                    **hyperopt_dict,
-                    model_resume_path=checkpoint_dir,
-                    parameters=config,
-                )
-                stats.append((train_stats, eval_stats))
-            else:
-                train_stats, eval_stats = run_experiment(
-                    **hyperopt_dict,
-                    model_resume_path=checkpoint_dir,
-                    parameters=config,
-                )
-                stats.append((train_stats, eval_stats))
+            # if is_using_ray_backend:
+            #     # with dask.config.set(annotations={"ray_remote_args": {"placement_group": None, "num_cpus": 1}}):
+            #     train_stats, eval_stats = run_experiment(
+            #         **hyperopt_dict,
+            #         model_resume_path=checkpoint_dir,
+            #         parameters=config,
+            #     )
+            #     stats.append((train_stats, eval_stats))
+            # else:
+            train_stats, eval_stats = run_experiment(
+                **hyperopt_dict,
+                model_resume_path=checkpoint_dir,
+                parameters=config,
+            )
+            stats.append((train_stats, eval_stats))
 
         if is_using_ray_backend:
             # We have to pull the results to the trial actor
