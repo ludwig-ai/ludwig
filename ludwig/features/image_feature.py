@@ -86,6 +86,9 @@ class _ImagePreprocessing(torch.nn.Module):
         self.width = metadata["preprocessing"]["width"]
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
+        self.torchvision_parameters = torchvision_model_registry.get(metadata.get("torchvision_model_id"))
+        if self.torchvision_parameters is not None:
+            self.transform_method = self.torchvision_parameters.weights_class.DEFAULT.transforms()
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -97,30 +100,35 @@ class _ImagePreprocessing(torch.nn.Module):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
-        if torch.jit.isinstance(v, List[torch.Tensor]):
-            imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
-            imgs_stacked = torch.stack(imgs)
+        if self.torchvision_parameters:
+            pass
         else:
-            imgs_stacked = v
-
-        _, num_channels, height, width = imgs_stacked.shape
-
-        # Ensure images are the size expected by the model
-        if height != self.height or width != self.width:
-            imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
-
-        # Ensures images have the number of channels expected by the model
-        if num_channels != self.num_channels:
-            if self.num_channels == 1:
-                imgs_stacked = grayscale(imgs_stacked)
-            elif num_channels < self.num_channels:
-                extra_channels = self.num_channels - num_channels
-                imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, extra_channels])
+            if torch.jit.isinstance(v, List[torch.Tensor]):
+                imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
+                imgs_stacked = torch.stack(imgs)
             else:
-                raise ValueError(
-                    f"Number of channels cannot be reconciled. metadata.num_channels = "
-                    f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
-                )
+                imgs_stacked = v
+
+            _, num_channels, height, width = imgs_stacked.shape
+
+            # Ensure images are the size expected by the model
+            if height != self.height or width != self.width:
+                imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
+
+            # Ensures images have the number of channels expected by the model
+            if num_channels != self.num_channels:
+                if self.num_channels == 1:
+                    imgs_stacked = grayscale(imgs_stacked)
+                elif num_channels < self.num_channels:
+                    extra_channels = self.num_channels - num_channels
+                    imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, extra_channels])
+                else:
+                    raise ValueError(
+                        f"Number of channels cannot be reconciled. metadata.num_channels = "
+                        f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
+                    )
+
+            imgs_stacked = imgs_stacked.type(torch.float32) / 255
 
         return imgs_stacked
 
@@ -439,6 +447,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 transform_fn=torchvision_parameters.weights_class.DEFAULT.transforms(),
             )
             average_file_size = None
+
+            # add torchvision model id to preprocessing section for torchscript
+            preprocessing_parameters["torchvision_model_id"] = torchvision_model_id
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
@@ -544,9 +555,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(
-            [self.encoder_obj.config.num_channels, self.encoder_obj.config.height, self.encoder_obj.config.width]
-        )
+        return torch.Size(self.encoder_obj.input_shape)
 
     @property
     def output_shape(self) -> torch.Size:
