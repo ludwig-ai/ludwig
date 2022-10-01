@@ -27,9 +27,8 @@ import tempfile
 import traceback
 from collections import OrderedDict
 from dataclasses import dataclass
-from enum import Enum
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -106,15 +105,8 @@ from ludwig.utils.types import TorchDevice
 logger = logging.getLogger(__name__)
 
 
-class EvaluationPeriod(str, Enum):
-    """The unit that the period between model evaluations is expressed in."""
-
-    EPOCH = "epoch"  # One epoch is a single pass through the training set.
-    STEP = "step"  # One step is training on one mini-batch.
-
-
 @dataclass
-class EvaluationFrequency(str, Enum):
+class EvaluationFrequency:
     """Represents the frequency of periodic evaluation of a metric during training. For example:
 
     "every epoch"
@@ -125,7 +117,10 @@ class EvaluationFrequency(str, Enum):
     """
 
     frequency: float
-    period: EvaluationPeriod
+    period: str  # One of "epoch" or "step".
+
+    EPOCH: ClassVar[str] = "epoch"  # One epoch is a single pass through the training set.
+    STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
 
 
 @dataclass
@@ -140,11 +135,7 @@ class TrainingStats:
 
     def __getitem__(self, key):
         # Support dict-style accessory for compatibility.
-        return {
-            TRAINING: self.training_set,
-            VALIDATION: self.validation_set,
-            TEST: self.test_set,
-        }[key]
+        return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
 @dataclass
@@ -172,14 +163,14 @@ class TrainingResults:
 
         train_stats, training_set, output_dir = model.train(...)
         """
-        return iter((self.train_stats, self.training_set, self.output_directory))
+        return iter((self.train_stats, self.preprocessed_data, self.output_directory))
 
     def __getitem__(self, index):
         """Provides indexed getter ex.
 
         train_stats = model.train(...)[0]
         """
-        return (self.train_stats, self.training_set, self.output_directory)[index]
+        return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
 class LudwigModel:
@@ -668,16 +659,16 @@ class LudwigModel:
                             self.model.save(model_dir)
 
                     # Evaluation Frequency
-                    if self.config.get("steps_per_checkpoint", None):
+                    if self.config[TRAINER].get("steps_per_checkpoint", None):
                         evaluation_frequency = EvaluationFrequency(
-                            self.config["steps_per_checkpoint"], metric_utils.EvaluationPeriod.STEP
+                            self.config[TRAINER]["steps_per_checkpoint"], EvaluationFrequency.STEP
                         )
-                    elif self.config.get("checkpoints_per_epoch", None):
+                    elif self.config[TRAINER].get("checkpoints_per_epoch", None):
                         evaluation_frequency = EvaluationFrequency(
-                            1.0 / self.config["checkpoints_per_epoch"], metric_utils.EvaluationPeriod.EPOCH
+                            1.0 / self.config[TRAINER]["checkpoints_per_epoch"], EvaluationFrequency.EPOCH
                         )
                     else:
-                        evaluation_frequency = EvaluationFrequency(1, metric_utils.EvaluationPeriod.EPOCH)
+                        evaluation_frequency = EvaluationFrequency(1, EvaluationFrequency.EPOCH)
 
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
+import itertools
 import logging
 import os
 import sys
@@ -30,7 +31,7 @@ from yaml import warnings
 
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT, TRAINING, VALIDATION
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
@@ -152,10 +153,9 @@ def _validate_output_feature_name_from_train_stats(output_feature_name, train_st
     :return output_feature_names: list of output_feature_name(s) containing ground truth
     """
     output_feature_names_set = set()
-    for ls in train_stats_per_model:
-        for _, values in ls.items():
-            for key in values:
-                output_feature_names_set.add(key)
+    for train_stats in train_stats_per_model:
+        for key in itertools.chain(train_stats.training.keys(), train_stats.validation.keys(), train_stats.test.keys()):
+            output_feature_names_set.add(key)
     try:
         if output_feature_name in output_feature_names_set:
             return [output_feature_name]
@@ -1284,28 +1284,32 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0][TRAINING][output_feature_name]:
+            if metric in train_stats_per_model_list[0].training[output_feature_name]:
                 filename = None
                 if filename_template_path:
                     filename = filename_template_path.format(output_feature_name, metric)
 
                 training_stats = [
-                    learning_stats[TRAINING][output_feature_name][metric]
+                    learning_stats.training[output_feature_name][metric]
                     for learning_stats in train_stats_per_model_list
                 ]
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
-                    if VALIDATION in learning_stats and output_feature_name in learning_stats[VALIDATION]:
-                        validation_stats.append(learning_stats[VALIDATION][output_feature_name][metric])
+                    if learning_stats.validation and output_feature_name in learning_stats.validation:
+                        validation_stats.append(learning_stats.validation[output_feature_name][metric])
                     else:
                         validation_stats.append(None)
+
+                evaluation_frequency = train_stats_per_model_list[0].evaluation_frequency
 
                 visualization_utils.learning_curves_plot(
                     training_stats,
                     validation_stats,
                     metric,
-                    model_names_list,
+                    x_label=evaluation_frequency.period,
+                    x_step=evaluation_frequency.frequency,
+                    algorithm_names=model_names_list,
                     title=f"Learning Curves {output_feature_name}",
                     filename=filename,
                     callbacks=callbacks,
