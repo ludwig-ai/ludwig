@@ -18,7 +18,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ray
 from packaging import version
 from ray import tune
-from ray.air import Checkpoint
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
 from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
@@ -43,9 +42,11 @@ from ludwig.utils.misc_utils import get_from_registry
 
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
 if _ray_200:
+    from ray.air import Checkpoint
     from ray.tune.search import SEARCH_ALG_IMPORT
     from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
 else:
+    from ray.ml import Checkpoint
     from ray.tune.suggest import SEARCH_ALG_IMPORT
     from ray.tune.syncer import get_cloud_sync_client
 
