@@ -23,6 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 import torchvision
+from torchvision.transforms._presets import ImageClassification
 
 from ludwig.constants import (
     CHECKSUM,
@@ -86,9 +87,20 @@ class _ImagePreprocessing(torch.nn.Module):
         self.width = metadata["preprocessing"]["width"]
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
-        self.torchvision_parameters = torchvision_model_registry.get(metadata.get("torchvision_model_id"))
-        if self.torchvision_parameters is not None:
-            self.transform_method = self.torchvision_parameters.weights_class.DEFAULT.transforms()
+        self.torchvision_model_id = metadata["preprocessing"].get("torchvision_model_id")
+        if self.torchvision_model_id:
+            # temporarily instantiate torchvision partial function to obtain required
+            # construction parameters
+            image_transforms_partial = (
+                torchvision_model_registry[self.torchvision_model_id].weights_class.DEFAULT.transforms
+            )
+
+            # now recreate the ImageClassification object without the functools.partial wrapper
+            # this is needed because torchscript does not support functools.partial
+            self.image_transforms = ImageClassification(
+                *image_transforms_partial.args,
+                **image_transforms_partial.keywords
+            )
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -100,9 +112,16 @@ class _ImagePreprocessing(torch.nn.Module):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
-        if self.torchvision_parameters:
-            pass
+        if self.torchvision_model_id is not None:
+            # perform pre-processing for torchvision pretrained model encoders
+            # TODO: do we really need this isinstance() test for torchvision?  discuss with @geoffrey
+            if torch.jit.isinstance(v, List[torch.Tensor]):
+                imgs = [self.image_transforms(img) for img in v]
+                imgs_stacked = torch.stack(imgs)
+            else:
+                imgs_stacked = v
         else:
+            # perform pre-processing for Ludwig defined image encoders
             if torch.jit.isinstance(v, List[torch.Tensor]):
                 imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
                 imgs_stacked = torch.stack(imgs)
@@ -551,7 +570,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_dtype(self):
-        return torch.uint8
+        return torch.float32
 
     @property
     def input_shape(self) -> torch.Size:
