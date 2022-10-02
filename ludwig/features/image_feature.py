@@ -91,15 +91,14 @@ class _ImagePreprocessing(torch.nn.Module):
         if self.torchvision_model_id:
             # temporarily instantiate torchvision partial function to obtain required
             # construction parameters
-            image_transforms_partial = (
-                torchvision_model_registry[self.torchvision_model_id].weights_class.DEFAULT.transforms
-            )
+            image_transforms_partial = torchvision_model_registry[
+                self.torchvision_model_id
+            ].weights_class.DEFAULT.transforms
 
             # now recreate the ImageClassification object without the functools.partial wrapper
             # this is needed because torchscript does not support functools.partial
             self.image_transforms = ImageClassification(
-                *image_transforms_partial.args,
-                **image_transforms_partial.keywords
+                *image_transforms_partial.args, **image_transforms_partial.keywords
             )
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
