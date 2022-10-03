@@ -312,3 +312,13 @@ class file_lock(contextlib.AbstractContextManager):
     def __exit__(self, *args, **kwargs):
         if self.lock:
             return self.lock.__exit__(*args, **kwargs)
+
+
+def upload(lpath, rpath, recursive=False):
+    fs, path = get_fs_and_path(rpath)
+    fs.put(lpath, path, recursive=recursive)
+
+
+def download(rpath, lpath, recursive=False):
+    fs, path = get_fs_and_path(rpath)
+    fs.get(path, lpath, recursive=recursive)
