@@ -13,7 +13,7 @@
 
 import os
 from dataclasses import dataclass
-from typing import List, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 import dask.dataframe as dd
 import numpy as np
@@ -91,7 +91,7 @@ def allocate_experiment_resources(resources: Resources) -> dict:
     return experiment_resources
 
 
-def _get_hyperopt_config(experiment_resources, time_limit_s, random_seed):
+def _get_hyperopt_config(experiment_resources: Dict[str, Any], time_limit_s: Union[int, float], random_seed: int):
     executor = experiment_resources
     executor.update({"time_budget_s": time_limit_s})
     if time_limit_s is not None:
