@@ -85,8 +85,7 @@ def test_autoconfig_preprocessing_imbalanced():
 
     assert PREPROCESSING in config
     assert SPLIT in config[PREPROCESSING]
-    assert config[PREPROCESSING][SPLIT][TYPE] == "stratify"
-    assert config[PREPROCESSING][SPLIT][COLUMN] == "category"
+    assert config[PREPROCESSING][SPLIT] == {TYPE: "stratify", COLUMN: "category"}
 
 
 @pytest.mark.distributed
