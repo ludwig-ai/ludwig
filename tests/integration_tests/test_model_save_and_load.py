@@ -187,8 +187,8 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
             for if1_w, if2_w in zip(if1.encoder_obj.parameters(), if2.encoder_obj.parameters()):
                 assert torch.allclose(if1_w, if2_w)
 
-        tree1 = ludwig_model1.model.compiled_model
-        tree2 = ludwig_model2.model.compiled_model
+        tree1 = ludwig_model1.model.compiled_model.model
+        tree2 = ludwig_model2.model.compiled_model.model
         for t1_w, t2_w in zip(tree1.parameters(), tree2.parameters()):
             assert torch.allclose(t1_w, t2_w)
 
