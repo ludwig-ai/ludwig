@@ -6,6 +6,7 @@ from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 from ludwig.utils.torch_utils import initializer_registry
 
 
@@ -58,20 +59,36 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
         "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
         "each layer.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=3),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["kernel_size"],
     )
 
     stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of integers specifying the stride of the convolution along the height and "
         "width. If a stride is not already specified in conv_layers, specifies the default stride of the "
-        "2D convolutional kernel that will be used for each layer. ",
+        "2D convolutional kernel that will be used for each layer.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=1),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["stride"],
     )
 
     padding: Optional[Union[int, Tuple[int], str]] = schema_utils.PositiveIntegerOrTupleOrStringOptions(
         options=["valid", "same"],
         default="valid",
-        description="An int, pair of ints (h, w), or one of valid, same specifying the padding used for convolution "
-        "kernels. ",
+        description="An int, pair of ints (h, w), or one of ['valid', 'same'] specifying the padding used for"
+        "convolution kernels.",
+        field_options=[
+            schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+            schema_utils.StringOptions(options=["valid", "same"], default="valid", allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["padding"],
     )
 
     dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
@@ -79,6 +96,11 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         description="An int or pair of ints specifying the dilation rate to use for dilated convolution. If dilation "
         "is not already specified in conv_layers, specifies the default dilation of the 2D convolutional "
         "kernel that will be used for each layer.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["dilation"],
     )
 
     groups: Optional[int] = schema_utils.PositiveInteger(
@@ -137,22 +159,42 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default=2,
         description="An integer or pair of integers specifying the pooling size. If pool_kernel_size is not specified "
         "in conv_layers this is the default value that will be used for each layer.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_kernel_size"],
     )
 
     pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="An integer or pair of integers specifying the pooling stride, which is the factor by which the "
         "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_stride"],
     )
 
     pool_padding: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=0,
         description="An integer or pair of ints specifying pooling padding (h, w).",
+        field_options=[
+            schema_utils.NonNegativeInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_padding"],
     )
 
     pool_dilation: Optional[Union[int, Tuple[int]]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
+        field_options=[
+            schema_utils.PositiveInteger(description="", default=None, allow_none=False),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_dilation"],
     )
 
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
@@ -264,21 +306,41 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
         "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
         "each layer.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["kernel_size"],
     )
 
     conv_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=1,
         description="An integer or pair of integers specifying the stride of the initial convolutional layer.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["conv_stride"],
     )
 
     first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["first_pool_kernel_size"],
     )
 
     first_pool_stride: Union[int, Tuple[int]] = schema_utils.IntegerOrSequenceOfIntegers(
         default=None,
         description="Stride for first pooling layer. If null, defaults to first_pool_kernel_size.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["first_pool_stride"],
     )
 
     batch_norm_momentum: float = schema_utils.NonNegativeFloat(

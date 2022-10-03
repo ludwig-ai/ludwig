@@ -4,7 +4,9 @@ import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.schema import get_validator
 from ludwig.schema import utils as schema_utils
+from ludwig.schema import validate
 
 
 def get_marshmallow_from_dataclass_field(dfield):
@@ -144,7 +146,7 @@ def test_OneOfOptionsField():
             description="",
             allow_none=False,
             field_options=[
-                schema_utils.FloatRange(default=0.001, min=0, max=1),
+                schema_utils.FloatRange(default=0.001, min=0, max=1, allow_none=False),
                 schema_utils.StringOptions(options=["placeholder"], default="placeholder", allow_none=False),
             ],
         )
@@ -167,8 +169,8 @@ def test_OneOfOptionsField():
             description="",
             allow_none=True,
             field_options=[
-                schema_utils.FloatRange(default=0.001, min=0, max=1),
-                schema_utils.StringOptions(options=["placeholder"], default="placeholder"),
+                schema_utils.FloatRange(default=0.001, min=0, max=1, allow_none=False),
+                schema_utils.StringOptions(options=["placeholder"], default="placeholder", allow_none=False),
             ],
         )
 
@@ -186,3 +188,65 @@ def test_OneOfOptionsField():
     # Test invalid loads:
     with pytest.raises(MarshmallowValidationError):
         CustomTestSchema.Schema().load({"foo": "bar"})
+
+
+def test_OneOfOptionsField_allows_none():
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+            default=None,
+            allow_none=True,
+            description="",
+            field_options=[
+                schema_utils.PositiveInteger(description="", default=1, allow_none=False),
+                schema_utils.List(list_type=int, allow_none=False),
+            ],
+        )
+
+    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    schema = {
+        "type": "object",
+        "properties": {
+            "hello": json,
+        },
+        "definitions": {},
+    }
+    validate(instance={"hello": {"foo": None}}, schema=schema, cls=get_validator())
+
+
+def test_OneOfOptionsField_allows_none_fails_if_multiple_fields_allow_none():
+    with pytest.raises(ValueError):
+
+        @dataclass
+        class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+            foo: Union[float, str] = schema_utils.OneOfOptionsField(
+                default=None,
+                description="",
+                field_options=[
+                    schema_utils.PositiveInteger(description="", default=1, allow_none=True),
+                    schema_utils.List(list_type=int, allow_none=True),
+                ],
+            )
+
+
+def test_OneOfOptionsField_allows_none_one_field_allows_none():
+    @dataclass
+    class CustomTestSchema(schema_utils.BaseMarshmallowConfig):
+        foo: Union[float, str] = schema_utils.OneOfOptionsField(
+            default=None,
+            description="",
+            field_options=[
+                schema_utils.PositiveInteger(description="", default=1, allow_none=False),
+                schema_utils.List(list_type=int, allow_none=True),
+            ],
+        )
+
+    json = schema_utils.unload_jsonschema_from_marshmallow_class(CustomTestSchema)
+    schema = {
+        "type": "object",
+        "properties": {
+            "hello": json,
+        },
+        "definitions": {},
+    }
+    validate(instance={"hello": {"foo": None}}, schema=schema, cls=get_validator())
