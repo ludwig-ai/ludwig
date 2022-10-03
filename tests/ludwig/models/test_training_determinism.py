@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 
@@ -7,7 +6,6 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
-from ludwig.utils.data_utils import flatten_dict, NumpyEncoder
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
