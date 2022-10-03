@@ -508,7 +508,9 @@ class RayTuneExecutor:
                     self.resume_ckpt_ref = resume_ckpt.to_object_ref()
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
-                if self.resume_ckpt_ref is not None:
+                # Check local rank before manipulating files, as otherwise there will be a race condition
+                # between multiple workers running on the same node.
+                if self.resume_ckpt_ref is not None and trainer.local_rank == 0:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
@@ -534,6 +536,9 @@ class RayTuneExecutor:
                         # Cleanup the backup save_path as it's no longer needed
                         if os.path.exists(tmp_path):
                             shutil.rmtree(tmp_path)
+
+                # Sync all workers here before continuing to training
+                trainer.barrier()
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
