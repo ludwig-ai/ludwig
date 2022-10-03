@@ -22,7 +22,7 @@ from ludwig.globals import (
 )
 from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
-from ludwig.utils.data_utils import get_pa_schema, save_csv, save_json
+from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import flatten_df, from_numpy_dataset
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
