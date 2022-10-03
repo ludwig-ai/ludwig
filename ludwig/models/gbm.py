@@ -33,8 +33,12 @@ class GBM(BaseModel):
         if len(output_features) > 1:
             raise ValueError("Only single task currently supported")
         feat_types = {f[TYPE] for f in output_features + input_features}
-        if len(feat_types - {NUMBER, CATEGORY, BINARY}) != 0:
-            raise ValueError("Model type GBM only supports numerical, categorical, or binary features")
+        unsupported_types = feat_types - {NUMBER, CATEGORY, BINARY}
+        if len(unsupported_types) != 0:
+            raise ValueError(
+                "Model type GBM only supports numerical, categorical, or binary features "
+                f"but got unsupported types {unsupported_types}"
+            )
 
         super().__init__(random_seed=random_seed)
 
