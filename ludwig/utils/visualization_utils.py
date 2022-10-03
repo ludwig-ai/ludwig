@@ -105,7 +105,7 @@ def learning_curves_plot(
     ax.set_xlabel(x_label)
     ax.set_ylabel(metric.replace("_", " "))
 
-    xs = np.arange(1, (max_len + 1) * x_step, x_step)
+    xs = np.arange(1, (max_len * x_step) + 1, x_step)
 
     for i in range(num_algorithms):
         name_prefix = algorithm_names[i] + " " if algorithm_names is not None and i < len(algorithm_names) else ""
