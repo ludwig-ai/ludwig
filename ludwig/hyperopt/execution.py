@@ -37,7 +37,7 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.fs_utils import has_remote_protocol
+from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
@@ -446,7 +446,6 @@ class RayTuneExecutor:
 
         trial_id = tune.get_trial_id()
         trial_dir = Path(tune.get_trial_dir())
-        driver_trial_location = ray.util.get_node_ip_address()
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
@@ -509,13 +508,32 @@ class RayTuneExecutor:
                     self.resume_ckpt_ref = resume_ckpt.to_object_ref()
 
             def on_trainer_train_setup(self, trainer, save_path, is_coordinator):
-                if self.resume_ckpt_ref is not None and driver_trial_location != ray.util.get_node_ip_address():
+                if self.resume_ckpt_ref is not None:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
                     trainer_ckpt = Checkpoint.from_object_ref(self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
-                        os.rename(ckpt_path, save_path)
+                        # Attempt an atomic move from the ckpt_path to the save_path
+                        # This may first require removing the existing save_path
+                        tmp_path = save_path + ".tmp"
+                        if os.path.exists(save_path):
+                            os.rename(save_path, tmp_path)
+
+                        try:
+                            safe_move_file(os.path.join(ckpt_path, "model"), save_path)
+                        except Exception:
+                            # Rollback from partial changes. Remove the save_path
+                            # and move the original save_path back.
+                            if os.path.exists(save_path):
+                                shutil.rmtree(save_path)
+                            if os.path.exists(tmp_path):
+                                os.rename(tmp_path, save_path)
+                            raise
+
+                        # Cleanup the backup save_path as it's no longer needed
+                        if os.path.exists(tmp_path):
+                            shutil.rmtree(tmp_path)
 
             def on_eval_end(self, trainer, progress_tracker, save_path):
                 progress_tracker.tune_checkpoint_num += 1
