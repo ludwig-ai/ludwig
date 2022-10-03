@@ -1,5 +1,5 @@
-from marshmallow_dataclass import dataclass
 import yaml
+from marshmallow_dataclass import dataclass
 
 from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
