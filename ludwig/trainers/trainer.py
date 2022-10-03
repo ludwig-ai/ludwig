@@ -1360,6 +1360,17 @@ class Trainer(BaseTrainer):
             return True
         return self.horovod.rank() == 0
 
+    @property
+    def local_rank(self):
+        if not self.horovod:
+            return 0
+        return self.horovod.local_rank()
+
+    def barrier(self):
+        if not self.horovod:
+            return
+        self.horovod.allreduce(torch.as_tensor([0], dtype=torch.int))
+
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():
             for callback in self.callbacks:
