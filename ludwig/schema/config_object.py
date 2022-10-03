@@ -1,8 +1,11 @@
 import copy
-from typing import Dict, List
+import sys
+import warnings
+from typing import List
 
 import yaml
 from marshmallow import ValidationError
+from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
     BINARY,
@@ -13,6 +16,7 @@ from ludwig.constants import (
     DEFAULT_VALIDATION_METRIC,
     DEFAULTS,
     ENCODER,
+    EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
     LOSS,
@@ -25,6 +29,7 @@ from ludwig.constants import (
     OUTPUT_FEATURES,
     PREPROCESSING,
     PROC_COLUMN,
+    RAY,
     SEQUENCE,
     SPLIT,
     TIED,
@@ -48,6 +53,7 @@ from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
@@ -71,6 +77,9 @@ class BaseFeatureContainer:
         """
         return list(convert_submodules(self.__dict__).values())
 
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
+
 
 class InputFeaturesContainer(BaseFeatureContainer):
     """InputFeatures is a container for all input features."""
@@ -84,20 +93,26 @@ class OutputFeaturesContainer(BaseFeatureContainer):
     pass
 
 
-class Config:
+@dataclass
+class Config(BaseMarshmallowConfig):
     """This class is the implementation of the config object that replaces the need for a config dictionary
     throughout the project."""
 
-    def __init__(self, config_dict: dict):
+    model_type: str = MODEL_ECD
 
-        self.model_type = MODEL_ECD
-        self.input_features: InputFeaturesContainer = InputFeaturesContainer()
-        self.output_features: OutputFeaturesContainer = OutputFeaturesContainer()
-        self.combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
-        self.trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
-        self.preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
-        self.hyperopt = config_dict.get(HYPEROPT, {})
-        self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
+    input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
+
+    output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
+
+    combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
+
+    trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
+
+    preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
+
+    defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
+
+    def __init__(self, config_dict: dict):
 
         # ===== Defaults =====
         if DEFAULTS in config_dict:
@@ -148,14 +163,26 @@ class Config:
             self._set_attributes(self.preprocessing, config_dict[PREPROCESSING])
 
         # ===== Hyperopt =====
-        if HYPEROPT in config_dict:
-            pass  # TODO: Schemify Hyperopt
+        self.hyperopt = config_dict.get(HYPEROPT, {})
+        self._set_hyperopt_defaults()
+
+        # ===== Validate =====
 
     def __repr__(self):
-        output = ""
-        output += f"Model Type: {self.model_type}\n"
-        output += f"Input Features: {yaml.dump()}"
-        return output
+        return yaml.dump(self.to_dict(), sort_keys=False)
+
+    @classmethod
+    def from_dict(cls, dict_config):
+        return cls(dict_config)
+
+    @classmethod
+    def from_yaml(cls, yaml_path):
+        with open(yaml_path, "r") as stream:
+            try:
+                yaml_config = yaml.safe_load(stream)
+            except yaml.YAMLError:
+                raise yaml.YAMLError("Cannot parse input yaml file")
+        return cls(yaml_config)
 
     @staticmethod
     def _set_feature_column(config: dict) -> None:
@@ -220,7 +247,7 @@ class Config:
                     updated_feature_config = self._update_with_global_defaults(
                         feature_config, feature[TYPE], feature_section
                     )
-                    setattr(self.input_features, feature[NAME], updated_feature_config)
+                    setattr(self.input_features, feature[NAME], copy.deepcopy(updated_feature_config))
                 self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
 
             else:
@@ -231,7 +258,7 @@ class Config:
                     updated_feature_config = self._update_with_global_defaults(
                         feature_config, feature[TYPE], feature_section
                     )
-                    setattr(self.output_features, feature[NAME], updated_feature_config)
+                    setattr(self.output_features, feature[NAME], copy.deepcopy(updated_feature_config))
                 self._set_attributes(
                     getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
                 )
@@ -263,7 +290,7 @@ class Config:
                 # Check if submodule needs update
                 if TYPE in val and module.type != val[TYPE]:
                     new_config = self._get_new_config(key, val[TYPE], feature_type)()
-                    setattr(config_obj_lvl, key, new_config)
+                    setattr(config_obj_lvl, key, copy.deepcopy(new_config))
 
                 #  Now set the other defaults specified in the module
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
@@ -272,7 +299,7 @@ class Config:
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             else:
-                setattr(config_obj_lvl, key, val)
+                setattr(config_obj_lvl, key, copy.deepcopy(val))
 
     def _update_with_global_defaults(
         self, feature: BaseFeatureConfig, feat_type: str, feature_section: str
@@ -301,6 +328,44 @@ class Config:
 
         return feature
 
+    def _set_hyperopt_defaults(self):
+        if HYPEROPT not in self.hyperopt:
+            return
+
+        scheduler = self.hyperopt.get("executor", {}).get("scheduler")
+        if not scheduler:
+            return
+
+        if EXECUTOR in self.hyperopt:
+            set_default_value(self.hyperopt[EXECUTOR], TYPE, RAY)
+
+        # Disable early stopping when using a scheduler. We achieve this by setting the parameter
+        # to -1, which ensures the condition to apply early stopping is never met.
+        early_stop = self.trainer.early_stop
+        if early_stop is not None and early_stop != -1:
+            warnings.warn(
+                "Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1."
+            )
+        self.trainer.early_stop = -1
+
+        max_t = scheduler.get("max_t")
+        time_attr = scheduler.get("time_attr")
+        epochs = self.trainer.to_dict().get("epochs", None)
+        if max_t is not None:
+            if time_attr == "time_total_s":
+                if epochs is None:
+                    setattr(self.trainer, "epochs", sys.maxsize)  # continue training until time limit hit
+                # else continue training until either time or trainer epochs limit hit
+            elif epochs is not None and epochs != max_t:
+                raise ValueError(
+                    "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                    "Unset one of these parameters in your config or make sure their values match."
+                )
+            else:
+                setattr(self.trainer, "epochs", max_t)  # run trainer until scheduler epochs limit hit
+        elif epochs is not None:
+            scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
+
     def update_config_object(self, config_dict: dict):
         """This function enables the functionality to update the config object with the config dict in case it has
         been altered by a particular section of the Ludwig pipeline. For example, preprocessing/auto_tune_config
@@ -328,22 +393,3 @@ class Config:
         # ==== Update Trainer ====
         if TRAINER in config_dict:
             self._set_attributes(self.trainer, config_dict[TRAINER])
-
-    def get_config_dict(self) -> Dict[str, any]:
-        """This method converts the current config object into an equivalent dictionary representation since many
-        parts of the codebase still use the dictionary representation of the config.
-
-        Returns:
-            Config Dictionary
-        """
-        config_dict = {
-            "model_type": self.model_type,
-            "input_features": self.input_features.to_list(),
-            "output_features": self.output_features.to_list(),
-            "combiner": self.combiner.to_dict(),
-            "trainer": self.trainer.to_dict(),
-            "preprocessing": self.preprocessing.to_dict(),
-            "hyperopt": self.hyperopt,
-            "defaults": self.defaults.to_dict(),
-        }
-        return convert_submodules(config_dict)

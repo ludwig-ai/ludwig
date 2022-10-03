@@ -1,4 +1,5 @@
 import copy
+import yaml
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -128,6 +129,9 @@ class BaseMarshmallowConfig:
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
 
 
 def assert_is_a_marshmallow_class(cls):

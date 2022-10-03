@@ -45,7 +45,6 @@ from ludwig.constants import (
     HYPEROPT_WARNING,
     MIN_VALIDATION_SET_ROWS,
     TEST,
-    TRAINER,
     TRAINING,
     VALIDATION,
 )
@@ -83,14 +82,13 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.dataset_utils import generate_dataset_statistics
-from ludwig.utils.defaults import default_random_seed, set_hyperopt_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
     get_commit_hash,
     get_file_names,
     get_from_registry,
     get_output_directory,
-    merge_dict,
     set_saved_weights_in_checkpoint_flag,
 )
 from ludwig.utils.print_utils import print_boxed
@@ -215,19 +213,13 @@ class LudwigModel:
         self.base_config = config_dict
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        upgraded_config = upgrade_to_latest_version(config_dict)
-
-        # Set defaults for hyperopt -> Can be removed after hyperopt is schemafied and in config obj
-        self.config = set_hyperopt_defaults(upgraded_config)
+        self.config = upgrade_to_latest_version(config_dict)
 
         # Initialize the config object
-        self.config_obj = Config(upgraded_config)
+        self.config_obj = Config(self.config)
 
         # validate config dict
-        validate_config(self.config_obj.get_config_dict())
-
-        # ===== TEMPORARY - TO REMOVE =====
-        self.config[TRAINER] = merge_dict(self.config_obj.trainer.to_dict(), self.config.get(TRAINER, {}))
+        validate_config(self.config_obj.to_dict())
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -416,7 +408,7 @@ class LudwigModel:
                 # save description
                 if self.backend.is_coordinator():
                     description = get_experiment_description(
-                        self.config_obj.get_config_dict(),
+                        self.config_obj.to_dict(),
                         dataset=dataset,
                         training_set=training_set,
                         validation_set=validation_set,
@@ -445,10 +437,10 @@ class LudwigModel:
                         logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
                         print_boxed("LUDWIG CONFIG")
-                        logger.info(pformat(self.config_obj.get_config_dict(), indent=4))
+                        logger.info(pformat(self.config_obj.to_dict(), indent=4))
 
                 for callback in self.callbacks:
-                    callback.on_preprocess_start(self.config_obj.get_config_dict())
+                    callback.on_preprocess_start(self.config_obj.to_dict())
 
                 try:
                     preprocessed_data = self.preprocess(
@@ -528,7 +520,7 @@ class LudwigModel:
                     # TODO (ASN): add support for substitute_with_max parameter
                     # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
                     tuned_batch_size = trainer.tune_batch_size(
-                        self.config_obj.get_config_dict(), training_set, random_seed=random_seed
+                        self.config_obj.to_dict(), training_set, random_seed=random_seed
                     )
 
                     # TODO(travis): pass these in as args to trainer when we call train,
@@ -544,7 +536,7 @@ class LudwigModel:
                 # auto tune learning rate
                 if self.config_obj.trainer.learning_rate == AUTO:
                     tuned_learning_rate = trainer.tune_learning_rate(
-                        self.config_obj.get_config_dict(), training_set, random_seed=random_seed
+                        self.config_obj.to_dict(), training_set, random_seed=random_seed
                     )
                     self.config_obj.trainer.learning_rate = tuned_learning_rate
                     trainer.set_base_learning_rate(tuned_learning_rate)
@@ -558,7 +550,7 @@ class LudwigModel:
                 for callback in self.callbacks:
                     callback.on_train_start(
                         model=self.model,
-                        config=self.config_obj.get_config_dict(),
+                        config=self.config_obj.to_dict(),
                         config_fp=self.config_fp,
                     )
 
@@ -684,7 +676,7 @@ class LudwigModel:
 
         with provision_preprocessing_workers(self.backend):
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
-                self.config_obj.get_config_dict(),
+                self.config_obj.to_dict(),
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
@@ -768,7 +760,7 @@ class LudwigModel:
         # preprocessing
         logger.debug("Preprocessing")
         dataset, _ = preprocess_for_prediction(
-            self.config_obj.get_config_dict(),
+            self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -881,7 +873,7 @@ class LudwigModel:
         # preprocessing
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
-            self.config_obj.get_config_dict(),
+            self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1217,7 +1209,7 @@ class LudwigModel:
         # preprocessing
         logger.debug("Preprocessing")
         dataset, training_set_metadata = preprocess_for_prediction(
-            self.config_obj.get_config_dict(),
+            self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1297,7 +1289,7 @@ class LudwigModel:
 
         with provision_preprocessing_workers(self.backend):
             preprocessed_data = preprocess_for_training(
-                self.config_obj.get_config_dict(),
+                self.config_obj.to_dict(),
                 dataset=dataset,
                 training_set=training_set,
                 validation_set=validation_set,
@@ -1471,7 +1463,7 @@ class LudwigModel:
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-        save_json(model_hyperparameters_path, self.config_obj.get_config_dict())
+        save_json(model_hyperparameters_path, self.config_obj.to_dict())
 
     def to_torchscript(
         self,
@@ -1496,7 +1488,7 @@ class LudwigModel:
             return self.model.to_torchscript(device)
         else:
             inference_module = InferenceModule.from_ludwig_model(
-                self.model, self.config_obj.get_config_dict(), self.training_set_metadata, device=device
+                self.model, self.config_obj.to_dict(), self.training_set_metadata, device=device
             )
             return torch.jit.script(inference_module)
 
@@ -1519,7 +1511,7 @@ class LudwigModel:
         save_ludwig_model_for_inference(
             save_path,
             self.model,
-            self.config_obj.get_config_dict(),
+            self.config_obj.to_dict(),
             self.training_set_metadata,
             model_only=model_only,
             device=device,

@@ -16,13 +16,9 @@
 import argparse
 import copy
 import logging
-import sys
-import warnings
-from typing import Dict
 
 import yaml
 
-from ludwig.constants import EXECUTOR, HYPEROPT, RAY, TRAINER, TYPE
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.globals import LUDWIG_VERSION
@@ -32,7 +28,6 @@ from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
-from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -48,70 +43,9 @@ default_preprocessing_parameters = copy.deepcopy(default_feature_specific_prepro
 default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 
-def merge_hyperopt_with_trainer(config: dict) -> None:
-    if "hyperopt" not in config:
-        return
-
-    scheduler = config["hyperopt"].get("executor", {}).get("scheduler")
-    if not scheduler:
-        return
-
-    if TRAINER not in config:
-        config[TRAINER] = {}
-
-    # Disable early stopping when using a scheduler. We achieve this by setting the parameter
-    # to -1, which ensures the condition to apply early stopping is never met.
-    trainer = config[TRAINER]
-    early_stop = trainer.get("early_stop")
-    if early_stop is not None and early_stop != -1:
-        warnings.warn(
-            "Cannot set trainer parameter `early_stop` when using a hyperopt scheduler. We are unsetting "
-            "this parameter in your config in order to allow hyperopt scheduler to continue."
-        )
-    trainer["early_stop"] = -1
-
-    max_t = scheduler.get("max_t")
-    time_attr = scheduler.get("time_attr")
-    epochs = trainer.get("epochs")
-    if max_t is not None:
-        if time_attr == "time_total_s":
-            if epochs is None:
-                trainer["epochs"] = sys.maxsize  # continue training until time limit hit
-            # else continue training until either time or trainer epochs limit hit
-        elif epochs is not None and epochs != max_t:
-            raise ValueError(
-                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
-                "Unset one of these parameters in your config or make sure their values match."
-            )
-        else:
-            trainer["epochs"] = max_t  # run trainer until scheduler epochs limit hit
-    elif epochs is not None:
-        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
-
-
-def set_hyperopt_defaults(config: dict) -> Dict[str, any]:
-    """This function is intended to set the defaults for hyperopt on the user defined config. This is a temporary
-    function that should be removed once Hyperopt has been reconfigured to use the config object instead of a
-    config dictionary.
-
-    Args:
-        config: User defined config dictionary
-
-    Returns:
-        Updated user defined config dictionary
-    """
-
-    merge_hyperopt_with_trainer(config)
-
-    if HYPEROPT in config:
-        set_default_value(config[HYPEROPT][EXECUTOR], TYPE, RAY)
-
-    return config
-
-
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_to_latest_version(config)
-    output_config = Config(upgraded_config).get_config_dict()
+    output_config = Config(upgraded_config).to_dict()
     validate_config(output_config)
 
     if output is None:

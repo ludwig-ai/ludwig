@@ -39,7 +39,7 @@ from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, s
 from ludwig.schema.config_object import Config
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
-from ludwig.utils.defaults import default_random_seed, set_hyperopt_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
 
@@ -204,9 +204,6 @@ def hyperopt(
     # backwards compatibility
     upgraded_config = upgrade_to_latest_version(config_dict)
 
-    # Set default hyperopt params
-    set_hyperopt_defaults(upgraded_config)
-
     # Initialize config object
     config_obj = Config(upgraded_config)
 
@@ -214,7 +211,7 @@ def hyperopt(
     premerged_config = copy.deepcopy(upgraded_config)
 
     # Get full config with defaults
-    full_config = config_obj.get_config_dict()
+    full_config = config_obj.to_dict()
 
     hyperopt_config = full_config[HYPEROPT]
 

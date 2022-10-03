@@ -139,7 +139,7 @@ def run_hyperopt_executor(
         df["split"] = 0
         df.to_csv(rel_path)
 
-    config = Config(config).get_config_dict()
+    config = Config(config).to_dict()
 
     hyperopt_config = config["hyperopt"]
 

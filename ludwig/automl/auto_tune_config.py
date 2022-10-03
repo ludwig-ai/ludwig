@@ -126,7 +126,7 @@ def compute_memory_usage(config_obj, training_set_metadata, model_category) -> i
         batch_size = 2
     memory_usage = model_size * (BYTES_PER_WEIGHT + BYTES_OPTIMIZER_PER_WEIGHT) * batch_size
     if model_category == TEXT:
-        return _get_text_model_memory_usage(config_obj.get_config_dict(), training_set_metadata, memory_usage)
+        return _get_text_model_memory_usage(config_obj.to_dict(), training_set_metadata, memory_usage)
     else:
         return memory_usage
 
@@ -206,7 +206,7 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
     fits_in_memory = False
     tried_reduce_seq_len = False
     config_obj = Config(config)
-    raw_config = config_obj.get_config_dict()
+    raw_config = config_obj.to_dict()
     training_set_metadata = get_trainingset_metadata(raw_config, dataset, backend)
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])
     current_param_values = {}

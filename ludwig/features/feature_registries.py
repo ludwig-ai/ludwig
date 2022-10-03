@@ -43,7 +43,6 @@ from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOut
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
-from ludwig.schema.config_object import Config
 from ludwig.utils.misc_utils import get_from_registry
 
 base_type_registry = {
@@ -87,7 +86,7 @@ output_type_registry = {
 }
 
 
-def update_config_with_metadata(config_obj: Config, training_set_metadata):
+def update_config_with_metadata(config_obj, training_set_metadata):
     # populate input features fields depending on data
     # config = merge_with_defaults(config)
     for input_feature in config_obj.input_features.to_list():

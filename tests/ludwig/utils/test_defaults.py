@@ -110,7 +110,7 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
         config[HYPEROPT][EXECUTOR][SCHEDULER] = SCHEDULER_DICT
 
     upgraded_config = set_hyperopt_defaults(config)
-    merged_config = Config(upgraded_config).get_config_dict()
+    merged_config = Config(upgraded_config).to_dict()
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.
@@ -126,7 +126,7 @@ def test_missing_outputs_drop_rows():
     }
 
     upgraded_config = set_hyperopt_defaults(config)
-    merged_config = Config(upgraded_config).get_config_dict()
+    merged_config = Config(upgraded_config).to_dict()
 
     global_preprocessing = merged_config[DEFAULTS]
     input_feature_config = merged_config[INPUT_FEATURES][0]
@@ -147,7 +147,7 @@ def test_default_model_type():
         OUTPUT_FEATURES: [category_feature()],
     }
 
-    merged_config = Config(config).get_config_dict()
+    merged_config = Config(config).to_dict()
 
     assert merged_config[MODEL_TYPE] == MODEL_ECD
 
@@ -167,7 +167,7 @@ def test_default_trainer_type(model_trainer_type):
         MODEL_TYPE: model_type,
     }
 
-    merged_config = Config(config).get_config_dict()
+    merged_config = Config(config).to_dict()
 
     assert merged_config[TRAINER][TYPE] == expected_trainer_type
 
@@ -181,7 +181,7 @@ def test_overwrite_trainer_type():
         "trainer": {"type": expected_trainer_type},
     }
 
-    merged_config = Config(config).get_config_dict()
+    merged_config = Config(config).to_dict()
 
     assert merged_config[TRAINER][TYPE] == expected_trainer_type
 
@@ -273,7 +273,7 @@ def test_merge_with_defaults():
     }
 
     updated_config = upgrade_to_latest_version(legacy_config_format)
-    merged_config = Config(updated_config).get_config_dict()
+    merged_config = Config(updated_config).to_dict()
 
     assert len(merged_config[DEFAULTS]) == 13
     assert ENCODER in merged_config[DEFAULTS][CATEGORY]

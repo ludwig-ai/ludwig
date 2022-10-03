@@ -1,3 +1,7 @@
+import os
+import yaml
+from tempfile import TemporaryDirectory
+
 from ludwig.constants import COMBINER, DEFAULTS, HYPEROPT, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER
 from ludwig.schema.config_object import Config
 
@@ -151,7 +155,7 @@ def test_config_object_to_config_dict():
     }
 
     config_object = Config(config)
-    config_dict = config_object.get_config_dict()
+    config_dict = config_object.to_dict()
 
     assert INPUT_FEATURES in config_dict
     assert OUTPUT_FEATURES in config_dict
@@ -196,3 +200,42 @@ def test_update_config_object():
     config_object.update_config_object(temp_config)
 
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
+
+
+def test_constructors():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text", "encoder": {"type": "parallel_cnn", "max_sequence_length": 10}},
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_obj = Config.from_dict(config)
+
+    assert hasattr(config_obj, INPUT_FEATURES)
+    assert hasattr(config_obj, OUTPUT_FEATURES)
+    assert hasattr(config_obj, PREPROCESSING)
+    assert hasattr(config_obj, TRAINER)
+    assert hasattr(config_obj, COMBINER)
+    assert hasattr(config_obj, DEFAULTS)
+    assert hasattr(config_obj, HYPEROPT)
+
+    with TemporaryDirectory() as tmpdir:
+        file_path = os.path.join(tmpdir, "test.yaml")
+        with open(file_path, 'w') as file:
+            yaml.dump(config, file)
+
+        config_obj = Config.from_yaml(file_path)
+
+    assert hasattr(config_obj, INPUT_FEATURES)
+    assert hasattr(config_obj, OUTPUT_FEATURES)
+    assert hasattr(config_obj, PREPROCESSING)
+    assert hasattr(config_obj, TRAINER)
+    assert hasattr(config_obj, COMBINER)
+    assert hasattr(config_obj, DEFAULTS)
+    assert hasattr(config_obj, HYPEROPT)
