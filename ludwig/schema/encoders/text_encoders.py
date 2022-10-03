@@ -6,7 +6,6 @@ from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("albert", TEXT)
@@ -2325,11 +2324,6 @@ class LongformerConfig(BaseEncoderConfig):
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
         "specify a different window size for each layer, use a List[int] where len(attention_window) == "
         "num_hidden_layers.",
-        field_options=[
-            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-            schema_utils.List(list_type=int, allow_none=False),
-        ],
-        parameter_metadata=ENCODER_METADATA["LongformerEncoder"]["attention_window"],
     )
 
     sep_token_id: int = schema_utils.Integer(
