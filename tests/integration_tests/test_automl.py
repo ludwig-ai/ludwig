@@ -3,10 +3,12 @@ import tempfile
 from typing import Any, Dict, List, Set
 from unittest import mock
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES
+from ludwig.constants import COLUMN, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT TYPE
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:
@@ -47,6 +49,43 @@ def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+def _get_sample_df(class_probs):
+    nrows = 1000
+    thresholds = np.cumsum((class_probs * nrows).astype(int))
+
+    df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
+
+    def get_category(v):
+        if v < thresholds[0]:
+            return 0
+        if thresholds[0] <= v < thresholds[1]:
+            return 1
+        return 2
+
+    df["category"] = df.index.map(get_category).astype(np.int8)
+    return df
+
+
+@pytest.mark.distributed
+def test_autoconfig_preprocessing_balanced():
+    df = _get_sample_df(np.array([0.33, 0.33, 0.34]))
+
+    config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+
+    assert PREPROCESSING not in config
+
+
+@pytest.mark.distributed
+def test_autoconfig_preprocessing_imbalanced():
+    df = _get_sample_df(np.array([0.6, 0.2, 0.2]))
+
+    config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+
+    assert PREPROCESSING in config
+    assert SPLIT in config[PREPROCESSING]
+    assert config[PREPROCESSING][SPLIT] == {TYPE: "stratify", COLUMN: "category"}
 
 
 @pytest.mark.distributed
