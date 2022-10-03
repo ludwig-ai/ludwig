@@ -26,8 +26,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tokenizers import tokenizer_registry
+from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
 
 PANDAS_TRUE_STRS = {"true"}
@@ -254,7 +253,7 @@ def create_vocabulary(
     """
     vocab = None
 
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
@@ -396,7 +395,7 @@ def build_sequence_matrix(
     pretrained_model_name_or_path=None,
     processor=PANDAS,
 ) -> np.ndarray:
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=tokenizer_vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )

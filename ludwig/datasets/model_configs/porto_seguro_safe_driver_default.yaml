@@ -3,11 +3,11 @@ output_features:
     type: binary
 input_features:
   - name: ps_ind_01
-    type: numerical
+    type: number
   - name: ps_ind_02_cat
     type: category
   - name: ps_ind_03
-    type: numerical
+    type: number
   - name: ps_ind_04_cat
     type: category
   - name: ps_ind_05_cat
@@ -29,9 +29,9 @@ input_features:
   - name: ps_ind_13_bin
     type: binary
   - name: ps_ind_14
-    type: numerical
+    type: number
   - name: ps_ind_15
-    type: numerical
+    type: number
   - name: ps_ind_16_bin
     type: binary
   - name: ps_ind_17_bin
@@ -39,11 +39,11 @@ input_features:
   - name: ps_ind_18_bin
     type: binary
   - name: ps_reg_01
-    type: numerical
+    type: number
   - name: ps_reg_02
-    type: numerical
+    type: number
   - name: ps_reg_03
-    type: numerical
+    type: number
   - name: ps_car_01_cat
     type: category
   - name: ps_car_02_cat
@@ -67,43 +67,43 @@ input_features:
   - name: ps_car_11_cat
     type: category
   - name: ps_car_11
-    type: numerical
+    type: number
   - name: ps_car_12
-    type: numerical
+    type: number
   - name: ps_car_13
-    type: numerical
+    type: number
   - name: ps_car_14
-    type: numerical
+    type: number
   - name: ps_car_15
-    type: numerical
+    type: number
   - name: ps_calc_01
-    type: numerical
+    type: number
   - name: ps_calc_02
-    type: numerical
+    type: number
   - name: ps_calc_03
-    type: numerical
+    type: number
   - name: ps_calc_04
-    type: numerical
+    type: number
   - name: ps_calc_05
-    type: numerical
+    type: number
   - name: ps_calc_06
-    type: numerical
+    type: number
   - name: ps_calc_07
-    type: numerical
+    type: number
   - name: ps_calc_08
-    type: numerical
+    type: number
   - name: ps_calc_09
-    type: numerical
+    type: number
   - name: ps_calc_10
-    type: numerical
+    type: number
   - name: ps_calc_11
-    type: numerical
+    type: number
   - name: ps_calc_12
-    type: numerical
+    type: number
   - name: ps_calc_13
-    type: numerical
+    type: number
   - name: ps_calc_14
-    type: numerical
+    type: number
   - name: ps_calc_15_bin
     type: binary
   - name: ps_calc_16_bin

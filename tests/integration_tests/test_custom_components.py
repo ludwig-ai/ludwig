@@ -15,6 +15,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
@@ -32,7 +33,7 @@ from tests.integration_tests.utils import (
 
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
-    foo: bool = False
+    foo: bool = schema_utils.Boolean(default=False, description="")
 
 
 @register_encoder_config("custom_number_encoder", NUMBER)
@@ -41,7 +42,7 @@ class CustomNumberEncoderConfig(BaseEncoderConfig):
 
     type: str = "custom_number_encoder"
 
-    input_size: int = 0
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
 @register_decoder_config("custom_number_decoder", NUMBER)
@@ -50,7 +51,7 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
 
     type: str = "custom_number_decoder"
 
-    input_size: int = 0
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
 @dataclass
