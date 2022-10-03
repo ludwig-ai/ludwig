@@ -18,7 +18,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(NUMBER)
-@dataclass
+@dataclass(repr=False)
 class NumberInputFeatureConfig(BaseInputFeatureConfig):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -31,7 +31,7 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig):
 
 
 @output_config_registry.register(NUMBER)
-@dataclass
+@dataclass(repr=False)
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""

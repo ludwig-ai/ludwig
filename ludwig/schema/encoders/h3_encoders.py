@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("embed", H3)
-@dataclass
+@dataclass(repr=False)
 class H3EmbedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -104,7 +104,7 @@ class H3EmbedConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("weighted_sum", H3)
-@dataclass
+@dataclass(repr=False)
 class H3WeightedSumConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -198,7 +198,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("rnn", H3)
-@dataclass
+@dataclass(repr=False)
 class H3RNNConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

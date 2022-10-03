@@ -11,7 +11,7 @@ from ludwig.utils import strings_utils
 
 
 @register_preprocessor(BINARY)
-@dataclass
+@dataclass(repr=False)
 class BinaryPreprocessingConfig(BasePreprocessingConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -58,7 +58,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
 
 @register_preprocessor("binary_output")
-@dataclass
+@dataclass(repr=False)
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

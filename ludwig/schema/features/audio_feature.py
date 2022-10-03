@@ -11,7 +11,7 @@ from ludwig.schema.features.utils import input_config_registry
 
 
 @input_config_registry.register(AUDIO)
-@dataclass
+@dataclass(repr=False)
 class AudioInputFeatureConfig(BaseInputFeatureConfig):
     """AudioFeatureInputFeature is a dataclass that configures the parameters used for an audio input feature."""
 

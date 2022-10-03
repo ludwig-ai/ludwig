@@ -16,7 +16,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(SEQUENCE)
-@dataclass
+@dataclass(repr=False)
 class SequenceInputFeatureConfig(BaseInputFeatureConfig):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
@@ -30,7 +30,7 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig):
 
 
 @output_config_registry.register(SEQUENCE)
-@dataclass
+@dataclass(repr=False)
 class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""

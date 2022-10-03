@@ -11,7 +11,7 @@ from ludwig.schema.features.utils import input_config_registry
 
 
 @input_config_registry.register(IMAGE)
-@dataclass
+@dataclass(repr=False)
 class ImageInputFeatureConfig(BaseInputFeatureConfig):
     """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
 

@@ -11,7 +11,7 @@ from ludwig.schema.features.utils import input_config_registry
 
 
 @input_config_registry.register(H3)
-@dataclass
+@dataclass(repr=False)
 class H3InputFeatureConfig(BaseInputFeatureConfig):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
 

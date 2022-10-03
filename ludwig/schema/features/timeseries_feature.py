@@ -11,7 +11,7 @@ from ludwig.schema.features.utils import input_config_registry
 
 
 @input_config_registry.register(TIMESERIES)
-@dataclass
+@dataclass(repr=False)
 class TimeseriesInputFeatureConfig(BaseInputFeatureConfig):
     """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
     feature."""

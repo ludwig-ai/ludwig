@@ -25,7 +25,7 @@ def register_trainer_schema(name: str):
     return wrap
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -95,7 +95,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @register_trainer_schema("trainer")
-@dataclass
+@dataclass(repr=False)
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
 
@@ -302,7 +302,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 
 @register_trainer_schema("lightgbm_trainer")
-@dataclass
+@dataclass(repr=False)
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 

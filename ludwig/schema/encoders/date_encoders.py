@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("embed", DATE)
-@dataclass
+@dataclass(repr=False)
 class DateEmbedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -98,7 +98,7 @@ class DateEmbedConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("wave", DATE)
-@dataclass
+@dataclass(repr=False)
 class DateWaveConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

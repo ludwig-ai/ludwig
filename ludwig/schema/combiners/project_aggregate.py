@@ -7,7 +7,7 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
 
     type: str = schema_utils.StringOptions(

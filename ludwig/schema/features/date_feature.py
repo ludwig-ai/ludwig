@@ -11,7 +11,7 @@ from ludwig.schema.features.utils import input_config_registry
 
 
 @input_config_registry.register(DATE)
-@dataclass
+@dataclass(repr=False)
 class DateInputFeatureConfig(BaseInputFeatureConfig):
     """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""
 

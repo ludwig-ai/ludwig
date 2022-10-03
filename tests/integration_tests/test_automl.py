@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:

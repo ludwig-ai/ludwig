@@ -15,7 +15,7 @@ from ludwig.constants import (
 from ludwig.schema import utils as schema_utils
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -24,7 +24,7 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     weight: float = 1.0
 
 
-@dataclass
+@dataclass(repr=False)
 class MSELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -38,7 +38,7 @@ class MSELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class MAELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -52,7 +52,7 @@ class MAELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class RMSELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -66,7 +66,7 @@ class RMSELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class RMSPELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -80,7 +80,7 @@ class RMSPELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class BWCEWLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -103,7 +103,7 @@ class BWCEWLossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -136,7 +136,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -174,7 +174,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(

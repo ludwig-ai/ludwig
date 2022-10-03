@@ -8,7 +8,7 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
 @register_preprocessor(IMAGE)
-@dataclass
+@dataclass(repr=False)
 class ImagePreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

@@ -16,7 +16,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(BINARY)
-@dataclass
+@dataclass(repr=False)
 class BinaryInputFeatureConfig(BaseInputFeatureConfig):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -36,7 +36,7 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig):
 
 
 @output_config_registry.register(BINARY)
-@dataclass
+@dataclass(repr=False)
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 

@@ -8,7 +8,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for encoders."""
 
@@ -16,7 +16,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @register_encoder_config("passthrough", [CATEGORY, NUMBER, VECTOR])
-@dataclass
+@dataclass(repr=False)
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
@@ -29,7 +29,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
-@dataclass
+@dataclass(repr=False)
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 

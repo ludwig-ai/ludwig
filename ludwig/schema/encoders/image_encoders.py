@@ -11,7 +11,7 @@ from ludwig.utils.torch_utils import initializer_registry
 
 
 @register_encoder_config("stacked_cnn", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -285,7 +285,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("resnet", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class ResNetEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -458,7 +458,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("mlp_mixer", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class MLPMixerEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -535,7 +535,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("vit", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class ViTEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

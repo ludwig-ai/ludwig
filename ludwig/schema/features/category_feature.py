@@ -1,4 +1,5 @@
 from marshmallow_dataclass import dataclass
+import yaml
 
 from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
@@ -16,7 +17,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(CATEGORY)
-@dataclass
+@dataclass(repr=False)
 class CategoryInputFeatureConfig(BaseInputFeatureConfig):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -35,9 +36,12 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig):
         "feature of the same type and with the same encoder parameters.",
     )
 
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
+
 
 @output_config_registry.register(CATEGORY)
-@dataclass
+@dataclass(repr=False)
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""

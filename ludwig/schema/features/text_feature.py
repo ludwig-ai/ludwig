@@ -16,7 +16,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 
 
 @input_config_registry.register(TEXT)
-@dataclass
+@dataclass(repr=False)
 class TextInputFeatureConfig(BaseInputFeatureConfig):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -29,7 +29,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
 
 
 @output_config_registry.register(TEXT)
-@dataclass
+@dataclass(repr=False)
 class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 

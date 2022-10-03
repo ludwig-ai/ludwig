@@ -96,7 +96,7 @@ class OutputFeaturesContainer(BaseFeatureContainer):
         pass
 
 
-@dataclass
+@dataclass(repr=False)
 class Config(BaseMarshmallowConfig):
     """This class is the implementation of the config object that replaces the need for a config dictionary
     throughout the project."""
@@ -106,10 +106,10 @@ class Config(BaseMarshmallowConfig):
         self.model_type: str = MODEL_ECD
         self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
         self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
-        self.combiner: BaseCombinerConfig = ConcatCombinerConfig()
-        self.trainer: BaseTrainerConfig = ECDTrainerConfig()
-        self.preprocessing: PreprocessingConfig = PreprocessingConfig()
-        self.defaults: DefaultsConfig = DefaultsConfig()
+        self.combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
+        self.trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
+        self.preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
+        self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
 
         # ===== Defaults =====
         if DEFAULTS in config_dict:

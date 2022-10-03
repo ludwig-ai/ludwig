@@ -21,7 +21,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -50,7 +50,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseInputFeatureConfig(BaseFeatureConfig):
     """Base input feature config class."""
 
@@ -62,7 +62,7 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
 
