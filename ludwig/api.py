@@ -70,7 +70,6 @@ from ludwig.models.predictor import (
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.config_object import Config
 from ludwig.utils import metric_utils
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -209,10 +208,7 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        self.base_config = config_dict
-
-        # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        self.config = upgrade_to_latest_version(config_dict)
+        self.config = config_dict
 
         # Initialize the config object
         self.config_obj = Config.from_dict(self.config)
@@ -479,7 +475,7 @@ class LudwigModel:
 
             for callback in self.callbacks:
                 callback.on_train_init(
-                    base_config=self.base_config,
+                    base_config=self.config,
                     experiment_directory=output_directory,
                     experiment_name=experiment_name,
                     model_name=model_name,
@@ -1358,8 +1354,7 @@ class LudwigModel:
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        upgraded_config = upgrade_to_latest_version(config)
-        config_obj = Config.from_dict(upgraded_config)
+        config_obj = Config.from_dict(config)
 
         if backend_param is None and "backend" in config:
             # Reset backend from config
@@ -1367,7 +1362,7 @@ class LudwigModel:
 
         # initialize model
         ludwig_model = LudwigModel(
-            upgraded_config,
+            config_obj.to_dict(),
             logging_level=logging_level,
             backend=backend,
             gpus=gpus,

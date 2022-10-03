@@ -71,9 +71,9 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
     model = LudwigModel(config, backend=LocalTestBackend())
 
     # check preconditions
-    assert model.config[TRAINER][BATCH_SIZE] == "auto"
-    assert model.config[TRAINER][EVAL_BATCH_SIZE] == eval_batch_size
-    assert model.config[TRAINER][LEARNING_RATE] == "auto"
+    assert model.config_obj.trainer.batch_size == "auto"
+    assert model.config_obj.trainer.eval_batch_size == eval_batch_size
+    assert model.config_obj.trainer.learning_rate == "auto"
 
     _, _, output_directory = model.train(
         training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir

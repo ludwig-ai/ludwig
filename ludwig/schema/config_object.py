@@ -54,6 +54,7 @@ from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
@@ -103,6 +104,8 @@ class Config(BaseMarshmallowConfig):
 
     def __init__(self, config_dict: dict):
 
+        upgraded_config = upgrade_to_latest_version(config_dict)
+
         self.model_type: str = MODEL_ECD
         self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
         self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
@@ -112,22 +115,22 @@ class Config(BaseMarshmallowConfig):
         self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
 
         # ===== Defaults =====
-        if DEFAULTS in config_dict:
-            self._set_attributes(self.defaults, config_dict[DEFAULTS])
+        if DEFAULTS in upgraded_config:
+            self._set_attributes(self.defaults, upgraded_config[DEFAULTS])
 
         # ===== Features =====
-        self._set_feature_column(config_dict)
-        self._set_proc_column(config_dict)
-        self._parse_features(config_dict[INPUT_FEATURES], INPUT_FEATURES)
-        self._parse_features(config_dict[OUTPUT_FEATURES], OUTPUT_FEATURES)
+        self._set_feature_column(upgraded_config)
+        self._set_proc_column(upgraded_config)
+        self._parse_features(upgraded_config[INPUT_FEATURES], INPUT_FEATURES)
+        self._parse_features(upgraded_config[OUTPUT_FEATURES], OUTPUT_FEATURES)
 
         # ===== Model Type =====
-        if MODEL_TYPE in config_dict:
-            if config_dict[MODEL_TYPE] == MODEL_GBM:
+        if MODEL_TYPE in upgraded_config:
+            if upgraded_config[MODEL_TYPE] == MODEL_GBM:
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
-                if TYPE in config_dict.get(TRAINER, {}):
-                    assert config_dict[TRAINER][TYPE] == "lightgbm_trainer"
+                if TYPE in upgraded_config.get(TRAINER, {}):
+                    assert upgraded_config[TRAINER][TYPE] == "lightgbm_trainer"
 
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
@@ -141,26 +144,26 @@ class Config(BaseMarshmallowConfig):
                         )
 
         # ===== Combiner =====
-        if COMBINER in config_dict:
-            if self.combiner.type != config_dict[COMBINER][TYPE]:
-                self.combiner = combiner_registry.get(config_dict[COMBINER][TYPE]).get_schema_cls()()
+        if COMBINER in upgraded_config:
+            if self.combiner.type != upgraded_config[COMBINER][TYPE]:
+                self.combiner = combiner_registry.get(upgraded_config[COMBINER][TYPE]).get_schema_cls()()
 
             if self.combiner.type == SEQUENCE:
                 encoder_family = SEQUENCE
             else:
                 encoder_family = None
-            self._set_attributes(self.combiner, config_dict[COMBINER], feature_type=encoder_family)
+            self._set_attributes(self.combiner, upgraded_config[COMBINER], feature_type=encoder_family)
 
         # ===== Trainer =====
-        if TRAINER in config_dict:
-            self._set_attributes(self.trainer, config_dict[TRAINER])
+        if TRAINER in upgraded_config:
+            self._set_attributes(self.trainer, upgraded_config[TRAINER])
 
         # ===== Global Preprocessing =====
-        if PREPROCESSING in config_dict:
-            self._set_attributes(self.preprocessing, config_dict[PREPROCESSING])
+        if PREPROCESSING in upgraded_config:
+            self._set_attributes(self.preprocessing, upgraded_config[PREPROCESSING])
 
         # ===== Hyperopt =====
-        self.hyperopt = config_dict.get(HYPEROPT, {})
+        self.hyperopt = upgraded_config.get(HYPEROPT, {})
         self._set_hyperopt_defaults()
 
         # ===== Validate =====
