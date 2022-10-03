@@ -39,7 +39,7 @@ TRAINER_METADATA = (
                                                   commonly_used=False,
                                                   expected_impact=ExpectedImpact.MEDIUM,
                                                   literature_references=None,
-                                                  internal_only=True),                
+                                                  internal_only=True),
      'checkpoints_per_epoch': ParameterMetadata(ui_display_name='Checkpoints per epoch',
                                                 default_value_reasoning='Per-epoch behavior, which scales according '
                                                                         'to the '
