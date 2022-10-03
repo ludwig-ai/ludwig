@@ -1,11 +1,11 @@
 import copy
 import sys
 import warnings
+from dataclasses import dataclass
 from typing import Dict, List
 
 import yaml
 from marshmallow import ValidationError
-from dataclasses import dataclass
 
 from ludwig.constants import (
     BINARY,
