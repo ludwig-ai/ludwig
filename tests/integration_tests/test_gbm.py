@@ -6,7 +6,7 @@ import torch
 from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
-from ludwig.constants import MODEL_TYPE, TRAINER
+from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
@@ -41,8 +41,8 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
 
     config = {
         MODEL_TYPE: "gbm",
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         TRAINER: {"num_boost_round": 2},
     }
 
