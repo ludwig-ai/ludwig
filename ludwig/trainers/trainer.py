@@ -477,17 +477,17 @@ class Trainer(BaseTrainer):
             # TODO(geoffrey): Add support for batch size tuning on CPU
             best_batch_size = DEFAULT_BATCH_SIZE
         else:
-            ceiling = config["trainer"].get("auto_batch_size_ceiling")
+            max_batch_size = config["trainer"].get("max_batch_size")
 
             def _is_valid_batch_size(batch_size):
                 # make sure that batch size is valid (e.g. less than size of ds)
                 is_smaller_than_training_set = batch_size < len(training_set)
-                is_under_ceiling = ceiling is None or batch_size < ceiling
-                is_valid = is_smaller_than_training_set and is_under_ceiling
+                is_under_max_batch_size = max_batch_size is None or batch_size < max_batch_size
+                is_valid = is_smaller_than_training_set and is_under_max_batch_size
                 if not is_valid:
                     logger.info(
                         f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                        f"{len(training_set)} and under ceiling {ceiling}"
+                        f"{len(training_set)} and under max batch size {max_batch_size}"
                     )
                 return is_valid
 
