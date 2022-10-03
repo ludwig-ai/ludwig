@@ -34,7 +34,7 @@ def test_explanation_dataclass():
 
 
 def test_abstract_explainer_instantiation(tmpdir):
-    with pytest.raises(TypeError, match="Can't instantiate abstract class Explainer with abstract methods explain"):
+    with pytest.raises(TypeError, match="Can't instantiate abstract class Explainer with abstract method"):
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
 
