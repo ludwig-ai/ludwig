@@ -1,7 +1,7 @@
 import copy
 import sys
 import warnings
-from typing import List
+from typing import Dict, List
 
 import yaml
 from marshmallow import ValidationError
@@ -36,6 +36,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema import validate_config
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -167,6 +168,7 @@ class Config(BaseMarshmallowConfig):
         self._set_hyperopt_defaults()
 
         # ===== Validate =====
+        validate_config(self.to_dict())
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
@@ -393,3 +395,22 @@ class Config(BaseMarshmallowConfig):
         # ==== Update Trainer ====
         if TRAINER in config_dict:
             self._set_attributes(self.trainer, config_dict[TRAINER])
+
+    def to_dict(self) -> Dict[str, any]:
+        """This method converts the current config object into an equivalent dictionary representation since many
+        parts of the codebase still use the dictionary representation of the config.
+
+        Returns:
+            Config Dictionary
+        """
+        config_dict = {
+            "model_type": self.model_type,
+            "input_features": self.input_features.to_list(),
+            "output_features": self.output_features.to_list(),
+            "combiner": self.combiner.to_dict(),
+            "trainer": self.trainer.to_dict(),
+            "preprocessing": self.preprocessing.to_dict(),
+            "hyperopt": self.hyperopt,
+            "defaults": self.defaults.to_dict(),
+        }
+        return convert_submodules(config_dict)

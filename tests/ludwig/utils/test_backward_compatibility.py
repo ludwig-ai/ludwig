@@ -31,7 +31,6 @@ from ludwig.utils.backward_compatibility import (
     upgrade_model_progress,
     upgrade_to_latest_version,
 )
-from ludwig.utils.defaults import set_hyperopt_defaults
 
 
 def test_preprocessing_backward_compatibility():
@@ -449,8 +448,7 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
     if use_scheduler:
         assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
 
-    upgraded_hyperopt_config = set_hyperopt_defaults(updated_config)
-    merged_config = Config(upgraded_hyperopt_config).to_dict()
+    merged_config = Config(updated_config).to_dict()
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.

@@ -68,7 +68,6 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.schema import validate_config
 from ludwig.schema.config_object import Config
 from ludwig.utils import metric_utils
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
@@ -217,9 +216,6 @@ class LudwigModel:
 
         # Initialize the config object
         self.config_obj = Config(self.config)
-
-        # validate config dict
-        validate_config(self.config_obj.to_dict())
 
         # setup logging
         self.set_logging_level(logging_level)
