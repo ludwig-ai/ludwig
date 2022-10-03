@@ -26,13 +26,13 @@ import sys
 import tempfile
 import traceback
 from collections import OrderedDict
-from dataclasses import dataclass
 from pprint import pformat
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
+from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
@@ -125,6 +125,11 @@ class EvaluationFrequency:
 
 @dataclass
 class TrainingStats:
+    """Training stats were previously represented as a tuple or a dict.
+
+    This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
+    """
+
     training: Dict[str, Any]
     validation: Dict[str, Any]
     test: Dict[str, Any]
@@ -133,8 +138,15 @@ class TrainingStats:
     def __iter__(self):
         return iter((self.training, self.test, self.validation))
 
+    def __contains__(self, key):
+        return (
+            (key == TRAINING and self.training)
+            or (key == VALIDATION and self.validation)
+            or (key == TEST and self.test)
+        )
+
     def __getitem__(self, key):
-        # Support dict-style accessory for compatibility.
+        # Supports dict-style [] element access for compatibility.
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 

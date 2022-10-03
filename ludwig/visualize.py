@@ -29,6 +29,7 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 from yaml import warnings
 
+from ludwig.api import TrainingStats
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT
@@ -113,7 +114,7 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
             raise RuntimeError(exception_message)
 
 
-def load_data_for_viz(load_type, model_file_statistics, **kwargs):
+def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
     """Load model file data in to list of .
 
     :param load_type: type of the data loader to be used.
@@ -123,15 +124,20 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
     """
     supported_load_types = dict(
         load_json=load_json,
-        load_from_file=partial(
-            load_from_file, dtype=kwargs.get("dtype", int), ground_truth_split=kwargs.get("ground_truth_split", 2)
-        ),
+        load_from_file=partial(load_from_file, dtype=dtype, ground_truth_split=ground_truth_split),
     )
     loader = supported_load_types[load_type]
+    # Loads training stats from JSON file(s).
     try:
         stats_per_model = [loader(stats_f) for stats_f in model_file_statistics]
     except (TypeError, AttributeError):
         logger.exception(f"Unable to open model statistics file {model_file_statistics}!")
+        raise
+    # Loads TrainingStats structure from JSON object.
+    try:
+        stats_per_model = [TrainingStats.Schema().load(j) for j in stats_per_model]
+    except Exception:
+        logger.exception(f"Failed to load model statistics {model_file_statistics}!")
         raise
     return stats_per_model
 
