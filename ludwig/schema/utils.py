@@ -115,7 +115,7 @@ def InitializerOptions(default: str = "xavier_uniform", description=""):
 
 
 def ActivationOptions(default: str = "relu", description=""):
-    """Utility warapper that returns a `StringOptions` field with keys from `activations` registry."""
+    """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
     return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
 
 
