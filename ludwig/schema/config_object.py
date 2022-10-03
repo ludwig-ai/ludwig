@@ -85,13 +85,15 @@ class BaseFeatureContainer:
 class InputFeaturesContainer(BaseFeatureContainer):
     """InputFeatures is a container for all input features."""
 
-    pass
+    def __init__(self):
+        pass
 
 
 class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
-    pass
+    def __init__(self):
+        pass
 
 
 @dataclass
@@ -99,21 +101,15 @@ class Config(BaseMarshmallowConfig):
     """This class is the implementation of the config object that replaces the need for a config dictionary
     throughout the project."""
 
-    model_type: str = MODEL_ECD
-
-    input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
-
-    output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
-
-    combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
-
-    trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
-
-    preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
-
-    defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
-
     def __init__(self, config_dict: dict):
+
+        self.model_type: str = MODEL_ECD
+        self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
+        self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
+        self.combiner: BaseCombinerConfig = ConcatCombinerConfig()
+        self.trainer: BaseTrainerConfig = ECDTrainerConfig()
+        self.preprocessing: PreprocessingConfig = PreprocessingConfig()
+        self.defaults: DefaultsConfig = DefaultsConfig()
 
         # ===== Defaults =====
         if DEFAULTS in config_dict:
