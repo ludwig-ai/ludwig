@@ -479,13 +479,18 @@ class Trainer(BaseTrainer):
             # TODO(geoffrey): Add support for batch size tuning on CPU
             best_batch_size = DEFAULT_BATCH_SIZE
         else:
-            ceiling = config["trainer"].get("tune_batch_size_ceiling")
+            ceiling = config["trainer"].get("auto_batch_size_ceiling")
 
             def _is_valid_batch_size(batch_size):
                 # make sure that batch size is valid (e.g. less than size of ds)
-                is_valid = batch_size < len(training_set)
-                if ceiling:
-                    is_valid = is_valid and batch_size <= ceiling
+                is_smaller_than_training_set = batch_size < len(training_set)
+                is_under_ceiling = ceiling is None or batch_size < ceiling
+                is_valid = is_smaller_than_training_set and is_under_ceiling
+                if not is_valid:
+                    logger.info(
+                        f"Batch size {batch_size} is invalid, must be smaller than training set size "
+                        f"{len(training_set)} and under ceiling {ceiling}"
+                    )
                 return is_valid
 
             # TODO (ASN) : Circle back on how we want to set default placeholder value

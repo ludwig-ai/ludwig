@@ -161,7 +161,10 @@ class ECDTrainerConfig(BaseTrainerConfig):
     auto_batch_size_ceiling: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
-        description=("The maximum batch size to use when `batch_size` is set to 'auto'."),
+        description=(
+            "If this parameter is not None and batch_size='auto', then the batch size found must be "
+            "under this value."
+        ),
         parameter_metadata=TRAINER_METADATA["auto_batch_size_ceiling"],
     )
 
