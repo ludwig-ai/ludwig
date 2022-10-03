@@ -113,12 +113,15 @@ class _ImagePreprocessing(torch.nn.Module):
 
         if self.torchvision_model_id is not None:
             # perform pre-processing for torchvision pretrained model encoders
-            # TODO: do we really need this isinstance() test for torchvision?  discuss with @geoffrey
             if torch.jit.isinstance(v, List[torch.Tensor]):
                 imgs = [self.image_transforms(img) for img in v]
-                imgs_stacked = torch.stack(imgs)
             else:
-                imgs_stacked = v
+                # convert batch of image tensors to a list and then run torchvision pretrained
+                # model transforms on each image
+                imgs = [self.image_transforms(img) for img in torch.unbind(v)]
+
+            # collect the list of images into a batch
+            imgs_stacked = torch.stack(imgs)
         else:
             # perform pre-processing for Ludwig defined image encoders
             if torch.jit.isinstance(v, List[torch.Tensor]):
