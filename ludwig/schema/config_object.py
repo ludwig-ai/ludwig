@@ -330,6 +330,13 @@ class Config(BaseMarshmallowConfig):
         return feature
 
     def _set_hyperopt_defaults(self):
+        """
+        This function was migrated from defaults.py with the intention of setting some hyperopt defaults while the
+        hyperopt section of the config object is not fully complete.
+
+        Returns:
+            None -> modifies trainer and hyperopt sections
+        """
         if not self.hyperopt:
             return
 
