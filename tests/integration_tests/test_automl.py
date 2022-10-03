@@ -51,15 +51,7 @@ def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize(
-    ("split_expected", "class_probs"),
-    [
-        pytest.param(False, np.array([0.33, 0.33, 0.34]), id="balanced"),
-        pytest.param(True, np.array([0.6, 0.2, 0.2]), id="imbalanced"),
-    ],
-)
-def test_autoconfig_preprocessing(split_expected, class_probs, ray_cluster_2cpu):
+def _get_sample_df(class_probs):
     nrows = 1000
     thresholds = np.cumsum((class_probs * nrows).astype(int))
 
@@ -73,16 +65,28 @@ def test_autoconfig_preprocessing(split_expected, class_probs, ray_cluster_2cpu)
         return 2
 
     df["category"] = df.index.map(get_category).astype(np.int8)
+    return df
+
+
+@pytest.mark.distributed
+def test_autoconfig_preprocessing_balanced():
+    df = _get_sample_df(np.array([0.33, 0.33, 0.34]))
 
     config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
 
-    if split_expected:
-        assert PREPROCESSING in config
-        assert SPLIT in config[PREPROCESSING]
-        assert config[PREPROCESSING][SPLIT][TYPE] == "stratify"
-        assert config[PREPROCESSING][SPLIT][COLUMN] == "category"
-    else:
-        assert PREPROCESSING not in config
+    assert PREPROCESSING not in config
+
+
+@pytest.mark.distributed
+def test_autoconfig_preprocessing_imbalanced():
+    df = _get_sample_df(np.array([0.6, 0.2, 0.2]))
+
+    config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+
+    assert PREPROCESSING in config
+    assert SPLIT in config[PREPROCESSING]
+    assert config[PREPROCESSING][SPLIT][TYPE] == "stratify"
+    assert config[PREPROCESSING][SPLIT][COLUMN] == "category"
 
 
 @pytest.mark.distributed
