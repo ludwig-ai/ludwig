@@ -1,6 +1,7 @@
 import os
-import yaml
 from tempfile import TemporaryDirectory
+
+import yaml
 
 from ludwig.constants import COMBINER, DEFAULTS, HYPEROPT, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER
 from ludwig.schema.config_object import Config
@@ -227,7 +228,7 @@ def test_constructors():
 
     with TemporaryDirectory() as tmpdir:
         file_path = os.path.join(tmpdir, "test.yaml")
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             yaml.dump(config, file)
 
         config_obj = Config.from_yaml(file_path)
