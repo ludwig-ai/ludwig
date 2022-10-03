@@ -66,8 +66,6 @@ from ludwig.utils.trainer_utils import (
 
 logger = logging.getLogger(__name__)
 
-print("ASDFASDFASDF NEW TRAINER.PY")
-
 
 @register_trainer("trainer", MODEL_ECD, default=True)
 class Trainer(BaseTrainer):

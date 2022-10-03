@@ -158,14 +158,14 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ],
     )
 
-    auto_batch_size_ceiling: Optional[int] = schema_utils.PositiveInteger(
+    max_batch_size: Optional[int] = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description=(
             "If this parameter is not None and batch_size='auto', then the batch size found must be "
             "under this value."
         ),
-        parameter_metadata=TRAINER_METADATA["auto_batch_size_ceiling"],
+        parameter_metadata=TRAINER_METADATA["max_batch_size"],
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
