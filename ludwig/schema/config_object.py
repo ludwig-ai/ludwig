@@ -179,7 +179,7 @@ class Config(BaseMarshmallowConfig):
 
     @classmethod
     def from_yaml(cls, yaml_path):
-        with open(yaml_path, "r") as stream:
+        with open(yaml_path) as stream:
             try:
                 yaml_config = yaml.safe_load(stream)
             except yaml.YAMLError:
@@ -345,9 +345,7 @@ class Config(BaseMarshmallowConfig):
         # to -1, which ensures the condition to apply early stopping is never met.
         early_stop = self.trainer.early_stop
         if early_stop is not None and early_stop != -1:
-            warnings.warn(
-                "Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1."
-            )
+            warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
         self.trainer.early_stop = -1
 
         max_t = scheduler.get("max_t")
