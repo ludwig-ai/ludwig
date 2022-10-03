@@ -5,7 +5,7 @@ from typing import Dict, List
 
 import yaml
 from marshmallow import ValidationError
-from marshmallow_dataclass import dataclass
+from dataclasses import dataclass
 
 from ludwig.constants import (
     BINARY,
@@ -331,7 +331,7 @@ class Config(BaseMarshmallowConfig):
         return feature
 
     def _set_hyperopt_defaults(self):
-        if HYPEROPT not in self.hyperopt:
+        if not self.hyperopt:
             return
 
         scheduler = self.hyperopt.get("executor", {}).get("scheduler")

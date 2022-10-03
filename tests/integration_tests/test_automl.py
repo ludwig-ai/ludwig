@@ -100,7 +100,7 @@ def test_train_with_config(time_budget, test_data, ray_cluster_2cpu, tmpdir):
 
         if time_budget > 1:
             assert isinstance(best_model, LudwigModel)
-            assert best_model.config[TRAINER]["early_stop"] == -1
+            assert best_model.config_obj.trainer.early_stop == -1
             assert mock_fn.call_count == 0
         else:
             assert best_model is None
