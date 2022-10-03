@@ -1,6 +1,6 @@
 import copy
 import os
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import numpy as np
@@ -15,6 +15,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.types import TorchDevice
 
 
 class GBM(BaseModel):
@@ -141,15 +142,15 @@ class GBM(BaseModel):
             f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
             f"but got {inputs.shape} of type {inputs.dtype}"
         )
+        # Predict using PyTorch module, so it is included when converting to TorchScript.
+        preds = self.compiled_model.model(inputs)
 
         if output_feature.type() == NUMBER:
             # regression
-            preds = self.compiled_model.predict(inputs)
-            logits = torch.from_numpy(preds)
+            logits = preds.view(-1)
         else:
             # classification
-            probs = self.compiled_model.predict_proba(inputs)
-            probs = torch.from_numpy(probs)
+            _, probs = preds
 
             if output_feature.type() == BINARY:
                 # keep positive class only for binary feature
@@ -189,6 +190,14 @@ class GBM(BaseModel):
 
         device = torch.device(get_torch_device())
         self.compiled_model.to(device)
+
+    def to_torchscript(self, device: Optional[TorchDevice] = None):
+        """Converts the ECD model as a TorchScript model."""
+
+        # Disable gradient calculation for hummingbird Parameter nodes.
+        self.compiled_model.model.requires_grad_(False)
+
+        return super().to_torchscript(device)
 
     def get_args(self):
         """Returns init arguments for constructing this model."""
