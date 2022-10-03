@@ -428,6 +428,7 @@ def test_merge_with_defaults():
             "regularization_lambda": 0.0,
             "regularization_type": "l2",
             "should_shuffle": True,
+            "auto_batch_size_ceiling": None,
             "batch_size": 128,
             "steps_per_checkpoint": 0,
             "checkpoints_per_epoch": 0,
