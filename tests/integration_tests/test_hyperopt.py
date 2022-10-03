@@ -114,7 +114,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
-    config = Config(config).to_dict()
+    config = Config.from_dict(config).to_dict()
 
     return config, rel_path
 

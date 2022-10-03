@@ -456,7 +456,7 @@ class RayTuneExecutor:
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        modified_config = Config(modified_config).to_dict()
+        modified_config = Config.from_dict(modified_config).to_dict()
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'

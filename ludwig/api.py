@@ -215,7 +215,7 @@ class LudwigModel:
         self.config = upgrade_to_latest_version(config_dict)
 
         # Initialize the config object
-        self.config_obj = Config(self.config)
+        self.config_obj = Config.from_dict(self.config)
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -1359,7 +1359,7 @@ class LudwigModel:
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
         upgraded_config = upgrade_to_latest_version(config)
-        config_obj = Config(upgraded_config)
+        config_obj = Config.from_dict(upgraded_config)
 
         if backend_param is None and "backend" in config:
             # Reset backend from config

@@ -45,7 +45,7 @@ default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_to_latest_version(config)
-    output_config = Config(upgraded_config).to_dict()
+    output_config = Config.from_dict(upgraded_config).to_dict()
     validate_config(output_config)
 
     if output is None:

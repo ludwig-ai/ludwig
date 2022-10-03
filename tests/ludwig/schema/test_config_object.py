@@ -72,7 +72,7 @@ def test_config_object():
         },
     }
 
-    config_object = Config(config)
+    config_object = Config.from_dict(config)
     assert config_object.input_features.text_feature.encoder.type == "rnn"
     assert config_object.input_features.text_feature.encoder.num_layers == 2
 
@@ -129,7 +129,7 @@ def test_config_object_defaults():
         },
     }
 
-    config_object = Config(config)
+    config_object = Config.from_dict(config)
     assert config_object.input_features.number_feature.preprocessing.missing_value_strategy == "drop_row"
     assert config_object.input_features.number_feature.encoder.type == "dense"
 
@@ -155,7 +155,7 @@ def test_config_object_to_config_dict():
         ],
     }
 
-    config_object = Config(config)
+    config_object = Config.from_dict(config)
     config_dict = config_object.to_dict()
 
     assert INPUT_FEATURES in config_dict
@@ -181,7 +181,7 @@ def test_update_config_object():
         ],
     }
 
-    config_object = Config(config)
+    config_object = Config.from_dict(config)
 
     assert config_object.input_features.text_feature.encoder.type == "parallel_cnn"
     assert config_object.input_features.text_feature.encoder.max_sequence_length is None

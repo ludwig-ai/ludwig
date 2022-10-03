@@ -205,7 +205,7 @@ def memory_tune_config(config, dataset, model_category, row_count, backend):
 
     fits_in_memory = False
     tried_reduce_seq_len = False
-    config_obj = Config(config)
+    config_obj = Config.from_dict(config)
     raw_config = config_obj.to_dict()
     training_set_metadata = get_trainingset_metadata(raw_config, dataset, backend)
     modified_hyperparam_search_space = copy.deepcopy(raw_config[HYPEROPT]["parameters"])

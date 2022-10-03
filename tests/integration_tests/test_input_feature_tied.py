@@ -103,7 +103,7 @@ def test_tied_micro_level(input_feature_options):
     if input_feature_options.tie_features:
         input_feature_configs[1]["tied"] = "input_feature_1"
 
-    config_obj = Config(
+    config_obj = Config.from_dict(
         {"input_features": input_feature_configs, "output_features": [{"name": "dummy_feature", "type": "binary"}]}
     )
 

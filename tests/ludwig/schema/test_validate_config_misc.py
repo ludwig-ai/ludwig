@@ -72,7 +72,7 @@ def test_config_features():
 
     # make sure all defaults provided also registers as valid
 
-    config = Config(config).to_dict()
+    config = Config.from_dict(config).to_dict()
     validate_config(config)
 
     # test various invalid output features
@@ -247,7 +247,7 @@ def test_validate_with_preprocessing_defaults():
     }
 
     validate_config(config)
-    config = Config(config).to_dict()
+    config = Config.from_dict(config).to_dict()
     validate_config(config)
 
 

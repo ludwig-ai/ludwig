@@ -205,7 +205,7 @@ def hyperopt(
     upgraded_config = upgrade_to_latest_version(config_dict)
 
     # Initialize config object
-    config_obj = Config(upgraded_config)
+    config_obj = Config.from_dict(upgraded_config)
 
     # Retain pre-merged config for hyperopt schema generation
     premerged_config = copy.deepcopy(upgraded_config)
