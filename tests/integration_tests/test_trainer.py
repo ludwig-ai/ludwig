@@ -6,7 +6,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
 
 try:
