@@ -3,6 +3,8 @@ import logging
 import os
 
 import pytest
+import numpy as np
+from ludwig.utils.data_utils import flatten_dict
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
@@ -32,12 +34,8 @@ def test_training_determinism_ray_backend(csv_filename, tmpdir):
     eval_stats_1, train_stats_1, _, _ = experiment_output_1
     eval_stats_2, train_stats_2, _, _ = experiment_output_2
 
-    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
-        eval_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
-    )
-    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
-        train_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
-    )
+    np.testing.assert_equal(eval_stats_1, eval_stats_1)
+    np.testing.assert_equal(train_stats_1, train_stats_1)
 
 
 def test_training_determinism_local_backend(csv_filename, tmpdir):
@@ -46,12 +44,8 @@ def test_training_determinism_local_backend(csv_filename, tmpdir):
     eval_stats_1, train_stats_1, _, _ = experiment_output_1
     eval_stats_2, train_stats_2, _, _ = experiment_output_2
 
-    assert json.dumps(eval_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
-        eval_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
-    )
-    assert json.dumps(train_stats_1, cls=NumpyEncoder, sort_keys=True, indent=4) == json.dumps(
-        train_stats_2, cls=NumpyEncoder, sort_keys=True, indent=4
-    )
+    np.testing.assert_equal(eval_stats_1, eval_stats_1)
+    np.testing.assert_equal(train_stats_1, train_stats_1)
 
 
 def train_twice(backend, csv_filename, tmpdir):
@@ -63,7 +57,6 @@ def train_twice(backend, csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(encoder={"vocab_size": 10}),
-        # TODO: future support
         sequence_feature(encoder={"vocab_size": 3}),
         text_feature(encoder={"vocab_size": 3}),
         vector_feature(),
