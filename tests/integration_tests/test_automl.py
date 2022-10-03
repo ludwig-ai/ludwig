@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT TYPE
+from ludwig.constants import COLUMN, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
 
 try:
