@@ -30,6 +30,6 @@ RUN HOROVOD_WITH_PYTORCH=1 \
 	HOROVOD_WITHOUT_MPI=1 \
 	HOROVOD_WITHOUT_TENSORFLOW=1 \
 	HOROVOD_WITHOUT_MXNET=1 \
-	pip install --no-cache-dir '.[full]' && \
+	pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cpu && \
 	horovodrun --check-build && \
 	python -c "import horovod.torch; horovod.torch.init()"
