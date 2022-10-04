@@ -28,12 +28,15 @@ class Calibrator:
         self.backend = backend
         self.batch_size = batch_size
 
+    def calibration_enabled(self):
+        return not all(o.calibration_module is None for o in self.model.output_features.values())
+
     def train_calibration(self, dataset, dataset_name: str):
         """Calibrates model output probabilities on validation set after training.
 
         This works well for most datasets, though it may fail for some difficult or extremely imbalanced datasets.
         """
-        if all(o.calibration_module is None for o in self.model.output_features.values()):
+        if not self.calibration_enabled():
             # Early out if no output features have calibration enabled.
             return
         with self.backend.create_predictor(self.model, batch_size=self.batch_size) as predictor:
