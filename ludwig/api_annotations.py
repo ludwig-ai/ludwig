@@ -3,23 +3,22 @@
 # Code in api_annotations.py adapted from https://github.com/ray-project/ray (Apache-2.0 License)
 #
 # ==============================================================================
-
-
 from typing import Optional
 
 
 def PublicAPI(*args, **kwargs):
     """Annotation for documenting public APIs. Public APIs are classes and methods exposed to end users of Ludwig.
 
-    If 'stability="stable"', the APIs will remain backwards compatible across minor Ludwig releases
+    If stability="stable", the APIs will remain backwards compatible across minor Ludwig releases
     (e.g., Ludwig 0.6 -> Ludwig 0.5).
 
-    If 'stability="experimental"', the APIs can be used by advanced users who are tolerant to and expect
+    If stability="experimental", the APIs can be used by advanced users who are tolerant to and expect
     breaking changes. This will likely be seen in the case of incremental new feature development.
 
     Args:
         stability: One of {"stable", "experimental"}.
         message: A message to help users understand the reason for the deprecation, and provide a migration path.
+
     Examples:
         >>> from api_annotations import PublicAPI
         >>> @PublicAPI
@@ -45,7 +44,7 @@ def PublicAPI(*args, **kwargs):
 
     def wrap(obj):
         if stability == "experimental":
-            message = f"PublicAPI ({stability}): This API is in {stability} " "and may change before becoming stable."
+            message = f"PublicAPI ({stability}): This API is {stability} and may change before becoming stable."
         else:
             message = "PublicAPI: This API is stable across Ludwig releases."
 
@@ -62,7 +61,8 @@ def DeveloperAPI(*args, **kwargs):
     e.g., Ludwig 0.6.1 and Ludwig 0.6.2).
 
     Args:
-        message: a message to help users understand the reason for the deprecation, and provide a migration path.
+        message: A message to help users understand the reason for the deprecation, and provide a migration path.
+
     Examples:
         >>> from api_annotations import DeveloperAPI
         >>> @DeveloperAPI
@@ -81,10 +81,12 @@ def DeveloperAPI(*args, **kwargs):
 
 
 def Deprecated(*args, **kwargs):
-    """Annotation for documenting a deprecated API.
-    Deprecated APIs may be removed in future releases of Ludwig (e.g., Ludwig 0.7 to Ludwig 0.8).
+    """Annotation for documenting a deprecated API. Deprecated APIs may be removed in future releases of Ludwig
+    (e.g., Ludwig 0.7 to Ludwig 0.8).
+
     Args:
         message: A message to help users understand the reason for the deprecation, and provide a migration path.
+
     Examples:
         >>> from api_annotations import Deprecated
         >>> @Deprecated
@@ -130,6 +132,17 @@ def _append_doc(obj, *, message: str, directive: Optional[str] = None) -> str:
     obj.__doc__ += f"\n{' ' * indent}"
 
 
+def _mark_annotated(obj) -> None:
+    # Set magic token for check_api_annotations linter.
+    if hasattr(obj, "__name__"):
+        obj._annotated = obj.__name__
+
+
+def _is_annotated(obj) -> bool:
+    # Check the magic token exists and applies to this class (not a subclass).
+    return hasattr(obj, "_annotated") and obj._annotated == obj.__name__
+
+
 def _get_indent(docstring: str) -> int:
     """
     Example:
@@ -169,17 +182,5 @@ def _get_indent(docstring: str) -> int:
         # Docstring contains summary only.
         return 0
 
-    # The docstring summary isn't indented, so check the indentation of the second
-    # non-empty line.
+    # The docstring summary isn't indented, so check the indentation of the second non-empty line.
     return len(non_empty_lines[1]) - len(non_empty_lines[1].lstrip())
-
-
-def _mark_annotated(obj) -> None:
-    # Set magic token for check_api_annotations linter.
-    if hasattr(obj, "__name__"):
-        obj._annotated = obj.__name__
-
-
-def _is_annotated(obj) -> bool:
-    # Check the magic token exists and applies to this class (not a subclass).
-    return hasattr(obj, "_annotated") and obj._annotated == obj.__name__
