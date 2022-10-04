@@ -12,9 +12,7 @@ from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.util import get_pred_col
 from ludwig.models.ecd import ECD
-from ludwig.utils.torch_utils import get_torch_device
-
-DEVICE = get_torch_device()
+from ludwig.utils.torch_utils import DEVICE
 
 
 class WrapperModule(torch.nn.Module):
@@ -123,6 +121,8 @@ class IntegratedGradientsExplainer(Explainer):
             `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
             label in the target feature's vocab.
         """
+        self.model.model.to(DEVICE)
+
         # Convert input data into embedding tensors from the output of the model encoders.
         inputs_encoded = get_input_tensors(self.model, self.inputs_df)
         sample_encoded = get_input_tensors(self.model, self.sample_df)

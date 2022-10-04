@@ -29,7 +29,7 @@ class GBMExplainer(Explainer):
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
         expected_values = []
-        for target_idx in range(self.vocab_size):
+        for _ in range(self.vocab_size):
             for explanation in self.explanations:
                 # Add the feature attributions to the explanation object for this row.
                 explanation.add(feat_imp)

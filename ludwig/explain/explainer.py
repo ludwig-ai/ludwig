@@ -7,9 +7,6 @@ from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, CATEGORY, TYPE
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.util import prepare_data
-from ludwig.utils.torch_utils import get_torch_device
-
-DEVICE = get_torch_device()
 
 
 class Explainer(metaclass=ABCMeta):
@@ -23,8 +20,6 @@ class Explainer(metaclass=ABCMeta):
         :param sample_df: (pd.DataFrame) A sample of the ground truth data.
         :param target: (str) The name of the target to explain.
         """
-        model.model.to(DEVICE)
-
         self.model = model
         self.inputs_df = inputs_df
         self.sample_df = sample_df
