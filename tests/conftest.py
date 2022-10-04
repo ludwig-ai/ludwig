@@ -143,6 +143,9 @@ def _ray_start(request, **kwargs):
         yield None
         return
 
+    if ray.is_initialized():
+        ray.shutdown()
+
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
     res = ray.init(**init_kwargs)
