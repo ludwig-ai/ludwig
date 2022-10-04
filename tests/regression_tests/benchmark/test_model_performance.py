@@ -121,6 +121,6 @@ def test_performance(dataset, tmpdir):
     pprint(evaluation_resource_usage)
 
     assert test_statistics[output_feature_name][metric_name] > dataset_to_expected_performance[dataset]
-    assert preprocessing_resource_usage["total_execution_time"] > dataset_to_expected_preprocessing_time[dataset]
-    assert training_resource_usage["total_execution_time"] > dataset_to_expected_training_time[dataset]
-    assert evaluation_resource_usage["total_execution_time"] > dataset_to_expected_evaluation_time[dataset]
+    assert preprocessing_resource_usage["total_execution_time"] < dataset_to_expected_preprocessing_time[dataset]
+    assert training_resource_usage["total_execution_time"] < dataset_to_expected_training_time[dataset]
+    assert evaluation_resource_usage["total_execution_time"] < dataset_to_expected_evaluation_time[dataset]
