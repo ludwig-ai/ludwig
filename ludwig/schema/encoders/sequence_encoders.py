@@ -641,7 +641,7 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "lstm", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
         default="rnn",
         description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
         "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
@@ -873,7 +873,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     cell_type: str = schema_utils.StringOptions(
-        ["rnn", "lstm", "lstm_block", "lstm", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
+        ["rnn", "lstm", "lstm_block", "ln", "lstm_cudnn", "gru", "gru_block", "gru_cudnn"],
         default="rnn",
         description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
         "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
