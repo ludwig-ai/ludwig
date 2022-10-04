@@ -430,7 +430,6 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
         max_concurrent_trials = num_samples
 
     num_cpus_available = int(backend.get_available_resources().cpus)
-    print(num_cpus_available)
     num_cpus_required = cpu_resources_per_trial * num_samples
 
     if num_cpus_required >= num_cpus_available:
