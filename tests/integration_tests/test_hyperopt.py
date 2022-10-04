@@ -641,7 +641,7 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_clu
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     backend = initialize_backend("local")
-    num_samples = backend.num_cpus
+    num_samples = backend.get_available_resources().cpus
 
     config = {
         BACKEND: {TYPE: "local"},

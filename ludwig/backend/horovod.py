@@ -73,8 +73,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
     @property
     def num_nodes(self) -> int:
-        if not self._horovod:
-            return 1
         return self._horovod.size()
 
     def get_available_resources(self) -> Resources:

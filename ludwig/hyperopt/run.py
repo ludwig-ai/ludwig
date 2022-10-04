@@ -443,9 +443,19 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
             )
 
         if leftover_cpus < 1:
-            # Subtract 1 to ensure there's at least 1 full CPU resource available for dataset read tasks
-            # Use min incase user defined config has a smaller value already set for max_concurrent_trials
-            max_concurrent_trials = min(max_possible_concurrent_trials_with_available_cpus - 1, max_concurrent_trials)
+            if backend.BACKEND_TYPE == "local":
+                # Use min incase user defined config has a smaller value already set for max_concurrent_trials
+                # Reduce by 1 to ensure that resources exist for dataset related tasks
+                max_concurrent_trials = min(
+                    max_possible_concurrent_trials_with_available_cpus - 1, max_concurrent_trials
+                )
+            else:
+                # Subtract 2 to ensure there's at least 1 full CPU resource available for dataset read tasks and make
+                # sure there's no competition amongst trials for RayDatasetPipeline resource related tasks
+                max_concurrent_trials = min(
+                    max_possible_concurrent_trials_with_available_cpus - 2, max_concurrent_trials
+                )
+
             logger.info(
                 f"Number of CPUs needed for hyperopt trials ({num_cpus_required}) is greater than or equal to the "
                 f"total number of CPUs available ({num_cpus_available}). Restricting parallelism by setting "

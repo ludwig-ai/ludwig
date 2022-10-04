@@ -372,4 +372,4 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_clu
     assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
 
     hyperopt_statistics = json.load(open(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")))
-    assert hyperopt_statistics["hyperopt_config"][EXECUTOR][MAX_CONCURRENT_TRIALS] == 3
+    assert hyperopt_statistics["hyperopt_config"][EXECUTOR][MAX_CONCURRENT_TRIALS] == 2
