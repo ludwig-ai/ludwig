@@ -1,4 +1,4 @@
-import contextlib
+# import contextlib
 
 import pytest
 
@@ -7,11 +7,11 @@ from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TYPE
 from ludwig.hyperopt.run import update_or_set_max_concurrent_trials
 from ludwig.hyperopt.utils import substitute_parameters
 
-try:
-    import ray
+# try:
+#     import ray
 
-except ImportError:
-    ray = None
+# except ImportError:
+#     ray = None
 
 BASE_CONFIG = {
     INPUT_FEATURES: [{NAME: "title", TYPE: "text"}],
@@ -19,23 +19,23 @@ BASE_CONFIG = {
 }
 
 
-@contextlib.contextmanager
-def ray_start_4_cpus():
-    res = ray.init(
-        num_cpus=4,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
+# @contextlib.contextmanager
+# def ray_start_4_cpus():
+#     res = ray.init(
+#         num_cpus=4,
+#         include_dashboard=False,
+#         object_store_memory=150 * 1024 * 1024,
+#     )
+#     try:
+#         yield res
+#     finally:
+#         ray.shutdown()
 
 
-@pytest.fixture(scope="module")
-def ray_cluster_4cpu():
-    with ray_start_4_cpus():
-        yield
+# @pytest.fixture(scope="module")
+# def ray_cluster_4cpu():
+#     with ray_start_4_cpus():
+#         yield
 
 
 @pytest.mark.parametrize(

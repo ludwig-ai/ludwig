@@ -144,6 +144,7 @@ SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
 MAX_CONCURRENT_TRIALS = "max_concurrent_trials"
 CPU_RESOURCES_PER_TRIAL = "cpu_resources_per_trial"
+GPU_RESOURCES_PER_TRIAL = "gpu_resources_per_trial"
 GOAL = "goal"
 GRID_SEARCH = "grid_search"
 

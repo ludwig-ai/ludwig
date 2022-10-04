@@ -18,6 +18,7 @@ from ludwig.constants import (
     CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
     GOAL,
+    GPU_RESOURCES_PER_TRIAL,
     GRID_SEARCH,
     HYPEROPT,
     LOSS,
@@ -224,7 +225,7 @@ def hyperopt(
     update_or_set_max_concurrent_trials(hyperopt_config[EXECUTOR], backend)
 
     # Print hyperopt config
-    logger.info("Hyperopt config")
+    logger.info("Hyperopt Config")
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info("\n")
 
@@ -436,6 +437,7 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
     Set max_concurrent_trials in the hyperopt executor to ensure CPU resources are available for Ray Dataset related
     tasks.
     """
+
     cpu_resources_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
     num_samples = executor_config.get(NUM_SAMPLES)
     max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS)
@@ -448,18 +450,12 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
     if not max_concurrent_trials:
         return
 
-    if cpu_resources_per_trial == 0:
+    if cpu_resources_per_trial == 0 and executor_config.get(GPU_RESOURCES_PER_TRIAL, 0) == 0:
         # TODO(Arnav): Replace with custom LudwigConfigError in the future
-        raise ValueError("Atleast 1 CPU resource is required per trial. Please set 'cpu_resources_per_trial' > 0")
-
-    if max_concurrent_trials > num_samples:
-        logger.warning(
-            f"'max_concurrent_trials' ({max_concurrent_trials}) is greater than 'num_samples' ({num_samples}). "
-            "Setting 'max_concurrent_trials' to 'num_samples'."
+        raise ValueError(
+            "Atleast 1 CPU or GPU resource is required per trial. Please set 'cpu_resources_per_trial' > 0 "
+            "or 'gpu_resources_per_trial' > 0"
         )
-        max_concurrent_trials = num_samples
-
-    logger.info("Setting maximum number of concurrent hyperopt trials")
 
     num_cpus_available = int(backend.get_available_resources().cpus)
     num_cpus_required = cpu_resources_per_trial * num_samples
@@ -471,7 +467,7 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
         if max_possible_concurrent_trials_with_available_cpus == 0:
             raise RuntimeError(
                 "'cpu_resources_per_trial' is greater than the number of CPUs available, so no trials can be run."
-                " Please consider increasing the number of CPUs available or decrease `cpu_resources_per_trial`."
+                " Please consider increasing the number of CPUs available or decrease 'cpu_resources_per_trial'."
             )
 
         if leftover_cpus < 1:
@@ -497,7 +493,8 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
             # Use max to ensure max_concurrent_trials is at least 1
             executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
     elif is_auto:
-        # There are enough CPUs for the trials but max_concurrent_trials is auto, so set it to the number of samples
+        # There are enough CPUs for the number of trials but max_concurrent_trials is auto, so set it to the
+        # number of samples
         logging.info(f"Setting 'max_concurrent_trials' to {max_concurrent_trials}")
         executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
 
