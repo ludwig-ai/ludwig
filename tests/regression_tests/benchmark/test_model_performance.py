@@ -4,7 +4,7 @@ from pprint import pprint
 import pytest
 
 from ludwig.benchmarking.benchmark import benchmark
-from ludwig.utils.data_utils import load_json  # , load_yaml
+from ludwig.utils.data_utils import load_json, load_yaml
 
 BENCHMARKING_CONFIG = """
 experiment_name: {experiment_name}
@@ -32,12 +32,39 @@ dataset_name_to_metric = {
 }
 
 dataset_to_expected_performance = {
-    "ames_housing": 0.75,  # 0.7565240263938904
-    "mercedes_benz_greener": 0.48,  # 0.5213764905929565
-    "protein": 0.47,  # 0.49943429231643677
-    "sarcos": 0.94,  # 0.9894186854362488
-    "naval": 0.65,  # 0.14058196544647217
-    "adult_census_income": 0.81,  # 0.8540130853652954
+    "ames_housing": 0.75,
+    "mercedes_benz_greener": 0.48,
+    "adult_census_income": 0.81,
+    "protein": 0.47,
+    "sarcos": 0.94,
+    "naval": 0.65,
+}
+
+dataset_to_expected_preprocessing_time = {  # in microseconds
+    "ames_housing": 6e5,
+    "mercedes_benz_greener": 3.5e6,
+    "adult_census_income": 2e6,
+    "protein": 7e5,
+    "sarcos": 2.4e5,
+    "naval": 6e5,
+}
+
+dataset_to_expected_training_time = {  # in microseconds
+    "ames_housing": 3e7,
+    "mercedes_benz_greener": 1.3e8,
+    "adult_census_income": 6e7,
+    "protein": 1.25e8,
+    "sarcos": 3e8,
+    "naval": 8e8,
+}
+
+dataset_to_expected_evaluation_time = {  # in microseconds
+    "ames_housing": 1.3e5,
+    "mercedes_benz_greener": 4.5e5,
+    "adult_census_income": 6e5,
+    "protein": 2.5e5,
+    "sarcos": 3.5e5,
+    "naval": 1.3e5,
 }
 
 
@@ -67,11 +94,9 @@ def test_performance(dataset, tmpdir):
 
     test_statistics_fp = os.path.join(tmpdir, dataset, experiment_name, "experiment_run", "test_statistics.json")
     test_statistics = load_json(test_statistics_fp)
-    # output_feature_name = load_yaml(config_path)["output_features"][0]["name"]
-    # metric_name = dataset_name_to_metric[dataset]
-    # expected_performance = dataset_to_expected_performance[dataset]
+    output_feature_name = load_yaml(config_path)["output_features"][0]["name"]
+    metric_name = dataset_name_to_metric[dataset]
     pprint(test_statistics)
-    # assert test_statistics[output_feature_name][metric_name] > expected_performance
 
     # todo (wael): enable profiler and add resource usage asserts (esp. time and memory usage)
     preprocessing_resource_usage_fp = os.path.join(
@@ -94,3 +119,8 @@ def test_performance(dataset, tmpdir):
     pprint(training_resource_usage)
     print()
     pprint(evaluation_resource_usage)
+
+    assert test_statistics[output_feature_name][metric_name] > dataset_to_expected_performance[dataset]
+    assert preprocessing_resource_usage["total_execution_time"] > dataset_to_expected_preprocessing_time[dataset]
+    assert training_resource_usage["total_execution_time"] > dataset_to_expected_training_time[dataset]
+    assert evaluation_resource_usage["total_execution_time"] > dataset_to_expected_evaluation_time[dataset]
