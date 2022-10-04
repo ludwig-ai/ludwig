@@ -12,9 +12,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
 [![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
-</div>
+[Full official documentation](https://ludwig.ai)
 
-[Full official documentation](http://ludwig.ai)
+</div>
 
 # What is Ludwig?
 
