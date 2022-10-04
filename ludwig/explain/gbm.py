@@ -19,12 +19,12 @@ class GBMExplainer(Explainer):
             the target feature's vocab.
         """
         base_model: GBM = self.model.model
-        bst = base_model.lgb_booster
-        if bst is None:
+        gbm = base_model.lgbm_model
+        if gbm is None:
             raise ValueError("Model has not been trained yet.")
 
         # Get global feature importance from the model, use it for each row in the batch.
-        feat_imp = bst.feature_importance(importance_type="gain")
+        feat_imp = gbm.booster_.feature_importance(importance_type="gain")
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
