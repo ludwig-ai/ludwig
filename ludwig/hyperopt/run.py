@@ -459,7 +459,7 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
         )
         max_concurrent_trials = num_samples
 
-    logger.info("Inferring maximum number of trials to run in parallel for hyperopt")
+    logger.info("Setting maximum number of concurrent hyperopt trials")
 
     num_cpus_available = int(backend.get_available_resources().cpus)
     num_cpus_required = cpu_resources_per_trial * num_samples
