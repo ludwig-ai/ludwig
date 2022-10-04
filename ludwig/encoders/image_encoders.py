@@ -430,20 +430,20 @@ class ViTEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-        self,
-        model_variant: Union[str, int] = None,
-        use_pretrained_weights: bool = True,
-        saved_weights_in_checkpoint: bool = False,
-        model_cache_dir: Optional[str] = None,
-        trainable: bool = True,
-        **kwargs,
+            self,
+            model_variant: Union[str, int] = None,
+            use_pretrained: bool = True,
+            saved_weights_in_checkpoint: bool = False,
+            model_cache_dir: Optional[str] = None,
+            trainable: bool = True,
+            **kwargs,
     ):
         super().__init__()
 
         logger.debug(f" {self.name}")
         # map parameter input feature config names to internal names
         self.model_variant = model_variant
-        self.use_pretrained_weights = use_pretrained_weights
+        self.use_pretrained = use_pretrained
         self.model_cache_dir = model_cache_dir
 
         # cache pre-trained models if requested
@@ -457,7 +457,7 @@ class TVBaseEncoder(Encoder):
         self.create_model = torchvision_model_registry[model_id].create_model_function
 
         # get weight specification
-        if use_pretrained_weights and not saved_weights_in_checkpoint:
+        if use_pretrained and not saved_weights_in_checkpoint:
             weights_specification = torchvision_model_registry[model_id].weights_class.DEFAULT
         else:
             weights_specification = None

@@ -106,24 +106,24 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
-    "use_pretrained_weights",
+    "use_pretrained",
     [
         False,
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in TV_RESNET_VARIANTS])
 def test_tv_resnet_encoder(
-    model_variant: int,
-    use_pretrained_weights: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
+        model_variant: int,
+        use_pretrained: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVResNetEncoder(
         model_variant=model_variant,
-        use_pretrained_weights=use_pretrained_weights,
+        use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
         trainable=trainable,
     )
@@ -135,24 +135,24 @@ def test_tv_resnet_encoder(
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
-    "use_pretrained_weights",
+    "use_pretrained",
     [
         False,
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in VGG_VARIANTS])
 def test_tv_vgg_encoder(
-    model_variant: int,
-    use_pretrained_weights: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
+        model_variant: int,
+        use_pretrained: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVVGGEncoder(
         model_variant=model_variant,
-        use_pretrained_weights=use_pretrained_weights,
+        use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
         trainable=trainable,
     )
@@ -164,24 +164,24 @@ def test_tv_vgg_encoder(
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
-    "use_pretrained_weights",
+    "use_pretrained",
     [
         False,
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in ALEXNET_VARIANTS])
 def test_tv_alexnet_encoder(
-    model_variant: int,
-    use_pretrained_weights: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
+        model_variant: int,
+        use_pretrained: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVAlexNetEncoder(
         model_variant=model_variant,
-        use_pretrained_weights=use_pretrained_weights,
+        use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
         trainable=trainable,
     )
@@ -193,24 +193,24 @@ def test_tv_alexnet_encoder(
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
-    "use_pretrained_weights",
+    "use_pretrained",
     [
         False,
     ],
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in EFFICIENTNET_VARIANTS])
 def test_tv_efficientnet_encoder(
-    model_variant: int,
-    use_pretrained_weights: bool,
-    saved_weights_in_checkpoint: bool,
-    trainable: bool,
+        model_variant: int,
+        use_pretrained: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVEfficientNetEncoder(
         model_variant=model_variant,
-        use_pretrained_weights=use_pretrained_weights,
+        use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
         trainable=trainable,
     )

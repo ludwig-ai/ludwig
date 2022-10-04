@@ -653,7 +653,7 @@ class ViTEncoderConfig(BaseEncoderConfig):
 
 @dataclass
 class TVBaseEncoderConfig(BaseEncoderConfig):
-    use_pretrained_weights: Optional[bool] = schema_utils.Boolean(
+    use_pretrained: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Download model weights from pre-trained model.",
     )
