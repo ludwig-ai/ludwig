@@ -2319,11 +2319,15 @@ class LongformerConfig(BaseEncoderConfig):
         description="Whether to use the pretrained weights for the model.",
     )
 
-    attention_window: Union[List[int], int] = schema_utils.IntegerOrSequenceOfIntegers(
+    attention_window: Union[List[int], int] = schema_utils.OneOfOptionsField(
         default=512,
         description="Size of an attention window around each token. If an int, use the same size for all layers. To "
         "specify a different window size for each layer, use a List[int] where len(attention_window) == "
         "num_hidden_layers.",
+        field_options=[
+            schema_utils.PositiveInteger(allow_none=False, description="", default=None),
+            schema_utils.List(list_type=int, allow_none=False),
+        ],
     )
 
     sep_token_id: int = schema_utils.Integer(

@@ -13,6 +13,11 @@ from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, 
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 
+def get_marshmallow_field_class_name(field):
+    """Returns a human-readable string of the marshmallow class name."""
+    return field.metadata["marshmallow_field"].__class__.__name__
+
+
 def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
     """Takes a marshmallow class and instantiates it with the given keyword args as parameters."""
     assert_is_a_marshmallow_class(cls)
@@ -48,7 +53,7 @@ def load_config_with_kwargs(
 ) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
 
-    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are no present in config.
+    Returns a tuple of config, and a dictionary of any keys in kwargs_overrides which are not present in config.
     """
     assert_is_a_marshmallow_class(cls)
     schema = cls.Schema()
@@ -109,7 +114,7 @@ def InitializerOptions(default: str = "xavier_uniform", description=""):
     return StringOptions(list(initializer_registry.keys()), default=default, allow_none=False, description=description)
 
 
-def ActivationOptions(default: Union[str, None] = "relu", description=""):
+def ActivationOptions(default: str = "relu", description=""):
     """Utility wrapper that returns a `StringOptions` field with keys from `activations` registry."""
     return StringOptions(list(activations.keys()), default=default, allow_none=True, description=description)
 
@@ -247,7 +252,7 @@ def Integer(
 
 
 def PositiveInteger(
-    description: str, default: Union[None, int], allow_none: bool = False, parameter_metadata: ParameterMetadata = None
+    description: str, default: Union[None, int], allow_none: bool = True, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -281,7 +286,7 @@ def PositiveInteger(
 def NonNegativeInteger(
     description: str,
     default: Union[None, int] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
@@ -387,7 +392,7 @@ def NonNegativeFloat(
 
 def FloatRange(
     default: Union[None, float] = None,
-    allow_none: bool = False,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
     min: int = None,
@@ -423,143 +428,6 @@ def FloatRange(
     )
 
 
-def IntegerOrSequenceOfIntegers(
-    default: Union[None, int, Tuple[int, ...], TList[int]] = None,
-    default_integer: int = None,
-    default_sequence: Union[TList[int], Tuple[int, ...]] = None,
-    allow_none=False,
-    non_negative: bool = True,
-    description="",
-):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs or a tuple of numeric
-    inputs."""
-
-    class IntegerOrIntegerSequenceField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if non_negative:
-                    if value < 0:
-                        raise ValidationError("Value must be positive.")
-                return value
-            if isinstance(value, (tuple, list)):
-                if non_negative:
-                    for v in value:
-                        if v < 0:
-                            raise ValidationError("Values must be positive.")
-                return value
-            raise ValidationError("Field should be either an integer, tuple of integers, or a list of integers")
-
-        def _jsonschema_type_mapping(self):
-            numeric_option = {
-                "type": "integer",
-                "title": "integer_option",
-                "default": default_integer,
-                "description": "Set to a valid number.",
-            }
-            sequence_option = {
-                "type": "array",
-                "title": "sequence_option",
-                "items": {"type": "number"},
-                "default": default_sequence,
-                "description": "Set to a valid number.",
-            }
-
-            oneof_list = [
-                numeric_option,
-                sequence_option,
-            ]
-
-            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
-
-    return field(
-        metadata={
-            "marshmallow_field": IntegerOrIntegerSequenceField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
-            )
-        },
-        default=default,
-    )
-
-
-def PositiveIntegerOrTupleOrStringOptions(
-    options: TList[str] = None,
-    allow_none=False,
-    default: Union[None, int, Tuple[int, ...], str] = None,
-    default_integer: Union[None, int] = None,
-    default_tuple: Union[None, Tuple[int, ...]] = None,
-    default_option: Union[None, str] = None,
-    description="",
-):
-    """Returns a dataclass field with marshmallow metadata enforcing numeric inputs, a tuple of numeric inputs, or
-    a string value."""
-
-    class IntegerTupleStringOptionsField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if value < 0:
-                    raise ValidationError("Value must be positive.")
-                return value
-            if isinstance(value, tuple):
-                for v in value:
-                    if v < 0:
-                        raise ValidationError("Values must be positive.")
-                return value
-            if isinstance(value, str):
-                if value not in options:
-                    raise ValidationError(f"String value should be one of {options}")
-                return value
-
-            raise ValidationError("Field should be either an integer, tuple of integers, or a string")
-
-        def _jsonschema_type_mapping(self):
-            if None in options and not self.allow_none:
-                raise AssertionError(
-                    f"Provided string options `{options}` includes `None`, but field is not set to allow `None`."
-                )
-
-            # Prepare numeric option:
-            numeric_option = {
-                "type": "integer",
-                "title": "integer_option",
-                "default": default_integer,
-                "description": "Set to a valid number.",
-            }
-            tuple_option = {
-                "type": "array",
-                "title": "tuple_option",
-                "items": [{"type": "number", "minimum": 0, "maximum": 999999}] * 2,
-                "default": default_tuple,
-                "description": "Set to a valid number.",
-            }
-
-            # Prepare string option (remove None):
-            if None in options:
-                options.remove(None)
-            string_option = {
-                "type": "string",
-                "enum": options,
-                "default": default_option,
-                "title": "preconfigured_option",
-                "description": "Choose a preconfigured option.",
-            }
-            oneof_list = [
-                numeric_option,
-                tuple_option,
-                string_option,
-            ]
-
-            return {"oneOf": oneof_list, "title": self.name, "description": description, "default": default}
-
-    return field(
-        metadata={
-            "marshmallow_field": IntegerTupleStringOptionsField(
-                allow_none=allow_none, load_default=default, dump_default=default, metadata={"description": description}
-            )
-        },
-        default=default,
-    )
-
-
 def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     if default is not None:
@@ -586,7 +454,11 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-    list_type: Union[Type[str], Type[int], Type[float]] = str, default: Union[None, TList[Any]] = None, description=""
+    list_type: Union[Type[str], Type[int], Type[float]] = str,
+    default: Union[None, TList[Any]] = None,
+    description: str = "",
+    allow_none: bool = True,
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
     if default is not None:
@@ -609,7 +481,7 @@ def List(
         metadata={
             "marshmallow_field": fields.List(
                 field_type,
-                allow_none=True,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={"description": description},
@@ -764,7 +636,7 @@ def InitializerOrDict(default: str = "xavier_uniform", description: str = ""):
 
 
 def FloatRangeTupleDataclassField(
-    n=2, default: Union[Tuple, None] = (0.9, 0.999), allow_none: bool = False, min=0, max=1, description=""
+    n=2, default: Tuple = (0.9, 0.999), allow_none: bool = True, min=0, max=1, description=""
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
@@ -834,10 +706,37 @@ def FloatRangeTupleDataclassField(
 
 
 def OneOfOptionsField(
-    default: Any, description: str, allow_none: bool, field_options: TList, parameter_metadata: ParameterMetadata = None
+    default: Any,
+    description: str,
+    field_options: TList,
+    allow_none: bool = True,
+    parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
-    field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
+    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
+
+    NOTE: There can be at most one field_option with `allow_none=True`, or else a None value can be attributed to
+    multiple field_options, which this JSON validator does not permit.
+    """
+    if default is None:
+        # If the default is None, then this field allows none.
+        allow_none = True
+
+    fields_that_allow_none = [option for option in field_options if option.metadata["marshmallow_field"].allow_none]
+    if len(fields_that_allow_none) > 1 and allow_none:
+        raise ValueError(
+            f"The governing OneOf has allow_none=True, but there are some field options that themselves "
+            "allow_none=True, which is ambiguous for JSON validation. To maintain allow_none=True for the overall "
+            "field, add allow_none=False to each of the field_options: "
+            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}, and rely on the "
+            "governing OneOf's allow_none=True to set the allow_none policy."
+        )
+
+    if fields_that_allow_none and not allow_none:
+        raise ValueError(
+            "The governing OneOf has allow_none=False, while None is permitted by the following field_options: "
+            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}. This is contradictory. "
+            "Please set allow_none=False for each field option to make this consistent."
+        )
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
@@ -893,12 +792,12 @@ def OneOfOptionsField(
                     tmp_json_schema["title"] = f"{self.name}_{mfield_meta_class_name}_option"
                     oneOf["oneOf"].append(tmp_json_schema)
 
-            # Add null as an option if none of the field options allow none:
-            oneOf["oneOf"] += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none and not field_options_allow_none
-                else []
+            # Add null as an option if we want to allow none but none of the field options allow none.
+            any_field_options_allow_none = any(
+                option.metadata["marshmallow_field"].allow_none for option in field_options
             )
+            if allow_none and not any_field_options_allow_none:
+                oneOf["oneOf"] += [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
 
             return oneOf
 

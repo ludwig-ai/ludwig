@@ -64,7 +64,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=True,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
@@ -72,7 +71,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -121,7 +120,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
-        allow_none=True,
         description=(
             "Maximum number of training steps the algorithm is intended to be run over. "
             + "If unset, then `epochs` is used to determine training length."
@@ -155,7 +153,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -323,7 +321,6 @@ class GBMTrainerConfig(BaseTrainerConfig):
     eval_batch_size: Union[None, int, str] = schema_utils.PositiveInteger(
         default=1024,
         description=("Size of batch to pass to the model for evaluation."),
-        allow_none=True,
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 
