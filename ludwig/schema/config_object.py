@@ -1,7 +1,7 @@
 import copy
 import sys
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List
 
 import yaml
