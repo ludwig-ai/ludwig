@@ -79,6 +79,7 @@ def test_substitute_parameters(parameters, expected):
     assert actual_config == expected
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize(
     "parameters, expected",
     [
