@@ -448,16 +448,16 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
     if not max_concurrent_trials:
         return
 
+    if cpu_resources_per_trial == 0:
+        # TODO(Arnav): Replace with custom LudwigConfigError in the future
+        raise ValueError("Atleast 1 CPU resource is required per trial. Please set 'cpu_resources_per_trial' > 0")
+
     if max_concurrent_trials > num_samples:
         logger.warning(
             f"'max_concurrent_trials' ({max_concurrent_trials}) is greater than 'num_samples' ({num_samples}). "
             "Setting 'max_concurrent_trials' to 'num_samples'."
         )
         max_concurrent_trials = num_samples
-
-    if cpu_resources_per_trial == 0:
-        # TODO(Arnav): Replace with custom LudwigConfigError in the future
-        raise ValueError("Atleast 1 CPU resource is required per trial. Please set 'cpu_resources_per_trial' > 0")
 
     logger.info("Inferring maximum number of trials to run in parallel for hyperopt")
 
