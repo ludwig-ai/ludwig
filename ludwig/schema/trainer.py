@@ -1,3 +1,4 @@
+import sys
 from abc import ABC
 from typing import List, Optional, Union
 
@@ -159,11 +160,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     max_batch_size: Optional[int] = schema_utils.PositiveInteger(
-        default=None,
+        default=sys.maxsize,
         allow_none=True,
         description=(
-            "If this parameter is not None and batch_size='auto', then the batch size found must be "
-            "under this value."
+            "Auto batch size tuning and increasing batch size on plateau will be capped at this value. The default "
+            "value is `sys.maxsize`."
         ),
         parameter_metadata=TRAINER_METADATA["max_batch_size"],
     )
