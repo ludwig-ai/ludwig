@@ -122,6 +122,11 @@ def path_exists(url):
     return fs.exists(path)
 
 
+def listdir(url):
+    fs, path = get_fs_and_path(url)
+    return fs.listdir(path)
+
+
 def safe_move_file(src, dst):
     """Rename a file from `src` to `dst`. Inspired by: https://alexwlchan.net/2019/03/atomic-cross-filesystem-
     moves-in-python/

@@ -9,6 +9,7 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.constants import TRAINER
+from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
 from tests.integration_tests.utils import category_feature, generate_data, private_param, sequence_feature
 
@@ -43,8 +44,8 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket):
 
         local_csv = generate_data(input_features, output_features, csv_filename)
         fs_utils.upload_file(local_csv, train_csv)
-        fs_utils.upload_file(local_csv, val_csv)
-        fs_utils.upload_file(local_csv, test_csv)
+        fs_utils.copy(train_csv, val_csv)
+        fs_utils.copy(train_csv, test_csv)
 
         config = {
             "input_features": input_features,
@@ -64,9 +65,18 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket):
 
         output_directory = os.path.join(tmpdir, "output")
         model = LudwigModel(config_path, backend=backend)
-        _, _, output_directory = model.train(
+        _, _, output_run_directory = model.train(
             training_set=train_csv, validation_set=val_csv, test_set=test_csv, output_directory=output_directory
         )
+
+        assert os.path.join(output_directory, "api_experiment_run") == output_run_directory
+
+        print(fs_utils.listdir(output_run_directory))
+        assert fs_utils.path_exists(os.path.join(output_run_directory, "training_statistics.json"))
+        assert fs_utils.path_exists(os.path.join(output_run_directory, DESCRIPTION_FILE_NAME))
+        assert fs_utils.path_exists(os.path.join(output_run_directory, "model"))
+        assert fs_utils.path_exists(os.path.join(output_run_directory, "model", "model_weights"))
+
         model.predict(dataset=test_csv, output_directory=output_directory)
 
         # Train again, this time the cache will be used
