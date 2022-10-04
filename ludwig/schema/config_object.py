@@ -81,8 +81,9 @@ class BaseFeatureContainer:
         return list(convert_submodules(self.__dict__).values())
 
     def filter_features(self):
-        return {key: {k: v for k, v in value.items() if k in {NAME, TYPE, ACTIVE}}
-                for key, value in self.to_dict().items()}
+        return {
+            key: {k: v for k, v in value.items() if k in {NAME, TYPE, ACTIVE}} for key, value in self.to_dict().items()
+        }
 
     def __repr__(self):
         filtered_repr = self.filter_features()
@@ -173,8 +174,7 @@ class Config(BaseMarshmallowConfig):
         self._set_hyperopt_defaults()
 
         # ===== Validate Config =====
-        validate_config(self.to_dict())\
-
+        validate_config(self.to_dict())
 
     def __repr__(self):
         config_repr = self.to_dict()

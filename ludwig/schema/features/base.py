@@ -1,8 +1,8 @@
 import logging
 from typing import List
-from rich.console import Console
 
 from marshmallow_dataclass import dataclass
+from rich.console import Console
 
 from ludwig.constants import (
     AUDIO,
@@ -58,9 +58,8 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     def enable(self):
-        """
-        This function allows the user to specify which features from a dataset should be included during
-        model training. This is the equivalent to toggling on a feature in the model creation UI.
+        """This function allows the user to specify which features from a dataset should be included during model
+        training. This is the equivalent to toggling on a feature in the model creation UI.
 
         Returns:
             None
@@ -73,8 +72,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
             logger.info(self.__repr__())
 
     def disable(self):
-        """
-        This function allows the user to specify which features from a dataset should not be included during
+        """This function allows the user to specify which features from a dataset should not be included during
         model training. This is the equivalent to toggling off a feature in the model creation UI.
 
         Returns:

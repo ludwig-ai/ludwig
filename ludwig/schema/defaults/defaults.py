@@ -55,8 +55,10 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
     vector: BaseFeatureConfig = DefaultsDataclassField(feature_type=VECTOR)
 
     def filter_defaults(self):
-        return {key: [k for k in value.keys() if k in {ENCODER, DECODER, LOSS, PREPROCESSING}]
-                for key, value in self.to_dict().items()}
+        return {
+            key: [k for k in value.keys() if k in {ENCODER, DECODER, LOSS, PREPROCESSING}]
+            for key, value in self.to_dict().items()
+        }
 
     def __repr__(self):
         filtered_repr = self.filter_defaults()
