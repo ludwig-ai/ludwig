@@ -656,20 +656,24 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
     use_pretrained: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Download model weights from pre-trained model.",
+        parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["use_pretrained"],
     )
 
     model_cache_dir: str = schema_utils.String(
         description="Directory path to cache pretrained model weights.",
+        parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["model_cache_dir"],
     )
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
         description="Whether to save the weights in the checkpoint.",
+        parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["saved_weights_in_checkpoint"],
     )
 
     trainable: bool = schema_utils.Boolean(
         default=True,
         description="Is the encoder trainable.",
+        parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["trainable"],
     )
 
 
@@ -688,6 +692,7 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
         default=50,
         allow_none=False,
         description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVResNetEncoder"]["model_variant"],
     )
 
 
@@ -726,6 +731,7 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
                 allow_none=False,
             ),
         ],
+        parameter_metadata=ENCODER_METADATA["TVVGGEncoder"]["model_variant"],
     )
 
 
@@ -744,6 +750,7 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
         default="base",
         allow_none=False,
         description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVAlexNetEncoder"]["model_variant"],
     )
 
 
@@ -774,4 +781,5 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
         default="b0",
         allow_none=False,
         description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVEfficientNetEncoder"]["model_variant"],
     )
