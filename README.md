@@ -3,6 +3,7 @@
 <div align="center">
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/ludwig-ai/ludwig)](https://img.shields.io/github/commit-activity/m/ludwig-ai/ludwig)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
 
