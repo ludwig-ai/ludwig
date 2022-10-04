@@ -1,5 +1,4 @@
 import os
-from pprint import pprint
 
 import pytest
 
@@ -45,7 +44,7 @@ dataset_to_expected_preprocessing_time = {  # in microseconds
     "mercedes_benz_greener": 3.5e6,
     "adult_census_income": 2e6,
     "protein": 7e5,
-    "sarcos": 2.4e5,
+    "sarcos": 2.4e6,
     "naval": 6e5,
 }
 
@@ -96,9 +95,7 @@ def test_performance(dataset, tmpdir):
     test_statistics = load_json(test_statistics_fp)
     output_feature_name = load_yaml(config_path)["output_features"][0]["name"]
     metric_name = dataset_name_to_metric[dataset]
-    pprint(test_statistics)
 
-    # todo (wael): enable profiler and add resource usage asserts (esp. time and memory usage)
     preprocessing_resource_usage_fp = os.path.join(
         tmpdir, dataset, experiment_name, "system_resource_usage", "preprocessing", "run_0.json"
     )
@@ -112,13 +109,6 @@ def test_performance(dataset, tmpdir):
     preprocessing_resource_usage = load_json(preprocessing_resource_usage_fp)
     training_resource_usage = load_json(training_resource_usage_fp)
     evaluation_resource_usage = load_json(evaluation_resource_usage_fp)
-
-    print()
-    pprint(preprocessing_resource_usage)
-    print()
-    pprint(training_resource_usage)
-    print()
-    pprint(evaluation_resource_usage)
 
     assert test_statistics[output_feature_name][metric_name] > dataset_to_expected_performance[dataset]
     assert preprocessing_resource_usage["total_execution_time"] < dataset_to_expected_preprocessing_time[dataset]
