@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torchvision.models as tvm
+from torchvision.transforms._presets import ImageClassification
 
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
@@ -461,6 +462,15 @@ class TVBaseEncoder(Encoder):
         else:
             weights_specification = None
 
+        # Extract from torchvision model transforms method the size of the image
+        # after the torchvision transforms method preprocesses the image
+        transforms_function = torchvision_model_registry[model_id].weights_class.DEFAULT.transforms
+        image_classification_object = ImageClassification(
+            *transforms_function.args,
+            **transforms_function.keywords,
+        )
+        self._input_shape = (3, *(2 * image_classification_object.crop_size))
+
         logger.debug(f"  {model_id}")
         # create pretrained model with pretrained weights or None for untrained model
         self.model = self.create_model(weights=weights_specification)
@@ -488,9 +498,9 @@ class TVBaseEncoder(Encoder):
 
     @property
     def input_shape(self) -> torch.Size:
-        # resnet shape after all pre-processing
+        # expected shape after all pre-processing
         # [num_channels, height, width]
-        return torch.Size([3, 224, 224])
+        return torch.Size(self._input_shape)
 
 
 # TVModelVariant(variant_id, create_model_function, model_weights)
