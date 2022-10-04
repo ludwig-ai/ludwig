@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+import warnings
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Union
 
@@ -15,14 +16,20 @@ from ludwig.constants import (
     COMBINED,
     CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
+    GOAL,
+    GRID_SEARCH,
     HYPEROPT,
     LOSS,
     MAX_CONCURRENT_TRIALS,
+    METRIC,
     MINIMIZE,
     NAME,
     NUM_SAMPLES,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    RAY,
+    SPACE,
+    SPLIT,
     TEST,
     TRAINING,
     TYPE,
@@ -227,6 +234,9 @@ def hyperopt(
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
 
+    # Check if all features are grid type parameters and log UserWarning if needed
+    log_warning_if_all_grid_type_parameters(parameters, executor.get("num_samples"))
+
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
@@ -419,7 +429,8 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
         )
         max_concurrent_trials = num_samples
 
-    num_cpus_available = int(backend.num_cpus)
+    num_cpus_available = int(backend.get_available_resources().cpus)
+    print(num_cpus_available)
     num_cpus_required = cpu_resources_per_trial * num_samples
 
     if num_cpus_required >= num_cpus_available:
@@ -446,16 +457,38 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
             executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
 
 
-def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any], backend: Backend = None) -> Dict[str, Any]:
+def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
+    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
+    duplicate trials being created."""
+    if num_samples == 1:
+        return
+
+    total_grid_search_trials = 1
+
+    for _, param_info in hyperopt_parameter_config.items():
+        if param_info.get(SPACE, None) != GRID_SEARCH:
+            return
+        total_grid_search_trials *= len(param_info.get("values", []))
+
+    num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
+    warnings.warn(
+        "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
+        f"({num_samples}) is greater than 1. This will result in {num_duplicate_trials} duplicate trials being "
+        "created. Consider setting `num_samples` to 1 in the hyperopt executor to prevent trial duplication.",
+        RuntimeWarning,
+    )
+
+
+def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any], backend: Backend = None) -> None:
     from ludwig.hyperopt.execution import executor_registry
 
     set_default_value(hyperopt_params, EXECUTOR, {})
-    set_default_value(hyperopt_params, "split", VALIDATION)
+    set_default_value(hyperopt_params, SPLIT, VALIDATION)
     set_default_value(hyperopt_params, "output_feature", COMBINED)
-    set_default_value(hyperopt_params, "metric", LOSS)
-    set_default_value(hyperopt_params, "goal", MINIMIZE)
+    set_default_value(hyperopt_params, METRIC, LOSS)
+    set_default_value(hyperopt_params, GOAL, MINIMIZE)
 
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: RAY, NUM_SAMPLES: 1})
 
     # Set max_concurrent_trials to ensure trials can run
     backend = backend or LocalBackend()

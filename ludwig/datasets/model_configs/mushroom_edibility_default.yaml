@@ -1,0 +1,57 @@
+output_features:
+  - name: class
+    type: category
+input_features:
+  - name: cap-shape
+    type: category
+  - name: cap-surface
+    type: category
+  - name: cap-color
+    type: category
+  - name: bruises?
+    type: category
+  - name: odor
+    type: category
+  - name: gill-attachment
+    type: category
+  - name: gill-spacing
+    type: category
+  - name: gill-size
+    type: category
+  - name: gill-color
+    type: category
+  - name: stalk-shape
+    type: category
+  - name: stalk-root
+    type: category
+  - name: stalk-surface-above-ring
+    type: category
+  - name: stalk-surface-below-ring
+    type: category
+  - name: stalk-color-above-ring
+    type: category
+  - name: stalk-color-below-ring
+    type: category
+  - name: veil-type
+    type: category
+  - name: veil-color
+    type: category
+  - name: ring-number
+    type: category
+  - name: ring-type
+    type: category
+  - name: spore-print-color
+    type: category
+  - name: population
+    type: category
+  - name: habitat
+    type: category
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

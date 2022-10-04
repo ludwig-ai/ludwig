@@ -29,6 +29,7 @@ from ludwig.constants import (
     COMBINER,
     CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
+    GRID_SEARCH,
     HYPEROPT,
     INPUT_FEATURES,
     MAX_CONCURRENT_TRIALS,
@@ -593,6 +594,39 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
             assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
 
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
+
+
+@pytest.mark.distributed
+def test_hyperopt_grid_search_more_than_one_sample(csv_filename, tmpdir, ray_cluster):
+    input_features = [
+        text_feature(name="utterance", encoder={"reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        HYPEROPT: {
+            "goal": "minimize",
+            "output_feature": output_features[0][NAME],
+            "validation_metrics": "loss",
+            "executor": {TYPE: "ray", "num_samples": 2},  # set to 2 intentionally
+            "search_alg": {TYPE: "variant_generator"},
+            "parameters": {
+                "trainer.learning_rate": {"space": GRID_SEARCH, "values": [0.001, 0.005]},
+                output_features[0][NAME] + ".output_size": {"space": GRID_SEARCH, "values": [16, 21]},
+            },
+        },
+    }
+
+    with pytest.warns(RuntimeWarning):
+        hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
 
 @pytest.mark.distributed

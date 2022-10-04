@@ -1,0 +1,171 @@
+output_features:
+  - name: SalePrice
+    type: number
+input_features:
+  - name: MSSubClass
+    type: category
+  - name: MSZoning
+    type: category
+  - name: LotFrontage
+    type: number
+  - name: LotArea
+    type: number
+  - name: Street
+    type: category
+  - name: Alley
+    type: category
+  - name: LotShape
+    type: category
+  - name: LandContour
+    type: category
+  - name: Utilities
+    type: category
+  - name: LotConfig
+    type: category
+  - name: LandSlope
+    type: category
+  - name: Neighborhood
+    type: category
+  - name: Condition1
+    type: category
+  - name: Condition2
+    type: category
+  - name: BldgType
+    type: category
+  - name: HouseStyle
+    type: category
+  - name: OverallQual
+    type: category
+  - name: OverallCond
+    type: category
+  - name: YearBuilt
+    type: number
+  - name: YearRemodAdd
+    type: number
+  - name: RoofStyle
+    type: category
+  - name: RoofMatl
+    type: category
+  - name: Exterior1st
+    type: category
+  - name: Exterior2nd
+    type: category
+  - name: MasVnrType
+    type: category
+  - name: MasVnrArea
+    type: number
+  - name: ExterQual
+    type: category
+  - name: ExterCond
+    type: category
+  - name: Foundation
+    type: category
+  - name: BsmtQual
+    type: category
+  - name: BsmtCond
+    type: category
+  - name: BsmtExposure
+    type: category
+  - name: BsmtFinType1
+    type: category
+  - name: BsmtFinSF1
+    type: number
+  - name: BsmtFinType2
+    type: category
+  - name: BsmtFinSF2
+    type: number
+  - name: BsmtUnfSF
+    type: number
+  - name: TotalBsmtSF
+    type: number
+  - name: Heating
+    type: category
+  - name: HeatingQC
+    type: category
+  - name: CentralAir
+    type: binary
+  - name: Electrical
+    type: category
+  - name: 1stFlrSF
+    type: number
+  - name: 2ndFlrSF
+    type: number
+  - name: LowQualFinSF
+    type: number
+  - name: GrLivArea
+    type: number
+  - name: BsmtFullBath
+    type: number
+  - name: BsmtHalfBath
+    type: number
+  - name: FullBath
+    type: number
+  - name: HalfBath
+    type: number
+  - name: BedroomAbvGr
+    type: number
+  - name: KitchenAbvGr
+    type: number
+  - name: KitchenQual
+    type: category
+  - name: TotRmsAbvGrd
+    type: number
+  - name: Functional
+    type: category
+  - name: Fireplaces
+    type: number
+  - name: FireplaceQu
+    type: category
+  - name: GarageType
+    type: category
+  - name: GarageYrBlt
+    type: number
+  - name: GarageFinish
+    type: category
+  - name: GarageCars
+    type: number
+  - name: GarageArea
+    type: number
+  - name: GarageQual
+    type: category
+  - name: GarageCond
+    type: category
+  - name: PavedDrive
+    type: category
+  - name: WoodDeckSF
+    type: number
+  - name: OpenPorchSF
+    type: number
+  - name: EnclosedPorch
+    type: number
+  - name: 3SsnPorch
+    type: number
+  - name: ScreenPorch
+    type: number
+  - name: PoolArea
+    type: number
+  - name: PoolQC
+    type: category
+  - name: Fence
+    type: category
+  - name: MiscFeature
+    type: category
+  - name: MiscVal
+    type: number
+  - name: MoSold
+    type: category
+  - name: YrSold
+    type: number
+  - name: SaleType
+    type: category
+  - name: SaleCondition
+    type: category
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

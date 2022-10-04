@@ -4,7 +4,7 @@ from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
 def test_get_config_and_load(tmpdir):
-    yosemite_config = ludwig.datasets.get_dataset_config("yosemite")
+    yosemite_config = ludwig.datasets._get_dataset_config("yosemite")
     assert isinstance(yosemite_config, DatasetConfig)
 
     yosemite_dataset = ludwig.datasets.get_dataset("yosemite", cache_dir=tmpdir)
@@ -15,7 +15,7 @@ def test_get_config_and_load(tmpdir):
 
 
 def test_get_config_kaggle(tmpdir):
-    twitter_bots_config = ludwig.datasets.get_dataset_config("twitter_bots")
+    twitter_bots_config = ludwig.datasets._get_dataset_config("twitter_bots")
     assert isinstance(twitter_bots_config, DatasetConfig)
 
     twitter_bots_dataset = ludwig.datasets.get_dataset("twitter_bots", cache_dir=tmpdir)

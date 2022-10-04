@@ -22,6 +22,7 @@ import pandas as pd
 import pytest
 from mlflow.tracking import MlflowClient
 
+from ludwig.callbacks import Callback
 from ludwig.constants import (
     ACCURACY,
     BACKEND,
@@ -213,7 +214,8 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 
 
 @pytest.mark.distributed
-def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
+@pytest.mark.parametrize("backend", ["local", "ray"])
+def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
@@ -228,6 +230,9 @@ def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        "backend": {
+            "type": backend,
+        },
     }
 
     output_feature_name = output_features[0]["name"]
@@ -245,13 +250,40 @@ def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": 2},
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+            "cpu_resources_per_trial": 1,
+            "max_concurrent_trials": 2,
+        },
         "search_alg": {"type": "variant_generator"},
     }
 
+    @ray.remote(num_cpus=0)
+    class Event:
+        def __init__(self):
+            self._set = False
+
+        def is_set(self):
+            return self._set
+
+        def set(self):
+            self._set = True
+
+    # Used to trigger a cancel event in the trial, which should subsequently be retried
+    event = Event.remote()
+
+    class CancelCallback(Callback):
+        def on_epoch_start(self, trainer, progress_tracker, save_path: str):
+            if progress_tracker.epoch == 1 and not ray.get(event.is_set.remote()):
+                ray.get(event.set.remote())
+                raise KeyboardInterrupt()
+
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
-    run_hyperopt(config, rel_path, tmpdir)
+
+    # run for one epoch, then cancel, then resume from where we left off
+    run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
 
 
 @pytest.mark.distributed

@@ -1,0 +1,42 @@
+output_features:
+  - name: income
+    type: category
+input_features:
+  - name: age
+    type: number
+  - name: workclass
+    type: category
+  - name: fnlwgt
+    type: number
+  - name: education
+    type: category
+  - name: education-num
+    type: number
+  - name: marital-status
+    type: category
+  - name: occupation
+    type: category
+  - name: relationship
+    type: category
+  - name: race
+    type: category
+  - name: sex
+    type: category
+  - name: capital-gain
+    type: number
+  - name: capital-loss
+    type: number
+  - name: hours-per-week
+    type: number
+  - name: native-country
+    type: category
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1
+  steps_per_checkpoint: 1

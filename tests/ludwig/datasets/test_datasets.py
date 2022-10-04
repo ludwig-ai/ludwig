@@ -29,7 +29,7 @@ def test_load_csv_dataset(tmpdir):
     )
 
     ludwig.datasets._get_dataset_configs.cache_clear()
-    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+    with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
         dataset = ludwig.datasets.get_dataset("fake_csv_dataset", cache_dir=tmpdir)
 
         assert not dataset.state == DatasetState.DOWNLOADED
@@ -39,6 +39,7 @@ def test_load_csv_dataset(tmpdir):
         pd.testing.assert_frame_equal(input_df, output_df)
 
         assert dataset.state == DatasetState.TRANSFORMED
+    ludwig.datasets._get_dataset_configs.cache_clear()
 
 
 @pytest.mark.parametrize("f_type", SUPPORTED_UNCOMPRESSED_FILETYPES)
@@ -91,7 +92,7 @@ def test_multifile_join_dataset(tmpdir, f_type):
     )
 
     ludwig.datasets._get_dataset_configs.cache_clear()
-    with mock.patch("ludwig.datasets.load_dataset_config", return_value=config):
+    with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
         dataset = ludwig.datasets.get_dataset("fake_multifile_dataset", cache_dir=tmpdir)
 
         assert not dataset.state == DatasetState.DOWNLOADED
@@ -101,3 +102,4 @@ def test_multifile_join_dataset(tmpdir, f_type):
         assert output_df.shape[0] == train_df.shape[0] + test_df.shape[0] + val_df.shape[0]
 
         assert dataset.state == DatasetState.TRANSFORMED
+    ludwig.datasets._get_dataset_configs.cache_clear()

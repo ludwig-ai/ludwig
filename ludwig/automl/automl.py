@@ -35,7 +35,7 @@ from ludwig.constants import (
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.automl.ray_utils import _ray_init, get_available_resources
+from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import (
     _add_transfer_config,
     get_model_type,
@@ -127,7 +127,13 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config
+        dataset,
+        target,
+        time_limit_s,
+        tune_for_memory,
+        user_config,
+        random_seed,
+        use_reference_config=use_reference_config,
     )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
@@ -139,6 +145,7 @@ def create_auto_config(
     tune_for_memory: bool,
     user_config: Dict = None,
     random_seed: int = default_random_seed,
+    imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
     backend: Union[Backend, str] = None,
 ) -> dict:
@@ -157,6 +164,7 @@ def create_auto_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
     :param use_reference_config: (bool) refine hyperopt search space by setting first
                                  search point from reference model config, if any
 
@@ -169,15 +177,17 @@ def create_auto_config(
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
-    default_configs, features_metadata = _create_default_config(dataset_info, target, time_limit_s, random_seed)
+    default_configs, features_metadata = _create_default_config(
+        dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
+    )
     model_config, model_category, row_count = _model_select(
         dataset_info, default_configs, features_metadata, user_config, use_reference_config
     )
     if tune_for_memory:
         args = (model_config, dataset, model_category, row_count, backend)
         if ray.is_initialized():
-            resources = get_available_resources()  # check if cluster has GPUS
-            if resources["gpu"] > 0:
+            resources = backend.get_available_resources()  # check if cluster has GPUS
+            if resources.gpus > 0:
                 model_config, fits_in_memory = ray.get(
                     ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(*args)
                 )

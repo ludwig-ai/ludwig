@@ -1,0 +1,70 @@
+output_features:
+  - name: label
+    type: binary
+    weight_regularization: null
+input_features:
+  - name: lepton_pT
+    type: number
+  - name: lepton_eta
+    type: number
+  - name: lepton_phi
+    type: number
+  - name: missing_energy_magnitude
+    type: number
+  - name: missing_energy_phi
+    type: number
+  - name: jet_1_pt
+    type: number
+  - name: jet_1_eta
+    type: number
+  - name: jet_1_phi
+    type: number
+  - name: jet_1_b-tag
+    type: number
+  - name: jet_2_pt
+    type: number
+  - name: jet_2_eta
+    type: number
+  - name: jet_2_phi
+    type: number
+  - name: jet_2_b-tag
+    type: number
+  - name: jet_3_pt
+    type: number
+  - name: jet_3_eta
+    type: number
+  - name: jet_3_phi
+    type: number
+  - name: jet_3_b-tag
+    type: number
+  - name: jet_4_pt
+    type: number
+  - name: jet_4_eta
+    type: number
+  - name: jet_4_phi
+    type: number
+  - name: jet_4_b-tag
+    type: number
+  - name: m_jj
+    type: number
+  - name: m_jjj
+    type: number
+  - name: m_lv
+    type: number
+  - name: m_jlv
+    type: number
+  - name: m_bb
+    type: number
+  - name: m_wbb
+    type: number
+  - name: m_wwbb
+    type: number
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

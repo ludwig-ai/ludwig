@@ -3232,9 +3232,9 @@ def calibration_1_vs_all(
 
     :return: (None)
     """
+    feature_metadata = metadata[output_feature_name]
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
-        feature_metadata = metadata[output_feature_name]
         ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
@@ -3254,6 +3254,7 @@ def calibration_1_vs_all(
     brier_scores = []
 
     classes = min(num_classes, top_n_classes[0]) if top_n_classes[0] > 0 else num_classes
+    class_names = [feature_metadata["idx2str"][i] for i in range(classes)]
 
     for class_idx in range(classes):
         fraction_positives_class = []
@@ -3261,7 +3262,7 @@ def calibration_1_vs_all(
         probs_class = []
         brier_scores_class = []
         for prob in probs:
-            # ground_truth is an vector of integers, each integer is a class
+            # ground_truth is a vector of integers, each integer is a class
             # index to have a [0,1] vector we have to check if the value equals
             # the input class index and convert the resulting boolean vector
             # into an integer vector probabilities is a n x c matrix, n is the
@@ -3294,7 +3295,11 @@ def calibration_1_vs_all(
             filename = filename_template_path.format(class_idx)
 
         visualization_utils.calibration_plot(
-            fraction_positives_class, mean_predicted_vals_class, model_names_list, filename=filename
+            fraction_positives_class,
+            mean_predicted_vals_class,
+            model_names_list,
+            class_name=class_names[class_idx],
+            filename=filename,
         )
 
         filename = None
@@ -3309,7 +3314,13 @@ def calibration_1_vs_all(
         os.makedirs(output_directory, exist_ok=True)
         filename = filename_template_path.format("brier")
 
-    visualization_utils.brier_plot(np.array(brier_scores), model_names_list, filename=filename)
+    visualization_utils.brier_plot(
+        np.array(brier_scores),
+        algorithm_names=model_names_list,
+        class_names=class_names,
+        title="Brier scores for each class",
+        filename=filename,
+    )
 
 
 def calibration_multiclass(
@@ -3594,8 +3605,13 @@ def frequency_vs_f1(
             per_class_stats = test_stats[of_name]["per_class_stats"]
             class_names = metadata[of_name]["idx2str"]
 
+            # get np arrays of frequencies, f1s and labels
+            idx2freq = {metadata[of_name]["str2idx"][key]: val for key, val in metadata[of_name]["str2freq"].items()}
+            freq_np = np.array([idx2freq[class_id] for class_id in sorted(idx2freq)], dtype=np.int32)
+
             if k > 0:
                 class_names = class_names[:k]
+                freq_np = freq_np[:k]
 
             f1_scores = []
             labels = []
@@ -3605,9 +3621,6 @@ def frequency_vs_f1(
                 f1_scores.append(class_stats["f1_score"])
                 labels.append(class_name)
 
-            # get np arrays of frequencies, f1s and labels
-            idx2freq = {metadata[of_name]["str2idx"][key]: val for key, val in metadata[of_name]["str2freq"].items()}
-            freq_np = np.array([idx2freq[class_id] for class_id in sorted(idx2freq)], dtype=np.int32)
             f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
             labels_np = np.array(labels)
 
