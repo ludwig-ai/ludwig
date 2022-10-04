@@ -679,9 +679,9 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
     assert (
-        model.config[TRAINER]["batch_size"] == DEFAULT_BATCH_SIZE
+        model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
     )  # On CPU, batch size tuning is disabled, so assert it is equal to default
-    assert model.config[TRAINER]["learning_rate"] != "auto"
+    assert model.config_obj.trainer.learning_rate != "auto"
 
 
 @pytest.mark.distributed
