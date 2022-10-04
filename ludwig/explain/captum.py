@@ -8,7 +8,7 @@ from torch.autograd import Variable
 
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import preprocess_for_prediction
-from ludwig.explain.base import Explainer
+from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.util import get_pred_col
 from ludwig.models.ecd import ECD

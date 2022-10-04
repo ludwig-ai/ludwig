@@ -6,8 +6,8 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import MODEL_ECD, MODEL_GBM
-from ludwig.explain.base import Explainer
 from ludwig.explain.captum import IntegratedGradientsExplainer
+from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.gbm import GBMExplainer
 from tests.integration_tests.utils import category_feature, generate_data, number_feature
