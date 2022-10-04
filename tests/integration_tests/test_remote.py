@@ -1,5 +1,7 @@
+import contextlib
 import os
-import shutil
+import tempfile
+import uuid
 
 import pytest
 import yaml
@@ -7,48 +9,68 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
 from ludwig.constants import TRAINER
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
+from ludwig.utils import fs_utils
+from tests.integration_tests.utils import category_feature, generate_data, private_param, sequence_feature
 
 
-@pytest.mark.parametrize("fs_protocol", ["file"])
-def test_remote_training_set(tmpdir, fs_protocol):
-    output_directory = f"{fs_protocol}://{tmpdir}"
+@contextlib.contextmanager
+def remote_tmpdir(fs_protocol, bucket):
+    if bucket is None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield f"{fs_protocol}://{tmpdir}"
+        return
 
-    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    prefix = f"tmp_{uuid.uuid4().hex}"
+    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
+    fs_utils.makedirs(tmpdir, exist_ok=True)
+    try:
+        yield tmpdir
+    finally:
+        fs_utils.delete(tmpdir, recursive=True)
 
-    csv_filename = os.path.join(tmpdir, "training.csv")
-    data_csv = generate_data(input_features, output_features, csv_filename)
-    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
-    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
-    data_csv = f"{fs_protocol}://{os.path.abspath(data_csv)}"
-    val_csv = f"{fs_protocol}://{os.path.abspath(val_csv)}"
-    test_csv = f"{fs_protocol}://{os.path.abspath(test_csv)}"
+@pytest.mark.parametrize(
+    "fs_protocol,bucket", [("file", None), private_param(("s3", "ludwig-tests"))], ids=["file", "s3"]
+)
+def test_remote_training_set(csv_filename, fs_protocol, bucket):
+    with remote_tmpdir(fs_protocol, bucket) as tmpdir:
+        input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+        output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
-    config = {
-        "input_features": input_features,
-        "output_features": output_features,
-        "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
-    }
+        train_csv = os.path.join(tmpdir, "training.csv")
+        val_csv = os.path.join(tmpdir, "validation.csv")
+        test_csv = os.path.join(tmpdir, "test.csv")
 
-    config_path = os.path.join(tmpdir, "config.yaml")
-    with open(config_path, "w") as f:
-        yaml.dump(config, f)
-    config_path = f"{fs_protocol}://{config_path}"
+        local_csv = generate_data(input_features, output_features, csv_filename)
+        fs_utils.upload_file(local_csv, train_csv)
+        fs_utils.upload_file(local_csv, val_csv)
+        fs_utils.upload_file(local_csv, test_csv)
 
-    backend_config = {
-        "type": "local",
-    }
-    backend = initialize_backend(backend_config)
+        config = {
+            "input_features": input_features,
+            "output_features": output_features,
+            "combiner": {"type": "concat", "output_size": 14},
+            TRAINER: {"epochs": 2},
+        }
 
-    model = LudwigModel(config_path, backend=backend)
-    _, _, output_directory = model.train(
-        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=output_directory
-    )
-    model.predict(dataset=test_csv, output_directory=output_directory)
+        config_path = os.path.join(tmpdir, "config.yaml")
+        with fs_utils.open_file(config_path, "w") as f:
+            yaml.dump(config, f)
 
-    # Train again, this time the cache will be used
-    # Resume from the remote output directory
-    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, model_resume_path=output_directory)
+        backend_config = {
+            "type": "local",
+        }
+        backend = initialize_backend(backend_config)
+
+        output_directory = os.path.join(tmpdir, "output")
+        model = LudwigModel(config_path, backend=backend)
+        _, _, output_directory = model.train(
+            training_set=train_csv, validation_set=val_csv, test_set=test_csv, output_directory=output_directory
+        )
+        model.predict(dataset=test_csv, output_directory=output_directory)
+
+        # Train again, this time the cache will be used
+        # Resume from the remote output directory
+        model.train(
+            training_set=train_csv, validation_set=val_csv, test_set=test_csv, model_resume_path=output_directory
+        )

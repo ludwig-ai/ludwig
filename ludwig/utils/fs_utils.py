@@ -163,6 +163,18 @@ def rename(src, tgt):
         safe_move_file(src, tgt)
 
 
+def upload_file(src, tgt):
+    protocol, _ = split_protocol(tgt)
+    fs = fsspec.filesystem(protocol)
+    fs.put(src, tgt)
+
+
+def copy(src, tgt, recursive=False):
+    protocol, _ = split_protocol(tgt)
+    fs = fsspec.filesystem(protocol)
+    fs.copy(src, tgt, recursive=recursive)
+
+
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
@@ -226,9 +238,12 @@ def open_file(url, *args, **kwargs):
 
 @contextlib.contextmanager
 def download_h5(url):
-    local_path = fsspec.open_local(url)
-    with h5py.File(local_path, "r") as f:
-        yield f
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_path = os.path.join(tmpdir, os.path.basename(url))
+        fs, path = get_fs_and_path(url)
+        fs.get(path, local_path)
+        with h5py.File(local_path, "r") as f:
+            yield f
 
 
 @contextlib.contextmanager
