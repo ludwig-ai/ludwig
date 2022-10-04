@@ -30,7 +30,7 @@ TRAINER_METADATA = (
                                                   related_parameters=['batch_size'],
                                                   description_implications='Value used to manually limit the batch '
                                                                            'sizes explored by auto batch size tuning '
-                                                                           'and batch size increasing on plateau.'
+                                                                           'and batch size increasing on plateau.',
                                                   suggested_values=None,
                                                   suggested_values_reasoning=None,
                                                   commonly_used=False,
