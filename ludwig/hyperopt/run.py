@@ -13,6 +13,7 @@ from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
+    AUTO,
     COMBINED,
     CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
@@ -219,7 +220,8 @@ def hyperopt(
     backend = backend or config_dict.get("backend") or "local"
     backend = initialize_backend(backend)
 
-    update_hyperopt_params_with_defaults(hyperopt_config, backend)
+    update_hyperopt_params_with_defaults(hyperopt_config)
+    update_or_set_max_concurrent_trials(hyperopt_config[EXECUTOR], backend)
 
     # Print hyperopt config
     logger.info("Hyperopt config")
@@ -405,22 +407,45 @@ def hyperopt(
     return hyperopt_results
 
 
-def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
+def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
+    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
+    duplicate trials being created."""
+    if num_samples == 1:
+        return
+
+    total_grid_search_trials = 1
+
+    for _, param_info in hyperopt_parameter_config.items():
+        if param_info.get(SPACE, None) != GRID_SEARCH:
+            return
+        total_grid_search_trials *= len(param_info.get("values", []))
+
+    num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
+    warnings.warn(
+        "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
+        f"({num_samples}) is greater than 1. This will result in {num_duplicate_trials} duplicate trials being "
+        "created. Consider setting `num_samples` to 1 in the hyperopt executor to prevent trial duplication.",
+        RuntimeWarning,
+    )
+
+
+def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
     """Datasets read tasks request 0.5 CPUs and all transformation tasks request 1 CPU, so if there are no cores
     available, trials won't be able to run.
 
     Set max_concurrent_trials in the hyperopt executor to ensure CPU resources are available for Ray Dataset related
     tasks.
     """
-    # Fallback to RayExecutor defaults
     cpu_resources_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
-    if cpu_resources_per_trial == 0:
-        # TODO(Arnav): Replace with custom LudwigConfigError in the future
-        raise ValueError("Atleast 1 CPU resource is required per trial. Please set `cpu_resources_per_trial` > 0.")
+    num_samples = executor_config.get(NUM_SAMPLES)
+    max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS)
 
-    # Default to num_samples if max_concurrent_trials isn't set
-    num_samples = executor_config.get(NUM_SAMPLES, 1)
-    max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS, num_samples)
+    # Default to num_samples if max_concurrent_trials isn't set, otherwise use the value from the config
+    max_concurrent_trials = num_samples if max_concurrent_trials == AUTO else max_concurrent_trials
+
+    # Max_concurrent_trials set to None, no need to infer
+    if not max_concurrent_trials:
+        return
 
     if max_concurrent_trials > num_samples:
         logger.warning(
@@ -428,6 +453,12 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
             "Setting 'max_concurrent_trials' to 'num_samples'."
         )
         max_concurrent_trials = num_samples
+
+    if cpu_resources_per_trial == 0:
+        # TODO(Arnav): Replace with custom LudwigConfigError in the future
+        raise ValueError("Atleast 1 CPU resource is required per trial. Please set 'cpu_resources_per_trial' > 0")
+
+    logger.info("Inferring maximum number of trials to run in parallel for hyperopt")
 
     num_cpus_available = int(backend.get_available_resources().cpus)
     num_cpus_required = cpu_resources_per_trial * num_samples
@@ -466,29 +497,7 @@ def set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
             executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
 
 
-def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
-    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
-    duplicate trials being created."""
-    if num_samples == 1:
-        return
-
-    total_grid_search_trials = 1
-
-    for _, param_info in hyperopt_parameter_config.items():
-        if param_info.get(SPACE, None) != GRID_SEARCH:
-            return
-        total_grid_search_trials *= len(param_info.get("values", []))
-
-    num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
-    warnings.warn(
-        "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
-        f"({num_samples}) is greater than 1. This will result in {num_duplicate_trials} duplicate trials being "
-        "created. Consider setting `num_samples` to 1 in the hyperopt executor to prevent trial duplication.",
-        RuntimeWarning,
-    )
-
-
-def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any], backend: Backend = None) -> None:
+def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any]) -> None:
     from ludwig.hyperopt.execution import executor_registry
 
     set_default_value(hyperopt_params, EXECUTOR, {})
@@ -497,11 +506,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any], backen
     set_default_value(hyperopt_params, METRIC, LOSS)
     set_default_value(hyperopt_params, GOAL, MINIMIZE)
 
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: RAY, NUM_SAMPLES: 1})
-
-    # Set max_concurrent_trials to ensure trials can run
-    backend = backend or LocalBackend()
-    set_max_concurrent_trials(hyperopt_params[EXECUTOR], backend)
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: RAY, NUM_SAMPLES: 1, MAX_CONCURRENT_TRIALS: AUTO})
 
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}

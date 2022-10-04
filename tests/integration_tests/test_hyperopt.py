@@ -630,7 +630,10 @@ def test_hyperopt_grid_search_more_than_one_sample(csv_filename, tmpdir, ray_clu
 
 
 @pytest.mark.distributed
-def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_cluster):
+@pytest.mark.parametrize(
+    "max_concurrent_trials", ["auto", None], ids=["max_concurrent_trials_auto", "no_max_concurrent_trials_specified"]
+)
+def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, max_concurrent_trials, ray_cluster):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
         category_feature(vocab_size=3),
@@ -663,6 +666,9 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_clu
             "search_alg": {TYPE: "variant_generator"},
         },
     }
+
+    if max_concurrent_trials:
+        config[HYPEROPT][EXECUTOR][MAX_CONCURRENT_TRIALS] = max_concurrent_trials
 
     hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
     assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
