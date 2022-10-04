@@ -29,7 +29,11 @@ class Calibrator:
         self.batch_size = batch_size
 
     def calibration_enabled(self):
-        return not all(o.calibration_module is None for o in self.model.output_features.values())
+        """Calibration is enabled if the config requests calibration for any output feature.
+
+        If no output features have calibration enabled, the calibration phase should be skipped.
+        """
+        return any(o.calibration_module is not None for o in self.model.output_features.values())
 
     def train_calibration(self, dataset, dataset_name: str):
         """Calibrates model output probabilities on validation set after training.
