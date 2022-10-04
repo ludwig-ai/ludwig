@@ -150,6 +150,7 @@ GRID_SEARCH = "grid_search"
 NAME = "name"
 COLUMN = "column"
 TYPE = "type"
+ACTIVE = "active"
 
 RAY = "ray"
 

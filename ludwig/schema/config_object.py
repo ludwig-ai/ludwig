@@ -1,13 +1,14 @@
 import copy
 import sys
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List
 
 import yaml
 from marshmallow import ValidationError
 
 from ludwig.constants import (
+    ACTIVE,
     BINARY,
     CATEGORY,
     COLUMN,
@@ -79,10 +80,13 @@ class BaseFeatureContainer:
         """
         return list(convert_submodules(self.__dict__).values())
 
+    def filter_features(self):
+        return {key: {k: v for k, v in value.items() if k in {NAME, TYPE, ACTIVE}}
+                for key, value in self.to_dict().items()}
+
     def __repr__(self):
-        input_repr = {key: {k: v for k, v in value.items() if k in {NAME, TYPE}}
-                      for key, value in self.to_dict().items()}
-        return yaml.dump(input_repr, sort_keys=True)
+        filtered_repr = self.filter_features()
+        return yaml.dump(filtered_repr, sort_keys=True)
 
 
 class InputFeaturesContainer(BaseFeatureContainer):
@@ -169,10 +173,15 @@ class Config(BaseMarshmallowConfig):
         self._set_hyperopt_defaults()
 
         # ===== Validate Config =====
-        validate_config(self.to_dict())
+        validate_config(self.to_dict())\
+
 
     def __repr__(self):
-        return yaml.dump(self.to_dict(), sort_keys=False)
+        config_repr = self.to_dict()
+        config_repr[INPUT_FEATURES] = self.input_features.filter_features()
+        config_repr[OUTPUT_FEATURES] = self.output_features.filter_features()
+        config_repr[DEFAULTS] = self.defaults.filter_defaults()
+        return yaml.dump(config_repr, sort_keys=False)
 
     @classmethod
     def from_dict(cls, dict_config):

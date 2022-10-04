@@ -240,3 +240,27 @@ def test_constructors():
     assert hasattr(config_obj, COMBINER)
     assert hasattr(config_obj, DEFAULTS)
     assert hasattr(config_obj, HYPEROPT)
+
+
+def test_feature_enabling_disabling():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+            {"name": "category_feature", "type": "number"}
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_obj = Config.from_dict(config)
+
+    assert config_obj.input_features.text_feature.active
+    assert config_obj.input_features.category_feature.active
+
+    config_obj.input_features.text_feature.disable()
+
+    assert not config_obj.input_features.text_feature.active

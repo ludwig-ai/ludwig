@@ -1,5 +1,6 @@
 import logging
 from typing import List
+from rich.console import Console
 
 from marshmallow_dataclass import dataclass
 
@@ -22,6 +23,8 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 logger = logging.getLogger(__name__)
+_error_console = Console(stderr=True, style="bold red")
+_info_console = Console(stderr=True, style="bold green")
 
 
 @dataclass(repr=False)
@@ -63,9 +66,11 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
             None
         """
         if self.active:
-            logger.info("This feature is already enabled")
+            _error_console.print("This feature is already enabled!")
         else:
             self.active = True
+            _info_console.print(f"{self.name} feature enabled!\n")
+            logger.info(self.__repr__())
 
     def disable(self):
         """
@@ -76,9 +81,11 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
             None
         """
         if not self.active:
-            logger.info("This feature is already disabled")
+            _error_console.print("This feature is already disabled!")
         else:
             self.active = False
+            _info_console.print(f"{self.name} feature disabled!\n")
+            logger.info(self.__repr__())
 
 
 @dataclass(repr=False)
