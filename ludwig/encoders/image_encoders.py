@@ -430,13 +430,13 @@ class ViTEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-            self,
-            model_variant: Union[str, int] = None,
-            use_pretrained: bool = True,
-            saved_weights_in_checkpoint: bool = False,
-            model_cache_dir: Optional[str] = None,
-            trainable: bool = True,
-            **kwargs,
+        self,
+        model_variant: Union[str, int] = None,
+        use_pretrained: bool = True,
+        saved_weights_in_checkpoint: bool = False,
+        model_cache_dir: Optional[str] = None,
+        trainable: bool = True,
+        **kwargs,
     ):
         super().__init__()
 
