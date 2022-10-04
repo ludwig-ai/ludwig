@@ -298,7 +298,7 @@ def test_ray_tabular_save_inputs(dataset_type, ray_cluster_2cpu):
         bag_feature(),
         date_feature(),
         # TODO: feature type not yet supported
-        # h3_feature(),  # ValueError casting large int strings (e.g. '5.864041857092157e+17') to int: MLI-72
+        # h3_feature(),  # ValueError casting large int strings (e.g. '5.864041857092157e+17') to int (#2588)
     ]
     output_features = [
         category_feature(decoder={"vocab_size": 5}),  # Regression test for #1991 requires multi-class predictions.
@@ -324,7 +324,7 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
         number_feature(),
         vector_feature(),
         # TODO: feature type not yet supported
-        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors: MLI-71
+        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
     ]
     # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
     # flakiness in the test having to do with uneven allocation of samples between Ray workers.
@@ -348,8 +348,8 @@ def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
     ]
     output_features = [
         binary_feature(),
-        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
-        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key: MLI-70
+        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
+        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
     run_test_with_features(
         input_features,
