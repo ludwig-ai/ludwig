@@ -145,7 +145,7 @@ def _ray_start(request, **kwargs):
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
-    res = ray.init(**init_kwargs, ignore_reinit_error=True)
+    res = ray.init(**init_kwargs)
     try:
         yield res
     finally:
