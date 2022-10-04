@@ -88,8 +88,8 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
         text_feature(),
     ]
     all_output_features = [
-        category_feature(),
-        sequence_feature(),
+        category_feature(output_feature=True),
+        sequence_feature(output_feature=True),
         vector_feature(),
     ]
 
@@ -141,7 +141,7 @@ def test_missing_outputs_drop_rows():
 def test_default_model_type():
     config = {
         INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature(output_feature=True)],
     }
 
     merged_config = Config.from_dict(config).to_dict()
@@ -160,7 +160,7 @@ def test_default_trainer_type(model_trainer_type):
     model_type, expected_trainer_type = model_trainer_type
     config = {
         INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature(output_feature=True)],
         MODEL_TYPE: model_type,
     }
 
@@ -173,7 +173,7 @@ def test_overwrite_trainer_type():
     expected_trainer_type = "ray_legacy_trainer"
     config = {
         INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
+        OUTPUT_FEATURES: [category_feature(output_feature=True)],
         MODEL_TYPE: MODEL_ECD,
         "trainer": {"type": expected_trainer_type},
     }
