@@ -26,6 +26,7 @@ import sys
 import tempfile
 import traceback
 from collections import OrderedDict
+from dataclasses import field
 from pprint import pformat
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
@@ -116,8 +117,8 @@ class EvaluationFrequency:
     frequency: 50, period: STEP
     """
 
-    frequency: float
-    period: str  # One of "epoch" or "step".
+    frequency: float = 1.0
+    period: str = "epoch"  # One of "epoch" or "step".
 
     EPOCH: ClassVar[str] = "epoch"  # One epoch is a single pass through the training set.
     STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
@@ -133,7 +134,7 @@ class TrainingStats:
     training: Dict[str, Any]
     validation: Dict[str, Any]
     test: Dict[str, Any]
-    evaluation_frequency: EvaluationFrequency
+    evaluation_frequency: EvaluationFrequency = field(default_factory=EvaluationFrequency)
 
     def __iter__(self):
         return iter((self.training, self.test, self.validation))
