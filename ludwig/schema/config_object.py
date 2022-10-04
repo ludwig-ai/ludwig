@@ -80,21 +80,21 @@ class BaseFeatureContainer:
         return list(convert_submodules(self.__dict__).values())
 
     def __repr__(self):
-        return yaml.dump(self.to_dict(), sort_keys=False)
+        input_repr = {key: {k: v for k, v in value.items() if k in {NAME, TYPE}}
+                      for key, value in self.to_dict().items()}
+        return yaml.dump(input_repr, sort_keys=True)
 
 
 class InputFeaturesContainer(BaseFeatureContainer):
     """InputFeatures is a container for all input features."""
 
-    def __init__(self):
-        pass
+    pass
 
 
 class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
-    def __init__(self):
-        pass
+    pass
 
 
 @dataclass(repr=False)
@@ -408,10 +408,13 @@ class Config(BaseMarshmallowConfig):
         Returns:
             Config Dictionary
         """
+        input_features = [feat for feat in self.input_features.to_list() if feat["active"]]
+        output_features = [feat for feat in self.output_features.to_list() if feat["active"]]
+
         config_dict = {
             "model_type": self.model_type,
-            "input_features": self.input_features.to_list(),
-            "output_features": self.output_features.to_list(),
+            "input_features": input_features,
+            "output_features": output_features,
             "combiner": self.combiner.to_dict(),
             "trainer": self.trainer.to_dict(),
             "preprocessing": self.preprocessing.to_dict(),

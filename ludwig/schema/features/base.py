@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from marshmallow_dataclass import dataclass
@@ -20,10 +21,14 @@ from ludwig.constants import (
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(repr=False)
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
+
+    active: bool = True
 
     name: str = schema_utils.String(
         allow_none=True,
@@ -48,6 +53,32 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
         description="The name of the preprocessed column name of this feature. Internal only.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
+
+    def enable(self):
+        """
+        This function allows the user to specify which features from a dataset should be included during
+        model training. This is the equivalent to toggling on a feature in the model creation UI.
+
+        Returns:
+            None
+        """
+        if self.active:
+            logger.info("This feature is already enabled")
+        else:
+            self.active = True
+
+    def disable(self):
+        """
+        This function allows the user to specify which features from a dataset should not be included during
+        model training. This is the equivalent to toggling off a feature in the model creation UI.
+
+        Returns:
+            None
+        """
+        if not self.active:
+            logger.info("This feature is already disabled")
+        else:
+            self.active = False
 
 
 @dataclass(repr=False)
