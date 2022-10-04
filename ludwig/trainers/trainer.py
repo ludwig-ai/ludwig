@@ -807,12 +807,14 @@ class Trainer(BaseTrainer):
                         f"Training for {self.total_steps} step(s), approximately "
                         f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
-                    logger.info(
-                        f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
-                        f"step(s), approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
-                        "epoch(s).\n"
-                    )
-
+                    if self.early_stop < 0:
+                        logger.info("Early stopping policy: None")
+                    else:
+                        logger.info(
+                            f"Early stopping policy: {self.early_stop} round(s) of evaluation, or "
+                            f"{early_stopping_steps} step(s), approximately "
+                            f"{int(early_stopping_steps / batcher.steps_per_epoch)} epoch(s).\n"
+                        )
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar_config = {
