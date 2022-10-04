@@ -225,7 +225,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
-        description="Number to increase the batch size by on a plateau.",
+        description="The number of times to increase the batch size on a plateau.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau"],
     )
 
