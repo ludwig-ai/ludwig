@@ -441,6 +441,7 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
     max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS)
 
     # Default to num_samples if max_concurrent_trials isn't set, otherwise use the value from the config
+    is_auto = max_concurrent_trials == AUTO
     max_concurrent_trials = num_samples if max_concurrent_trials == AUTO else max_concurrent_trials
 
     # Max_concurrent_trials set to None, no need to infer
@@ -495,6 +496,10 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
             )
             # Use max to ensure max_concurrent_trials is at least 1
             executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
+    elif is_auto:
+        # There are enough CPUs for the trials but max_concurrent_trials is auto, so set it to the number of samples
+        logging.info(f"Setting 'max_concurrent_trials' to {max_concurrent_trials}")
+        executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any]) -> None:

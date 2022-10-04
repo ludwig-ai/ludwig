@@ -182,7 +182,7 @@ def run_hyperopt_executor(
         hyperopt_config["validation_metric"] = validation_metric
 
     backend = RayBackend(**RAY_BACKEND_KWARGS)
-    update_hyperopt_params_with_defaults(hyperopt_config, backend)
+    update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
