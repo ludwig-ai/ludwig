@@ -244,10 +244,7 @@ def test_constructors():
 
 def test_feature_enabling_disabling():
     config = {
-        "input_features": [
-            {"name": "text_feature", "type": "text"},
-            {"name": "category_feature", "type": "number"}
-        ],
+        "input_features": [{"name": "text_feature", "type": "text"}, {"name": "category_feature", "type": "number"}],
         "output_features": [
             {
                 "name": "number_output_feature",
