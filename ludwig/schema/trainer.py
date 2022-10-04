@@ -241,12 +241,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_rate"],
     )
 
-    increase_batch_size_on_plateau_max: int = schema_utils.PositiveInteger(
-        default=512,
-        description="Maximum size of the batch.",
-        parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_max"],
-    )
-
     increase_batch_size_eval_metric: str = schema_utils.String(
         default=LOSS,
         description="Which metric to listen on for increasing the batch size.",

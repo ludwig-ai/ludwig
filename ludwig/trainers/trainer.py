@@ -143,6 +143,7 @@ class Trainer(BaseTrainer):
         self.decay_steps = config.decay_steps
         self.staircase = config.staircase
         self.batch_size = config.batch_size
+        self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
         self._validation_field = config.validation_field
@@ -159,7 +160,6 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
         self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
-        self.increase_batch_size_on_plateau_max = config.increase_batch_size_on_plateau_max
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
         self.learning_rate_warmup_epochs = config.learning_rate_warmup_epochs
@@ -661,7 +661,7 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_on_plateau,
                 self.increase_batch_size_on_plateau_patience,
                 self.increase_batch_size_on_plateau_rate,
-                self.increase_batch_size_on_plateau_max,
+                self.max_batch_size,
                 self.increase_batch_size_eval_metric,
                 self.increase_batch_size_eval_split,
                 early_stopping_steps,

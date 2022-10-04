@@ -440,7 +440,6 @@ def test_merge_with_defaults():
             "increase_batch_size_on_plateau": 0,
             "increase_batch_size_on_plateau_patience": 5,
             "increase_batch_size_on_plateau_rate": 2.0,
-            "increase_batch_size_on_plateau_max": 512,
             "increase_batch_size_eval_metric": "loss",
             "increase_batch_size_eval_split": "training",
             "decay": False,
