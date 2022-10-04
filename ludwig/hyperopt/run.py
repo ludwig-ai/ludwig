@@ -42,15 +42,18 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
 
+logger = logging.getLogger(__name__)
+
 try:
     from ludwig.backend.ray import RayBackend
-except ImportError:
+except ImportError as e:
+    logger.warning(
+        f"ImportError (run.py) failed to import RayBackend with error: \n\t{e}. "
+        "The LocalBackend will be used instead. If you want to use the RayBackend, please install ludwig[distributed]."
+    )
 
     class RayBackend:
         pass
-
-
-logger = logging.getLogger(__name__)
 
 
 def hyperopt(

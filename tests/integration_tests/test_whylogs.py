@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import os
 import shutil
 
@@ -9,9 +10,14 @@ from ludwig.constants import TRAINER
 from ludwig.contribs import WhyLogsCallback
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, spawn
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray
 except ImportError:
+    logger.warning(
+        "ray is not installed. In order to use ray please run pip install ludwig[ray]." "Setting ray import to none."
+    )
     ray = None
 
 

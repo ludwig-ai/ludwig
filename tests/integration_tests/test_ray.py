@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os
 import tempfile
 
@@ -55,6 +56,8 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+logger = logging.getLogger(__name__)
+
 try:
     import modin
     import ray
@@ -80,6 +83,9 @@ try:
     ) >= version.parse("1.13.0")
 
 except ImportError:
+    logger.warning(
+        "ray is not installed. In order to use ray please run pip install ludwig[ray]." "Setting ray import to none."
+    )
     modin = None
     ray = None
 

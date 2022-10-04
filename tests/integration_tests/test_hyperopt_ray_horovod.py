@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import os.path
 import shutil
 import uuid
@@ -29,6 +30,8 @@ from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray
 
@@ -42,12 +45,16 @@ try:
 
     from ludwig.backend.ray import RayBackend
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
-except ImportError:
+except ImportError as e:
+    logger.warning(
+        f"ImportError (test_hyperopt_ray_horovod.py) failed to import RayBackend with error: \n\t{e}. "
+        "The LocalBackend will be used instead. If you want to use the RayBackend, please install ludwig[distributed]. "
+        "Setting ray import to none."
+    )
     ray = None
     _ray_nightly = False
     RayTuneExecutor = object
 
-# Ray mocks
 
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"

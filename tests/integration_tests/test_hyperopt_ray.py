@@ -30,17 +30,20 @@ from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logging.getLogger("ludwig").setLevel(logging.INFO)
+
 try:
     import ray
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
 except ImportError:
+    logger.warning(
+        "ray is not installed. In order to use ray please run pip install ludwig[ray]." "Setting ray import to none."
+    )
     ray = None
 
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logging.getLogger("ludwig").setLevel(logging.INFO)
 
 HYPEROPT_CONFIG = {
     "parameters": {

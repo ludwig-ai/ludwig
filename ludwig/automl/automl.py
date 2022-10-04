@@ -55,7 +55,7 @@ try:
 
     _ray_113 = parse_version(ray.__version__) >= parse_version("1.13.0")
 except ImportError:
-    raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
+    raise ImportError("ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
 
 
 logger = logging.getLogger(__name__)

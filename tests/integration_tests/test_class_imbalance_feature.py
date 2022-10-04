@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import os
 import shutil
 
@@ -10,11 +11,18 @@ from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
 from tests.integration_tests.utils import create_data_set_to_use, spawn
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray
 
     from ludwig.backend.ray import RayBackend
-except ImportError:
+except ImportError as e:
+    logger.warning(
+        f"ImportError (test_class_imbalance_feature.py) failed to import RayBackend with error: \n\t{e}. "
+        "The LocalBackend will be used instead. If you want to use the RayBackend, please install ludwig[distributed]. "
+        "Setting ray import to none."
+    )
     ray = None
 
 rs = np.random.RandomState(42)

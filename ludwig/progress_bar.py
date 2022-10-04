@@ -1,12 +1,16 @@
+import logging
 import uuid
 from typing import Dict
 
 import tqdm
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray.train as rt
 except ImportError:
     rt = None
+    logger.warning("Failed to import ray train. ray may not be installed. Run pip install ludwig[ray]")
 
 
 class LudwigProgressBarActions:

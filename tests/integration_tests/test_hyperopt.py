@@ -14,6 +14,7 @@
 # ==============================================================================
 import contextlib
 import json
+import logging
 import os.path
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -43,6 +44,8 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
+logger = logging.getLogger(__name__)
+
 try:
     import ray
 
@@ -51,6 +54,9 @@ try:
     _ray113 = version.parse(ray.__version__) > version.parse("1.13")
 
 except ImportError:
+    logger.warning(
+        "ray is not installed. In order to use ray please run pip install ludwig[ray]." "Setting ray import to none."
+    )
     ray = None
     _ray113 = None
 

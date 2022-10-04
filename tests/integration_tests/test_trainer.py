@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from unittest import mock
@@ -8,6 +9,8 @@ from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import BATCH_SIZE, EVAL_BATCH_SIZE, LEARNING_RATE, TRAINER
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
+
+logger = logging.getLogger(__name__)
 
 try:
     import ray
@@ -39,6 +42,9 @@ try:
         return callback.lr
 
 except ImportError:
+    logger.warning(
+        "ray is not installed. In order to use ray please run pip install ludwig[ray]." "Setting ray import to none."
+    )
     ray = None
 
 
