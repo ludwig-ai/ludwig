@@ -104,8 +104,10 @@ class Config(BaseMarshmallowConfig):
 
     def __init__(self, config_dict: dict):
 
+        # ===== Backwards Compatibility =====
         upgraded_config = upgrade_to_latest_version(config_dict)
 
+        # ===== Initialize Top Level Config Sections =====
         self.model_type: str = MODEL_ECD
         self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
         self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
@@ -166,7 +168,7 @@ class Config(BaseMarshmallowConfig):
         self.hyperopt = upgraded_config.get(HYPEROPT, {})
         self._set_hyperopt_defaults()
 
-        # ===== Validate =====
+        # ===== Validate Config =====
         validate_config(self.to_dict())
 
     def __repr__(self):
@@ -181,8 +183,8 @@ class Config(BaseMarshmallowConfig):
         with open(yaml_path) as stream:
             try:
                 yaml_config = yaml.safe_load(stream)
-            except yaml.YAMLError:
-                raise yaml.YAMLError("Cannot parse input yaml file")
+            except yaml.YAMLError as e:
+                raise yaml.YAMLError(f"Cannot parse input yaml file: {e}")
         return cls(yaml_config)
 
     @staticmethod
