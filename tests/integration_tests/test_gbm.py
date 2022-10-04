@@ -209,8 +209,8 @@ def run_test_gbm_schema(backend_config):
     invalid_trainer = "trainer"
     config = {
         MODEL_TYPE: "gbm",
-        "input_features": input_features,
-        "output_features": output_features,
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
         TRAINER: {
             "num_boost_round": 2,
             "type": invalid_trainer,
@@ -290,19 +290,24 @@ def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
 
 
 def test_loss_decreases(tmpdir, local_backend):
-    from ludwig.datasets import get_dataset, model_configs_for_dataset
+    from ludwig.datasets import adult_census_income
 
-    default_config = model_configs_for_dataset("adult_census_income")["default"]
     config = {
         MODEL_TYPE: "gbm",
-        "input_features": default_config["input_features"][:3],  # only use first 3 features
-        "output_features": default_config["output_features"],
+        INPUT_FEATURES: [
+            {"name": "age", "type": "number"},
+            {"name": "workclass", "type": "category"},
+            {"name": "fnlwgt", "type": "number"},
+        ],  # only use first 3 features
+        OUTPUT_FEATURES: [
+            {"name": "income", "type": "category"},
+        ],
         TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1},
     }
 
-    df = get_dataset("adult_census_income").load(split=False)
+    df = adult_census_income.load(split=False)
     # reduce dataset size to speed up test
-    df = df.loc[:10, [f["name"] for f in config["input_features"] + config["output_features"]]]
+    df = df.loc[:10, [f["name"] for f in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]]]
 
     model = LudwigModel(config, backend=local_backend)
     train_stats, _, _ = model.train(
