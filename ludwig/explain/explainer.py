@@ -61,7 +61,7 @@ class Explainer(metaclass=ABCMeta):
         return 1
 
     @abstractmethod
-    def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:
+    def explain(self) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions.
 
         # Return

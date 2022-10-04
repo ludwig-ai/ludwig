@@ -6,7 +6,7 @@ from ludwig.models.gbm import GBM
 
 
 class GBMExplainer(Explainer):
-    def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:
+    def explain(self) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions. Uses the feature importances from the model.
 
         # Return

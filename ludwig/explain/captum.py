@@ -110,7 +110,7 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
 
 
 class IntegratedGradientsExplainer(Explainer):
-    def explain(self, **kwargs) -> Tuple[List[Explanation], List[float]]:
+    def explain(self) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions using Integrated Gradients.
 
         # Return
