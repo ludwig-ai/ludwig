@@ -23,7 +23,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
-        test-markers: ["not distributed", "distributed", "not benchmark"]
+        test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
             pytorch-version: 1.10.2
@@ -40,6 +40,7 @@ jobs:
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
+      EXCLUDED_MARKERS: "benchmark"
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
@@ -154,7 +155,7 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
+          pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()
