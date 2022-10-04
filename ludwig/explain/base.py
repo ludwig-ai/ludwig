@@ -5,7 +5,8 @@ import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, CATEGORY, TYPE
-from ludwig.explain.util import Explanation, prepare_data
+from ludwig.explain.explanation import Explanation
+from ludwig.explain.util import prepare_data
 from ludwig.utils.torch_utils import get_torch_device
 
 DEVICE = get_torch_device()

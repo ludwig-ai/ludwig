@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from ludwig.explain.base import Explainer
-from ludwig.explain.util import Explanation
+from ludwig.explain.explanation import Explanation
 from ludwig.models.gbm import GBM
 
 
