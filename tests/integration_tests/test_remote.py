@@ -30,9 +30,16 @@ def remote_tmpdir(fs_protocol, bucket):
 
 
 @pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+@pytest.mark.parametrize(
     "fs_protocol,bucket", [("file", None), private_param(("s3", "ludwig-tests"))], ids=["file", "s3"]
 )
-def test_remote_training_set(csv_filename, fs_protocol, bucket):
+def test_remote_training_set(csv_filename, fs_protocol, bucket, backend, ray_cluster_2cpu):
     with remote_tmpdir(fs_protocol, bucket) as tmpdir:
         input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
         output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
@@ -58,7 +65,7 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket):
             yaml.dump(config, f)
 
         backend_config = {
-            "type": "local",
+            "type": backend,
         }
         backend = initialize_backend(backend_config)
 
