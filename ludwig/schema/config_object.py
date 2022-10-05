@@ -413,7 +413,7 @@ class Config(BaseMarshmallowConfig):
         elif epochs is not None:
             scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
-    def update_config_object(self, config_dict: dict):
+    def update_with_dict(self, config_dict: dict):
         """This function enables the functionality to update the config object with the config dict in case it has
         been altered by a particular section of the Ludwig pipeline. For example, preprocessing/auto_tune_config
         make changes to the config dict that need to be reconciled with the config obj. This function will ideally

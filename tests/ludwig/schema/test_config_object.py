@@ -199,7 +199,7 @@ def test_update_config_object():
         ],
     }
 
-    config_object.update_config_object(temp_config)
+    config_object.update_with_dict(temp_config)
 
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
