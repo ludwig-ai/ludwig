@@ -352,7 +352,7 @@ class Config(BaseMarshmallowConfig):
             The feature with defaults set.
         """
         type_defaults = getattr(self.defaults, feat_type)  # Global defaults section for specific feature type
-        config_sections = feature.to_dict().keys()         # Parameters available on this feature
+        config_sections = feature.to_dict().keys()  # Parameters available on this feature
 
         # Loop through sections of feature config
         for section in config_sections:
