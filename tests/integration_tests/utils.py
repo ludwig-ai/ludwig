@@ -41,7 +41,6 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.trainers.trainer import Trainer
-from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
@@ -888,4 +887,5 @@ def remote_tmpdir(fs_protocol, bucket):
     try:
         yield tmpdir
     finally:
-        fs_utils.delete(tmpdir, recursive=True)
+        # fs_utils.delete(tmpdir, recursive=True)
+        pass

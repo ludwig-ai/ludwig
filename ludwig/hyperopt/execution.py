@@ -32,6 +32,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
+from ludwig.hyperopt.syncer import WrappedSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
@@ -44,7 +45,7 @@ _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
 if _ray_200:
     from ray.air import Checkpoint
     from ray.tune.search import SEARCH_ALG_IMPORT
-    from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
+    from ray.tune.syncer import get_node_to_storage_syncer
 else:
     from ray.ml import Checkpoint
     from ray.tune.suggest import SEARCH_ALG_IMPORT
@@ -778,10 +779,9 @@ class RayTuneExecutor:
             )
 
         if has_remote_protocol(output_directory):
-            run_experiment_trial = tune.durable(run_experiment_trial)
-            self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
+            self.sync_config = tune.SyncConfig(upload_dir=output_directory)
             if _ray_200:
-                self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
+                self.sync_client = WrappedSyncer(get_node_to_storage_syncer(self.sync_config))
             else:
                 self.sync_client = get_cloud_sync_client(output_directory)
             output_directory = None
