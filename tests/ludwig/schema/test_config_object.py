@@ -1,7 +1,7 @@
 import os
-import pytest
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 
 from ludwig.constants import COMBINER, DEFAULTS, HYPEROPT, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER
@@ -204,10 +204,7 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-@pytest.mark.parametrize(
-    "load_format",
-    ["dict", "yaml"]
-)
+@pytest.mark.parametrize("load_format", ["dict", "yaml"])
 def test_constructors(load_format):
     config = {
         "input_features": [
@@ -266,7 +263,7 @@ def test_sequence_combiner():
     config = {
         "input_features": [{"name": "text_feature", "type": "text"}],
         "output_features": [{"name": "number_output_feature", "type": "number"}],
-        "combiner": {"type": "sequence", "encoder": {"type": "rnn"}}
+        "combiner": {"type": "sequence", "encoder": {"type": "rnn"}},
     }
 
     config_obj = Config.from_dict(config)
@@ -281,23 +278,17 @@ def test_sequence_combiner():
     [
         {"sess_id": 0, "encoder": "parallel_cnn", "loss": {"type": "mean_squared_error"}},
         {"sess_id": 1, "encoder": "cnnrnn", "loss": {"type": "mean_absolute_error"}},
-        {"sess_id": 2, "encoder": "parallel_cnn", "loss": {"type": "mean_absolute_error"}}
-    ]
+        {"sess_id": 2, "encoder": "parallel_cnn", "loss": {"type": "mean_absolute_error"}},
+    ],
 )
 def test_shared_state(session):
     config = {
         "input_features": [
             {"name": "text_feature", "type": "text", "encoder": {"type": session["encoder"]}},
-            {"name": "text_feature_2", "type": "text"}
+            {"name": "text_feature_2", "type": "text"},
         ],
         "output_features": [{"name": "number_output_feature", "type": "number"}],
-        "defaults": {
-            "text": {
-                "encoder": {
-                    "type": session["encoder"]
-                }
-            }
-        }
+        "defaults": {"text": {"encoder": {"type": session["encoder"]}}},
     }
 
     if session["sess_id"] == 2:
