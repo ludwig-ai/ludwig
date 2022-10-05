@@ -340,7 +340,7 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
+def test_ray_text_sequence_timeseries(dataset_type, ray_cluster_2cpu):
     input_features = [
         text_feature(),
         sequence_feature(encoder={"reduce_output": "sum"}),

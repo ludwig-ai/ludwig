@@ -373,7 +373,6 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
         ludwig_model.preprocess(dataset=df)
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize(
     "backend",
     [
