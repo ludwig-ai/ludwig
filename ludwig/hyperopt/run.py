@@ -28,6 +28,7 @@ from ludwig.constants import (
     NAME,
     NUM_SAMPLES,
     OUTPUT_FEATURES,
+    PARAMETERS,
     PREPROCESSING,
     RAY,
     SPACE,
@@ -222,7 +223,16 @@ def hyperopt(
     backend = initialize_backend(backend)
 
     update_hyperopt_params_with_defaults(hyperopt_config)
-    update_or_set_max_concurrent_trials(hyperopt_config[EXECUTOR], backend)
+
+    # Check if all features are grid type parameters and log UserWarning if needed
+    log_warning_if_all_grid_type_parameters(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES))
+
+    # Set max_concurrent_trials if trials will stall with current cluster resources
+    update_or_set_max_concurrent_trials(
+        hyperopt_config[EXECUTOR],
+        backend,
+        get_total_trial_count(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES)),
+    )
 
     # Print hyperopt config
     logger.info("Hyperopt Config")
@@ -231,14 +241,11 @@ def hyperopt(
 
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config[EXECUTOR]
-    parameters = hyperopt_config["parameters"]
+    parameters = hyperopt_config[PARAMETERS]
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
-
-    # Check if all features are grid type parameters and log UserWarning if needed
-    log_warning_if_all_grid_type_parameters(parameters, executor.get("num_samples"))
 
     ######################
     # check validity of output_feature / metric/ split combination
@@ -408,6 +415,15 @@ def hyperopt(
     return hyperopt_results
 
 
+def get_total_trial_count(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> int:
+    """Returns the total number of hyperopt trials that will run based on the hyperopt config."""
+    total_trial_count = num_samples
+    for _, param_info in hyperopt_parameter_config.items():
+        if param_info.get(SPACE) == GRID_SEARCH:
+            total_trial_count *= len(param_info.get("values"))
+    return total_trial_count
+
+
 def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
     """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
     duplicate trials being created."""
@@ -430,7 +446,7 @@ def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str,
     )
 
 
-def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend) -> None:
+def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend, total_num_trials: int) -> None:
     """Datasets read tasks request 0.5 CPUs and all transformation tasks request 1 CPU, so if there are no cores
     available, trials won't be able to run.
 
@@ -466,7 +482,7 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
         raise ValueError("Not enough CPUs available for hyperopt, reduce the number of CPUs requested per trial")
 
     if max_concurrent_trials == AUTO:
-        if max_possible_trials > executor_config.get(NUM_SAMPLES):
+        if max_possible_trials > total_num_trials:
             # If all trials easily fit on the available CPUs, then remove max_concurrent_trials
             del executor_config[MAX_CONCURRENT_TRIALS]
             return
