@@ -109,7 +109,8 @@ def _append_doc(obj, message: str, directive: Optional[str] = None) -> str:
     Args:
         message: An additional message to append to the end of docstring for a class
                  or method that uses one of the API annotations
-        directive:
+        directive: A shorter message that provides contexts for the message and indents it.
+                For example, this could be something like 'warning' or 'info'.
     """
     if not obj.__doc__:
         obj.__doc__ = ""
