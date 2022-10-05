@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -114,8 +114,8 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
             raise RuntimeError(exception_message)
 
 
-def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
-    """Load model file data in to list of .
+def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> Dict[str, Any]:
+    """Load JSON files (training stats, evaluation stats...) for a list of models.
 
     :param load_type: type of the data loader to be used.
     :param model_file_statistics: JSON file or list of json files containing any
@@ -133,7 +133,20 @@ def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_
     except (TypeError, AttributeError):
         logger.exception(f"Unable to open model statistics file {model_file_statistics}!")
         raise
-    # Loads TrainingStats structure from JSON object.
+    return stats_per_model
+
+
+def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
+    """Load model file data (specifically training stats) for a list of models.
+
+    :param load_type: type of the data loader to be used.
+    :param model_file_statistics: JSON file or list of json files containing any
+           model experiment stats.
+    :return List of model statistics loaded as TrainingStats objects.
+    """
+    stats_per_model = load_data_for_viz(
+        load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
+    )
     try:
         stats_per_model = [TrainingStats.Schema().load(j) for j in stats_per_model]
     except Exception:
@@ -344,7 +357,7 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
 
     :return None:
     """
-    train_stats_per_model = load_data_for_viz("load_json", training_statistics)
+    train_stats_per_model = load_training_stats_for_viz("load_json", training_statistics)
     learning_curves(train_stats_per_model, **kwargs)
 
 
