@@ -602,7 +602,7 @@ class LudwigModel:
 
                     # save training statistics
                     if self.backend.is_coordinator():
-                        if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
+                        if not skip_save_training_statistics:
                             save_json(training_stats_fn, train_stats)
 
                     # results of the model with highest validation test performance

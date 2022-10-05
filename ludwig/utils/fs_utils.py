@@ -29,6 +29,7 @@ from urllib.parse import unquote, urlparse
 import certifi
 import fsspec
 import h5py
+import pyarrow.fs
 import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
@@ -115,6 +116,14 @@ def find_non_existing_dir_by_adding_suffix(directory_name):
         curr_directory_name = directory_name + "_" + str(suffix)
         suffix += 1
     return curr_directory_name
+
+
+def abspath(url):
+    protocol, _ = split_protocol(url)
+    if protocol is not None:
+        # we assume any path containing an explicit protovol is fully qualified
+        return url
+    return os.path.abspath(url)
 
 
 def path_exists(url):
@@ -217,11 +226,18 @@ def upload_output_directory(url):
         # then upload to the remote fs at the end.
         with tempfile.TemporaryDirectory() as tmpdir:
             fs, remote_path = get_fs_and_path(url)
+
+            # In cases where we are resuming from a previous run, we first need to download
+            # the artifacts from the remote filesystem
             if path_exists(url):
                 fs.get(url, tmpdir + "/", recursive=True)
 
             def put_fn():
-                fs.put(tmpdir, remote_path, recursive=True)
+                # Use pyarrow API here as fs.put() is inconsistent in where it uploads the file
+                # See: https://github.com/fsspec/filesystem_spec/issues/1062
+                pyarrow.fs.copy_files(
+                    tmpdir, remote_path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs))
+                )
 
             # Write to temp directory locally
             yield tmpdir, put_fn

@@ -23,7 +23,6 @@ def remote_tmpdir(fs_protocol, bucket):
 
     prefix = f"tmp_{uuid.uuid4().hex}"
     tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
-    fs_utils.makedirs(tmpdir, exist_ok=True)
     try:
         yield tmpdir
     finally:
@@ -70,10 +69,8 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket):
         )
 
         assert os.path.join(output_directory, "api_experiment_run") == output_run_directory
-
-        print(fs_utils.listdir(output_run_directory))
-        assert fs_utils.path_exists(os.path.join(output_run_directory, "training_statistics.json"))
         assert fs_utils.path_exists(os.path.join(output_run_directory, DESCRIPTION_FILE_NAME))
+        assert fs_utils.path_exists(os.path.join(output_run_directory, "training_statistics.json"))
         assert fs_utils.path_exists(os.path.join(output_run_directory, "model"))
         assert fs_utils.path_exists(os.path.join(output_run_directory, "model", "model_weights"))
 
@@ -82,5 +79,5 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket):
         # Train again, this time the cache will be used
         # Resume from the remote output directory
         model.train(
-            training_set=train_csv, validation_set=val_csv, test_set=test_csv, model_resume_path=output_directory
+            training_set=train_csv, validation_set=val_csv, test_set=test_csv, model_resume_path=output_run_directory
         )
