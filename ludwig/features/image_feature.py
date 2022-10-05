@@ -529,7 +529,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
-                    feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
+                    feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.float32
                 )
                 for i, img_entry in enumerate(abs_path_column):
                     res = read_image_if_bytes_obj_and_resize(img_entry)
