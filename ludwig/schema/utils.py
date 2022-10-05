@@ -65,7 +65,7 @@ def load_config_with_kwargs(
     }
 
 
-def convert_submodules(config_dict):
+def convert_submodules(config_dict: dict) -> TDict[str, any]:
     """Helper function for converting submodules to dictionaries during a config object to dict transformation.
 
     Args:
@@ -79,15 +79,6 @@ def convert_submodules(config_dict):
     for k, v in output_dict.items():
         if isinstance(v, dict):
             convert_submodules(v)
-
-        elif isinstance(v, list):
-            for i, feature in enumerate(v):
-                if isinstance(feature, dict):
-                    convert_submodules(feature)
-
-                if isinstance(feature, BaseMarshmallowConfig):
-                    output_dict[k][i] = feature.to_dict()
-                    convert_submodules(output_dict[k][i])
 
         elif isinstance(v, BaseMarshmallowConfig):
             output_dict[k] = v.to_dict()

@@ -254,7 +254,7 @@ class Config(BaseMarshmallowConfig):
             if feature_section == INPUT_FEATURES:
 
                 # Retrieve input feature schema cls from registry to init feature
-                feature_config_cls = get_input_feature_cls(feature[TYPE])()
+                feature_config_cls = copy.deepcopy(get_input_feature_cls(feature[TYPE])())
 
                 # Check if feature is being initialized or if it's just being updated
                 if initialize:
@@ -275,7 +275,7 @@ class Config(BaseMarshmallowConfig):
             if feature_section == OUTPUT_FEATURES:
 
                 # Retrieve output feature schema cls from registry to init feature
-                feature_config_cls = get_output_feature_cls(feature[TYPE])()
+                feature_config_cls = copy.deepcopy(get_output_feature_cls(feature[TYPE])())
 
                 # Check if feature is being initialized or if it's just being updated
                 if initialize:

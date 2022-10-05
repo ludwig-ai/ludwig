@@ -4,8 +4,18 @@ from tempfile import TemporaryDirectory
 import pytest
 import yaml
 
-from ludwig.constants import COMBINER, DEFAULTS, HYPEROPT, INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER
+from ludwig.constants import (
+    COMBINER,
+    DEFAULTS,
+    HYPEROPT,
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
+    OPTIMIZER,
+    PREPROCESSING,
+    TRAINER
+)
 from ludwig.schema.config_object import Config
+from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
 
 def test_config_object():
@@ -46,7 +56,7 @@ def test_config_object():
                 "type": "category",
                 "top_k": 3,
                 "preprocessing": {
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": "bfill",
                 },
                 "decoder": {
                     "type": "classifier",
@@ -287,9 +297,14 @@ def test_shared_state(session):
             {"name": "text_feature", "type": "text", "encoder": {"type": session["encoder"]}},
             {"name": "text_feature_2", "type": "text"},
         ],
-        "output_features": [{"name": "number_output_feature", "type": "number"}],
+        "output_features": [
+            {"name": "number_output_feature", "type": "number"},
+            {"name": "category_feature", "type": "category", "preprocessing": {"missing_value_strategy": "bfill"}}],
         "defaults": {"text": {"encoder": {"type": session["encoder"]}}},
     }
+
+    if session["sess_id"] == 1:
+        del config[OUTPUT_FEATURES][1]["preprocessing"]
 
     if session["sess_id"] == 2:
         del config[INPUT_FEATURES][0]["encoder"]
@@ -307,6 +322,8 @@ def test_shared_state(session):
     if session["sess_id"] == 1:
         config_obj.output_features.number_output_feature.loss.weight = 2.0
 
+        # Test previous edits to config don't carry over
+        assert config_obj.output_features.category_feature.preprocessing.missing_value_strategy == "drop_row"
         assert config_obj.defaults.text.encoder.max_sequence_length is None  # Test no link w/ previous encoder config
         assert config_obj.input_features.text_feature.tied is None  # Test no link w/ previous text feature config
         assert config_obj.output_features.number_output_feature.loss.weight == 2.0  # Test loss weight set as expected
@@ -316,3 +333,21 @@ def test_shared_state(session):
         assert config_obj.output_features.number_output_feature.loss.weight == 1.0  # Test no link previous loss config
         assert config_obj.defaults.text.encoder.max_sequence_length is None  # Test no link w/ first encoder config
         assert config_obj.input_features.text_feature.tied is None  # Test no link w/ first tied setting
+
+
+def test_convert_submodules():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+        ],
+        "output_features": [
+            {"name": "number_output_feature", "type": "number"}
+        ]
+    }
+
+    config_obj = Config.from_dict(config)
+    trainer = convert_submodules(config_obj.trainer.__dict__)
+    input_features = list(convert_submodules(config_obj.input_features.__dict__).values())
+
+    assert not isinstance(trainer[OPTIMIZER], BaseMarshmallowConfig)
+    assert not isinstance(input_features[0][PREPROCESSING], BaseMarshmallowConfig)

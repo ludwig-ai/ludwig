@@ -78,7 +78,7 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
 
     # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
     inputs = {
-        name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(model.config["trainer"]["batch_size"])
+        name: torch.from_numpy(dataset.dataset[feature.proc_column]).split(model.config_obj.trainer.batch_size)
         for name, feature in model.model.input_features.items()
     }
 
@@ -143,7 +143,7 @@ class IntegratedGradientsExplainer(Explainer):
                 tuple(inputs_encoded),
                 baselines=tuple(baseline),
                 target=target_idx if self.is_category_target else None,
-                internal_batch_size=self.model.config["trainer"]["batch_size"],
+                internal_batch_size=self.model.config_obj.trainer.batch_size,
                 return_convergence_delta=True,
             )
 
