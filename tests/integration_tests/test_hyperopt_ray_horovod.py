@@ -22,10 +22,10 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.constants import ACCURACY, EXECUTOR, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults, update_or_set_max_concurrent_trials
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
@@ -183,6 +183,7 @@ def run_hyperopt_executor(
 
     backend = RayBackend(**RAY_BACKEND_KWARGS)
     update_hyperopt_params_with_defaults(hyperopt_config)
+    update_or_set_max_concurrent_trials(hyperopt_config[EXECUTOR], backend)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
@@ -221,8 +222,7 @@ def run_hyperopt_executor(
     )
 
 
-# @pytest.mark.skipif(_ray_nightly, reason="https://github.com/ludwig-ai/ludwig/issues/2451")
-@pytest.mark.skip(reason="""Skipping for now - quick test""")
+@pytest.mark.skipif(_ray_nightly, reason="https://github.com/ludwig-ai/ludwig/issues/2451")
 @pytest.mark.distributed
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):
