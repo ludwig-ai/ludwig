@@ -436,61 +436,42 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
 
     Set max_concurrent_trials in the hyperopt executor to ensure CPU resources are available for dataset related tasks.
     """
-    cpu_resources_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
-    gpu_resources_per_trial = executor_config.get(GPU_RESOURCES_PER_TRIAL, 0)
+    cpus_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
+    gpus_per_trial = executor_config.get(GPU_RESOURCES_PER_TRIAL, 0)
     max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS)
 
-    # max_concurrent_trials set to None, no need to infer
     # TODO: clarify comment
     if not max_concurrent_trials:
         return
 
-    if cpu_resources_per_trial == 0 and gpu_resources_per_trial == 0:
+    if cpus_per_trial == 0 and gpus_per_trial == 0:
         # TODO(Arnav): Replace with custom LudwigConfigError in the future
         raise ValueError(
-            "Atleast 1 CPU or GPU resource is required per trial. Please set 'cpu_resources_per_trial' > 0 "
-            "or 'gpu_resources_per_trial' > 0"
+            f"Atleast 1 CPU or GPU resource is required per trial. Please set '{CPU_RESOURCES_PER_TRIAL}' > 0 "
+            f"or '{GPU_RESOURCES_PER_TRIAL}' > 0"
         )
-
-    num_samples = executor_config.get(NUM_SAMPLES)
-    is_auto = max_concurrent_trials == AUTO
-    # Default to num_samples if max_concurrent_trials isn't set, otherwise use the value set in the config
-    max_concurrent_trials = num_samples if max_concurrent_trials == AUTO else max_concurrent_trials
 
     # Raise error if total num CPUs < 2
     num_cpus_available = int(backend.get_available_resources().cpus)
-    num_cpus_required = cpu_resources_per_trial * num_samples
+    if num_cpus_available < 2:
+        raise ValueError("Atleast 2 CPUs are required for hyperopt.")
 
-    # Either check validity of max conc trials or set max concurrent trials to something
+    # TODO: figure out if the leeway if 1 or 2
+    max_possible_trials = (num_cpus_available - 2) // cpus_per_trial
+    if max_possible_trials < 1:
+        raise ValueError("Not enough CPUs available for hyperopt, reduce the number of CPUs requested per trial.")
 
-    if num_cpus_required >= num_cpus_available:
-        max_possible_concurrent_trials = int(num_cpus_available // cpu_resources_per_trial)
-        leftover_cpus = num_cpus_available % cpu_resources_per_trial
+    if max_concurrent_trials == "auto":
+        if max_possible_trials > executor_config.get(NUM_SAMPLES):
+            # If all trials easily fit on the available CPUs, then don't update the config.
+            return
+        max_concurrent_trials = max_possible_trials
+    else:
+        if max_concurrent_trials > max_possible_trials:
+            logger.info("Setting max_concurrent_trials to max possible value.")
+        max_concurrent_trials = min(max_concurrent_trials, max_possible_trials)
 
-        if max_possible_concurrent_trials == 0:
-            raise RuntimeError(
-                "'cpu_resources_per_trial' is greater than the number of CPUs available, so no trials can be run."
-                " Please consider increasing the number of CPUs available or decrease 'cpu_resources_per_trial'."
-            )
-        elif leftover_cpus < 1:
-            if backend.BACKEND_TYPE == "local":
-                # Use min incase user defined config has a smaller value already set for max_concurrent_trials
-                # Reduce by 1 to ensure that resources exist for dataset related tasks
-                max_concurrent_trials = min(max_possible_concurrent_trials - 1, max_concurrent_trials)
-            else:
-                # Subtract 2 to ensure there's at least 1 full CPU resource available for dataset read tasks and make
-                # sure there's no competition amongst trials for RayDatasetPipeline resource related tasks
-                max_concurrent_trials = min(max_possible_concurrent_trials - 2, max_concurrent_trials)
-            logger.info(
-                f"Number of CPUs needed for hyperopt trials ({num_cpus_required}) is greater than or equal to the "
-                f"total number of CPUs available ({num_cpus_available}). Restricting parallelism by setting "
-                f"'max_concurrent_trials' to {max_concurrent_trials} to ensure there's at least 1 free CPU "
-                "available for dataset read tasks and ensure hyperopt trials start."
-            )
-            executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
-    elif is_auto:
-        logger.info(f"Setting 'max_concurrent_trials' to {max_concurrent_trials}")
-        executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
+    executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any]) -> None:
