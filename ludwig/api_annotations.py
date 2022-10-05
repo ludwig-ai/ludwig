@@ -1,9 +1,3 @@
-# ==============================================================================
-#
-# Code in api_annotations.py adapted from https://github.com/ray-project/ray (Apache-2.0 License)
-# Link to file: https://github.com/ray-project/ray/blob/master/python/ray/util/annotations.py
-#
-# ==============================================================================
 from typing import Optional
 
 
