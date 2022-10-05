@@ -1,4 +1,5 @@
 import os
+import pytest
 from tempfile import TemporaryDirectory
 
 import yaml
@@ -203,7 +204,11 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-def test_constructors():
+@pytest.mark.parametrize(
+    "load_format",
+    ["dict", "yaml"]
+)
+def test_constructors(load_format):
     config = {
         "input_features": [
             {"name": "text_feature", "type": "text", "encoder": {"type": "parallel_cnn", "max_sequence_length": 10}},
@@ -216,22 +221,16 @@ def test_constructors():
         ],
     }
 
-    config_obj = Config.from_dict(config)
+    if load_format == "dict":
+        config_obj = Config.from_dict(config)
 
-    assert hasattr(config_obj, INPUT_FEATURES)
-    assert hasattr(config_obj, OUTPUT_FEATURES)
-    assert hasattr(config_obj, PREPROCESSING)
-    assert hasattr(config_obj, TRAINER)
-    assert hasattr(config_obj, COMBINER)
-    assert hasattr(config_obj, DEFAULTS)
-    assert hasattr(config_obj, HYPEROPT)
+    if load_format == "yaml":
+        with TemporaryDirectory() as tmpdir:
+            file_path = os.path.join(tmpdir, "test.yaml")
+            with open(file_path, "w") as file:
+                yaml.dump(config, file)
 
-    with TemporaryDirectory() as tmpdir:
-        file_path = os.path.join(tmpdir, "test.yaml")
-        with open(file_path, "w") as file:
-            yaml.dump(config, file)
-
-        config_obj = Config.from_yaml(file_path)
+            config_obj = Config.from_yaml(file_path)
 
     assert hasattr(config_obj, INPUT_FEATURES)
     assert hasattr(config_obj, OUTPUT_FEATURES)
@@ -261,3 +260,68 @@ def test_feature_enabling_disabling():
     config_obj.input_features.text_feature.disable()
 
     assert not config_obj.input_features.text_feature.active
+
+
+def test_sequence_combiner():
+    config = {
+        "input_features": [{"name": "text_feature", "type": "text"}],
+        "output_features": [{"name": "number_output_feature", "type": "number"}],
+        "combiner": {"type": "sequence", "encoder": {"type": "rnn"}}
+    }
+
+    config_obj = Config.from_dict(config)
+
+    assert config_obj.combiner.type == "sequence"
+    assert config_obj.combiner.encoder.type == "rnn"
+    assert config_obj.combiner.encoder.cell_type == "rnn"
+
+
+@pytest.mark.parametrize(
+    "session",
+    [
+        {"sess_id": 0, "encoder": "parallel_cnn", "loss": {"type": "mean_squared_error"}},
+        {"sess_id": 1, "encoder": "cnnrnn", "loss": {"type": "mean_absolute_error"}},
+        {"sess_id": 2, "encoder": "parallel_cnn", "loss": {"type": "mean_absolute_error"}}
+    ]
+)
+def test_shared_state(session):
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text", "encoder": {"type": session["encoder"]}},
+            {"name": "text_feature_2", "type": "text"}
+        ],
+        "output_features": [{"name": "number_output_feature", "type": "number"}],
+        "defaults": {
+            "text": {
+                "encoder": {
+                    "type": session["encoder"]
+                }
+            }
+        }
+    }
+
+    if session["sess_id"] == 2:
+        del config[INPUT_FEATURES][0]["encoder"]
+        del config[DEFAULTS]
+
+    config_obj = Config.from_dict(config)
+
+    if session["sess_id"] == 0:
+        config_obj.input_features.text_feature.encoder.max_sequence_length = 10
+        config_obj.input_features.text_feature.tied = "text_feature_2"
+
+        assert config_obj.defaults.text.encoder.max_sequence_length is None  # Test no link w/ defaults config
+        assert config_obj.input_features.text_feature.tied == "text_feature_2"  # Test tied set as expected
+
+    if session["sess_id"] == 1:
+        config_obj.output_features.number_output_feature.loss.weight = 2.0
+
+        assert config_obj.defaults.text.encoder.max_sequence_length is None  # Test no link w/ previous encoder config
+        assert config_obj.input_features.text_feature.tied is None  # Test no link w/ previous text feature config
+        assert config_obj.output_features.number_output_feature.loss.weight == 2.0  # Test loss weight set as expected
+
+    if session["sess_id"] == 2:
+        assert config_obj.input_features.text_feature.encoder.type == "parallel_cnn"
+        assert config_obj.output_features.number_output_feature.loss.weight == 1.0  # Test no link previous loss config
+        assert config_obj.defaults.text.encoder.max_sequence_length is None  # Test no link w/ first encoder config
+        assert config_obj.input_features.text_feature.tied is None  # Test no link w/ first tied setting

@@ -114,14 +114,14 @@ class Config(BaseMarshmallowConfig):
 
         # ===== Initialize Top Level Config Sections =====
         self.model_type: str = MODEL_ECD
-        self.input_features: InputFeaturesContainer = copy.deepcopy(InputFeaturesContainer())
-        self.output_features: OutputFeaturesContainer = copy.deepcopy(OutputFeaturesContainer())
-        self.combiner: BaseCombinerConfig = copy.deepcopy(ConcatCombinerConfig())
-        self.trainer: BaseTrainerConfig = copy.deepcopy(ECDTrainerConfig())
-        self.preprocessing: PreprocessingConfig = copy.deepcopy(PreprocessingConfig())
+        self.input_features: InputFeaturesContainer = InputFeaturesContainer()
+        self.output_features: OutputFeaturesContainer = OutputFeaturesContainer()
+        self.combiner: BaseCombinerConfig = ConcatCombinerConfig()
+        self.trainer: BaseTrainerConfig = ECDTrainerConfig()
+        self.preprocessing: PreprocessingConfig = PreprocessingConfig()
         self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
 
-        # ===== Defaults =====
+        # ===== Set User Defined Global Defaults =====
         if DEFAULTS in upgraded_config:
             self._set_attributes(self.defaults, upgraded_config[DEFAULTS])
 
@@ -209,33 +209,31 @@ class Config(BaseMarshmallowConfig):
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
 
     @staticmethod
-    def _get_new_config(module: str, config_type: str, feature_type: str) -> BaseMarshmallowConfig:
-        """Helper function for getting the appropriate config to set in defaults section.
+    def _get_config_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
+        """Helper function for getting the specified section class associated with the section type passed in.
 
         Args:
-            module: Which nested config module we're dealing with.
-            config_type: Which config schema to get (i.e. parallel_cnn)
+            section: Which nested config module we're dealing with.
+            section_type: Which config schema to get (i.e. parallel_cnn)
             feature_type: feature type corresponding to config schema we're grabbing
 
         Returns:
             Config Schema to update the defaults section with.
         """
-        if module == ENCODER:
-            return get_encoder_cls(feature_type, config_type)
+        if section == ENCODER:
+            cls = get_encoder_cls(feature_type, section_type)
+        elif section == DECODER:
+            cls = get_decoder_cls(feature_type, section_type)
+        elif section == LOSS:
+            cls = get_loss_cls(feature_type, section_type).get_schema_cls()
+        elif section == OPTIMIZER:
+            cls = get_optimizer_cls(section_type)
+        elif section == SPLIT:
+            cls = get_split_cls(section_type)
+        else:
+            raise ValueError("Config Section not Supported")
 
-        if module == DECODER:
-            return get_decoder_cls(feature_type, config_type)
-
-        if module == LOSS:
-            return get_loss_cls(feature_type, config_type).get_schema_cls()
-
-        if module == OPTIMIZER:
-            return get_optimizer_cls(config_type)
-
-        if module == SPLIT:
-            return get_split_cls(config_type)
-
-        raise ValueError("Module needs to be added to parsing support")
+        return copy.deepcopy(cls())
 
     def _parse_features(self, features: List[dict], feature_section: str, initialize: bool = True):
         """This function sets the values on the config object that are specified in the user defined config
@@ -246,34 +244,58 @@ class Config(BaseMarshmallowConfig):
         Args:
             features: List of feature definitions in user defined config dict.
             feature_section: Indication of input features vs. output features.
+            initialize: Flag used to indicate whether the feature is getting initialized -> If false, skips setting
+                        global defaults. This is used for updating the config object (update_config_object).
 
         Returns:
             None -> Updates config object.
         """
         for feature in features:
             if feature_section == INPUT_FEATURES:
-                if DECODER in feature:  # Ensure input feature doesn't have decoder specs
-                    del feature[DECODER]
-                feature_config = get_input_feature_cls(feature[TYPE])()  # name something else
+
+                # Retrieve input feature schema cls from registry to init feature
+                feature_config_cls = get_input_feature_cls(feature[TYPE])()
+
+                # Check if feature is being initialized or if it's just being updated
                 if initialize:
-                    updated_feature_config = self._update_with_global_defaults(
-                        feature_config, feature[TYPE], feature_section
+
+                    # Set global defaults on input feature config cls - if user has defined global defaults, these
+                    # will be set on feature_config_cls, otherwise the global defaults already reflect the regular
+                    # defaults, so it will initialize the feature as expected.
+                    feature_config_w_defaults = self._set_global_defaults(
+                        feature_config_cls, feature[TYPE], feature_section
                     )
-                    setattr(self.input_features, feature[NAME], copy.deepcopy(updated_feature_config))
+
+                    # Assign feature on input features container
+                    setattr(self.input_features, feature[NAME], feature_config_w_defaults)
+
+                # Set the parameters that the user specified on the input feature itself
                 self._set_attributes(getattr(self.input_features, feature[NAME]), feature, feature_type=feature[TYPE])
 
-            else:
-                if ENCODER in feature:  # Ensure output feature doesn't have encoder specs
-                    del feature[ENCODER]
-                feature_config = get_output_feature_cls(feature[TYPE])()
+            if feature_section == OUTPUT_FEATURES:
+
+                # Retrieve output feature schema cls from registry to init feature
+                feature_config_cls = get_output_feature_cls(feature[TYPE])()
+
+                # Check if feature is being initialized or if it's just being updated
                 if initialize:
-                    updated_feature_config = self._update_with_global_defaults(
-                        feature_config, feature[TYPE], feature_section
+
+                    # Set global defaults on output feature config cls - if user has defined global defaults, these
+                    # will be set on feature_config_cls, otherwise the global defaults already reflect the regular
+                    # defaults, so it will initialize the feature as expected.
+                    feature_config_w_defaults = self._set_global_defaults(
+                        feature_config_cls, feature[TYPE], feature_section
                     )
-                    setattr(self.output_features, feature[NAME], copy.deepcopy(updated_feature_config))
+
+                    # Assign feature on output features container
+                    setattr(self.output_features, feature[NAME], feature_config_w_defaults)
+
+                # Set the parameters that the user specified on the output feature itself
                 self._set_attributes(
                     getattr(getattr(self, feature_section), feature[NAME]), feature, feature_type=feature[TYPE]
                 )
+
+                # Set the reduce_input parameter for the tagger decoder specifically
                 if getattr(getattr(self, feature_section), feature[NAME]).decoder.type == "tagger":
                     getattr(getattr(self, feature_section), feature[NAME]).reduce_input = None
 
@@ -295,25 +317,27 @@ class Config(BaseMarshmallowConfig):
             if key in input_config_registry.keys():
                 feature_type = key
 
-            #  Update logic for nested feature fields
+            #  Set new section for nested feature fields and recurse into function for setting values
             if key in [ENCODER, DECODER, LOSS, OPTIMIZER, SPLIT]:
-                module = getattr(config_obj_lvl, key)
+                section = getattr(config_obj_lvl, key)
 
-                # Check if submodule needs update
-                if TYPE in val and module.type != val[TYPE]:
-                    new_config = self._get_new_config(key, val[TYPE], feature_type)()
-                    setattr(config_obj_lvl, key, copy.deepcopy(new_config))
+                # Check if nested subsection needs update
+                if TYPE in val and section.type != val[TYPE]:
+                    config_cls = self._get_config_cls(key, val[TYPE], feature_type)
+                    setattr(config_obj_lvl, key, config_cls)
 
                 #  Now set the other defaults specified in the module
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
+            # If val is a nested section (i.e. preprocessing) recurse into function to set values.
             elif isinstance(val, dict):
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
+            # Base case for setting values on leaves
             else:
-                setattr(config_obj_lvl, key, copy.deepcopy(val))
+                setattr(config_obj_lvl, key, val)
 
-    def _update_with_global_defaults(
+    def _set_global_defaults(
         self, feature: BaseFeatureConfig, feat_type: str, feature_section: str
     ) -> BaseFeatureConfig:
         """This purpose of this function is to set the attributes of the features that are specified in the
@@ -327,14 +351,21 @@ class Config(BaseMarshmallowConfig):
         Returns:
             The feature with defaults set.
         """
-        type_defaults = getattr(self.defaults, feat_type)
-        config_sections = feature.to_dict().keys()
+        type_defaults = getattr(self.defaults, feat_type)  # Global defaults section for specific feature type
+        config_sections = feature.to_dict().keys()         # Parameters available on this feature
 
+        # Loop through sections of feature config
         for section in config_sections:
             if feature_section == INPUT_FEATURES:
+
+                # For input features we set global defaults for encoders
+                # and preprocessing sections on the feature config itself
                 if section in {ENCODER, PREPROCESSING}:
                     setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
             else:
+
+                # For output features we set global defaults for decoders
+                # and loss sections on the feature config itself
                 if section in {DECODER, LOSS}:
                     setattr(feature, section, copy.deepcopy(getattr(type_defaults, section)))
 
@@ -401,9 +432,14 @@ class Config(BaseMarshmallowConfig):
         # ==== Combiner ====
         if COMBINER in config_dict:
             if self.combiner.type == SEQUENCE:
+
+                # Encoder family will be used when getting sequence encoders for the sequence combiner. This is passed
+                # into feature type so the sequence encoders set on this combiner will be available upon registry get
                 encoder_family = SEQUENCE
             else:
                 encoder_family = None
+
+            # Set parameters on combiner with encoder family passed in
             self._set_attributes(self.combiner, config_dict[COMBINER], feature_type=encoder_family)
 
         # ==== Update Trainer ====
