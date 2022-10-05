@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import multiprocessing
 import os
@@ -40,6 +41,7 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.trainers.trainer import Trainer
+from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension
 
 logger = logging.getLogger(__name__)
@@ -872,3 +874,18 @@ def train_with_backend(
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def remote_tmpdir(fs_protocol, bucket):
+    if bucket is None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield f"{fs_protocol}://{tmpdir}"
+        return
+
+    prefix = f"tmp_{uuid.uuid4().hex}"
+    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
+    try:
+        yield tmpdir
+    finally:
+        fs_utils.delete(tmpdir, recursive=True)
