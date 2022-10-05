@@ -51,9 +51,6 @@ def DeveloperAPI(*args, **kwargs):
     advanced Ludwig users and library developers. Their interfaces may change across minor Ludwig releases (for
     e.g., Ludwig 0.6.1 and Ludwig 0.6.2).
 
-    Args:
-        message: A message to indicate what might change with the API definition, or provide a migration path.
-
     Examples:
         >>> from api_annotations import DeveloperAPI
         >>> @DeveloperAPI
