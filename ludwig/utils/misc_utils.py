@@ -27,6 +27,7 @@ import torch
 
 from ludwig.constants import PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
+from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
@@ -126,7 +127,7 @@ def get_class_attributes(c):
 
 def get_output_directory(output_directory, experiment_name, model_name="run"):
     base_dir_name = os.path.join(output_directory, experiment_name + ("_" if model_name else "") + (model_name or ""))
-    return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
+    return fs_utils.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
 def get_file_names(output_directory):
