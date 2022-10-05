@@ -439,36 +439,42 @@ def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend)
     cpus_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
     gpus_per_trial = executor_config.get(GPU_RESOURCES_PER_TRIAL, 0)
     max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS)
+    num_cpus_available = int(backend.get_available_resources().cpus)
 
-    # TODO: clarify comment
+    # max_concurrent_trials is explicitly set to none in the config, so return
     if not max_concurrent_trials:
         return
 
-    if cpus_per_trial == 0 and gpus_per_trial == 0:
+    # Only infer max_concurrent_trials for CPU only clusters
+    if gpus_per_trial:
+        return
+
+    if cpus_per_trial == 0:
         # TODO(Arnav): Replace with custom LudwigConfigError in the future
-        raise ValueError(
-            f"Atleast 1 CPU or GPU resource is required per trial. Please set '{CPU_RESOURCES_PER_TRIAL}' > 0 "
-            f"or '{GPU_RESOURCES_PER_TRIAL}' > 0"
-        )
+        raise ValueError(f"Set '{CPU_RESOURCES_PER_TRIAL}' to > 0")
 
-    # Raise error if total num CPUs < 2
-    num_cpus_available = int(backend.get_available_resources().cpus)
     if num_cpus_available < 2:
-        raise ValueError("Atleast 2 CPUs are required for hyperopt.")
+        raise RuntimeError("Atleast 2 CPUs are required for hyperopt")
 
-    # TODO: figure out if the leeway if 1 or 2
-    max_possible_trials = (num_cpus_available - 2) // cpus_per_trial
+    if backend.BACKEND_TYPE == "local":
+        max_possible_trials = (num_cpus_available - 1) // cpus_per_trial
+    else:
+        # Ray requires at least 2 free CPUs to ensure trials don't stall
+        max_possible_trials = (num_cpus_available - 2) // cpus_per_trial
+
     if max_possible_trials < 1:
-        raise ValueError("Not enough CPUs available for hyperopt, reduce the number of CPUs requested per trial.")
+        raise ValueError("Not enough CPUs available for hyperopt, reduce the number of CPUs requested per trial")
 
-    if max_concurrent_trials == "auto":
+    if max_concurrent_trials == AUTO:
         if max_possible_trials > executor_config.get(NUM_SAMPLES):
-            # If all trials easily fit on the available CPUs, then don't update the config.
+            # If all trials easily fit on the available CPUs, then remove max_concurrent_trials
+            del executor_config[MAX_CONCURRENT_TRIALS]
             return
         max_concurrent_trials = max_possible_trials
     else:
         if max_concurrent_trials > max_possible_trials:
-            logger.info("Setting max_concurrent_trials to max possible value.")
+            logger.info("Setting max_concurrent_trials to maximum possible value")
+        # Use min to respect value set in user config incase it is smaller
         max_concurrent_trials = min(max_concurrent_trials, max_possible_trials)
 
     executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
