@@ -22,6 +22,7 @@ import pandas as pd
 import pytest
 from mlflow.tracking import MlflowClient
 
+from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     ACCURACY,
@@ -43,6 +44,7 @@ from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.utils import update_or_set_max_concurrent_trials
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -165,7 +167,9 @@ def run_hyperopt_executor(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
+    backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
+    update_or_set_max_concurrent_trials(hyperopt_config, backend)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
@@ -178,17 +182,13 @@ def run_hyperopt_executor(
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
     search_alg = hyperopt_config["search_alg"]
+    executor = hyperopt_config["executor"]
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
-    hyperopt_executor.execute(
-        config,
-        dataset=rel_path,
-        output_directory=tmpdir,
-        backend="local",
-    )
+    hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir, backend=backend)
 
 
 @pytest.mark.distributed

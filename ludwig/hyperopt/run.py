@@ -1,7 +1,6 @@
 import copy
 import logging
 import os
-import warnings
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Union
 
@@ -15,11 +14,8 @@ from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
     COMBINED,
-    CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
     GOAL,
-    GPU_RESOURCES_PER_TRIAL,
-    GRID_SEARCH,
     HYPEROPT,
     LOSS,
     MAX_CONCURRENT_TRIALS,
@@ -31,7 +27,6 @@ from ludwig.constants import (
     PARAMETERS,
     PREPROCESSING,
     RAY,
-    SPACE,
     SPLIT,
     TEST,
     TRAINING,
@@ -41,7 +36,13 @@ from ludwig.constants import (
 from ludwig.data.split import get_splitter
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
+from ludwig.hyperopt.utils import (
+    log_warning_if_all_grid_type_parameters,
+    print_hyperopt_results,
+    save_hyperopt_stats,
+    should_tune_preprocessing,
+    update_or_set_max_concurrent_trials,
+)
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -228,11 +229,7 @@ def hyperopt(
     log_warning_if_all_grid_type_parameters(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES))
 
     # Set max_concurrent_trials if trials will stall with current cluster resources
-    update_or_set_max_concurrent_trials(
-        hyperopt_config[EXECUTOR],
-        backend,
-        get_total_trial_count(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES)),
-    )
+    update_or_set_max_concurrent_trials(hyperopt_config, backend)
 
     # Print hyperopt config
     logger.info("Hyperopt Config")
@@ -413,87 +410,6 @@ def hyperopt(
     logger.info("Finished hyperopt")
 
     return hyperopt_results
-
-
-def get_total_trial_count(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> int:
-    """Returns the total number of hyperopt trials that will run based on the hyperopt config."""
-    total_trial_count = num_samples
-    for _, param_info in hyperopt_parameter_config.items():
-        if param_info.get(SPACE) == GRID_SEARCH:
-            total_trial_count *= len(param_info.get("values"))
-    return total_trial_count
-
-
-def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
-    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
-    duplicate trials being created."""
-    if num_samples == 1:
-        return
-
-    total_grid_search_trials = 1
-
-    for _, param_info in hyperopt_parameter_config.items():
-        if param_info.get(SPACE, None) != GRID_SEARCH:
-            return
-        total_grid_search_trials *= len(param_info.get("values", []))
-
-    num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
-    warnings.warn(
-        "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
-        f"({num_samples}) is greater than 1. This will result in {num_duplicate_trials} duplicate trials being "
-        "created. Consider setting `num_samples` to 1 in the hyperopt executor to prevent trial duplication.",
-        RuntimeWarning,
-    )
-
-
-def update_or_set_max_concurrent_trials(executor_config: dict, backend: Backend, total_num_trials: int) -> None:
-    """Datasets read tasks request 0.5 CPUs and all transformation tasks request 1 CPU, so if there are no cores
-    available, trials won't be able to run.
-
-    Set max_concurrent_trials in the hyperopt executor to ensure CPU resources are available for dataset related tasks.
-    """
-    cpus_per_trial = executor_config.get(CPU_RESOURCES_PER_TRIAL, 1)
-    gpus_per_trial = executor_config.get(GPU_RESOURCES_PER_TRIAL, 0)
-    max_concurrent_trials = executor_config.get(MAX_CONCURRENT_TRIALS)
-    num_cpus_available = int(backend.get_available_resources().cpus)
-
-    # max_concurrent_trials is explicitly set to none in the config, so return
-    if not max_concurrent_trials:
-        return
-
-    # Only infer max_concurrent_trials for CPU only clusters
-    if gpus_per_trial:
-        return
-
-    if cpus_per_trial == 0:
-        # TODO(Arnav): Replace with custom LudwigConfigError in the future
-        raise ValueError(f"Set '{CPU_RESOURCES_PER_TRIAL}' to > 0")
-
-    if num_cpus_available < 2:
-        raise RuntimeError("Atleast 2 CPUs are required for hyperopt")
-
-    if backend.BACKEND_TYPE == "local":
-        max_possible_trials = (num_cpus_available - 1) // cpus_per_trial
-    else:
-        # Ray requires at least 2 free CPUs to ensure trials don't stall
-        max_possible_trials = (num_cpus_available - 2) // cpus_per_trial
-
-    if max_possible_trials < 1:
-        raise ValueError("Not enough CPUs available for hyperopt, reduce the number of CPUs requested per trial")
-
-    if max_concurrent_trials == AUTO:
-        if max_possible_trials > total_num_trials:
-            # If all trials easily fit on the available CPUs, then remove max_concurrent_trials
-            del executor_config[MAX_CONCURRENT_TRIALS]
-            return
-        max_concurrent_trials = max_possible_trials
-    else:
-        if max_concurrent_trials > max_possible_trials:
-            logger.info("Setting max_concurrent_trials to maximum possible value")
-        # Use min to respect value set in user config incase it is smaller
-        max_concurrent_trials = min(max_concurrent_trials, max_possible_trials)
-
-    executor_config.update({MAX_CONCURRENT_TRIALS: max_concurrent_trials})
 
 
 def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any]) -> None:

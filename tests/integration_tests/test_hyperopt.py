@@ -43,7 +43,8 @@ from ludwig.constants import (
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults, update_or_set_max_concurrent_trials
+from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.utils import update_or_set_max_concurrent_trials
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -233,6 +234,9 @@ def test_hyperopt_search_alg(
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
+    backend = initialize_backend("local")
+    update_or_set_max_concurrent_trials(hyperopt_config, backend)
+
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
@@ -240,9 +244,6 @@ def test_hyperopt_search_alg(
     goal = hyperopt_config["goal"]
     executor = hyperopt_config["executor"]
     search_alg = hyperopt_config["search_alg"]
-
-    backend = initialize_backend("local")
-    update_or_set_max_concurrent_trials(executor, backend)
 
     hyperopt_executor = get_build_hyperopt_executor(RAY)(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
@@ -300,7 +301,9 @@ def test_hyperopt_scheduler(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
+    backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
+    update_or_set_max_concurrent_trials(hyperopt_config, backend)
 
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
@@ -309,9 +312,6 @@ def test_hyperopt_scheduler(
     goal = hyperopt_config["goal"]
     executor = hyperopt_config["executor"]
     search_alg = hyperopt_config["search_alg"]
-
-    backend = initialize_backend("local")
-    update_or_set_max_concurrent_trials(executor, backend)
 
     # TODO: Determine if we still need this if-then-else construct
     if search_alg[TYPE] in {""}:
