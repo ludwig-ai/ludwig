@@ -82,7 +82,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     input_feature_obj = ImageInputFeature(image_def).to(DEVICE)
 
     # check one forward pass through input feature
-    input_tensor = torch.randint(0, 256, size=(BATCH_SIZE, num_channels, height, width), dtype=torch.uint8).to(DEVICE)
+    input_tensor = torch.rand(size=(BATCH_SIZE, num_channels, height, width), dtype=torch.float32).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
