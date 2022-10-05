@@ -211,7 +211,7 @@ def hyperopt(
     premerged_config = copy.deepcopy(upgraded_config)
 
     # Get full config with defaults
-    full_config = config_obj.to_dict()
+    full_config = config_obj.to_dict()  # TODO (Connor): Refactor to use config object
 
     hyperopt_config = full_config[HYPEROPT]
 

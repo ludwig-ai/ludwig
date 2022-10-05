@@ -668,6 +668,7 @@ class LudwigModel:
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
+            # TODO (Connor): Refactor to use self.config_obj
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
                 self.config_obj.to_dict(),
                 training_set=dataset,
@@ -752,7 +753,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, _ = preprocess_for_prediction(
+        dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -865,7 +866,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(
+        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -1201,7 +1202,7 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(
+        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
             self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
@@ -1281,6 +1282,7 @@ class LudwigModel:
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
+            # TODO (Connor): Refactor to use self.config_obj
             preprocessed_data = preprocess_for_training(
                 self.config_obj.to_dict(),
                 dataset=dataset,
