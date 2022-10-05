@@ -18,7 +18,7 @@ def PublicAPI(*args, **kwargs):
         >>> @PublicAPI
         ... def func1(x):
         ...     return x
-        >>> @PublicAPI(stability="beta")
+        >>> @PublicAPI(stability="experimental")
         ... def func2(y):
         ...     return y
     """
