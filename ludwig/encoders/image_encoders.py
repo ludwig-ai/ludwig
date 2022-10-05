@@ -459,8 +459,16 @@ class TVBaseEncoder(Encoder):
         # get weight specification
         if use_pretrained and not saved_weights_in_checkpoint:
             weights_specification = torchvision_model_registry[model_id].weights_class.DEFAULT
+            logger.info(
+                f"Instantiating torchvision image encoder '{self.torchvision_model_type}' with pretrained weights: "
+                f"{torchvision_model_registry[model_id].weights_class.DEFAULT}."
+            )
         else:
             weights_specification = None
+            logger.info(
+                f"Instantiating torchvision image encoder: '{self.torchvision_model_type}' "
+                "with no pretrained weights."
+            )
 
         # Extract from torchvision model transforms method the size of the image
         # after the torchvision transforms method preprocesses the image
