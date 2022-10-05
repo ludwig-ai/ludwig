@@ -160,15 +160,6 @@ def substitute_parameters(
     return config
 
 
-def get_total_trial_count(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> int:
-    """Returns the total number of hyperopt trials that will run based on the hyperopt config."""
-    total_trial_count = num_samples
-    for _, param_info in hyperopt_parameter_config.items():
-        if param_info.get(SPACE) == GRID_SEARCH:
-            total_trial_count *= len(param_info.get("values"))
-    return total_trial_count
-
-
 def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
     """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
     duplicate trials being created."""
@@ -189,6 +180,15 @@ def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str,
         "created. Consider setting `num_samples` to 1 in the hyperopt executor to prevent trial duplication.",
         RuntimeWarning,
     )
+
+
+def get_total_trial_count(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> int:
+    """Returns the total number of hyperopt trials that will run based on the hyperopt config."""
+    total_trial_count = num_samples
+    for _, param_info in hyperopt_parameter_config.items():
+        if param_info.get(SPACE) == GRID_SEARCH:
+            total_trial_count *= len(param_info.get("values"))
+    return total_trial_count
 
 
 def update_or_set_max_concurrent_trials(hyperopt_config: dict, backend: Backend) -> None:

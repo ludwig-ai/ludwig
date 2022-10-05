@@ -2,7 +2,7 @@ import pytest
 
 from ludwig.backend import initialize_backend
 from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TYPE
-from ludwig.hyperopt.utils import substitute_parameters, update_or_set_max_concurrent_trials
+from ludwig.hyperopt.utils import get_total_trial_count, substitute_parameters, update_or_set_max_concurrent_trials
 
 BASE_CONFIG = {
     INPUT_FEATURES: [{NAME: "title", TYPE: "text"}],
@@ -78,9 +78,37 @@ def test_substitute_parameters(parameters, expected):
     assert actual_config == expected
 
 
-# @pytest.mark.parametrize("parameters, expected", [], ids=[])
-# def test_get_total_trial_count(parameters, expected):
-#     pass
+@pytest.mark.parametrize(
+    "parameters, num_samples, expected_total_trials",
+    [
+        ({"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}}, 4, 4),
+        (
+            {
+                "combiner.num_fc_layers": {
+                    "space": "grid_search",
+                    "values": [0.001, 0.01, 0.1],
+                }
+            },
+            2,
+            6,
+        ),
+        (
+            {
+                "trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]},
+                "combiner.num_fc_layers": {
+                    "space": "grid_search",
+                    "values": [0.001, 0.01, 0.1],
+                },
+            },
+            4,
+            12,
+        ),
+    ],
+    ids=["non_grid_search_params", "grid_search_params", "combined_params"],
+)
+def test_get_total_trial_count(parameters, num_samples, expected_total_trials):
+    computed_total_trials = get_total_trial_count(parameters, num_samples)
+    assert computed_total_trials == expected_total_trials
 
 
 @pytest.mark.distributed
