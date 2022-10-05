@@ -1,6 +1,7 @@
-#! /usr/bin/env python
+# ==============================================================================
 #
 # Code in api_annotations.py adapted from https://github.com/ray-project/ray (Apache-2.0 License)
+# Link to file: https://github.com/ray-project/ray/blob/master/python/ray/util/annotations.py
 #
 # ==============================================================================
 from typing import Optional
@@ -16,8 +17,7 @@ def PublicAPI(*args, **kwargs):
     breaking changes. This will likely be seen in the case of incremental new feature development.
 
     Args:
-        stability: One of {"stable", "experimental"}.
-        message: A message to help users understand the reason for the deprecation, and provide a migration path.
+        stability: One of {"stable", "experimental"}
 
     Examples:
         >>> from api_annotations import PublicAPI
@@ -27,9 +27,6 @@ def PublicAPI(*args, **kwargs):
         >>> @PublicAPI(stability="beta")
         ... def func2(y):
         ...     return y
-        >>> @PublicAPI(message="")
-        ... def func3(z):
-        ...     return z
     """
     if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
         return PublicAPI(stability="stable")(args[0])
@@ -61,7 +58,7 @@ def DeveloperAPI(*args, **kwargs):
     e.g., Ludwig 0.6.1 and Ludwig 0.6.2).
 
     Args:
-        message: A message to help users understand the reason for the deprecation, and provide a migration path.
+        message: A message to indicate what might change with the API definition, or provide a migration path.
 
     Examples:
         >>> from api_annotations import DeveloperAPI
@@ -116,7 +113,13 @@ def Deprecated(*args, **kwargs):
     return inner
 
 
-def _append_doc(obj, *, message: str, directive: Optional[str] = None) -> str:
+def _append_doc(obj, message: str, directive: Optional[str] = None) -> str:
+    """
+    Args:
+        message: An additional message to append to the end of docstring for a class
+                 or method that uses one of the API annotations
+        directive:
+    """
     if not obj.__doc__:
         obj.__doc__ = ""
 
