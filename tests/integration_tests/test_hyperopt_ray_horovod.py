@@ -34,8 +34,8 @@ try:
 
     # Ray nightly version is always set to 3.0.0.dev0
     _ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
-    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
-    if _ray_114:
+    _ray_13 = version.parse(ray.__version__) >= version.parse("1.13")
+    if _ray_13:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
         from ray.tune.syncer import get_sync_client
@@ -47,8 +47,6 @@ except ImportError:
     _ray_nightly = False
     RayTuneExecutor = object
 
-# Ray mocks
-
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
 LOCAL_DELETE_TEMPLATE = "echo {target}"
@@ -57,7 +55,7 @@ LOCAL_DELETE_TEMPLATE = "echo {target}"
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
     os.makedirs(path, exist_ok=True)
-    if _ray_114:
+    if _ray_13:
         syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     else:
         syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
@@ -71,7 +69,7 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        "combiner.num_fc_layers": {"space": "randint", "lower": 1, "upper": 3},
         "combiner.num_steps": {"space": "grid_search", "values": [3, 4, 5]},
     },
     "goal": "minimize",
@@ -121,8 +119,8 @@ def _get_config(search_alg, executor):
     return {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        "combiner": {"type": "concat", "num_fc_layers": 1},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -234,8 +232,6 @@ def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cp
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     run_hyperopt_executor(
-        # {"type": "ray", "num_samples": 2},
-        # {"type": "ray"},
         {"type": "variant_generator"},  # search_alg
         {"type": "ray", "num_samples": 2},  # executor
         csv_filename,
@@ -260,7 +256,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 4, "learning_rate": 0.001},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         "backend": {"type": "ray", **RAY_BACKEND_KWARGS},
     }
 
@@ -273,8 +269,8 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
                 "lower": 0.001,
                 "upper": 0.1,
             },
-            output_feature_name + ".output_size": {"space": "randint", "lower": 2, "upper": 32},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+            output_feature_name + ".output_size": {"space": "randint", "lower": 2, "upper": 8},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 3},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
