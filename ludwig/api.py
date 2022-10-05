@@ -20,13 +20,13 @@
     Python Version: 3+
 """
 import copy
+import dataclasses
 import logging
 import os
 import sys
 import tempfile
 import traceback
 from collections import OrderedDict
-from dataclasses import field
 from pprint import pformat
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
@@ -134,7 +134,7 @@ class TrainingStats:
     training: Dict[str, Any]
     validation: Dict[str, Any]
     test: Dict[str, Any]
-    evaluation_frequency: EvaluationFrequency = field(default_factory=EvaluationFrequency)
+    evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
     def __iter__(self):
         return iter((self.training, self.test, self.validation))
@@ -1080,7 +1080,7 @@ class LudwigModel:
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
+    ) -> Tuple[Optional[dict], TrainingStats, PreprocessedDataset, str]:
         """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
         It saves the trained model and the statistics of training and testing.
 
@@ -1832,10 +1832,11 @@ def kfold_cross_validate(
 
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats["fold_eval_stats"] = eval_stats
+            train_stats_dict = dataclasses.asdict(train_stats)
+            train_stats_dict["fold_eval_stats"] = eval_stats
 
             # collect training statistics for this fold
-            kfold_cv_stats["fold_" + str(fold_num)] = train_stats
+            kfold_cv_stats["fold_" + str(fold_num)] = train_stats_dict
 
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
