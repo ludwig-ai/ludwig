@@ -29,6 +29,7 @@ from typing import List, Union
 import cloudpickle
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from PIL import Image
 
@@ -124,6 +125,7 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
+_run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
 
 
 def slow(test_case):
@@ -134,6 +136,20 @@ def slow(test_case):
     if not _run_slow_tests:
         test_case = unittest.skip("Skipping: this test is too slow")(test_case)
     return test_case
+
+
+def private_param(param):
+    """Wrap param to mark it as private, meaning it requires credentials to run.
+
+    Private tests are skipped by default. Set the RUN_PRIVATE environment variable to a truth value to run them.
+    """
+    return pytest.param(
+        *param,
+        marks=pytest.mark.skipif(
+            not _run_private_tests,
+            reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+        ),
+    )
 
 
 def generate_data(
