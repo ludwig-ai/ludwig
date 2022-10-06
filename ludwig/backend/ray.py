@@ -90,6 +90,11 @@ def get_horovod_kwargs(use_gpu=None):
     )
 
 
+def _num_nodes():
+    node_resources = [node["Resources"] for node in ray.nodes()]
+    return len(node_resources)
+
+
 def get_trainer_kwargs(**kwargs):
     kwargs = copy.deepcopy(kwargs)
 
@@ -100,9 +105,7 @@ def get_trainer_kwargs(**kwargs):
     if use_gpu:
         num_workers = int(ray.cluster_resources().get("GPU", 0))
     else:
-        # TODO: use placement groups or otherwise spread across nodes
-        node_resources = [node["Resources"] for node in ray.nodes()]
-        num_workers = len(node_resources)
+        num_workers = _num_nodes()
 
     # Explicitly override network interfaces Horovod will attempt to use
     nics = kwargs.pop("nics", None)
@@ -331,22 +334,26 @@ class TqdmCallback(rt.TrainingCallback):
 
 
 @contextlib.contextmanager
-def create_runner(**kwargs):
-    trainer_kwargs = get_trainer_kwargs(**kwargs)
-
+def spread_env(trainer_kwargs: Dict[str, Any]):
     prev_env = os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV)
     try:
         if not trainer_kwargs.get("use_gpu"):
             # When doing CPU-only training, default to a SPREAD policy to avoid
             # packing too many workers on a single machine
             os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = "1"
-
-        trainer = Trainer(**trainer_kwargs)
+        yield
     finally:
         if prev_env is not None:
             os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = prev_env
         elif TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
             del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
+
+
+@contextlib.contextmanager
+def create_runner(**kwargs):
+    trainer_kwargs = get_trainer_kwargs(**kwargs)
+    with spread_env(trainer_kwargs):
+        trainer = Trainer(**trainer_kwargs)
 
     trainer.start()
     try:
