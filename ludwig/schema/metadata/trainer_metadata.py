@@ -27,7 +27,7 @@ TRAINER_METADATA = (
       'max_batch_size': ParameterMetadata(ui_display_name='Max Batch Size',
                                                   default_value_reasoning='Not typically required.',
                                                   example_value=None,
-                                                  related_parameters=['batch_size'],
+                                                  related_parameters=['batch_size', 'increase_batch_size_on_plateau'],
                                                   description_implications='Value used to manually limit the batch '
                                                                            'sizes explored by auto batch size tuning '
                                                                            'and batch size increasing on plateau.',
