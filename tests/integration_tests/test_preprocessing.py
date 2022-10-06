@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import string
@@ -398,3 +399,87 @@ def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
     assert training_dataset.in_memory_size_bytes > 0
     assert validation_dataset.in_memory_size_bytes > 0
     assert test_dataset.in_memory_size_bytes > 0
+
+
+@pytest.mark.parametrize(
+    "binary_as_input, expected_preprocessing",
+    [
+        pytest.param(
+            True,
+            {
+                "missing_value_strategy": "fill_with_false",
+                "fill_value": None,
+                "computed_fill_value": "<=50K",
+                "fallback_true_label": ">50K",
+            },
+            id="binary_as_input",
+        ),
+        pytest.param(
+            False,
+            {
+                "missing_value_strategy": "drop_row",
+                "fill_value": None,
+                "computed_fill_value": None,
+                "fallback_true_label": ">50K",
+            },
+            id="binary_as_output",
+        ),
+    ],
+)
+def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, tmpdir):
+    # Specify a non-conventional boolean feature with a fallback true label.
+    bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": ">50K"})
+
+    # Generate data with the non-conventional boolean feature.
+    if binary_as_input:
+        input_features = [bin_feature]
+        output_features = [number_feature()]
+    else:
+        input_features = [number_feature()]
+        output_features = [bin_feature]
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # Preprocess the data.
+    ludwig_model = LudwigModel(config)
+    _, _, _, training_set_metadata = ludwig_model.preprocess(dataset=df)
+
+    # Check that true/false labels are set correctly.
+    assert training_set_metadata[bin_feature[NAME]] == {
+        "str2bool": {"<=50K": False, ">50K": True},
+        "bool2str": ["<=50K", ">50K"],
+        "fallback_true_label": ">50K",
+        "preprocessing": expected_preprocessing,
+    }
+
+
+@pytest.mark.parametrize(
+    "binary_as_input", [pytest.param(True, id="binary_as_input"), pytest.param(False, id="binary_as_output")]
+)
+def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, caplog, tmpdir):
+    # Specify a non-conventional boolean feature without a fallback true label.
+    bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": None})
+
+    # Generate data with the non-conventional boolean feature.
+    if binary_as_input:
+        input_features = [bin_feature]
+        output_features = [number_feature()]
+    else:
+        input_features = [number_feature()]
+        output_features = [bin_feature]
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # Preprocess the data.
+    with caplog.at_level(logging.WARN, logger="ludwig.features.binary_feature"):
+        ludwig_model = LudwigModel(config)
+        ludwig_model.preprocess(dataset=df)
+
+    # Check that a warning is logged.
+    assert "unconventional boolean value" in caplog.text

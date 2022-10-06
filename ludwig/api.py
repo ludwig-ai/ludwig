@@ -569,22 +569,23 @@ class LudwigModel:
                             self.backend,
                             batch_size=trainer.eval_batch_size,
                         )
-                        if validation_set is None:
-                            logger.warning(
-                                "Calibration uses validation set, but no validation split specified."
-                                "Will use training set for calibration."
-                                "Recommend providing a validation set when using calibration."
-                            )
-                            calibrator.train_calibration(training_set, TRAINING)
-                        elif len(validation_set) < MIN_VALIDATION_SET_ROWS:
-                            logger.warning(
-                                f"Validation set size ({len(validation_set)} rows) is too small for calibration."
-                                "Will use training set for calibration."
-                                f"Validation set much have at least {MIN_VALIDATION_SET_ROWS} rows."
-                            )
-                            calibrator.train_calibration(training_set, TRAINING)
-                        else:
-                            calibrator.train_calibration(validation_set, VALIDATION)
+                        if calibrator.calibration_enabled():
+                            if validation_set is None:
+                                logger.warning(
+                                    "Calibration uses validation set, but no validation split specified."
+                                    "Will use training set for calibration."
+                                    "Recommend providing a validation set when using calibration."
+                                )
+                                calibrator.train_calibration(training_set, TRAINING)
+                            elif len(validation_set) < MIN_VALIDATION_SET_ROWS:
+                                logger.warning(
+                                    f"Validation set size ({len(validation_set)} rows) is too small for calibration."
+                                    "Will use training set for calibration."
+                                    f"Validation set much have at least {MIN_VALIDATION_SET_ROWS} rows."
+                                )
+                                calibrator.train_calibration(training_set, TRAINING)
+                            else:
+                                calibrator.train_calibration(validation_set, VALIDATION)
                         if not skip_save_model:
                             self.model.save(model_dir)
 
@@ -602,7 +603,7 @@ class LudwigModel:
 
                     # save training statistics
                     if self.backend.is_coordinator():
-                        if not skip_save_training_statistics and path_exists(os.path.dirname(training_stats_fn)):
+                        if not skip_save_training_statistics:
                             save_json(training_stats_fn, train_stats)
 
                     # results of the model with highest validation test performance

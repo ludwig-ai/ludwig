@@ -815,12 +815,14 @@ class Trainer(BaseTrainer):
                         f"Training for {self.total_steps} step(s), approximately "
                         f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
-                    logger.info(
-                        f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
-                        f"step(s), approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
-                        "epoch(s).\n"
-                    )
-
+                    if self.early_stop < 0:
+                        logger.info("Early stopping policy: None")
+                    else:
+                        logger.info(
+                            f"Early stopping policy: {self.early_stop} round(s) of evaluation, or "
+                            f"{early_stopping_steps} step(s), approximately "
+                            f"{int(early_stopping_steps / batcher.steps_per_epoch)} epoch(s).\n"
+                        )
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar_config = {
@@ -1393,6 +1395,17 @@ class Trainer(BaseTrainer):
         if not self.horovod:
             return True
         return self.horovod.rank() == 0
+
+    @property
+    def local_rank(self):
+        if not self.horovod:
+            return 0
+        return self.horovod.local_rank()
+
+    def barrier(self):
+        if not self.horovod:
+            return
+        self.horovod.allreduce(torch.as_tensor([0], dtype=torch.int))
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():
