@@ -17,6 +17,20 @@ pytestmark = pytest.mark.distributed
     "trainer_config,cluster_resources,num_nodes,expected_kwargs",
     [
         (
+            {},
+            {"CPU": 4, "GPU": 1},
+            2,
+            dict(
+                backend=HorovodConfig(),
+                num_workers=1,
+                use_gpu=True,
+                resources_per_worker={
+                    "CPU": 0,
+                    "GPU": 1,
+                },
+            ),
+        ),
+        (
             {"nics": [""]},
             {"CPU": 4, "GPU": 0},
             2,
@@ -29,7 +43,7 @@ pytestmark = pytest.mark.distributed
                     "GPU": 0,
                 },
             ),
-        )
+        ),
     ],
 )
 def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expected_kwargs):
