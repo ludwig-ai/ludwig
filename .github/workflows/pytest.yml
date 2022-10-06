@@ -44,6 +44,8 @@ jobs:
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
@@ -154,7 +156,7 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()
