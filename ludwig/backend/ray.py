@@ -90,12 +90,12 @@ def get_horovod_kwargs(use_gpu=None):
     )
 
 
-def _num_nodes():
+def _num_nodes() -> int:
     node_resources = [node["Resources"] for node in ray.nodes()]
     return len(node_resources)
 
 
-def get_trainer_kwargs(**kwargs):
+def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -335,7 +335,11 @@ class TqdmCallback(rt.TrainingCallback):
 
 @contextlib.contextmanager
 def spread_env(trainer_kwargs: Dict[str, Any]):
-    prev_env = os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV)
+    if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
+        # User set this explicitly, so honor their selection
+        yield
+        return
+
     try:
         if not trainer_kwargs.get("use_gpu"):
             # When doing CPU-only training, default to a SPREAD policy to avoid
@@ -343,9 +347,7 @@ def spread_env(trainer_kwargs: Dict[str, Any]):
             os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = "1"
         yield
     finally:
-        if prev_env is not None:
-            os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = prev_env
-        elif TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
+        if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
             del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
 
 
