@@ -334,14 +334,14 @@ class TqdmCallback(rt.TrainingCallback):
 
 
 @contextlib.contextmanager
-def spread_env(trainer_kwargs: Dict[str, Any]):
+def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
     if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
         # User set this explicitly, so honor their selection
         yield
         return
 
     try:
-        if not trainer_kwargs.get("use_gpu"):
+        if not use_gpu and num_workers > 1:
             # When doing CPU-only training, default to a SPREAD policy to avoid
             # packing too many workers on a single machine
             os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = "1"
@@ -354,7 +354,7 @@ def spread_env(trainer_kwargs: Dict[str, Any]):
 @contextlib.contextmanager
 def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
-    with spread_env(trainer_kwargs):
+    with spread_env(**trainer_kwargs):
         trainer = Trainer(**trainer_kwargs)
 
     trainer.start()

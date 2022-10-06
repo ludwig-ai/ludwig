@@ -101,10 +101,11 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
 @pytest.mark.parametrize(
     "trainer_kwargs,current_env_value,expected_env_value",
     [
-        ({"use_gpu": False}, None, "1"),
-        ({"use_gpu": True}, None, None),
-        ({"use_gpu": True}, "1", "1"),
-        ({"use_gpu": True}, "", ""),
+        ({"use_gpu": False, "num_workers": 2}, None, "1"),
+        ({"use_gpu": False, "num_workers": 1}, None, None),
+        ({"use_gpu": True, "num_workers": 2}, None, None),
+        ({"use_gpu": True, "num_workers": 2}, "1", "1"),
+        ({"use_gpu": True, "num_workers": 2}, "", ""),
     ],
 )
 def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
@@ -116,7 +117,7 @@ def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
     elif TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
         del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
 
-    with spread_env(trainer_kwargs):
+    with spread_env(**trainer_kwargs):
         assert os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV) == expected_env_value
     assert os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV) == current_env_value
 
