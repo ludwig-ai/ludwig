@@ -22,7 +22,7 @@ except ImportError:
         pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
     ],
 )
-def test_random_split(df_engine):
+def test_random_split(df_engine, ray_cluster_2cpu):
     nrows = 100
     npartitions = 10
 
@@ -70,7 +70,7 @@ def test_random_split(df_engine):
         pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
     ],
 )
-def test_random_split_zero_probability_for_test_produces_no_zombie(df_engine):
+def test_random_split_zero_probability_for_test_produces_no_zombie(df_engine, ray_cluster_2cpu):
     nrows = 102
     npartitions = 10
 
@@ -99,7 +99,7 @@ def test_random_split_zero_probability_for_test_produces_no_zombie(df_engine):
         pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
     ],
 )
-def test_fixed_split(df_engine):
+def test_fixed_split(df_engine, ray_cluster_2cpu):
     nrows = 100
     npartitions = 10
     thresholds = [60, 80, 100]
@@ -155,7 +155,7 @@ def test_fixed_split(df_engine):
         pytest.param(np.array([0.6, 0.2, 0.2]), id="imbalanced"),
     ],
 )
-def test_stratify_split(df_engine, nrows, atol, class_probs):
+def test_stratify_split(df_engine, nrows, atol, class_probs, ray_cluster_2cpu):
     npartitions = 10
     thresholds = np.cumsum((class_probs * nrows).astype(int))
 
@@ -218,7 +218,7 @@ def test_stratify_split(df_engine, nrows, atol, class_probs):
         pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
     ],
 )
-def test_datetime_split(df_engine):
+def test_datetime_split(df_engine, ray_cluster_2cpu):
     nrows = 100
     npartitions = 10
 
