@@ -26,8 +26,8 @@ from ludwig.constants import (
     PARAMETERS,
     PREPROCESSING,
     RAY,
-    SPACE,
     SEARCH_ALG,
+    SPACE,
     SPLIT,
     TEST,
     TRAINING,
@@ -39,8 +39,8 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.data_utils import use_credentials
+from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
