@@ -1,7 +1,6 @@
 import logging
 import os
 import random
-import re
 import string
 
 import numpy as np
@@ -483,11 +482,4 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
         ludwig_model.preprocess(dataset=df)
 
     # Check that a warning is logged.
-    warning_text = re.compile(
-        f"Binary feature {bin_feature[NAME]} has at least 1 unconventional boolean value:"
-        r" Cannot automatically map value '(>50K|<=50K)'"
-        " to a boolean and no `preprocessing.fallback_true_label` specified."
-        " We will now interpret <=50K as 1 and the other values as 0. If this is incorrect, please use the category"
-        " feature type or manually specify the true value with `preprocessing.fallback_true_label`."
-    )
-    assert re.search(warning_text, caplog.text) is not None
+    assert "unconventional boolean value" in caplog.text
