@@ -598,6 +598,18 @@ def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
+@register_config_transformation("0.6")
+def upgrade_increase_batch_size_on_plateau_max(config: Dict[str, Any]) -> Dict[str, Any]:
+    if "increase_batch_size_on_plateau_max" in config[TRAINER]:
+        config[TRAINER]["max_batch_size"] = config[TRAINER].pop("increase_batch_size_on_plateau_max")
+        warnings.warn(
+            'Config param "increase_batch_size_on_plateau_max" renamed to "max_batch_size" and will be '
+            "removed in v0.8",
+            DeprecationWarning,
+        )
+    return config
+
+
 def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata

@@ -509,6 +509,25 @@ def test_update_missing_value_strategy(missing_value_strategy: str):
     assert updated_config == expected_config
 
 
+def test_update_increase_batch_size_on_plateau_max():
+    old_valid_config = {
+        "input_features": [{"name": "input_feature_1", "type": "category"}],
+        "output_features": [{"name": "output_feature_1", "type": "category"}],
+        "trainer": {
+            "increase_batch_size_on_plateau_max": 256,
+        },
+    }
+
+    updated_config = upgrade_to_latest_version(old_valid_config)
+    del updated_config["ludwig_version"]
+
+    expected_config = copy.deepcopy(old_valid_config)
+    del expected_config["trainer"]["increase_batch_size_on_plateau_max"]
+    expected_config["trainer"]["max_batch_size"] = 256
+
+    assert updated_config == expected_config
+
+
 def test_old_class_weights_default():
     old_config = {
         "input_features": [
