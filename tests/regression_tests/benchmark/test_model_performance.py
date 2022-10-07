@@ -68,7 +68,7 @@ dataset_to_expected_evaluation_time = {  # in microseconds
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize(
-    "dataset", ["ames_housing"] #, "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
+    "dataset", ["ames_housing"]  # , "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
 )
 def test_performance(dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
