@@ -89,7 +89,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
-def upgrade_to_latest_version(config: Dict) -> Dict:
+def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
 

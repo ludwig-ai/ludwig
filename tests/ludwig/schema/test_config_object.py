@@ -41,8 +41,8 @@ def test_config_object():
                 "name": "image_feature_1",
                 "type": "image",
                 "preprocessing": {
-                    "height": 10,
-                    "width": 10,
+                    "height": 7,
+                    "width": 7,
                     "num_channels": 4,
                 },
                 "encoder": {
@@ -89,6 +89,10 @@ def test_config_object():
     config_object = ModelConfig.from_dict(config)
     assert config_object.input_features.text_feature.encoder.type == "rnn"
     assert config_object.input_features.text_feature.encoder.num_layers == 2
+    assert config_object.input_features.text_feature.preprocessing.missing_value_strategy == "drop_row"
+
+    assert config_object.defaults.text.encoder.type != "rnn"
+    assert config_object.defaults.text.preprocessing.missing_value_strategy != "drop_row"
 
     assert config_object.output_features.category_feature.decoder.num_classes == 10
     assert config_object.output_features.category_feature.top_k == 3
