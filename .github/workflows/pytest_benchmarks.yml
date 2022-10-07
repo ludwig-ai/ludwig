@@ -75,17 +75,17 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
-          
+
           # skip installation of some requirements
           echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
           echo > requirements-temp && mv requirements-temp requirements_serve.txt
           echo > requirements-temp && mv requirements-temp requirements_viz.txt
           echo > requirements-temp && mv requirements-temp requirements_explain.txt
-          echo > requirements-temp && mv requirements-temp requirements_distributed.txt          
+          echo > requirements-temp && mv requirements-temp requirements_distributed.txt
 
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-          
+
           torch_expected=$(python -c "import torch; print(torch.__version__)")
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
