@@ -14,7 +14,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class AudioInputFeatureConfigMixin(BaseMarshmallowConfig):
     """AudioInputFeatureConfigMixin is a dataclass that configures the parameters used in both the audio input
-    feature and the audio global defaults section of the Ludwig Config """
+    feature and the audio global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=AUDIO)
 

@@ -15,7 +15,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     input_mixin_registry,
     output_config_registry,
-    output_mixin_registry
+    output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
@@ -25,7 +25,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
-    feature and the binary global defaults section of the Ludwig Config """
+    feature and the binary global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
@@ -47,7 +47,7 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigM
 @dataclass
 class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
-    feature and the binary global defaults section of the Ludwig Config """
+    feature and the binary global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=BINARY,

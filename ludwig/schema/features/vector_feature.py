@@ -15,7 +15,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     input_mixin_registry,
     output_config_registry,
-    output_mixin_registry
+    output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
@@ -25,7 +25,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
-    feature and the vector global defaults section of the Ludwig Config """
+    feature and the vector global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
@@ -47,7 +47,7 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigM
 @dataclass
 class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
-    feature and the vector global defaults section of the Ludwig Config """
+    feature and the vector global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,

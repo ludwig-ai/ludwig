@@ -14,7 +14,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
     """ImageInputFeatureConfigMixin is a dataclass that configures the parameters used in both the image input
-    feature and the image global defaults section of the Ludwig Config """
+    feature and the image global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=IMAGE)
 

@@ -15,7 +15,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     input_mixin_registry,
     output_config_registry,
-    output_mixin_registry
+    output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
@@ -24,8 +24,8 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @input_mixin_registry.register(CATEGORY)
 @dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
-    """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category input
-    feature and the category global defaults section of the Ludwig Config """
+    """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
+    input feature and the category global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
@@ -47,8 +47,8 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureCon
 @output_mixin_registry.register(CATEGORY)
 @dataclass
 class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
-    """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category output
-    feature and the category global defaults section of the Ludwig Config """
+    """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
+    output feature and the category global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=CATEGORY,

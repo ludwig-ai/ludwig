@@ -13,8 +13,8 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @input_mixin_registry.register(BAG)
 @dataclass
 class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
-    """BagInputFeatureConfigMixin is a dataclass that configures the parameters used in both the bag input
-    feature and the bag global defaults section of the Ludwig Config """
+    """BagInputFeatureConfigMixin is a dataclass that configures the parameters used in both the bag input feature
+    and the bag global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BAG)
 

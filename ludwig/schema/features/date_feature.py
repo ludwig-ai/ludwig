@@ -14,7 +14,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
     """DateInputFeatureConfigMixin is a dataclass that configures the parameters used in both the date input
-    feature and the date global defaults section of the Ludwig Config """
+    feature and the date global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=DATE)
 
