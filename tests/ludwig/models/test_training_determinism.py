@@ -25,7 +25,7 @@ from tests.integration_tests.utils import (
 
 
 @pytest.mark.distributed
-def test_training_determinism_ray_backend(csv_filename, tmpdir):
+def test_training_determinism_ray_backend(csv_filename, tmpdir, ray_cluster_4cpu):
     experiment_output_1, experiment_output_2 = train_twice("ray", csv_filename, tmpdir)
 
     eval_stats_1, train_stats_1, _, _ = experiment_output_1
