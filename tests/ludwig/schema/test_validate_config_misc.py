@@ -4,7 +4,7 @@ from jsonschema.exceptions import ValidationError
 from ludwig.constants import TRAINER
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import validate_config
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
@@ -72,7 +72,7 @@ def test_config_features():
 
     # make sure all defaults provided also registers as valid
 
-    config = Config.from_dict(config).to_dict()
+    config = ModelConfig.from_dict(config).to_dict()
     validate_config(config)
 
     # test various invalid output features
@@ -247,7 +247,7 @@ def test_validate_with_preprocessing_defaults():
     }
 
     validate_config(config)
-    config = Config.from_dict(config).to_dict()
+    config = ModelConfig.from_dict(config).to_dict()
     validate_config(config)
 
 

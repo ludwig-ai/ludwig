@@ -68,7 +68,7 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from ludwig.utils import metric_utils
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
@@ -208,16 +208,16 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        self.config = config_dict
+        self.config_dict = config_dict
 
         # Initialize the config object
-        self.config_obj = Config.from_dict(self.config)
+        self.config_obj = ModelConfig.from_dict(self.config_dict)
 
         # setup logging
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self.config.get("backend"))
+        self.backend = initialize_backend(backend or self.config_dict.get("backend"))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
@@ -343,7 +343,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        if HYPEROPT in self.config:
+        if HYPEROPT in self.config_dict:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
 
@@ -475,7 +475,7 @@ class LudwigModel:
 
             for callback in self.callbacks:
                 callback.on_train_init(
-                    base_config=self.config,
+                    base_config=self.config_dict,
                     experiment_directory=output_directory,
                     experiment_name=experiment_name,
                     model_name=model_name,
@@ -488,7 +488,7 @@ class LudwigModel:
             if not self.model:
                 if self.backend.is_coordinator():
                     print_boxed("MODEL")
-                # update config and config object with metadata properties
+                # update model config with metadata properties derived from training set
                 update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
@@ -517,11 +517,11 @@ class LudwigModel:
 
                     # TODO(travis): pass these in as args to trainer when we call train,
                     #  to avoid setting state on possibly remote trainer
-                    if self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO:
+                    if self.config_obj.trainer.batch_size == AUTO:
                         self.config_obj.trainer.batch_size = tuned_batch_size
                         trainer.batch_size = tuned_batch_size
 
-                    if self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) in {AUTO, None}:
+                    if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
                         self.config_obj.trainer.eval_batch_size = tuned_batch_size
                         trainer.eval_batch_size = tuned_batch_size
 
@@ -1081,7 +1081,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
-        if HYPEROPT in self.config:
+        if HYPEROPT in self.config_dict:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
 
@@ -1357,7 +1357,7 @@ class LudwigModel:
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        config_obj = Config.from_dict(config)
+        config_obj = ModelConfig.from_dict(config)
 
         if backend_param is None and "backend" in config:
             # Reset backend from config
@@ -1512,11 +1512,11 @@ class LudwigModel:
         )
 
     def _check_initialization(self):
-        if self.model is None or self.config is None or self.training_set_metadata is None:
+        if self.model is None or self.config_dict is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config_obj: Config, random_seed: int = default_random_seed) -> BaseModel:
+    def create_model(config_obj: ModelConfig, random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
 
         # Inputs

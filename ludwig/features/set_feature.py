@@ -208,7 +208,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([len(self.encoder_obj.config.vocab)])
+        return torch.Size([len(self.encoder_obj.config_dict.vocab)])
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
@@ -268,7 +268,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_obj.config.num_classes])
+        return torch.Size([self.decoder_obj.config_dict.num_classes])
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):

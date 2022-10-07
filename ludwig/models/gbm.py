@@ -12,7 +12,7 @@ from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
-from ludwig.schema.config_object import Config, OutputFeaturesContainer
+from ludwig.schema.config_object import ModelConfig, OutputFeaturesContainer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.types import TorchDevice
@@ -25,7 +25,7 @@ class GBM(BaseModel):
 
     def __init__(
         self,
-        config_obj: Config,
+        config_obj: ModelConfig,
         random_seed: int = None,
         **_kwargs,
     ):

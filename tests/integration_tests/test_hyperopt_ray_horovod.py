@@ -26,7 +26,7 @@ from ludwig.constants import ACCURACY, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
 try:
@@ -172,7 +172,7 @@ def run_hyperopt_executor(
     dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=100)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
 
-    config = Config.from_dict(config).to_dict()
+    config = ModelConfig.from_dict(config).to_dict()
 
     hyperopt_config = config["hyperopt"]
 

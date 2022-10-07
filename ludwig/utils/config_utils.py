@@ -2,7 +2,7 @@ from typing import Any, Dict, Set, Union
 
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -40,7 +40,7 @@ def get_defaults_section_for_feature_type(
     return config_defaults[feature_type][config_defaults_section]
 
 
-def get_preprocessing_params(config_obj: Config) -> Dict[str, Any]:
+def get_preprocessing_params(config_obj: ModelConfig) -> Dict[str, Any]:
     """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
     parameters from config defaults."""
     preprocessing_params = {}

@@ -423,9 +423,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: AudioInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
-        if not getattr(self.encoder_obj.config, "embedding_size", None):
+        if not getattr(self.encoder_obj.config_dict, "embedding_size", None):
             raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
-        if not getattr(self.encoder_obj.config, "max_sequence_length", None):
+        if not getattr(self.encoder_obj.config_dict, "max_sequence_length", None):
             raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
 
     def forward(self, inputs, mask=None):
@@ -439,7 +439,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder_obj.config.max_sequence_length, self.encoder_obj.config.embedding_size])
+        return torch.Size([self.encoder_obj.config_dict.max_sequence_length, self.encoder_obj.config_dict.embedding_size])
 
     @property
     def input_dtype(self):

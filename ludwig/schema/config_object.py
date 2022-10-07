@@ -103,14 +103,14 @@ class OutputFeaturesContainer(BaseFeatureContainer):
 
 
 @dataclass(repr=False)
-class Config(BaseMarshmallowConfig):
+class ModelConfig(BaseMarshmallowConfig):
     """This class is the implementation of the config object that replaces the need for a config dictionary
     throughout the project."""
 
     def __init__(self, config_dict: dict):
 
         # ===== Backwards Compatibility =====
-        upgraded_config = upgrade_to_latest_version(config_dict)
+        upgraded_config = self._upgrade_config(config_dict)
 
         # ===== Initialize Top Level Config Sections =====
         self.model_type: str = MODEL_ECD
@@ -136,8 +136,8 @@ class Config(BaseMarshmallowConfig):
             if upgraded_config[MODEL_TYPE] == MODEL_GBM:
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
-                if TYPE in upgraded_config.get(TRAINER, {}):
-                    assert upgraded_config[TRAINER][TYPE] == "lightgbm_trainer"
+                if TYPE in upgraded_config.get(TRAINER, {}) and upgraded_config[TRAINER][TYPE] != "lightgbm_trainer":
+                    raise ValidationError
 
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
@@ -174,7 +174,7 @@ class Config(BaseMarshmallowConfig):
         self._set_hyperopt_defaults()
 
         # ===== Validate Config =====
-        validate_config(self.to_dict())
+        self._validate_config(self.to_dict())
 
     def __repr__(self):
         config_repr = self.to_dict()
@@ -207,6 +207,26 @@ class Config(BaseMarshmallowConfig):
         for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
             if PROC_COLUMN not in feature:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
+
+    @staticmethod
+    def _upgrade_config(config_dict: dict) -> dict:
+        """
+        Helper function used to run backwards compatibility check on the config and return an upgraded version.
+
+        Args:
+            config_dict: Config Dictionary
+        """
+        return upgrade_to_latest_version(config_dict)
+
+    @staticmethod
+    def _validate_config(config_dict: dict) -> None:
+        """
+        Helper function used to validate the config using the Ludwig Schema.
+
+        Args:
+            config_dict: Config Dictionary
+        """
+        validate_config(config_dict)
 
     @staticmethod
     def _get_config_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
@@ -258,7 +278,6 @@ class Config(BaseMarshmallowConfig):
 
                 # Check if feature is being initialized or if it's just being updated
                 if initialize:
-
                     # Set global defaults on input feature config cls - if user has defined global defaults, these
                     # will be set on feature_config_cls, otherwise the global defaults already reflect the regular
                     # defaults, so it will initialize the feature as expected.
@@ -279,7 +298,6 @@ class Config(BaseMarshmallowConfig):
 
                 # Check if feature is being initialized or if it's just being updated
                 if initialize:
-
                     # Set global defaults on output feature config cls - if user has defined global defaults, these
                     # will be set on feature_config_cls, otherwise the global defaults already reflect the regular
                     # defaults, so it will initialize the feature as expected.
@@ -338,7 +356,7 @@ class Config(BaseMarshmallowConfig):
                 setattr(config_obj_lvl, key, val)
 
     def _set_global_defaults(
-        self, feature: BaseFeatureConfig, feat_type: str, feature_section: str
+            self, feature: BaseFeatureConfig, feat_type: str, feature_section: str
     ) -> BaseFeatureConfig:
         """This purpose of this function is to set the attributes of the features that are specified in the
         defaults section of the config.

@@ -31,7 +31,7 @@ class Explainer(metaclass=ABCMeta):
         self.explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
 
         # Lookup from column name to output feature
-        self.output_feature_map = {feature["column"]: feature for feature in self.model.config["output_features"]}
+        self.output_feature_map = {feature["column"]: feature for feature in self.model.config_dict["output_features"]}
 
     @property
     def is_binary_target(self) -> bool:

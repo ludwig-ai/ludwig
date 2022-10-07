@@ -34,7 +34,7 @@ from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed
@@ -400,10 +400,10 @@ class RayTuneExecutor:
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        if best_model.config[TRAINER]["eval_batch_size"]:
-            batch_size = best_model.config[TRAINER]["eval_batch_size"]
+        if best_model.config_dict[TRAINER]["eval_batch_size"]:
+            batch_size = best_model.config_dict[TRAINER]["eval_batch_size"]
         else:
-            batch_size = best_model.config[TRAINER]["batch_size"]
+            batch_size = best_model.config_dict[TRAINER]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
@@ -450,7 +450,7 @@ class RayTuneExecutor:
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        modified_config = Config.from_dict(modified_config).to_dict()
+        modified_config = ModelConfig.from_dict(modified_config).to_dict()
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'

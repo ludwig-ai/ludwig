@@ -14,7 +14,7 @@ from ludwig.constants import (
     PREPROCESSING,
     TRAINER,
 )
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
 
@@ -83,7 +83,7 @@ def test_config_object():
         },
     }
 
-    config_object = Config.from_dict(config)
+    config_object = ModelConfig.from_dict(config)
     assert config_object.input_features.text_feature.encoder.type == "rnn"
     assert config_object.input_features.text_feature.encoder.num_layers == 2
 
@@ -140,7 +140,7 @@ def test_config_object_defaults():
         },
     }
 
-    config_object = Config.from_dict(config)
+    config_object = ModelConfig.from_dict(config)
     assert config_object.input_features.number_feature.preprocessing.missing_value_strategy == "drop_row"
     assert config_object.input_features.number_feature.encoder.type == "dense"
 
@@ -166,7 +166,7 @@ def test_config_object_to_config_dict():
         ],
     }
 
-    config_object = Config.from_dict(config)
+    config_object = ModelConfig.from_dict(config)
     config_dict = config_object.to_dict()
 
     assert INPUT_FEATURES in config_dict
@@ -192,7 +192,7 @@ def test_update_config_object():
         ],
     }
 
-    config_object = Config.from_dict(config)
+    config_object = ModelConfig.from_dict(config)
 
     assert config_object.input_features.text_feature.encoder.type == "parallel_cnn"
     assert config_object.input_features.text_feature.encoder.max_sequence_length is None
@@ -229,7 +229,7 @@ def test_constructors(load_format):
     }
 
     if load_format == "dict":
-        config_obj = Config.from_dict(config)
+        config_obj = ModelConfig.from_dict(config)
 
     if load_format == "yaml":
         with TemporaryDirectory() as tmpdir:
@@ -237,7 +237,7 @@ def test_constructors(load_format):
             with open(file_path, "w") as file:
                 yaml.dump(config, file)
 
-            config_obj = Config.from_yaml(file_path)
+            config_obj = ModelConfig.from_yaml(file_path)
 
     assert hasattr(config_obj, INPUT_FEATURES)
     assert hasattr(config_obj, OUTPUT_FEATURES)
@@ -259,7 +259,7 @@ def test_feature_enabling_disabling():
         ],
     }
 
-    config_obj = Config.from_dict(config)
+    config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.input_features.text_feature.active
     assert config_obj.input_features.category_feature.active
@@ -276,7 +276,7 @@ def test_sequence_combiner():
         "combiner": {"type": "sequence", "encoder": {"type": "rnn"}},
     }
 
-    config_obj = Config.from_dict(config)
+    config_obj = ModelConfig.from_dict(config)
 
     assert config_obj.combiner.type == "sequence"
     assert config_obj.combiner.encoder.type == "rnn"
@@ -311,7 +311,7 @@ def test_shared_state(session):
         del config[INPUT_FEATURES][0]["encoder"]
         del config[DEFAULTS]
 
-    config_obj = Config.from_dict(config)
+    config_obj = ModelConfig.from_dict(config)
 
     if session["sess_id"] == 0:
         config_obj.input_features.text_feature.encoder.max_sequence_length = 10
@@ -344,7 +344,7 @@ def test_convert_submodules():
         "output_features": [{"name": "number_output_feature", "type": "number"}],
     }
 
-    config_obj = Config.from_dict(config)
+    config_obj = ModelConfig.from_dict(config)
     trainer = convert_submodules(config_obj.trainer.__dict__)
     input_features = list(convert_submodules(config_obj.input_features.__dict__).values())
 

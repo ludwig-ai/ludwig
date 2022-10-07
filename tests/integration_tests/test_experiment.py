@@ -420,7 +420,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
         # hdf5 format
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-            model.config,
+            model.config_dict,
             dataset=test_data,
             backend=backend,
         )

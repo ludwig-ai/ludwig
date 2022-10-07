@@ -3,7 +3,7 @@ from collections import namedtuple
 import pytest
 
 from ludwig.models.base import BaseModel
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -103,7 +103,7 @@ def test_tied_micro_level(input_feature_options):
     if input_feature_options.tie_features:
         input_feature_configs[1]["tied"] = "input_feature_1"
 
-    config_obj = Config.from_dict(
+    config_obj = ModelConfig.from_dict(
         {"input_features": input_feature_configs, "output_features": [{"name": "dummy_feature", "type": "binary"}]}
     )
 

@@ -23,7 +23,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import validate_config
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
@@ -45,7 +45,7 @@ default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_to_latest_version(config)
-    output_config = Config.from_dict(upgraded_config).to_dict()
+    output_config = ModelConfig.from_dict(upgraded_config).to_dict()
     validate_config(output_config)
 
     if output is None:

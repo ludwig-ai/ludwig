@@ -17,7 +17,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.schema.config_object import Config
+from ludwig.schema.config_object import ModelConfig
 from tests.integration_tests.utils import category_feature, generate_data, run_experiment, text_feature
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ def test_global_defaults_with_encoder_dependencies(csv_filename):
     }
 
     # Config should populate with the additional required fields for bert
-    updated_config = Config.from_dict(config).to_dict()
+    updated_config = ModelConfig.from_dict(config).to_dict()
 
     assert updated_config[INPUT_FEATURES][0][ENCODER][TYPE] == "bert"
     assert updated_config[INPUT_FEATURES][0][ENCODER]["pretrained_model_name_or_path"] == "bert-base-uncased"

@@ -59,8 +59,8 @@ def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, tes
     flavor = loaded_model.metadata.flavors["ludwig"]
 
     def compare_features(key):
-        assert len(model.config[key]) == len(flavor["ludwig_schema"][key])
-        for feature, schema_feature in zip(model.config[key], flavor["ludwig_schema"][key]):
+        assert len(model.config_dict[key]) == len(flavor["ludwig_schema"][key])
+        for feature, schema_feature in zip(model.config_dict[key], flavor["ludwig_schema"][key]):
             assert feature["name"] == schema_feature["name"]
             assert feature["type"] == schema_feature["type"]
 
