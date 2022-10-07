@@ -6,6 +6,7 @@ import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.utils import (
     BaseMarshmallowConfig,
@@ -19,8 +20,6 @@ from ludwig.schema.utils import (
     unload_jsonschema_from_marshmallow_class,
 )
 from ludwig.utils.registry import Registry
-
-from .metadata.parameter_metadata import convert_metadata_to_json
 
 optimizer_registry = Registry()
 

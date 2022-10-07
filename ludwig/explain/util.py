@@ -17,7 +17,8 @@ def prepare_data(model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.Data
     target_feature_name = get_feature_name(model, target)
 
     inputs_df = filter_cols(inputs_df, feature_cols)
-    sample_df = filter_cols(sample_df, feature_cols)
+    if sample_df is not None:
+        sample_df = filter_cols(sample_df, feature_cols)
 
     return inputs_df, sample_df, feature_cols, target_feature_name
 
