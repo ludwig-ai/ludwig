@@ -85,7 +85,7 @@ jobs:
           echo > requirements-temp && mv requirements-temp requirements_serve.txt
           echo > requirements-temp && mv requirements-temp requirements_viz.txt
           echo > requirements-temp && mv requirements-temp requirements_explain.txt
-          echo > requirements-temp && mv requirements-temp requirements_distributed.txt          
+          echo > requirements-temp && mv requirements-temp requirements_distributed.txt
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
           #pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
