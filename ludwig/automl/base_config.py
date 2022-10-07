@@ -175,7 +175,7 @@ def _create_default_config(
     outputs_metadata = [f for f in features_metadata if f.mode == "output"]
     if len(outputs_metadata) == 1:
         of_meta = outputs_metadata[0]
-        is_categorical = of_meta.config_dict.type in ["category", "binary"]
+        is_categorical = of_meta.config.type in ["category", "binary"]
         is_imbalanced = of_meta.imbalance_ratio < imbalance_threshold
         if is_categorical and is_imbalanced:
             base_automl_config.update(_get_stratify_split_config(of_meta))
