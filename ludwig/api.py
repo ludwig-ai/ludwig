@@ -136,6 +136,7 @@ class TrainingStats:
     test: Dict[str, Any]
     evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
 
+    # TODO(daniel): deprecate multiple return value unpacking and dictionary-style element access
     def __iter__(self):
         return iter((self.training, self.test, self.validation))
 
@@ -158,6 +159,7 @@ class PreprocessedDataset:
     test_set: Dataset
     training_set_metadata: Dict[str, Any]
 
+    # TODO(daniel): deprecate multiple return value unpacking and indexed access
     def __iter__(self):
         return iter((self.training_set, self.validation_set, self.test_set, self.training_set_metadata))
 
