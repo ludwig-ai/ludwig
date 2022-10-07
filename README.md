@@ -3,7 +3,7 @@
 <div align="center">
 
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
-[![Build Status](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml/badge.svg)](https://github.com/ludwig-ai/ludwig/actions/workflows/pytest.yml)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/ludwig-ai/ludwig)](https://img.shields.io/github/commit-activity/m/ludwig-ai/ludwig)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4210/badge)](https://bestpractices.coreinfrastructure.org/projects/4210)
 [![Slack](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://join.slack.com/t/ludwig-ai/shared_invite/zt-mrxo87w6-DlX5~73T2B4v_g6jj0pJcQ)
 
@@ -12,9 +12,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ludwig-ai/ludwig/blob/master/LICENSE)
 [![Twitter](https://img.shields.io/twitter/follow/ludwig_ai.svg?style=social&logo=twitter)](https://twitter.com/ludwig_ai)
 
-</div>
+Full Documentation: [ludwig.ai](https://ludwig.ai)
 
-Translated in [🇰🇷Korean](README_KR.md)
+</div>
 
 # What is Ludwig?
 
@@ -29,7 +29,7 @@ data types. Users can also specify additional parameters to preprocess, encode,
 and decode features, load from pre-trained models, compose the internal model
 architecture, set training parameters, or run hyperparameter optimization.
 
-![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos.gif)
+![img](https://raw.githubusercontent.com/ludwig-ai/ludwig-docs/master/docs/images/ludwig_legos_unanimated.gif)
 
 Ludwig will build an end-to-end machine learning pipeline automatically, using
 whatever is explicitly specified in the configuration, while falling back to
