@@ -64,7 +64,7 @@ def test_whylogs_callback_local(tmpdir):
 
 
 @pytest.mark.distributed
-def test_whylogs_callback_dask(tmpdir):  # , ray_cluster_4cpu):
+def test_whylogs_callback_dask(tmpdir):
     num_examples = 100
 
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
