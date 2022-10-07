@@ -8,7 +8,6 @@ from ludwig.utils.data_utils import load_json, load_yaml
 BENCHMARKING_CONFIG = """
 experiment_name: {experiment_name}
 hyperopt: false
-process_config_file_path: {process_config_file_path}
 export:
   export_artifacts: true
   export_base_path: {export_base_path}
@@ -69,17 +68,15 @@ dataset_to_expected_evaluation_time = {  # in microseconds
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize(
-    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
+    "dataset", ["ames_housing"] #, "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
 )
 def test_performance(dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"
     config_path = os.path.join(benchmark_directory, f"{dataset}.yaml")
-    process_config_file_path = os.path.join(benchmark_directory, "process_config.py")
 
     benchmarking_config = BENCHMARKING_CONFIG.format(
         experiment_name=experiment_name,
-        process_config_file_path=process_config_file_path,
         export_base_path=tmpdir,
         dataset=dataset,
         config_path=config_path,
