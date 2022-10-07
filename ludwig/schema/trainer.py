@@ -167,7 +167,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ],
     )
 
-    max_batch_size: Optional[int] = schema_utils.PositiveInteger(
+    max_batch_size: int = schema_utils.PositiveInteger(
         default=MAX_POSSIBLE_BATCH_SIZE,
         allow_none=True,
         description=(
