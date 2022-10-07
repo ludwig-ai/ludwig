@@ -25,7 +25,7 @@ from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import ModelConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.print_utils import print_ludwig
@@ -44,7 +44,7 @@ default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 
 def render_config(config=None, output=None, **kwargs):
-    upgraded_config = upgrade_to_latest_version(config)
+    upgraded_config = upgrade_config_dict_to_latest_version(config)
     output_config = ModelConfig.from_dict(upgraded_config).to_dict()
     validate_config(output_config)
 

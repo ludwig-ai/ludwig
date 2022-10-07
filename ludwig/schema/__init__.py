@@ -77,10 +77,10 @@ def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
     from ludwig.data.split import get_splitter
-    from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
     splitter.validate(updated_config)

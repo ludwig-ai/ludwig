@@ -27,9 +27,9 @@ from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing_split,
+    upgrade_config_dict_to_latest_version,
     upgrade_missing_value_strategy,
     upgrade_model_progress,
-    upgrade_to_latest_version,
 )
 
 
@@ -331,7 +331,7 @@ def test_deprecated_field_aliases():
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     assert updated_config["input_features"][0][TYPE] == NUMBER
     assert updated_config["output_features"][0][TYPE] == NUMBER
@@ -372,7 +372,7 @@ def test_deprecated_split_aliases(stratify, force_split):
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     assert "force_split" not in updated_config[PREPROCESSING]
     assert "split_probabilities" not in updated_config[PREPROCESSING]
@@ -444,7 +444,7 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
     if use_scheduler:
         assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
 
@@ -534,14 +534,14 @@ def test_old_class_weights_default():
         ],
     }
 
-    upgraded_config = upgrade_to_latest_version(old_config)
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
     del upgraded_config["ludwig_version"]
     assert new_config == upgraded_config
 
     old_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
     new_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
 
-    upgraded_config = upgrade_to_latest_version(old_config)
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
     del upgraded_config["ludwig_version"]
     assert new_config == upgraded_config
 

@@ -33,7 +33,7 @@ from ludwig.constants import (
 )
 from ludwig.schema.config_object import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
     binary_feature,
@@ -269,7 +269,7 @@ def test_merge_with_defaults():
         },
     }
 
-    updated_config = upgrade_to_latest_version(legacy_config_format)
+    updated_config = upgrade_config_dict_to_latest_version(legacy_config_format)
     merged_config = ModelConfig.from_dict(updated_config).to_dict()
 
     assert len(merged_config[DEFAULTS]) == 13
