@@ -11,14 +11,21 @@ from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import (
+    input_config_registry,
+    input_mixin_registry,
+    output_config_registry,
+    output_mixin_registry
+)
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
-@input_config_registry.register(VECTOR)
-@dataclass(repr=False)
-class VectorInputFeatureConfig(BaseInputFeatureConfig):
-    """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
+@input_mixin_registry.register(VECTOR)
+@dataclass
+class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
+    """VectorInputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector input
+    feature and the vector global defaults section of the Ludwig Config """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
@@ -27,23 +34,36 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig):
         default="dense",
     )
 
-    tied: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-        "feature of the same type and with the same encoder parameters.",
-    )
 
-
-@output_config_registry.register(VECTOR)
+@input_config_registry.register(VECTOR)
 @dataclass(repr=False)
-class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
-    """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
+class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
+    """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
+
+    pass
+
+
+@output_mixin_registry.register(VECTOR)
+@dataclass
+class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
+    """VectorOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the vector output
+    feature and the vector global defaults section of the Ludwig Config """
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=VECTOR,
         default="projector",
     )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=VECTOR,
+        default=MEAN_SQUARED_ERROR,
+    )
+
+
+@output_config_registry.register(VECTOR)
+@dataclass(repr=False)
+class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
+    """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 
     dependencies: list = schema_utils.List(
         default=[],
@@ -55,11 +75,6 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig):
         default=MEAN_SQUARED_ERROR,
         description="Internal only use parameter: default validation metric for binary output feature.",
         parameter_metadata=INTERNAL_ONLY,
-    )
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=VECTOR,
-        default=MEAN_SQUARED_ERROR,
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")

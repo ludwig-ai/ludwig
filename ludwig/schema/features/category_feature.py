@@ -1,4 +1,3 @@
-import yaml
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
@@ -12,15 +11,21 @@ from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import (
+    input_config_registry,
+    input_mixin_registry,
+    output_config_registry,
+    output_mixin_registry
+)
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
-@input_config_registry.register(CATEGORY)
-@dataclass(repr=False)
-class CategoryInputFeatureConfig(BaseInputFeatureConfig):
-    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
-    feature."""
+@input_mixin_registry.register(CATEGORY)
+@dataclass
+class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
+    """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category input
+    feature and the category global defaults section of the Ludwig Config """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
@@ -29,31 +34,42 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig):
         default="dense",
     )
 
-    tied: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-        "feature of the same type and with the same encoder parameters.",
+
+@input_config_registry.register(CATEGORY)
+@dataclass(repr=False)
+class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
+    feature."""
+
+    pass
+
+
+@output_mixin_registry.register(CATEGORY)
+@dataclass
+class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
+    """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category output
+    feature and the category global defaults section of the Ludwig Config """
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=CATEGORY,
+        default="classifier",
     )
 
-    def __repr__(self):
-        return yaml.dump(self.to_dict(), sort_keys=False)
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=CATEGORY,
+        default=SOFTMAX_CROSS_ENTROPY,
+    )
 
 
 @output_config_registry.register(CATEGORY)
 @dataclass(repr=False)
-class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
+class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeatureConfigMixin):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
 
     calibration: bool = schema_utils.Boolean(
         default=False,
         description="Calibrate the model's output probabilities using temperature scaling.",
-    )
-
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=CATEGORY,
-        default="classifier",
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -66,11 +82,6 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig):
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
-    )
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=CATEGORY,
-        default=SOFTMAX_CROSS_ENTROPY,
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="category_output")

@@ -11,14 +11,21 @@ from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import (
+    input_config_registry,
+    input_mixin_registry,
+    output_config_registry,
+    output_mixin_registry
+)
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
-@input_config_registry.register(SET)
-@dataclass(repr=False)
-class SetInputFeatureConfig(BaseInputFeatureConfig):
-    """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
+@input_mixin_registry.register(SET)
+@dataclass
+class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
+    """SetInputFeatureConfigMixin is a dataclass that configures the parameters used in both the set input
+    feature and the set global defaults section of the Ludwig Config """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
 
@@ -27,23 +34,36 @@ class SetInputFeatureConfig(BaseInputFeatureConfig):
         default="embed",
     )
 
-    tied: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="Name of input feature to tie the weights of the encoder with.  It needs to be the name of a "
-        "feature of the same type and with the same encoder parameters.",
-    )
 
-
-@output_config_registry.register(SET)
+@input_config_registry.register(SET)
 @dataclass(repr=False)
-class SetOutputFeatureConfig(BaseOutputFeatureConfig):
-    """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
+class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
+    """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
+
+    pass
+
+
+@output_mixin_registry.register(SET)
+@dataclass
+class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
+    """SetOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the set output
+    feature and the set global defaults section of the Ludwig Config """
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SET,
         default="classifier",
     )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=SET,
+        default=SIGMOID_CROSS_ENTROPY,
+    )
+
+
+@output_config_registry.register(SET)
+@dataclass(repr=False)
+class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
+    """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
     default_validation_metric: str = schema_utils.StringOptions(
         [JACCARD],
@@ -55,11 +75,6 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig):
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
-    )
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=SET,
-        default=SIGMOID_CROSS_ENTROPY,
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")

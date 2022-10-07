@@ -11,15 +11,21 @@ from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import (
+    input_config_registry,
+    input_mixin_registry,
+    output_config_registry,
+    output_mixin_registry
+)
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
-@input_config_registry.register(SEQUENCE)
-@dataclass(repr=False)
-class SequenceInputFeatureConfig(BaseInputFeatureConfig):
-    """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
-    feature."""
+@input_mixin_registry.register(SEQUENCE)
+@dataclass
+class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
+    """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence input
+    feature and the sequence global defaults section of the Ludwig Config """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
@@ -29,16 +35,37 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
-@output_config_registry.register(SEQUENCE)
+@input_config_registry.register(SEQUENCE)
 @dataclass(repr=False)
-class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
-    """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
+class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
+    """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
+
+    pass
+
+
+@output_mixin_registry.register(SEQUENCE)
+@dataclass
+class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
+    """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence output
+    feature and the sequence global defaults section of the Ludwig Config """
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SEQUENCE,
         default="generator",
     )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=SEQUENCE,
+        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    )
+
+
+@output_config_registry.register(SEQUENCE)
+@dataclass(repr=False)
+class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
+    """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
+    feature."""
 
     default_validation_metric: str = schema_utils.StringOptions(
         [LOSS],
@@ -50,11 +77,6 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig):
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
-    )
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=SEQUENCE,
-        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="sequence_output")

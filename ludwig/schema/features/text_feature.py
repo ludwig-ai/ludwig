@@ -11,14 +11,21 @@ from ludwig.schema.features.loss.loss import BaseLossConfig
 from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import (
+    input_config_registry,
+    input_mixin_registry,
+    output_config_registry,
+    output_mixin_registry
+)
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
-@input_config_registry.register(TEXT)
-@dataclass(repr=False)
-class TextInputFeatureConfig(BaseInputFeatureConfig):
-    """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
+@input_mixin_registry.register(TEXT)
+@dataclass
+class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
+    """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
+    feature and the text global defaults section of the Ludwig Config """
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
@@ -28,9 +35,34 @@ class TextInputFeatureConfig(BaseInputFeatureConfig):
     )
 
 
+@input_config_registry.register(TEXT)
+@dataclass(repr=False)
+class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
+    """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
+
+    pass
+
+
+@output_mixin_registry.register(TEXT)
+@dataclass
+class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
+    """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
+    feature and the text global defaults section of the Ludwig Config """
+
+    decoder: BaseDecoderConfig = DecoderDataclassField(
+        feature_type=TEXT,
+        default="generator",
+    )
+
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=TEXT,
+        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    )
+
+
 @output_config_registry.register(TEXT)
 @dataclass(repr=False)
-class TextOutputFeatureConfig(BaseOutputFeatureConfig):
+class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 
     class_similarities: list = schema_utils.List(
@@ -38,11 +70,6 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig):
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
-    )
-
-    decoder: BaseDecoderConfig = DecoderDataclassField(
-        feature_type=TEXT,
-        default="generator",
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -55,11 +82,6 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig):
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
-    )
-
-    loss: BaseLossConfig = LossDataclassField(
-        feature_type=TEXT,
-        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")

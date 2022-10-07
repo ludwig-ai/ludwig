@@ -6,8 +6,11 @@ import yaml
 
 from ludwig.constants import (
     COMBINER,
+    DECODER,
     DEFAULTS,
+    ENCODER,
     HYPEROPT,
+    LOSS,
     INPUT_FEATURES,
     OPTIMIZER,
     OUTPUT_FEATURES,
@@ -38,8 +41,8 @@ def test_config_object():
                 "name": "image_feature_1",
                 "type": "image",
                 "preprocessing": {
-                    "height": 7.5,
-                    "width": 7.5,
+                    "height": 10,
+                    "width": 10,
                     "num_channels": 4,
                 },
                 "encoder": {
@@ -350,3 +353,17 @@ def test_convert_submodules():
 
     assert not isinstance(trainer[OPTIMIZER], BaseMarshmallowConfig)
     assert not isinstance(input_features[0][PREPROCESSING], BaseMarshmallowConfig)
+
+
+def test_defaults_mixins():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+        ],
+        "output_features": [{"name": "number_output_feature", "type": "number"}],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    assert config_obj.defaults.audio.to_dict().keys() == {ENCODER, PREPROCESSING}
+    assert config_obj.defaults.category.to_dict().keys() == {ENCODER, PREPROCESSING, DECODER, LOSS}

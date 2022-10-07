@@ -35,7 +35,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["computed_fill_value"],
     )
 
-    height: int = schema_utils.NonNegativeFloat(
+    height: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image height in pixels. If this parameter is set, images will be resized to the specified "
@@ -44,7 +44,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["height"],
     )
 
-    width: int = schema_utils.NonNegativeFloat(
+    width: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
         description="The image width in pixels. If this parameter is set, images will be resized to the specified "
