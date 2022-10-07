@@ -15,6 +15,7 @@
 import contextlib
 import os
 import tempfile
+import time
 import uuid
 from unittest import mock
 
@@ -23,6 +24,19 @@ import pytest
 from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
+
+
+def pytest_sessionstart(session):
+    session.start_time = time.time()
+
+
+@pytest.fixture(autouse=True)
+def check_session_time(request):
+    elapsed = time.time() - request.session.start_time
+    if elapsed > TEST_SUITE_TIMEOUT_S:
+        request.session.shouldstop = "time limit reached: %0.2f seconds" % elapsed
 
 
 @pytest.fixture(autouse=True)
