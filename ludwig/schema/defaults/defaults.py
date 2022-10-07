@@ -1,4 +1,3 @@
-import yaml
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import (
@@ -7,13 +6,9 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     DATE,
-    DECODER,
-    ENCODER,
     H3,
     IMAGE,
-    LOSS,
     NUMBER,
-    PREPROCESSING,
     SEQUENCE,
     SET,
     TEXT,
@@ -53,33 +48,6 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
     timeseries: BaseFeatureConfig = DefaultsDataclassField(feature_type=TIMESERIES)
 
     vector: BaseFeatureConfig = DefaultsDataclassField(feature_type=VECTOR)
-
-    def filter_defaults(self):
-        return {
-            key: [k for k in value.keys() if k in {ENCODER, DECODER, LOSS, PREPROCESSING}]
-            for key, value in self.to_dict().items()
-        }
-
-    def __repr__(self):
-        filtered_repr = self.filter_defaults()
-        return yaml.dump(filtered_repr, sort_keys=True)
-
-    def to_dict(self):
-        """This method overwrites the default to_dict method for getting a dictionary representation of this
-        dataclass because we need to remove excess parameters that cannot be removed from the dataclass itself.
-
-        Returns: dict for this dataclass
-        """
-        output_dict = schema_utils.convert_submodules(self.__dict__)
-
-        for feature_type in output_dict.keys():
-            output_dict[feature_type] = {
-                key: val
-                for key, val in output_dict[feature_type].items()
-                if key in [ENCODER, PREPROCESSING, DECODER, LOSS]
-            }
-
-        return output_dict
 
 
 def get_defaults_jsonschema():

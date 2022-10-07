@@ -41,13 +41,11 @@ def DefaultsDataclassField(feature_type: str):
             input_feature_cls = input_mixin_registry.get(feature_type)
             output_feature_cls = output_mixin_registry.get(feature_type, None)
             input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
-            input_props_filtered = {key: val for key, val in input_props.items() if key in [ENCODER, PREPROCESSING]}
             if output_feature_cls:
                 output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
-                output_props_filtered = {key: val for key, val in output_props.items() if key in [DECODER, LOSS]}
-                combined_props = {**output_props_filtered, **input_props_filtered}
+                combined_props = {**output_props, **input_props}
             else:
-                combined_props = input_props_filtered
+                combined_props = input_props
             return {
                 "type": "object",
                 "properties": combined_props,
