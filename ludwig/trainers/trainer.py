@@ -481,7 +481,7 @@ class Trainer(BaseTrainer):
             def _is_valid_batch_size(batch_size):
                 # make sure that batch size is valid (e.g. less than size of ds)
                 is_smaller_than_training_set = batch_size < len(training_set)
-                is_under_max_batch_size = self.max_batch_size is None or batch_size <= self.max_batch_size
+                is_under_max_batch_size = batch_size <= self.max_batch_size
                 is_valid = is_smaller_than_training_set and is_under_max_batch_size
                 if not is_valid:
                     logger.info(
@@ -1325,9 +1325,6 @@ class Trainer(BaseTrainer):
         increase_batch_size_eval_split: str = TRAINING,
     ):
         """Uses the progress tracker to determine if the batch size should be increased."""
-        if increase_batch_size_on_plateau_max is None:
-            increase_batch_size_on_plateau_max = float("inf")  # If None, no hard limit on batch size.
-
         if (
             not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
             and not progress_tracker.batch_size == increase_batch_size_on_plateau_max

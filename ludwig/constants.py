@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2019 Uber Technologies, BATCHS.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -164,6 +164,7 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = 128
+MAX_POSSIBLE_BATCH_SIZE = 1099511627776  # 2^40
 LEARNING_RATE = "learning_rate"
 USE_BIAS = "use_bias"
 BIAS = "bias"

@@ -1,10 +1,18 @@
-import sys
 from abc import ABC
 from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
+from ludwig.constants import (
+    COMBINED,
+    DEFAULT_BATCH_SIZE,
+    LOSS,
+    MAX_POSSIBLE_BATCH_SIZE,
+    MODEL_ECD,
+    MODEL_GBM,
+    TRAINING,
+    TYPE,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -160,11 +168,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     max_batch_size: Optional[int] = schema_utils.PositiveInteger(
-        default=sys.maxsize,
+        default=MAX_POSSIBLE_BATCH_SIZE,
         allow_none=True,
         description=(
             "Auto batch size tuning and increasing batch size on plateau will be capped at this value. The default "
-            "value is `sys.maxsize`."
+            "value is 2^40."
         ),
         parameter_metadata=TRAINER_METADATA["max_batch_size"],
     )

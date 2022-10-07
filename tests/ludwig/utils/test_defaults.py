@@ -1,5 +1,4 @@
 import copy
-import sys
 
 import pytest
 from marshmallow import ValidationError
@@ -15,6 +14,7 @@ from ludwig.constants import (
     FILL_WITH_MODE,
     HYPEROPT,
     INPUT_FEATURES,
+    MAX_POSSIBLE_BATCH_SIZE,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
     MODEL_GBM,
@@ -430,7 +430,7 @@ def test_merge_with_defaults():
             "regularization_type": "l2",
             "should_shuffle": True,
             "batch_size": 128,
-            "max_batch_size": sys.maxsize,
+            "max_batch_size": MAX_POSSIBLE_BATCH_SIZE,
             "steps_per_checkpoint": 0,
             "checkpoints_per_epoch": 0,
             "reduce_learning_rate_on_plateau": 0.0,
