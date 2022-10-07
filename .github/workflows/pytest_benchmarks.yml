@@ -1,5 +1,6 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# This workflow will install Python dependencies, and run benchmarks on a few datasets
+# to test model performance regressions. Currently running on the local backend as the
+# Ludwig Profiler doesn't support the Ray backend yet.
 
 name: benchmark
 
@@ -12,16 +13,12 @@ on:
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
 concurrency:
-  group: pytest-${{ github.head_ref || github.sha }}
+  group: benchmark-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   benchmark-pytest:
-#    if: >
-#      always() && (github.event_name == 'schedule' && github.repository == 'ludwig-ai/ludwig' ||
-#      github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork)
     runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
       matrix:
@@ -32,16 +29,14 @@ jobs:
           - python-version: 3.8
             pytorch-version: 1.12.1
             torchscript-version: 1.10.2
-            ray-version: 2.0.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
-      RAY_VERSION: ${{ matrix.ray-version }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ray-${{ matrix.ray-version }}, ${{ matrix.os }}
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-local
 
     timeout-minutes: 60
     steps:
@@ -80,46 +75,22 @@ jobs:
           pip --version
           python -m pip install -U pip
           cmake --version
+          
           # skip installation of some requirements
           echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
           echo > requirements-temp && mv requirements-temp requirements_serve.txt
           echo > requirements-temp && mv requirements-temp requirements_viz.txt
           echo > requirements-temp && mv requirements-temp requirements_explain.txt
-          echo > requirements-temp && mv requirements-temp requirements_distributed.txt
+          echo > requirements-temp && mv requirements-temp requirements_distributed.txt          
+
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-          #pip install protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
-          #pip install ray==$RAY_VERSION
-          #ray_expected=$(python -c "import ray; print(ray.__version__)")
+          
           torch_expected=$(python -c "import torch; print(torch.__version__)")
-          #pip install --no-build-isolation --no-use-pep517 ConfigSpace # temporary fix: https://github.com/automl/ConfigSpace/issues/173
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
-          #python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
-
-#      - name: Install Neuropod backend
-#        run: |
-#          sudo mkdir -p "$NEUROPOD_BASE_DIR"
-#          curl -L https://github.com/uber/neuropod/releases/download/v${{ env.NEUROPOD_VERISON }}/libneuropod-cpu-linux-v${{ env.NEUROPOD_VERISON }}-torchscript-${{ env.TORCHSCRIPT_VERISON }}-backend.tar.gz | sudo tar -xz -C "$NEUROPOD_BASE_DIR"
-#        shell: bash
-
-#      - name: Reinstall Horovod if necessary
-#        if: matrix.test-markers == 'distributed'
-#        env:
-#          HOROVOD_WITH_PYTORCH: 1
-#          HOROVOD_WITHOUT_MPI: 1
-#          HOROVOD_WITHOUT_TENSORFLOW: 1
-#          HOROVOD_WITHOUT_MXNET: 1
-#        run: |
-#          HOROVOD_BUILT=$(python -c "import horovod.torch; horovod.torch.nccl_built(); print('SUCCESS')" || true)
-#          if [[ $HOROVOD_BUILT != "SUCCESS" ]]; then
-#            pip uninstall -y horovod
-#            pip install --no-cache-dir git+https://github.com/horovod/horovod.git@master
-#          fi
-#          horovodrun --check-build
-#        shell: bash
 
       - name: Tests
         env:
