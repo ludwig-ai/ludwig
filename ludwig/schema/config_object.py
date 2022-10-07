@@ -212,8 +212,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
     @staticmethod
     def _upgrade_config(config_dict: dict) -> dict:
-        """
-        Helper function used to run backwards compatibility check on the config and return an upgraded version.
+        """Helper function used to run backwards compatibility check on the config and return an upgraded version.
 
         Args:
             config_dict: Config Dictionary
@@ -222,8 +221,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
     @staticmethod
     def _validate_config(config_dict: dict) -> None:
-        """
-        Helper function used to validate the config using the Ludwig Schema.
+        """Helper function used to validate the config using the Ludwig Schema.
 
         Args:
             config_dict: Config Dictionary
@@ -358,7 +356,7 @@ class ModelConfig(BaseMarshmallowConfig):
                 setattr(config_obj_lvl, key, val)
 
     def _set_global_defaults(
-            self, feature: BaseFeatureConfig, feat_type: str, feature_section: str
+        self, feature: BaseFeatureConfig, feat_type: str, feature_section: str
     ) -> BaseFeatureConfig:
         """This purpose of this function is to set the attributes of the features that are specified in the
         defaults section of the config.
