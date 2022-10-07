@@ -337,7 +337,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     boosting_rounds_per_checkpoint: int = schema_utils.PositiveInteger(
-        default=10, description="Number of boosting rounds per checkpoint / evaluation round."
+        default=50, description="Number of boosting rounds per checkpoint / evaluation round."
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
