@@ -57,6 +57,7 @@ def yaml_filename():
 
 @pytest.fixture(scope="module")
 def hyperopt_results_single_parameter(ray_cluster_4cpu):
+    """This fixture is used by hyperopt visualization tests in test_visualization_api.py."""
     config, rel_path = _get_sample_config()
     config[HYPEROPT] = {
         "parameters": {
@@ -84,6 +85,7 @@ def hyperopt_results_single_parameter(ray_cluster_4cpu):
 
 @pytest.fixture(scope="module")
 def hyperopt_results_multiple_parameters(ray_cluster_4cpu):
+    """This fixture is used by hyperopt visualization tests in test_visualization_api.py."""
     config, rel_path = _get_sample_config()
     output_feature_name = config[OUTPUT_FEATURES][0][NAME]
     config[HYPEROPT] = {
