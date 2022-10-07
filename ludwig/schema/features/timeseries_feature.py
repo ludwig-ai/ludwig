@@ -13,8 +13,8 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @input_mixin_registry.register(TIMESERIES)
 @dataclass
 class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
-    """TimeseriesInputFeatureConfigMixin is a dataclass that configures the parameters used in both the timeseries input
-    feature and the timeseries global defaults section of the Ludwig Config """
+    """TimeseriesInputFeatureConfigMixin is a dataclass that configures the parameters used in both the timeseries
+    input feature and the timeseries global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
 

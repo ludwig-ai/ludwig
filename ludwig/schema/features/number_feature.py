@@ -17,7 +17,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     input_mixin_registry,
     output_config_registry,
-    output_mixin_registry
+    output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
@@ -27,7 +27,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberInputFeatureConfigMixin is a dataclass that configures the parameters used in both the number input
-    feature and the number global defaults section of the Ludwig Config """
+    feature and the number global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
@@ -49,7 +49,7 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigM
 @dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """NumberOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the number output
-    feature and the number global defaults section of the Ludwig Config """
+    feature and the number global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=NUMBER,

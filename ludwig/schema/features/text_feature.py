@@ -15,7 +15,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     input_mixin_registry,
     output_config_registry,
-    output_mixin_registry
+    output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
@@ -25,7 +25,7 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @dataclass
 class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextInputFeatureConfigMixin is a dataclass that configures the parameters used in both the text input
-    feature and the text global defaults section of the Ludwig Config """
+    feature and the text global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
@@ -47,7 +47,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin
 @dataclass
 class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """TextOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the text output
-    feature and the text global defaults section of the Ludwig Config """
+    feature and the text global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=TEXT,

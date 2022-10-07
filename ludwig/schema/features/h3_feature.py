@@ -13,8 +13,8 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @input_mixin_registry.register(H3)
 @dataclass
 class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
-    """H3InputFeatureConfigMixin is a dataclass that configures the parameters used in both the h3 input
-    feature and the h3 global defaults section of the Ludwig Config """
+    """H3InputFeatureConfigMixin is a dataclass that configures the parameters used in both the h3 input feature
+    and the h3 global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=H3)
 

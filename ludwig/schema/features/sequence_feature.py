@@ -15,7 +15,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     input_mixin_registry,
     output_config_registry,
-    output_mixin_registry
+    output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
@@ -24,8 +24,8 @@ from ludwig.schema.utils import BaseMarshmallowConfig
 @input_mixin_registry.register(SEQUENCE)
 @dataclass
 class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
-    """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence input
-    feature and the sequence global defaults section of the Ludwig Config """
+    """SequenceInputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
+    input feature and the sequence global defaults section of the Ludwig Config."""
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
@@ -47,8 +47,8 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureCon
 @output_mixin_registry.register(SEQUENCE)
 @dataclass
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
-    """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence output
-    feature and the sequence global defaults section of the Ludwig Config """
+    """SequenceOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the sequence
+    output feature and the sequence global defaults section of the Ludwig Config."""
 
     decoder: BaseDecoderConfig = DecoderDataclassField(
         feature_type=SEQUENCE,
