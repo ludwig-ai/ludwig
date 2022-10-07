@@ -137,9 +137,7 @@ class ModelConfig(BaseMarshmallowConfig):
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
                 if TYPE in upgraded_config.get(TRAINER, {}) and upgraded_config[TRAINER][TYPE] != "lightgbm_trainer":
-                    raise ValidationError(
-                        "GBM Model trainer must be of type: 'lightgbm_trainer'"
-                    )
+                    raise ValidationError("GBM Model trainer must be of type: 'lightgbm_trainer'")
 
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
