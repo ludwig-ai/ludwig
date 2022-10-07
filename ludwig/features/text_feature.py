@@ -199,7 +199,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     @property
     def input_shape(self):
-        return torch.Size([self.encoder_obj.config_dict.max_sequence_length])
+        return torch.Size([self.encoder_obj.config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
@@ -239,7 +239,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @property
     def output_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_obj.config_dict.max_sequence_length])
+        return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
@@ -341,6 +341,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def unflatten(self, df: DataFrame) -> DataFrame:
         probs_col = f"{self.feature_name}_{PROBABILITIES}"
         df[probs_col] = df[probs_col].apply(
-            lambda x: x.reshape(-1, self.decoder_obj.config_dict.max_sequence_length), meta=(probs_col, "object")
+            lambda x: x.reshape(-1, self.decoder_obj.config.max_sequence_length), meta=(probs_col, "object")
         )
         return df

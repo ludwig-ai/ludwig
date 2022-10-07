@@ -153,7 +153,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.encoder_obj.config_dict.input_size])
+        return torch.Size([self.encoder_obj.config.input_size])
 
     @property
     def output_shape(self) -> torch.Size:

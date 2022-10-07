@@ -2168,8 +2168,8 @@ class AutoTransformerEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
             # TODO(justin): This may need to be conditioned on which AutoModel gets chosen.
-            return torch.Size([self.max_sequence_length, self.transformer.config_dict.hidden_size])
-        return torch.Size([self.transformer.config_dict.hidden_size])
+            return torch.Size([self.max_sequence_length, self.transformer.config.hidden_size])
+        return torch.Size([self.transformer.config.hidden_size])
 
     @property
     def input_dtype(self):

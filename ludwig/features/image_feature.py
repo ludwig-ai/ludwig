@@ -498,7 +498,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size(
-            [self.encoder_obj.config_dict.num_channels, self.encoder_obj.config_dict.height, self.encoder_obj.config_dict.width]
+            [self.encoder_obj.config.num_channels, self.encoder_obj.config.height, self.encoder_obj.config.width]
         )
 
     @property

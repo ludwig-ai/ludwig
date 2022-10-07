@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pytest
+from marshmallow import ValidationError
 
 try:
     import ray as _ray
@@ -222,7 +223,7 @@ def run_test_gbm_schema(backend_config):
             "type": invalid_trainer,
         },
     }
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValidationError):
         # Then I should get a schema validation error
         LudwigModel(config, backend=backend_config)
 

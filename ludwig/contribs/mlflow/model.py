@@ -126,7 +126,7 @@ def save_model(
     )
 
     schema_keys = {"name", "column", "type"}
-    config = ludwig_model.config_dict
+    config = ludwig_model.config
 
     mlflow_model.add_flavor(
         FLAVOR_NAME,

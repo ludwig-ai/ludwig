@@ -77,7 +77,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
     inputs = torch.rand(2, num_channels, image_size, image_size)
     outputs = vit(inputs)
     assert outputs["encoder_output"].shape[1:] == vit.output_shape
-    config = vit.transformer.config_dict
+    config = vit.transformer.config
     num_patches = (224 // config.patch_size) ** 2 + 1  # patches of the image + cls_token
     attentions = outputs["attentions"]
     assert len(attentions) == config.num_hidden_layers

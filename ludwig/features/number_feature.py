@@ -369,7 +369,7 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size([self.decoder_obj.config_dict.input_size])
+        return torch.Size([self.decoder_obj.config.input_size])
 
     @classmethod
     def get_output_dtype(cls):
