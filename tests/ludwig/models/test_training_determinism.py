@@ -35,7 +35,7 @@ def test_training_determinism_ray_backend(csv_filename, tmpdir, ray_cluster_4cpu
     np.testing.assert_equal(train_stats_1, train_stats_2)
 
 
-def test_training_determinism_local_backend(csv_filename, tmpdir, ray_cluster_4cpu):
+def test_training_determinism_local_backend(csv_filename, tmpdir):
     experiment_output_1, experiment_output_2 = train_twice("local", csv_filename, tmpdir)
 
     eval_stats_1, train_stats_1, _, _ = experiment_output_1
