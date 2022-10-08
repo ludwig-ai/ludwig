@@ -640,11 +640,11 @@ def test_hyperopt_grid_search_more_than_one_sample(csv_filename, tmpdir, ray_clu
     "max_concurrent_trials", ["auto", None], ids=["max_concurrent_trials_auto", "no_max_concurrent_trials_specified"]
 )
 def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, max_concurrent_trials, ray_cluster):
-    input_features = [
-        text_feature(name="utterance", reduce_output="sum"),
-        category_feature(vocab_size=3),
-    ]
+    """The purpose of this test is to ensure that hyperopt_statistics.json has max_concurrent_trials set.
 
+    time_budget_s is intentionally set to a very small value to force the experiment to terminate prematurely.
+    """
+    input_features = [category_feature(vocab_size=3)]
     output_features = [category_feature(vocab_size=3)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -657,7 +657,7 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, max_con
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat"},
-        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        TRAINER: {"steps": 1, "learning_rate": 0.001},
         HYPEROPT: {
             "parameters": {"trainer.learning_rate": {"space": "loguniform", "lower": 0.001, "upper": 0.1}},
             "goal": "minimize",
@@ -667,7 +667,7 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, max_con
                 TYPE: RAY,
                 NUM_SAMPLES: num_samples,
                 CPU_RESOURCES_PER_TRIAL: 1,
-                "time_budget_s": 200,
+                "time_budget_s": 5,
             },
             "search_alg": {TYPE: "variant_generator"},
         },
@@ -676,8 +676,7 @@ def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, max_con
     if max_concurrent_trials:
         config[HYPEROPT][EXECUTOR][MAX_CONCURRENT_TRIALS] = max_concurrent_trials
 
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
-    assert len(hyperopt_results.experiment_analysis.results_df) == config[HYPEROPT][EXECUTOR][NUM_SAMPLES]
+    hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
     hyperopt_statistics = json.load(open(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")))
     assert hyperopt_statistics["hyperopt_config"][EXECUTOR][MAX_CONCURRENT_TRIALS] == num_samples - 1
