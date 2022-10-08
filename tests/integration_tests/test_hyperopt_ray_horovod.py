@@ -25,8 +25,8 @@ from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, EXECUTOR, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.hyperopt.utils import update_or_set_max_concurrent_trials
+from ludwig.hyperopt.run import hyperopt
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, update_or_set_max_concurrent_trials
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 

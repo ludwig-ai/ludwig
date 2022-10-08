@@ -9,24 +9,39 @@ from typing import Any, Dict
 from ludwig.backend import Backend
 from ludwig.constants import (
     AUTO,
+    COMBINED,
     CPU_RESOURCES_PER_TRIAL,
     EXECUTOR,
+    GOAL,
     GPU_RESOURCES_PER_TRIAL,
     GRID_SEARCH,
     HYPEROPT,
     INPUT_FEATURES,
+    LOSS,
     MAX_CONCURRENT_TRIALS,
+    METRIC,
+    MINIMIZE,
     NAME,
     NUM_SAMPLES,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
+    RAY,
     SPACE,
+    SPLIT,
+    TYPE,
+    VALIDATION,
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.utils.data_utils import save_json
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import (
+    get_class_attributes,
+    get_from_registry,
+    merge_dict,
+    set_default_value,
+    set_default_values,
+)
 from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
@@ -189,6 +204,26 @@ def get_total_trial_count(hyperopt_parameter_config: Dict[str, Any], num_samples
         if param_info.get(SPACE) == GRID_SEARCH:
             total_trial_count *= len(param_info.get("values"))
     return total_trial_count
+
+
+def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any]) -> None:
+    """Updates user's Ludwig config with default hyperopt parameters."""
+    from ludwig.hyperopt.execution import executor_registry
+
+    set_default_value(hyperopt_params, EXECUTOR, {})
+    set_default_value(hyperopt_params, SPLIT, VALIDATION)
+    set_default_value(hyperopt_params, "output_feature", COMBINED)
+    set_default_value(hyperopt_params, METRIC, LOSS)
+    set_default_value(hyperopt_params, GOAL, MINIMIZE)
+
+    set_default_values(hyperopt_params[EXECUTOR], {TYPE: RAY, NUM_SAMPLES: 1, MAX_CONCURRENT_TRIALS: AUTO})
+
+    executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
+    executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
+    set_default_values(
+        hyperopt_params[EXECUTOR],
+        executor_defaults,
+    )
 
 
 def update_or_set_max_concurrent_trials(hyperopt_config: dict, backend: Backend) -> None:
