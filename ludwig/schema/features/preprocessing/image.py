@@ -120,8 +120,8 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
     in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether image dataset will reside in memory during the training process or will be "
-                    "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
-                    "of input images will be fetched from disk each training iteration.",
+        "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
+        "of input images will be fetched from disk each training iteration.",
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["in_memory"],
     )
 
