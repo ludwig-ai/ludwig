@@ -112,8 +112,9 @@ class ModelConfig(BaseMarshmallowConfig):
         upgraded_config_dict = self._upgrade_config(config_dict)
 
         # ===== Initialize Top Level Config Sections =====
-        # ecd is the default model type so we assign it to the ModelConfig
-        # will be overridden later if the user specified a model type
+
+        # Since 'ecd' is the default model type, we set it initially here.
+        # If a user specifies a model type however, it will be overridden later.
         self.model_type: str = MODEL_ECD
         self.input_features: InputFeaturesContainer = InputFeaturesContainer()
         self.output_features: OutputFeaturesContainer = OutputFeaturesContainer()
@@ -186,7 +187,7 @@ class ModelConfig(BaseMarshmallowConfig):
         config_repr = self.to_dict()
         config_repr[INPUT_FEATURES] = self.input_features.filter_features()
         config_repr[OUTPUT_FEATURES] = self.output_features.filter_features()
-        config_repr[DEFAULTS] = self.defaults.filter_defaults()
+        config_repr[DEFAULTS] = self.defaults
         return yaml.dump(config_repr, sort_keys=False)
 
     @classmethod
@@ -259,27 +260,26 @@ class ModelConfig(BaseMarshmallowConfig):
 
         return copy.deepcopy(cls())
 
-    def _initialize_input_features(self, feature_dicts: List[dict]):
-        """This function sets the values on the config object that are specified in the user defined config
-        dictionary.
+    def _initialize_input_features(self, feature_dicts: List[dict]) -> None:
+        """This function initializes the input features on the ModelConfig that are specified in the user defined config
+        dictionary. It does this by getting the corresponding feature config class, initializing it, then setting the
+        encoder and preprocessing sections to the value of the corresponding global defaults section. By doing this,
+        any global defaults that the user specified will be set here accordingly, however if no global defaults were
+        specified, they will already reflect the regular defaults for each feature, so the input feature will initialize
+        as expected. Any values set on the input feature itself will be set later in _set_input_features().
 
-        Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
-              obj, so we make sure to check and remove inappropriate modules.
         Args:
-            feature_dicts: List of feature definitions in user defined config dict.
-            feature_section: Indication of input features vs. output features.
-            initialize: Flag used to indicate whether the feature is getting initialized -> If false, skips setting
-                        global defaults. This is used for updating the config object (update_config_object).
+            feature_dicts: List of input feature definitions in user defined config dict.
 
         Returns:
-            None -> Updates config object.
+            None -> Updates ModelConfig.
         """
         for feature_dict in feature_dicts:
-            # Retrieve output feature schema cls from registry to init feature
+            # Retrieve input feature schema cls from registry to initialize feature
             feature_config = copy.deepcopy(get_input_feature_cls(feature_dict[TYPE])())
 
             # Set global defaults on output feature config cls - if user has defined global defaults, these
-            # will be set on feature_config_cls, otherwise the global defaults already reflect the regular
+            # will be set on the feature_config class, otherwise the global defaults already reflect the regular
             # defaults, so it will initialize the feature as expected.
             type_defaults = getattr(
                 self.defaults, feature_dict[TYPE]
@@ -290,20 +290,15 @@ class ModelConfig(BaseMarshmallowConfig):
             # Assign feature on output features container
             setattr(self.input_features, feature_dict[NAME], feature_config)
 
-    def _set_input_features(self, feature_dicts: List[dict]):
-        """This function sets the values on the config object that are specified in the user defined config
-        dictionary.
+    def _set_input_features(self, feature_dicts: List[dict]) -> None:
+        """This function sets the values on the ModelConfig that are specified on the input features themselves. This
+        will override any global defaults that have been set in the previous function call _initialize_input_features().
 
-        Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
-              obj, so we make sure to check and remove inappropriate modules.
         Args:
-            feature_dicts: List of feature definitions in user defined config dict.
-            feature_section: Indication of input features vs. output features.
-            initialize: Flag used to indicate whether the feature is getting initialized -> If false, skips setting
-                        global defaults. This is used for updating the config object (update_config_object).
+            feature_dicts: List of input feature definitions in user defined config dict.
 
         Returns:
-            None -> Updates config object.
+            None -> Updates ModelConfig.
         """
         for feature_dict in feature_dicts:
             # Set the parameters that the user specified on the input feature itself
@@ -311,27 +306,26 @@ class ModelConfig(BaseMarshmallowConfig):
                 getattr(self.input_features, feature_dict[NAME]), feature_dict, feature_type=feature_dict[TYPE]
             )
 
-    def _initialize_output_features(self, feature_dicts: List[dict]):
-        """This function sets the values on the config object that are specified in the user defined config
-        dictionary.
+    def _initialize_output_features(self, feature_dicts: List[dict]) -> None:
+        """This function initializes the output features on the ModelConfig that are specified in the user defined
+        config dictionary. It does this by getting the corresponding feature config class, initializing it, then setting
+        the decoder and loss sections to the value of the corresponding global defaults section. By doing this, any
+        global defaults that the user specified will be set here accordingly, however if no global defaults were
+        specified, each section already reflects the regular defaults for each feature, so the output features will
+        initialize as expected. Any values set on the output feature itself will be set later in _set_output_features().
 
-        Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
-              obj, so we make sure to check and remove inappropriate modules.
         Args:
-            feature_dicts: List of feature definitions in user defined config dict.
-            feature_section: Indication of input features vs. output features.
-            initialize: Flag used to indicate whether the feature is getting initialized -> If false, skips setting
-                        global defaults. This is used for updating the config object (update_config_object).
+            feature_dicts: List of output feature definitions in user defined config dict.
 
         Returns:
-            None -> Updates config object.
+            None -> Updates ModelConfig.
         """
         for feature_dict in feature_dicts:
             # Retrieve output feature schema cls from registry to init feature
             feature_config = copy.deepcopy(get_output_feature_cls(feature_dict[TYPE])())
 
             # Set global defaults on output feature config cls - if user has defined global defaults, these
-            # will be set on feature_config_cls, otherwise the global defaults already reflect the regular
+            # will be set on the feature_config class, otherwise the global defaults already reflect the regular
             # defaults, so it will initialize the feature as expected.
             type_defaults = getattr(
                 self.defaults, feature_dict[TYPE]
@@ -339,26 +333,22 @@ class ModelConfig(BaseMarshmallowConfig):
             feature_config.decoder = copy.deepcopy(type_defaults.decoder)
             feature_config.loss = copy.deepcopy(type_defaults.loss)
 
-            # TODO depending on defaults section covnersation may want to enable
+            # TODO depending on defaults section conversation may want to enable
             # feature_config.preprocessing = copy.deepcopy(type_defaults.preprocessing)
 
             # Assign feature on output features container
             setattr(self.output_features, feature_dict[NAME], feature_config)
 
-    def _set_output_features(self, feature_dicts: List[dict]):
-        """This function sets the values on the config object that are specified in the user defined config
-        dictionary.
+    def _set_output_features(self, feature_dicts: List[dict]) -> None:
+        """This function sets the values on the ModelConfig that are specified on the output features themselves. This
+        will override any global defaults that have been set in the previous function call
+        _initialize_output_features().
 
-        Note: Sometimes features in tests have both an encoder and decoder specified. This causes issues in the config
-              obj, so we make sure to check and remove inappropriate modules.
         Args:
-            feature_dicts: List of feature definitions in user defined config dict.
-            feature_section: Indication of input features vs. output features.
-            initialize: Flag used to indicate whether the feature is getting initialized -> If false, skips setting
-                        global defaults. This is used for updating the config object (update_config_object).
+            feature_dicts: List of output feature definitions in user defined config dict.
 
         Returns:
-            None -> Updates config object.
+            None -> Updates ModelConfig.
         """
         for feature_dict in feature_dicts:
             # Set the parameters that the user specified on the output feature itself

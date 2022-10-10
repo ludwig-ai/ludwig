@@ -1,7 +1,13 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import TRAINER
+from ludwig.constants import (
+    TRAINER,
+    ENCODER,
+    PREPROCESSING,
+    DECODER,
+    LOSS,
+)
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import ModelConfig
@@ -255,9 +261,11 @@ def test_defaults_schema():
     schema = DefaultsConfig()
     assert schema.binary.decoder.type == "regressor"
     assert schema.binary.encoder.type == "passthrough"
-
-    assert schema.category.top_k == 3
     assert schema.category.encoder.dropout == 0.0
+    assert ENCODER in schema.category.to_dict()
+    assert PREPROCESSING in schema.category.to_dict()
+    assert DECODER in schema.category.to_dict()
+    assert LOSS in schema.category.to_dict()
 
 
 def test_validate_defaults_schema():
