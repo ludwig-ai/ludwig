@@ -13,7 +13,7 @@ export:
   export_artifacts: true
   export_base_path: {export_base_path}
 profiler:
-  enable: true
+  enable: false
   use_torch_profiler: false
   logging_interval: 0.1
 experiments:
@@ -96,26 +96,29 @@ def test_performance(model_type, dataset, tmpdir):
         output_feature_name = load_yaml(config_path)["output_features"][0]["name"]
         metric_name = dataset_name_to_metric[dataset]
 
-        preprocessing_resource_usage_fp = os.path.join(
-            tmpdir, dataset, experiment_name, "system_resource_usage", "preprocessing", "run_0.json"
-        )
-        training_resource_usage_fp = os.path.join(
-            tmpdir, dataset, experiment_name, "system_resource_usage", "training", "run_0.json"
-        )
-        evaluation_resource_usage_fp = os.path.join(
-            tmpdir, dataset, experiment_name, "system_resource_usage", "evaluation", "run_0.json"
-        )
+        # preprocessing_resource_usage_fp = os.path.join(
+        #     tmpdir, dataset, experiment_name, "system_resource_usage", "preprocessing", "run_0.json"
+        # )
+        # training_resource_usage_fp = os.path.join(
+        #     tmpdir, dataset, experiment_name, "system_resource_usage", "training", "run_0.json"
+        # )
+        # evaluation_resource_usage_fp = os.path.join(
+        #     tmpdir, dataset, experiment_name, "system_resource_usage", "evaluation", "run_0.json"
+        # )
+        #
+        # preprocessing_resource_usage = load_json(preprocessing_resource_usage_fp)
+        # training_resource_usage = load_json(training_resource_usage_fp)
+        # evaluation_resource_usage = load_json(evaluation_resource_usage_fp)
 
-        preprocessing_resource_usage = load_json(preprocessing_resource_usage_fp)
-        training_resource_usage = load_json(training_resource_usage_fp)
-        evaluation_resource_usage = load_json(evaluation_resource_usage_fp)
+        from pprint import pprint
 
         print()
         print(dataset, model_type)
-        print(metric_name, test_statistics[output_feature_name][metric_name])
-        print("preprocessing_time", preprocessing_resource_usage["total_execution_time"])
-        print("training_time", training_resource_usage["total_execution_time"])
-        print("evaluation_time", evaluation_resource_usage["total_execution_time"])
+        pprint(test_statistics)
+        # print(metric_name, test_statistics[output_feature_name][metric_name])
+        # print("preprocessing_time", preprocessing_resource_usage["total_execution_time"])
+        # print("training_time", training_resource_usage["total_execution_time"])
+        # print("evaluation_time", evaluation_resource_usage["total_execution_time"])
         print()
 
         import shutil

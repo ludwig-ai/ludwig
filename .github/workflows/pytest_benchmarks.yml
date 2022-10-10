@@ -29,12 +29,14 @@ jobs:
           - python-version: 3.8
             pytorch-version: 1.12.1
             torchscript-version: 1.10.2
+            ray-version: 2.0.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-local
 
@@ -81,15 +83,16 @@ jobs:
           echo > requirements-temp && mv requirements-temp requirements_serve.txt
           echo > requirements-temp && mv requirements-temp requirements_viz.txt
           echo > requirements-temp && mv requirements-temp requirements_explain.txt
-          echo > requirements-temp && mv requirements-temp requirements_distributed.txt
 
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
-
+          pip install ray==$RAY_VERSION
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
           torch_expected=$(python -c "import torch; print(torch.__version__)")
           pip install '.[test]' --extra-index-url $extra_index_url
           pip list
           python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
         shell: bash
 
       - name: Tests
