@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-import json
 import logging
 import os.path
 
@@ -24,22 +23,7 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import (
-    ACCURACY,
-    BACKEND,
-    COMBINER,
-    CPU_RESOURCES_PER_TRIAL,
-    EXECUTOR,
-    HYPEROPT,
-    INPUT_FEATURES,
-    MAX_CONCURRENT_TRIALS,
-    NAME,
-    NUM_SAMPLES,
-    OUTPUT_FEATURES,
-    RAY,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import ACCURACY, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
@@ -334,41 +318,3 @@ def run_hyperopt(
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
-
-
-@pytest.mark.distributed
-def test_hyperopt_with_infer_max_concurrent_trials(csv_filename, tmpdir, ray_cluster_4cpu):
-    """The purpose of this test is to ensure that hyperopt_statistics.json has max_concurrent_trials set.
-
-    time_budget_s is intentionally set to a very small value to force the experiment to terminate prematurely.
-    """
-    input_features = [category_feature(vocab_size=3)]
-    output_features = [category_feature(vocab_size=3)]
-
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    config = {
-        BACKEND: {TYPE: RAY},
-        INPUT_FEATURES: input_features,
-        OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat"},
-        TRAINER: {"steps": 1, "learning_rate": 0.001},
-        HYPEROPT: {
-            "parameters": {"trainer.learning_rate": {"space": "loguniform", "lower": 0.001, "upper": 0.1}},
-            "goal": "minimize",
-            "output_feature": output_features[0][NAME],
-            "validation_metrics": "loss",
-            EXECUTOR: {
-                TYPE: RAY,
-                NUM_SAMPLES: 4,
-                CPU_RESOURCES_PER_TRIAL: 1,
-                "time_budget_s": 5,
-            },
-            "search_alg": {TYPE: "variant_generator"},
-        },
-    }
-
-    hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt", resume=False)
-
-    hyperopt_statistics = json.load(open(os.path.join(tmpdir, "test_hyperopt", "hyperopt_statistics.json")))
-    assert hyperopt_statistics["hyperopt_config"][EXECUTOR][MAX_CONCURRENT_TRIALS] == 2
