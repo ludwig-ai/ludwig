@@ -292,7 +292,7 @@ def test_hash_split(df_engine, ray_cluster_2cpu):
     assert len(splits) == 3
     if isinstance(df_engine, DaskEngine):
         splits = [split.compute() for split in splits]
-        
+
     # IDs should not overlap between splits
     assert all([set(split1["id"]).isdisjoint(set(split2["id"])) for split1, split2 in combinations(splits, 2)])
 
