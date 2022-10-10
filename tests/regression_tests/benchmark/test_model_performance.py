@@ -26,7 +26,7 @@ experiments:
 @pytest.mark.benchmark
 @pytest.mark.parametrize("model_type", [MODEL_GBM, MODEL_ECD])
 @pytest.mark.parametrize(
-    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
+    "dataset", ["ames_housing"]  # , "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
 )
 def test_performance(model_type, dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
@@ -48,7 +48,7 @@ def test_performance(model_type, dataset, tmpdir):
 
     test_statistics_fp = os.path.join(tmpdir, dataset, experiment_name, "experiment_run", "test_statistics.json")
     test_statistics = load_json(test_statistics_fp)
-    expected_test_statistics_fp = os.path.join(benchmark_directory, "expected_metrics", f"{dataset}_{model_type}.yaml")
+    expected_test_statistics_fp = os.path.join(benchmark_directory, "expected_metrics", f"{dataset}_{model_type}.json")
     expected_test_statistics = load_json(expected_test_statistics_fp)
 
     from pprint import pprint
