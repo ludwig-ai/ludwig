@@ -3,7 +3,7 @@ import os
 import pytest
 
 from ludwig.benchmarking.benchmark import benchmark
-from ludwig.constants import MODEL_GBM, MODEL_ECD
+from ludwig.constants import MODEL_ECD, MODEL_GBM
 from ludwig.utils.data_utils import load_json, load_yaml
 
 BENCHMARKING_CONFIG = """
@@ -119,6 +119,7 @@ def test_performance(model_type, dataset, tmpdir):
         print()
 
         import shutil
+
         shutil.rmtree(os.path.join(tmpdir, dataset), ignore_errors=True)
 
     # assert test_statistics[output_feature_name][metric_name] > dataset_to_expected_performance[dataset]
