@@ -1,0 +1,13 @@
+{
+   "SalePrice": {
+      "loss": 1.958102912E9,
+      "mean_absolute_error": 27144.462890625,
+      "mean_squared_error": 1.958102912E9,
+      "r2": 0.7343850135803223,
+      "root_mean_squared_error": 44250.45703125,
+      "root_mean_squared_percentage_error": 0.2543955147266388
+   },
+   "combined": {
+      "loss": 1.958102912000008E9
+   }
+}

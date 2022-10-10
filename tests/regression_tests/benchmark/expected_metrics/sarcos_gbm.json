@@ -1,0 +1,13 @@
+{
+   "combined": {
+      "loss": 24.572309494018555
+   },
+   "torque_1": {
+      "loss": 24.572309494018555,
+      "mean_absolute_error": 3.5389742851257324,
+      "mean_squared_error": 24.572309494018555,
+      "r2": 0.9405434131622314,
+      "root_mean_squared_error": 4.9570465087890625,
+      "root_mean_squared_percentage_error": 1565.6533203125
+   }
+}

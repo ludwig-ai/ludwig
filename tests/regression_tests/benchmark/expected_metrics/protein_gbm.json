@@ -1,0 +1,13 @@
+{
+   "RMSD": {
+      "loss": 2888.749267578125,
+      "mean_absolute_error": 36.039886474609375,
+      "mean_squared_error": 2888.749267578125,
+      "r2": -77.8150405883789,
+      "root_mean_squared_error": 53.74708557128906,
+      "root_mean_squared_percentage_error": 41334.625
+   },
+   "combined": {
+      "loss": 2888.749267578125
+   }
+}
