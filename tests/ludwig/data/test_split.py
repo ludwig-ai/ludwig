@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from itertools import combinations
 from random import randrange
 from unittest.mock import Mock
 
@@ -291,6 +292,9 @@ def test_hash_split(df_engine, ray_cluster_2cpu):
     assert len(splits) == 3
     if isinstance(df_engine, DaskEngine):
         splits = [split.compute() for split in splits]
+        
+    # IDs should not overlap between splits
+    assert all([set(split1["id"]).isdisjoint(set(split2["id"])) for split1, split2 in combinations(splits, 2)])
 
     for split, p in zip(splits, probabilities):
         # Should be approximately the same size as the desired proportion
@@ -309,7 +313,7 @@ def test_hash_split(df_engine, ray_cluster_2cpu):
         splits2 = [split.compute() for split in splits2]
 
     # IDs should not overlap between splits
-    assert all([set(split1["id"]).isdisjoint(set(split2["id"])) for split1, split2 in combinations(splits, 2)])
+    assert all([set(split1["id"]).isdisjoint(set(split2["id"])) for split1, split2 in combinations(splits2, 2)])
 
     for split1, split2, p in zip(splits, splits2, probabilities):
         ids1 = set(split1["id"].values.tolist())
