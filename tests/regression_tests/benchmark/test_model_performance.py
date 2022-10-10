@@ -3,6 +3,7 @@ import os
 import pytest
 
 from ludwig.benchmarking.benchmark import benchmark
+from ludwig.constants import MODEL_GBM  # , MODEL_ECD
 from ludwig.utils.data_utils import load_json, load_yaml
 
 BENCHMARKING_CONFIG = """
@@ -67,13 +68,14 @@ dataset_to_expected_evaluation_time = {  # in microseconds
 
 
 @pytest.mark.benchmark
+@pytest.mark.parametrize("model_type", [MODEL_GBM])  # , MODEL_ECD])
 @pytest.mark.parametrize(
-    "dataset", ["ames_housing"]  # , "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
+    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
 )
-def test_performance(dataset, tmpdir):
+def test_performance(model_type, dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"
-    config_path = os.path.join(benchmark_directory, f"{dataset}.yaml")
+    config_path = os.path.join(benchmark_directory, f"{dataset}_{model_type}.yaml")
 
     benchmarking_config = BENCHMARKING_CONFIG.format(
         experiment_name=experiment_name,
@@ -106,6 +108,22 @@ def test_performance(dataset, tmpdir):
     preprocessing_resource_usage = load_json(preprocessing_resource_usage_fp)
     training_resource_usage = load_json(training_resource_usage_fp)
     evaluation_resource_usage = load_json(evaluation_resource_usage_fp)
+
+    from pprint import pprint
+
+    print()
+    print(dataset)
+    print()
+    pprint(test_statistics)
+    print()
+    pprint(preprocessing_resource_usage)
+    print()
+    pprint(training_resource_usage)
+    print()
+    pprint(evaluation_resource_usage)
+    print()
+    print()
+    print()
 
     assert test_statistics[output_feature_name][metric_name] > dataset_to_expected_performance[dataset]
     assert preprocessing_resource_usage["total_execution_time"] < dataset_to_expected_preprocessing_time[dataset]
