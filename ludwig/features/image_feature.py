@@ -24,6 +24,7 @@ import numpy as np
 import torch
 import torchvision
 from torchvision.transforms._presets import ImageClassification
+from torchvision.transforms.functional import normalize
 
 from ludwig.constants import (
     CHECKSUM,
@@ -65,17 +66,6 @@ from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
-
-
-# TODO(shreya): Confirm if it's ok to do per channel normalization
-# TODO(shreya): Also confirm if this is being used anywhere
-# TODO(shreya): Confirm if ok to use imagenet means and std devs
-image_scaling_registry = {
-    "pixel_normalization": lambda x: x * 1.0 / 255,
-    "pixel_standardization": partial(
-        torchvision.transforms.functional.normalize, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    ),
-}
 
 
 class _ImagePreprocessing(torch.nn.Module):
@@ -173,13 +163,14 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def _read_image_if_bytes_obj_and_resize(
-        img_entry: Union[bytes, torch.Tensor, np.ndarray],
-        img_width: int,
-        img_height: int,
-        should_resize: bool,
-        num_channels: int,
-        resize_method: str,
-        user_specified_num_channels: bool,
+            img_entry: Union[bytes, torch.Tensor, np.ndarray],
+            img_width: int,
+            img_height: int,
+            should_resize: bool,
+            num_channels: int,
+            resize_method: str,
+            user_specified_num_channels: bool,
+            standardize_image: str,
     ) -> Optional[np.ndarray]:
         """
         :param img_entry Union[bytes, torch.Tensor, np.ndarray]: if str file path to the
@@ -264,6 +255,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         # casting and rescaling
         img = img.type(torch.float32) / 255
+
+        if standardize_image == "imagenet1k":
+            img = normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         return img.numpy()
 
@@ -437,7 +431,25 @@ class ImageFeatureMixin(BaseFeatureMixin):
         assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
 
         average_file_size = np.mean(sample_num_bytes) if sample_num_bytes else None
-        return (should_resize, width, height, num_channels, user_specified_num_channels, average_file_size)
+
+        standardize_image = preprocessing_parameters["standardize_image"]
+        if standardize_image == "imagenet1k" and num_channels != 3:
+            warnings.warn(
+                f"'standardize_image=imagenet1k' is defined only for 'num_channels=3' but "
+                f"detected 'num_channels={num_channels}'.  For this situation setting 'standardize_image=None'.",
+                RuntimeWarning,
+            )
+            standardize_image = None
+
+        return (
+            should_resize,
+            width,
+            height,
+            num_channels,
+            user_specified_num_channels,
+            average_file_size,
+            standardize_image,
+        )
 
     @staticmethod
     def add_feature_data(
@@ -481,6 +493,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 num_channels,
                 user_specified_num_channels,
                 average_file_size,
+                standardize_image,
             ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
 
             metadata[name][PREPROCESSING]["height"] = height
@@ -495,6 +508,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 num_channels=num_channels,
                 resize_method=preprocessing_parameters["resize_method"],
                 user_specified_num_channels=user_specified_num_channels,
+                standardize_image=standardize_image,
             )
 
             # TODO: alternatively use get_average_image() for unreachable images
@@ -584,7 +598,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        for key in ["height", "width", "num_channels", "scaling"]:
+        for key in ["height", "width", "num_channels", "standardize_image"]:
             input_feature[ENCODER][key] = feature_metadata[PREPROCESSING][key]
 
     @staticmethod

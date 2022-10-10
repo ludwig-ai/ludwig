@@ -109,19 +109,19 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_sample_size"],
     )
 
-    scaling: str = schema_utils.StringOptions(
-        ["pixel_normalization", "pixel_standardization"],
-        default="pixel_normalization",
-        allow_none=False,
-        description="The scaling strategy for pixel values in the image.",
-        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["scaling"],
+    standardize_image: str = schema_utils.StringOptions(
+        [None, "imagenet1k"],
+        default=None,
+        allow_none=True,
+        description="Standardize image by per channel mean centering and standard deviation scaling .",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["standardize_image"],
     )
 
     in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether image dataset will reside in memory during the training process or will be "
-        "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
-        "of input images will be fetched from disk each training iteration.",
+                    "dynamically fetched from disk (useful for large datasets). In the latter case a training batch "
+                    "of input images will be fetched from disk each training iteration.",
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["in_memory"],
     )
 

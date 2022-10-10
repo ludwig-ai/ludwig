@@ -817,7 +817,7 @@ FEATURE_METADATA = {
                 literature_references=None,
                 internal_only=False,
             ),
-            "scaling": ParameterMetadata(
+            "standardize_image": ParameterMetadata(
                 ui_display_name=None,
                 default_value_reasoning=None,
                 example_value=None,
