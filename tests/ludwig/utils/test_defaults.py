@@ -359,7 +359,7 @@ def test_merge_with_defaults():
                     "infer_image_max_height": 256,
                     "infer_image_max_width": 256,
                     "infer_image_sample_size": 100,
-                    "scaling": "pixel_normalization",
+                    "standardize_image": None,
                     "in_memory": True,
                     "num_processes": 1,
                 },
@@ -552,7 +552,7 @@ def test_merge_with_defaults():
                     "infer_image_max_height": 256,
                     "infer_image_max_width": 256,
                     "infer_image_sample_size": 100,
-                    "scaling": "pixel_normalization",
+                    "standardize_image": None,
                     "in_memory": True,
                     "num_processes": 1,
                 }
