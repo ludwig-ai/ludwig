@@ -3,7 +3,7 @@ import os
 import pytest
 
 from ludwig.benchmarking.benchmark import benchmark
-from ludwig.constants import MODEL_GBM  # , MODEL_ECD
+from ludwig.constants import MODEL_GBM, MODEL_ECD
 from ludwig.utils.data_utils import load_json, load_yaml
 
 BENCHMARKING_CONFIG = """
@@ -68,14 +68,14 @@ dataset_to_expected_evaluation_time = {  # in microseconds
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("model_type", [MODEL_GBM])  # , MODEL_ECD])
+@pytest.mark.parametrize("model_type", [MODEL_GBM, MODEL_ECD])
 @pytest.mark.parametrize(
     "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
 )
 def test_performance(model_type, dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"
-    config_path = os.path.join(benchmark_directory, f"{dataset}_{model_type}.yaml")
+    config_path = os.path.join(benchmark_directory, "configs", f"{dataset}_{model_type}.yaml")
 
     benchmarking_config = BENCHMARKING_CONFIG.format(
         experiment_name=experiment_name,
@@ -112,7 +112,7 @@ def test_performance(model_type, dataset, tmpdir):
     from pprint import pprint
 
     print()
-    print(dataset)
+    print(dataset, model_type)
     print()
     pprint(test_statistics)
     print()
