@@ -104,7 +104,16 @@ class DateTimeSplitConfig(BaseSplitConfig):
 @split_config_registry.register("hash")
 @dataclass
 class HashSplitConfig(BaseSplitConfig):
-    """This Dataclass generates a schema for the fixed splitting config."""
+    """This Dataclass generates a schema for the hash splitting config.
+
+    This is useful for deterministically splitting on a unique ID. Even when additional rows are added to the dataset
+    in the future, each ID will retain its original split assignment.
+
+    This approach does not guarantee that the split proportions will be assigned exactly, but the larger the dataset,
+    the more closely the assignment should match the given proportions.
+
+    This approach can be used on a column with duplicates, but it will further skew the assignments of rows to splits.
+    """
 
     type: str = schema_utils.StringOptions(
         ["hash"],
