@@ -51,4 +51,11 @@ def test_performance(model_type, dataset, tmpdir):
     expected_test_statistics_fp = os.path.join(benchmark_directory, "expected_metrics", f"{dataset}_{model_type}.yaml")
     expected_test_statistics = load_json(expected_test_statistics_fp)
 
+    from pprint import pprint
+    print()
+    pprint(test_statistics)
+    print()
+    pprint(expected_test_statistics)
+    print()
+
     np.testing.assert_equal(test_statistics, expected_test_statistics)
