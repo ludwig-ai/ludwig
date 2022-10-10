@@ -1,0 +1,70 @@
+combiner:
+  type: tabnet
+input_features:
+- column: lp
+  name: lp
+  type: number
+- column: v
+  name: v
+  type: number
+- column: gtt
+  name: gtt
+  type: number
+- column: gtn
+  name: gtn
+  type: number
+- column: ggn
+  name: ggn
+  type: number
+- column: ts
+  name: ts
+  type: number
+- column: tp
+  name: tp
+  type: number
+- column: t48
+  name: t48
+  type: number
+- column: t1
+  name: t1
+  type: category
+- column: t2
+  name: t2
+  type: number
+- column: p48
+  name: p48
+  type: number
+- column: p1
+  name: p1
+  type: number
+- column: p2
+  name: p2
+  type: number
+- column: pexh
+  name: pexh
+  type: number
+- column: tic
+  name: tic
+  type: number
+- column: mf
+  name: mf
+  type: number
+- column: gttdsc
+  name: gttdsc
+  type: number
+output_features:
+- column: gtcdsc
+  name: gtcdsc
+  type: number
+trainer:
+  early_stop: 5
+  eval_batch_size: 16384
+  evaluate_training_set: false
+  learning_rate: 0.041295041855485305
+  batch_size: 134
+  decay: false
+defaults:
+  number:
+    preprocessing:
+      normalization: zscore
+      missing_value_strategy: fill_with_const
