@@ -32,7 +32,6 @@ from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
-from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils import metric_utils
@@ -45,10 +44,11 @@ _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
 if _ray_200:
     from ray.air import Checkpoint
     from ray.tune.search import SEARCH_ALG_IMPORT
+
+    from ludwig.hyperopt.syncer import RemoteSyncer
 else:
     from ray.ml import Checkpoint
     from ray.tune.suggest import SEARCH_ALG_IMPORT
-    from ray.tune.syncer import get_cloud_sync_client
 
 
 logger = logging.getLogger(__name__)
@@ -782,8 +782,10 @@ class RayTuneExecutor:
                 self.sync_client = RemoteSyncer()
                 self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
             else:
-                self.sync_config = tune.SyncConfig(upload_dir=output_directory)
-                self.sync_client = get_cloud_sync_client(output_directory)
+                raise ValueError(
+                    "Syncing to remote filesystems with hyperopt is not supported with ray<2.0, "
+                    "please upgrade to ray>=2.0"
+                )
             output_directory = None
         elif self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer

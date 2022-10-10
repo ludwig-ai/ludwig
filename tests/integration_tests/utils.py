@@ -888,4 +888,8 @@ def remote_tmpdir(fs_protocol, bucket):
     try:
         yield tmpdir
     finally:
-        fs_utils.delete(tmpdir, recursive=True)
+        try:
+            fs_utils.delete(tmpdir, recursive=True)
+        except FileNotFoundError as e:
+            logging.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+            pass
