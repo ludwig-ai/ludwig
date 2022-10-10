@@ -1,0 +1,6 @@
+metrics:
+  - output_feature_name: SalePrice
+    metric_name: r2
+    expected_value: 0.7343850135803223
+    regression_direction: LOWER
+    percent_change_sensitivity: 0.1

@@ -1,0 +1,6 @@
+metrics:
+  - output_feature_name: torque_1
+    metric_name: r2
+    expected_value: 0.9871084690093994
+    regression_direction: LOWER
+    percent_change_sensitivity: 0.1

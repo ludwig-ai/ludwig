@@ -1,0 +1,6 @@
+metrics:
+  - output_feature_name: income
+    metric_name: accuracy
+    expected_value: 0.8283590078353882
+    regression_direction: LOWER
+    percent_change_sensitivity: 0.1
