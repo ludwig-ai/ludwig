@@ -1,8 +1,8 @@
-from ludwig.schema import utils as schema_utils
-from ludwig.utils.registry import Registry
 from ludwig.constants import TYPE
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.utils.registry import Registry
 
 combiner_registry = Registry()
 
@@ -29,7 +29,7 @@ def get_combiner_jsonschema():
                 "default": "concat",
                 "title": "Combiner Type",
                 "description": "Select the combiner type.",
-                "parameter_metadata": parameter_metadata
+                "parameter_metadata": parameter_metadata,
             },
         },
         "allOf": get_combiner_conds(),

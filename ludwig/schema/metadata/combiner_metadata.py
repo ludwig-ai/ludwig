@@ -2,18 +2,18 @@ from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterM
 
 COMBINER_METADATA = {
     "type": ParameterMetadata(
-            ui_display_name="Combiner Type",
-            default_value_reasoning=None,
-            example_value=None,
-            related_parameters=None,
-            other_information=None,
-            description_implications=None,
-            suggested_values_reasoning=None,
-            commonly_used=True,
-            expected_impact=ExpectedImpact.HIGH,
-            literature_references=None,
-            internal_only=False,
-        ),
+        ui_display_name="Combiner Type",
+        default_value_reasoning=None,
+        example_value=None,
+        related_parameters=None,
+        other_information=None,
+        description_implications=None,
+        suggested_values_reasoning=None,
+        commonly_used=True,
+        expected_impact=ExpectedImpact.HIGH,
+        literature_references=None,
+        internal_only=False,
+    ),
     "ComparatorCombiner": {
         "activation": ParameterMetadata(
             ui_display_name="Activation",
