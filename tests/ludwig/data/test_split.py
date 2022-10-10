@@ -291,7 +291,7 @@ def test_hash_split(df_engine, ray_cluster_2cpu):
     assert len(splits) == 3
     if isinstance(df_engine, DaskEngine):
         splits = [split.compute() for split in splits]
-    
+
     for split, p in zip(splits, probabilities):
         # Should be approximately the same size as the desired proportion
         assert nrows * p - 5 <= len(split["id"]) <= nrows * p + 5
@@ -302,15 +302,15 @@ def test_hash_split(df_engine, ray_cluster_2cpu):
 
     nrows *= 2
     df = df.append(df2)
-    
+
     splits2 = splitter.split(df, backend)
     assert len(splits2) == 3
     if isinstance(df_engine, DaskEngine):
         splits2 = [split.compute() for split in splits2]
-        
+
     # IDs should not overlap between splits
     assert all([set(split1["id"]).isdisjoint(set(split2["id"])) for split1, split2 in combinations(splits, 2)])
-    
+
     for split1, split2, p in zip(splits, splits2, probabilities):
         ids1 = set(split1["id"].values.tolist())
         ids2 = set(split2["id"].values.tolist())
