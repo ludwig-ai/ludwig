@@ -52,6 +52,7 @@ def test_performance(model_type, dataset, tmpdir):
     expected_test_statistics = load_json(expected_test_statistics_fp)
 
     from pprint import pprint
+
     print()
     pprint(test_statistics)
     print()
