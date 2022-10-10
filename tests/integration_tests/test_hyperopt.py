@@ -41,7 +41,7 @@ from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
-from tests.integration_tests.utils import category_feature, generate_data, text_feature
+from tests.integration_tests.utils import category_feature, generate_data, private_param, remote_tmpdir, text_feature
 
 try:
     import ray
@@ -392,6 +392,18 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", HYPEROPT_STATISTICS_FILE_NAME))
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
+def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
+    with remote_tmpdir(fs_protocol, bucket) as tmpdir:
+        test_hyperopt_run_hyperopt(
+            csv_filename,
+            "random",
+            tmpdir,
+            ray_cluster,
+        )
 
 
 @pytest.mark.distributed
