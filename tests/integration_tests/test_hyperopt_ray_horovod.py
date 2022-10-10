@@ -74,8 +74,9 @@ HYPEROPT_CONFIG = {
 
 
 SCENARIOS = [
+    # Set max_concurrent_trials to 5 as a stop-gap solution for OOM
     {
-        "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1},
+        "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1, "max_concurrent_trials": 5},
         "search_alg": {"type": "variant_generator"},
     },
     {
