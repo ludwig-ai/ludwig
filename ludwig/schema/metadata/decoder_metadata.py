@@ -479,7 +479,7 @@ DECODER_METADATA = {
             "but the higher dimensionality can also improve overall quality.",
             suggested_values="128 - 2048",
             suggested_values_reasoning="Try models with smaller or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=None,
             internal_only=False,

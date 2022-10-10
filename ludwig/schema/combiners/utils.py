@@ -1,5 +1,8 @@
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
+from ludwig.constants import TYPE
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 combiner_registry = Registry()
 
@@ -16,6 +19,7 @@ def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
     combiner_types = sorted(list(combiner_registry.keys()))
+    parameter_metadata = convert_metadata_to_json(COMBINER_METADATA[TYPE])
     return {
         "type": "object",
         "properties": {
@@ -23,8 +27,9 @@ def get_combiner_jsonschema():
                 "type": "string",
                 "enum": combiner_types,
                 "default": "concat",
-                "title": "type",
+                "title": "Combiner Type",
                 "description": "Select the combiner type.",
+                "parameter_metadata": parameter_metadata
             },
         },
         "allOf": get_combiner_conds(),

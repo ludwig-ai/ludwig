@@ -71,7 +71,7 @@ TRAINER_METADATA = (
                                                                            'a sub-epoch time scale, or every few '
                                                                            'thousand '
                                                                            'steps.',
-                                                commonly_used=True,
+                                                commonly_used=False,
                                                 expected_impact=ExpectedImpact.HIGH,
                                                 literature_references=None,
                                                 internal_only=False),
@@ -106,7 +106,7 @@ TRAINER_METADATA = (
                                                            'a learning rate schedule can give better training '
                                                            'performance '
                                                            'and make the model converge faster',
-                                commonly_used=True,
+                                commonly_used=False,
                                 expected_impact=ExpectedImpact.MEDIUM,
                                 literature_references=[
                                     'https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model'
@@ -168,7 +168,7 @@ TRAINER_METADATA = (
                                                                  '`decay_steps`. You can think of `decay_steps` as a '
                                                                  'rate '
                                                                  'of decay for the `decay_rate`.',
-                                      commonly_used=True,
+                                      commonly_used=False,
                                       expected_impact=ExpectedImpact.MEDIUM,
                                       literature_references=None,
                                       internal_only=False),
@@ -204,7 +204,7 @@ TRAINER_METADATA = (
                                                                 "is usually a good indicator that there's not much "
                                                                 "more to "
                                                                 'learn.',
-                                     commonly_used=True,
+                                     commonly_used=False,
                                      expected_impact=ExpectedImpact.MEDIUM,
                                      literature_references=None,
                                      internal_only=False),
@@ -296,7 +296,7 @@ TRAINER_METADATA = (
                                                                            'computed, so it will still be easy to spot '
                                                                            'signs of overfitting like when the '
                                                                            'training-validation loss curves diverge.',
-                                                commonly_used=True,
+                                                commonly_used=False,
                                                 expected_impact=ExpectedImpact.HIGH,
                                                 literature_references=None,
                                                 internal_only=False),
@@ -547,7 +547,7 @@ TRAINER_METADATA = (
                                                                'choice. If you are in need of quick results without '
                                                                'extensive hypertuning, tend towards adaptive gradient '
                                                                'methods like adam or adamw.',
-                                    commonly_used=True,
+                                    commonly_used=False,
                                     expected_impact=ExpectedImpact.HIGH,
                                     literature_references=['https://www.youtube.com/watch?v=mdKjMPmcWjY'],
                                     internal_only=False),
@@ -657,7 +657,7 @@ TRAINER_METADATA = (
                                                                            '” with values '
                                                                            'often on a logarithmic scale between 0 and '
                                                                            '0.1, such as 0.1, 0.001, 0.0001, etc.',
-                                                commonly_used=True,
+                                                commonly_used=False,
                                                 expected_impact=ExpectedImpact.HIGH,
                                                 literature_references=[
                                                     'https://developers.google.com/machine-learning/crash-course'
@@ -688,7 +688,7 @@ TRAINER_METADATA = (
                                                                        'regularization is not.',
                                               suggested_values='L2',
                                               suggested_values_reasoning=None,
-                                              commonly_used=True,
+                                              commonly_used=False,
                                               expected_impact=ExpectedImpact.HIGH,
                                               literature_references=[
                                                   'https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2'
@@ -801,7 +801,7 @@ TRAINER_METADATA = (
                                                                           'a sub-epoch time scale, or every few '
                                                                           'thousand '
                                                                           'steps.',
-                                               commonly_used=True,
+                                               commonly_used=False,
                                                expected_impact=ExpectedImpact.HIGH,
                                                literature_references=None,
                                                internal_only=False),
