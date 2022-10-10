@@ -481,6 +481,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             )
             average_file_size = None
 
+            # save weight specification in preprocessing section
+            preprocessing_parameters["torchvision_model_weights"] = f"{torchvision_parameters.weights_class.DEFAULT}"
+
             # add torchvision model id to preprocessing section for torchscript
             preprocessing_parameters["torchvision_model_id"] = torchvision_model_id
         else:
