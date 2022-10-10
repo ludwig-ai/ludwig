@@ -1,13 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import (
-    TRAINER,
-    ENCODER,
-    PREPROCESSING,
-    DECODER,
-    LOSS,
-)
+from ludwig.constants import DECODER, ENCODER, LOSS, PREPROCESSING, TRAINER
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import validate_config
 from ludwig.schema.config_object import ModelConfig

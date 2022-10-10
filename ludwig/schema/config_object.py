@@ -261,12 +261,13 @@ class ModelConfig(BaseMarshmallowConfig):
         return copy.deepcopy(cls())
 
     def _initialize_input_features(self, feature_dicts: List[dict]) -> None:
-        """This function initializes the input features on the ModelConfig that are specified in the user defined config
-        dictionary. It does this by getting the corresponding feature config class, initializing it, then setting the
-        encoder and preprocessing sections to the value of the corresponding global defaults section. By doing this,
-        any global defaults that the user specified will be set here accordingly, however if no global defaults were
-        specified, they will already reflect the regular defaults for each feature, so the input feature will initialize
-        as expected. Any values set on the input feature itself will be set later in _set_input_features().
+        """This function initializes the input features on the ModelConfig that are specified in the user defined
+        config dictionary. It does this by getting the corresponding feature config class, initializing it, then
+        setting the encoder and preprocessing sections to the value of the corresponding global defaults section.
+        By doing this, any global defaults that the user specified will be set here accordingly, however if no
+        global defaults were specified, they will already reflect the regular defaults for each feature, so the
+        input feature will initialize as expected. Any values set on the input feature itself will be set later in
+        _set_input_features().
 
         Args:
             feature_dicts: List of input feature definitions in user defined config dict.
@@ -291,8 +292,9 @@ class ModelConfig(BaseMarshmallowConfig):
             setattr(self.input_features, feature_dict[NAME], feature_config)
 
     def _set_input_features(self, feature_dicts: List[dict]) -> None:
-        """This function sets the values on the ModelConfig that are specified on the input features themselves. This
-        will override any global defaults that have been set in the previous function call _initialize_input_features().
+        """This function sets the values on the ModelConfig that are specified on the input features themselves.
+        This will override any global defaults that have been set in the previous function call
+        _initialize_input_features().
 
         Args:
             feature_dicts: List of input feature definitions in user defined config dict.
@@ -308,11 +310,12 @@ class ModelConfig(BaseMarshmallowConfig):
 
     def _initialize_output_features(self, feature_dicts: List[dict]) -> None:
         """This function initializes the output features on the ModelConfig that are specified in the user defined
-        config dictionary. It does this by getting the corresponding feature config class, initializing it, then setting
-        the decoder and loss sections to the value of the corresponding global defaults section. By doing this, any
-        global defaults that the user specified will be set here accordingly, however if no global defaults were
-        specified, each section already reflects the regular defaults for each feature, so the output features will
-        initialize as expected. Any values set on the output feature itself will be set later in _set_output_features().
+        config dictionary. It does this by getting the corresponding feature config class, initializing it, then
+        setting the decoder and loss sections to the value of the corresponding global defaults section. By doing
+        this, any global defaults that the user specified will be set here accordingly, however if no global
+        defaults were specified, each section already reflects the regular defaults for each feature, so the output
+        features will initialize as expected. Any values set on the output feature itself will be set later in
+        _set_output_features().
 
         Args:
             feature_dicts: List of output feature definitions in user defined config dict.
@@ -340,8 +343,8 @@ class ModelConfig(BaseMarshmallowConfig):
             setattr(self.output_features, feature_dict[NAME], feature_config)
 
     def _set_output_features(self, feature_dicts: List[dict]) -> None:
-        """This function sets the values on the ModelConfig that are specified on the output features themselves. This
-        will override any global defaults that have been set in the previous function call
+        """This function sets the values on the ModelConfig that are specified on the output features themselves.
+        This will override any global defaults that have been set in the previous function call
         _initialize_output_features().
 
         Args:
