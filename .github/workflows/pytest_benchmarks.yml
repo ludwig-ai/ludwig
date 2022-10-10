@@ -1,6 +1,5 @@
 # This workflow will install Python dependencies, and run benchmarks on a few datasets
-# to test model performance regressions. Currently running on the local backend as the
-# Ludwig Profiler doesn't support the Ray backend yet.
+# to test model performance regressions.
 
 name: benchmark
 
