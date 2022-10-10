@@ -33,12 +33,10 @@ jobs:
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
-      NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
-      NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-local
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
 
     timeout-minutes: 60
     steps:
