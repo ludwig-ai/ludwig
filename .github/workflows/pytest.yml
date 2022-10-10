@@ -49,7 +49,7 @@ jobs:
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
 
-    timeout-minutes: 60
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -156,7 +156,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()
