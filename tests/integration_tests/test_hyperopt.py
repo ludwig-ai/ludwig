@@ -15,6 +15,7 @@
 import contextlib
 import json
 import os.path
+import uuid
 from typing import Any, Dict, Optional, Tuple, Union
 
 import pytest
@@ -39,6 +40,7 @@ from ludwig.constants import (
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, private_param, remote_tmpdir, text_feature
@@ -55,7 +57,7 @@ except ImportError:
     _ray113 = None
 
 
-RANDOM_SEARCH_SIZE = 4
+RANDOM_SEARCH_SIZE = 2
 
 HYPEROPT_CONFIG = {
     "parameters": {
@@ -370,14 +372,19 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {TYPE: "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "executor": {
+            TYPE: "ray",
+            "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE,
+            "max_concurrent_trials": 1,
+        },
         "search_alg": {TYPE: "variant_generator"},
     }
 
     # add hyperopt parameter space to the config
     config[HYPEROPT] = hyperopt_configs
 
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
     if search_space == "random":
         assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
     else:
@@ -391,7 +398,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", HYPEROPT_STATISTICS_FILE_NAME))
+    assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
 
 
 @pytest.mark.distributed
