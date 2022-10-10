@@ -279,7 +279,7 @@ class HashSplitter(Splitter):
         thresholds = [v * max_value for v in self.probabilities]
 
         def hash_column(x):
-            value = hash_dict({"value": x})
+            value = hash_dict({"value": x}, max_length=None)
             hash_value = crc32(value)
             if hash_value < thresholds[0]:
                 return 0

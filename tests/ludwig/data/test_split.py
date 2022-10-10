@@ -262,3 +262,59 @@ def test_datetime_split(df_engine, ray_cluster_2cpu):
 
         assert np.all(split["date_col"] > min_datestr)
         min_datestr = split["date_col"].max()
+
+
+@pytest.mark.parametrize(
+    ("df_engine",),
+    [
+        pytest.param(PandasEngine(), id="pandas"),
+        pytest.param(DaskEngine(_use_ray=False), id="dask", marks=pytest.mark.distributed),
+    ],
+)
+def test_hash_split(df_engine, ray_cluster_2cpu):
+    nrows = 100
+    npartitions = 10
+
+    df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
+    df["id"] = np.arange(0, 100)
+
+    if isinstance(df_engine, DaskEngine):
+        df = df_engine.df_lib.from_pandas(df, npartitions=npartitions)
+
+    probabilities = [0.8, 0.1, 0.1]
+    split_params = {"type": "hash", "column": "id", "probabilities": probabilities}
+    splitter = get_splitter(**split_params)
+
+    backend = Mock()
+    backend.df_engine = df_engine
+    splits = splitter.split(df, backend)
+
+    assert len(splits) == 3
+
+    for split, p in zip(splits, probabilities):
+        if isinstance(df_engine, DaskEngine):
+            split = split.compute()
+
+        # Should be approximately the same size as the desired proportion
+        assert nrows * p - 5 <= len(split["id"]) <= nrows * p + 5
+
+    # Need to ensure deterministic splitting even as we append data
+    df2 = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 3)), columns=["A", "B", "C"])
+    df2["id"] = np.arange(100, 200)
+
+    nrows *= 2
+    df = df.append(df2)
+    splits2 = splitter.split(df, backend)
+    for split1, split2, p in zip(splits, splits2, probabilities):
+        if isinstance(df_engine, DaskEngine):
+            split1 = split1.compute()
+            split2 = split2.compute()
+
+        ids1 = set(split1["id"].values.tolist())
+        ids2 = set(split2["id"].values.tolist())
+
+        assert nrows * p - 10 <= len(ids2) <= nrows * p + 10
+
+        # All elements from the first round of splitting are in the same split, even after appending
+        # more rows
+        assert ids1.issubset(ids2)
