@@ -117,7 +117,7 @@ def _get_config(search_alg, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"train_steps": 1, "learning_rate": 0.001},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -252,7 +252,7 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"train_steps": 1, "learning_rate": 0.001},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         "backend": {"type": "ray", **RAY_BACKEND_KWARGS},
     }
 
