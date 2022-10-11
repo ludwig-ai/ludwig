@@ -20,19 +20,19 @@ def test_make_fractions_ensure_minimum_rows():
     from ludwig.data.split import _make_fractions_ensure_minimum_rows
 
     # With 100 examples, the function should make no change to fractions.
-    fractions = _make_fractions_ensure_minimum_rows((0.7, 0.1, 0.2), 100, min_rows=3)
+    fractions = _make_fractions_ensure_minimum_rows((0.7, 0.1, 0.2), 100, min_val_rows=3, min_test_rows=3)
     assert sum(fractions) == pytest.approx(1.0)
     assert fractions[0] == pytest.approx(0.7)
     assert fractions[1] == pytest.approx(0.1)
     assert fractions[2] == pytest.approx(0.2)
     # With 25 examples, the expected number of validation set rows is 2.5
-    fractions = _make_fractions_ensure_minimum_rows((0.7, 0.1, 0.2), 25, min_rows=3)
+    fractions = _make_fractions_ensure_minimum_rows((0.7, 0.1, 0.2), 25, min_val_rows=3, min_test_rows=3)
     assert sum(fractions) == pytest.approx(1.0)
     assert fractions[0] == pytest.approx(0.68)
     assert fractions[1] == pytest.approx(0.12)
     assert fractions[2] == pytest.approx(0.2)
     # With 25 examples, the expected number of val and test set rows is 2.5
-    fractions = _make_fractions_ensure_minimum_rows((0.8, 0.1, 0.1), 25, min_rows=3)
+    fractions = _make_fractions_ensure_minimum_rows((0.8, 0.1, 0.1), 25, min_val_rows=3, min_test_rows=3)
     assert sum(fractions) == pytest.approx(1.0)
     assert fractions[0] == pytest.approx(0.76)
     assert fractions[1] == pytest.approx(0.12)
@@ -42,16 +42,20 @@ def test_make_fractions_ensure_minimum_rows():
 def test_make_divisions_ensure_minimum_rows():
     from ludwig.data.split import _make_divisions_ensure_minimum_rows
 
-    # In this case, the function should make no change to fractions.
-    divisions = _make_divisions_ensure_minimum_rows((70, 80), 100, min_rows=3)
+    # Constraints are satisfied, the function should make no change to fractions.
+    divisions = _make_divisions_ensure_minimum_rows((70, 80), 100, min_val_rows=3, min_test_rows=3)
     assert divisions[0] == 70
     assert divisions[1] == 80
+    # Constraints are satisfied, the function should make no change to fractions.
+    divisions = _make_divisions_ensure_minimum_rows((20, 22), 25, min_val_rows=0, min_test_rows=0)
+    assert divisions[0] == 20
+    assert divisions[1] == 22
     # The number of rows in validation set is too small.
-    divisions = _make_divisions_ensure_minimum_rows((17, 19), 25, min_rows=3)
+    divisions = _make_divisions_ensure_minimum_rows((17, 19), 25, min_val_rows=3, min_test_rows=3)
     assert divisions[0] == 16
     assert divisions[1] == 19
     # The number of rows in validation and test sets are both too small.
-    divisions = _make_divisions_ensure_minimum_rows((20, 22), 25, min_rows=3)
+    divisions = _make_divisions_ensure_minimum_rows((20, 22), 25, min_val_rows=3, min_test_rows=3)
     assert divisions[0] == 19
     assert divisions[1] == 22
 

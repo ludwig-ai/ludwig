@@ -43,37 +43,37 @@ TMP_SPLIT_COL = "__SPLIT__"
 DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 
 
-def _make_fractions_ensure_minimum_rows(fractions, n_examples, min_rows=MIN_DATASET_SPLIT_ROWS):
+def _make_fractions_ensure_minimum_rows(fractions, n_examples, min_val_rows, min_test_rows):
     """Adjust fractions to ensure no dataset split has too few examples.
 
     Note: if we are splitting by random sampling, this will not guarantee minimum rows.
     """
     result = list(fractions)
     n = [f * n_examples for f in fractions]  # Expected number of examples in each split.
-    if 0 < n[2] < min_rows:
+    if 0 < n[2] < min_test_rows:
         # Test set is nonempty but too small, shift examples from training set.
-        shift = min_rows - n[2]
+        shift = min_test_rows - n[2]
         result[0] -= shift / n_examples
         result[2] += shift / n_examples
-    if 0 < n[1] < min_rows:
+    if 0 < n[1] < min_val_rows:
         # Validation set is nonempty but too small, shift examples from training set.
-        shift = min_rows - n[1]
+        shift = min_val_rows - n[1]
         result[0] -= shift / n_examples
         result[1] += shift / n_examples
     return tuple(result)
 
 
-def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_rows=MIN_DATASET_SPLIT_ROWS):
+def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_val_rows, min_test_rows):
     """Revises divisions to ensure no dataset split has too few examples."""
     result = list(divisions)
     n = [dn - dm for dm, dn in zip((0,) + divisions, divisions + (n_examples,))]  # Number of examples in each split.
-    if 0 < n[2] < min_rows:
+    if 0 < n[2] < min_test_rows and n[0] > 0:
         # Test set is nonempty but too small, take examples from training set.
-        shift = min_rows - n[2]
+        shift = min(min_test_rows - n[2], n[0])
         result = [d - shift for d in result]
-    if 0 < n[1] < min_rows:
+    if 0 < n[1] < min_val_rows and n[0] > 0:
         # Validation set is nonempty but too small, take examples from training set.
-        result[0] -= min_rows - n[1]
+        result[0] -= min(min_val_rows - n[1], result[0])
     return tuple(result)
 
 
@@ -95,6 +95,27 @@ class Splitter(ABC):
         return []
 
 
+def _split_divisions_with_min_rows(
+    n_rows: int, probabilities: List[float], min_val_rows: int, min_test_rows: int
+) -> List[int]:
+    """Splits a dataframe into train, validation, and test sets according to split probabilities, also ensuring
+    that at least min_val_rows or min_test_rows are present in each nonempty split.
+
+    Returns division indices to split on.
+    """
+    probabilities = _make_fractions_ensure_minimum_rows(
+        probabilities, n_rows, min_val_rows=min_val_rows, min_test_rows=min_test_rows
+    )
+    d1 = int(np.ceil(probabilities[0] * n_rows))
+    if probabilities[-1] > 0:
+        n2 = int(probabilities[1] * n_rows)
+        d2 = d1 + n2
+    else:
+        # If the last probability is 0, then use the entire remaining dataset for validation.
+        d2 = n_rows
+    return _make_divisions_ensure_minimum_rows((d1, d2), n_rows, min_val_rows=min_val_rows, min_test_rows=min_test_rows)
+
+
 @split_registry.register("random", default=True)
 class RandomSplitter(Splitter):
     def __init__(self, probabilities: List[float] = DEFAULT_PROBABILITIES, **kwargs):
@@ -103,23 +124,69 @@ class RandomSplitter(Splitter):
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
-        if backend.df_engine.partitioned:
-            # The below approach is very inefficient for partitioned backends, which
-            # can split by partition. This may not be exact in all cases, but is much more efficient.
-            return df.random_split(self.probabilities, random_state=random_seed)
+        probabilities = self.probabilities
+        if not backend.df_engine.partitioned:
+            divisions = _split_divisions_with_min_rows(
+                len(df), probabilities, min_val_rows=MIN_DATASET_SPLIT_ROWS, min_test_rows=MIN_DATASET_SPLIT_ROWS
+            )
+            shuffled_df = df.sample(frac=1, random_state=random_seed)
+            return (
+                shuffled_df.iloc[: divisions[0]],  # Train
+                shuffled_df.iloc[divisions[0] : divisions[1]],  # Validation
+                shuffled_df.iloc[divisions[1] :],  # Test
+            )
 
-        n = len(df)
-        probabilities = _make_fractions_ensure_minimum_rows(self.probabilities, n)
-        d1 = int(probabilities[0] * n)
-        if probabilities[-1] > 0:
-            n2 = int(probabilities[1] * n)
-            d2 = d1 + n2
-        else:
-            # If the last probability is 0, then use the entire remaining dataset for validation.
-            d2 = n
+        # Ensures we have at least MIN_DATASET_SPLIT_ROWS by guaranteeing we take a minimum number of rows from a
+        # predetermined number of partitions.
+        min_split_rows_each_partition = int(np.ceil(MIN_DATASET_SPLIT_ROWS / df.npartitions))
+        # The number of partitions for which we must enforce the min constraint in order to guarantee min_rows.
+        n_guaranteed_partitions = int(np.ceil(MIN_DATASET_SPLIT_ROWS / min_split_rows_each_partition))
+        # Select n_guaranteed_partitions at random. We'll require each of these to return min_split_rows_each_partition,
+        # and randomly split the rest.
+        min_val_rows_by_partition = np.zeros(df.npartitions, dtype=int)
+        if probabilities[1] > 0:
+            chosen_partitions = np.random.choice(np.arange(df.npartitions), size=n_guaranteed_partitions, replace=False)
+            min_val_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
+        min_test_rows_by_partition = np.zeros(df.npartitions, dtype=int)
+        if probabilities[2] > 0:
+            chosen_partitions = np.random.choice(
+                np.where(min_val_rows_by_partition == 0)[0], size=n_guaranteed_partitions, replace=False
+            )
+            min_test_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
 
-        divisions = _make_divisions_ensure_minimum_rows((d1, d2), n)
-        return np.split(df.sample(frac=1, random_state=random_seed), divisions)
+        print("-------------- min_split_rows_each_partition: " + str(min_split_rows_each_partition))
+        print("-------------- df.npartitions: " + str(df.npartitions))
+        print("-------------- quotient: " + str(MIN_DATASET_SPLIT_ROWS / df.npartitions))
+        print("-------------- min_val_rows_by_partition: " + str(min_val_rows_by_partition))
+        print("-------------- min_test_rows_by_partition: " + str(min_test_rows_by_partition))
+
+        def random_split_partition(partition: DataFrame, partition_info=None) -> DataFrame:
+            """Splits a single partition into train, val, test.
+
+            Returns a single DataFrame with the split column populated. Assumes that the split column is already present
+            in the partition and has a default value of 0 (train).
+            """
+            partition_index = partition_info["number"]
+            divisions = _split_divisions_with_min_rows(
+                len(partition),
+                probabilities,
+                min_val_rows=min_val_rows_by_partition[partition_index],
+                min_test_rows=min_test_rows_by_partition[partition_index],
+            )
+            print(f"LLLLLLLLLLLLLL  partition:{partition_index}  divisions: " + str(divisions))
+            shuffled = partition.sample(frac=1, random_state=random_seed)
+            # Split column defaults to train, so only need to update val and test
+            split_col = shuffled.columns.get_loc(TMP_SPLIT_COL)
+            shuffled.iloc[divisions[0] : divisions[1], split_col] = 1
+            shuffled.iloc[divisions[1] :, split_col] = 2
+            return shuffled
+
+        df[TMP_SPLIT_COL] = 0
+        df = backend.df_engine.map_partitions(df, random_split_partition, meta=df)
+        df_train = df[df[TMP_SPLIT_COL] == 0].drop(columns=TMP_SPLIT_COL)
+        df_val = df[df[TMP_SPLIT_COL] == 1].drop(columns=TMP_SPLIT_COL)
+        df_test = df[df[TMP_SPLIT_COL] == 2].drop(columns=TMP_SPLIT_COL)
+        return df_train, df_val, df_test
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
