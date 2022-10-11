@@ -262,6 +262,7 @@ def test_defaults_schema():
     assert DECODER in schema.category.to_dict()
     assert LOSS in schema.category.to_dict()
 
+
 def test_validate_defaults_schema():
     config = {
         "input_features": [
