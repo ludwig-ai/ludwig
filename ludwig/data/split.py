@@ -150,7 +150,7 @@ class RandomSplitter(Splitter):
         if probabilities[1] > 0:
             partition_indices = np.where(min_test_rows_by_partition == 0)[0]
             chosen_partitions = np.random.choice(
-                partition_indices, size=min(n_guaranteed_partitions, partition_indices), replace=False
+                partition_indices, size=min(n_guaranteed_partitions, len(partition_indices)), replace=False
             )
             min_val_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
 
