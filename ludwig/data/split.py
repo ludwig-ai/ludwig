@@ -141,8 +141,7 @@ class RandomSplitter(Splitter):
         min_split_rows_each_partition = int(np.ceil(MIN_DATASET_SPLIT_ROWS / df.npartitions))
         # The number of partitions for which we must enforce the min constraint in order to guarantee min_rows.
         n_guaranteed_partitions = int(np.ceil(MIN_DATASET_SPLIT_ROWS / min_split_rows_each_partition))
-        # Select n_guaranteed_partitions at random. We'll require each of these to return min_split_rows_each_partition,
-        # and randomly split the rest.
+        # Selects n_guaranteed_partitions at random. We'll require each to return min_split_rows_each_partition.
         min_val_rows_by_partition = np.zeros(df.npartitions, dtype=int)
         if probabilities[1] > 0:
             chosen_partitions = np.random.choice(np.arange(df.npartitions), size=n_guaranteed_partitions, replace=False)
