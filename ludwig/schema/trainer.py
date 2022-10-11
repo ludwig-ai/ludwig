@@ -3,7 +3,16 @@ from typing import List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
+from ludwig.constants import (
+    COMBINED,
+    DEFAULT_BATCH_SIZE,
+    LOSS,
+    MAX_POSSIBLE_BATCH_SIZE,
+    MODEL_ECD,
+    MODEL_GBM,
+    TRAINING,
+    TYPE,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -158,6 +167,16 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ],
     )
 
+    max_batch_size: int = schema_utils.PositiveInteger(
+        default=MAX_POSSIBLE_BATCH_SIZE,
+        allow_none=True,
+        description=(
+            "Auto batch size tuning and increasing batch size on plateau will be capped at this value. The default "
+            "value is 2^40."
+        ),
+        parameter_metadata=TRAINER_METADATA["max_batch_size"],
+    )
+
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
@@ -215,7 +234,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
-        description="Number to increase the batch size by on a plateau.",
+        description="The number of times to increase the batch size on a plateau.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau"],
     )
 
@@ -229,12 +248,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=2.0,
         description="Rate at which the batch size increases.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_rate"],
-    )
-
-    increase_batch_size_on_plateau_max: int = schema_utils.PositiveInteger(
-        default=512,
-        description="Maximum size of the batch.",
-        parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_max"],
     )
 
     increase_batch_size_eval_metric: str = schema_utils.String(
