@@ -65,7 +65,7 @@ class ExpectedMetric:
 @pytest.mark.benchmark
 @pytest.mark.parametrize("model_type", [MODEL_GBM, MODEL_ECD])
 @pytest.mark.parametrize(
-    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "protein", "sarcos", "naval"]
+    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "sarcos"]
 )
 def test_performance(model_type, dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
@@ -104,10 +104,10 @@ def test_performance(model_type, dataset, tmpdir):
         if expected_metric.regression_direction == MetricRegressionDirection.LOWER.value:
             assert (
                 test_statistics[expected_metric.output_feature_name][expected_metric.metric_name]
-                > expected_metric.expected_value + tolerance
+                >= expected_metric.expected_value + tolerance
             )
         else:
             assert (
                 test_statistics[expected_metric.output_feature_name][expected_metric.metric_name]
-                < expected_metric.expected_value + tolerance
+                <= expected_metric.expected_value + tolerance
             )

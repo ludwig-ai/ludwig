@@ -1,6 +1,0 @@
-metrics:
-  - output_feature_name: gtcdsc
-    metric_name: r2
-    expected_value: -105731.2734375
-    regression_direction: LOWER
-    percent_change_sensitivity: 0.1

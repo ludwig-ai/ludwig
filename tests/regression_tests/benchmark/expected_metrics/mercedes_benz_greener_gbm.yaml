@@ -3,4 +3,4 @@ metrics:
     metric_name: r2
     expected_value: 0.5123344659805298
     regression_direction: LOWER
-    percent_change_sensitivity: 0.1
+    percent_change_sensitivity: 0.15

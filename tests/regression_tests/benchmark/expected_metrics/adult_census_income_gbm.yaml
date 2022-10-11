@@ -3,4 +3,4 @@ metrics:
     metric_name: accuracy
     expected_value: 0.8283590078353882
     regression_direction: LOWER
-    percent_change_sensitivity: 0.1
+    percent_change_sensitivity: 0.15
