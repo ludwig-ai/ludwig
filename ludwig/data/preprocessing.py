@@ -1860,7 +1860,6 @@ def preprocess_for_prediction(
 
     Args:
         config: Config dictionary corresponding to Ludwig Model
-        config_obj: Config object corresponding to Ludwig Model
         dataset: Dataset to be processed
         training_set_metadata: Train set metadata for the input features
         data_format: Format of the data

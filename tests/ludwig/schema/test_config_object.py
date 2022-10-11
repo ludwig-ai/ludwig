@@ -5,20 +5,35 @@ import pytest
 import yaml
 
 from ludwig.constants import (
+    ACTIVE,
+    CLIP,
+    COLUMN,
     COMBINER,
     DECODER,
+    DEFAULT_VALIDATION_METRIC,
     DEFAULTS,
+    DEPENDENCIES,
     ENCODER,
     HYPEROPT,
     INPUT_FEATURES,
+    INPUT_SIZE,
     LOSS,
+    NAME,
+    NUM_CLASSES,
     OPTIMIZER,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    PROC_COLUMN,
+    REDUCE_DEPENDENCIES,
+    REDUCE_INPUT,
+    TIED,
     TRAINER,
+    TYPE,
 )
 from ludwig.schema.config_object import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+
+config_sections = {INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER, COMBINER, DEFAULTS, HYPEROPT}
 
 
 def test_config_object():
@@ -176,14 +191,16 @@ def test_config_object_to_config_dict():
     config_object = ModelConfig.from_dict(config)
     config_dict = config_object.to_dict()
 
-    assert INPUT_FEATURES in config_dict
-    assert OUTPUT_FEATURES in config_dict
-    assert PREPROCESSING in config_dict
-    assert TRAINER in config_dict
-    assert COMBINER in config_dict
-    assert DEFAULTS in config_dict
+    for section in config_sections:
+        assert section in config_dict
     assert len(config_dict[DEFAULTS]) == 13
-    assert HYPEROPT in config_dict
+    assert set(config_dict[INPUT_FEATURES][0].keys()) == {
+        NAME, ACTIVE, TYPE, COLUMN, PROC_COLUMN, TIED, PREPROCESSING, ENCODER,
+    }
+    assert set(config_dict[OUTPUT_FEATURES][0].keys()) == {
+        NAME, ACTIVE, TYPE, COLUMN, PROC_COLUMN, PREPROCESSING, DECODER, LOSS, REDUCE_INPUT, DEPENDENCIES, INPUT_SIZE,
+        CLIP, REDUCE_DEPENDENCIES, NUM_CLASSES, DEFAULT_VALIDATION_METRIC,
+    }
 
 
 def test_update_config_object():
@@ -221,8 +238,7 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-@pytest.mark.parametrize("load_format", ["dict", "yaml"])
-def test_constructors(load_format):
+def test_constructors_yaml():
     config = {
         "input_features": [
             {"name": "text_feature", "type": "text", "encoder": {"type": "parallel_cnn", "max_sequence_length": 10}},
@@ -235,24 +251,34 @@ def test_constructors(load_format):
         ],
     }
 
-    if load_format == "dict":
-        config_obj = ModelConfig.from_dict(config)
+    with TemporaryDirectory() as tmpdir:
+        file_path = os.path.join(tmpdir, "test.yaml")
+        with open(file_path, "w") as file:
+            yaml.dump(config, file)
 
-    if load_format == "yaml":
-        with TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, "test.yaml")
-            with open(file_path, "w") as file:
-                yaml.dump(config, file)
+        config_obj = ModelConfig.from_yaml(file_path)
 
-            config_obj = ModelConfig.from_yaml(file_path)
+    for section in config_sections:
+        assert hasattr(config_obj, section)
 
-    assert hasattr(config_obj, INPUT_FEATURES)
-    assert hasattr(config_obj, OUTPUT_FEATURES)
-    assert hasattr(config_obj, PREPROCESSING)
-    assert hasattr(config_obj, TRAINER)
-    assert hasattr(config_obj, COMBINER)
-    assert hasattr(config_obj, DEFAULTS)
-    assert hasattr(config_obj, HYPEROPT)
+
+def test_constructors_dict():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text", "encoder": {"type": "parallel_cnn", "max_sequence_length": 10}},
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_obj = ModelConfig.from_dict(config)
+
+    for section in config_sections:
+        assert hasattr(config_obj, section)
 
 
 def test_feature_enabling_disabling():
