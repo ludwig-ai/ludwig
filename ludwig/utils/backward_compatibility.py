@@ -601,12 +601,20 @@ def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
 @register_config_transformation("0.6", ["trainer"])
 def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
     if "increase_batch_size_on_plateau_max" in trainer:
-        trainer["max_batch_size"] = trainer.pop("increase_batch_size_on_plateau_max")
         warnings.warn(
             'Config param "increase_batch_size_on_plateau_max" renamed to "max_batch_size" and will be '
             "removed in v0.8",
             DeprecationWarning,
         )
+        increase_batch_size_on_plateau_max_val = trainer.pop("increase_batch_size_on_plateau_max")
+        if "max_batch_size" in trainer:
+            warnings.warn('"max_batch_size" config param already set. Discarding "increase_batch_size_on_plateau_max".')
+        else:
+            warnings.warn(
+                f'Setting "max_batch_size" config param to "increase_batch_size_on_plateau_max" value '
+                f'({increase_batch_size_on_plateau_max_val}) and discarding "increase_batch_size_on_plateau_max"'
+            )
+            trainer["max_batch_size"] = increase_batch_size_on_plateau_max_val
     return trainer
 
 
