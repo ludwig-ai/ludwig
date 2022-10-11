@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import time
+from typing import Any, Dict, Union
 
 import psutil
 import torch
@@ -83,3 +84,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         gpus = self._horovod.allreduce(gpus, op=self._horovod.Sum).item()
 
         return Resources(cpus=cpus, gpus=gpus)
+
+    def get_max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+        return None

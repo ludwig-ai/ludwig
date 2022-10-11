@@ -23,12 +23,12 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
-from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, update_or_set_max_concurrent_trials
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -153,7 +153,8 @@ def run_hyperopt_executor(
 
     backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
-    update_or_set_max_concurrent_trials(hyperopt_config, backend)
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":

@@ -1,8 +1,7 @@
 import pytest
 
-from ludwig.backend import initialize_backend
 from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TYPE
-from ludwig.hyperopt.utils import get_total_trial_count, substitute_parameters, update_or_set_max_concurrent_trials
+from ludwig.hyperopt.utils import substitute_parameters
 
 BASE_CONFIG = {
     INPUT_FEATURES: [{NAME: "title", TYPE: "text"}],
@@ -76,96 +75,3 @@ BASE_CONFIG = {
 def test_substitute_parameters(parameters, expected):
     actual_config = substitute_parameters(BASE_CONFIG, parameters)
     assert actual_config == expected
-
-
-@pytest.mark.parametrize(
-    "parameters, num_samples, expected_total_trials",
-    [
-        ({"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}}, 4, 4),
-        (
-            {
-                "combiner.num_fc_layers": {
-                    "space": "grid_search",
-                    "values": [0.001, 0.01, 0.1],
-                }
-            },
-            2,
-            6,
-        ),
-        (
-            {
-                "trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]},
-                "combiner.num_fc_layers": {
-                    "space": "grid_search",
-                    "values": [0.001, 0.01, 0.1],
-                },
-            },
-            4,
-            12,
-        ),
-    ],
-    ids=["non_grid_search_params", "grid_search_params", "combined_params"],
-)
-def test_get_total_trial_count(parameters, num_samples, expected_total_trials):
-    computed_total_trials = get_total_trial_count(parameters, num_samples)
-    assert computed_total_trials == expected_total_trials
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize(
-    "parameters, expected",
-    [
-        (  # If max_concurrent_trials is none, it should not be set in the updated config
-            {
-                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": None},
-            },
-            {
-                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": None},
-            },
-        ),
-        (  # If max_concurrent_trials is auto, set it to total_trials - 2 if num_samples == num_cpus
-            {
-                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": "auto"},
-            },
-            {
-                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 2},
-            },
-        ),
-        (  # Even though num_samples is set to 4, this will actually result in 9 trials. This test checks if
-            # we still correctly set max_concurrent_trials to 2
-            {
-                "parameters": {
-                    "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
-                    "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2, 3]},
-                },
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": "auto"},
-            },
-            {
-                "parameters": {
-                    "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
-                    "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2, 3]},
-                },
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 2},
-            },
-        ),
-        (  # Ensure user config value (1) is respected if it is less than total possible trials (2)
-            {
-                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 1},
-            },
-            {
-                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 1},
-            },
-        ),
-    ],
-    ids=["none", "auto", "auto_with_large_num_trials", "1"],
-)
-def test_set_max_concurrent_trials(parameters, expected, ray_cluster_4cpu):
-    backend = initialize_backend("ray")
-    update_or_set_max_concurrent_trials(parameters, backend)
-    assert parameters == expected

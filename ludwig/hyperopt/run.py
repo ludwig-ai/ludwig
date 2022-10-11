@@ -12,15 +12,21 @@ from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
+    AUTO,
     COMBINED,
     EXECUTOR,
+    GOAL,
     HYPEROPT,
     LOSS,
+    MAX_CONCURRENT_TRIALS,
+    METRIC,
     NAME,
     NUM_SAMPLES,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
+    SEARCH_ALG,
+    SPLIT,
     TEST,
     TRAINING,
     TYPE,
@@ -35,7 +41,6 @@ from ludwig.hyperopt.utils import (
     save_hyperopt_stats,
     should_tune_preprocessing,
     update_hyperopt_params_with_defaults,
-    update_or_set_max_concurrent_trials,
 )
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
@@ -222,21 +227,22 @@ def hyperopt(
     # Check if all features are grid type parameters and log UserWarning if needed
     log_warning_if_all_grid_type_parameters(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES))
 
-    # Set max_concurrent_trials if trials will stall with current cluster resources
-    update_or_set_max_concurrent_trials(hyperopt_config, backend)
+    # Infer max concurrent trials
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config)
 
     # Print hyperopt config
     logger.info("Hyperopt Config")
     logger.info(pformat(hyperopt_config, indent=4))
     logger.info("\n")
 
-    search_alg = hyperopt_config["search_alg"]
+    search_alg = hyperopt_config[SEARCH_ALG]
     executor = hyperopt_config[EXECUTOR]
     parameters = hyperopt_config[PARAMETERS]
-    split = hyperopt_config["split"]
+    split = hyperopt_config[SPLIT]
     output_feature = hyperopt_config["output_feature"]
-    metric = hyperopt_config["metric"]
-    goal = hyperopt_config["goal"]
+    metric = hyperopt_config[METRIC]
+    goal = hyperopt_config[GOAL]
 
     ######################
     # check validity of output_feature / metric/ split combination

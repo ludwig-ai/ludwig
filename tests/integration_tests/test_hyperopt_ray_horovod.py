@@ -22,11 +22,11 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EXECUTOR, TRAINER
+from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
-from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults, update_or_set_max_concurrent_trials
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
@@ -184,7 +184,8 @@ def run_hyperopt_executor(
 
     backend = RayBackend(**RAY_BACKEND_KWARGS)
     update_hyperopt_params_with_defaults(hyperopt_config)
-    update_or_set_max_concurrent_trials(hyperopt_config, backend)
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
