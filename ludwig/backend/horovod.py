@@ -21,7 +21,7 @@ import psutil
 import torch
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
-from ludwig.constants import MODEL_GBM, MODEL_TYPE
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
@@ -86,4 +86,21 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         return Resources(cpus=cpus, gpus=gpus)
 
     def get_max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
-        return None
+        cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
+        num_cpus_available = self.get_available_resources().cpus
+
+        # no actors will compete for ray datasets tasks dataset tasks are cpu bound
+        if cpus_per_trial == 0:
+            return None
+
+        if num_cpus_available < 2:
+            raise RuntimeError("At least 2 CPUs are required for hyperopt when using a HorovodBackend.")
+
+        # Ray requires at least 2 free CPUs to ensure trials don't stall
+        max_possible_trials = (num_cpus_available - 2) // cpus_per_trial
+
+        # Users may be using an autoscaling cluster, so return None
+        if max_possible_trials < 1:
+            return None
+
+        return max_possible_trials
