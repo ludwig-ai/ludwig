@@ -108,7 +108,7 @@ class Backend(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
         raise NotImplementedError()
 
 
@@ -202,7 +202,7 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     def get_available_resources(self) -> Resources:
         return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())
 
-    def get_max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
         # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
         # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
         return None

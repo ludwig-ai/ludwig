@@ -154,7 +154,7 @@ def run_hyperopt_executor(
     backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
     if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
-        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config)
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":

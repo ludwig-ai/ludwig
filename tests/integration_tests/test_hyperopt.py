@@ -220,7 +220,7 @@ def test_hyperopt_search_alg(
 
     backend = initialize_backend("local")
     if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
-        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config)
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
@@ -287,7 +287,7 @@ def test_hyperopt_scheduler(
     backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
     if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
-        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config)
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]

@@ -187,5 +187,5 @@ def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
 def test_set_max_concurrent_trials(hyperopt_config_old, hyperopt_config_expected, ray_cluster_4cpu):
     backend = initialize_backend(RAY)
     if hyperopt_config_old[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
-        hyperopt_config_old[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.get_max_concurrent_trials(hyperopt_config_old)
+        hyperopt_config_old[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config_old)
     assert hyperopt_config_old == hyperopt_config_expected
