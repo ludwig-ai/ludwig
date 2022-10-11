@@ -128,7 +128,7 @@ FULL = "full"
 TRAIN_SPLIT = 0
 VALIDATION_SPLIT = 1
 TEST_SPLIT = 2
-MIN_VALIDATION_SET_ROWS = 3  # The minimum validation set size to ensure metric computation doesn't fail.
+MIN_DATASET_SPLIT_ROWS = 3  # The minimum number of rows in a split. Splits smaller than this size are treated as empty.
 
 META = "meta"
 

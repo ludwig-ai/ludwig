@@ -45,7 +45,7 @@ from ludwig.constants import (
     HYPEROPT,
     HYPEROPT_WARNING,
     LEARNING_RATE,
-    MIN_VALIDATION_SET_ROWS,
+    MIN_DATASET_SPLIT_ROWS,
     MODEL_TYPE,
     PREPROCESSING,
     TEST,
@@ -577,11 +577,11 @@ class LudwigModel:
                                     "Recommend providing a validation set when using calibration."
                                 )
                                 calibrator.train_calibration(training_set, TRAINING)
-                            elif len(validation_set) < MIN_VALIDATION_SET_ROWS:
+                            elif len(validation_set) < MIN_DATASET_SPLIT_ROWS:
                                 logger.warning(
                                     f"Validation set size ({len(validation_set)} rows) is too small for calibration."
                                     "Will use training set for calibration."
-                                    f"Validation set much have at least {MIN_VALIDATION_SET_ROWS} rows."
+                                    f"Validation set much have at least {MIN_DATASET_SPLIT_ROWS} rows."
                                 )
                                 calibrator.train_calibration(training_set, TRAINING)
                             else:
