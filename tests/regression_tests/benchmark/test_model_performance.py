@@ -1,16 +1,13 @@
 import os
-from dataclasses import dataclass
-from enum import Enum
-from typing import List, Union
-
 import pytest
-from dataclasses_json import dataclass_json
 
+from typing import List
+from expected_metric import ExpectedMetric, MetricRegressionDirection
 from ludwig.benchmarking.benchmark import benchmark
 from ludwig.constants import MODEL_ECD, MODEL_GBM
 from ludwig.utils.data_utils import load_json, load_yaml
 
-BENCHMARKING_CONFIG = """
+BENCHMARKING_CONFIG_TEMPLATE = """
 experiment_name: {experiment_name}
 hyperopt: false
 export:
@@ -26,42 +23,6 @@ experiments:
 """
 
 
-class MetricRegressionDirection(Enum):
-    """Which direction is considered a regression."""
-
-    LOWER = -1
-    HIGHER = 1
-
-
-@dataclass_json
-@dataclass
-class ExpectedMetric:
-    # Output feature name.
-    output_feature_name: str
-
-    # Metric name.
-    metric_name: str
-
-    # Expected metric value.
-    expected_value: Union[int, float]
-
-    # Which direction is considered a regression.
-    regression_direction: int
-
-    # The percentage change that would trigger a notification/failure.
-    percent_change_sensitivity: float
-
-    def __post_init__(self):
-        if self.regression_direction == "LOWER":
-            self.regression_direction = -1
-        elif self.regression_direction == "HIGHER":
-            self.regression_direction = 1
-        else:
-            raise ValueError(
-                "Regression direction in the expected performance YAML file should be one" "of 'LOWER', 'HIGHER'."
-            )
-
-
 @pytest.mark.benchmark
 @pytest.mark.parametrize("model_type", [MODEL_GBM, MODEL_ECD])
 @pytest.mark.parametrize("dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "sarcos"])
@@ -70,7 +31,7 @@ def test_performance(model_type, dataset, tmpdir):
     experiment_name = "regression_test"
     config_path = os.path.join(benchmark_directory, "configs", f"{dataset}_{model_type}.yaml")
 
-    benchmarking_config = BENCHMARKING_CONFIG.format(
+    benchmarking_config = BENCHMARKING_CONFIG_TEMPLATE.format(
         experiment_name=experiment_name,
         export_base_path=tmpdir,
         dataset=dataset,
