@@ -44,11 +44,11 @@ _ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
 if _ray_200:
     from ray.air import Checkpoint
     from ray.tune.search import SEARCH_ALG_IMPORT
-    from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
+
+    from ludwig.hyperopt.syncer import RemoteSyncer
 else:
     from ray.ml import Checkpoint
     from ray.tune.suggest import SEARCH_ALG_IMPORT
-    from ray.tune.syncer import get_cloud_sync_client
 
 
 logger = logging.getLogger(__name__)
@@ -778,12 +778,14 @@ class RayTuneExecutor:
             )
 
         if has_remote_protocol(output_directory):
-            run_experiment_trial = tune.durable(run_experiment_trial)
-            self.sync_config = tune.SyncConfig(sync_to_driver=False, upload_dir=output_directory)
             if _ray_200:
-                self.sync_client = get_node_to_storage_syncer(SyncConfig(upload_dir=output_directory))
+                self.sync_client = RemoteSyncer()
+                self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
             else:
-                self.sync_client = get_cloud_sync_client(output_directory)
+                raise ValueError(
+                    "Syncing to remote filesystems with hyperopt is not supported with ray<2.0, "
+                    "please upgrade to ray>=2.0"
+                )
             output_directory = None
         elif self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer
