@@ -38,19 +38,6 @@ def test_abstract_explainer_instantiation(tmpdir):
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
 
-def _train_model(tmpdir, input_features, output_features, model_type):
-    csv_filename = os.path.join(tmpdir, "training.csv")
-    generate_data(input_features, output_features, csv_filename, num_examples=100)
-    df = pd.read_csv(csv_filename)
-
-    config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
-
-    model = LudwigModel(config)
-    model.train(df)
-
-    return df, model
-
-
 @pytest.mark.parametrize(
     "explainer_class, model_type",
     [
@@ -58,12 +45,31 @@ def _train_model(tmpdir, input_features, output_features, model_type):
         (GBMExplainer, MODEL_GBM),
     ],
 )
-def test_explainer_api(explainer_class, model_type, tmpdir):
+@pytest.mark.parametrize(
+    "additional_config",
+    [
+        pytest.param({}, id="default"),
+        pytest.param({"preprocessing": {"split": {"type": "fixed"}}}, id="fixed_split"),
+    ],
+)
+def test_explainer_api(explainer_class, model_type, additional_config, tmpdir):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     vocab_size = 3
     output_features = [category_feature(decoder={"vocab_size": vocab_size})]
 
-    df, model = _train_model(tmpdir, input_features, output_features, model_type)
+    # Generate data
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    generate_data(input_features, output_features, csv_filename, num_examples=100)
+    df = pd.read_csv(csv_filename)
+    if "split" in additional_config.get("preprocessing", {}):
+        df["split"] = np.random.randint(0, 3, df.shape[0])
+
+    # Train model
+    config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
+    config.update(additional_config)
+
+    model = LudwigModel(config)
+    model.train(df)
 
     # Explain model
     explainer = explainer_class(model, inputs_df=df, sample_df=df, target=output_features[0]["name"])

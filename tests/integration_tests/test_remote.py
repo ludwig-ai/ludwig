@@ -1,7 +1,4 @@
-import contextlib
 import os
-import tempfile
-import uuid
 
 import pytest
 import yaml
@@ -11,22 +8,13 @@ from ludwig.backend import initialize_backend
 from ludwig.constants import TRAINER
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
-from tests.integration_tests.utils import category_feature, generate_data, private_param, sequence_feature
-
-
-@contextlib.contextmanager
-def remote_tmpdir(fs_protocol, bucket):
-    if bucket is None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield f"{fs_protocol}://{tmpdir}"
-        return
-
-    prefix = f"tmp_{uuid.uuid4().hex}"
-    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
-    try:
-        yield tmpdir
-    finally:
-        fs_utils.delete(tmpdir, recursive=True)
+from tests.integration_tests.utils import (
+    category_feature,
+    generate_data,
+    private_param,
+    remote_tmpdir,
+    sequence_feature,
+)
 
 
 @pytest.mark.parametrize(
