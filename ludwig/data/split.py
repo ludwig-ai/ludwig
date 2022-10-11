@@ -22,7 +22,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 from ludwig.backend.base import Backend
-from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
+from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, MIN_DATASET_SPLIT_ROWS, SPLIT, TYPE
 from ludwig.schema.split import (
     DateTimeSplitConfig,
     FixedSplitConfig,
@@ -41,6 +41,40 @@ logger = logging.getLogger(__name__)
 
 TMP_SPLIT_COL = "__SPLIT__"
 DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
+
+
+def _make_fractions_ensure_minimum_rows(fractions, n_examples, min_rows=MIN_DATASET_SPLIT_ROWS):
+    """Adjust fractions to ensure no dataset split has too few examples.
+
+    Note: if we are splitting by random sampling, this will not guarantee minimum rows.
+    """
+    result = list(fractions)
+    n = [f * n_examples for f in fractions]  # Expected number of examples in each split.
+    if 0 < n[2] < min_rows:
+        # Test set is nonempty but too small, shift examples from training set.
+        shift = min_rows - n[2]
+        result[0] -= shift / n_examples
+        result[2] += shift / n_examples
+    if 0 < n[1] < min_rows:
+        # Validation set is nonempty but too small, shift examples from training set.
+        shift = min_rows - n[1]
+        result[0] -= shift / n_examples
+        result[1] += shift / n_examples
+    return tuple(result)
+
+
+def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_rows=MIN_DATASET_SPLIT_ROWS):
+    """Revises divisions to ensure no dataset split has too few examples."""
+    result = list(divisions)
+    n = [dn - dm for dm, dn in zip((0,) + divisions, divisions + (n_examples,))]  # Number of examples in each split.
+    if 0 < n[2] < min_rows:
+        # Test set is nonempty but too small, take examples from training set.
+        shift = min_rows - n[2]
+        result = [d - shift for d in result]
+    if 0 < n[1] < min_rows:
+        # Validation set is nonempty but too small, take examples from training set.
+        result[0] -= min_rows - n[1]
+    return tuple(result)
 
 
 class Splitter(ABC):
@@ -76,11 +110,12 @@ class RandomSplitter(Splitter):
 
         n = len(df)
         d1 = int(self.probabilities[0] * n)
-        if not self.probabilities[-1]:
+        if self.probabilities[-1] > 0:
+            n2 = int(self.probabilities[1] * n)
+            d2 = d1 + n2
+        else:
             # If the last probability is 0, then use the entire remaining dataset for validation.
             d2 = n
-        else:
-            d2 = d1 + int(self.probabilities[1] * n)
 
         # Note that sometimes this results in the test set with 1 example even if the last probability is 0.
         return np.split(df.sample(frac=1, random_state=random_seed), [d1, d2])
