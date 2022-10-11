@@ -64,9 +64,7 @@ class ExpectedMetric:
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize("model_type", [MODEL_GBM, MODEL_ECD])
-@pytest.mark.parametrize(
-    "dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "sarcos"]
-)
+@pytest.mark.parametrize("dataset", ["ames_housing", "mercedes_benz_greener", "adult_census_income", "sarcos"])
 def test_performance(model_type, dataset, tmpdir):
     benchmark_directory = "/".join(__file__.split("/")[:-1])
     experiment_name = "regression_test"
