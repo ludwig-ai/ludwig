@@ -142,16 +142,17 @@ class RandomSplitter(Splitter):
         # The number of partitions for which we must enforce the min constraint in order to guarantee min_rows.
         n_guaranteed_partitions = int(np.ceil(MIN_DATASET_SPLIT_ROWS / min_split_rows_each_partition))
         # Selects n_guaranteed_partitions at random. We'll require each to return min_split_rows_each_partition.
-        min_val_rows_by_partition = np.zeros(df.npartitions, dtype=int)
-        if probabilities[1] > 0:
-            chosen_partitions = np.random.choice(np.arange(df.npartitions), size=n_guaranteed_partitions, replace=False)
-            min_val_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
         min_test_rows_by_partition = np.zeros(df.npartitions, dtype=int)
         if probabilities[2] > 0:
-            chosen_partitions = np.random.choice(
-                np.where(min_val_rows_by_partition == 0)[0], size=n_guaranteed_partitions, replace=False
-            )
+            chosen_partitions = np.random.choice(np.arange(df.npartitions), size=n_guaranteed_partitions, replace=False)
             min_test_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
+        min_val_rows_by_partition = np.zeros(df.npartitions, dtype=int)
+        if probabilities[1] > 0:
+            partition_indices = np.where(min_test_rows_by_partition == 0)[0]
+            chosen_partitions = np.random.choice(
+                partition_indices, size=min(n_guaranteed_partitions, partition_indices), replace=False
+            )
+            min_val_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
 
         def random_split_partition(partition: DataFrame, partition_info=None) -> DataFrame:
             """Splits a single partition into train, val, test.
