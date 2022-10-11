@@ -155,6 +155,46 @@ async def download_one(
     return dataset_name, local_dir
 
 
+def propagate_global_parameters(benchmarking_config: Dict[str, Any]):
+    """Propagate the global parameters of the benchmarking config to local experiments.
+
+    :param benchmarking_config: benchmarking config dictionary.
+    """
+    if "experiment_name" not in benchmarking_config and not all(
+        "experiment_name" in experiment for experiment in benchmarking_config["experiments"]
+    ):
+        raise ValueError("You must either specify a global experiment name or an experiment name for each experiment.")
+    if "export" not in benchmarking_config:
+        raise ValueError(
+            """You must specify export parameters. Example:
+            export:
+              export_artifacts: true
+              export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
+        """
+        )
+    if "experiments" not in benchmarking_config:
+        raise ValueError("You must specify a list of experiments.")
+    if "hyperopt" not in benchmarking_config:
+        benchmarking_config["hyperopt"] = False
+    if "process_config_file_path" not in benchmarking_config:
+        benchmarking_config["process_config_file_path"] = None
+    if "profiler" not in benchmarking_config:
+        benchmarking_config["profiler"] = {"enable": False, "use_torch_profiler": False, "logging_interval": 0.1}
+
+    for i, experiment in enumerate(benchmarking_config["experiments"]):
+        if "experiment_name" not in experiment:
+            experiment["experiment_name"] = benchmarking_config["experiment_name"]
+        if "export" not in experiment:
+            experiment["export"] = benchmarking_config["export"]
+        if "hyperopt" not in experiment:
+            experiment["hyperopt"] = benchmarking_config["hyperopt"]
+        if "process_config_file_path" not in experiment:
+            experiment["process_config_file_path"] = benchmarking_config["process_config_file_path"]
+        if "profiler" not in experiment:
+            experiment["profiler"] = benchmarking_config["profiler"]
+    return benchmarking_config
+
+
 def create_default_config(experiment: Dict[str, Any]) -> str:
     """Create a Ludwig config that only contains input and output features.
 
