@@ -195,11 +195,31 @@ def test_config_object_to_config_dict():
         assert section in config_dict
     assert len(config_dict[DEFAULTS]) == 13
     assert set(config_dict[INPUT_FEATURES][0].keys()) == {
-        NAME, ACTIVE, TYPE, COLUMN, PROC_COLUMN, TIED, PREPROCESSING, ENCODER,
+        NAME,
+        ACTIVE,
+        TYPE,
+        COLUMN,
+        PROC_COLUMN,
+        TIED,
+        PREPROCESSING,
+        ENCODER,
     }
     assert set(config_dict[OUTPUT_FEATURES][0].keys()) == {
-        NAME, ACTIVE, TYPE, COLUMN, PROC_COLUMN, PREPROCESSING, DECODER, LOSS, REDUCE_INPUT, DEPENDENCIES, INPUT_SIZE,
-        CLIP, REDUCE_DEPENDENCIES, NUM_CLASSES, DEFAULT_VALIDATION_METRIC,
+        NAME,
+        ACTIVE,
+        TYPE,
+        COLUMN,
+        PROC_COLUMN,
+        PREPROCESSING,
+        DECODER,
+        LOSS,
+        REDUCE_INPUT,
+        DEPENDENCIES,
+        INPUT_SIZE,
+        CLIP,
+        REDUCE_DEPENDENCIES,
+        NUM_CLASSES,
+        DEFAULT_VALIDATION_METRIC,
     }
 
 

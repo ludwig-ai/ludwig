@@ -80,10 +80,8 @@ class BaseFeatureContainer:
         return list(convert_submodules(self.__dict__).values())
 
     def filter_features(self):
-        """
-        This function is intended to filter out the parameters on input/output features that we want to show in the
-        config object repr.
-        """
+        """This function is intended to filter out the parameters on input/output features that we want to show in
+        the config object repr."""
         return {
             key: {k: v for k, v in value.items() if k in {NAME, TYPE, ACTIVE}} for key, value in self.to_dict().items()
         }
@@ -107,8 +105,9 @@ class OutputFeaturesContainer(BaseFeatureContainer):
 
 @dataclass(repr=False)
 class ModelConfig(BaseMarshmallowConfig):
-    """Configures the end-to-end LudwigModel machine learning pipeline. Refer to
-    https://ludwig.ai/latest/configuration/ for full documentation.
+    """Configures the end-to-end LudwigModel machine learning pipeline.
+
+    Refer to https://ludwig.ai/latest/configuration/ for full documentation.
     """
 
     def __init__(self, config_dict: dict):
@@ -409,9 +408,8 @@ class ModelConfig(BaseMarshmallowConfig):
                 setattr(config_obj_lvl, key, val)
 
     def _set_gbm_attributes(self, config_dict: dict) -> None:
-        """
-        This function sets the appropriate attributes on the config object when the model type is 'gbm'. These are
-        things such as the correct model trainer config class and passthrough encoders for the features.
+        """This function sets the appropriate attributes on the config object when the model type is 'gbm'. These
+        are things such as the correct model trainer config class and passthrough encoders for the features.
 
         Args:
             config_dict: The user defined config dictionary.
@@ -431,9 +429,7 @@ class ModelConfig(BaseMarshmallowConfig):
             elif feature_cls.type in [CATEGORY, NUMBER]:
                 feature_cls.encoder = PassthroughEncoderConfig()
             else:
-                raise ValidationError(
-                    "GBM Models currently only support Binary, Category, and Number " "features"
-                )
+                raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
 
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
