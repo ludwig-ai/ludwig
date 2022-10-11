@@ -27,7 +27,7 @@ def get_combiner_jsonschema():
                 "type": "string",
                 "enum": combiner_types,
                 "default": "concat",
-                "title": "Combiner Type",
+                "title": "type",
                 "description": "Select the combiner type.",
                 "parameter_metadata": parameter_metadata
             },
