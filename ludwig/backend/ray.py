@@ -1026,7 +1026,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return None
 
         if num_cpus_available < 2:
-            raise RuntimeError("At least 2 CPUs are required for hyperopt when using a HorovodBackend.")
+            raise RuntimeError("At least 2 CPUs are required for hyperopt when using a RayBackend.")
 
         # Ray requires at least 2 free CPUs to ensure trials don't stall
         max_possible_trials = (num_cpus_available - 2) // cpus_per_trial
