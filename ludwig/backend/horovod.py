@@ -21,7 +21,6 @@ import psutil
 import torch
 
 from ludwig.backend.base import Backend, LocalPreprocessingMixin
-from ludwig.backend.utils import get_max_concurrent_trials
 from ludwig.constants import MODEL_GBM, MODEL_TYPE
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
@@ -87,4 +86,5 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         return Resources(cpus=cpus, gpus=gpus)
 
     def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
-        return get_max_concurrent_trials(self, hyperopt_config)
+        # Return None since there is no Ray component
+        return None
