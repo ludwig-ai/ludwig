@@ -103,13 +103,13 @@ class RandomSplitter(Splitter):
     def split(
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
-        probabilities = _make_fractions_ensure_minimum_rows(self.probabilities, len(df))
         if backend.df_engine.partitioned:
             # The below approach is very inefficient for partitioned backends, which
             # can split by partition. This may not be exact in all cases, but is much more efficient.
-            return df.random_split(probabilities, random_state=random_seed)
+            return df.random_split(self.probabilities, random_state=random_seed)
 
         n = len(df)
+        probabilities = _make_fractions_ensure_minimum_rows(self.probabilities, n)
         d1 = int(probabilities[0] * n)
         if probabilities[-1] > 0:
             n2 = int(probabilities[1] * n)
@@ -118,7 +118,7 @@ class RandomSplitter(Splitter):
             # If the last probability is 0, then use the entire remaining dataset for validation.
             d2 = n
 
-        divisions = _make_divisions_ensure_minimum_rows((d1, d2), len(df))
+        divisions = _make_divisions_ensure_minimum_rows((d1, d2), n)
         return np.split(df.sample(frac=1, random_state=random_seed), divisions)
 
     def has_split(self, split_index: int) -> bool:
