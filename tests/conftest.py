@@ -15,6 +15,7 @@
 import contextlib
 import os
 import tempfile
+import time
 import uuid
 from unittest import mock
 
@@ -23,6 +24,19 @@ import pytest
 from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
+
+TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
+
+
+def pytest_sessionstart(session):
+    session.start_time = time.time()
+
+
+@pytest.fixture(autouse=True)
+def check_session_time(request):
+    elapsed = time.time() - request.session.start_time
+    if elapsed > TEST_SUITE_TIMEOUT_S:
+        request.session.shouldstop = "time limit reached: %0.2f seconds" % elapsed
 
 
 @pytest.fixture(autouse=True)
@@ -56,7 +70,8 @@ def yaml_filename():
 
 
 @pytest.fixture(scope="module")
-def hyperopt_results_single_parameter():
+def hyperopt_results_single_parameter(ray_cluster_4cpu):
+    """This fixture is used by hyperopt visualization tests in test_visualization_api.py."""
     config, rel_path = _get_sample_config()
     config[HYPEROPT] = {
         "parameters": {
@@ -83,7 +98,8 @@ def hyperopt_results_single_parameter():
 
 
 @pytest.fixture(scope="module")
-def hyperopt_results_multiple_parameters():
+def hyperopt_results_multiple_parameters(ray_cluster_4cpu):
+    """This fixture is used by hyperopt visualization tests in test_visualization_api.py."""
     config, rel_path = _get_sample_config()
     output_feature_name = config[OUTPUT_FEATURES][0][NAME]
     config[HYPEROPT] = {
