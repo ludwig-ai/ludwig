@@ -153,12 +153,6 @@ class RandomSplitter(Splitter):
             )
             min_test_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
 
-        print("-------------- min_split_rows_each_partition: " + str(min_split_rows_each_partition))
-        print("-------------- df.npartitions: " + str(df.npartitions))
-        print("-------------- quotient: " + str(MIN_DATASET_SPLIT_ROWS / df.npartitions))
-        print("-------------- min_val_rows_by_partition: " + str(min_val_rows_by_partition))
-        print("-------------- min_test_rows_by_partition: " + str(min_test_rows_by_partition))
-
         def random_split_partition(partition: DataFrame, partition_info=None) -> DataFrame:
             """Splits a single partition into train, val, test.
 
@@ -172,7 +166,6 @@ class RandomSplitter(Splitter):
                 min_val_rows=min_val_rows_by_partition[partition_index],
                 min_test_rows=min_test_rows_by_partition[partition_index],
             )
-            print(f"LLLLLLLLLLLLLL  partition:{partition_index}  divisions: " + str(divisions))
             shuffled = partition.sample(frac=1, random_state=random_seed)
             # Split column defaults to train, so only need to update val and test
             split_col = shuffled.columns.get_loc(TMP_SPLIT_COL)
