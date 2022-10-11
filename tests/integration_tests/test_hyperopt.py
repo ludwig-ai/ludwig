@@ -15,7 +15,8 @@
 import contextlib
 import json
 import os.path
-from typing import Any, Dict, Optional, Tuple, Union
+import uuid
+from typing import Any, Dict, Optional, Tuple
 
 import pytest
 import torch
@@ -40,22 +41,20 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.schema.config_object import ModelConfig
+from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import load_json
-from tests.integration_tests.utils import category_feature, generate_data, text_feature
+from tests.integration_tests.utils import category_feature, generate_data, private_param, remote_tmpdir, text_feature
 
-try:
-    import ray
+ray = pytest.importorskip("ray")
 
-    from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.execution import get_build_hyperopt_executor  # noqa
 
-    _ray113 = version.parse(ray.__version__) > version.parse("1.13")
+_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
-except ImportError:
-    ray = None
-    _ray113 = None
+pytestmark = pytest.mark.distributed
 
 
-RANDOM_SEARCH_SIZE = 4
+RANDOM_SEARCH_SIZE = 2
 
 HYPEROPT_CONFIG = {
     "parameters": {
@@ -165,18 +164,6 @@ def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]
     return config, rel_path, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
 
 
-def _get_trial_parameter_value(parameter_key: str, trial_row: str) -> Union[str, None]:
-    """Returns the parameter value from the Ray trial row, which has slightly different column names depending on
-    the version of Ray. Returns None if the parameter key is not found.
-
-    TODO(#2176): There are different key name delimiters depending on Ray version. The delimiter in future versions of
-    Ray (> 1.13) will be '/' instead of '.' Simplify this as Ray is upgraded.
-    """
-    if _ray113:
-        return trial_row[f"config/{parameter_key}"]
-    return trial_row[f"config.{parameter_key}"]
-
-
 @contextlib.contextmanager
 def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
     res = ray.init(
@@ -198,7 +185,6 @@ def ray_cluster():
         yield
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS_FOR_TESTING)
 def test_hyperopt_search_alg(
     search_alg, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
@@ -249,7 +235,6 @@ def test_hyperopt_search_alg(
         assert isinstance(path, str)
 
 
-@pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
     test_hyperopt_search_alg(
         "variant_generator",
@@ -261,7 +246,6 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
     )
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("scheduler", SCHEDULERS_FOR_TESTING)
 def test_hyperopt_scheduler(
     scheduler, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
@@ -316,7 +300,6 @@ def test_hyperopt_scheduler(
         assert isinstance(raytune_results, HyperoptResults)
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("search_space", ["random", "grid"])
 def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     input_features = [
@@ -370,14 +353,19 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {TYPE: "ray", "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE},
+        "executor": {
+            TYPE: "ray",
+            "num_samples": 1 if search_space == "grid" else RANDOM_SEARCH_SIZE,
+            "max_concurrent_trials": 1,
+        },
         "search_alg": {TYPE: "variant_generator"},
     }
 
     # add hyperopt parameter space to the config
     config[HYPEROPT] = hyperopt_configs
 
-    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
+    experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
     if search_space == "random":
         assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
     else:
@@ -391,10 +379,21 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
-    assert os.path.isfile(os.path.join(tmpdir, "test_hyperopt", HYPEROPT_STATISTICS_FILE_NAME))
+    assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
 
 
-@pytest.mark.distributed
+@pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
+def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
+    with remote_tmpdir(fs_protocol, bucket) as tmpdir:
+        with pytest.raises(ValueError) if not _ray200 else contextlib.nullcontext():
+            test_hyperopt_run_hyperopt(
+                csv_filename,
+                "random",
+                tmpdir,
+                ray_cluster,
+            )
+
+
 def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
@@ -446,7 +445,6 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
             assert input_feature["encoder"]["embedding_size"] in embedding_size_search_space
 
 
-@pytest.mark.distributed
 def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
     old_config = {
         "ludwig_version": "0.4",
@@ -500,7 +498,6 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
 
-@pytest.mark.distributed
 def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
     config = {
         INPUT_FEATURES: [
@@ -591,7 +588,6 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
 
 
-@pytest.mark.distributed
 def test_hyperopt_grid_search_more_than_one_sample(csv_filename, tmpdir, ray_cluster):
     input_features = [
         text_feature(name="utterance", encoder={"reduce_output": "sum"}),
