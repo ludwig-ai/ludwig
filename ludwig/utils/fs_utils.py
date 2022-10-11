@@ -202,6 +202,16 @@ def delete(url, recursive=False):
     return fs.delete(path, recursive=recursive)
 
 
+def upload(lpath, rpath):
+    fs, path = get_fs_and_path(rpath)
+    pyarrow.fs.copy_files(lpath, path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
+
+
+def download(rpath, lpath):
+    fs, path = get_fs_and_path(rpath)
+    pyarrow.fs.copy_files(path, lpath, source_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
+
+
 def checksum(url):
     fs, path = get_fs_and_path(url)
     return fs.checksum(path)
