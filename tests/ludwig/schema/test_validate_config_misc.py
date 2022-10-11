@@ -1,7 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import TRAINER
+from ludwig.constants import DECODER, ENCODER, LOSS, PREPROCESSING, TRAINER
 from ludwig.features.audio_feature import AudioFeatureMixin
 from ludwig.features.bag_feature import BagFeatureMixin
 from ludwig.features.binary_feature import BinaryFeatureMixin
@@ -256,10 +256,11 @@ def test_defaults_schema():
     schema = DefaultsConfig()
     assert schema.binary.decoder.type == "regressor"
     assert schema.binary.encoder.type == "passthrough"
-
-    assert schema.category.top_k == 3
     assert schema.category.encoder.dropout == 0.0
-
+    assert ENCODER in schema.category.to_dict()
+    assert PREPROCESSING in schema.category.to_dict()
+    assert DECODER in schema.category.to_dict()
+    assert LOSS in schema.category.to_dict()
 
 def test_validate_defaults_schema():
     config = {

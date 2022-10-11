@@ -23,7 +23,6 @@ from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TIMESERIE
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -173,7 +172,6 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(TIMESERIES)
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: Union[TimeseriesInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
