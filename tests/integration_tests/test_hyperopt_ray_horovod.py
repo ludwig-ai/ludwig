@@ -32,8 +32,8 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    _ray_13 = version.parse(ray.__version__) >= version.parse("1.13")
-    if _ray_13:
+    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
+    if _ray_114:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
         from ray.tune.syncer import get_sync_client
@@ -52,7 +52,7 @@ LOCAL_DELETE_TEMPLATE = "echo {target}"
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
     os.makedirs(path, exist_ok=True)
-    if _ray_13:
+    if _ray_114:
         syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     else:
         syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
@@ -74,7 +74,6 @@ HYPEROPT_CONFIG = {
 
 
 SCENARIOS = [
-    # Set max_concurrent_trials to 5 as a stop-gap solution for OOM
     {
         "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1, "max_concurrent_trials": 5},
         "search_alg": {"type": "variant_generator"},
@@ -114,11 +113,13 @@ def _get_config(search_alg, executor):
     input_features = [number_feature()]
     output_features = [binary_feature()]
 
+    num_epochs = 1 if search_alg["type"] == "variant_generator" else 2
+
     return {
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        TRAINER: {"epochs": num_epochs, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
