@@ -136,50 +136,9 @@ class RandomSplitter(Splitter):
                 shuffled_df.iloc[divisions[1] :],  # Test
             )
 
-        # Ensures we have at least MIN_DATASET_SPLIT_ROWS by guaranteeing we take a minimum number of rows from a
-        # predetermined number of partitions.
-        min_split_rows_each_partition = int(np.ceil(MIN_DATASET_SPLIT_ROWS / df.npartitions))
-        # The number of partitions for which we must enforce the min constraint in order to guarantee min_rows.
-        n_guaranteed_partitions = int(np.ceil(MIN_DATASET_SPLIT_ROWS / min_split_rows_each_partition))
-        # Selects n_guaranteed_partitions at random. We'll require each to return min_split_rows_each_partition.
-        min_test_rows_by_partition = np.zeros(df.npartitions, dtype=int)
-        if probabilities[2] > 0:
-            chosen_partitions = np.random.choice(np.arange(df.npartitions), size=n_guaranteed_partitions, replace=False)
-            min_test_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
-        min_val_rows_by_partition = np.zeros(df.npartitions, dtype=int)
-        if probabilities[1] > 0:
-            partition_indices = np.where(min_test_rows_by_partition == 0)[0]
-            chosen_partitions = np.random.choice(
-                partition_indices, size=min(n_guaranteed_partitions, len(partition_indices)), replace=False
-            )
-            min_val_rows_by_partition[chosen_partitions] = min_split_rows_each_partition
-
-        def random_split_partition(partition: DataFrame, partition_info=None) -> DataFrame:
-            """Splits a single partition into train, val, test.
-
-            Returns a single DataFrame with the split column populated. Assumes that the split column is already present
-            in the partition and has a default value of 0 (train).
-            """
-            partition_index = partition_info["number"]
-            divisions = _split_divisions_with_min_rows(
-                len(partition),
-                probabilities,
-                min_val_rows=min_val_rows_by_partition[partition_index],
-                min_test_rows=min_test_rows_by_partition[partition_index],
-            )
-            shuffled = partition.sample(frac=1, random_state=random_seed)
-            # Split column defaults to train, so only need to update val and test
-            split_col = shuffled.columns.get_loc(TMP_SPLIT_COL)
-            shuffled.iloc[divisions[0] : divisions[1], split_col] = 1
-            shuffled.iloc[divisions[1] :, split_col] = 2
-            return shuffled
-
-        df[TMP_SPLIT_COL] = 0
-        df = backend.df_engine.map_partitions(df, random_split_partition, meta=df)
-        df_train = df[df[TMP_SPLIT_COL] == 0].drop(columns=TMP_SPLIT_COL)
-        df_val = df[df[TMP_SPLIT_COL] == 1].drop(columns=TMP_SPLIT_COL)
-        df_test = df[df[TMP_SPLIT_COL] == 2].drop(columns=TMP_SPLIT_COL)
-        return df_train, df_val, df_test
+        # The above approach is very inefficient for partitioned backends, which can split by partition.
+        # This does not give exact guarantees on split size but is much more efficient for large datasets.
+        return df.random_split(self.probabilities, random_state=random_seed)
 
     def has_split(self, split_index: int) -> bool:
         return self.probabilities[split_index] > 0
