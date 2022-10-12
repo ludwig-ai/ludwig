@@ -32,7 +32,7 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    _ray_200 = version.parse(ray.__version__) >= version.parse("1.13")
+    _ray_200 = version.parse(ray.__version__) > version.parse("1.13")
     if _ray_200:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
