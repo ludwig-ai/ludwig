@@ -23,7 +23,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
-        test-markers: ["not distributed", "distributed"]
+        test-markers: ['distributed'] # ["not distributed", "distributed"]
         include:
           - python-version: 3.7
             pytorch-version: 1.10.2
