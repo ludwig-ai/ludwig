@@ -886,6 +886,8 @@ def remote_tmpdir(fs_protocol, bucket):
     prefix = f"tmp_{uuid.uuid4().hex}"
     tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
     try:
+        with use_credentials(minio_test_creds()):
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)
         yield tmpdir
     finally:
         try:
