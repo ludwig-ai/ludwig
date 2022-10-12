@@ -21,14 +21,17 @@ import pytest
 import torch
 from packaging import version
 
+from ludwig.backend import initialize_backend
 from ludwig.constants import (
     ACCURACY,
+    AUTO,
     CATEGORY,
     COMBINER,
     EXECUTOR,
     GRID_SEARCH,
     HYPEROPT,
     INPUT_FEATURES,
+    MAX_CONCURRENT_TRIALS,
     NAME,
     OUTPUT_FEATURES,
     RAY,
@@ -38,7 +41,8 @@ from ludwig.constants import (
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.run import hyperopt
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
@@ -228,6 +232,10 @@ def test_hyperopt_search_alg(
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
+    backend = initialize_backend("local")
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
+
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
@@ -292,7 +300,10 @@ def test_hyperopt_scheduler(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
+    backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
