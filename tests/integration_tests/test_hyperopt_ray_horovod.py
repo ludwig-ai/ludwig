@@ -22,10 +22,11 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.run import hyperopt
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import binary_feature, create_data_set_to_use, generate_data, number_feature
 
@@ -71,8 +72,8 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-        "combiner.num_steps": {"space": "grid_search", "values": [3, 4, 5]},
+        "combiner.num_fc_layers": {"space": "randint", "lower": 1, "upper": 3},
+        "combiner.num_steps": {"space": "grid_search", "values": [1, 2, 3]},
     },
     "goal": "minimize",
 }
@@ -122,7 +123,7 @@ def _get_config(search_alg, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -181,7 +182,10 @@ def run_hyperopt_executor(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
+    backend = RayBackend(**RAY_BACKEND_KWARGS)
     update_hyperopt_params_with_defaults(hyperopt_config)
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
@@ -196,7 +200,6 @@ def run_hyperopt_executor(
     search_alg = hyperopt_config["search_alg"]
 
     # preprocess
-    backend = RayBackend(**RAY_BACKEND_KWARGS)
     model = LudwigModel(config=config, backend=backend)
     training_set, validation_set, test_set, training_set_metadata = model.preprocess(
         dataset=dataset_parquet,
@@ -204,7 +207,7 @@ def run_hyperopt_executor(
 
     # hyperopt
     hyperopt_executor = MockRayTuneExecutor(
-        parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
+        parameters, output_feature, metric, goal, split, search_alg=search_alg, **hyperopt_config[EXECUTOR]
     )
     hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
@@ -273,8 +276,8 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
                 "lower": 0.001,
                 "upper": 0.1,
             },
-            output_feature_name + ".output_size": {"space": "randint", "lower": 2, "upper": 32},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+            output_feature_name + ".output_size": {"space": "randint", "lower": 2, "upper": 8},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 3},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
