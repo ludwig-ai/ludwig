@@ -286,7 +286,6 @@ def _model_select(
                     input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
                 else:
                     input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
-                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
@@ -296,7 +295,10 @@ def _model_select(
                     input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
                 else:
                     input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
-                base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
+
+        # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
+        base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+        base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:

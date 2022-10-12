@@ -8,8 +8,8 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TRAINER, TYPE
-from tests.integration_tests.utils import category_feature, generate_data, number_feature
+from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TRAINER, TYPE
+from tests.integration_tests.utils import category_feature, generate_data, number_feature, text_feature, image_feature
 
 try:
     import dask.dataframe as dd
@@ -86,6 +86,29 @@ def test_autoconfig_preprocessing_imbalanced():
     assert PREPROCESSING in config
     assert SPLIT in config[PREPROCESSING]
     assert config[PREPROCESSING][SPLIT] == {TYPE: "stratify", COLUMN: "category"}
+
+
+@pytest.mark.distributed
+def test_autoconfig_preprocessing_text_image(tmpdir):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+
+    input_features = [
+        text_feature(preprocessing={"tokenizer": "space"}),
+        image_feature(folder=image_dest_folder)
+    ]
+    output_features = [category_feature(output_feature=True)]
+
+    # Generate Dataset
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+    df = pd.read_csv(rel_path)
+    target = df.columns[-1]
+
+    config = create_auto_config(dataset=df, target=target, time_limit_s=1, tune_for_memory=False)
+
+    assert len(input_features) == 2
+    assert len(output_features) == 1
+    assert config[INPUT_FEATURES][0][ENCODER][TYPE] == 'bert'
+    assert config[INPUT_FEATURES][1][ENCODER][TYPE] == 'stacked_cnn'
 
 
 @pytest.mark.distributed
