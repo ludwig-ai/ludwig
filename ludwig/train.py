@@ -157,6 +157,7 @@ def train_cli(
     if HYPEROPT in config:
         if not query_yes_no(HYPEROPT_WARNING + CONTINUE_PROMPT):
             exit(1)
+        config.pop(HYPEROPT)
 
     if model_load_path:
         model = LudwigModel.load(
