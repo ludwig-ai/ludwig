@@ -280,14 +280,14 @@ def _model_select(
             # default text encoder is bert
             if input_feature["type"] == TEXT:
                 model_category = TEXT
-                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
+                input_feature["encoder"]["type"] = AUTOML_DEFAULT_TEXT_ENCODER
                 base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
             if input_feature["type"] == IMAGE:
                 model_category = IMAGE
-                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
+                input_feature["encoder"]["type"] = AUTOML_DEFAULT_IMAGE_ENCODER
                 base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
