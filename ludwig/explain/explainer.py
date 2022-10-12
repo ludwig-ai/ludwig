@@ -4,10 +4,10 @@ from typing import List, Tuple
 import pandas as pd
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, TYPE
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.util import prepare_data
-from ludwig.api_annotations import DeveloperAPI
 
 
 @DeveloperAPI
