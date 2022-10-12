@@ -2,7 +2,6 @@ import contextlib
 from typing import Any, Dict, Optional, Union
 
 from ludwig.utils import data_utils
-from ludwig.utils.fs_utils import RemoteFilesystem
 
 CredInputs = Optional[Union[str, Dict[str, Any]]]
 
@@ -17,16 +16,13 @@ class Storage:
     def __init__(self, creds: Optional[Dict[str, Any]]):
         self._creds = creds
 
-    @property
-    def fs(self) -> RemoteFilesystem:
-        return RemoteFilesystem(self._creds)
-
     @contextlib.contextmanager
     def use(self):
         with data_utils.use_credentials(self._creds):
             yield
 
-    def to_dict(self) -> Optional[Dict[str, Any]]:
+    @property
+    def credentials(self) -> Optional[Dict[str, Any]]:
         return self._creds
 
 
@@ -54,10 +50,12 @@ class StorageManager:
 
     @property
     def artifacts(self) -> Storage:
+        """TODO(travis): Currently used for hyperopt, but should be used for all outputs."""
         return self.storages[ARTIFACTS]
 
     @property
     def datasets(self) -> Storage:
+        """TODO(travis): Should be used to read in datasets."""
         return self.storages[DATASETS]
 
     @property
