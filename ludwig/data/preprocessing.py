@@ -1192,8 +1192,9 @@ def build_dataset(
     for col in splitter.required_columns:
         proc_cols[col] = dataset_df[col]
 
-    # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
-    #  conversion with Tensor columns. Can remove for 1.8.
+    # TODO pyarrow: this is needed for caching to work with pyarrow. if removed, the following error is raised:
+    # "pyarrow.lib.ArrowInvalid: Can only convert 1-dimensional array values". The data is reshaped when loaded
+    # by the batcher in the RayDataset class (see _prepare_batch).
     if backend.df_engine.partitioned:
         for feature in features:
             name = feature[NAME]
@@ -1765,6 +1766,9 @@ def _preprocess_file_for_training(
 
     else:
         raise ValueError("either data or data_train have to be not None")
+
+    # print("backend", backend)
+    # print("data", backend.df_engine.compute(data))
 
     logger.debug("split train-val-test")
     training_data, validation_data, test_data = split_dataset(data, preprocessing_params, backend, random_seed)
