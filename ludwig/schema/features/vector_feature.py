@@ -17,7 +17,6 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
-from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 

@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -17,7 +17,6 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
-from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
