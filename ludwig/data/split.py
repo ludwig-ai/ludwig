@@ -43,40 +43,6 @@ TMP_SPLIT_COL = "__SPLIT__"
 DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 
 
-def _make_fractions_ensure_minimum_rows(fractions, n_examples, min_val_rows, min_test_rows):
-    """Adjust fractions to ensure no dataset split has too few examples.
-
-    Note: if we are splitting by random sampling, this will not guarantee minimum rows.
-    """
-    result = list(fractions)
-    n = [f * n_examples for f in fractions]  # Expected number of examples in each split.
-    if 0 < n[2] < min_test_rows:
-        # Test set is nonempty but too small, shift examples from training set.
-        shift = min_test_rows - n[2]
-        result[0] -= shift / n_examples
-        result[2] += shift / n_examples
-    if 0 < n[1] < min_val_rows:
-        # Validation set is nonempty but too small, shift examples from training set.
-        shift = min_val_rows - n[1]
-        result[0] -= shift / n_examples
-        result[1] += shift / n_examples
-    return tuple(result)
-
-
-def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_val_rows, min_test_rows):
-    """Revises divisions to ensure no dataset split has too few examples."""
-    result = list(divisions)
-    n = [dn - dm for dm, dn in zip((0,) + divisions, divisions + (n_examples,))]  # Number of examples in each split.
-    if 0 < n[2] < min_test_rows and n[0] > 0:
-        # Test set is nonempty but too small, take examples from training set.
-        shift = min(min_test_rows - n[2], n[0])
-        result = [d - shift for d in result]
-    if 0 < n[1] < min_val_rows and n[0] > 0:
-        # Validation set is nonempty but too small, take examples from training set.
-        result[0] -= min(min_val_rows - n[1], result[0])
-    return tuple(result)
-
-
 class Splitter(ABC):
     @abstractmethod
     def split(
@@ -95,6 +61,20 @@ class Splitter(ABC):
         return []
 
 
+def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_val_rows, min_test_rows):
+    """Revises divisions to ensure no dataset split has too few examples."""
+    result = list(divisions)
+    n = [dn - dm for dm, dn in zip((0,) + divisions, divisions + (n_examples,))]  # Number of examples in each split.
+    if 0 < n[2] < min_test_rows and n[0] > 0:
+        # Test set is nonempty but too small, take examples from training set.
+        shift = min(min_test_rows - n[2], n[0])
+        result = [d - shift for d in result]
+    if 0 < n[1] < min_val_rows and n[0] > 0:
+        # Validation set is nonempty but too small, take examples from training set.
+        result[0] -= min(min_val_rows - n[1], result[0])
+    return tuple(result)
+
+
 def _split_divisions_with_min_rows(
     n_rows: int, probabilities: List[float], min_val_rows: int, min_test_rows: int
 ) -> List[int]:
@@ -103,9 +83,6 @@ def _split_divisions_with_min_rows(
 
     Returns division indices to split on.
     """
-    probabilities = _make_fractions_ensure_minimum_rows(
-        probabilities, n_rows, min_val_rows=min_val_rows, min_test_rows=min_test_rows
-    )
     d1 = int(np.ceil(probabilities[0] * n_rows))
     if probabilities[-1] > 0:
         n2 = int(probabilities[1] * n_rows)
