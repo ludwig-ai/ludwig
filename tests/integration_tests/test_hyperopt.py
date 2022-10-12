@@ -41,7 +41,7 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
 from ludwig.utils import fs_utils
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, use_credentials
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     category_feature,
@@ -372,9 +372,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
     config[HYPEROPT] = hyperopt_configs
 
     experiment_name = f"test_hyperopt_{uuid.uuid4().hex}"
-    hyperopt_results = hyperopt(
-        config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name, backend=backend
-    )
+    hyperopt_results = hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name=experiment_name)
     if search_space == "random":
         assert hyperopt_results.experiment_analysis.results_df.shape[0] == RANDOM_SEARCH_SIZE
     else:
@@ -388,7 +386,10 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
     assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
-    assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+    with use_credentials(minio_test_creds()):
+        assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+        for trial in hyperopt_results.experiment_analysis.trials:
+            assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, f"trial_{trial.trial_id}"))
 
 
 @pytest.mark.parametrize("search_space", ["random", "grid"])
@@ -400,7 +401,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
 def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
     backend = {
         "type": "local",
-        "storage": {
+        "credentials": {
             "artifacts": minio_test_creds(),
         },
     }
