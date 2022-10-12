@@ -23,6 +23,7 @@ from ludwig.constants import (
 from ludwig.schema import validate_config
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
+    _update_backend_cache_credentials,
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing_split,
@@ -657,3 +658,13 @@ def test_upgrade_model_progress_already_valid():
 
     unchanged_model_progress = upgrade_model_progress(valid_model_progress)
     assert unchanged_model_progress == valid_model_progress
+
+
+def test_cache_credentials_backward_compatibility():
+    # From v0.6.3.
+    creds = {"s3": {"client_kwargs": {}}}
+    config = {"backend": {"type": "local", "cache_dir": "/foo/bar", "cache_credentials": creds}}
+
+    _update_backend_cache_credentials(config)
+
+    assert config == {"backend": {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}}

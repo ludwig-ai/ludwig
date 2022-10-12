@@ -161,6 +161,22 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
+@register_config_transformation("0.6")
+def _update_backend_cache_credentials(config: Dict[str, Any]) -> Dict[str, Any]:
+    backend = config.get("backend", {})
+    if "cache_credentials" in backend:
+        credentials = backend.get("credentials", {})
+        if "cache" in credentials:
+            warnings.warn("`cache` already found in `backend.credentials`, ignoring `cache_credentials`")
+        else:
+            warnings.warn(
+                "`backend.cache_credentials` has been renamed `backend.credentials.cache`", DeprecationWarning
+            )
+            credentials["cache"] = backend.pop("cache_credentials")
+        backend["credentials"] = credentials
+    return config
+
+
 @register_config_transformation("0.6", ["output_features"])
 def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
     if LOSS in feature:
