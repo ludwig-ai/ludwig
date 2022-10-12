@@ -43,7 +43,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import calibration, output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
@@ -214,7 +213,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[BinaryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -273,7 +271,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return _BinaryPreprocessing(metadata)
 
 
-@register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC

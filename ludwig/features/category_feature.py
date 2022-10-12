@@ -44,7 +44,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -190,7 +189,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(CATEGORY)
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[CategoryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -251,7 +249,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return _CategoryPreprocessing(metadata)
 
 
-@register_output_feature(CATEGORY)
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
     default_validation_metric = ACCURACY
