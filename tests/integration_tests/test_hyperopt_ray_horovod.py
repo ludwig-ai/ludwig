@@ -32,8 +32,8 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
-    if _ray_114:
+    _ray_200 = version.parse(ray.__version__) >= version.parse("1.13")
+    if _ray_200:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
         from ray.tune.syncer import get_sync_client
@@ -52,7 +52,7 @@ LOCAL_DELETE_TEMPLATE = "echo {target}"
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
     os.makedirs(path, exist_ok=True)
-    if _ray_114:
+    if _ray_200:
         syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     else:
         syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
