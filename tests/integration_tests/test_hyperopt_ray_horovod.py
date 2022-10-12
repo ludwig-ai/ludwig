@@ -74,7 +74,7 @@ HYPEROPT_CONFIG = {
 
 
 SCENARIOS = [
-    {
+    {  # set max_concurrent_trials to 5 to reduce memory pressure and prevent OOMs
         "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1, "max_concurrent_trials": 5},
         "search_alg": {"type": "variant_generator"},
     },
