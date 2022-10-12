@@ -11,6 +11,10 @@ def get_input_feature_cls(name: str):
     return input_config_registry[name]
 
 
+def get_output_feature_cls(name: str):
+    return output_config_registry[name]
+
+
 def get_input_feature_jsonschema():
     """This function returns a JSON schema structured to only requires a `type` key and then conditionally applies
     a corresponding input feature's field constraints.
@@ -48,8 +52,7 @@ def get_input_feature_conds():
     input_feature_types = sorted(list(input_config_registry.keys()))
     conds = []
     for feature_type in input_feature_types:
-        feature_cls = input_config_registry[feature_type]
-        schema_cls = feature_cls.get_schema_cls()
+        schema_cls = get_input_feature_cls(feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
@@ -94,8 +97,7 @@ def get_output_feature_conds():
     output_feature_types = sorted(list(output_config_registry.keys()))
     conds = []
     for feature_type in output_feature_types:
-        feature_cls = output_config_registry[feature_type]
-        schema_cls = feature_cls.get_schema_cls()
+        schema_cls = get_output_feature_cls(feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
