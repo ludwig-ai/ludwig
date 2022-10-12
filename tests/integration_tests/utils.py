@@ -52,6 +52,7 @@ from ludwig.constants import (
     PROC_COLUMN,
     SEQUENCE,
     SET,
+    SPLIT,
     TEXT,
     TIMESERIES,
     TRAINER,
@@ -698,6 +699,8 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     num_rows = len(df)
     num_nans_per_col = int(round(nan_percent * num_rows))
     for col in df.columns:
+        if col == SPLIT:  # do not add NaNs to the split column
+            continue
         col_idx = df.columns.get_loc(col)
         for row_idx in random.sample(range(num_rows), num_nans_per_col):
             df.iloc[row_idx, col_idx] = np.nan

@@ -16,6 +16,8 @@
 import argparse
 import logging
 
+import numpy as np
+
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import SPLIT
 from ludwig.utils.data_utils import read_csv
@@ -54,13 +56,21 @@ def concatenate_files(train_fname, vali_fname, test_fname, read_fn, backend):
 
 
 def concatenate_df(train_df, vali_df, test_df, backend):
-    train_df[SPLIT] = 0
-    vali_df[SPLIT] = 1
-    test_df[SPLIT] = 2
+    train_size = len(train_df)
+    vali_size = len(vali_df) if vali_df is not None else 0
 
     concatenated_df = backend.df_engine.df_lib.concat(
         [df for df in [train_df, vali_df, test_df] if df is not None], ignore_index=True
     )
+
+    def get_split(idx):
+        if idx < train_size:
+            return 0
+        if idx < train_size + vali_size:
+            return 1
+        return 2
+
+    concatenated_df[SPLIT] = concatenated_df.index.to_series().map(get_split).astype(np.int8)
     return concatenated_df
 
 

@@ -40,6 +40,7 @@ from ludwig.constants import (
     PREPROCESSING,
     SET,
     SEQUENCE,
+    SPLIT,
     TEXT,
     TIMESERIES,
     TRAINER,
@@ -162,9 +163,9 @@ def run_preprocessing(
     num_examples_per_split=20,
     nan_percent=0.0,
 ):
-    # Split the dataset manually to avoid the random split
-    split_to_dataset_path = {}
-    for split in ["training_set", "validation_set", "test_set"]:
+    # Split the dataset manually to avoid randomness in splitting
+    split_to_df = {}
+    for split in range(3):
         csv_filename = os.path.join(tmpdir, f"{split}_dataset.csv")
         dataset_csv_path = generate_data(
             input_features,
@@ -172,8 +173,13 @@ def run_preprocessing(
             csv_filename,
             num_examples=num_examples_per_split,
         )
-        dataset_path = create_data_set_to_use(dataset_type, dataset_csv_path, nan_percent=nan_percent)
-        split_to_dataset_path[split] = dataset_path
+        dataset_df = pd.read_csv(dataset_csv_path)
+        dataset_df[SPLIT] = split
+        dataset_df.to_csv(dataset_csv_path, index=False)
+        split_to_df[split] = dataset_df
+    full_df_path = os.path.join(tmpdir, "dataset.csv")
+    pd.concat(split_to_df.values()).to_csv(full_df_path, index=False)
+    dataset_path = create_data_set_to_use(dataset_type, full_df_path, nan_percent=nan_percent)
 
     # Configure ray backend
     config = {
@@ -181,6 +187,11 @@ def run_preprocessing(
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {"epochs": 2, "batch_size": 8},
+        PREPROCESSING: {
+            SPLIT: {
+                "type": "fixed",
+            },
+        },
     }
     backend_config = {**RAY_BACKEND_CONFIG}
     if df_engine:
@@ -189,8 +200,8 @@ def run_preprocessing(
     # Run preprocessing with ray backend
     ray_model = LudwigModel(config, backend=backend_config)
     *ray_datasets, ray_training_set_metadata = ray_model.preprocess(
-        skip_save_processed_input=False,
-        **split_to_dataset_path,
+        skip_save_processed_input=False,  # Save the processed input to test pyarrow write/read
+        dataset=dataset_path,
     )
 
     # Run preprocessing with local backend using the ray_training_set_metadata to ensure parity of
@@ -198,8 +209,7 @@ def run_preprocessing(
     local_model = LudwigModel(config, backend=LOCAL_BACKEND)
     *local_datasets, _ = local_model.preprocess(
         training_set_metadata=ray_training_set_metadata,
-        skip_save_processed_input=False,
-        **split_to_dataset_path,
+        dataset=dataset_path,
     )
 
     for ray_dataset, local_dataset in zip(ray_datasets, local_datasets):
@@ -345,6 +355,33 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+@pytest.mark.distributed
+def test_ray_outputs(dataset_type, ray_cluster_2cpu):
+    input_features = [
+        binary_feature(),
+    ]
+    output_features = [
+        binary_feature(),
+        number_feature(),
+        vector_feature(),
+        # TODO: feature type not yet supported
+        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
+        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
+        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
+    ]
+    # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
+    # flakiness in the test having to do with uneven allocation of samples between Ray workers.
+    run_test_with_features(
+        input_features,
+        output_features,
+        df_engine="dask",
+        dataset_type=dataset_type,
+        predict=True,
+        skip_save_predictions=False,
+    )
+
+
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     "df_engine",
@@ -407,31 +444,6 @@ def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
     )
 
 
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.distributed
-def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
-    input_features = [
-        binary_feature(),
-    ]
-    output_features = [
-        binary_feature(),
-        number_feature(),
-        vector_feature(),
-        # TODO: feature type not yet supported
-        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
-    ]
-    # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
-    # flakiness in the test having to do with uneven allocation of samples between Ray workers.
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-        dataset_type=dataset_type,
-        predict=True,
-        skip_save_predictions=False,
-    )
-
-
 @pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 def test_ray_text_sequence_timeseries(tmpdir, ray_cluster_2cpu, dataset_type):
@@ -442,8 +454,6 @@ def test_ray_text_sequence_timeseries(tmpdir, ray_cluster_2cpu, dataset_type):
     ]
     output_features = [
         binary_feature(),
-        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
-        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
     run_preprocessing(
         tmpdir,
