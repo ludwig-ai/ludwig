@@ -518,7 +518,7 @@ def test_update_increase_batch_size_on_plateau_max():
         },
     }
 
-    updated_config = upgrade_to_latest_version(old_valid_config)
+    updated_config = upgrade_config_dict_to_latest_version(old_valid_config)
     del updated_config["ludwig_version"]
 
     expected_config = copy.deepcopy(old_valid_config)

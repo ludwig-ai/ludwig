@@ -1283,7 +1283,7 @@ def build_preprocessing_parameters(
 
                     preprocessing_parameters = merge_dict(
                         preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                    )
+                    ) # TODO(Connor): Temporary fix, refactor this during preproc refactor
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 

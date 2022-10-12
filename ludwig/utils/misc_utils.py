@@ -84,7 +84,7 @@ def resolve_pointers(dict1, dict2, dict2_name):
             if key_in_dict2 in dict2.keys():
                 value = dict2[key_in_dict2]
                 resolved_dict[key] = value
-            if ENCODER in dict2.keys():  # Temporary fix, this whole function should be removed during preproc refactor
+            if ENCODER in dict2.keys():  # TODO(Connor): Temporary fix, remove this during preproc refactor
                 if key_in_dict2 in dict2[ENCODER].keys():
                     value = dict2[ENCODER][key_in_dict2]
                     resolved_dict[key] = value
