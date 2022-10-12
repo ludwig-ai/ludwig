@@ -78,8 +78,8 @@ def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_val_rows, min
 def _split_divisions_with_min_rows(
     n_rows: int, probabilities: List[float], min_val_rows: int, min_test_rows: int
 ) -> List[int]:
-    """Splits a dataframe into train, validation, and test sets according to split probabilities, also ensuring
-    that at least min_val_rows or min_test_rows are present in each nonempty split.
+    """Generates splits for a dataset of n_rows into train, validation, and test sets according to split
+    probabilities, also ensuring that at least min_val_rows or min_test_rows are present in each nonempty split.
 
     Returns division indices to split on.
     """
