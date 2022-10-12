@@ -5,6 +5,7 @@ from pprint import pformat
 from typing import List, Optional, Union
 
 import pandas as pd
+from ray.tune import Callback as TuneCallback
 import yaml
 from tabulate import tabulate
 
@@ -86,6 +87,7 @@ def hyperopt(
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
+    tune_callbacks: List[TuneCallback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
@@ -387,6 +389,7 @@ def hyperopt(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
+        tune_callbacks=tune_callbacks,
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,

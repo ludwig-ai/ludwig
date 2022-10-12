@@ -449,9 +449,16 @@ class RayTuneExecutor:
         trial_id = tune.get_trial_id()
         trial_dir = Path(tune.get_trial_dir())
 
+        # Write out the unmerged config to the trial's local directory.
+        with open(os.path.join(trial_dir, 'user_hyperparameters.json'), 'w') as f:
+            json.dump(hyperopt_dict['config'], f)
+
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
         modified_config = ModelConfig.from_dict(modified_config).to_dict()
+
+        with open(os.path.join(trial_dir, 'model_hyperparameters.json'), 'w') as f:
+            json.dump(hyperopt_dict['config'], f)
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -659,6 +666,7 @@ class RayTuneExecutor:
         gpu_memory_limit=None,
         allow_parallel_threads=True,
         callbacks=None,
+        tune_callbacks=None,
         backend=None,
         random_seed=default_random_seed,
         debug=False,
@@ -762,7 +770,7 @@ class RayTuneExecutor:
             )
 
         tune_config = {}
-        tune_callbacks = []
+        # tune_callbacks = []
         for callback in callbacks or []:
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
@@ -808,6 +816,8 @@ class RayTuneExecutor:
         # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
         should_resume = "AUTO" if resume is None else resume
 
+        raise_on_failed_trial = kwargs.get('raise_on_failed_trial', True)
+
         try:
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
@@ -834,6 +844,7 @@ class RayTuneExecutor:
                 verbose=hyperopt_log_verbosity,
                 resume=should_resume,
                 log_to_file=True,
+                raise_on_failed_trial=raise_on_failed_trial,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
