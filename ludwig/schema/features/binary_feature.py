@@ -70,13 +70,6 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
         description="Calibrate the model's output probabilities using temperature scaling.",
     )
 
-    default_validation_metric: str = schema_utils.StringOptions(
-        [ROC_AUC],
-        default=ROC_AUC,
-        description="Internal only use parameter: default validation metric for binary output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",

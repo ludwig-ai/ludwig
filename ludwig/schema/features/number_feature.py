@@ -77,13 +77,6 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
         description="Clip the predicted output to the specified range.",
     )
 
-    default_validation_metric: str = schema_utils.StringOptions(
-        [MEAN_SQUARED_ERROR],
-        default=MEAN_SQUARED_ERROR,
-        description="Internal only use parameter: default validation metric for number output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",

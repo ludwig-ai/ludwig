@@ -65,13 +65,6 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
-    default_validation_metric: str = schema_utils.StringOptions(
-        [JACCARD],
-        default=JACCARD,
-        description="Internal only use parameter: default validation metric for set output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",

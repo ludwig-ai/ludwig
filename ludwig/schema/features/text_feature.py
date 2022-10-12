@@ -72,13 +72,6 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
     )
 
-    default_validation_metric: str = schema_utils.StringOptions(
-        [LOSS],
-        default=LOSS,
-        description="Internal only use parameter: default validation metric for binary output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",

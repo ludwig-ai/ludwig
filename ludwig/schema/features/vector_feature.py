@@ -70,13 +70,6 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConf
         description="List of input features that this feature depends on.",
     )
 
-    default_validation_metric: str = schema_utils.StringOptions(
-        [MEAN_SQUARED_ERROR],
-        default=MEAN_SQUARED_ERROR,
-        description="Internal only use parameter: default validation metric for binary output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")
 
     reduce_dependencies: str = schema_utils.ReductionOptions(

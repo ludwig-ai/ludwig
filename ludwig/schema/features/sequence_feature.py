@@ -67,13 +67,6 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
 
-    default_validation_metric: str = schema_utils.StringOptions(
-        [LOSS],
-        default=LOSS,
-        description="Internal only use parameter: default validation metric for sequence output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
