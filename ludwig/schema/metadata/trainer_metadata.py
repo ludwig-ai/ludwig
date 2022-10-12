@@ -3,8 +3,229 @@
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterMetadata
 
 TRAINER_METADATA = (
-{'batch_size': ParameterMetadata(ui_display_name='Batch Size',
-                                 default_value_reasoning='Not too big, not too small.',
+    {'batch_size': ParameterMetadata(ui_display_name='Batch Size',
+                                     default_value_reasoning='Not too big, not too small.',
+                                     example_value=None,
+                                     related_parameters=['eval_batch_size'],
+                                     other_information=None,
+                                     description_implications="There's conflicting advice about what batch size to "
+                                                              "use. "
+                                                              'Using a higher batch size will achieve the highest '
+                                                              "throughput and training efficiency. However, "
+                                                              "there's also "
+                                                              'evidence that depending on other hyperparameters, '
+                                                              'a smaller '
+                                                              'batch size may produce a higher quality model.',
+                                     suggested_values='auto',
+                                     suggested_values_reasoning='Try at least a few different batch sizes to get a '
+                                                                'sense '
+                                                                'of whether batch size affects model performance',
+                                     commonly_used=True,
+                                     expected_impact=ExpectedImpact.HIGH,
+                                     literature_references=None,
+                                     internal_only=False),
+      'max_batch_size': ParameterMetadata(ui_display_name='Max Batch Size',
+                                                  default_value_reasoning='Not typically required.',
+                                                  example_value=1024,
+                                                  related_parameters=['batch_size', 'increase_batch_size_on_plateau'],
+                                                  description_implications='Value used to manually limit the batch '
+                                                                           'sizes explored by auto batch size tuning '
+                                                                           'and batch size increasing on plateau.',
+                                                  suggested_values=None,
+                                                  suggested_values_reasoning=None,
+                                                  commonly_used=False,
+                                                  expected_impact=ExpectedImpact.MEDIUM,
+                                                  literature_references=None,
+                                                  internal_only=False),
+     'checkpoints_per_epoch': ParameterMetadata(ui_display_name='Checkpoints per epoch',
+                                                default_value_reasoning='Per-epoch behavior, which scales according '
+                                                                        'to the '
+                                                                        'dataset size.',
+                                                example_value=None,
+                                                related_parameters=['train_steps', 'steps_per_checkpoint'],
+                                                other_information=None,
+                                                description_implications='Epoch-based evaluation (using the default: '
+                                                                         '0) is '
+                                                                         'an appropriate fit for tabular datasets, '
+                                                                         'which '
+                                                                         'are small, fit in memory, and train '
+                                                                         'quickly.\n'
+                                                                         '\n'
+                                                                         'However, this is a poor fit for unstructured '
+                                                                         'datasets, which tend to be much larger, and '
+                                                                         'train more slowly due to larger models.\n'
+                                                                         '\n'
+                                                                         "It's important to setup evaluation such "
+                                                                         "that you "
+                                                                         'do not wait several hours before getting a '
+                                                                         'single evaluation result. In general, '
+                                                                         'it is not '
+                                                                         'necessary for models to train over the '
+                                                                         'entirety '
+                                                                         'of a dataset, nor evaluate over the '
+                                                                         'entirety of '
+                                                                         'a test set, to produce useful monitoring '
+                                                                         'metrics '
+                                                                         'and signals to indicate model health.\n'
+                                                                         '\n'
+                                                                         'It is also more engaging and more valuable '
+                                                                         'to '
+                                                                         'ensure a frequent pulse of evaluation '
+                                                                         'metrics, '
+                                                                         'even if they are partial.',
+                                                suggested_values='2 - 10, for larger datasets',
+                                                suggested_values_reasoning='Running evaluation too frequently can be '
+                                                                           'wasteful while running evaluation not '
+                                                                           'frequently enough can be prohibitively '
+                                                                           'uninformative. In many large-scale '
+                                                                           'training '
+                                                                           'runs, evaluation is often configured to '
+                                                                           'run on '
+                                                                           'a sub-epoch time scale, or every few '
+                                                                           'thousand '
+                                                                           'steps.',
+                                                commonly_used=True,
+                                                expected_impact=ExpectedImpact.HIGH,
+                                                literature_references=None,
+                                                internal_only=False),
+     'decay': ParameterMetadata(ui_display_name='Decay',
+                                default_value_reasoning=None,
+                                example_value=None,
+                                related_parameters=['decay_rate', 'decay_steps', 'learning_rate'],
+                                other_information=None,
+                                description_implications='It’s almost always a good idea to use a schedule. For most '
+                                                         'models, try the exponential decay schedule first.\n'
+                                                         '\n'
+                                                         'The exponential schedule divides the learning rate by the '
+                                                         'same '
+                                                         'factor (%) every epoch. This means that the learning rate '
+                                                         'will '
+                                                         'decrease rapidly in the first few epochs, and spend more '
+                                                         'epochs '
+                                                         'with a lower value, but never reach exactly zero. As a rule '
+                                                         'of '
+                                                         'thumb, compared to training without a schedule, you can use '
+                                                         'a '
+                                                         'slightly higher maximum learning rate. Since the learning '
+                                                         'rate '
+                                                         'changes over time, the whole training is not so sensitive '
+                                                         'to the '
+                                                         'value picked.',
+                                suggested_values=None,
+                                suggested_values_reasoning='There is no go-to schedule for all models. Changing the '
+                                                           'learning rate, in general, has shown to make training less '
+                                                           'sensitive to the learning rate value you pick for it. So '
+                                                           'using '
+                                                           'a learning rate schedule can give better training '
+                                                           'performance '
+                                                           'and make the model converge faster',
+                                commonly_used=True,
+                                expected_impact=ExpectedImpact.MEDIUM,
+                                literature_references=[
+                                    'https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model'
+                                    '/optimization-principles-(in-deep-learning)/learning-rate-schedule '
+                                ],
+                                internal_only=False),
+     'decay_rate': ParameterMetadata(ui_display_name='Decay Rate',
+                                     default_value_reasoning='4-5% decay each step is an empirically useful decary '
+                                                             'rate to '
+                                                             'start with.',
+                                     example_value=None,
+                                     related_parameters=['decay_rate, decay_steps, learning_rate'],
+                                     other_information=None,
+                                     description_implications='Increasing the decay rate will lower the learning rate '
+                                                              'faster. This could make the model more robust to a bad '
+                                                              '(too '
+                                                              'high) initial learning rate, but a decay rate that is '
+                                                              'too '
+                                                              'high could prohibit the model from learning anything at '
+                                                              'all.',
+                                     suggested_values='0.9 - 0.96',
+                                     suggested_values_reasoning='Since this controls exponential decay, even a small '
+                                                                'decay '
+                                                                'rate will still be strongly impactful.',
+                                     commonly_used=False,
+                                     expected_impact=ExpectedImpact.MEDIUM,
+                                     literature_references=[
+                                         'https://peltarion.com/knowledge-center/documentation/modeling-view/run-a'
+                                         '-model'
+                                         '/optimization-principles-(in-deep-learning)/learning-rate-schedule '
+                                     ],
+                                     internal_only=False),
+     'decay_steps': ParameterMetadata(ui_display_name='Decay Steps',
+                                      default_value_reasoning='This default essentially enables the `learning_rate` to '
+                                                              'decay by a factor of the `decay_rate` at 10000 training '
+                                                              'steps.',
+                                      example_value=[5000],
+                                      related_parameters=['decay_rate', 'decay_steps', 'learning_rate'],
+                                      other_information=None,
+                                      description_implications='By increasing the value of decay steps, '
+                                                               'you are increasing '
+                                                               'the number of training steps it takes to decay the '
+                                                               'learning rate by a factor of `decay_rate`. In other '
+                                                               'words, '
+                                                               'the bigger this parameter, the slower the learning '
+                                                               'rate '
+                                                               'decays.',
+                                      suggested_values='10000 +/- 500 at a time',
+                                      suggested_values_reasoning='The decay in the learning rate is calculated as the '
+                                                                 'training step divided by the `decay_steps` plus one. '
+                                                                 'Then the `decay_rate` is raised to the power of this '
+                                                                 'exponent which is then multiplied to the current '
+                                                                 'learning rate. All this to say that the learning '
+                                                                 'rate is '
+                                                                 'only decayed by a factor of the set `decay_rate` '
+                                                                 'when '
+                                                                 'the training step reaches the `decay_steps` and then '
+                                                                 'subsequently when it reaches any multiple of '
+                                                                 '`decay_steps`. You can think of `decay_steps` as a '
+                                                                 'rate '
+                                                                 'of decay for the `decay_rate`.',
+                                      commonly_used=True,
+                                      expected_impact=ExpectedImpact.MEDIUM,
+                                      literature_references=None,
+                                      internal_only=False),
+     'early_stop': ParameterMetadata(ui_display_name='Early Stop',
+                                     default_value_reasoning="Deep learning models are prone to overfitting. It's "
+                                                             'generally a good policy to set up some early stopping '
+                                                             "criteria as it's not useful to have a model train after "
+                                                             "it's "
+                                                             'maximized what it can learn. 5 consecutive rounds of '
+                                                             "evaluation where there hasn't been any improvement on "
+                                                             "the "
+                                                             'validation set (including chance) is a reasonable '
+                                                             'policy to '
+                                                             'start with.',
+                                     example_value=None,
+                                     related_parameters=['epochs', 'train_steps'],
+                                     other_information=None,
+                                     description_implications='Decreasing this value is a more aggressive policy. '
+                                                              'Decreasing early stopping makes model training less '
+                                                              'forgiving, as the model has less runway to demonstrate '
+                                                              'consecutive metric improvements before the training '
+                                                              'run is '
+                                                              'quit. This can be efficient for pruning bad models '
+                                                              'earlier, '
+                                                              'but since the training process is inherently '
+                                                              'non-deterministic and noisy, sometimes improvements '
+                                                              'happen '
+                                                              'very gradually over a long period of time.',
+                                     suggested_values='5 - 10',
+                                     suggested_values_reasoning="There's potentially a lot of randomness in how models "
+                                                                'train, but so many consecutive rounds of no '
+                                                                'improvement '
+                                                                "is usually a good indicator that there's not much "
+                                                                "more to "
+                                                                'learn.',
+                                     commonly_used=True,
+                                     expected_impact=ExpectedImpact.MEDIUM,
+                                     literature_references=None,
+                                     internal_only=False),
+     'epochs': ParameterMetadata(ui_display_name='Epochs',
+                                 default_value_reasoning='A very high training length ceiling. Models will almost '
+                                                         'always '
+                                                         'hit early stopping criteria before hitting a 100-epoch '
+                                                         'ceiling.',
                                  example_value=None,
                                  related_parameters='eval_batch_size',
                                  other_information=None,
@@ -296,8 +517,20 @@ TRAINER_METADATA = (
                                                          expected_impact=ExpectedImpact.MEDIUM,
                                                          literature_references=None,
                                                          internal_only=False),
- 'increase_batch_size_on_plateau_patience': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: '
-                                                                              'Patience',
+     'increase_batch_size_on_plateau_patience': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: '
+                                                                                  'Patience',
+                                                                  default_value_reasoning=None,
+                                                                  example_value=None,
+                                                                  related_parameters=None,
+                                                                  other_information=None,
+                                                                  description_implications=None,
+                                                                  suggested_values=None,
+                                                                  suggested_values_reasoning=None,
+                                                                  commonly_used=False,
+                                                                  expected_impact=ExpectedImpact.MEDIUM,
+                                                                  literature_references=None,
+                                                                  internal_only=False),
+     'increase_batch_size_on_plateau_rate': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: Rate',
                                                               default_value_reasoning=None,
                                                               example_value=None,
                                                               related_parameters=None,
