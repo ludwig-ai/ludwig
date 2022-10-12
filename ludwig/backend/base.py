@@ -43,7 +43,7 @@ class Backend(ABC):
         self,
         dataset_manager: DatasetManager,
         cache_dir: Optional[str] = None,
-        credentials: Optional[Dict[str, Any]] = None,
+        credentials: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
         credentials = credentials or {}
         self._dataset_manager = dataset_manager
