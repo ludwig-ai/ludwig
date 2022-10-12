@@ -25,8 +25,8 @@ from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
 from ludwig.constants import (
     AUDIO,
-    BALANCE_PERCENTAGE_TOLERANCE,
     BAG,
+    BALANCE_PERCENTAGE_TOLERANCE,
     BFILL,
     BINARY,
     CATEGORY,
@@ -38,8 +38,8 @@ from ludwig.constants import (
     NAME,
     NUMBER,
     PREPROCESSING,
-    SET,
     SEQUENCE,
+    SET,
     SPLIT,
     TEXT,
     TIMESERIES,

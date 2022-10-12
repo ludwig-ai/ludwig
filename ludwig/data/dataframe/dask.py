@@ -23,7 +23,7 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import get_pa_schema, split_by_slices, get_parquet_filename
+from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, split_by_slices
 from ludwig.utils.dataframe_utils import set_index_name
 
 TMP_COLUMN = "__TMP_COLUMN__"
