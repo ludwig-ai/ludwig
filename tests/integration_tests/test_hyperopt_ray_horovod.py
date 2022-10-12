@@ -33,10 +33,8 @@ from tests.integration_tests.utils import binary_feature, create_data_set_to_use
 try:
     import ray
 
-    # Ray nightly version is always set to 3.0.0.dev0
-    _ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
-    _ray_114 = version.parse(ray.__version__) >= version.parse("1.14")
-    if _ray_114:
+    _ray_200 = version.parse(ray.__version__) > version.parse("1.13")
+    if _ray_200:
         from ray.tune.syncer import get_node_to_storage_syncer, SyncConfig
     else:
         from ray.tune.syncer import get_sync_client
@@ -45,10 +43,7 @@ try:
     from ludwig.hyperopt.execution import _get_relative_checkpoints_dir_parts, RayTuneExecutor
 except ImportError:
     ray = None
-    _ray_nightly = False
     RayTuneExecutor = object
-
-# Ray mocks
 
 # Dummy sync templates
 LOCAL_SYNC_TEMPLATE = "echo {source}/ {target}/"
@@ -58,7 +53,7 @@ LOCAL_DELETE_TEMPLATE = "echo {target}"
 def mock_storage_client(path):
     """Mocks storage client that treats a local dir as durable storage."""
     os.makedirs(path, exist_ok=True)
-    if _ray_114:
+    if _ray_200:
         syncer = get_node_to_storage_syncer(SyncConfig(upload_dir=path))
     else:
         syncer = get_sync_client(LOCAL_SYNC_TEMPLATE, LOCAL_DELETE_TEMPLATE)
@@ -72,8 +67,7 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 1, "upper": 3},
-        "combiner.num_steps": {"space": "grid_search", "values": [1, 2, 3]},
+        "combiner.output_size": {"space": "grid_search", "values": [4, 8]},
     },
     "goal": "minimize",
 }
@@ -83,6 +77,19 @@ SCENARIOS = [
     {
         "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1},
         "search_alg": {"type": "variant_generator"},
+    },
+    {
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+            "scheduler": {
+                "type": "hb_bohb",
+                "time_attr": "training_iteration",
+                "reduction_factor": 4,
+            },
+            "cpu_resources_per_trial": 1,
+        },
+        "search_alg": {"type": "bohb"},
     },
     # TODO(shreya): Uncomment when https://github.com/ludwig-ai/ludwig/issues/2039 is fixed.
     # {
@@ -95,19 +102,6 @@ SCENARIOS = [
     #         "dynamic_resource_allocation": True,
     #     },
     # },
-    {
-        "executor": {
-            "type": "ray",
-            "num_samples": 3,
-            "scheduler": {
-                "type": "hb_bohb",
-                "time_attr": "training_iteration",
-                "reduction_factor": 4,
-            },
-            "cpu_resources_per_trial": 1,
-        },
-        "search_alg": {"type": "bohb"},
-    },
 ]
 
 
@@ -116,14 +110,17 @@ RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}}
 
 
 def _get_config(search_alg, executor):
-    input_features = [number_feature(), number_feature()]
+    input_features = [number_feature()]
     output_features = [binary_feature()]
+
+    # Bohb causes training failures when num epochs is 1
+    num_epochs = 1 if search_alg["type"] == "variant_generator" else 2
 
     return {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 1, "learning_rate": 0.001},
+        "combiner": {"type": "concat"},
+        TRAINER: {"epochs": num_epochs, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -190,7 +187,7 @@ def run_hyperopt_executor(
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
         # bohb does not support grid_search search space
-        del parameters["combiner.num_steps"]
+        del parameters["combiner.output_size"]
         hyperopt_config["parameters"] = parameters
 
     split = hyperopt_config["split"]
@@ -224,9 +221,8 @@ def run_hyperopt_executor(
     )
 
 
-@pytest.mark.skipif(_ray_nightly, reason="https://github.com/ludwig-ai/ludwig/issues/2451")
 @pytest.mark.distributed
-@pytest.mark.parametrize("scenario", SCENARIOS)
+@pytest.mark.parametrize("scenario", SCENARIOS, ids=["variant_generator", "bohb"])
 def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):
     search_alg = scenario["search_alg"]
     executor = scenario["executor"]
@@ -237,8 +233,6 @@ def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cp
 @pytest.mark.distributed
 def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     run_hyperopt_executor(
-        # {"type": "ray", "num_samples": 2},
-        # {"type": "ray"},
         {"type": "variant_generator"},  # search_alg
         {"type": "ray", "num_samples": 2},  # executor
         csv_filename,
@@ -252,7 +246,7 @@ def test_hyperopt_executor_with_metric(csv_filename, ray_mock_dir, ray_cluster_7
 @pytest.mark.distributed
 @patch("ludwig.hyperopt.execution.RayTuneExecutor", MockRayTuneExecutor)
 def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
-    input_features = [number_feature(), number_feature()]
+    input_features = [number_feature()]
     output_features = [binary_feature()]
 
     csv_filename = os.path.join(ray_mock_dir, "dataset.csv")
@@ -262,8 +256,8 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 4, "learning_rate": 0.001},
+        "combiner": {"type": "concat"},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001},
         "backend": {"type": "ray", **RAY_BACKEND_KWARGS},
     }
 
@@ -277,7 +271,6 @@ def test_hyperopt_run_hyperopt(csv_filename, ray_mock_dir, ray_cluster_7cpu):
                 "upper": 0.1,
             },
             output_feature_name + ".output_size": {"space": "randint", "lower": 2, "upper": 8},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 3},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
