@@ -42,7 +42,6 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
@@ -210,7 +209,6 @@ class SetFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[SetInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -260,7 +258,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return _SetPreprocessing(metadata)
 
 
-@register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
