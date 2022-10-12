@@ -1026,13 +1026,22 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return None
 
         if num_cpus_available < 2:
-            raise RuntimeError("At least 2 CPUs are required for hyperopt when using a RayBackend.")
+            logger.warning(
+                "At least 2 CPUs are required for hyperopt when using a RayBackend, but only found "
+                f"{num_cpus_available}. If you are not using an auto-scaling Ray cluster, your hyperopt "
+                "trials may hang."
+            )
 
-        # Ray requires at least 2 free CPUs to ensure trials don't stall
-        max_possible_trials = int((num_cpus_available - 2) // cpus_per_trial)
+        # Ray requires at least 1 free CPU to ensure trials don't stall
+        max_possible_trials = int(num_cpus_available // cpus_per_trial) - 1
 
         # Users may be using an autoscaling cluster, so return None
         if max_possible_trials < 1:
+            logger.warning(
+                f"Hyperopt trials will request {cpus_per_trial} CPUs in addition to CPUs needed for Ray Datasets, "
+                f" but only {num_cpus_available} CPUs are currently available. If you are not using an auto-scaling "
+                " Ray cluster, your hyperopt trials may hang."
+            )
             return None
 
         return max_possible_trials

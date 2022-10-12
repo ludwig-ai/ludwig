@@ -151,7 +151,7 @@ def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
             },
             {
                 "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 2},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 3},
             },
         ),
         (  # Even though num_samples is set to 4, this will actually result in 9 trials. We should correctly set
@@ -168,7 +168,7 @@ def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
                     "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
                     "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2, 3]},
                 },
-                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 2},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 3},
             },
         ),
         (  # Ensure user config value (1) is respected if it is passed in
