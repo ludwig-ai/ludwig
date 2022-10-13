@@ -21,7 +21,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema import validate_config
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
     _upgrade_encoder_decoder_params,

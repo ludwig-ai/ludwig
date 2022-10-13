@@ -4,7 +4,7 @@ from jsonschema.exceptions import ValidationError
 from ludwig.constants import DECODER, ENCODER, LOSS, PREPROCESSING, TRAINER
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import validate_config
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig

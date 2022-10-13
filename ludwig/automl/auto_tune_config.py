@@ -29,7 +29,7 @@ from ludwig.constants import (
 )
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import update_config_with_metadata
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.automl.utils import get_model_type
 from ludwig.utils.torch_utils import initialize_pytorch
 

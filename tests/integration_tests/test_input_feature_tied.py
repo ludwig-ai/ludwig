@@ -3,7 +3,7 @@ from collections import namedtuple
 import pytest
 
 from ludwig.models.base import BaseModel
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,

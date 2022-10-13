@@ -2,7 +2,7 @@ from typing import Any, Dict, Set, Union
 
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.misc_utils import get_from_registry
 
 

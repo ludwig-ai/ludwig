@@ -34,7 +34,7 @@ from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
 from ludwig.utils.defaults import default_random_seed

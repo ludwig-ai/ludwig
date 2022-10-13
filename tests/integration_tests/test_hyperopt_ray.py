@@ -29,7 +29,7 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
-from ludwig.schema.config_object import ModelConfig
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 try:
