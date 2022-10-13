@@ -44,7 +44,16 @@ if TYPE_CHECKING:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import (
+    CPU_RESOURCES_PER_TRIAL,
+    EXECUTOR,
+    MODEL_ECD,
+    MODEL_GBM,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    TYPE,
+)
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
@@ -1009,6 +1018,35 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
+
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+        cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
+        num_cpus_available = self.get_available_resources().cpus
+
+        # No actors will compete for ray datasets tasks dataset tasks are cpu bound
+        if cpus_per_trial == 0:
+            return None
+
+        if num_cpus_available < 2:
+            logger.warning(
+                "At least 2 CPUs are required for hyperopt when using a RayBackend, but only found "
+                f"{num_cpus_available}. If you are not using an auto-scaling Ray cluster, your hyperopt "
+                "trials may hang."
+            )
+
+        # Ray requires at least 1 free CPU to ensure trials don't stall
+        max_possible_trials = int(num_cpus_available // cpus_per_trial) - 1
+
+        # Users may be using an autoscaling cluster, so return None
+        if max_possible_trials < 1:
+            logger.warning(
+                f"Hyperopt trials will request {cpus_per_trial} CPUs in addition to CPUs needed for Ray Datasets, "
+                f" but only {num_cpus_available} CPUs are currently available. If you are not using an auto-scaling "
+                " Ray cluster, your hyperopt trials may hang."
+            )
+            return None
+
+        return max_possible_trials
 
 
 def initialize_ray():

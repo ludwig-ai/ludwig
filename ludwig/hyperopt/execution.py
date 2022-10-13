@@ -780,7 +780,7 @@ class RayTuneExecutor:
 
         if has_remote_protocol(output_directory):
             if _ray_200:
-                self.sync_client = RemoteSyncer()
+                self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
                 self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
             else:
                 raise ValueError(
