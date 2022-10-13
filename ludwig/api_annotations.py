@@ -5,7 +5,7 @@ def PublicAPI(*args, **kwargs):
     """Annotation for documenting public APIs. Public APIs are classes and methods exposed to end users of Ludwig.
 
     If stability="stable", the APIs will remain backwards compatible across minor Ludwig releases
-    (e.g., Ludwig 0.6 -> Ludwig 0.5).
+    (e.g., Ludwig 0.6 -> Ludwig 0.7).
 
     If stability="experimental", the APIs can be used by advanced users who are tolerant to and expect
     breaking changes. This will likely be seen in the case of incremental new feature development.
