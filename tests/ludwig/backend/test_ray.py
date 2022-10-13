@@ -10,7 +10,9 @@ ray = pytest.importorskip("ray")  # noqa
 from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV  # noqa
 from ray.train.horovod import HorovodConfig  # noqa
 
+from ludwig.backend import initialize_backend  # noqa
 from ludwig.backend.ray import get_trainer_kwargs, spread_env  # noqa
+from ludwig.constants import AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, RAY  # noqa
 
 # Mark the entire module as distributed
 pytestmark = pytest.mark.distributed
@@ -126,3 +128,64 @@ def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
         os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = prev_env
     elif TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
         del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "hyperopt_config_old, hyperopt_config_expected",
+    [
+        (  # If max_concurrent_trials is none, it should not be set in the updated config
+            {
+                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": None},
+            },
+            {
+                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": None},
+            },
+        ),
+        (  # If max_concurrent_trials is auto, set it to total_trials - 2 if num_samples == num_cpus
+            {
+                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": "auto"},
+            },
+            {
+                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 3},
+            },
+        ),
+        (  # Even though num_samples is set to 4, this will actually result in 9 trials. We should correctly set
+            # max_concurrent_trials to 2
+            {
+                "parameters": {
+                    "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
+                    "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2, 3]},
+                },
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": "auto"},
+            },
+            {
+                "parameters": {
+                    "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01, 0.1]},
+                    "combiner.num_fc_layers": {"space": "grid_search", "values": [1, 2, 3]},
+                },
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 3},
+            },
+        ),
+        (  # Ensure user config value (1) is respected if it is passed in
+            {
+                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 1},
+            },
+            {
+                "parameters": {"trainer.learning_rate": {"space": "choice", "values": [0.001, 0.01, 0.1]}},
+                "executor": {"num_samples": 4, "cpu_resources_per_trial": 1, "max_concurrent_trials": 1},
+            },
+        ),
+    ],
+    ids=["none", "auto", "auto_with_large_num_trials", "1"],
+)
+def test_set_max_concurrent_trials(hyperopt_config_old, hyperopt_config_expected, ray_cluster_4cpu):
+    backend = initialize_backend(RAY)
+    if hyperopt_config_old[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config_old[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config_old)
+    assert hyperopt_config_old == hyperopt_config_expected
