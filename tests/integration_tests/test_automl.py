@@ -105,8 +105,15 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 
     config = create_auto_config(dataset=df, target=target, time_limit_s=1, tune_for_memory=False)
 
+    # Check no features shuffled around
     assert len(input_features) == 2
     assert len(output_features) == 1
+
+    # Check encoders are properly nested
+    assert isinstance(config[INPUT_FEATURES][0][ENCODER], dict)
+    assert isinstance(config[INPUT_FEATURES][1][ENCODER], dict)
+
+    # Check automl default encoders are properly set
     assert config[INPUT_FEATURES][0][ENCODER][TYPE] == 'bert'
     assert config[INPUT_FEATURES][1][ENCODER][TYPE] == 'stacked_cnn'
 
