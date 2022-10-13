@@ -108,11 +108,11 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         delete_model_checkpoints(experiment["experiment_name"])
 
 
-def benchmark(benchmarking_config: Union[dict, str]) -> Dict[str, BenchmarkingResult]:
+def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, BenchmarkingResult]:
     """Launch benchmarking suite from a benchmarking config.
 
     Args:
-        bench_config_path: config for the benchmarking tool. Specifies datasets and their
+        benchmarking_config: config or config path for the benchmarking tool. Specifies datasets and their
             corresponding Ludwig configs, as well as export options.
     """
     if isinstance(benchmarking_config, str):
@@ -127,7 +127,7 @@ def benchmark(benchmarking_config: Union[dict, str]) -> Dict[str, BenchmarkingRe
             experiment_artifacts[dataset_name] = build_benchmarking_result(benchmarking_config, experiment_idx)
         except Exception:
             logger.exception(
-                f"Experiment *{experiment['experiment_name']}* on " f"dataset *{experiment['dataset_name']}* failed"
+                f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
         finally:
             if benchmarking_config["export"]["export_artifacts"]:

@@ -159,11 +159,14 @@ async def download_one(
     return dataset_name, local_dir
 
 
-def propagate_global_parameters(benchmarking_config: Dict[str, Any]):
-    """Propagate the global parameters of the benchmarking config to local experiments.
+def validate_benchmarking_config(benchmarking_config: Dict[str, Any]) -> None:
+    """Validates the parameters of the benchmarking config.
 
     Args:
         benchmarking_config: benchmarking config dictionary.
+
+    Raises:
+        ValueError if any of the expected parameters is not there.
     """
     if "experiment_name" not in benchmarking_config and not all(
         "experiment_name" in experiment for experiment in benchmarking_config["experiments"]
@@ -179,16 +182,36 @@ def propagate_global_parameters(benchmarking_config: Dict[str, Any]):
         )
     if "experiments" not in benchmarking_config:
         raise ValueError("You must specify a list of experiments.")
+    for experiment in benchmarking_config["experiments"]:
+        if "dataset_name" not in experiment:
+            raise ValueError("A Ludwig dataset must be specified.")
+
+
+def populate_benchmarking_config_with_defaults(benchmarking_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Populates the parameters of the benchmarking config with defaults.
+
+    Args:
+        benchmarking_config: benchmarking config dictionary.
+    """
     if "hyperopt" not in benchmarking_config:
         benchmarking_config["hyperopt"] = False
     if "process_config_file_path" not in benchmarking_config:
         benchmarking_config["process_config_file_path"] = None
     if "profiler" not in benchmarking_config:
-        benchmarking_config["profiler"] = {"enable": False, "use_torch_profiler": False, "logging_interval": 0.1}
+        benchmarking_config["profiler"] = {"enable": False, "use_torch_profiler": False, "logging_interval": None}
+    return benchmarking_config
+
+
+def propagate_global_parameters(benchmarking_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Propagate the global parameters of the benchmarking config to local experiments.
+
+    Args:
+        benchmarking_config: benchmarking config dictionary.
+    """
+    validate_benchmarking_config(benchmarking_config)
+    benchmarking_config = populate_benchmarking_config_with_defaults(benchmarking_config)
 
     for experiment in benchmarking_config["experiments"]:
-        if "dataset_name" not in experiment:
-            raise ValueError("A Ludwig dataset must be specified.")
         if "experiment_name" not in experiment:
             experiment["experiment_name"] = benchmarking_config["experiment_name"]
         if "export" not in experiment:
