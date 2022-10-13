@@ -161,9 +161,8 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
-@register_config_transformation("0.6")
-def _update_backend_cache_credentials(config: Dict[str, Any]) -> Dict[str, Any]:
-    backend = config.get("backend", {})
+@register_config_transformation("0.6", "backend")
+def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
     if "cache_credentials" in backend:
         credentials = backend.get("credentials", {})
         if "cache" in credentials:
@@ -174,7 +173,7 @@ def _update_backend_cache_credentials(config: Dict[str, Any]) -> Dict[str, Any]:
             )
             credentials["cache"] = backend.pop("cache_credentials")
         backend["credentials"] = credentials
-    return config
+    return backend
 
 
 @register_config_transformation("0.6", ["output_features"])

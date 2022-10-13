@@ -1575,7 +1575,7 @@ def preprocess_for_training(
         test_set = test_set.unwrap() if test_set is not None else None
 
         if data_format in CACHEABLE_FORMATS:
-            with backend.storage.cache.use():
+            with backend.storage.cache.use_credentials():
                 cache_results = cache.get()
                 if cache_results is not None:
                     valid, *cache_values = cache_results
@@ -1602,7 +1602,7 @@ def preprocess_for_training(
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
 
         if cached or data_format == "hdf5":
-            with backend.storage.cache.use():
+            with backend.storage.cache.use_credentials():
                 # Always interpret hdf5 files as preprocessed, even if missing from the cache
                 processed = data_format_processor.prepare_processed_data(
                     features,
@@ -1637,14 +1637,14 @@ def preprocess_for_training(
 
             # cache the dataset
             if backend.cache.can_cache(skip_save_processed_input):
-                with backend.storage.cache.use():
+                with backend.storage.cache.use_credentials():
                     logger.debug("cache processed data")
                     processed = cache.put(*processed)
                     # set cached=True to ensure credentials are used correctly below
                     cached = True
             training_set, test_set, validation_set, training_set_metadata = processed
 
-        with backend.storage.cache.use() if cached else contextlib.nullcontext():
+        with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
             logger.debug("create training dataset")
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
             if not len(training_set):
@@ -1913,7 +1913,7 @@ def preprocess_for_prediction(
 
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        with backend.storage.cache.use():
+        with backend.storage.cache.use_credentials():
             cache_results = cache.get()
             if cache_results is not None:
                 valid, *cache_values = cache_results
@@ -1929,7 +1929,7 @@ def preprocess_for_prediction(
 
     data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
     if cached:
-        with backend.storage.cache.use():
+        with backend.storage.cache.use_credentials():
             processed = data_format_processor.prepare_processed_data(
                 features,
                 dataset=dataset,
@@ -1967,7 +1967,7 @@ def preprocess_for_prediction(
         "output_features": output_features,
     }
 
-    with backend.storage.cache.use() if cached else contextlib.nullcontext():
+    with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
         dataset = backend.dataset_manager.create(
             dataset,
             config,

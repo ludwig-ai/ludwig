@@ -17,7 +17,7 @@ class Storage:
         self._creds = creds
 
     @contextlib.contextmanager
-    def use(self):
+    def use_credentials(self):
         with data_utils.use_credentials(self._creds):
             yield
 

@@ -381,7 +381,7 @@ def hyperopt(
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            with backend.storage.artifacts.use():
+            with backend.storage.artifacts.use_credentials():
                 results_directory = os.path.join(output_directory, experiment_name)
                 makedirs(results_directory, exist_ok=True)
 

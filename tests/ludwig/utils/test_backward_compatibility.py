@@ -663,8 +663,8 @@ def test_upgrade_model_progress_already_valid():
 def test_cache_credentials_backward_compatibility():
     # From v0.6.3.
     creds = {"s3": {"client_kwargs": {}}}
-    config = {"backend": {"type": "local", "cache_dir": "/foo/bar", "cache_credentials": creds}}
+    backend = {"type": "local", "cache_dir": "/foo/bar", "cache_credentials": creds}
 
-    _update_backend_cache_credentials(config)
+    _update_backend_cache_credentials(backend)
 
-    assert config == {"backend": {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}}
+    assert backend == {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}
