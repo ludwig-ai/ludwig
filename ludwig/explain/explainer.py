@@ -4,11 +4,13 @@ from typing import List, Tuple
 import pandas as pd
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, TYPE
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.util import prepare_data
 
 
+@DeveloperAPI
 class Explainer(metaclass=ABCMeta):
     def __init__(self, model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.DataFrame, target: str):
         """Constructor for the explainer.

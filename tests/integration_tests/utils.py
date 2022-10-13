@@ -42,7 +42,7 @@ from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
-from ludwig.utils.data_utils import read_csv, replace_file_extension
+from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -886,10 +886,25 @@ def remote_tmpdir(fs_protocol, bucket):
     prefix = f"tmp_{uuid.uuid4().hex}"
     tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
     try:
+        with use_credentials(minio_test_creds()):
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)
         yield tmpdir
     finally:
         try:
-            fs_utils.delete(tmpdir, recursive=True)
+            with use_credentials(minio_test_creds()):
+                fs_utils.delete(tmpdir, recursive=True)
         except FileNotFoundError as e:
             logging.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
             pass
+
+
+def minio_test_creds():
+    return {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": os.environ.get("LUDWIG_MINIO_ENDPOINT", "http://localhost:9000"),
+                "aws_access_key_id": os.environ.get("LUDWIG_MINIO_ACCESS_KEY", "minio"),
+                "aws_secret_access_key": os.environ.get("LUDWIG_MINIO_SECRET_KEY", "minio123"),
+            }
+        }
+    }

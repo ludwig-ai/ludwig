@@ -7,6 +7,7 @@ from captum.attr import IntegratedGradients
 from torch.autograd import Variable
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import PublicAPI
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -107,6 +108,7 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
     return data_to_predict
 
 
+@PublicAPI(stability="experimental")
 class IntegratedGradientsExplainer(Explainer):
     def explain(self) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions using Integrated Gradients.

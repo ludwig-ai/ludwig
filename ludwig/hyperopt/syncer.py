@@ -12,16 +12,25 @@ class RemoteSyncer(_BackgroundSyncer):
         self.creds = creds
 
     def _sync_up_command(self, local_path: str, uri: str, exclude: Optional[List] = None) -> Tuple[Callable, Dict]:
-        with use_credentials(self.creds):
-            return upload, dict(lpath=local_path, rpath=uri)
+        def upload_cmd(*args, **kwargs):
+            with use_credentials(self.creds):
+                return upload(*args, **kwargs)
+
+        return upload_cmd, dict(lpath=local_path, rpath=uri)
 
     def _sync_down_command(self, uri: str, local_path: str) -> Tuple[Callable, Dict]:
-        with use_credentials(self.creds):
-            return download, dict(rpath=uri, lpath=local_path)
+        def download_cmd(*args, **kwargs):
+            with use_credentials(self.creds):
+                return download(*args, **kwargs)
+
+        return download_cmd, dict(rpath=uri, lpath=local_path)
 
     def _delete_command(self, uri: str) -> Tuple[Callable, Dict]:
-        with use_credentials(self.creds):
-            return delete, dict(url=uri, recursive=True)
+        def delete_cmd(*args, **kwargs):
+            with use_credentials(self.creds):
+                return delete(*args, **kwargs)
+
+        return delete_cmd, dict(url=uri, recursive=True)
 
     def __reduce__(self):
         """We need this custom serialization because we can't pickle thread.lock objects that are used by the
