@@ -393,16 +393,17 @@ def hyperopt(
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            results_directory = os.path.join(output_directory, experiment_name)
-            makedirs(results_directory, exist_ok=True)
+            with backend.storage.artifacts.use_credentials():
+                results_directory = os.path.join(output_directory, experiment_name)
+                makedirs(results_directory, exist_ok=True)
 
-            hyperopt_stats = {
-                "hyperopt_config": hyperopt_config,
-                "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
-            }
+                hyperopt_stats = {
+                    "hyperopt_config": hyperopt_config,
+                    "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
+                }
 
-            save_hyperopt_stats(hyperopt_stats, results_directory)
-            logger.info(f"Hyperopt stats saved to: {results_directory}")
+                save_hyperopt_stats(hyperopt_stats, results_directory)
+                logger.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
