@@ -1,6 +1,19 @@
 from ludwig.schema.metadata.parameter_metadata import ExpectedImpact, ParameterMetadata
 
 COMBINER_METADATA = {
+    "type": ParameterMetadata(
+        ui_display_name="Combiner Type",
+        default_value_reasoning=None,
+        example_value=None,
+        related_parameters=None,
+        other_information=None,
+        description_implications=None,
+        suggested_values_reasoning=None,
+        commonly_used=True,
+        expected_impact=ExpectedImpact.HIGH,
+        literature_references=None,
+        internal_only=False,
+    ),
     "ComparatorCombiner": {
         "activation": ParameterMetadata(
             ui_display_name="Activation",
@@ -61,7 +74,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -143,7 +156,7 @@ COMBINER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -327,7 +340,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -395,7 +408,7 @@ COMBINER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -593,7 +606,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -647,7 +660,7 @@ COMBINER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -955,7 +968,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1156,7 +1169,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1194,7 +1207,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1272,7 +1285,7 @@ COMBINER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -1512,7 +1525,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1550,7 +1563,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1628,7 +1641,7 @@ COMBINER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"

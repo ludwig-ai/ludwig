@@ -18,7 +18,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -52,7 +52,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -78,7 +78,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -136,7 +136,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -359,7 +359,7 @@ ENCODER_METADATA = {
             "typically generalize well. Consider deviating from the default only if the "
             "text in the dataset originates from another domain (e.g. languages other than "
             "English).",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://arxiv.org/abs/1909.11942"],
             internal_only=False,
@@ -583,7 +583,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -603,7 +603,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -658,7 +658,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1008,7 +1008,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1034,7 +1034,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -1147,7 +1147,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -1634,7 +1634,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1654,7 +1654,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -1707,7 +1707,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -2014,7 +2014,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -2057,7 +2057,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -2146,7 +2146,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -2189,7 +2189,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -2321,7 +2321,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -2347,7 +2347,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -2425,7 +2425,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -2620,7 +2620,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -2674,7 +2674,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -2869,7 +2869,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -2918,7 +2918,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -3078,7 +3078,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3112,7 +3112,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3254,7 +3254,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3305,7 +3305,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3397,7 +3397,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3417,7 +3417,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3443,7 +3443,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -3486,7 +3486,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3792,7 +3792,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -3840,7 +3840,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -4910,7 +4910,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -4936,7 +4936,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -5014,7 +5014,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -5264,7 +5264,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -5290,7 +5290,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -5367,7 +5367,7 @@ ENCODER_METADATA = {
             description_implications=None,
             suggested_values="sigmoid, ReLu, tanh",
             suggested_values_reasoning=None,
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=None,
             internal_only=False,
@@ -5388,7 +5388,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -5544,7 +5544,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -5570,7 +5570,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -5648,7 +5648,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -6009,7 +6009,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -6198,7 +6198,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -6608,7 +6608,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -6634,7 +6634,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -6755,7 +6755,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -7137,7 +7137,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -7247,7 +7247,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -7622,7 +7622,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -7648,7 +7648,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -7904,7 +7904,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -7930,7 +7930,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -8022,7 +8022,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -8244,7 +8244,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -8367,7 +8367,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -8844,7 +8844,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -8870,7 +8870,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -8991,7 +8991,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -9421,7 +9421,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -9476,7 +9476,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -9502,7 +9502,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -9578,7 +9578,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -9661,7 +9661,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -9879,7 +9879,7 @@ ENCODER_METADATA = {
             description_implications=None,
             suggested_values="sigmoid, ReLu, tanh",
             suggested_values_reasoning=None,
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=None,
             internal_only=False,
@@ -9900,7 +9900,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -10151,7 +10151,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -10177,7 +10177,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -10298,7 +10298,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -10659,7 +10659,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -10685,7 +10685,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -10761,7 +10761,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -10830,7 +10830,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -10951,7 +10951,7 @@ ENCODER_METADATA = {
             description_implications=None,
             suggested_values="sigmoid, ReLu, tanh",
             suggested_values_reasoning=None,
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=None,
             internal_only=False,
@@ -10972,7 +10972,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -11173,7 +11173,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -11199,7 +11199,7 @@ ENCODER_METADATA = {
             suggested_values="1.6 * sqrt(vocab_size)",
             suggested_values_reasoning="Rule of thumb suggested by a deep learning textbook. Try models with smaller "
             "or larger embedding sizes to observe relative impact.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.MEDIUM,
             literature_references=[
                 "https://developers.google.com/machine-learning/crash-course/embeddings/video-lecture"
@@ -11275,7 +11275,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -11363,7 +11363,7 @@ ENCODER_METADATA = {
             "weights are updated. For example, batch normalization standardizes the inputs "
             "to a layer for each mini-batch. Try out different normalizations to see if "
             "that helps with training stability",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=[
                 "https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/"
@@ -11684,7 +11684,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -12080,7 +12080,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -12609,7 +12609,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -12678,7 +12678,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -12832,7 +12832,7 @@ ENCODER_METADATA = {
             "typically generalize well. Consider deviating from the default only if the "
             "images in the dataset originate from another domain (e.g. medical images, "
             "geospatial data).",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://arxiv.org/abs/2010.11929"],
             internal_only=False,
@@ -12888,7 +12888,7 @@ ENCODER_METADATA = {
             suggested_values=[False],
             suggested_values_reasoning="If you have a large amount of data and/or you have data that differs from the "
             "typical distribution, then it might be worth training the model from scratch.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://machinelearningmastery.com/transfer-learning-for-deep-learning/"],
             internal_only=False,
@@ -12938,7 +12938,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -13000,7 +13000,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -13725,7 +13725,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,
@@ -14003,7 +14003,7 @@ ENCODER_METADATA = {
             suggested_values_reasoning="Tuning dropout is really something to be done when all of the big choices "
             "about architecture have been settled. Consider starting with 0.5 and "
             "adjusting the dropout depending on observed model performance.",
-            commonly_used=True,
+            commonly_used=False,
             expected_impact=ExpectedImpact.HIGH,
             literature_references=["https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"],
             internal_only=False,

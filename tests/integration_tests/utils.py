@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import multiprocessing
 import os
@@ -29,6 +30,7 @@ from typing import List, Union
 import cloudpickle
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from PIL import Image
 
@@ -39,7 +41,8 @@ from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FO
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.trainers.trainer import Trainer
-from ludwig.utils.data_utils import read_csv, replace_file_extension
+from ludwig.utils import fs_utils
+from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +127,7 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
+_run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
 
 
 def slow(test_case):
@@ -134,6 +138,20 @@ def slow(test_case):
     if not _run_slow_tests:
         test_case = unittest.skip("Skipping: this test is too slow")(test_case)
     return test_case
+
+
+def private_param(param):
+    """Wrap param to mark it as private, meaning it requires credentials to run.
+
+    Private tests are skipped by default. Set the RUN_PRIVATE environment variable to a truth value to run them.
+    """
+    return pytest.param(
+        *param,
+        marks=pytest.mark.skipif(
+            not _run_private_tests,
+            reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+        ),
+    )
 
 
 def generate_data(
@@ -849,10 +867,44 @@ def train_with_backend(
                     for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
                         assert name1 == name2
                         assert np.isclose(
-                            metric1, metric2, rtol=1e-04, atol=1e-5
+                            metric1, metric2, rtol=1e-03, atol=1e-04
                         ), f"metric {name1}: {metric1} != {metric2}"
 
         return model
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def remote_tmpdir(fs_protocol, bucket):
+    if bucket is None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield f"{fs_protocol}://{tmpdir}"
+        return
+
+    prefix = f"tmp_{uuid.uuid4().hex}"
+    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
+    try:
+        with use_credentials(minio_test_creds()):
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)
+        yield tmpdir
+    finally:
+        try:
+            with use_credentials(minio_test_creds()):
+                fs_utils.delete(tmpdir, recursive=True)
+        except FileNotFoundError as e:
+            logging.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+            pass
+
+
+def minio_test_creds():
+    return {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": os.environ.get("LUDWIG_MINIO_ENDPOINT", "http://localhost:9000"),
+                "aws_access_key_id": os.environ.get("LUDWIG_MINIO_ACCESS_KEY", "minio"),
+                "aws_secret_access_key": os.environ.get("LUDWIG_MINIO_SECRET_KEY", "minio123"),
+            }
+        }
+    }

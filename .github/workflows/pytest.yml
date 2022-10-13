@@ -46,8 +46,16 @@ jobs:
       RAY_VERSION: ${{ matrix.ray-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
 
-    timeout-minutes: 60
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -106,10 +114,10 @@ jobs:
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
-              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
 
               # NOTE: Pinned Ray nightly version to September 20, 2022 to get tests to pass
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/fa182d3c9e478ef4c169ccf7459764768996110f/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/fa182d3c9e478ef4c169ccf7459764768996110f/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
               pip install ray==$RAY_VERSION
             fi
@@ -154,7 +162,7 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "$MARKERS" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: always()

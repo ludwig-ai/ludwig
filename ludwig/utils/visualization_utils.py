@@ -15,7 +15,6 @@
 # ==============================================================================
 import copy
 import logging
-import sys
 from collections import Counter
 from sys import platform
 
@@ -32,7 +31,10 @@ try:
     import matplotlib as mpl
 
     if platform == "darwin":  # OS X
-        mpl.use("TkAgg")
+        try:
+            mpl.use("TkAgg")
+        except ModuleNotFoundError:
+            logging.warning("Unable to set TkAgg backend for matplotlib. Your Python may not be configured for Tk")
     import matplotlib.patches as patches
     import matplotlib.path as path
     import matplotlib.patheffects as PathEffects
@@ -41,13 +43,12 @@ try:
     from matplotlib import ticker
     from matplotlib.lines import Line2D
     from mpl_toolkits.mplot3d import Axes3D
-except ImportError:
-    logger.error(
-        " matplotlib or seaborn are not installed. "
+except ImportError as e:
+    raise RuntimeError(
+        "matplotlib or seaborn are not installed. "
         "In order to install all visualization dependencies run "
         "pip install ludwig[viz]"
-    )
-    sys.exit(-1)
+    ) from e
 
 INT_QUANTILES = 10
 FLOAT_QUANTILES = 10

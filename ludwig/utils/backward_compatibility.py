@@ -161,6 +161,21 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
+@register_config_transformation("0.6", "backend")
+def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
+    if "cache_credentials" in backend:
+        credentials = backend.get("credentials", {})
+        if "cache" in credentials:
+            warnings.warn("`cache` already found in `backend.credentials`, ignoring `cache_credentials`")
+        else:
+            warnings.warn(
+                "`backend.cache_credentials` has been renamed `backend.credentials.cache`", DeprecationWarning
+            )
+            credentials["cache"] = backend.pop("cache_credentials")
+        backend["credentials"] = credentials
+    return backend
+
+
 @register_config_transformation("0.6", ["output_features"])
 def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
     if LOSS in feature:
@@ -598,15 +613,35 @@ def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
+@register_config_transformation("0.6", ["trainer"])
+def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
+    if "increase_batch_size_on_plateau_max" in trainer:
+        warnings.warn(
+            'Config param "increase_batch_size_on_plateau_max" renamed to "max_batch_size" and will be '
+            "removed in v0.8",
+            DeprecationWarning,
+        )
+        increase_batch_size_on_plateau_max_val = trainer.pop("increase_batch_size_on_plateau_max")
+        if "max_batch_size" in trainer:
+            warnings.warn('"max_batch_size" config param already set. Discarding "increase_batch_size_on_plateau_max".')
+        else:
+            warnings.warn(
+                f'Setting "max_batch_size" config param to "increase_batch_size_on_plateau_max" value '
+                f'({increase_batch_size_on_plateau_max_val}) and discarding "increase_batch_size_on_plateau_max"'
+            )
+            trainer["max_batch_size"] = increase_batch_size_on_plateau_max_val
+    return trainer
+
+
 def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata
     metadata = copy.deepcopy(metadata)
-    _upgrade_metadata_mising_values(metadata)
+    _upgrade_metadata_missing_values(metadata)
     return metadata
 
 
-def _upgrade_metadata_mising_values(metadata: Dict[str, Any]):
+def _upgrade_metadata_missing_values(metadata: Dict[str, Any]):
     for k, v in metadata.items():
         if isinstance(v, dict) and _is_old_missing_value_strategy(v):
             _update_old_missing_value_strategy(v)

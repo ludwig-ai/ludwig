@@ -26,6 +26,8 @@ TARGET_NAME = "target"
         (2, ["0", "1"], 0, 0, 0.0, BINARY),
         # Mostly bool-like values.
         (3, ["0", "1", "True"], 0, 0, 0.0, CATEGORY),
+        # Non-conventional booleans are treated as categories since we cannot infer true/false labels.
+        pytest.param(2, ["<=50K", ">50K"], 0, 0, 0.0, CATEGORY, id="non-conventional-bools"),
         # Finite list of strings.
         (2, ["human", "bot"], 0, 0, 0.0, CATEGORY),
         (10, [generate_string(5) for _ in range(10)], 0, 0, 0.0, CATEGORY),
