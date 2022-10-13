@@ -16,7 +16,7 @@ import logging
 import os
 from datetime import datetime
 
-from ludwig.api import PublicAPI
+from ludwig.api_annotations import PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
 

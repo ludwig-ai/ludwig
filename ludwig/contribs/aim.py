@@ -1,7 +1,7 @@
 import json
 import logging
 
-from ludwig.api import PublicAPI
+from ludwig.api_annotations import PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.package_utils import LazyLoader
