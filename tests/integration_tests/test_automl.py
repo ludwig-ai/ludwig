@@ -111,8 +111,8 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
     assert isinstance(config[INPUT_FEATURES][1][ENCODER], dict)
 
     # Check automl default encoders are properly set
-    assert config[INPUT_FEATURES][0][ENCODER][TYPE] == 'bert'
-    assert config[INPUT_FEATURES][1][ENCODER][TYPE] == 'stacked_cnn'
+    assert config[INPUT_FEATURES][0][ENCODER][TYPE] == "bert"
+    assert config[INPUT_FEATURES][1][ENCODER][TYPE] == "stacked_cnn"
 
 
 @pytest.mark.distributed
