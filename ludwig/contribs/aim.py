@@ -1,6 +1,7 @@
 import json
 import logging
 
+from ludwig.api import PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.utils.data_utils import NumpyEncoder
 from ludwig.utils.package_utils import LazyLoader
@@ -10,6 +11,7 @@ aim = LazyLoader("aim", globals(), "aim")
 logger = logging.getLogger(__name__)
 
 
+@PublicAPI
 class AimCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 

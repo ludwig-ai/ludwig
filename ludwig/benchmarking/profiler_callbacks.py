@@ -1,10 +1,13 @@
 from typing import Any, Dict
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.benchmarking.profiler import LudwigProfiler
 from ludwig.callbacks import Callback
 from ludwig.constants import EVALUATION, PREPROCESSING, TRAINING
 
 
+# Bump to PublicAPI once Ludwig 0.7 is released
+@DeveloperAPI
 class LudwigProfilerCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 

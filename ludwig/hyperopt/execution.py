@@ -26,6 +26,7 @@ from ray.tune.utils.placement_groups import PlacementGroupFactory
 from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
@@ -889,6 +890,7 @@ class RayTuneExecutor:
         return HyperoptResults(ordered_trials=ordered_trials, experiment_analysis=analysis)
 
 
+@PublicAPI
 class CallbackStopper(Stopper):
     """Ray Tune Stopper that triggers the entire job to stop if one callback returns True."""
 

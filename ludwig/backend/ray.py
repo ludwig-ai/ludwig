@@ -41,6 +41,7 @@ from ray.util.placement_group import placement_group, remove_placement_group
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
@@ -293,6 +294,7 @@ def tune_learning_rate_fn(
         hvd.shutdown()
 
 
+@DeveloperAPI
 class TqdmCallback(rt.TrainingCallback):
     """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
 
