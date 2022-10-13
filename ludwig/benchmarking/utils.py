@@ -186,7 +186,9 @@ def propagate_global_parameters(benchmarking_config: Dict[str, Any]):
     if "profiler" not in benchmarking_config:
         benchmarking_config["profiler"] = {"enable": False, "use_torch_profiler": False, "logging_interval": 0.1}
 
-    for i, experiment in enumerate(benchmarking_config["experiments"]):
+    for experiment in benchmarking_config["experiments"]:
+        if "dataset_name" not in experiment:
+            raise ValueError("A Ludwig dataset must be specified.")
         if "experiment_name" not in experiment:
             experiment["experiment_name"] = benchmarking_config["experiment_name"]
         if "export" not in experiment:

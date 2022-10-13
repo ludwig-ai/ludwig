@@ -3,11 +3,11 @@ import importlib
 import logging
 import os
 import shutil
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
 import ludwig.datasets
 from ludwig.api import LudwigModel
-from ludwig.benchmarking.artifacts import BenchmarkingArtifact
+from ludwig.benchmarking.artifacts import BenchmarkingResult, build_benchmarking_result
 from ludwig.benchmarking.profiler_callbacks import LudwigProfilerCallback
 from ludwig.benchmarking.utils import (
     create_default_config,
@@ -108,7 +108,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         delete_model_checkpoints(experiment["experiment_name"])
 
 
-def benchmark(benchmarking_config: Union[dict, str]) -> List[BenchmarkingArtifact]:
+def benchmark(benchmarking_config: Union[dict, str]) -> Dict[str, BenchmarkingResult]:
     """Launch benchmarking suite from a benchmarking config.
 
     Args:
@@ -119,11 +119,12 @@ def benchmark(benchmarking_config: Union[dict, str]) -> List[BenchmarkingArtifac
         benchmarking_config = load_yaml(benchmarking_config)
     benchmarking_config = propagate_global_parameters(benchmarking_config)
 
-    experiment_artifacts = []
+    experiment_artifacts = {}
     for experiment_idx, experiment in enumerate(benchmarking_config["experiments"]):
         try:
             benchmark_one(experiment)
-            experiment_artifacts.append(BenchmarkingArtifact(benchmarking_config, experiment_idx))
+            dataset_name = experiment["dataset_name"]
+            experiment_artifacts[dataset_name] = build_benchmarking_result(benchmarking_config, experiment_idx)
         except Exception:
             logger.exception(
                 f"Experiment *{experiment['experiment_name']}* on " f"dataset *{experiment['dataset_name']}* failed"
