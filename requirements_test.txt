@@ -41,4 +41,4 @@ scikit-optimize
 # search_alg: zoopt
 zoopt
 
-s3fs
+s3fs>=2022.8.2

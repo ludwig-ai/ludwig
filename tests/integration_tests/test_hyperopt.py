@@ -45,9 +45,16 @@ from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils import fs_utils
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, use_credentials
 from ludwig.utils.defaults import merge_with_defaults
-from tests.integration_tests.utils import category_feature, generate_data, private_param, remote_tmpdir, text_feature
+from tests.integration_tests.utils import (
+    category_feature,
+    generate_data,
+    minio_test_creds,
+    private_param,
+    remote_tmpdir,
+    text_feature,
+)
 
 ray = pytest.importorskip("ray")
 
@@ -311,8 +318,7 @@ def test_hyperopt_scheduler(
         assert isinstance(raytune_results, HyperoptResults)
 
 
-@pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
+def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_cluster):
     input_features = [
         text_feature(name="utterance", encoder={"reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 3}),
@@ -327,6 +333,7 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        "backend": backend,
     }
 
     output_feature_name = output_features[0][NAME]
@@ -390,17 +397,33 @@ def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
     assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
-    assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+    with use_credentials(minio_test_creds()):
+        assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+        for trial in hyperopt_results.experiment_analysis.trials:
+            assert fs_utils.path_exists(os.path.join(tmpdir, experiment_name, f"trial_{trial.trial_id}"))
+
+
+@pytest.mark.parametrize("search_space", ["random", "grid"])
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
+    _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster)
 
 
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
 def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
+    backend = {
+        "type": "local",
+        "credentials": {
+            "artifacts": minio_test_creds(),
+        },
+    }
+
     with remote_tmpdir(fs_protocol, bucket) as tmpdir:
         with pytest.raises(ValueError) if not _ray200 else contextlib.nullcontext():
-            test_hyperopt_run_hyperopt(
+            _run_hyperopt_run_hyperopt(
                 csv_filename,
                 "random",
                 tmpdir,
+                backend,
                 ray_cluster,
             )
 
