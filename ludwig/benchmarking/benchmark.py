@@ -28,8 +28,9 @@ logger = logging.getLogger()
 def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     """Set up the backend and load the Ludwig config.
 
-    experiment: dictionary containing the dataset name, config path, and experiment name.
-    Returns a Ludwig config.
+    Args:
+        experiment: dictionary containing the dataset name, config path, and experiment name.
+        Returns a Ludwig config.
     """
     shutil.rmtree(os.path.join(experiment["experiment_name"]), ignore_errors=True)
     if "config_path" not in experiment:
@@ -54,8 +55,8 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
 def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
     """Run a Ludwig exepriment and track metrics given a dataset name.
 
-    experiment: dictionary containing the dataset name, config path, and experiment name.
-    export_artifacts_dict: dictionary containing an export boolean flag and a path to export to.
+    Args:
+        experiment: dictionary containing the dataset name, config path, and experiment name.
     """
     logger.info(f"\nRunning experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}*")
 
@@ -110,8 +111,9 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
 def benchmark(benchmarking_config: Union[dict, str]) -> List[BenchmarkingArtifact]:
     """Launch benchmarking suite from a benchmarking config.
 
-    bench_config_path: config for the benchmarking tool. Specifies datasets and their
-        corresponding Ludwig configs, as well as export options.
+    Args:
+        bench_config_path: config for the benchmarking tool. Specifies datasets and their
+            corresponding Ludwig configs, as well as export options.
     """
     if isinstance(benchmarking_config, str):
         benchmarking_config = load_yaml(benchmarking_config)
