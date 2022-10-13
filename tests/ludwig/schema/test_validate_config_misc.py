@@ -1,7 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import DECODER, ENCODER, LOSS, PREPROCESSING, TRAINER
+from ludwig.constants import DECODER, ENCODER, LOSS, MODEL_ECD, MODEL_GBM, MODEL_TYPE, PREPROCESSING, TRAINER
 from ludwig.features.audio_feature import AudioFeatureMixin
 from ludwig.features.bag_feature import BagFeatureMixin
 from ludwig.features.binary_feature import BinaryFeatureMixin
@@ -300,3 +300,37 @@ def test_validate_defaults_schema():
     }
 
     validate_config(config)
+
+
+def test_validate_no_trainer_type():
+    config = {
+        "model_type": "ecd",
+        "input_features": [
+            category_feature(),
+            number_feature(),
+        ],
+        "output_features": [category_feature()],
+        "trainer": {
+            "learning_rate": "auto",
+            "batch_size": "auto"
+        },
+    }
+
+    # Ensure validation succeeds with ECD trainer params and ECD model type
+    validate_config(config)
+
+    # Ensure validation fails with ECD trainer params and GBM model type
+    config[MODEL_TYPE] = MODEL_GBM
+    with pytest.raises(ValidationError):
+        validate_config(config)
+
+    # Switch to trainer with valid GBM params
+    config[TRAINER] = {"tree_learner": "serial"}
+
+    # Ensure validation succeeds with GBM trainer params and GBM model type
+    validate_config(config)
+
+    # Ensure validation fails with GBM trainer params and ECD model type
+    config[MODEL_TYPE] = MODEL_ECD
+    with pytest.raises(ValidationError):
+        validate_config(config)

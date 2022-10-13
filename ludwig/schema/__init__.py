@@ -44,7 +44,7 @@ from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonsch
 
 
 @lru_cache(maxsize=1)
-def get_schema():
+def get_schema(model_type):
     schema = {
         "type": "object",
         "properties": {
@@ -52,7 +52,7 @@ def get_schema():
             INPUT_FEATURES: get_input_feature_jsonschema(),
             OUTPUT_FEATURES: get_output_feature_jsonschema(),
             COMBINER: get_combiner_jsonschema(),
-            TRAINER: get_trainer_jsonschema(),
+            TRAINER: get_trainer_jsonschema(model_type),
             PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: {},
             DEFAULTS: get_defaults_jsonschema(),
@@ -83,10 +83,4 @@ def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     updated_config = upgrade_to_latest_version(config)
 
-    # Add trainer type if not specified before validation - will be removed after config object
-    model_type = updated_config.get(MODEL_TYPE, None)
-    trainer_config = updated_config.get(TRAINER, {})
-    if not trainer_config.get(TYPE, None):
-        trainer_config[TYPE] = LIGHTGBM_TRAINER if model_type == MODEL_GBM else TRAINER
-
-    validate(instance=updated_config, schema=get_schema(), cls=get_validator())
+    validate(instance=updated_config, schema=get_schema(updated_config[MODEL_TYPE]), cls=get_validator())
