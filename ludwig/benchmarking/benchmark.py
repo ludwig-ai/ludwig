@@ -15,6 +15,8 @@ from ludwig.benchmarking.utils import (
     delete_model_checkpoints,
     export_artifacts,
     load_from_module,
+    validate_benchmarking_config,
+    populate_benchmarking_config_with_defaults,
     propagate_global_parameters,
     save_yaml,
 )
@@ -117,6 +119,8 @@ def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, Benc
     """
     if isinstance(benchmarking_config, str):
         benchmarking_config = load_yaml(benchmarking_config)
+    validate_benchmarking_config(benchmarking_config)
+    benchmarking_config = populate_benchmarking_config_with_defaults(benchmarking_config)
     benchmarking_config = propagate_global_parameters(benchmarking_config)
 
     experiment_artifacts = {}

@@ -208,9 +208,6 @@ def propagate_global_parameters(benchmarking_config: Dict[str, Any]) -> Dict[str
     Args:
         benchmarking_config: benchmarking config dictionary.
     """
-    validate_benchmarking_config(benchmarking_config)
-    benchmarking_config = populate_benchmarking_config_with_defaults(benchmarking_config)
-
     for experiment in benchmarking_config["experiments"]:
         if "experiment_name" not in experiment:
             experiment["experiment_name"] = benchmarking_config["experiment_name"]
