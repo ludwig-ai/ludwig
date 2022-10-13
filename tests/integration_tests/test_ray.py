@@ -232,10 +232,14 @@ def check_preprocessed_df_equal(df1, df2):
         elif any(feature_name in column for feature_name in [AUDIO, IMAGE]):
             is_equal = True
             for v1, v2 in zip(vals1, vals2):
-                # We reshape both because there is a difference in after preprocessing across the two backends
+                # We reshape both because there is a difference after preprocessing across the two backends.
                 # With the distributed backend, the data is flattened and then later reshaped to its original shape
                 # during training. With the local backend, the data is kept its original shape throughout.
-                is_equal &= np.allclose(v1.reshape(-1), v2.reshape(-1))
+                # TODO: Determine whether this is desired behavior. Tracked here:
+                # https://github.com/ludwig-ai/ludwig/issues/2645
+                v1 = v1.reshape(-1)
+                v2 = v2.reshape(-1)
+                is_equal &= np.allclose(v1, v2, atol=1e-5)
                 if not is_equal:
                     break
         assert is_equal, f"Column {column} is not equal. Expected {vals1[:2]}, got {vals2[:2]}"
@@ -389,7 +393,10 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         "dask",
         pytest.param(
             "modin",
-            marks=pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
+            marks=[
+                pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
+                pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643"),
+            ],
         ),
     ],
 )
@@ -578,6 +585,7 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
 @pytest.mark.distributed
 @pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643")
 def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [

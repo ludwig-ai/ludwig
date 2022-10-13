@@ -18,7 +18,7 @@ import modin.pandas as pd
 import numpy as np
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import split_by_slices
+from ludwig.utils.data_utils import get_pa_schema, split_by_slices
 
 
 class ModinEngine(DataFrameEngine):
@@ -63,7 +63,13 @@ class ModinEngine(DataFrameEngine):
         return df
 
     def to_parquet(self, df, path, index=False):
-        df.to_parquet(path, engine="pyarrow", index=index)
+        schema = get_pa_schema(df)
+        df.to_parquet(
+            path,
+            engine="pyarrow",
+            index=index,
+            schema=schema,
+        )
 
     def to_ray_dataset(self, df):
         from ray.data import from_modin

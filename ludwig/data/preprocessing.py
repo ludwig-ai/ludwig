@@ -1195,7 +1195,7 @@ def build_dataset(
     # TODO pyarrow: this is needed for caching to work with pyarrow. if removed, the following error is raised:
     # "pyarrow.lib.ArrowInvalid: Can only convert 1-dimensional array values". The data is reshaped when loaded
     # by the batcher in the RayDataset class (see _prepare_batch).
-    if backend.df_engine.partitioned:
+    if not skip_save_processed_input and backend.cache.data_format == "parquet":
         for feature in features:
             name = feature[NAME]
             proc_column = feature[PROC_COLUMN]
