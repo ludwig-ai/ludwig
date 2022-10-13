@@ -6,7 +6,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import EVALUATION, PREPROCESSING, TRAINING
 
 
-# Bump to PublicAPI once Ludwig 0.7 is released
+# TODO: Change annotation to PublicAPI once Ludwig 0.7 is released
 @DeveloperAPI
 class LudwigProfilerCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
