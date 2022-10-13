@@ -157,6 +157,10 @@ def train_cli(
     if HYPEROPT in config:
         if not query_yes_no(HYPEROPT_WARNING + CONTINUE_PROMPT):
             exit(1)
+        # Stop gap: remove hyperopt from the config to prevent interference with training step sizes
+        # TODO: https://github.com/ludwig-ai/ludwig/issues/2633
+        # Need to investigate why the presence of hyperopt in the config interferes with training step sizes
+        config.pop(HYPEROPT)
 
     if model_load_path:
         model = LudwigModel.load(

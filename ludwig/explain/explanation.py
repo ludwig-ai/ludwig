@@ -4,6 +4,8 @@ from typing import List
 import numpy as np
 import numpy.typing as npt
 
+from ludwig.api_annotations import PublicAPI
+
 
 @dataclass
 class LabelExplanation:
@@ -13,6 +15,7 @@ class LabelExplanation:
     feature_attributions: npt.NDArray[np.float64]
 
 
+@PublicAPI(stability="experimental")
 @dataclass
 class Explanation:
     """Stores the explanations for a single row of input data.
