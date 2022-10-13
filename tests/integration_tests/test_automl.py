@@ -9,7 +9,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TRAINER, TYPE
-from tests.integration_tests.utils import category_feature, generate_data, number_feature, text_feature, image_feature
+from tests.integration_tests.utils import category_feature, generate_data, image_feature, number_feature, text_feature
 
 try:
     import dask.dataframe as dd
@@ -92,10 +92,7 @@ def test_autoconfig_preprocessing_imbalanced():
 def test_autoconfig_preprocessing_text_image(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
 
-    input_features = [
-        text_feature(preprocessing={"tokenizer": "space"}),
-        image_feature(folder=image_dest_folder)
-    ]
+    input_features = [text_feature(preprocessing={"tokenizer": "space"}), image_feature(folder=image_dest_folder)]
     output_features = [category_feature(output_feature=True)]
 
     # Generate Dataset
