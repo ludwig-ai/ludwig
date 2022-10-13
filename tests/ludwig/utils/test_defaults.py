@@ -372,7 +372,7 @@ def test_merge_with_defaults():
                 "name": "number_output_feature",
                 "column": "number_output_feature",
                 "proc_column": "number_output_feature_mZFLky",
-                "loss": {"type": "mean_squared_error", "weight": 1},
+                "loss": {"type": "mean_squared_error", "weight": 1.0},
                 "decoder": {
                     "type": "regressor",
                     "fc_layers": None,
@@ -396,8 +396,8 @@ def test_merge_with_defaults():
                 "reduce_dependencies": "sum",
                 "preprocessing": {
                     "missing_value_strategy": "drop_row",
-                    "fill_value": 0,
-                    "computed_fill_value": 0,
+                    "fill_value": 0.0,
+                    "computed_fill_value": 0.0,
                     "normalization": None,
                 },
                 "input_size": None,

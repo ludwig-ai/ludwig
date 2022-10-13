@@ -17,13 +17,14 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 import psutil
 import torch
 
+from ludwig.backend.utils.storage import StorageManager
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
@@ -42,17 +43,23 @@ class Backend(ABC):
         self,
         dataset_manager: DatasetManager,
         cache_dir: Optional[str] = None,
-        cache_credentials: Optional[Union[str, dict]] = None,
+        credentials: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
+        credentials = credentials or {}
         self._dataset_manager = dataset_manager
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir, cache_credentials)
+        self._storage_manager = StorageManager(**credentials)
+        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
 
     @property
-    def cache(self):
+    def storage(self) -> StorageManager:
+        return self._storage_manager
+
+    @property
+    def cache(self) -> CacheManager:
         return self._cache_manager
 
     @property
-    def dataset_manager(self):
+    def dataset_manager(self) -> DatasetManager:
         return self._dataset_manager
 
     @abstractmethod
@@ -105,6 +112,10 @@ class Backend(ABC):
 
     @abstractmethod
     def get_available_resources(self) -> Resources:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
         raise NotImplementedError()
 
 
@@ -197,3 +208,8 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
 
     def get_available_resources(self) -> Resources:
         return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())
+
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+        # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
+        # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
+        return None

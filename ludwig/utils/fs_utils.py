@@ -192,9 +192,6 @@ def copy(src, tgt, recursive=False):
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
-    if not path_exists(url):
-        with fsspec.open(url, mode="wb"):
-            pass
 
 
 def delete(url, recursive=False):
