@@ -15,10 +15,10 @@ from ludwig.benchmarking.utils import (
     delete_model_checkpoints,
     export_artifacts,
     load_from_module,
-    validate_benchmarking_config,
     populate_benchmarking_config_with_defaults,
     propagate_global_parameters,
     save_yaml,
+    validate_benchmarking_config,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
