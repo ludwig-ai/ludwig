@@ -3,6 +3,7 @@ dask[dataframe]
 pyarrow==6.0.1 # https://github.com/ray-project/ray/issues/22310
 
 # requirements for horovod
+packaging
 horovod[pytorch]>=0.24.0
 # requirements for ray
 ray[default,data,serve,tune]>=1.13.0
