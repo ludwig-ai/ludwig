@@ -26,15 +26,12 @@ from jsonschema.validators import extend
 from ludwig.constants import (
     COMBINER,
     DEFAULTS,
-    MODEL_GBM,
     HYPEROPT,
     INPUT_FEATURES,
-    LIGHTGBM_TRAINER,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
     TRAINER,
-    TYPE,
 )
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema

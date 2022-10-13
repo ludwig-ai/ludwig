@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
@@ -11,7 +11,6 @@ from ludwig.constants import (
     MODEL_ECD,
     MODEL_GBM,
     TRAINING,
-    TYPE,
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
