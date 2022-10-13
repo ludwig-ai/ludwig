@@ -61,7 +61,12 @@ class Splitter(ABC):
         return []
 
 
-def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_val_rows, min_test_rows):
+def _make_divisions_ensure_minimum_rows(
+    divisions: List[int],
+    n_examples: int,
+    min_val_rows: int = MIN_DATASET_SPLIT_ROWS,
+    min_test_rows: int = MIN_DATASET_SPLIT_ROWS,
+) -> List[int]:
     """Revises divisions to ensure no dataset split has too few examples."""
     result = list(divisions)
     n = [dn - dm for dm, dn in zip((0,) + divisions, divisions + (n_examples,))]  # Number of examples in each split.
@@ -72,12 +77,10 @@ def _make_divisions_ensure_minimum_rows(divisions, n_examples, min_val_rows, min
     if 0 < n[1] < min_val_rows and n[0] > 0:
         # Validation set is nonempty but too small, take examples from training set.
         result[0] -= min(min_val_rows - n[1], result[0])
-    return tuple(result)
+    return result
 
 
-def _split_divisions_with_min_rows(
-    n_rows: int, probabilities: List[float], min_val_rows: int, min_test_rows: int
-) -> List[int]:
+def _split_divisions_with_min_rows(n_rows: int, probabilities: List[float]) -> List[int]:
     """Generates splits for a dataset of n_rows into train, validation, and test sets according to split
     probabilities, also ensuring that at least min_val_rows or min_test_rows are present in each nonempty split.
 
@@ -90,7 +93,7 @@ def _split_divisions_with_min_rows(
     else:
         # If the last probability is 0, then use the entire remaining dataset for validation.
         d2 = n_rows
-    return _make_divisions_ensure_minimum_rows((d1, d2), n_rows, min_val_rows=min_val_rows, min_test_rows=min_test_rows)
+    return _make_divisions_ensure_minimum_rows((d1, d2), n_rows)
 
 
 @split_registry.register("random", default=True)
@@ -103,9 +106,7 @@ class RandomSplitter(Splitter):
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         probabilities = self.probabilities
         if not backend.df_engine.partitioned:
-            divisions = _split_divisions_with_min_rows(
-                len(df), probabilities, min_val_rows=MIN_DATASET_SPLIT_ROWS, min_test_rows=MIN_DATASET_SPLIT_ROWS
-            )
+            divisions = _split_divisions_with_min_rows(len(df), probabilities)
             shuffled_df = df.sample(frac=1, random_state=random_seed)
             return (
                 shuffled_df.iloc[: divisions[0]],  # Train
