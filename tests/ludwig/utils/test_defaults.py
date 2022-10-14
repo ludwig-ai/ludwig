@@ -1,7 +1,6 @@
 import copy
 
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
@@ -17,7 +16,6 @@ from ludwig.constants import (
     MAX_POSSIBLE_BATCH_SIZE,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,

@@ -3,7 +3,6 @@ import os
 import numpy as np
 import pytest
 import torch
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER

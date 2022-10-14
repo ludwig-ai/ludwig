@@ -59,7 +59,7 @@ from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayData
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
