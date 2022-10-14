@@ -1,8 +1,9 @@
 import os
-import pytest
-
 from typing import List
+
+import pytest
 from expected_metric import ExpectedMetric, MetricRegressionDirection
+
 from ludwig.benchmarking.benchmark import benchmark
 from ludwig.utils.data_utils import load_yaml
 
@@ -14,7 +15,7 @@ def get_test_config_paths() -> List[str]:
 
 
 def get_dataset_from_config_path(config_path: str) -> str:
-    """path/to/config/<dataset>.<descriptors>.yaml -> dataset"""
+    """path/to/config/<dataset>.<descriptors>.yaml -> dataset."""
     return os.path.basename(config_path).split(".")[0]
 
 
@@ -27,16 +28,8 @@ def test_performance(config_filename, tmpdir):
 
     benchmarking_config = {
         "experiment_name": "regression_test",
-        "export": {
-            "export_artifacts": True,
-            "export_base_path": tmpdir
-        },
-        "experiments": [
-            {
-                "dataset_name": get_dataset_from_config_path(config_path),
-                "config_path": config_path
-            }
-        ]
+        "export": {"export_artifacts": True, "export_base_path": tmpdir},
+        "experiments": [{"dataset_name": get_dataset_from_config_path(config_path), "config_path": config_path}],
     }
 
     benchmarking_artifacts = benchmark(benchmarking_config)

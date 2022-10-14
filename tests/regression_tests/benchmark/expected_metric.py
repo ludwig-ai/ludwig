@@ -1,6 +1,7 @@
-from typing import Union
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Union
+
 from dataclasses_json import dataclass_json
 
 
@@ -38,4 +39,3 @@ class ExpectedMetric:
             raise ValueError(
                 "Regression direction in the expected performance YAML file should be one" "of 'LOWER', 'HIGHER'."
             )
-
