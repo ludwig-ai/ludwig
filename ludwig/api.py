@@ -20,6 +20,7 @@
     Python Version: 3+
 """
 import copy
+import dataclasses
 import logging
 import os
 import sys
@@ -27,11 +28,12 @@ import tempfile
 import traceback
 from collections import OrderedDict
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import torch
+from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
@@ -95,6 +97,88 @@ from ludwig.utils.trainer_utils import get_training_report
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EvaluationFrequency:
+    """Represents the frequency of periodic evaluation of a metric during training. For example:
+
+    "every epoch"
+    frequency: 1, period: EPOCH
+
+    "every 50 steps".
+    frequency: 50, period: STEP
+    """
+
+    frequency: float = 1.0
+    period: str = "epoch"  # One of "epoch" or "step".
+
+    EPOCH: ClassVar[str] = "epoch"  # One epoch is a single pass through the training set.
+    STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
+
+
+@dataclass
+class TrainingStats:
+    """Training stats were previously represented as a tuple or a dict.
+
+    This class replaces those while preserving dict and tuple-like behavior (unpacking, [] access).
+    """
+
+    training: Dict[str, Any]
+    validation: Dict[str, Any]
+    test: Dict[str, Any]
+    evaluation_frequency: EvaluationFrequency = dataclasses.field(default_factory=EvaluationFrequency)
+
+    # TODO(daniel): deprecate multiple return value unpacking and dictionary-style element access
+    def __iter__(self):
+        return iter((self.training, self.test, self.validation))
+
+    def __contains__(self, key):
+        return (
+            (key == TRAINING and self.training)
+            or (key == VALIDATION and self.validation)
+            or (key == TEST and self.test)
+        )
+
+    def __getitem__(self, key):
+        # Supports dict-style [] element access for compatibility.
+        return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
+
+
+@dataclass
+class PreprocessedDataset:
+    training_set: Dataset
+    validation_set: Dataset
+    test_set: Dataset
+    training_set_metadata: Dict[str, Any]
+
+    # TODO(daniel): deprecate multiple return value unpacking and indexed access
+    def __iter__(self):
+        return iter((self.training_set, self.validation_set, self.test_set, self.training_set_metadata))
+
+    def __getitem__(self, index):
+        return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
+
+
+@dataclass
+class TrainingResults:
+    train_stats: TrainingStats
+    preprocessed_data: PreprocessedDataset
+    output_directory: str
+
+    def __iter__(self):
+        """Supports tuple-style return value unpacking ex.
+
+        train_stats, training_set, output_dir = model.train(...)
+        """
+        return iter((self.train_stats, self.preprocessed_data, self.output_directory))
+
+    def __getitem__(self, index):
+        """Provides indexed getter ex.
+
+        train_stats = model.train(...)[0]
+        """
+        return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
 class LudwigModel:
@@ -252,7 +336,7 @@ class LudwigModel:
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[dict, Union[dict, pd.DataFrame], str]:
+    ) -> TrainingResults:
         """This function is used to perform a full training of the model on the specified dataset.
 
         During training if the skip parameters are False
@@ -582,17 +666,30 @@ class LudwigModel:
                         if not skip_save_model:
                             self.model.save(model_dir)
 
+                    # Evaluation Frequency
+                    if self.config[TRAINER].get("steps_per_checkpoint", None):
+                        evaluation_frequency = EvaluationFrequency(
+                            self.config[TRAINER]["steps_per_checkpoint"], EvaluationFrequency.STEP
+                        )
+                    elif self.config[TRAINER].get("checkpoints_per_epoch", None):
+                        evaluation_frequency = EvaluationFrequency(
+                            1.0 / self.config[TRAINER]["checkpoints_per_epoch"], EvaluationFrequency.EPOCH
+                        )
+                    else:
+                        evaluation_frequency = EvaluationFrequency(1, EvaluationFrequency.EPOCH)
+
                     # Unpack train()'s return.
                     # The statistics are all nested dictionaries of TrainerMetrics: feature_name -> metric_name ->
                     # List[TrainerMetric], with one entry per training checkpoint, according to steps_per_checkpoint.
                     # We reduce the dictionary of TrainerMetrics to a simple list of floats for interfacing with Ray
                     # Tune.
                     (self.model, train_trainset_stats, train_valiset_stats, train_testset_stats) = train_stats
-                    train_stats = {
-                        TRAINING: metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
-                        VALIDATION: metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
-                        TEST: metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
-                    }
+                    train_stats = TrainingStats(
+                        metric_utils.reduce_trainer_metrics_dict(train_trainset_stats),
+                        metric_utils.reduce_trainer_metrics_dict(train_valiset_stats),
+                        metric_utils.reduce_trainer_metrics_dict(train_testset_stats),
+                        evaluation_frequency,
+                    )
 
                     # save training statistics
                     if self.backend.is_coordinator():
@@ -626,7 +723,7 @@ class LudwigModel:
                 self.backend.sync_model(self.model)
 
                 print_boxed("FINISHED")
-                return train_stats, preprocessed_data, output_url
+                return TrainingResults(train_stats, preprocessed_data, output_url)
 
     def train_online(
         self,
@@ -980,7 +1077,7 @@ class LudwigModel:
         output_directory: str = "results",
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[Optional[dict], dict, Union[dict, pd.DataFrame], str]:
+    ) -> Tuple[Optional[dict], TrainingStats, PreprocessedDataset, str]:
         """Trains a model on a dataset's training and validation splits and uses it to predict on the test split.
         It saves the trained model and the statistics of training and testing.
 
@@ -1232,7 +1329,7 @@ class LudwigModel:
         skip_save_processed_input: bool = True,
         random_seed: int = default_random_seed,
         **kwargs,
-    ) -> Tuple[Dataset, Dataset, Dataset, dict]:
+    ) -> PreprocessedDataset:
         """This function is used to preprocess data.
 
         # Inputs
@@ -1275,7 +1372,7 @@ class LudwigModel:
 
         # Return
 
-        :return: (Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict]) tuple containing
+        :return: (PreprocessedDataset) data structure containing
             `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
         """
         print_boxed("PREPROCESSING")
@@ -1301,7 +1398,7 @@ class LudwigModel:
 
         (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 
-        return proc_training_set, proc_validation_set, proc_test_set, training_set_metadata
+        return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
 
     @staticmethod
     def load(
@@ -1727,10 +1824,11 @@ def kfold_cross_validate(
 
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats["fold_eval_stats"] = eval_stats
+            train_stats_dict = dataclasses.asdict(train_stats)
+            train_stats_dict["fold_eval_stats"] = eval_stats
 
             # collect training statistics for this fold
-            kfold_cv_stats["fold_" + str(fold_num)] = train_stats
+            kfold_cv_stats["fold_" + str(fold_num)] = train_stats_dict
 
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}

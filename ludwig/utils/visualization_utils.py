@@ -74,7 +74,15 @@ def visualize_callbacks(callbacks, fig):
 
 
 def learning_curves_plot(
-    train_values, vali_values, metric, algorithm_names=None, title=None, filename=None, callbacks=None
+    train_values,
+    vali_values,
+    metric,
+    x_label="epoch",
+    x_step=1,
+    algorithm_names=None,
+    title=None,
+    filename=None,
+    callbacks=None,
 ):
     num_algorithms = len(train_values)
     max_len = max(len(tv) for tv in train_values)
@@ -94,10 +102,10 @@ def learning_curves_plot(
     ax.grid(which="both")
     ax.grid(which="minor", alpha=0.5)
     ax.grid(which="major", alpha=0.75)
-    ax.set_xlabel("epochs")
+    ax.set_xlabel(x_label)
     ax.set_ylabel(metric.replace("_", " "))
 
-    xs = list(range(1, max_len + 1))
+    xs = np.arange(1, (max_len * x_step) + 1, x_step)
 
     for i in range(num_algorithms):
         name_prefix = algorithm_names[i] + " " if algorithm_names is not None and i < len(algorithm_names) else ""
