@@ -1,4 +1,5 @@
 from contextlib import nullcontext as no_error_raised
+
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
 from tests.integration_tests.utils import category_feature, generate_data
@@ -7,8 +8,12 @@ from tests.integration_tests.utils import category_feature, generate_data
 def test_category_passthrough_encoder(csv_filename):
     input_features = [category_feature(), category_feature()]
     output_features = [category_feature(output_feature=True)]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"train_steps": 1},
-              "defaults": {"category": {"encoder": {"type": "passthrough"}}}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"train_steps": 1},
+        "defaults": {"category": {"encoder": {"type": "passthrough"}}},
+    }
 
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, csv_filename)
