@@ -26,10 +26,10 @@ from jsonschema.validators import extend
 from ludwig.constants import (
     COMBINER,
     DEFAULTS,
-    MODEL_GBM,
     HYPEROPT,
     INPUT_FEATURES,
     LIGHTGBM_TRAINER,
+    MODEL_GBM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
