@@ -375,7 +375,7 @@ def create_runner(**kwargs):
         trainer.shutdown()
 
 
-@register_ray_trainer("trainer", MODEL_ECD, default=True)
+@register_ray_trainer(MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
@@ -564,7 +564,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
         super().__init__(horovod=horovod, **kwargs)
 
 
-@register_ray_trainer("ray_legacy_trainer", MODEL_ECD)
+@register_ray_trainer("ecd_ray_legacy")
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.

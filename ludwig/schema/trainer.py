@@ -99,6 +99,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
+@register_trainer_schema("ecd_ray_legacy")
 @register_trainer_schema(MODEL_ECD)
 @dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
@@ -526,7 +527,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 def get_model_type_jsonschema():
     return {
         "type": "string",
-        "enum": [MODEL_ECD, MODEL_GBM],
+        "enum": [MODEL_ECD, MODEL_GBM, "ecd_ray_legacy"],
         "default": MODEL_ECD,
         "title": "type",
         "description": "Select the model type.",
