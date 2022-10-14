@@ -1,3 +1,4 @@
+import contextlib
 import os
 import tempfile
 from typing import Any, Dict, List, Set
@@ -6,18 +7,31 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TRAINER, TYPE
-from tests.integration_tests.utils import category_feature, generate_data, image_feature, number_feature, text_feature
+from tests.integration_tests.utils import (
+    category_feature,
+    generate_data,
+    image_feature,
+    minio_test_creds,
+    number_feature,
+    private_param,
+    remote_tmpdir,
+    text_feature,
+)
 
-try:
-    import dask.dataframe as dd
+ray = pytest.importorskip("ray")
 
-    from ludwig.automl.automl import create_auto_config, train_with_config
-    from ludwig.hyperopt.execution import RayTuneExecutor
-except ImportError:
-    pass
+import dask.dataframe as dd  # noqa
+
+from ludwig.automl.automl import create_auto_config, train_with_config  # noqa
+from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
+
+_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
+
+pytestmark = pytest.mark.distributed
 
 
 @pytest.fixture(scope="module")
@@ -118,6 +132,24 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 @pytest.mark.distributed
 @pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
 def test_train_with_config(time_budget, test_data, ray_cluster_2cpu, tmpdir):
+    _run_train_with_config(time_budget, test_data, tmpdir)
+
+
+@pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
+def test_train_with_config_remote(fs_protocol, bucket, test_data, ray_cluster_2cpu):
+    backend = {
+        "type": "local",
+        "credentials": {
+            "artifacts": minio_test_creds(),
+        },
+    }
+
+    with remote_tmpdir(fs_protocol, bucket) as tmpdir:
+        with pytest.raises(ValueError) if not _ray200 else contextlib.nullcontext():
+            _run_train_with_config(200, test_data, tmpdir, backend=backend)
+
+
+def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
     input_features, output_features, dataset_csv = test_data
     config = {
         "input_features": input_features,
@@ -161,7 +193,7 @@ def test_train_with_config(time_budget, test_data, ray_cluster_2cpu, tmpdir):
         mock_fn.side_effect = fn
 
         outdir = os.path.join(tmpdir, "output")
-        results = train_with_config(dataset_csv, config, output_directory=outdir)
+        results = train_with_config(dataset_csv, config, output_directory=outdir, **kwargs)
         best_model = results.best_model
 
         if time_budget > 1:
