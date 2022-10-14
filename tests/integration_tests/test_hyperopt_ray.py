@@ -13,19 +13,25 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+from genericpath import isfile
+import json
 import logging
 import os.path
+from pyexpat import model
+import sys
+from typing import List
 
 import mlflow
 import pandas as pd
 import pytest
+from ray import tune
 from mlflow.tracking import MlflowClient
 
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs import MlflowCallback
-from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -123,6 +129,37 @@ def ray_start_4_cpus():
 def ray_cluster_4cpu():
     with ray_start_4_cpus():
         yield
+
+
+class HyperoptTestCallback(tune.Callback):
+    def __init__(self):
+        self.trial_ids = set()
+        self.user_config = {}
+        self.rendered_config = {}
+
+    def on_trial_start(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):
+        super().on_trial_start(iteration, trials, trial, **info)
+        self.trial_ids.add(trial.trial_id)
+
+    def on_trial_complete(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):
+        super().on_trial_start(iteration, trials, trial, **info)
+        model_hyperparameters = os.path.join(trial.logdir, MODEL_HYPERPARAMETERS_FILE_NAME)
+        if os.path.isfile(model_hyperparameters):
+            try:
+                with open(model_hyperparameters, "r") as f:
+                    json.load(f)
+                self.rendered_config[trial.trial_id] = True
+            except OSError:
+                logging.exception("Could not load rendered config from trial logdir.")
+
+        model_hyperparameters = os.path.join(trial.logdir, "trial_hyperparameters.json")
+        if os.path.isfile(model_hyperparameters):
+            try:
+                with open(model_hyperparameters, "r") as f:
+                    params = json.load(f)
+                self.rendered_config[trial.trial_id] = True
+            except OSError:
+                logging.exception("Could not load rendered config from trial logdir.")
 
 
 def run_hyperopt_executor(
@@ -305,12 +342,16 @@ def run_hyperopt(
     experiment_name="ray_hyperopt",
     callbacks=None,
 ):
+
+    tune_test_callback = HyperoptTestCallback()
+
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,
         output_directory=tmpdir,
         experiment_name=experiment_name,
         callbacks=callbacks,
+        tune_callbacks=[tune_test_callback],
     )
 
     # check for return results
@@ -318,3 +359,5 @@ def run_hyperopt(
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+
+    # check for evidence that the callback
