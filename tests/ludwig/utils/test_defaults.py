@@ -364,7 +364,7 @@ def test_merge_with_defaults():
             "search_alg": {"type": "variant_generator"},
         },
         "trainer": {
-"learning_rate": 0                                                                                                  .001,
+            "learning_rate": 0.001,
             "validation_metric": "loss",
             "validation_field": "combined",
             "eval_batch_size": None,
