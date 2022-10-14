@@ -38,8 +38,9 @@ def load_from_module(
     """Load the ludwig dataset, optionally subsamples it, and returns a repeatable split. A stratified split is
     used for classification datasets.
 
-    dataset_module: ludwig datasets module (e.g. ludwig.datasets.sst2, ludwig.datasets.ames_housing, etc.)
-    subsample_frac: percentage of the total dataset to load.
+    Args:
+        dataset_module: ludwig datasets module (e.g. ludwig.datasets.sst2, ludwig.datasets.ames_housing, etc.)
+        subsample_frac: percentage of the total dataset to load.
     """
     dataset = dataset_module.load(split=False)
     if subsample_frac < 1:
@@ -58,12 +59,13 @@ def load_from_module(
 def export_artifacts(experiment: Dict[str, str], experiment_output_directory: str, export_base_path: str):
     """Save the experiment artifacts to the `bench_export_directory`.
 
-    :param experiment: experiment dict that contains "dataset_name" (e.g. ames_housing),
-        "experiment_name" (specified by user), and "config_path" (path to experiment config.
-        Relative to ludwig/benchmarks/configs).
-    :param experiment_output_directory: path where the model, data, and logs of the experiment are saved.
-    :param export_base_path: remote or local path (directory) where artifacts are
-        exported. (e.g. s3://benchmarking.us-west-2.ludwig.com/bench/ or your/local/bench/)
+    Args:
+        experiment: experiment dict that contains "dataset_name" (e.g. ames_housing),
+            "experiment_name" (specified by user), and "config_path" (path to experiment config.
+            Relative to ludwig/benchmarks/configs).
+        experiment_output_directory: path where the model, data, and logs of the experiment are saved.
+        export_base_path: remote or local path (directory) where artifacts are
+            exported. (e.g. s3://benchmarking.us-west-2.ludwig.com/bench/ or your/local/bench/)
     """
     protocol, _ = fsspec.core.split_protocol(export_base_path)
     fs, _ = get_fs_and_path(export_base_path)
@@ -95,12 +97,13 @@ def download_artifacts(
 ) -> Tuple[str, List[str]]:
     """Download benchmarking artifacts for two experiments.
 
-    bench_config: bench config file. Can be the same one that was used to run
-        these experiments.
-    base_experiment: name of the experiment we're comparing against.
-    experimental_experiment: name of the experiment we're comparing.
-    download_base_path: base path under which live the stored artifacts of
-        the benchmarking experiments.
+    Args:
+        bench_config_path: bench config file path. Can be the same one that was used to run
+            these experiments.
+        base_experiment: name of the experiment we're comparing against.
+        experimental_experiment: name of the experiment we're comparing.
+        download_base_path: base path under which live the stored artifacts of
+            the benchmarking experiments.
     """
     bench_config = load_yaml(bench_config_path)
     protocol, _ = fsspec.core.split_protocol(download_base_path)
@@ -129,12 +132,13 @@ async def download_one(
 ) -> Tuple[str, str]:
     """Download `config.yaml` and `report.json` for an experiment.
 
-    fs: filesystem to use to download.
-    download_base_path: base path under which live the stored artifacts of
-        the benchmarking experiments.
-    dataset_name: name of the dataset we ran the experiments on.
-    experiment_name: name of the experiment (e.g. `v0.5.3_with_bert`)
-    local_dir: local directory under which the artifacts will be downloaded.
+    Args:
+        fs: filesystem to use to download.
+        download_base_path: base path under which live the stored artifacts of
+            the benchmarking experiments.
+        dataset_name: name of the dataset we ran the experiments on.
+        experiment_name: name of the experiment (e.g. `v0.5.3_with_bert`)
+        local_dir: local directory under which the artifacts will be downloaded.
     """
     loop = asyncio.get_running_loop()
     local_experiment_dir = os.path.join(local_dir, dataset_name, experiment_name)
@@ -155,12 +159,77 @@ async def download_one(
     return dataset_name, local_dir
 
 
+def validate_benchmarking_config(benchmarking_config: Dict[str, Any]) -> None:
+    """Validates the parameters of the benchmarking config.
+
+    Args:
+        benchmarking_config: benchmarking config dictionary.
+
+    Raises:
+        ValueError if any of the expected parameters is not there.
+    """
+    if "experiment_name" not in benchmarking_config and not all(
+        "experiment_name" in experiment for experiment in benchmarking_config["experiments"]
+    ):
+        raise ValueError("You must either specify a global experiment name or an experiment name for each experiment.")
+    if "export" not in benchmarking_config:
+        raise ValueError(
+            """You must specify export parameters. Example:
+            export:
+              export_artifacts: true
+              export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
+        """
+        )
+    if "experiments" not in benchmarking_config:
+        raise ValueError("You must specify a list of experiments.")
+    for experiment in benchmarking_config["experiments"]:
+        if "dataset_name" not in experiment:
+            raise ValueError("A Ludwig dataset must be specified.")
+
+
+def populate_benchmarking_config_with_defaults(benchmarking_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Populates the parameters of the benchmarking config with defaults.
+
+    Args:
+        benchmarking_config: benchmarking config dictionary.
+    """
+    if "hyperopt" not in benchmarking_config:
+        benchmarking_config["hyperopt"] = False
+    if "process_config_file_path" not in benchmarking_config:
+        benchmarking_config["process_config_file_path"] = None
+    if "profiler" not in benchmarking_config:
+        benchmarking_config["profiler"] = {"enable": False, "use_torch_profiler": False, "logging_interval": None}
+    return benchmarking_config
+
+
+def propagate_global_parameters(benchmarking_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Propagate the global parameters of the benchmarking config to local experiments.
+
+    Args:
+        benchmarking_config: benchmarking config dictionary.
+    """
+    for experiment in benchmarking_config["experiments"]:
+        if "experiment_name" not in experiment:
+            experiment["experiment_name"] = benchmarking_config["experiment_name"]
+        if "export" not in experiment:
+            experiment["export"] = benchmarking_config["export"]
+        if "hyperopt" not in experiment:
+            experiment["hyperopt"] = benchmarking_config["hyperopt"]
+        if "process_config_file_path" not in experiment:
+            experiment["process_config_file_path"] = benchmarking_config["process_config_file_path"]
+        if "profiler" not in experiment:
+            experiment["profiler"] = benchmarking_config["profiler"]
+    return benchmarking_config
+
+
 def create_default_config(experiment: Dict[str, Any]) -> str:
     """Create a Ludwig config that only contains input and output features.
 
-    :param dataset_name: name of the dataset to load the config for.
+    Args:
+        experiment: experiment dictionary.
 
-    return: path where the default config is saved.
+    Returns:
+        path where the default config is saved.
     """
     model_config = model_configs_for_dataset(experiment["dataset_name"])["default"]
 
@@ -175,12 +244,22 @@ def create_default_config(experiment: Dict[str, Any]) -> str:
 
 
 def delete_model_checkpoints(output_directory: str):
+    """Deletes outputs of the experiment run that we don't want to save with the artifacts.
+
+    Args:
+        output_directory: output directory of the hyperopt run.
+    """
     shutil.rmtree(os.path.join(output_directory, "model", "training_checkpoints"), ignore_errors=True)
     if os.path.isfile(os.path.join(output_directory, "model", "model_weights")):
         os.remove(os.path.join(output_directory, "model", "model_weights"))
 
 
 def delete_hyperopt_outputs(output_directory: str):
+    """Deletes outputs of the hyperopt run that we don't want to save with the artifacts.
+
+    Args:
+        output_directory: output directory of the hyperopt run.
+    """
     for path, currentDirectory, files in os.walk(output_directory):
         for file in files:
             filename = os.path.join(path, file)

@@ -42,10 +42,6 @@ You can find an example of a benchmarking config in the `examples/` directory.
 
 ## Basic Usage
 
-basic: manually specify datasets, configs and run experiments. talk about the
-hyperopt on vs off distinction, how the config parameters can be specified
-for each experiment. explain the concept of an experiment
-
 Say you implemented a new feature and would like to test it on several datasets.
 In this case, this is what the benchmarking config could look like
 
@@ -209,6 +205,17 @@ full_bench_with_profiler_with_torch
 
 The only difference is the `system_resource_usage` and `torch_ops_resource_usage`.
 The difference between these two outputs can be found in the `LudwigProfiler` README.
+
+## Parameters and defaults
+
+Each of these parameters can also be specified in the experiments section to override the global value.
+If not specified, the value of the global parameter will be propagated to the experiments.
+
+- `experiment_name` (required): name of the benchmarking run.
+- `export` (required): dictionary specifying whether to export the experiment artifacts and the export path.
+- `hyperopt` (optional): whether this is a hyperopt run or `LudwigModel.experiment`.
+- `process_config_file_path` (optional): path to python script that will modify configs.
+- `profiler` (optional): dictionary specifying whether to use the profiler and its parameters.
 
 ## Comparing experiments
 
