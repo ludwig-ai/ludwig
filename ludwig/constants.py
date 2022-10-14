@@ -103,6 +103,7 @@ INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
 TRAINER = "trainer"
+LIGHTGBM_TRAINER = "lightgbm_trainer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"
