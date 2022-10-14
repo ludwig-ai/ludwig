@@ -1,9 +1,11 @@
+from ludwig.api_annotations import PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
 
 whylogs = LazyLoader("whylogs", globals(), "whylogs")
 
 
+@PublicAPI
 class WhyLogsCallback(Callback):
     def __init__(self, path_to_config=None):
         self.path_to_config = path_to_config

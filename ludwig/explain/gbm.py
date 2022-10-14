@@ -1,10 +1,12 @@
 from typing import List, Tuple
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.models.gbm import GBM
 
 
+@PublicAPI(stability="experimental")
 class GBMExplainer(Explainer):
     def explain(self) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions. Uses the feature importances from the model.

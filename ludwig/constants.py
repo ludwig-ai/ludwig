@@ -142,6 +142,9 @@ NUM_SAMPLES = "num_samples"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+MAX_CONCURRENT_TRIALS = "max_concurrent_trials"
+CPU_RESOURCES_PER_TRIAL = "cpu_resources_per_trial"
+GPU_RESOURCES_PER_TRIAL = "gpu_resources_per_trial"
 GOAL = "goal"
 GRID_SEARCH = "grid_search"
 
@@ -164,6 +167,9 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = 128
+MAX_POSSIBLE_BATCH_SIZE = (
+    1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
+)
 LEARNING_RATE = "learning_rate"
 USE_BIAS = "use_bias"
 BIAS = "bias"
@@ -179,6 +185,7 @@ DEPENDENCIES = "dependencies"
 REDUCE_INPUT = "reduce_input"
 REDUCE_DEPENDENCIES = "reduce_dependencies"
 
+BACKEND = "backend"
 COMBINER = "combiner"
 
 ENCODER = "encoder"

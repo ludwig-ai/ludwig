@@ -192,14 +192,21 @@ def copy(src, tgt, recursive=False):
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
-    if not path_exists(url):
-        with fsspec.open(url, mode="wb"):
-            pass
 
 
 def delete(url, recursive=False):
     fs, path = get_fs_and_path(url)
     return fs.delete(path, recursive=recursive)
+
+
+def upload(lpath, rpath):
+    fs, path = get_fs_and_path(rpath)
+    pyarrow.fs.copy_files(lpath, path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
+
+
+def download(rpath, lpath):
+    fs, path = get_fs_and_path(rpath)
+    pyarrow.fs.copy_files(path, lpath, source_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
 
 
 def checksum(url):

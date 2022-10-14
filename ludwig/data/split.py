@@ -16,14 +16,21 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
+from zlib import crc32
 
 import numpy as np
 from sklearn.model_selection import train_test_split
 
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, SPLIT, TYPE
-from ludwig.schema.split import DateTimeSplitConfig, FixedSplitConfig, RandomSplitConfig, StratifySplitConfig
-from ludwig.utils.data_utils import split_dataset_ttv
+from ludwig.schema.split import (
+    DateTimeSplitConfig,
+    FixedSplitConfig,
+    HashSplitConfig,
+    RandomSplitConfig,
+    StratifySplitConfig,
+)
+from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
 
@@ -251,6 +258,51 @@ class DatetimeSplitter(Splitter):
     @staticmethod
     def get_schema_cls():
         return DateTimeSplitConfig
+
+
+@split_registry.register("hash")
+class HashSplitter(Splitter):
+    def __init__(
+        self,
+        column: str,
+        probabilities: List[float] = DEFAULT_PROBABILITIES,
+        **kwargs,
+    ):
+        self.column = column
+        self.probabilities = probabilities
+
+    def split(
+        self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
+    ) -> Tuple[DataFrame, DataFrame, DataFrame]:
+        # Maximum value of the hash function crc32
+        max_value = 2**32
+        thresholds = [v * max_value for v in self.probabilities]
+
+        def hash_column(x):
+            value = hash_dict({"value": x}, max_length=None)
+            hash_value = crc32(value)
+            if hash_value < thresholds[0]:
+                return 0
+            elif hash_value < (thresholds[0] + thresholds[1]):
+                return 1
+            else:
+                return 2
+
+        df[TMP_SPLIT_COL] = backend.df_engine.map_objects(df[self.column], hash_column).astype(np.int8)
+        dfs = split_dataset_ttv(df, TMP_SPLIT_COL)
+        train, test, val = tuple(df.drop(columns=TMP_SPLIT_COL) if df is not None else None for df in dfs)
+        return train, val, test
+
+    def has_split(self, split_index: int) -> bool:
+        return self.probabilities[split_index] > 0
+
+    @property
+    def required_columns(self) -> List[str]:
+        return [self.column]
+
+    @staticmethod
+    def get_schema_cls():
+        return HashSplitConfig
 
 
 def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:

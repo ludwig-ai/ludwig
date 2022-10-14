@@ -4,6 +4,7 @@ import queue
 import threading
 from typing import Any, Dict
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.data.dataset.base import Dataset
@@ -27,6 +28,7 @@ def _get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
     return mlflow.create_experiment(name=experiment_name, artifact_location=artifact_uri)
 
 
+@DeveloperAPI
 class MlflowCallback(Callback):
     def __init__(self, tracking_uri=None, log_artifacts: bool = True):
         self.experiment_id = None
