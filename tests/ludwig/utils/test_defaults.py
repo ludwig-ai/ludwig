@@ -149,56 +149,6 @@ def test_default_model_type():
     assert merged_config[MODEL_TYPE] == MODEL_ECD
 
 
-@pytest.mark.parametrize(
-    "model_trainer_type",
-    [
-        (MODEL_ECD, "trainer"),
-        (MODEL_GBM, "lightgbm_trainer"),
-    ],
-)
-def test_default_trainer_type(model_trainer_type):
-    model_type, expected_trainer_type = model_trainer_type
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config[TRAINER][TYPE] == expected_trainer_type
-
-
-def test_overwrite_trainer_type():
-    expected_trainer_type = "ray_legacy_trainer"
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: MODEL_ECD,
-        "trainer": {"type": expected_trainer_type},
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config[TRAINER][TYPE] == expected_trainer_type
-
-
-@pytest.mark.parametrize(
-    "model_type",
-    [MODEL_ECD, MODEL_GBM],
-)
-def test_invalid_trainer_type(model_type):
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-        "trainer": {"type": "invalid_trainer"},
-    }
-
-    with pytest.raises(ValidationError):
-        merge_with_defaults(config)
-
-
 def test_set_default_values():
     config = {
         INPUT_FEATURES: [number_feature(encoder={"max_sequence_length": 10})],
