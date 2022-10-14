@@ -38,14 +38,7 @@ def load_trainer_with_kwargs(
 
     trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 
-    def default_type_for_trainer_schema(cls):
-        """Returns the default values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].dump_default
-
-    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
-    kwargs_with_type = {**{TYPE: default_type_for_trainer_schema(trainer_schema)}, **kwargs}
-
-    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+    return load_config_with_kwargs(trainer_schema, kwargs)
 
 
 def load_config_with_kwargs(

@@ -37,8 +37,6 @@ def register_trainer_schema(model_type: str):
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
-    type: str
-
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
         allow_none=False,
