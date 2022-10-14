@@ -27,10 +27,12 @@ from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
     AUTOML_DEFAULT_TEXT_ENCODER,
+    ENCODER,
     HYPEROPT,
     IMAGE,
     TABULAR,
     TEXT,
+    TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -278,17 +280,25 @@ def _model_select(
         # text heuristics
         for input_feature in base_config["input_features"]:
             # default text encoder is bert
-            if input_feature["type"] == TEXT:
+            if input_feature[TYPE] == TEXT:
                 model_category = TEXT
-                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
-                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+                if ENCODER in input_feature:
+                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
+                else:
+                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
-            if input_feature["type"] == IMAGE:
+            if input_feature[TYPE] == IMAGE:
                 model_category = IMAGE
-                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
-                base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
+                if ENCODER in input_feature:
+                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
+                else:
+                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
+
+        # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
+        base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+        base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:
