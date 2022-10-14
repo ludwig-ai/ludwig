@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
+import itertools
 import logging
 import os
 import sys
 from functools import partial
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -28,9 +29,10 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 from yaml import warnings
 
+from ludwig.api import TrainingStats
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT, TRAINING, VALIDATION
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
@@ -112,8 +114,8 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
             raise RuntimeError(exception_message)
 
 
-def load_data_for_viz(load_type, model_file_statistics, **kwargs):
-    """Load model file data in to list of .
+def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> Dict[str, Any]:
+    """Load JSON files (training stats, evaluation stats...) for a list of models.
 
     :param load_type: type of the data loader to be used.
     :param model_file_statistics: JSON file or list of json files containing any
@@ -122,15 +124,33 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
     """
     supported_load_types = dict(
         load_json=load_json,
-        load_from_file=partial(
-            load_from_file, dtype=kwargs.get("dtype", int), ground_truth_split=kwargs.get("ground_truth_split", 2)
-        ),
+        load_from_file=partial(load_from_file, dtype=dtype, ground_truth_split=ground_truth_split),
     )
     loader = supported_load_types[load_type]
+    # Loads training stats from JSON file(s).
     try:
         stats_per_model = [loader(stats_f) for stats_f in model_file_statistics]
     except (TypeError, AttributeError):
         logger.exception(f"Unable to open model statistics file {model_file_statistics}!")
+        raise
+    return stats_per_model
+
+
+def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
+    """Load model file data (specifically training stats) for a list of models.
+
+    :param load_type: type of the data loader to be used.
+    :param model_file_statistics: JSON file or list of json files containing any
+           model experiment stats.
+    :return List of model statistics loaded as TrainingStats objects.
+    """
+    stats_per_model = load_data_for_viz(
+        load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
+    )
+    try:
+        stats_per_model = [TrainingStats.Schema().load(j) for j in stats_per_model]
+    except Exception:
+        logger.exception(f"Failed to load model statistics {model_file_statistics}!")
         raise
     return stats_per_model
 
@@ -152,10 +172,9 @@ def _validate_output_feature_name_from_train_stats(output_feature_name, train_st
     :return output_feature_names: list of output_feature_name(s) containing ground truth
     """
     output_feature_names_set = set()
-    for ls in train_stats_per_model:
-        for _, values in ls.items():
-            for key in values:
-                output_feature_names_set.add(key)
+    for train_stats in train_stats_per_model:
+        for key in itertools.chain(train_stats.training.keys(), train_stats.validation.keys(), train_stats.test.keys()):
+            output_feature_names_set.add(key)
     try:
         if output_feature_name in output_feature_names_set:
             return [output_feature_name]
@@ -338,7 +357,7 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
 
     :return None:
     """
-    train_stats_per_model = load_data_for_viz("load_json", training_statistics)
+    train_stats_per_model = load_training_stats_for_viz("load_json", training_statistics)
     learning_curves(train_stats_per_model, **kwargs)
 
 
@@ -1284,28 +1303,32 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0][TRAINING][output_feature_name]:
+            if metric in train_stats_per_model_list[0].training[output_feature_name]:
                 filename = None
                 if filename_template_path:
                     filename = filename_template_path.format(output_feature_name, metric)
 
                 training_stats = [
-                    learning_stats[TRAINING][output_feature_name][metric]
+                    learning_stats.training[output_feature_name][metric]
                     for learning_stats in train_stats_per_model_list
                 ]
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
-                    if VALIDATION in learning_stats and output_feature_name in learning_stats[VALIDATION]:
-                        validation_stats.append(learning_stats[VALIDATION][output_feature_name][metric])
+                    if learning_stats.validation and output_feature_name in learning_stats.validation:
+                        validation_stats.append(learning_stats.validation[output_feature_name][metric])
                     else:
                         validation_stats.append(None)
+
+                evaluation_frequency = train_stats_per_model_list[0].evaluation_frequency
 
                 visualization_utils.learning_curves_plot(
                     training_stats,
                     validation_stats,
                     metric,
-                    model_names_list,
+                    x_label=evaluation_frequency.period,
+                    x_step=evaluation_frequency.frequency,
+                    algorithm_names=model_names_list,
                     title=f"Learning Curves {output_feature_name}",
                     filename=filename,
                     callbacks=callbacks,
