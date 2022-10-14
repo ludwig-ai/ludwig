@@ -310,10 +310,7 @@ def test_validate_no_trainer_type():
             number_feature(),
         ],
         "output_features": [category_feature()],
-        "trainer": {
-            "learning_rate": "auto",
-            "batch_size": "auto"
-        },
+        "trainer": {"learning_rate": "auto", "batch_size": "auto"},
     }
 
     # Ensure validation succeeds with ECD trainer params and ECD model type
