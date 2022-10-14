@@ -48,6 +48,7 @@ from ludwig.constants import (
     MIN_DATASET_SPLIT_ROWS,
     TEST,
     TRAINING,
+    TRAINER,
     VALIDATION,
 )
 from ludwig.data.dataset.base import Dataset
