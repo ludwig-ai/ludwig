@@ -13,6 +13,7 @@ from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.fs_utils import open_file
 from ludwig.utils.torch_utils import get_torch_device
 
 logger = logging.getLogger(__name__)
@@ -148,7 +149,8 @@ class ECD(BaseModel):
         """Loads the model from the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         device = torch.device(get_torch_device())
-        self.load_state_dict(torch.load(weights_save_path, map_location=device))
+        with open_file(weights_save_path, "rb") as f:
+            self.load_state_dict(torch.load(f, map_location=device))
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

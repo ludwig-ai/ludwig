@@ -1,0 +1,24 @@
+# You can specify any of the global parameters locally to any experiment. This will override the global behavior.
+experiment_name: github_action
+process_config_file_path: tests/ludwig/benchmarking/example_files/process_config_example.py
+export:
+  export_artifacts: true
+  export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
+profiler:
+  enable: false
+  use_torch_profiler: false
+  logging_interval: 0.1
+experiments:
+  - dataset_name: ames_housing
+    experiment_name: large_learning_rate
+    config_path: tests/regression_tests/benchmark/configs/ames_housing.yaml
+    hyperopt: true
+  - dataset_name: protein
+    config_path: tests/regression_tests/benchmark/configs/protein.yaml
+    profiler:
+      enable: true
+      use_torch_profiler: true
+      logging_interval: 0.1
+  - dataset_name: mercedes_benz_greener
+    experiment_name: zscore_normalization
+    config_path: tests/regression_tests/benchmark/configs/mercedes_benz_greener.yaml

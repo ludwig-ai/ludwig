@@ -16,6 +16,7 @@ import logging
 import os
 from datetime import datetime
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
 
@@ -24,6 +25,7 @@ comet_ml = LazyLoader("comet_ml", globals(), "comet_ml")
 logger = logging.getLogger(__name__)
 
 
+@PublicAPI
 class CometCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 

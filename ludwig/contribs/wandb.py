@@ -15,6 +15,7 @@
 import logging
 import os
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.callbacks import Callback
 from ludwig.utils.package_utils import LazyLoader
 
@@ -23,6 +24,7 @@ wandb = LazyLoader("wandb", globals(), "wandb")
 logger = logging.getLogger(__name__)
 
 
+@PublicAPI
 class WandbCallback(Callback):
     """Class that defines the methods necessary to hook into process."""
 

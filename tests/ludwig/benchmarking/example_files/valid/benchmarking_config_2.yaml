@@ -1,0 +1,13 @@
+# This is a minimal example of a valid benchmarking config. the hyperopt section of the benchmarking config
+# will default to false. The profiler section will also default to false.
+experiment_name: github_action
+export:
+  export_artifacts: true
+  export_base_path: s3://benchmarking.us-west-2.ludwig.com/bench/    # include the slash at the end.
+experiments:
+  - dataset_name: ames_housing
+    config_path: tests/regression_tests/benchmark/configs/ames_housing.yaml
+  - dataset_name: protein
+    config_path: tests/regression_tests/benchmark/configs/protein.yaml
+  - dataset_name: mercedes_benz_greener
+    config_path: tests/regression_tests/benchmark/configs/mercedes_benz_greener.yaml
