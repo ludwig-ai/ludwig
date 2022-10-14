@@ -1,0 +1,17 @@
+# This benchmarking config is invalid beacuse it's missing the export section.
+experiment_name: github_action
+process_config_file_path: tests/ludwig/benchmarking/example_files/process_config_example.py
+hyperopt: false
+profiler:
+  enable: false
+  use_torch_profiler: false
+  logging_interval: 0.1
+experiments:
+  - dataset_name: ames_housing
+    experiment_name: large_learning_rate
+    config_path: tests/regression_tests/benchmark/configs/ames_housing.yaml
+  - dataset_name: protein
+    config_path: tests/regression_tests/benchmark/configs/protein.yaml
+  - dataset_name: mercedes_benz_greener
+    experiment_name: zscore_normalization
+    config_path: tests/regression_tests/benchmark/configs/mercedes_benz_greener.yaml

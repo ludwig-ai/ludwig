@@ -85,7 +85,8 @@ def reduce_trainer_metrics_dict(
         for metric_name, trainer_metrics in trainer_metric_dict.items():
             for trainer_metric in trainer_metrics:
                 flattened_dict[feature_name][metric_name].append(trainer_metric[-1])
-    return flattened_dict
+    # Convert defaultdict to dict so JSON serialization works with dataclasses.asdict().
+    return {k: dict(v) for k, v in flattened_dict.items()}
 
 
 def get_metric_names(output_features: Dict[str, Dict]) -> Dict[str, List[str]]:

@@ -67,7 +67,7 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
-@register_trainer("trainer", MODEL_ECD, default=True)
+@register_trainer(MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
 

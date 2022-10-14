@@ -21,19 +21,8 @@ import numpy as np
 import pytest
 
 from ludwig import visualize
-from ludwig.api import LudwigModel
-from ludwig.constants import (
-    ENCODER,
-    NAME,
-    PREDICTIONS,
-    PROBABILITIES,
-    PROBABILITY,
-    TEST,
-    TRAINER,
-    TRAINING,
-    TYPE,
-    VALIDATION,
-)
+from ludwig.api import LudwigModel, TrainingStats
+from ludwig.constants import ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
@@ -153,7 +142,7 @@ def test_learning_curves_vis_api(experiment_to_use, training_only):
     if training_only:
         # ensure plot works with only training metrics
         # Handle situation in Issue #1875
-        train_stats = {TEST: {}, TRAINING: train_stats[TRAINING], VALIDATION: {}}
+        train_stats = TrainingStats(train_stats.training, {}, {})
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
