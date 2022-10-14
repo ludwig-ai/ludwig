@@ -13,6 +13,7 @@ def register_trainer(model_type: str, default=False):
         model_type: The model_type which dictates the trainer type to use.
         default: Whether the trainer should be the default trainer for the model type.
     """
+
     def wrap(cls):
         trainers_registry[model_type] = cls
         if default:
@@ -34,6 +35,7 @@ def register_ray_trainer(model_type: str, default=False):
         model_type: The model_type which dictates the trainer type to use.
         default: Whether the trainer should be the default trainer for the model type.
     """
+
     def wrap(cls):
         ray_trainers_registry[model_type] = cls
         if default:
