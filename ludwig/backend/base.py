@@ -161,9 +161,7 @@ class LocalTrainingMixin:
     ) -> "BaseTrainer":  # noqa: F821
         from ludwig.trainers.registry import trainers_registry
 
-        trainers_for_model = get_from_registry(model.type(), trainers_registry)
-
-        trainer_cls = get_from_registry(config.type, trainers_for_model)
+        trainer_cls = get_from_registry(model.type(), trainers_registry)
 
         return trainer_cls(config=config, model=model, **kwargs)
 

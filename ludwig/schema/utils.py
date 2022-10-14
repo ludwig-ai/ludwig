@@ -33,19 +33,12 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD, TYPE
+    from ludwig.constants import MODEL_ECD
     from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 
     trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 
-    def default_type_for_trainer_schema(cls):
-        """Returns the default values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].dump_default
-
-    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
-    kwargs_with_type = {**{TYPE: default_type_for_trainer_schema(trainer_schema)}, **kwargs}
-
-    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+    return load_config_with_kwargs(trainer_schema, kwargs)
 
 
 def load_config_with_kwargs(
