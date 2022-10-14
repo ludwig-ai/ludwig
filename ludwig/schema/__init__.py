@@ -31,6 +31,7 @@ from ludwig.constants import (
     INPUT_FEATURES,
     LIGHTGBM_TRAINER,
     MODEL_TYPE,
+    MODEL_ECD,
     OUTPUT_FEATURES,
     PREPROCESSING,
     TRAINER,
@@ -86,7 +87,9 @@ def validate_config(config):
     # Add trainer type if not specified before validation - will be removed after config object
     model_type = updated_config.get(MODEL_TYPE, None)
     trainer_config = updated_config.get(TRAINER, {})
-    if not trainer_config.get(TYPE, None):
+    if trainer_config is None:
+        updated_config[TRAINER] = {TYPE: MODEL_ECD}
+    elif not trainer_config:
         trainer_config[TYPE] = LIGHTGBM_TRAINER if model_type == MODEL_GBM else TRAINER
 
     validate(instance=updated_config, schema=get_schema(), cls=get_validator())
