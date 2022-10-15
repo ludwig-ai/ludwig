@@ -22,7 +22,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-import torchvision
 from torchvision.transforms._presets import ImageClassification
 from torchvision.transforms.functional import normalize
 
