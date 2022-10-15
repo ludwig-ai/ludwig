@@ -60,6 +60,13 @@ jobs:
 
     timeout-minutes: 80
     steps:
+      - name: Hack container for local development
+        if: ${{ env.ACT }}
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          sudo mkdir -p /opt/hostedtoolcache/
+          sudo chmod 777 -R /opt/hostedtoolcache/
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -74,7 +81,7 @@ jobs:
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
-          brew install libuv
+          brew install node libuv
 
       - name: pip cache
         uses: actions/cache@v2
