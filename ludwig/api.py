@@ -47,8 +47,8 @@ from ludwig.constants import (
     HYPEROPT_WARNING,
     MIN_DATASET_SPLIT_ROWS,
     TEST,
-    TRAINING,
     TRAINER,
+    TRAINING,
     VALIDATION,
 )
 from ludwig.data.dataset.base import Dataset
