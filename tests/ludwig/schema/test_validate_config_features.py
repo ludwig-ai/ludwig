@@ -17,6 +17,8 @@ def test_config_input_output_features():
     validate_config(config)
 
 
+# TODO: remove skip
+@pytest.mark.skip("temporary skip til schema validation requirements confirmed")
 def test_incorrect_input_features_config():
     config = {
         "input_features": [
@@ -26,9 +28,8 @@ def test_incorrect_input_features_config():
     }
 
     # Not a preprocessing param for category feature
-    # TODO: re-evaluate need for the following
-    # with pytest.raises(ValidationError):
-    #     validate_config(config)
+    with pytest.raises(ValidationError):
+        validate_config(config)
 
     config = {
         "input_features": [
@@ -38,9 +39,8 @@ def test_incorrect_input_features_config():
     }
 
     # Incorrect type for padding_symbol preprocessing param
-    # TODO: re-evaluate need for the following
-    # with pytest.raises(ValidationError):
-    #     validate_config(config)
+    with pytest.raises(ValidationError):
+        validate_config(config)
 
     config = {
         "input_features": [
@@ -51,10 +51,12 @@ def test_incorrect_input_features_config():
     del config["input_features"][0]["type"]
 
     # Incorrect type for padding_symbol preprocessing param
-    # with pytest.raises(ValidationError):
-    #     validate_config(config)
+    with pytest.raises(ValidationError):
+        validate_config(config)
 
 
+# TODO: remove skip
+@pytest.mark.skip("temporary skip til schema validation requirements confirmed")
 def test_incorrect_output_features_config():
     config = {
         "input_features": [
@@ -64,6 +66,5 @@ def test_incorrect_output_features_config():
     }
 
     # Invalid decoder for binary output feature
-    # TODO: re-evaluate need for the following
-    # with pytest.raises(ValidationError):
-    #     validate_config(config)
+    with pytest.raises(ValidationError):
+        validate_config(config)
