@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import pytest
-from marshmallow import ValidationError
 
 try:
     import ray as _ray
@@ -206,35 +205,6 @@ def test_local_gbm_number(tmpdir, local_backend):
 @pytest.mark.distributed
 def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_number(tmpdir, ray_backend)
-
-
-def run_test_gbm_schema(backend_config):
-    input_features = [number_feature()]
-    output_features = [binary_feature()]
-
-    # When I pass an invalid trainer configuration,
-    invalid_trainer = "trainer"
-    config = {
-        MODEL_TYPE: "gbm",
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {
-            "num_boost_round": 2,
-            "type": invalid_trainer,
-        },
-    }
-    with pytest.raises(ValidationError):
-        # Then I should get a schema validation error
-        LudwigModel(config, backend=backend_config)
-
-
-def test_local_gbm_schema(local_backend):
-    run_test_gbm_schema(local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_schema(ray_backend, ray_cluster_4cpu):
-    run_test_gbm_schema(ray_backend)
 
 
 def test_hummingbird_conversion_binary(tmpdir, local_backend):
