@@ -5,9 +5,9 @@ from ludwig.encoders.image_encoders import (
     ALEXNET_VARIANTS,
     EFFICIENTNET_VARIANTS,
     MLPMixerEncoder,
+    RESNET_TORCH_VARIANTS,
     ResNetEncoder,
     Stacked2DCNN,
-    RESNET_TORCH_VARIANTS,
     TVAlexNetEncoder,
     TVEfficientNetEncoder,
     TVResNetEncoder,
@@ -113,10 +113,10 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in RESNET_TORCH_VARIANTS])
 def test_resnet_torch_encoder(
-        model_variant: int,
-        use_pretrained: bool,
-        saved_weights_in_checkpoint: bool,
-        trainable: bool,
+    model_variant: int,
+    use_pretrained: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
