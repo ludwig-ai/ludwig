@@ -361,7 +361,10 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
 
     input_features = [
         text_feature(
-            encoder={"vocab_size": 3, "type": "bert", }
+            encoder={
+                "vocab_size": 3,
+                "type": "bert",
+            }
         ),
     ]
 
