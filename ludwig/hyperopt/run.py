@@ -5,7 +5,6 @@ from pprint import pformat
 from typing import List, Optional, Union
 
 import pandas as pd
-from ray.tune import Callback as TuneCallback
 import yaml
 from tabulate import tabulate
 
@@ -51,11 +50,15 @@ from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
+    from ray.tune import Callback as TuneCallback
+
     from ludwig.backend.ray import RayBackend
 except ImportError:
 
     class RayBackend:
         pass
+
+    TuneCallback = object
 
 
 logger = logging.getLogger(__name__)
@@ -87,7 +90,7 @@ def hyperopt(
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
-    tune_callbacks: List[TuneCallback] = None,
+    tune_callbacks: List["TuneCallback"] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,

@@ -37,12 +37,14 @@ from tests.integration_tests.utils import category_feature, generate_data, text_
 
 try:
     import ray
+    from ray.tune import TuneCallback
     from ray.tune.trial import Trial
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
 except ImportError:
     ray = None
     Trial = None
+    TuneCallback = object  # needed to set up HyperoptTestCallback when not distributed
 
 
 logger = logging.getLogger(__name__)
@@ -130,11 +132,12 @@ def ray_cluster_4cpu():
         yield
 
 
-class HyperoptTestCallback(ray.tune.Callback):
+class HyperoptTestCallback(TuneCallback):
     def __init__(self, exp_name: str, model_type: str):
         self.exp_name = exp_name
         self.model_type = model_type
         self.trial_ids = set()
+        self.trial_status = {}
         self.user_config = {}
         self.rendered_config = {}
 
@@ -143,7 +146,9 @@ class HyperoptTestCallback(ray.tune.Callback):
         self.trial_ids.add(trial.trial_id)
 
     def on_trial_complete(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):
-        super().on_trial_start(iteration, trials, trial, **info)
+        super().on_trial_complete(iteration, trials, trial, **info)
+        self.trial_status[trial.trial_id] = trial.status
+
         model_hyperparameters = os.path.join(
             trial.logdir, f"{self.exp_name}_{self.model_type}", "model", MODEL_HYPERPARAMETERS_FILE_NAME
         )
@@ -364,7 +369,8 @@ def run_hyperopt(
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
 
     # check for evidence that the HyperoptTestCallback was active
-    assert len(tune_test_callback) > 0
+    assert len(tune_test_callback.trial_ids) > 0
     for t in tune_test_callback.trial_ids:
-        assert tune_test_callback.user_config[t].get()
-        assert tune_test_callback.rendered_config[t].get()
+        if tune_test_callback.trial_status.get(t) == "terminated":
+            assert tune_test_callback.user_config[t].get()
+            assert tune_test_callback.rendered_config[t].get()

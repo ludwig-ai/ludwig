@@ -451,7 +451,7 @@ class RayTuneExecutor:
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        # Write out the unmerged config to the trial's local directory.
+        # Write out the unmerged config with sampled hyperparameters to the trial's local directory.
         with open(os.path.join(trial_dir, "trial_hyperparameters.json"), "w") as f:
             json.dump(hyperopt_dict["config"], f)
 
@@ -812,8 +812,6 @@ class RayTuneExecutor:
         # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
         should_resume = "AUTO" if resume is None else resume
 
-        raise_on_failed_trial = kwargs.get("raise_on_failed_trial", True)
-
         try:
             analysis = tune.run(
                 f"trainable_func_f{hash_dict(config).decode('ascii')}",
@@ -840,7 +838,6 @@ class RayTuneExecutor:
                 verbose=hyperopt_log_verbosity,
                 resume=should_resume,
                 log_to_file=True,
-                raise_on_failed_trial=raise_on_failed_trial,
             )
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
