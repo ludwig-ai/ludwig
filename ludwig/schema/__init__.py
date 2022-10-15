@@ -19,6 +19,7 @@
 #
 
 from functools import lru_cache
+from threading import Lock
 
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
@@ -39,6 +40,8 @@ from ludwig.schema.defaults.defaults import get_defaults_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
+
+VALIDATION_LOCK = Lock()
 
 
 @lru_cache(maxsize=2)
@@ -82,4 +85,7 @@ def validate_config(config):
     updated_config = upgrade_to_latest_version(config)
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
 
-    validate(instance=updated_config, schema=get_schema(model_type), cls=get_validator())
+    with VALIDATION_LOCK:
+        # There is a race condition during schema validation that can cause the marshmallow schema class to
+        # be missing during validation if more than one thread is trying to validate at once.
+        validate(instance=updated_config, schema=get_schema(model_type), cls=get_validator())
