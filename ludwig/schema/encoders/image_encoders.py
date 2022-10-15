@@ -677,12 +677,12 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
     )
 
 
-@register_encoder_config("tv_resnet", IMAGE)
+@register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.StringOptions(
-        ["tv_resnet"],
-        default="tv_resnet",
+        ["resnet_torch"],
+        default="resnet_torch",
         allow_none=False,
         description="Type of encoder.",
     )

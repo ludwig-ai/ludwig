@@ -516,7 +516,7 @@ class TVBaseEncoder(Encoder):
 #   create_model_function: TorchVision function to create model class
 #   model_weights: Torchvision class for model weights
 
-TV_RESNET_VARIANTS = [
+RESNET_TORCH_VARIANTS = [
     TVModelVariant(18, tvm.resnet18, tvm.ResNet18_Weights),
     TVModelVariant(34, tvm.resnet34, tvm.ResNet34_Weights),
     TVModelVariant(50, tvm.resnet50, tvm.ResNet50_Weights),
@@ -525,11 +525,11 @@ TV_RESNET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(TV_RESNET_VARIANTS)
-@register_encoder("tv_resnet", IMAGE)
+@register_torchvision_variant(RESNET_TORCH_VARIANTS)
+@register_encoder("resnet_torch", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "tv_resnet"
+    torchvision_model_type: str = "resnet_torch"
 
     def __init__(
         self,

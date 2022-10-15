@@ -265,7 +265,7 @@ def test_model_save_reload_tv_model(tmpdir, csv_filename, tmp_path):
     ]
     tv_cache_dir = os.path.join(os.environ["HOME"], ".cache", "torch")
     input_features[0][ENCODER] = {
-        TYPE: "tv_resnet",
+        TYPE: "resnet_torch",
         "model_variant": 18,
     }
 
