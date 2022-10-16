@@ -161,27 +161,28 @@ def test_config_bad_encoder_name():
         validate_config(config)
 
 
-def test_config_bad_preprocessing_param():
-    config = {
-        "input_features": [
-            sequence_feature(encoder={"type": "parallel_cnn", "reduce_output": "sum"}),
-            image_feature(
-                "/tmp/destination_folder",
-                preprocessing={
-                    "in_memory": True,
-                    "height": 12,
-                    "width": 12,
-                    "num_channels": 3,
-                    "tokenizer": "space",
-                },
-            ),
-        ],
-        "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
-        "combiner": {"type": "concat", "output_size": 14},
-    }
+# TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
+# def test_config_bad_preprocessing_param():
+#     config = {
+#         "input_features": [
+#             sequence_feature(encoder={"type": "parallel_cnn", "reduce_output": "sum"}),
+#             image_feature(
+#                 "/tmp/destination_folder",
+#                 preprocessing={
+#                     "in_memory": True,
+#                     "height": 12,
+#                     "width": 12,
+#                     "num_channels": 3,
+#                     "tokenizer": "space",
+#                 },
+#             ),
+#         ],
+#         "output_features": [category_feature(encoder={"vocab_size": 2}, reduce_input="sum")],
+#         "combiner": {"type": "concat", "output_size": 14},
+#     }
 
-    with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
-        validate_config(config)
+#     with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
+#         validate_config(config)
 
 
 def test_config_fill_values():
