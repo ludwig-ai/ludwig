@@ -163,8 +163,11 @@ class TrainingStats:
                     recursive_compare(dict_1[key1], dict_2[key2])
                 elif isinstance(dict_1[key1], EvaluationFrequency) and isinstance(dict_2[key2], EvaluationFrequency):
                     recursive_compare(dataclasses.asdict(dict_1[key1]), dataclasses.asdict(dict_2[key2]))
-                elif isinstance(dict_1[key1], list) and isinstance(dict_2[key2], list) \
-                        and set(dict_1[key1]) == set(dict_2[key2]):
+                elif (
+                    isinstance(dict_1[key1], list)
+                    and isinstance(dict_2[key2], list)
+                    and set(dict_1[key1]) == set(dict_2[key2])
+                ):
                     return False
                 elif dict_1[key1] != dict_2[key2]:
                     return False
