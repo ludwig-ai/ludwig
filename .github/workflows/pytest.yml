@@ -81,7 +81,7 @@ jobs:
       - name: Setup macOS
         if: runner.os == 'macOS'
         run: |
-          brew install node libuv
+          brew install libuv
 
       - name: pip cache
         uses: actions/cache@v2
