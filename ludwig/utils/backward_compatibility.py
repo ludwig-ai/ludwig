@@ -633,6 +633,19 @@ def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
     return trainer
 
 
+@register_config_transformation("0.6", ["trainer"])
+def remove_trainer_type(trainer: Dict[str, Any]) -> Dict[str, Any]:
+    if TYPE in trainer:
+        warnings.warn(
+            "Config param `type` has been removed from the trainer. The trainer type is determined by the top level "
+            " `model_type` parameter. Support for the `type` params in trainer will be removed in v0.8",
+            DeprecationWarning,
+        )
+        del trainer[TYPE]
+
+    return trainer
+
+
 def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata
