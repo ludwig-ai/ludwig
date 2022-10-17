@@ -47,7 +47,6 @@ from ludwig.constants import (
     HYPEROPT_WARNING,
     MIN_DATASET_SPLIT_ROWS,
     TEST,
-    TRAINER,
     TRAINING,
     VALIDATION,
 )
