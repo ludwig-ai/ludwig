@@ -668,13 +668,13 @@ class LudwigModel:
                             self.model.save(model_dir)
 
                     # Evaluation Frequency
-                    if self.config[TRAINER].get("steps_per_checkpoint", None):
+                    if self.config_obj.trainer.steps_per_checkpoint:
                         evaluation_frequency = EvaluationFrequency(
-                            self.config[TRAINER]["steps_per_checkpoint"], EvaluationFrequency.STEP
+                            self.config_obj.trainer.steps_per_checkpoint, EvaluationFrequency.STEP
                         )
-                    elif self.config[TRAINER].get("checkpoints_per_epoch", None):
+                    elif self.config_obj.trainer.checkpoints_per_epoch:
                         evaluation_frequency = EvaluationFrequency(
-                            1.0 / self.config[TRAINER]["checkpoints_per_epoch"], EvaluationFrequency.EPOCH
+                            1.0 / self.config_obj.trainer.checkpoints_per_epoch, EvaluationFrequency.EPOCH
                         )
                     else:
                         evaluation_frequency = EvaluationFrequency(1, EvaluationFrequency.EPOCH)
