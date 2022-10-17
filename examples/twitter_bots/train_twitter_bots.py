@@ -65,7 +65,7 @@ if __name__ == "__main__":
         """
     )
 
-    model = LudwigModel(config, logging_level=logging.INFO, backend="local")
+    model = LudwigModel(config, logging_level=logging.INFO)
 
     train_stats, preprocessed_data, output_directory = model.train(dataset=training_set)
 
