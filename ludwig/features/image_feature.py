@@ -22,7 +22,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from torchvision.transforms._presets import ImageClassification
 from torchvision.transforms.functional import normalize
 
 from ludwig.constants import (
@@ -69,25 +68,14 @@ logger = logging.getLogger(__name__)
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: Dict[str, Any], tv_transforms: Optional[torch.nn.Module] = None):
         super().__init__()
         self.height = metadata["preprocessing"]["height"]
         self.width = metadata["preprocessing"]["width"]
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
         self.torchvision_model_id = metadata["preprocessing"].get("torchvision_model_id")
-        if self.torchvision_model_id:
-            # temporarily instantiate torchvision partial function to obtain required
-            # construction parameters
-            image_transforms_partial = torchvision_model_registry[
-                self.torchvision_model_id
-            ].weights_class.DEFAULT.transforms
-
-            # now recreate the ImageClassification object without the functools.partial wrapper
-            # this is needed because torchscript does not support functools.partial
-            self.image_transforms = ImageClassification(
-                *image_transforms_partial.args, **image_transforms_partial.keywords
-            )
+        self.tv_transforms = tv_transforms
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -102,11 +90,11 @@ class _ImagePreprocessing(torch.nn.Module):
         if self.torchvision_model_id is not None:
             # perform pre-processing for torchvision pretrained model encoders
             if torch.jit.isinstance(v, List[torch.Tensor]):
-                imgs = [self.image_transforms(img) for img in v]
+                imgs = [self.tv_transforms(img) for img in v]
             else:
                 # convert batch of image tensors to a list and then run torchvision pretrained
                 # model transforms on each image
-                imgs = [self.image_transforms(img) for img in torch.unbind(v)]
+                imgs = [self.tv_transforms(img) for img in torch.unbind(v)]
 
             # collect the list of images into a batch
             imgs_stacked = torch.stack(imgs)
@@ -616,4 +604,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        return _ImagePreprocessing(metadata)
+        torchvision_model_id = metadata["preprocessing"].get("torchvision_model_id")
+        if torchvision_model_id:
+            tv_transforms = torchvision_model_registry[torchvision_model_id].weights_class.DEFAULT.transforms()
+        else:
+            tv_transforms = None
+
+        return _ImagePreprocessing(metadata, tv_transforms=tv_transforms)
