@@ -46,6 +46,7 @@ from ludwig.constants import (
     HYPEROPT,
     HYPEROPT_WARNING,
     MIN_DATASET_SPLIT_ROWS,
+    MODEL_ECD,
     TEST,
     TRAINING,
     VALIDATION,
@@ -667,11 +668,11 @@ class LudwigModel:
                             self.model.save(model_dir)
 
                     # Evaluation Frequency
-                    if self.config_obj.trainer.steps_per_checkpoint:
+                    if self.config_obj.model_type == MODEL_ECD and self.config_obj.trainer.steps_per_checkpoint:
                         evaluation_frequency = EvaluationFrequency(
                             self.config_obj.trainer.steps_per_checkpoint, EvaluationFrequency.STEP
                         )
-                    elif self.config_obj.trainer.checkpoints_per_epoch:
+                    elif self.config_obj.model_type == MODEL_ECD and self.config_obj.trainer.checkpoints_per_epoch:
                         evaluation_frequency = EvaluationFrequency(
                             1.0 / self.config_obj.trainer.checkpoints_per_epoch, EvaluationFrequency.EPOCH
                         )
