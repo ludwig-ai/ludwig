@@ -334,8 +334,8 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {},
-        {"encoder": {"type": "vgg", "use_pretrained_weights": False}},
+        {},  # Ludwig default image encoder
+        {"encoder": {"type": "resnet_torch", "use_pretrained": False}},
     ],
 )
 def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
