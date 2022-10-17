@@ -12,3 +12,5 @@ GPUtil
 tblib
 awscli
 modin[ray]
+
+whylogs
