@@ -60,7 +60,7 @@ jobs:
 
     timeout-minutes: 80
     steps:
-      - name: Hack container for local development
+      - name: Setup ludwigai/ludwig-ray container for local testing with act.
         if: ${{ env.ACT }}
         run: |
           curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
