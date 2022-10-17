@@ -200,8 +200,8 @@ class LudwigModel:
         of backend to use to execute preprocessing / training steps.
     :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
         to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-    :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
-        allocate per GPU device.
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow Torch
         to use multithreading parallelism to improve performance at the
         cost of determinism.
@@ -263,7 +263,7 @@ class LudwigModel:
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
         gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
+        gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
     ) -> None:
@@ -278,8 +278,8 @@ class LudwigModel:
             of backend to use to execute preprocessing / training steps.
         :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
-            allocate per GPU device.
+        :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
         :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use multithreading parallelism to improve performance at the
             cost of determinism.
@@ -1414,7 +1414,7 @@ class LudwigModel:
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
         gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
+        gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
@@ -1431,8 +1431,8 @@ class LudwigModel:
             of backend to use to execute preprocessing / training steps.
         :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
-            allocate per GPU device.
+        :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
         :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use
             multithreading parallelism to improve performance at the cost of
@@ -1677,7 +1677,7 @@ def kfold_cross_validate(
     output_directory: str = "results",
     random_seed: int = default_random_seed,
     gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
@@ -1747,8 +1747,8 @@ def kfold_cross_validate(
            splits and any other random function.
     :param gpus: (list, default: `None`) list of GPUs that are available
             for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-            allocate per GPU device.
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow Torch to
             use multithreading parallelism
            to improve performance at the cost of determinism.
