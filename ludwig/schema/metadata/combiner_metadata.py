@@ -127,7 +127,7 @@ COMBINER_METADATA = {
             other_information=None,
             description_implications="The more layers that are specified the deeper and higher capacity the model "
             "will be. This makes it possible to potentially achieve better performance when "
-            "a big anough amount of data is provided, but also makes the model more "
+            "a big enough amount of data is provided, but also makes the model more "
             "computationally expensive and potentially more prone to overfitting.",
             suggested_values=None,
             suggested_values_reasoning="It is easier to define a stack of fully connected layers by just specifying "
