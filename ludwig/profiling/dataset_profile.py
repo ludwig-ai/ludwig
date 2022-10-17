@@ -29,7 +29,6 @@ def get_dataset_profile_proto(profile_view: DatasetProfileView) -> dataset_profi
     dataset_profile = dataset_profile_pb2.DatasetProfile()
     dataset_profile.timestamp = int(time.time())
     dataset_profile.num_examples = profile_view_pandas.iloc[0]["counts/n"]
-    # TODO: Add size bytes.
     for column_name, column_profile_view in profile_view.get_columns().items():
         feature_profile = dataset_profile_pb2.FeatureProfile()
         # Ideally, this line of code would simply be:
@@ -55,38 +54,3 @@ def get_column_profile_views_from_proto(
         whylogs_metrics_proto.ParseFromString(feature_profile.whylogs_metrics.SerializeToString())
         column_profile_views[feature_name] = ColumnProfileView.from_protobuf(whylogs_metrics_proto)
     return column_profile_views
-
-
-# def get_dtype_from_column_profile(column_profile_summary: Dict) -> str:
-#     # TODO: Better way of getting this, is it automatically available?
-#     if column_profile_summary["types/boolean"]:
-#         return "bool"
-#     if column_profile_summary["types/fractional"]:
-#         return "float"
-#     if column_profile_summary["types/integral"]:
-#         return "int64"
-#     if column_profile_summary["types/string"]:
-#         return "string"
-#     return "object"
-
-
-# def column_profile_to_field_info(feature_name: str, column_profile: ColumnProfileView) -> FieldInfo:
-#     """Placeholder to replicate current Ludwig type inference logic."""
-#     column_profile_summary = column_profile.to_summary_dict()
-#     field_info = FieldInfo()
-#     field_info.name = feature_name
-#     field_info.key = feature_name
-#     if "frequent_items/frequent_strings" in column_profile_summary:
-#         frequent_items = column_profile_summary["frequent_items/frequent_strings"]
-#         if frequent_items:  # Can be an empty list if the feature is non-string.
-#             max_occurence = frequent_items[0].est
-#             min_occurence = frequent_items[-1].est
-#             for frequent_item in frequent_items:
-#                 field_info.distinct_values.append(frequent_item.value)
-#             field_info.distinct_values_balance = min_occurence / max_occurence
-#     field_info.num_distinct_values = int(column_profile_summary["cardinality/est"])
-#     field_info.nonnull_values = column_profile_summary["counts/n"] - column_profile_summary["counts/null"]
-#     field_info.image_values = column_profile_summary["ludwig_metric/image_score"]
-#     field_info.audio_values = column_profile_summary["ludwig_metric/audio_score"]
-#     field_info.dtype = get_dtype_from_column_profile(column_profile_summary)
-#     return field_info
