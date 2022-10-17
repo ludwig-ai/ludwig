@@ -42,7 +42,6 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import set_default_value, set_default_values
@@ -98,7 +97,7 @@ class VectorFeatureMixin:
 
     @staticmethod
     def preprocessing_defaults():
-        return VectorInputFeatureConfig().preprocessing.__dict__
+        return VectorInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -146,7 +145,6 @@ class VectorFeatureMixin:
         return proc_df
 
 
-@register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[VectorInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -195,7 +193,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return VectorInputFeatureConfig
 
 
-@register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
     default_validation_metric = MEAN_SQUARED_ERROR
@@ -220,7 +217,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def loss_kwargs(self):
-        return self.loss
+        return self.loss.to_dict()
 
     def metric_kwargs(self):
         return dict(num_outputs=self.output_shape[0])
@@ -268,7 +265,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

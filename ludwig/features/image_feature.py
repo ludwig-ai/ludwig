@@ -47,7 +47,6 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -131,7 +130,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return ImageInputFeatureConfig().preprocessing.__dict__
+        return ImageInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -175,7 +174,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         if isinstance(img_entry, bytes):
             img = read_image_from_bytes_obj(img_entry, num_channels)
         elif isinstance(img_entry, np.ndarray):
-            img = torch.from_numpy(img_entry).permute(2, 0, 1)
+            img = torch.from_numpy(np.array(img_entry, copy=True)).permute(2, 0, 1)
         else:
             img = img_entry
 
@@ -204,7 +203,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 img = torch.nn.functional.pad(img, [0, 0, 0, 0, 0, extra_channels])
 
             if img_num_channels != num_channels:
-                logging.warning(
+                logger.warning(
                     "Image has {} channels, where as {} "
                     "channels are expected. Dropping/adding channels "
                     "with 0s as appropriate".format(img_num_channels, num_channels)
@@ -277,16 +276,16 @@ class ImageFeatureMixin(BaseFeatureMixin):
         else:
             # Default case: use 3 channels.
             num_channels = 3
-        logging.info(f"Inferring num_channels from the first {n_images} images.")
-        logging.info("\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())]))
+        logger.info(f"Inferring num_channels from the first {n_images} images.")
+        logger.info("\n".join([f"  images with {k} channels: {v}" for k, v in sorted(channel_frequency.items())]))
         if num_channels == max(channel_frequency, key=channel_frequency.get):
-            logging.info(
+            logger.info(
                 f"Using {num_channels} channels because it is the majority in sample. If an image with"
                 f" a different depth is read, will attempt to convert to {num_channels} channels."
             )
         else:
-            logging.info(f"Defaulting to {num_channels} channels.")
-        logging.info(
+            logger.info(f"Defaulting to {num_channels} channels.")
+        logger.info(
             "To explicitly set the number of channels, define num_channels in the preprocessing dictionary of "
             "the image input feature config."
         )
@@ -471,7 +470,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             proc_df[feature_config[PROC_COLUMN]] = np.arange(num_images)
 
         if num_failed_image_reads > 0:
-            logging.warning(
+            logger.warning(
                 f"Failed to read {num_failed_image_reads} images while preprocessing feature `{name}`. "
                 "Using default image for these rows in the dataset."
             )
@@ -479,7 +478,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[ImageInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)

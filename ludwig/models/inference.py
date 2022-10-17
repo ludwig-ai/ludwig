@@ -13,7 +13,7 @@ from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils import output_feature_utils
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.inference_utils import get_filename_from_stage, to_inference_module_input_from_dataframe
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.output_feature_utils import get_feature_name_from_concat_name, get_tensor_name_from_concat_name
@@ -23,6 +23,8 @@ from ludwig.utils.types import TorchDevice, TorchscriptPreprocessingInput
 # Prevents circular import errors from typing.
 if TYPE_CHECKING:
     from ludwig.models.base import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class InferenceModule(nn.Module):
@@ -97,7 +99,7 @@ class InferenceModule(nn.Module):
     ):
         """Create an InferenceModule from a trained LudwigModel."""
         if device is None:
-            logging.info(f'No device specified. Loading using device "{DEVICE}".')
+            logger.info(f'No device specified. Loading using device "{DEVICE}".')
             device = DEVICE
 
         stage_to_module = _init_inference_stages_from_ludwig_model(
@@ -121,7 +123,7 @@ class InferenceModule(nn.Module):
     ):
         """Create an InferenceModule from a directory containing a model, config, and training set metadata."""
         if device is None:
-            logging.info(f'No device specified. Loading using device "{DEVICE}".')
+            logger.info(f'No device specified. Loading using device "{DEVICE}".')
             device = DEVICE
 
         stage_to_module = _init_inference_stages_from_directory(directory, device=device)
@@ -237,7 +239,7 @@ def save_ludwig_model_for_inference(
 ) -> None:
     """Saves a LudwigModel (a BaseModel model, config, and training_set_metadata) for inference."""
     if device is None:
-        logging.info(f'No device specified. Saving using device "{DEVICE}".')
+        logger.info(f'No device specified. Saving using device "{DEVICE}".')
         device = DEVICE
 
     stage_to_filenames = {
@@ -250,9 +252,19 @@ def save_ludwig_model_for_inference(
     if model_only:
         stage_to_module[PREDICTOR].save(os.path.join(save_path, stage_to_filenames[PREDICTOR]))
     else:
+        config_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+        if not os.path.exists(config_path):
+            save_json(config_path, config)
+            logger.info(f"Saved model config to {config_path}")
+
+        training_set_metadata_path = os.path.join(save_path, TRAIN_SET_METADATA_FILE_NAME)
+        if not os.path.exists(training_set_metadata_path):
+            save_json(training_set_metadata_path, training_set_metadata)
+            logger.info(f"Saved training set metadata to {training_set_metadata_path}")
+
         for stage, module in stage_to_module.items():
             module.save(os.path.join(save_path, stage_to_filenames[stage]))
-            logging.info(f"Saved torchscript module for {stage} to {stage_to_filenames[stage]}.")
+            logger.info(f"Saved torchscript module for {stage} to {stage_to_filenames[stage]}.")
 
 
 def _init_inference_stages_from_directory(

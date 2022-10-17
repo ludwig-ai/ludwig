@@ -21,19 +21,8 @@ import numpy as np
 import pytest
 
 from ludwig import visualize
-from ludwig.api import LudwigModel
-from ludwig.constants import (
-    ENCODER,
-    NAME,
-    PREDICTIONS,
-    PROBABILITIES,
-    PROBABILITY,
-    TEST,
-    TRAINER,
-    TRAINING,
-    TYPE,
-    VALIDATION,
-)
+from ludwig.api import LudwigModel, TrainingStats
+from ludwig.constants import ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
@@ -153,7 +142,7 @@ def test_learning_curves_vis_api(experiment_to_use, training_only):
     if training_only:
         # ensure plot works with only training metrics
         # Handle situation in Issue #1875
-        train_stats = {TEST: {}, TRAINING: train_stats[TRAINING], VALIDATION: {}}
+        train_stats = TrainingStats(train_stats.training, {}, {})
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
@@ -483,7 +472,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment
                 experiment.ground_truth,
                 experiment.ground_truth_metadata,
                 experiment.output_feature_name,
-                top_n_classes=[3],
+                top_n_classes=[2],
                 labels_limit=0,
                 subset="ground_truth",
                 model_names=["Model1", "Model2"],
@@ -493,7 +482,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(experiment
             figure_cnt = glob.glob(vis_output_pattern_pdf)
             # 3 figures should be saved because experiment setting top_n_classes = 3
             # hence one figure per class
-            assert 3 == len(figure_cnt)
+            assert 2 == len(figure_cnt)
 
 
 def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
@@ -652,7 +641,7 @@ def test_binary_threshold_vs_metric_vis_api(experiment_to_use):
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
     metrics = ["accuracy"]
-    positive_label = 2
+    positive_label = 1
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
@@ -681,7 +670,7 @@ def test_roc_curves_vis_api(experiment_to_use):
     experiment = experiment_to_use
     probabilities = experiment.probabilities
     viz_outputs = ("pdf", "png")
-    positive_label = 2
+    positive_label = 1
     with TemporaryDirectory() as tmpvizdir:
         for viz_output in viz_outputs:
             vis_output_pattern_pdf = tmpvizdir + f"/*.{viz_output}"
@@ -758,7 +747,7 @@ def test_calibration_1_vs_all_vis_api(experiment_to_use):
                 file_format=viz_output,
             )
             figure_cnt = glob.glob(vis_output_pattern_pdf)
-            assert 7 == len(figure_cnt)
+            assert 5 == len(figure_cnt)
 
 
 def test_calibration_multiclass_vis_api(experiment_to_use):
@@ -844,10 +833,17 @@ def test_frequency_vs_f1_vis_api(experiment_to_use):
 
 
 @pytest.mark.distributed
-def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
+def test_hyperopt_report_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
-    visualize.hyperopt_report(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)
+    # Ensure visualizations directory is empty before creating plots
+    if os.path.exists(vis_dir):
+        for f in os.listdir(vis_dir):
+            os.remove(os.path.join(vis_dir, f))
+
+    visualize.hyperopt_report(
+        os.path.join(hyperopt_results_multiple_parameters, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir
+    )
 
     # test for creation of output directory
     assert os.path.isdir(vis_dir)
@@ -857,13 +853,39 @@ def test_hyperopt_report_vis_api(hyperopt_results, tmpdir):
 
 
 @pytest.mark.distributed
-def test_hyperopt_hiplot_vis_api(hyperopt_results, tmpdir):
+def test_hyperopt_hiplot_vis_api(hyperopt_results_multiple_parameters, tmpdir):
     vis_dir = os.path.join(tmpdir, "visualizations")
 
-    visualize.hyperopt_hiplot(os.path.join(hyperopt_results, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir)
+    # Ensure visualizations directory is empty before creating plots
+    if os.path.exists(vis_dir):
+        for f in os.listdir(vis_dir):
+            os.remove(os.path.join(vis_dir, f))
+
+    visualize.hyperopt_hiplot(
+        os.path.join(hyperopt_results_multiple_parameters, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir
+    )
 
     # test for creation of output directory
     assert os.path.isdir(vis_dir)
 
     # test for generatated html page
     assert os.path.isfile(os.path.join(vis_dir, "hyperopt_hiplot.html"))
+
+
+@pytest.mark.distributed
+def test_hyperopt_report_vis_api_no_pairplot(hyperopt_results_single_parameter, tmpdir):
+    vis_dir = os.path.join(tmpdir, "visualizations")
+
+    # Ensure visualizations directory is empty before creating plots
+    if os.path.exists(vis_dir):
+        for f in os.listdir(vis_dir):
+            os.remove(os.path.join(vis_dir, f))
+
+    visualize.hyperopt_report(
+        os.path.join(hyperopt_results_single_parameter, HYPEROPT_STATISTICS_FILE_NAME), output_directory=vis_dir
+    )
+
+    figure_cnt = glob.glob(os.path.join(vis_dir, "*"))
+
+    # Only create plot for single parameter and skip pairplot creation
+    assert len(figure_cnt) == 1

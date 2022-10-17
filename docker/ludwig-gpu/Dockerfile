@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
+FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-devel
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sh -c 'echo "APT { Get { AllowUnauthenticated \"1\"; }; };" > /etc/apt/apt.conf.d/99allow_unauth' && \
@@ -35,7 +35,8 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' && horovodrun --check-build
+    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu113 && \
+    horovodrun --check-build
 
 WORKDIR /data
 

@@ -9,9 +9,10 @@ Driver script which:
 """
 import argparse
 import copy
+import logging
 import os
 import warnings
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -20,25 +21,29 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
+from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
     AUTOML_DEFAULT_TEXT_ENCODER,
+    ENCODER,
     HYPEROPT,
     IMAGE,
     TABULAR,
     TEXT,
+    TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.automl.ray_utils import _ray_init, get_available_resources
+from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import (
     _add_transfer_config,
     get_model_type,
     has_imbalanced_output,
     set_output_feature_metric,
 )
+from ludwig.utils.data_utils import load_dataset, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import merge_dict
@@ -48,32 +53,44 @@ try:
     import dask.dataframe as dd
     import ray
     from ray.tune import ExperimentAnalysis
-except ImportError:
-    raise ImportError(" ray is not installed. " "In order to use auto_train please run " "pip install ludwig[ray]")
+except ImportError as e:
+    raise RuntimeError("ray is not installed. In order to use auto_train please run pip install ludwig[ray]") from e
 
+
+logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = "."
 
 
 class AutoTrainResults:
-    def __init__(self, experiment_analysis: ExperimentAnalysis):
+    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: Dict[str, Any] = None):
         self._experiment_analysis = experiment_analysis
+        self._creds = creds
 
     @property
     def experiment_analysis(self):
         return self._experiment_analysis
 
     @property
-    def path_to_best_model(self) -> str:
-        return self._experiment_analysis.best_checkpoint
-
-    @property
     def best_trial_id(self) -> str:
         return self._experiment_analysis.best_trial.trial_id
 
     @property
-    def best_model(self) -> LudwigModel:
-        return LudwigModel.load(os.path.join(self.path_to_best_model, "model"))
+    def best_model(self) -> Optional[LudwigModel]:
+        checkpoint = self._experiment_analysis.best_checkpoint
+        if checkpoint is None:
+            logger.warning("No best model found")
+            return None
+
+        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
+        if ckpt_type == "uri":
+            # Read remote URIs using Ludwig's internal remote file loading APIs, as
+            # Ray's do not handle custom credentials at the moment.
+            with use_credentials(self._creds):
+                return LudwigModel.load(os.path.join(ckpt_path, "model"))
+        else:
+            with checkpoint.as_directory() as ckpt_path:
+                return LudwigModel.load(os.path.join(ckpt_path, "model"))
 
 
 def auto_train(
@@ -114,7 +131,13 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config
+        dataset,
+        target,
+        time_limit_s,
+        tune_for_memory,
+        user_config,
+        random_seed,
+        use_reference_config=use_reference_config,
     )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
@@ -126,7 +149,9 @@ def create_auto_config(
     tune_for_memory: bool,
     user_config: Dict = None,
     random_seed: int = default_random_seed,
+    imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
+    backend: Union[Backend, str] = None,
 ) -> dict:
     """Returns an auto-generated Ludwig config with the intent of training the best model on given given dataset /
     target in the given time limit.
@@ -143,31 +168,37 @@ def create_auto_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
     :param use_reference_config: (bool) refine hyperopt search space by setting first
                                  search point from reference model config, if any
 
     # Return
     :return: (dict) selected model configuration
     """
-    default_configs, features_metadata = _create_default_config(dataset, target, time_limit_s, random_seed)
+    backend = initialize_backend(backend)
+
+    if not isinstance(dataset, DatasetInfo):
+        dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
+
+    dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
+    default_configs, features_metadata = _create_default_config(
+        dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
+    )
     model_config, model_category, row_count = _model_select(
-        dataset, default_configs, features_metadata, user_config, use_reference_config
+        dataset_info, default_configs, features_metadata, user_config, use_reference_config
     )
     if tune_for_memory:
+        args = (model_config, dataset, model_category, row_count, backend)
         if ray.is_initialized():
-            resources = get_available_resources()  # check if cluster has GPUS
-            if resources["gpu"] > 0:
+            resources = backend.get_available_resources()  # check if cluster has GPUS
+            if resources.gpus > 0:
                 model_config, fits_in_memory = ray.get(
-                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(
-                        model_config, dataset, model_category, row_count
-                    )
+                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(*args)
                 )
             else:
-                model_config, fits_in_memory = ray.get(
-                    ray.remote(num_cpus=1)(memory_tune_config).remote(model_config, dataset, model_category, row_count)
-                )
+                model_config, fits_in_memory = ray.get(ray.remote(num_cpus=1)(memory_tune_config).remote(*args))
         else:
-            model_config, fits_in_memory = memory_tune_config(model_config, dataset, model_category, row_count)
+            model_config, fits_in_memory = memory_tune_config(*args)
         if not fits_in_memory:
             warnings.warn(
                 "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
@@ -201,6 +232,7 @@ def train_with_config(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     _ray_init()
+
     model_type = get_model_type(config)
     hyperopt_results = _train(
         config, dataset, output_directory=output_directory, model_name=model_type, random_seed=random_seed, **kwargs
@@ -216,12 +248,18 @@ def train_with_config(
                 "Consider increasing the time budget for experiment. "
             )
 
+    # Extract credentials needed to pull artifacts, if provided
+    creds = None
+    backend: Backend = initialize_backend(kwargs.get("backend"))
+    if backend is not None:
+        creds = backend.storage.artifacts.credentials
+
     experiment_analysis = hyperopt_results.experiment_analysis
-    return AutoTrainResults(experiment_analysis)
+    return AutoTrainResults(experiment_analysis, creds)
 
 
 def _model_select(
-    dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
+    dataset_info: DatasetInfo,
     default_configs,
     features_metadata,
     user_config,
@@ -231,8 +269,6 @@ def _model_select(
 
     Note: Current implementation returns tabnet by default for tabular datasets.
     """
-
-    dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
     fields = dataset_info.fields
 
     base_config = default_configs["base_config"]
@@ -252,17 +288,25 @@ def _model_select(
         # text heuristics
         for input_feature in base_config["input_features"]:
             # default text encoder is bert
-            if input_feature["type"] == TEXT:
+            if input_feature[TYPE] == TEXT:
                 model_category = TEXT
-                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
-                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+                if ENCODER in input_feature:
+                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
+                else:
+                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
-            if input_feature["type"] == IMAGE:
+            if input_feature[TYPE] == IMAGE:
                 model_category = IMAGE
-                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
-                base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
+                if ENCODER in input_feature:
+                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
+                else:
+                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
+
+        # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
+        base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+        base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:

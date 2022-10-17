@@ -1017,10 +1017,7 @@ try:
         raise ImportError
 
 except ImportError:
-    logger.warning(
-        f"torchtext>=0.12.0 is not installed, so the following tokenizers are not available: "
-        f"{TORCHTEXT_0_12_0_TOKENIZERS}"
-    )
+    pass
 
 
 try:
@@ -1126,10 +1123,7 @@ try:
     TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_13_0_TOKENIZERS)
 
 except ImportError:
-    logger.warning(
-        f"torchtext>=0.13.0 is not installed, so the following tokenizers are not available: "
-        f"{TORCHTEXT_0_13_0_TOKENIZERS}"
-    )
+    pass
 
 
 def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
@@ -1148,7 +1142,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
             pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
             and pretrained_model_name_or_path not in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
         ):
-            logging.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
+            logger.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
             vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][pretrained_model_name_or_path]
             init_kwargs = PRETRAINED_INIT_CONFIGURATION.get(pretrained_model_name_or_path, {})
             return BERTTokenizer(
@@ -1159,7 +1153,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
     # If pretrained_model_name_or_path does not have a torchtext equivalent implementation, load the
     # HuggingFace implementation.
-    logging.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
+    logger.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
     return HFTokenizer(pretrained_model_name_or_path)
 
 
@@ -1168,3 +1162,34 @@ tokenizer_registry.update(
         "hf_tokenizer": get_hf_tokenizer,
     }
 )
+
+
+def get_tokenizer_from_registry(tokenizer_name: str) -> torch.nn.Module:
+    """Returns the appropriate tokenizer from the tokenizer registry.
+
+    Raises a KeyError if a tokenizer that does not exist in the registry is requested, with additional help text if the
+    requested tokenizer would be available for a different version of torchtext.
+    """
+    if tokenizer_name in tokenizer_registry:
+        return tokenizer_registry[tokenizer_name]
+
+    if (
+        torch.torch_version.TorchVersion(torchtext.__version__) < (0, 12, 0)
+        and tokenizer_name in TORCHTEXT_0_12_0_TOKENIZERS
+    ):
+        raise KeyError(
+            f"torchtext>=0.12.0 is not installed, so '{tokenizer_name}' and the following tokenizers are not "
+            f"available: {TORCHTEXT_0_12_0_TOKENIZERS}"
+        )
+
+    if (
+        torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0)
+        and tokenizer_name in TORCHTEXT_0_13_0_TOKENIZERS
+    ):
+        raise KeyError(
+            f"torchtext>=0.13.0 is not installed, so '{tokenizer_name}' and the following tokenizers are not "
+            f"available: {TORCHTEXT_0_13_0_TOKENIZERS}"
+        )
+
+    # Tokenizer does not exist or is unavailable.
+    raise KeyError(f"Invalid tokenizer name: '{tokenizer_name}'. Available tokenizers: {tokenizer_registry.keys()}")

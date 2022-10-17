@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def export_torchscript(
-    model_path: str, model_only: bool = False, output_path: str = "torchscript", device: Optional[str] = None, **kwargs
+    model_path: str, model_only: bool = False, output_path: Optional[str] = None, device: Optional[str] = None, **kwargs
 ) -> None:
     """Exports a model to torchscript.
 
@@ -38,13 +38,17 @@ def export_torchscript(
 
     :param model_path: (str) filepath to pre-trained model.
     :param model_only: (bool, default: `False`) If true, scripts and exports the model only.
-    :param output_path: (str, default: `'torchscript'`) directory to store torchscript
+    :param output_path: directory to store torchscript. If `None`, defaults to model_path
 
     # Return
     :returns: (`None`)
     """
     logger.info(f"Model path: {model_path}")
     logger.info(f"Saving model only: {model_only}")
+
+    if output_path is None:
+        logger.info("output_path is None, defaulting to model_path")
+        output_path = model_path
     logger.info(f"Output path: {output_path}")
     logger.info("\n")
 
@@ -167,7 +171,13 @@ def cli_export_torchscript(sys_argv):
     # -----------------
     # Output parameters
     # -----------------
-    parser.add_argument("op", "--output_path", type=str, help="path where to save the export model", required=True)
+    parser.add_argument(
+        "-op",
+        "--output_path",
+        type=str,
+        help="path where to save the export model. If not specified, defaults to model_path.",
+        default=None,
+    )
 
     # ------------------
     # Runtime parameters

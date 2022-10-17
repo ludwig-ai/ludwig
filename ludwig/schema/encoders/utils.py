@@ -1,17 +1,42 @@
 from dataclasses import field
+from typing import List, Union
 
 from marshmallow import fields, ValidationError
 
 from ludwig.constants import TYPE
-from ludwig.encoders.registry import get_encoder_classes, get_encoder_cls
 from ludwig.schema import utils as schema_utils
+from ludwig.utils.registry import Registry
+
+encoder_config_registry = Registry()
+
+
+def register_encoder_config(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            feature_registry = encoder_config_registry.get(feature, {})
+            feature_registry[name] = cls
+            encoder_config_registry[feature] = feature_registry
+        return cls
+
+    return wrap
+
+
+def get_encoder_cls(feature: str, name: str):
+    return encoder_config_registry[feature][name]
+
+
+def get_encoder_classes(feature: str):
+    return encoder_config_registry[feature]
 
 
 def get_encoder_conds(feature_type: str):
     """Returns a JSON schema of conditionals to validate against encoder types for specific feature types."""
     conds = []
     for encoder in get_encoder_classes(feature_type):
-        encoder_cls = get_encoder_cls(feature_type, encoder).get_schema_cls()
+        encoder_cls = get_encoder_cls(feature_type, encoder)
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(encoder_cls)["properties"]
         other_props.pop("type")
         encoder_cond = schema_utils.create_cond(
@@ -37,7 +62,7 @@ def EncoderDataclassField(feature_type: str, default: str):
                 return None
             if isinstance(value, dict):
                 if TYPE in value and value[TYPE] in get_encoder_classes(feature_type):
-                    enc = get_encoder_cls(feature_type, value[TYPE]).get_schema_cls()
+                    enc = get_encoder_cls(feature_type, value[TYPE])
                     try:
                         return enc.Schema().load(value)
                     except (TypeError, ValidationError) as error:
@@ -60,11 +85,10 @@ def EncoderDataclassField(feature_type: str, default: str):
                 },
                 "title": "encoder_options",
                 "allOf": get_encoder_conds(feature_type),
-                "required": ["type"],
             }
 
     try:
-        encoder = get_encoder_cls(feature_type, default).get_schema_cls()
+        encoder = get_encoder_cls(feature_type, default)
         load_default = encoder.Schema().load({"type": default})
         dump_default = encoder.Schema().dump({"type": default})
 

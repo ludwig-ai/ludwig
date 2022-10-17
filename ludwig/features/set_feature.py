@@ -42,11 +42,10 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
-from ludwig.utils.strings_utils import create_vocabulary, tokenizer_registry, UNKNOWN_SYMBOL
-from ludwig.utils.tokenizers import TORCHSCRIPT_COMPATIBLE_TOKENIZERS
+from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
+from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,7 @@ class _SetPreprocessing(torch.nn.Module):
             )
 
         self.lowercase = metadata["preprocessing"]["lowercase"]
-        self.tokenizer = get_from_registry(metadata["preprocessing"]["tokenizer"], tokenizer_registry)()
+        self.tokenizer = get_tokenizer_from_registry(metadata["preprocessing"]["tokenizer"])()
         self.vocab_size = metadata["vocab_size"]
         self.unknown_symbol = UNKNOWN_SYMBOL
         self.unit_to_id = metadata["str2idx"]
@@ -162,7 +161,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return SetInputFeatureConfig().preprocessing.__dict__
+        return SetInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -210,7 +209,6 @@ class SetFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(SET)
 class SetInputFeature(SetFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[SetInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -260,7 +258,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return _SetPreprocessing(metadata)
 
 
-@register_output_feature(SET)
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, JACCARD: None}
     default_validation_metric = JACCARD
@@ -283,7 +280,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def loss_kwargs(self):
-        return self.loss
+        return self.loss.to_dict()
 
     def metric_kwargs(self) -> Dict[str, Any]:
         return {"threshold": self.threshold}
@@ -317,7 +314,9 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature["num_classes"], output_feature[NAME]
+                        len(output_feature[LOSS]["class_weights"]),
+                        output_feature[DECODER]["num_classes"],
+                        output_feature[NAME],
                     )
                 )
 
@@ -377,7 +376,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = SetOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

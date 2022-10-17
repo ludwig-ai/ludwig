@@ -25,7 +25,6 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -39,7 +38,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return BagInputFeatureConfig().preprocessing.__dict__
+        return BagInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -86,7 +85,6 @@ class BagFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(BAG)
 class BagInputFeature(BagFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[BagInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)

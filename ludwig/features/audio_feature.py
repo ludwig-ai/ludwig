@@ -36,7 +36,6 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -101,7 +100,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return AudioInputFeatureConfig().preprocessing.__dict__
+        return AudioInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -165,7 +164,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
         try:
             default_audio = get_default_audio([audio for audio in raw_audio if is_torch_audio_tuple(audio)])
         except RuntimeError:
-            logging.info("Unable to process audio files provided")
+            logger.info("Unable to process audio files provided")
             raise RuntimeError
 
         raw_audio = df_engine.map_objects(raw_audio, lambda row: row if is_torch_audio_tuple(row) else default_audio)
@@ -435,7 +434,6 @@ class AudioFeatureMixin(BaseFeatureMixin):
             raise ValueError(f"{feature_type} is not recognized.")
 
 
-@register_input_feature(AUDIO)
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: Union[AudioInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)

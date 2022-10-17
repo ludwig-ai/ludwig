@@ -21,7 +21,6 @@ import torch
 from ludwig.constants import COLUMN, ENCODER, H3, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -73,14 +72,14 @@ class H3FeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return H3InputFeatureConfig().preprocessing.__dict__
+        return H3InputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
         try:
             return column.astype(int)
         except ValueError:
-            logging.warning("H3Feature could not be read as int directly. Reading as float and converting to int.")
+            logger.warning("H3Feature could not be read as int directly. Reading as float and converting to int.")
             return column.astype(float).astype(int)
 
     @staticmethod
@@ -109,7 +108,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[H3InputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)

@@ -1,0 +1,877 @@
+output_features:
+  - name: isFraud
+    type: binary
+input_features:
+  - name: TransactionDT
+    type: number
+  - name: TransactionAmt
+    type: number
+  - name: ProductCD
+    type: category
+  - name: card1
+    type: number
+  - name: card2
+    type: number
+  - name: card3
+    type: number
+  - name: card4
+    type: category
+  - name: card5
+    type: number
+  - name: card6
+    type: category
+  - name: addr1
+    type: number
+  - name: addr2
+    type: number
+  - name: dist1
+    type: number
+  - name: dist2
+    type: number
+  - name: P_emaildomain
+    type: category
+  - name: R_emaildomain
+    type: number
+  - name: C1
+    type: number
+  - name: C2
+    type: number
+  - name: C3
+    type: number
+  - name: C4
+    type: number
+  - name: C5
+    type: number
+  - name: C6
+    type: number
+  - name: C7
+    type: number
+  - name: C8
+    type: number
+  - name: C9
+    type: number
+  - name: C10
+    type: number
+  - name: C11
+    type: number
+  - name: C12
+    type: number
+  - name: C13
+    type: number
+  - name: C14
+    type: number
+  - name: D1
+    type: number
+  - name: D2
+    type: number
+  - name: D3
+    type: number
+  - name: D4
+    type: number
+  - name: D5
+    type: number
+  - name: D6
+    type: number
+  - name: D7
+    type: number
+  - name: D8
+    type: number
+  - name: D9
+    type: number
+  - name: D10
+    type: number
+  - name: D11
+    type: number
+  - name: D12
+    type: number
+  - name: D13
+    type: number
+  - name: D14
+    type: number
+  - name: D15
+    type: number
+  - name: M1
+    type: category
+  - name: M2
+    type: category
+  - name: M3
+    type: category
+  - name: M4
+    type: category
+  - name: M5
+    type: category
+  - name: M6
+    type: category
+  - name: M7
+    type: category
+  - name: M8
+    type: category
+  - name: M9
+    type: category
+  - name: V1
+    type: number
+  - name: V2
+    type: number
+  - name: V3
+    type: number
+  - name: V4
+    type: number
+  - name: V5
+    type: number
+  - name: V6
+    type: number
+  - name: V7
+    type: number
+  - name: V8
+    type: number
+  - name: V9
+    type: number
+  - name: V10
+    type: number
+  - name: V11
+    type: number
+  - name: V12
+    type: number
+  - name: V13
+    type: number
+  - name: V14
+    type: number
+  - name: V15
+    type: number
+  - name: V16
+    type: number
+  - name: V17
+    type: number
+  - name: V18
+    type: number
+  - name: V19
+    type: number
+  - name: V20
+    type: number
+  - name: V21
+    type: number
+  - name: V22
+    type: number
+  - name: V23
+    type: number
+  - name: V24
+    type: number
+  - name: V25
+    type: number
+  - name: V26
+    type: number
+  - name: V27
+    type: number
+  - name: V28
+    type: number
+  - name: V29
+    type: number
+  - name: V30
+    type: number
+  - name: V31
+    type: number
+  - name: V32
+    type: number
+  - name: V33
+    type: number
+  - name: V34
+    type: number
+  - name: V35
+    type: number
+  - name: V36
+    type: number
+  - name: V37
+    type: number
+  - name: V38
+    type: number
+  - name: V39
+    type: number
+  - name: V40
+    type: number
+  - name: V41
+    type: number
+  - name: V42
+    type: number
+  - name: V43
+    type: number
+  - name: V44
+    type: number
+  - name: V45
+    type: number
+  - name: V46
+    type: number
+  - name: V47
+    type: number
+  - name: V48
+    type: number
+  - name: V49
+    type: number
+  - name: V50
+    type: number
+  - name: V51
+    type: number
+  - name: V52
+    type: number
+  - name: V53
+    type: number
+  - name: V54
+    type: number
+  - name: V55
+    type: number
+  - name: V56
+    type: number
+  - name: V57
+    type: number
+  - name: V58
+    type: number
+  - name: V59
+    type: number
+  - name: V60
+    type: number
+  - name: V61
+    type: number
+  - name: V62
+    type: number
+  - name: V63
+    type: number
+  - name: V64
+    type: number
+  - name: V65
+    type: number
+  - name: V66
+    type: number
+  - name: V67
+    type: number
+  - name: V68
+    type: number
+  - name: V69
+    type: number
+  - name: V70
+    type: number
+  - name: V71
+    type: number
+  - name: V72
+    type: number
+  - name: V73
+    type: number
+  - name: V74
+    type: number
+  - name: V75
+    type: number
+  - name: V76
+    type: number
+  - name: V77
+    type: number
+  - name: V78
+    type: number
+  - name: V79
+    type: number
+  - name: V80
+    type: number
+  - name: V81
+    type: number
+  - name: V82
+    type: number
+  - name: V83
+    type: number
+  - name: V84
+    type: number
+  - name: V85
+    type: number
+  - name: V86
+    type: number
+  - name: V87
+    type: number
+  - name: V88
+    type: number
+  - name: V89
+    type: number
+  - name: V90
+    type: number
+  - name: V91
+    type: number
+  - name: V92
+    type: number
+  - name: V93
+    type: number
+  - name: V94
+    type: number
+  - name: V95
+    type: number
+  - name: V96
+    type: number
+  - name: V97
+    type: number
+  - name: V98
+    type: number
+  - name: V99
+    type: number
+  - name: V100
+    type: number
+  - name: V101
+    type: number
+  - name: V102
+    type: number
+  - name: V103
+    type: number
+  - name: V104
+    type: number
+  - name: V105
+    type: number
+  - name: V106
+    type: number
+  - name: V107
+    type: number
+  - name: V108
+    type: number
+  - name: V109
+    type: number
+  - name: V110
+    type: number
+  - name: V111
+    type: number
+  - name: V112
+    type: number
+  - name: V113
+    type: number
+  - name: V114
+    type: number
+  - name: V115
+    type: number
+  - name: V116
+    type: number
+  - name: V117
+    type: number
+  - name: V118
+    type: number
+  - name: V119
+    type: number
+  - name: V120
+    type: number
+  - name: V121
+    type: number
+  - name: V122
+    type: number
+  - name: V123
+    type: number
+  - name: V124
+    type: number
+  - name: V125
+    type: number
+  - name: V126
+    type: number
+  - name: V127
+    type: number
+  - name: V128
+    type: number
+  - name: V129
+    type: number
+  - name: V130
+    type: number
+  - name: V131
+    type: number
+  - name: V132
+    type: number
+  - name: V133
+    type: number
+  - name: V134
+    type: number
+  - name: V135
+    type: number
+  - name: V136
+    type: number
+  - name: V137
+    type: number
+  - name: V138
+    type: number
+  - name: V139
+    type: number
+  - name: V140
+    type: number
+  - name: V141
+    type: number
+  - name: V142
+    type: number
+  - name: V143
+    type: number
+  - name: V144
+    type: number
+  - name: V145
+    type: number
+  - name: V146
+    type: number
+  - name: V147
+    type: number
+  - name: V148
+    type: number
+  - name: V149
+    type: number
+  - name: V150
+    type: number
+  - name: V151
+    type: number
+  - name: V152
+    type: number
+  - name: V153
+    type: number
+  - name: V154
+    type: number
+  - name: V155
+    type: number
+  - name: V156
+    type: number
+  - name: V157
+    type: number
+  - name: V158
+    type: number
+  - name: V159
+    type: number
+  - name: V160
+    type: number
+  - name: V161
+    type: number
+  - name: V162
+    type: number
+  - name: V163
+    type: number
+  - name: V164
+    type: number
+  - name: V165
+    type: number
+  - name: V166
+    type: number
+  - name: V167
+    type: number
+  - name: V168
+    type: number
+  - name: V169
+    type: number
+  - name: V170
+    type: number
+  - name: V171
+    type: number
+  - name: V172
+    type: number
+  - name: V173
+    type: number
+  - name: V174
+    type: number
+  - name: V175
+    type: number
+  - name: V176
+    type: number
+  - name: V177
+    type: number
+  - name: V178
+    type: number
+  - name: V179
+    type: number
+  - name: V180
+    type: number
+  - name: V181
+    type: number
+  - name: V182
+    type: number
+  - name: V183
+    type: number
+  - name: V184
+    type: number
+  - name: V185
+    type: number
+  - name: V186
+    type: number
+  - name: V187
+    type: number
+  - name: V188
+    type: number
+  - name: V189
+    type: number
+  - name: V190
+    type: number
+  - name: V191
+    type: number
+  - name: V192
+    type: number
+  - name: V193
+    type: number
+  - name: V194
+    type: number
+  - name: V195
+    type: number
+  - name: V196
+    type: number
+  - name: V197
+    type: number
+  - name: V198
+    type: number
+  - name: V199
+    type: number
+  - name: V200
+    type: number
+  - name: V201
+    type: number
+  - name: V202
+    type: number
+  - name: V203
+    type: number
+  - name: V204
+    type: number
+  - name: V205
+    type: number
+  - name: V206
+    type: number
+  - name: V207
+    type: number
+  - name: V208
+    type: number
+  - name: V209
+    type: number
+  - name: V210
+    type: number
+  - name: V211
+    type: number
+  - name: V212
+    type: number
+  - name: V213
+    type: number
+  - name: V214
+    type: number
+  - name: V215
+    type: number
+  - name: V216
+    type: number
+  - name: V217
+    type: number
+  - name: V218
+    type: number
+  - name: V219
+    type: number
+  - name: V220
+    type: number
+  - name: V221
+    type: number
+  - name: V222
+    type: number
+  - name: V223
+    type: number
+  - name: V224
+    type: number
+  - name: V225
+    type: number
+  - name: V226
+    type: number
+  - name: V227
+    type: number
+  - name: V228
+    type: number
+  - name: V229
+    type: number
+  - name: V230
+    type: number
+  - name: V231
+    type: number
+  - name: V232
+    type: number
+  - name: V233
+    type: number
+  - name: V234
+    type: number
+  - name: V235
+    type: number
+  - name: V236
+    type: number
+  - name: V237
+    type: number
+  - name: V238
+    type: number
+  - name: V239
+    type: number
+  - name: V240
+    type: number
+  - name: V241
+    type: number
+  - name: V242
+    type: number
+  - name: V243
+    type: number
+  - name: V244
+    type: number
+  - name: V245
+    type: number
+  - name: V246
+    type: number
+  - name: V247
+    type: number
+  - name: V248
+    type: number
+  - name: V249
+    type: number
+  - name: V250
+    type: number
+  - name: V251
+    type: number
+  - name: V252
+    type: number
+  - name: V253
+    type: number
+  - name: V254
+    type: number
+  - name: V255
+    type: number
+  - name: V256
+    type: number
+  - name: V257
+    type: number
+  - name: V258
+    type: number
+  - name: V259
+    type: number
+  - name: V260
+    type: number
+  - name: V261
+    type: number
+  - name: V262
+    type: number
+  - name: V263
+    type: number
+  - name: V264
+    type: number
+  - name: V265
+    type: number
+  - name: V266
+    type: number
+  - name: V267
+    type: number
+  - name: V268
+    type: number
+  - name: V269
+    type: number
+  - name: V270
+    type: number
+  - name: V271
+    type: number
+  - name: V272
+    type: number
+  - name: V273
+    type: number
+  - name: V274
+    type: number
+  - name: V275
+    type: number
+  - name: V276
+    type: number
+  - name: V277
+    type: number
+  - name: V278
+    type: number
+  - name: V279
+    type: number
+  - name: V280
+    type: number
+  - name: V281
+    type: number
+  - name: V282
+    type: number
+  - name: V283
+    type: number
+  - name: V284
+    type: number
+  - name: V285
+    type: number
+  - name: V286
+    type: number
+  - name: V287
+    type: number
+  - name: V288
+    type: number
+  - name: V289
+    type: number
+  - name: V290
+    type: number
+  - name: V291
+    type: number
+  - name: V292
+    type: number
+  - name: V293
+    type: number
+  - name: V294
+    type: number
+  - name: V295
+    type: number
+  - name: V296
+    type: number
+  - name: V297
+    type: number
+  - name: V298
+    type: number
+  - name: V299
+    type: number
+  - name: V300
+    type: number
+  - name: V301
+    type: number
+  - name: V302
+    type: number
+  - name: V303
+    type: number
+  - name: V304
+    type: number
+  - name: V305
+    type: number
+  - name: V306
+    type: number
+  - name: V307
+    type: number
+  - name: V308
+    type: number
+  - name: V309
+    type: number
+  - name: V310
+    type: number
+  - name: V311
+    type: number
+  - name: V312
+    type: number
+  - name: V313
+    type: number
+  - name: V314
+    type: number
+  - name: V315
+    type: number
+  - name: V316
+    type: number
+  - name: V317
+    type: number
+  - name: V318
+    type: number
+  - name: V319
+    type: number
+  - name: V320
+    type: number
+  - name: V321
+    type: number
+  - name: V322
+    type: number
+  - name: V323
+    type: number
+  - name: V324
+    type: number
+  - name: V325
+    type: number
+  - name: V326
+    type: number
+  - name: V327
+    type: number
+  - name: V328
+    type: number
+  - name: V329
+    type: number
+  - name: V330
+    type: number
+  - name: V331
+    type: number
+  - name: V332
+    type: number
+  - name: V333
+    type: number
+  - name: V334
+    type: number
+  - name: V335
+    type: number
+  - name: V336
+    type: number
+  - name: V337
+    type: number
+  - name: V338
+    type: number
+  - name: V339
+    type: number
+  - name: id_01
+    type: number
+  - name: id_02
+    type: number
+  - name: id_03
+    type: number
+  - name: id_04
+    type: number
+  - name: id_05
+    type: number
+  - name: id_06
+    type: number
+  - name: id_07
+    type: number
+  - name: id_08
+    type: number
+  - name: id_09
+    type: number
+  - name: id_10
+    type: number
+  - name: id_11
+    type: number
+  - name: id_12
+    type: number
+  - name: id_13
+    type: number
+  - name: id_14
+    type: number
+  - name: id_15
+    type: number
+  - name: id_16
+    type: number
+  - name: id_17
+    type: number
+  - name: id_18
+    type: number
+  - name: id_19
+    type: number
+  - name: id_20
+    type: number
+  - name: id_21
+    type: number
+  - name: id_22
+    type: number
+  - name: id_23
+    type: number
+  - name: id_24
+    type: number
+  - name: id_25
+    type: number
+  - name: id_26
+    type: number
+  - name: id_27
+    type: number
+  - name: id_28
+    type: number
+  - name: id_29
+    type: number
+  - name: id_30
+    type: number
+  - name: id_31
+    type: number
+  - name: id_32
+    type: number
+  - name: id_33
+    type: number
+  - name: id_34
+    type: number
+  - name: id_35
+    type: number
+  - name: id_36
+    type: number
+  - name: id_37
+    type: number
+  - name: id_38
+    type: number
+  - name: DeviceType
+    type: number
+  - name: DeviceInfo
+    type: number
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

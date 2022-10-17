@@ -2,10 +2,28 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.constants import CATEGORY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
+@register_encoder_config("passthrough", CATEGORY)
+@dataclass
+class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
+    """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
+    passthrough encoder."""
+
+    type: str = schema_utils.StringOptions(
+        ["passthrough"],
+        default="passthrough",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+
+@register_encoder_config("dense", CATEGORY)
 @dataclass
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
@@ -19,6 +37,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
     vocab: List[str] = schema_utils.List(
         default=None,
         description="Vocabulary of the encoder",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["vocab"],
     )
 
     embedding_size: int = schema_utils.NonNegativeInteger(
@@ -27,6 +46,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         "dense representations and exactly vocabulary_size for the sparse encoding, where vocabulary_size "
         "is the number of different strings appearing in the training set in the column the feature is "
         "named after (plus 1 for <UNK>).",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["embedding_size"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
@@ -34,6 +54,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
         "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
         "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
@@ -45,6 +66,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         "embeddings file, their embeddings are initialized with the average of all other embedding plus "
         "some random noise to make them different from each other. This parameter has effect only if "
         "representation is dense.",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["pretrained_embeddings"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
@@ -53,6 +75,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         "access, but in some cases the embedding matrix may be too large. This parameter forces the "
         "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
         "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["embeddings_on_cpu"],
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -60,6 +83,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         min=0,
         max=1,
         description="Dropout rate.",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["dropout"],
     )
 
     embedding_initializer: str = schema_utils.StringOptions(
@@ -84,9 +108,11 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         ],
         default=None,
         description="Initializer for the embedding matrix.",
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["embedding_initializer"],
     )
 
 
+@register_encoder_config("sparse", CATEGORY)
 @dataclass
 class CategoricalSparseConfig(BaseEncoderConfig):
 
@@ -100,6 +126,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
     vocab: List[str] = schema_utils.List(
         default=None,
         description="Vocabulary of the encoder",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["vocab"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
@@ -107,6 +134,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
         "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
         "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
@@ -118,6 +146,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         "embeddings file, their embeddings are initialized with the average of all other embedding plus "
         "some random noise to make them different from each other. This parameter has effect only if "
         "representation is dense.",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["pretrained_embeddings"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
@@ -126,6 +155,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         "access, but in some cases the embedding matrix may be too large. This parameter forces the "
         "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
         "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["embeddings_on_cpu"],
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -133,6 +163,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         min=0,
         max=1,
         description="Dropout rate.",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["dropout"],
     )
 
     embedding_initializer: str = schema_utils.StringOptions(
@@ -157,4 +188,5 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         ],
         default=None,
         description="Initializer for the embedding matrix.",
+        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["embedding_initializer"],
     )

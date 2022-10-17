@@ -26,8 +26,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tokenizers import tokenizer_registry
+from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
 
 PANDAS_TRUE_STRS = {"true"}
@@ -90,7 +89,9 @@ def str2bool(v: str, fallback_true_label=None) -> bool:
     if v_str in BOOL_FALSE_STRS:
         return False
     if fallback_true_label is None:
-        raise ValueError(f"Cannot automatically map value {v} to a boolean and no `fallback_true_label` specified")
+        raise ValueError(
+            f"Cannot automatically map value '{v}' to a boolean and no `preprocessing.fallback_true_label` specified"
+        )
     return v == fallback_true_label
 
 
@@ -252,7 +253,7 @@ def create_vocabulary(
     """
     vocab = None
 
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
@@ -330,9 +331,6 @@ def create_vocabulary_single_token(
     This assumption allows us to be more efficient than `create_vocabulary()` as we can skip tokenization and
     computing the maximum sequence length, which are unnecessary for category features.
 
-    The `UNKNOWN` special symbol is always included in the final vocabulary. Additional special symbols (PADDING, START,
-    STOP) are added if add_special_symbols=True.
-
     Args:
         data: Series of string data.
         num_most_frequent: Upper limit on vocabulary size.
@@ -347,7 +345,12 @@ def create_vocabulary_single_token(
     """
     processed_counts = data.str.strip().value_counts(sort=True)
     processed_counts = processor.compute(processed_counts)
-    vocab = [unknown_symbol] + processed_counts.index.tolist()[:num_most_frequent]
+    full_vocab = processed_counts.index.tolist()
+    # Only add unknown symbol if num most frequent tokens is less than total number of unique tokens
+    if num_most_frequent < len(full_vocab):
+        vocab = [unknown_symbol] + full_vocab[:num_most_frequent]
+    else:
+        vocab = full_vocab
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = processed_counts.to_dict()
     str2freq = {k: str2freq.get(k, 0) for k in vocab}
@@ -392,7 +395,7 @@ def build_sequence_matrix(
     pretrained_model_name_or_path=None,
     processor=PANDAS,
 ) -> np.ndarray:
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=tokenizer_vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )

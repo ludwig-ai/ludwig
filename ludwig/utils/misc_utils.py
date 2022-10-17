@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import functools
 import os
 import random
+import subprocess
+import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
 
@@ -24,6 +27,7 @@ import torch
 
 from ludwig.constants import PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
+from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
@@ -123,7 +127,7 @@ def get_class_attributes(c):
 
 def get_output_directory(output_directory, experiment_name, model_name="run"):
     base_dir_name = os.path.join(output_directory, experiment_name + ("_" if model_name else "") + (model_name or ""))
-    return os.path.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
+    return fs_utils.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
 def get_file_names(output_directory):
@@ -159,3 +163,42 @@ def set_saved_weights_in_checkpoint_flag(config):
 
 def remove_empty_lines(str):
     return "\n".join([line.rstrip() for line in str.split("\n") if line.rstrip()])
+
+
+# TODO(travis): move to cached_property when we drop Python 3.7.
+# https://stackoverflow.com/a/33672499
+def memoized_method(*lru_args, **lru_kwargs):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapped_func(self, *args, **kwargs):
+            # We're storing the wrapped method inside the instance. If we had
+            # a strong reference to self the instance would never die.
+            self_weak = weakref.ref(self)
+
+            @functools.wraps(func)
+            @functools.lru_cache(*lru_args, **lru_kwargs)
+            def cached_method(*args, **kwargs):
+                return func(self_weak(), *args, **kwargs)
+
+            setattr(self, func.__name__, cached_method)
+            return cached_method(*args, **kwargs)
+
+        return wrapped_func
+
+    return decorator
+
+
+def get_commit_hash():
+    """If Ludwig is run from a git repository, get the commit hash of the current HEAD.
+
+    Returns None if git is not executable in the current environment or Ludwig is not run in a git repo.
+    """
+    try:
+        with open(os.devnull, "w") as devnull:
+            is_a_git_repo = subprocess.call(["git", "branch"], stderr=subprocess.STDOUT, stdout=devnull) == 0
+        if is_a_git_repo:
+            commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8")
+            return commit_hash
+    except:  # noqa: E722
+        pass
+    return None

@@ -48,19 +48,18 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
+from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
-    tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -73,7 +72,7 @@ class _SequencePreprocessing(torch.nn.Module):
         super().__init__()
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
-        self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
+        self.tokenizer = get_tokenizer_from_registry(self.tokenizer_type)(
             pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
 
@@ -202,7 +201,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return SequenceInputFeatureConfig().preprocessing.__dict__
+        return SequenceInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -259,7 +258,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[SequenceInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -314,7 +312,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
-@register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     metric_functions = {
         LOSS: None,
@@ -498,7 +495,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = SequenceOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
             set_default_value(output_feature, "reduce_input", None)

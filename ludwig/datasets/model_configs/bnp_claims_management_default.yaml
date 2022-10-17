@@ -1,0 +1,275 @@
+output_features:
+  - name: target
+    type: binary
+input_features:
+  - name: v1
+    type: number
+  - name: v2
+    type: number
+  - name: v3
+    type: category
+  - name: v4
+    type: number
+  - name: v5
+    type: number
+  - name: v6
+    type: number
+  - name: v7
+    type: number
+  - name: v8
+    type: number
+  - name: v9
+    type: number
+  - name: v10
+    type: number
+  - name: v11
+    type: number
+  - name: v12
+    type: number
+  - name: v13
+    type: number
+  - name: v14
+    type: number
+  - name: v15
+    type: number
+  - name: v16
+    type: number
+  - name: v17
+    type: number
+  - name: v18
+    type: number
+  - name: v19
+    type: number
+  - name: v20
+    type: number
+  - name: v21
+    type: number
+  - name: v22
+    type: category
+  - name: v23
+    type: number
+  - name: v24
+    type: category
+  - name: v25
+    type: number
+  - name: v26
+    type: number
+  - name: v27
+    type: number
+  - name: v28
+    type: number
+  - name: v29
+    type: number
+  - name: v30
+    type: category
+  - name: v31
+    type: category
+  - name: v32
+    type: number
+  - name: v33
+    type: number
+  - name: v34
+    type: number
+  - name: v35
+    type: number
+  - name: v36
+    type: number
+  - name: v37
+    type: number
+  - name: v38
+    type: number
+  - name: v39
+    type: number
+  - name: v40
+    type: number
+  - name: v41
+    type: number
+  - name: v42
+    type: number
+  - name: v43
+    type: number
+  - name: v44
+    type: number
+  - name: v45
+    type: number
+  - name: v46
+    type: number
+  - name: v47
+    type: category
+  - name: v48
+    type: number
+  - name: v49
+    type: number
+  - name: v50
+    type: number
+  - name: v51
+    type: number
+  - name: v52
+    type: category
+  - name: v53
+    type: number
+  - name: v54
+    type: number
+  - name: v55
+    type: number
+  - name: v56
+    type: category
+  - name: v57
+    type: number
+  - name: v58
+    type: number
+  - name: v59
+    type: number
+  - name: v60
+    type: number
+  - name: v61
+    type: number
+  - name: v62
+    type: number
+  - name: v63
+    type: number
+  - name: v64
+    type: number
+  - name: v65
+    type: number
+  - name: v66
+    type: category
+  - name: v67
+    type: number
+  - name: v68
+    type: number
+  - name: v69
+    type: number
+  - name: v70
+    type: number
+  - name: v71
+    type: category
+  - name: v72
+    type: number
+  - name: v73
+    type: number
+  - name: v74
+    type: category
+  - name: v75
+    type: category
+  - name: v76
+    type: number
+  - name: v77
+    type: number
+  - name: v78
+    type: number
+  - name: v79
+    type: category
+  - name: v80
+    type: number
+  - name: v81
+    type: number
+  - name: v82
+    type: number
+  - name: v83
+    type: number
+  - name: v84
+    type: number
+  - name: v85
+    type: number
+  - name: v86
+    type: number
+  - name: v87
+    type: number
+  - name: v88
+    type: number
+  - name: v89
+    type: number
+  - name: v90
+    type: number
+  - name: v91
+    type: category
+  - name: v92
+    type: number
+  - name: v93
+    type: number
+  - name: v94
+    type: number
+  - name: v95
+    type: number
+  - name: v96
+    type: number
+  - name: v97
+    type: number
+  - name: v98
+    type: number
+  - name: v99
+    type: number
+  - name: v100
+    type: number
+  - name: v101
+    type: number
+  - name: v102
+    type: number
+  - name: v103
+    type: number
+  - name: v104
+    type: number
+  - name: v105
+    type: number
+  - name: v106
+    type: number
+  - name: v107
+    type: category
+  - name: v108
+    type: number
+  - name: v109
+    type: number
+  - name: v110
+    type: category
+  - name: v111
+    type: number
+  - name: v112
+    type: category
+  - name: v113
+    type: category
+  - name: v114
+    type: number
+  - name: v115
+    type: number
+  - name: v116
+    type: number
+  - name: v117
+    type: number
+  - name: v118
+    type: number
+  - name: v119
+    type: number
+  - name: v120
+    type: number
+  - name: v121
+    type: number
+  - name: v122
+    type: number
+  - name: v123
+    type: number
+  - name: v124
+    type: number
+  - name: v125
+    type: category
+  - name: v126
+    type: number
+  - name: v127
+    type: number
+  - name: v128
+    type: number
+  - name: v129
+    type: number
+  - name: v130
+    type: number
+  - name: v131
+    type: number
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

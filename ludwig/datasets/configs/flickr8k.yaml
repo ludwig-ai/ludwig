@@ -1,0 +1,18 @@
+version: 1.0
+name: flickr8k
+download_urls:
+  - https://github.com/jbrownlee/Datasets/releases/download/Flickr8k/Flickr8k_Dataset.zip
+  - https://github.com/jbrownlee/Datasets/releases/download/Flickr8k/Flickr8k_text.zip
+dataset_filenames: flickr8k_dataset.csv
+preserve_paths: Flicker8k_Dataset
+sha256:
+  Flickr8k_Dataset.zip: 61e4b111d32b24a55b69dafd91f4c3aec07391b7b9217face15dd35d517fe6de
+  Flickr8k_text.zip: 4992ddc8110e9aa49da5bf698522b0c8f11c448814a488584ee6bf040e5137e7
+loader: flickr8k.Flickr8kLoader
+description: |
+  A new benchmark collection for sentence-based image description and search,
+  consisting of 8,000 images that are each paired with five different
+  captions which provide clear descriptions of the salient entities and
+  events. The images were chosen from six different Flickr groups, and tend
+  not to contain any well-known people or locations, but were manually
+  selected to depict a variety of scenes and situations.

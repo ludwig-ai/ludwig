@@ -1,0 +1,19 @@
+version: 1.0
+name: yelp_review_polarity
+download_urls: https://s3.amazonaws.com/fast-ai-nlp/yelp_review_polarity_csv.tgz
+sha256:
+  yelp_review_polarity_csv.tgz: 528f22e286cad085948acbc3bea7e58188416546b0e364d0ae4ca0ce666abe35
+train_filenames: yelp_review_polarity_csv/train.csv
+test_filenames: yelp_review_polarity_csv/test.csv
+columns:
+  - label
+  - text
+description: |
+  The Yelp Polarity dataset
+  Details:
+      1,569,264 samples from the Yelp Dataset Challenge 2015.
+      This subset has 280,000 training samples and 19,000 test samples
+      in each polarity.
+  Dataset source:
+      Character-level Convolutional Networks for Text Classification
+      Xiang Zhang et al., 2015

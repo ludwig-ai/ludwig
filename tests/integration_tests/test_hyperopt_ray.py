@@ -21,10 +21,14 @@ import pandas as pd
 import pytest
 from mlflow.tracking import MlflowClient
 
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.backend import initialize_backend
+from ludwig.callbacks import Callback
+from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
+from ludwig.hyperopt.results import HyperoptResults
+from ludwig.hyperopt.run import hyperopt
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -32,7 +36,6 @@ try:
     import ray
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
-    from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
     ray = None
 
@@ -148,7 +151,10 @@ def run_hyperopt_executor(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
+    backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
@@ -161,17 +167,13 @@ def run_hyperopt_executor(
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
     search_alg = hyperopt_config["search_alg"]
+    executor = hyperopt_config["executor"]
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
-    hyperopt_executor.execute(
-        config,
-        dataset=rel_path,
-        output_directory=tmpdir,
-        backend="local",
-    )
+    hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir, backend=backend)
 
 
 @pytest.mark.distributed
@@ -197,12 +199,12 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 
 
 @pytest.mark.distributed
-def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
+@pytest.mark.parametrize("backend", ["local", "ray"])
+def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
-
     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -212,6 +214,9 @@ def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
         "output_features": output_features,
         "combiner": {"type": "concat", "num_fc_layers": 2},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        "backend": {
+            "type": backend,
+        },
     }
 
     output_feature_name = output_features[0]["name"]
@@ -229,13 +234,40 @@ def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": 2},
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+            "cpu_resources_per_trial": 2,
+            "max_concurrent_trials": "auto",
+        },
         "search_alg": {"type": "variant_generator"},
     }
 
+    @ray.remote(num_cpus=0)
+    class Event:
+        def __init__(self):
+            self._set = False
+
+        def is_set(self):
+            return self._set
+
+        def set(self):
+            self._set = True
+
+    # Used to trigger a cancel event in the trial, which should subsequently be retried
+    event = Event.remote()
+
+    class CancelCallback(Callback):
+        def on_epoch_start(self, trainer, progress_tracker, save_path: str):
+            if progress_tracker.epoch == 1 and not ray.get(event.is_set.remote()):
+                ray.get(event.set.remote())
+                raise KeyboardInterrupt()
+
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
-    run_hyperopt(config, rel_path, tmpdir)
+
+    # run for one epoch, then cancel, then resume from where we left off
+    run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
 
 
 @pytest.mark.distributed
@@ -282,7 +314,7 @@ def run_hyperopt(
     )
 
     # check for return results
-    assert isinstance(hyperopt_results, RayTuneResults)
+    assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))

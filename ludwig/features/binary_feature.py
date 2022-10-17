@@ -43,7 +43,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import calibration, output_feature_utils, strings_utils
 from ludwig.utils.eval_utils import (
     average_precision_score,
@@ -135,7 +134,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults() -> Dict[str, Any]:
-        return BinaryInputFeatureConfig().preprocessing.__dict__
+        return BinaryInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -170,10 +169,11 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 f"Binary feature column {column.name} expects 2 distinct values, "
                 f"found: {distinct_values.values.tolist()}"
             )
-        if "fallback_true_label" in preprocessing_parameters:
+        if preprocessing_parameters["fallback_true_label"]:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
         else:
             fallback_true_label = sorted(distinct_values)[0]
+            preprocessing_parameters["fallback_true_label"] = fallback_true_label
 
         try:
             str2bool = {v: strings_utils.str2bool(v) for v in distinct_values}
@@ -213,7 +213,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(BINARY)
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[BinaryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -272,7 +271,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return _BinaryPreprocessing(metadata)
 
 
-@register_output_feature(BINARY)
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
     default_validation_metric = ROC_AUC
@@ -296,24 +294,27 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     def loss_kwargs(self):
         return dict(
-            positive_class_weight=self.loss["positive_class_weight"],
-            robust_lambda=self.loss["robust_lambda"],
-            confidence_penalty=self.loss["confidence_penalty"],
+            positive_class_weight=self.loss.positive_class_weight,
+            robust_lambda=self.loss.robust_lambda,
+            confidence_penalty=self.loss.confidence_penalty,
         )
 
-    def create_calibration_module(self, feature) -> torch.nn.Module:
+    def create_calibration_module(self, feature: BinaryOutputFeatureConfig) -> torch.nn.Module:
         """Creates the appropriate calibration module based on the feature config.
 
         Today, only one type of calibration ("temperature_scaling") is available, but more options may be supported in
         the future.
         """
-        if feature.get("calibration"):
+        if feature.calibration:
             calibration_cls = calibration.get_calibration_cls(BINARY, "temperature_scaling")
             return calibration_cls(binary=True)
         return None
 
     def create_predict_module(self) -> PredictModule:
-        return _BinaryPredict(self.threshold, calibration_module=self.calibration_module)
+        # A lot of code assumes output features have a prediction module, but if we are using GBM then passthrough
+        # decoder is specified here which has no threshold.
+        threshold = getattr(self, "threshold", 0.5)
+        return _BinaryPredict(threshold, calibration_module=self.calibration_module)
 
     def get_prediction_set(self):
         return {PREDICTIONS, PROBABILITIES, LOGITS}
@@ -406,7 +407,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
         # If Loss is not defined, set an empty dictionary
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
 
         set_default_values(
             output_feature,

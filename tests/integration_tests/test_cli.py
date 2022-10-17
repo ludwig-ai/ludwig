@@ -12,18 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 import json
 import os
 import os.path
 import pathlib
 import shutil
 import subprocess
+from typing import Any, Dict, List, Set
 
 import pytest
 import yaml
 
-from ludwig.constants import TRAINER
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature
+from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
+from ludwig.utils.data_utils import load_yaml
+from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
 
 def _run_commands(commands, **ludwig_kwargs):
@@ -169,6 +172,18 @@ def test_export_neuropod_cli(tmpdir, csv_filename):
     )
 
 
+def test_export_torchscript_cli(tmpdir, csv_filename):
+    """Test exporting Ludwig model to torchscript format."""
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+    _run_ludwig(
+        "export_torchscript",
+        model_path=os.path.join(tmpdir, "experiment_run", "model"),
+        output_path=os.path.join(tmpdir, "torchscript"),
+    )
+
+
 def test_export_mlflow_cli(tmpdir, csv_filename):
     """Test export_mlflow cli."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -281,11 +296,16 @@ def test_preprocess_cli(tmpdir, csv_filename):
     _run_ludwig("preprocess", dataset=dataset_filename, preprocessing_config=config_filename)
 
 
-@pytest.mark.distributed
 @pytest.mark.parametrize("second_seed_offset", [0, 1])
 @pytest.mark.parametrize("random_seed", [1919, 31])
 @pytest.mark.parametrize("type_of_run", ["train", "experiment"])
-@pytest.mark.parametrize("backend", ["local", "horovod"])
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("horovod", id="horovod", marks=pytest.mark.distributed),
+    ],
+)
 def test_reproducible_cli_runs(
     backend: str, type_of_run: str, random_seed: int, second_seed_offset: int, csv_filename: str, tmpdir: pathlib.Path
 ) -> None:
@@ -360,3 +380,57 @@ def test_reproducible_cli_runs(
         else:
             # non-zero second_seed_offset uses different seeds and should result in different output
             assert test1 != test2
+
+
+@pytest.mark.distributed
+def test_init_config(tmpdir):
+    """Test initializing a config from a dataset and a target."""
+    input_features = [
+        number_feature(),
+        number_feature(),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+    dataset_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100)
+    output_config_path = os.path.join(tmpdir, "config.yaml")
+
+    _run_ludwig("init_config", dataset=dataset_csv, target=output_features[0][NAME], output=output_config_path)
+
+    config = load_yaml(output_config_path)
+
+    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+        return {feature[NAME] for feature in features}
+
+    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
+    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+def test_render_config(tmpdir):
+    """Test rendering a full config from a partial user config."""
+    user_config_path = os.path.join(tmpdir, "config.yaml")
+    input_features = [
+        number_feature(),
+        number_feature(),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+
+    user_config = {
+        INPUT_FEATURES: input_features,
+        OUTPUT_FEATURES: output_features,
+    }
+
+    with open(user_config_path, "w") as f:
+        yaml.dump(user_config, f)
+
+    output_config_path = os.path.join(tmpdir, "rendered.yaml")
+    _run_ludwig("render_config", config=user_config_path, output=output_config_path)
+
+    rendered_config = load_yaml(output_config_path)
+    assert len(rendered_config[INPUT_FEATURES]) == len(user_config[INPUT_FEATURES])
+    assert len(rendered_config[OUTPUT_FEATURES]) == len(user_config[OUTPUT_FEATURES])
+    assert TRAINER in rendered_config
+    assert COMBINER in rendered_config
+    assert PREPROCESSING in rendered_config

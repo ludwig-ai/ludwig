@@ -5,12 +5,9 @@ from unittest import mock
 
 import pandas as pd
 
-from ludwig.datasets.titanic import Titanic
-
-
-class FakeTitanicDataset(Titanic):
-    def __init__(self, cache_dir):
-        super().__init__(cache_dir=cache_dir)
+import ludwig.datasets
+from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.loaders.dataset_loader import DatasetState
 
 
 def test_download_titanic_dataset(tmpdir):
@@ -65,39 +62,49 @@ def test_download_titanic_dataset(tmpdir):
         z.write(train_fname, "train.csv")
         z.write(test_fname, "test.csv")
 
-    config = {
-        "version": 1.0,
-        "competition": "titanic",
-        "archive_filename": "titanic.zip",
-        "split_filenames": {
-            "train_file": "train.csv",
-            "test_file": "test.csv",
+    config = DatasetConfig(
+        version=1.0,
+        name="titanic",
+        kaggle_competition="titanic",
+        archive_filenames="titanic.zip",
+        # Normally we would verify the zip file, but in this test the zip file is created every time and contains the
+        # creation dates of the csv files so its digest will be different every time the test is run.
+        sha256={
+            "test.csv": "348c49a95fe099fcc3b9142c82fb6becb87edc0f4d2c69c485e0dce4af8625e0",
+            "train.csv": "483556c465414fd78deb02b25f39a0de844b0728c1ef0505df0e5b3e40fec995",
         },
-        "csv_filename": "titanic.csv",
-    }
+        train_filenames="train.csv",
+        test_filenames="test.csv",
+    )
 
     def download_files(competition_name, path):
         assert competition_name == "titanic"
         copy(archive_filename, path)
 
-    with mock.patch("ludwig.datasets.base_dataset.read_config", return_value=config):
-        with mock.patch("ludwig.datasets.mixins.kaggle.create_kaggle_client") as mock_kaggle_cls:
+    ludwig.datasets._get_dataset_configs.cache_clear()
+    with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
+        with mock.patch("ludwig.datasets.kaggle.create_kaggle_client") as mock_kaggle_cls:
             mock_kaggle_api = mock.MagicMock()
             mock_kaggle_api.competition_download_files = download_files
             mock_kaggle_cls.return_value = mock_kaggle_api
 
-            dataset = FakeTitanicDataset(tmpdir)
-            assert not dataset.is_downloaded()
+            dataset = ludwig.datasets.get_dataset("titanic", cache_dir=tmpdir)
+            assert not dataset.state == DatasetState.DOWNLOADED
 
             dataset.download()
-            assert dataset.is_downloaded()
+            assert dataset.state == DatasetState.DOWNLOADED
             mock_kaggle_api.authenticate.assert_called_once()
 
-            assert not dataset.is_processed()
-            dataset.process()
-            assert dataset.is_processed()
+            assert not dataset.state == DatasetState.TRANSFORMED
+            dataset.extract()
+            # Normally we would verify before extracting, but in this test the zip file is created on each run and
+            # changes between test runs. Instead we verify the extracted .csv files.
+            dataset.verify()
+            dataset.transform()
+            assert dataset.state == DatasetState.TRANSFORMED
 
             output_train_df, output_test_df, output_val_df = dataset.load(split=True)
             assert len(output_train_df) == len(titanic_train_df)
             assert len(output_test_df) == len(titanic_test_df)
             assert len(output_val_df) == 0
+    ludwig.datasets._get_dataset_configs.cache_clear()

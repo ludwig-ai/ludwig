@@ -20,9 +20,10 @@ import random
 import string
 import sys
 import uuid
-from typing import List
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+import pandas as pd
 import torch
 import torchaudio
 import yaml
@@ -37,8 +38,10 @@ from ludwig.constants import (
     ENCODER,
     H3,
     IMAGE,
+    INPUT_FEATURES,
     NAME,
     NUMBER,
+    OUTPUT_FEATURES,
     PREPROCESSING,
     SEQUENCE,
     SET,
@@ -157,14 +160,22 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset(dataset_size: int, features: List[dict]):
+def build_synthetic_dataset_df(dataset_size: int, config: Dict[str, Any]) -> pd.DataFrame:
+    features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
+    df = build_synthetic_dataset(dataset_size, features)
+    data = [next(df) for _ in range(dataset_size + 1)]
+    return pd.DataFrame(data[1:], columns=data[0])
+
+
+def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
     :param features: (List[dict]) list of features to generate in YAML format.
-        Provide a list contaning one dictionary for each feature,
+        Provide a list containing one dictionary for each feature,
         each dictionary must include a name, a type
         and can include some generation parameters depending on the type
+    :param outdir: (str) Path to an output directory. Used for saving synthetic image and audio files.
 
     Example content for features:
 
@@ -200,10 +211,14 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict]):
 
     yield header
     for _ in range(dataset_size):
-        yield generate_datapoint(features)
+        yield generate_datapoint(features=features, outdir=outdir)
 
 
-def generate_datapoint(features):
+def generate_datapoint(features: List[Dict], outdir: str) -> Union[str, int, bool]:
+    """Returns a synthetic example containing features specified by the features spec.
+
+    `outdir` is only used for generating synthetic image and synthetic audio features. Otherwise, it is unused.
+    """
     datapoint = []
     for feature in features:
         if "cycle" in feature and feature["cycle"] is True and feature[TYPE] in cyclers_registry:
@@ -211,27 +226,43 @@ def generate_datapoint(features):
             feature_value = cycler_function(feature)
         else:
             generator_function = get_from_registry(feature[TYPE], generators_registry)
-            feature_value = generator_function(feature)
+            feature_value = generator_function(feature=feature, outdir=outdir)
         datapoint.append(feature_value)
     return datapoint
 
 
-def generate_category(feature):
+def generate_category(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random category.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     return random.choice(encoder_or_decoder["idx2str"])
 
 
-def generate_number(feature):
+def generate_number(feature, outdir: Optional[str] = None) -> int:
+    """Returns a random number.
+
+    `outdir` is unused.
+    """
     return random.uniform(feature["min"] if "min" in feature else 0, feature["max"] if "max" in feature else 1)
 
 
-def generate_binary(feature):
+def generate_binary(feature, outdir: Optional[str] = None) -> bool:
+    """Returns a random boolean.
+
+    `outdir` is unused.
+    """
     choices = feature.get("bool2str", [False, True])
     p = feature["prob"] if "prob" in feature else 0.5
     return np.random.choice(choices, p=[1 - p, p])
 
 
-def generate_sequence(feature):
+def generate_sequence(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random sequence.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     length = encoder_or_decoder.get("max_len", 10)
     if "min_len" in encoder_or_decoder:
@@ -243,7 +274,11 @@ def generate_sequence(feature):
     return " ".join(sequence)
 
 
-def generate_set(feature):
+def generate_set(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random set.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
     for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
@@ -251,7 +286,11 @@ def generate_set(feature):
     return " ".join(list(set(elems)))
 
 
-def generate_bag(feature):
+def generate_bag(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random bag.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     elems = []
     for _ in range(random.randint(0, encoder_or_decoder.get("max_len", 3))):
@@ -259,7 +298,11 @@ def generate_bag(feature):
     return " ".join(elems)
 
 
-def generate_text(feature):
+def generate_text(feature, outdir: Optional[str] = None) -> str:
+    """Returns random text.
+
+    `outdir` is unused.
+    """
     encoder_or_decoder = _get_feature_encoder_or_decoder(feature)
     length = encoder_or_decoder.get("max_len", 10)
     text = []
@@ -268,19 +311,26 @@ def generate_text(feature):
     return " ".join(text)
 
 
-def generate_timeseries(feature, max_len=10):
+def generate_timeseries(feature, max_len=10, outdir: Optional[str] = None) -> str:
+    """Returns a random timeseries.
+
+    `outdir` is unused.
+    """
     encoder = _get_feature_encoder_or_decoder(feature)
     series = []
-    if "max_len" in encoder:
-        max_len = encoder["max_len"]
+    max_len = encoder.get("max_len", max_len)
     series_len = random.randint(max_len - 2, max_len)  # simulates variable length
     for _ in range(series_len):
         series.append(str(random.uniform(encoder.get("min", 0), encoder.get("max", 1))))
     return " ".join(series)
 
 
-def generate_audio(feature):
-    destination_folder = feature.get("destination_folder", "audio_files")
+def generate_audio(feature, outdir: str) -> str:
+    """Generates random audio and saves it to the outdir.
+
+    Returns the path to the directory of saved files.
+    """
+    destination_folder = feature.get("destination_folder", outdir)
     if PREPROCESSING in feature:
         audio_length = feature[PREPROCESSING].get("audio_file_length_limit_in_s", 2)
     else:
@@ -291,20 +341,23 @@ def generate_audio(feature):
     audio_tensor = torch.tensor(np.array([audio])).type(torch.float32)
     audio_filename = uuid.uuid4().hex[:10].upper() + ".wav"
 
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder)
+    audio_dest_path = os.path.join(destination_folder, audio_filename)
+
     try:
-        if not os.path.exists(destination_folder):
-            os.makedirs(destination_folder)
-
-        audio_dest_path = os.path.join(destination_folder, audio_filename)
         torchaudio.save(audio_dest_path, audio_tensor, sampling_rate)
-
     except OSError as e:
-        raise OSError("Unable to create a folder for audio or save audio to disk." "{}".format(e))
+        raise OSError(f"Unable to save audio to disk: {e}")
 
     return audio_dest_path
 
 
-def generate_image(feature, save_as_numpy=False):
+def generate_image(feature, outdir: str, save_as_numpy: bool = False) -> str:
+    """Generates random images and saves it to the outdir.
+
+    Returns the path to the directory of saved files.
+    """
     save_as_numpy = feature.get("save_as_numpy", save_as_numpy)
 
     try:
@@ -318,7 +371,7 @@ def generate_image(feature, save_as_numpy=False):
         sys.exit(-1)
 
     # Read num_channels, width, height
-    destination_folder = feature.get("destination_folder", "image_files")
+    destination_folder = feature.get("destination_folder", outdir)
     if PREPROCESSING in feature:
         height = feature[PREPROCESSING].get("height", 28)
         width = feature[PREPROCESSING].get("width", 28)
@@ -339,26 +392,24 @@ def generate_image(feature, save_as_numpy=False):
     image_filename = uuid.uuid4().hex[:10].upper() + ".png"
 
     # Save the image to disk either in a specified location/new folder
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder)
+    image_dest_path = os.path.join(destination_folder, image_filename)
     try:
-        if not os.path.exists(destination_folder):
-            os.makedirs(destination_folder)
-
-        image_dest_path = os.path.join(destination_folder, image_filename)
         # save_image(torch.from_numpy(img.astype("uint8")), image_dest_path)
         if save_as_numpy:
             with open(image_dest_path, "wb") as f:
                 np.save(f, img.detach().cpu().numpy())
         else:
             write_png(img, image_dest_path)
-
     except OSError as e:
-        raise OSError("Unable to create a folder for images/save image to disk." "{}".format(e))
+        raise OSError(f"Unable to save images to disk: {e}")
 
     return image_dest_path
 
 
-def generate_datetime(feature):
-    """picking a format among different types.
+def generate_datetime(feature, outdir: Optional[str] = None) -> str:
+    """Generates a random date time, picking a format among different types.
 
     If no format is specified, the first one is used.
     """
@@ -380,7 +431,11 @@ def generate_datetime(feature):
     return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
 
 
-def generate_h3(feature):
+def generate_h3(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random h3.
+
+    `outdir` is unused.
+    """
     resolution = random.randint(0, 15)  # valid values [0, 15]
     h3_components = {
         "mode": 1,  # we can avoid testing other modes
@@ -394,7 +449,11 @@ def generate_h3(feature):
     return components_to_h3(h3_components)
 
 
-def generate_vector(feature):
+def generate_vector(feature, outdir: Optional[str] = None) -> str:
+    """Returns a random vector.
+
+    `outdir` is unused.
+    """
     # Space delimited string with floating point numbers
     if PREPROCESSING in feature:
         vector_size = feature[PREPROCESSING].get("vector_size", 10)

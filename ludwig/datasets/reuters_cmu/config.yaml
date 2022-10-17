@@ -1,4 +1,0 @@
-version: 1.0
-download_urls:
-  - http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip
-csv_filename: reuters-allcats.csv

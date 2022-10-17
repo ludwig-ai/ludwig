@@ -1,0 +1,37 @@
+output_features:
+  - name: Cover_Type
+    type: category
+input_features:
+  - name: Elevation
+    type: number
+  - name: Aspect
+    type: number
+  - name: Slope
+    type: number
+  - name: Horizontal_Distance_To_Hydrology
+    type: number
+  - name: Vertical_Distance_To_Hydrology
+    type: number
+  - name: Horizontal_Distance_To_Roadways
+    type: number
+  - name: Hillshade_9am
+    type: number
+  - name: Hillshade_Noon
+    type: number
+  - name: Hillshade_3pm
+    type: number
+  - name: Horizontal_Distance_To_Fire_Points
+    type: number
+  - name: Wilderness_Area
+    type: category
+  - name: Soil_Type
+    type: category
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

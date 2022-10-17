@@ -1,0 +1,27 @@
+output_features:
+  - name: isFraud
+    type: binary
+input_features:
+  - name: step
+    type: number
+  - name: type
+    type: category
+  - name: amount
+    type: number
+  - name: oldbalanceOrg
+    type: number
+  - name: newbalanceOrig
+    type: number
+  - name: oldbalanceDest
+    type: number
+  - name: newbalanceDest
+    type: number
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

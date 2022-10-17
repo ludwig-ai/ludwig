@@ -15,9 +15,13 @@ from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.loss_modules import LogitsInputsMixin, register_loss
 from ludwig.modules.metric_modules import LossMetric, register_metric
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.decoders.base import BaseDecoderConfig
+from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.features.loss.loss import BaseLossConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -29,23 +33,34 @@ from tests.integration_tests.utils import (
 
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
-    foo: bool = False
+
+    type: str = "custom_combiner"
+
+    foo: bool = schema_utils.Boolean(default=False, description="")
 
 
+@register_encoder_config("custom_number_encoder", NUMBER)
 @dataclass
 class CustomNumberEncoderConfig(BaseEncoderConfig):
 
     type: str = "custom_number_encoder"
 
-    input_size: int = 0
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
 
 
+@register_decoder_config("custom_number_decoder", NUMBER)
 @dataclass
 class CustomNumberDecoderConfig(BaseDecoderConfig):
 
     type: str = "custom_number_decoder"
 
-    input_size: int = 0
+    input_size: int = schema_utils.PositiveInteger(default=1, description="")
+
+
+@dataclass
+class CustomLossConfig(BaseLossConfig):
+
+    type: str = "custom_loss"
 
 
 @register_combiner(name="custom_test")
@@ -117,6 +132,10 @@ class CustomLoss(nn.Module, LogitsInputsMixin):
 
     def forward(self, preds: Tensor, target: Tensor) -> Tensor:
         return torch.mean(torch.square(preds - target))
+
+    @staticmethod
+    def get_schema_cls():
+        return CustomLossConfig
 
 
 @register_metric("custom_loss", [NUMBER])

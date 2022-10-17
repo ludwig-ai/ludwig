@@ -1,0 +1,5 @@
+metrics:
+  - output_feature_name: SalePrice
+    metric_name: r2
+    expected_value: 0.7343850135803223
+    tolerance_percentage: 0.15

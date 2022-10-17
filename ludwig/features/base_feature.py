@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional, Union
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES, TYPE
+from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -212,18 +212,18 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
         self.fc_stack = FCStack(
             first_layer_input_size=self.input_size,
-            layers=feature.fc_layers,
-            num_layers=feature.num_fc_layers,
-            default_output_size=feature.output_size,
-            default_use_bias=feature.use_bias,
-            default_weights_initializer=feature.weights_initializer,
-            default_bias_initializer=feature.bias_initializer,
-            default_norm=feature.norm,
-            default_norm_params=feature.norm_params,
-            default_activation=feature.activation,
-            default_dropout=feature.dropout,
+            layers=feature.decoder.fc_layers,
+            num_layers=feature.decoder.num_fc_layers,
+            default_output_size=feature.decoder.fc_output_size,
+            default_use_bias=feature.decoder.fc_use_bias,
+            default_weights_initializer=feature.decoder.fc_weights_initializer,
+            default_bias_initializer=feature.decoder.fc_bias_initializer,
+            default_norm=feature.decoder.fc_norm,
+            default_norm_params=feature.decoder.fc_norm_params,
+            default_activation=feature.decoder.fc_activation,
+            default_dropout=feature.decoder.fc_dropout,
         )
-        self._calibration_module = self.create_calibration_module(kwargs)
+        self._calibration_module = self.create_calibration_module(feature)
         self._prediction_module = self.create_predict_module()
 
         # set up two sequence reducers, one for inputs and other for dependencies
@@ -279,8 +279,8 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_loss(self):
         loss_kwargs = self.loss_kwargs()
-        self.train_loss_function = get_loss_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
-        self.eval_loss_metric = get_metric_cls(self.type(), self.loss[TYPE])(**loss_kwargs)
+        self.train_loss_function = get_loss_cls(self.type(), self.loss.type)(**loss_kwargs)
+        self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
 
     def _setup_metrics(self):
         # needed to shadow class variable
@@ -293,7 +293,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             },
         }
 
-    def create_calibration_module(self, feature) -> CalibrationModule:
+    def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
         """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
         return None
 

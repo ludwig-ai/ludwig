@@ -189,7 +189,7 @@ def test_experiment_with_torch_module_dict_feature_name(csv_filename):
 def test_experiment_multiclass_with_class_weights(csv_filename):
     # Multiple inputs, Single category output
     input_features = [category_feature(encoder={"vocab_size": 10})]
-    output_features = [category_feature(decoder={"vocab_size": 3}, loss={"class_weights": [0, 1, 2, 3]})]
+    output_features = [category_feature(decoder={"vocab_size": 3}, loss={"class_weights": [0, 1, 2]})]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 import random
 from typing import Any, Dict, Union
@@ -23,6 +24,7 @@ import torch
 from torch import nn
 
 from ludwig.constants import (
+    CLIP,
     COLUMN,
     DECODER,
     DEPENDENCIES,
@@ -46,7 +48,6 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -59,6 +60,14 @@ class ZScoreTransformer(nn.Module):
         super().__init__()
         self.mu = float(mean) if mean is not None else mean
         self.sigma = float(std) if std is not None else std
+        self.feature_name = kwargs.get(NAME, "")
+        if self.sigma == 0:
+            raise RuntimeError(
+                f"Cannot apply zscore normalization to `{self.feature_name}` since it has a standard deviation of 0. "
+                f"This is most likely because `{self.feature_name}` has a constant value of {self.mu} for all rows in "
+                "the dataset. Consider removing this feature from your Ludwig config since it is not useful for "
+                "your machine learning model."
+            )
 
     def transform(self, x: np.ndarray) -> np.ndarray:
         return (x - self.mu) / self.sigma
@@ -228,7 +237,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return NumberInputFeatureConfig().preprocessing.__dict__
+        return NumberInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -263,8 +272,11 @@ class NumberFeatureMixin(BaseFeatureMixin):
         #     return series
 
         def normalize(series: pd.Series) -> pd.Series:
+            _feature_metadata = copy.deepcopy(metadata[feature_config[NAME]])
+            _feature_metadata.update({NAME: feature_config[NAME]})
+
             # retrieve request numeric transformer
-            numeric_transformer = get_transformer(metadata[feature_config[NAME]], preprocessing_parameters)
+            numeric_transformer = get_transformer(_feature_metadata, preprocessing_parameters)
 
             # transform input numeric values with specified transformer
             transformed_values = numeric_transformer.transform(series.values)
@@ -280,7 +292,6 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(NUMBER)
 class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[NumberInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)
@@ -338,7 +349,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return _NumberPreprocessing(metadata)
 
 
-@register_output_feature(NUMBER)
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     metric_functions = {
         LOSS: None,
@@ -368,12 +378,12 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return self.decoder_obj(hidden)
 
     def create_predict_module(self) -> PredictModule:
-        if self.clip is not None and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
+        if getattr(self, "clip", None) and not (isinstance(self.clip, (list, tuple)) and len(self.clip) == 2):
             raise ValueError(
                 f"The clip parameter of {self.feature_name} is {self.clip}. "
                 f"It must be a list or a tuple of length 2."
             )
-        return _NumberPredict(self.clip)
+        return _NumberPredict(getattr(self, "clip", None))
 
     def get_prediction_set(self):
         return {PREDICTIONS, LOGITS}
@@ -421,13 +431,14 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
     def populate_defaults(output_feature):
         defaults = NumberOutputFeatureConfig()
         set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss)
+        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
         set_default_values(
             output_feature,
             {
                 DECODER: {
                     TYPE: defaults.decoder.type,
                 },
+                CLIP: defaults.clip,
                 DEPENDENCIES: defaults.dependencies,
                 REDUCE_INPUT: defaults.reduce_input,
                 REDUCE_DEPENDENCIES: defaults.reduce_dependencies,

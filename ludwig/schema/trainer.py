@@ -1,9 +1,9 @@
 from abc import ABC
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
+from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -17,9 +17,9 @@ from ludwig.utils.registry import Registry
 trainer_schema_registry = Registry()
 
 
-def register_trainer_schema(name: str):
+def register_trainer_schema(model_type: str):
     def wrap(trainer_config: BaseTrainerConfig):
-        trainer_schema_registry[name] = trainer_config
+        trainer_schema_registry[model_type] = trainer_config
         return trainer_config
 
     return wrap
@@ -28,8 +28,6 @@ def register_trainer_schema(name: str):
 @dataclass
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
-
-    type: str
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
@@ -41,7 +39,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
         field_options=[
-            schema_utils.FloatRange(default=0.001, min=0, max=1),
+            schema_utils.NonNegativeFloat(default=0.001, allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -64,7 +62,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
         default=None,
-        allow_none=True,
         description=(
             "Size of batch to pass to the model for evaluation. If it is `0` or `None`, the same value of `batch_size` "
             "is used. This is useful to speedup evaluation with a much bigger batch size than training, if enough "
@@ -72,7 +69,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -94,20 +91,11 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
-@register_trainer_schema("trainer")
+@register_trainer_schema("ecd_ray_legacy")
+@register_trainer_schema(MODEL_ECD)
 @dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
-
-    type: str = schema_utils.StringOptions(
-        ["trainer", "ray_legacy_trainer"],
-        default="trainer",
-        description=(
-            "Trainer to use for training the model. Must be one of ['trainer', 'ray_legacy_trainer'] - "
-            "corresponds to name in `ludwig.trainers.registry.(ray_)trainers_registry` (default: 'trainer')"
-        ),
-        allow_none=False,
-    )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
@@ -121,7 +109,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
-        allow_none=True,
         description=(
             "Maximum number of training steps the algorithm is intended to be run over. "
             + "If unset, then `epochs` is used to determine training length."
@@ -147,7 +134,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=128,
+        default=DEFAULT_BATCH_SIZE,
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
@@ -155,9 +142,19 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
+            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
+    )
+
+    max_batch_size: int = schema_utils.PositiveInteger(
+        default=MAX_POSSIBLE_BATCH_SIZE,
+        allow_none=True,
+        description=(
+            "Auto batch size tuning and increasing batch size on plateau will be capped at this value. The default "
+            "value is 2^40."
+        ),
+        parameter_metadata=TRAINER_METADATA["max_batch_size"],
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
@@ -217,7 +214,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
-        description="Number to increase the batch size by on a plateau.",
+        description="The number of times to increase the batch size on a plateau.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau"],
     )
 
@@ -231,12 +228,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=2.0,
         description="Rate at which the batch size increases.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_rate"],
-    )
-
-    increase_batch_size_on_plateau_max: int = schema_utils.PositiveInteger(
-        default=512,
-        description="Maximum size of the batch.",
-        parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_max"],
     )
 
     increase_batch_size_eval_metric: str = schema_utils.String(
@@ -302,33 +293,32 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
 
-@register_trainer_schema("lightgbm_trainer")
+@register_trainer_schema(MODEL_GBM)
 @dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 
-    type: str = schema_utils.StringOptions(
-        ["lightgbm_trainer"],
-        default="lightgbm_trainer",
-        description=(
-            "Trainer to use for training the model. Must be one of ['lightgbm_trainer'] - "
-            "corresponds to name in `ludwig.trainers.registry.(ray_)trainers_registry` "
-            "(default: 'lightgbm_trainer')"
-        ),
-        allow_none=False,
-    )
-
     # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
     # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
-    eval_batch_size: Union[None, int, str] = schema_utils.OneOfOptionsField(
-        default=128,
+    eval_batch_size: Union[None, int, str] = schema_utils.PositiveInteger(
+        default=1024,
         description=("Size of batch to pass to the model for evaluation."),
-        allow_none=True,
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
-        field_options=[
-            schema_utils.PositiveInteger(default=128, description=""),
-            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
-        ],
+    )
+
+    # NOTE: Overwritten here since GBM performs better with a different default learning rate.
+    learning_rate: Union[float, str] = schema_utils.NonNegativeFloat(
+        default=0.03,
+        allow_none=False,
+        description=(
+            "Controls how much to change the model in response to the estimated error each time the model weights are "
+            "updated."
+        ),
+        parameter_metadata=TRAINER_METADATA["learning_rate"],
+    )
+
+    boosting_rounds_per_checkpoint: int = schema_utils.PositiveInteger(
+        default=50, description="Number of boosting rounds per checkpoint / evaluation round."
     )
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
@@ -345,21 +335,21 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     num_boost_round: int = schema_utils.PositiveInteger(
-        default=100, description="Number of boosting rounds to perform with GBM trainer."
+        default=1000, description="Number of boosting rounds to perform with GBM trainer."
     )
 
     num_leaves: int = schema_utils.PositiveInteger(
-        default=31, description="Number of leaves to use in the tree with GBM trainer."
+        default=82, description="Number of leaves to use in the tree with GBM trainer."
     )
 
     # LightGBM Learning Control params
     max_depth: int = schema_utils.Integer(
-        default=-1,
+        default=18,
         description="Maximum depth of a tree in the GBM trainer. A negative value means no limit.",
     )
 
     min_data_in_leaf: int = schema_utils.PositiveInteger(
-        default=20, description="Minimum number of data points in a leaf with GBM trainer."
+        default=315, description="Minimum number of data points in a leaf with GBM trainer."
     )
 
     min_sum_hessian_in_leaf: float = schema_utils.NonNegativeFloat(
@@ -367,7 +357,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     bagging_fraction: float = schema_utils.FloatRange(
-        default=1.0, min=0.0, max=1.0, description="Fraction of data to use for bagging with GBM trainer."
+        default=0.8, min=0.0, max=1.0, description="Fraction of data to use for bagging with GBM trainer."
     )
 
     pos_bagging_fraction: float = schema_utils.FloatRange(
@@ -378,12 +368,12 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=1.0, min=0.0, max=1.0, description="Fraction of negative data to use for bagging with GBM trainer."
     )
 
-    bagging_freq: int = schema_utils.NonNegativeInteger(default=0, description="Frequency of bagging with GBM trainer.")
+    bagging_freq: int = schema_utils.NonNegativeInteger(default=1, description="Frequency of bagging with GBM trainer.")
 
     bagging_seed: int = schema_utils.Integer(default=3, description="Random seed for bagging with GBM trainer.")
 
     feature_fraction: float = schema_utils.FloatRange(
-        default=1.0, min=0.0, max=1.0, description="Fraction of features to use in the GBM trainer."
+        default=0.75, min=0.0, max=1.0, description="Fraction of features to use in the GBM trainer."
     )
 
     feature_fraction_bynode: float = schema_utils.FloatRange(
@@ -412,11 +402,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     lambda_l1: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="L1 regularization factor for the GBM trainer."
+        default=0.25, description="L1 regularization factor for the GBM trainer."
     )
 
     lambda_l2: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="L2 regularization factor for the GBM trainer."
+        default=0.2, description="L2 regularization factor for the GBM trainer."
     )
 
     linear_lambda: float = schema_utils.NonNegativeFloat(
@@ -424,7 +414,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     min_gain_to_split: float = schema_utils.NonNegativeFloat(
-        default=0.0, description="Minimum gain to split a leaf in the GBM trainer."
+        default=0.03, description="Minimum gain to split a leaf in the GBM trainer."
     )
 
     drop_rate: float = schema_utils.FloatRange(
@@ -518,7 +508,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
-    verbose: int = schema_utils.IntegerRange(default=0, min=-1, max=2, description="Verbosity level for GBM trainer.")
+    verbose: int = schema_utils.IntegerRange(default=-1, min=-1, max=2, description="Verbosity level for GBM trainer.")
 
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
@@ -527,37 +517,23 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 def get_model_type_jsonschema():
-    return {"type": "string", "enum": [MODEL_ECD, MODEL_GBM], "default": MODEL_ECD}
+    return {
+        "type": "string",
+        "enum": [MODEL_ECD, MODEL_GBM, "ecd_ray_legacy"],
+        "default": MODEL_ECD,
+        "title": "type",
+        "description": "Select the model type.",
+    }
 
 
-def get_trainer_jsonschema():
-    def allowed_types_for_trainer_schema(cls) -> List[str]:
-        """Returns the allowed values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].validate.choices
-
-    conds = []
-    all_trainer_types = []
-    for trainer in trainer_schema_registry:
-        trainer_cls = trainer_schema_registry[trainer]
-
-        allowed_trainer_types = allowed_types_for_trainer_schema(trainer_cls)
-        all_trainer_types.extend(allowed_trainer_types)
-
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
-        other_props.pop("type")
-        for trainer_type in allowed_trainer_types:
-            trainer_cond = schema_utils.create_cond(
-                {"type": trainer_type},
-                other_props,
-            )
-            conds.append(trainer_cond)
+def get_trainer_jsonschema(model_type: str):
+    trainer_cls = trainer_schema_registry[model_type]
+    props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
 
     return {
         "type": "object",
-        "properties": {
-            "type": {"type": "string", "enum": all_trainer_types},
-        },
+        "properties": props,
         "title": "trainer_options",
-        "allOf": conds,
-        "description": "Use type 'trainer' for training ECD models, or 'lightgbm_trainer' for Tree models.",
+        "additionalProperties": False,
+        "description": "Schema for trainer determined by Model Type",
     }

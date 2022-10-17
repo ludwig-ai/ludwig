@@ -1,7 +1,6 @@
 import copy
 
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
@@ -14,9 +13,9 @@ from ludwig.constants import (
     FILL_WITH_MODE,
     HYPEROPT,
     INPUT_FEATURES,
+    MAX_POSSIBLE_BATCH_SIZE,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -32,7 +31,7 @@ from ludwig.constants import (
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.defaults import BASE_PREPROCESSING_SPLIT_CONFIG, merge_with_defaults
+from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc_utils import merge_dict, set_default_values
 from tests.integration_tests.utils import (
     binary_feature,
@@ -109,6 +108,8 @@ def test_merge_with_defaults_early_stop(use_train, use_hyperopt_scheduler):
 
     merged_config = merge_with_defaults(config)
 
+    # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
+    # hyperopt scheduler to manage trial lifecycle.
     expected = -1 if use_hyperopt_scheduler else ECDTrainerConfig().early_stop
     assert merged_config[TRAINER]["early_stop"] == expected
 
@@ -128,13 +129,11 @@ def test_missing_outputs_drop_rows():
 
     assert output_feature_config[PREPROCESSING][MISSING_VALUE_STRATEGY] == DROP_ROW
 
+    assert global_preprocessing[input_feature_config[TYPE]][PREPROCESSING][MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
     feature_preprocessing = merge_dict(
         global_preprocessing[output_feature_config[TYPE]][PREPROCESSING], output_feature_config[PREPROCESSING]
     )
     assert feature_preprocessing[MISSING_VALUE_STRATEGY] == DROP_ROW
-
-    feature_preprocessing = global_preprocessing[input_feature_config[TYPE]][PREPROCESSING]
-    assert feature_preprocessing[MISSING_VALUE_STRATEGY] == FILL_WITH_MODE
 
 
 def test_default_model_type():
@@ -146,56 +145,6 @@ def test_default_model_type():
     merged_config = merge_with_defaults(config)
 
     assert merged_config[MODEL_TYPE] == MODEL_ECD
-
-
-@pytest.mark.parametrize(
-    "model_trainer_type",
-    [
-        (MODEL_ECD, "trainer"),
-        (MODEL_GBM, "lightgbm_trainer"),
-    ],
-)
-def test_default_trainer_type(model_trainer_type):
-    model_type, expected_trainer_type = model_trainer_type
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config[TRAINER][TYPE] == expected_trainer_type
-
-
-def test_overwrite_trainer_type():
-    expected_trainer_type = "ray_legacy_trainer"
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: MODEL_ECD,
-        "trainer": {"type": expected_trainer_type},
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config[TRAINER][TYPE] == expected_trainer_type
-
-
-@pytest.mark.parametrize(
-    "model_type",
-    [MODEL_ECD, MODEL_GBM],
-)
-def test_invalid_trainer_type(model_type):
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-        "trainer": {"type": "invalid_trainer"},
-    }
-
-    with pytest.raises(ValidationError):
-        merge_with_defaults(config)
 
 
 def test_set_default_values():
@@ -287,50 +236,123 @@ def test_merge_with_defaults():
     # expected configuration content with default values after upgrading legacy configuration components
     expected_upgraded_format = {
         "ludwig_version": LUDWIG_VERSION,
-        MODEL_TYPE: "ecd",
-        INPUT_FEATURES: [
+        "input_features": [
             {
                 "type": "number",
                 "name": "number_input_feature",
-                "encoder": {"type": "passthrough"},
                 "column": "number_input_feature",
                 "proc_column": "number_input_feature_mZFLky",
                 "tied": None,
+                "encoder": {"type": "passthrough"},
+                "preprocessing": {
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": 0.0,
+                    "computed_fill_value": 0.0,
+                    "normalization": None,
+                },
             },
             {
                 "type": "image",
                 "name": "image_input_feature",
                 "encoder": {
                     "type": "stacked_cnn",
+                    "height": None,
+                    "width": None,
                     "conv_layers": [
                         {"num_filters": 32, "pool_size": 2, "pool_stride": 2, "use_bias": False},
                         {"num_filters": 64, "pool_size": 2, "pool_stride": 2},
                     ],
+                    "num_conv_layers": None,
+                    "num_channels": None,
+                    "out_channels": 32,
+                    "kernel_size": 3,
+                    "stride": 1,
+                    "padding": "valid",
+                    "dilation": 1,
+                    "groups": 1,
                     "conv_use_bias": True,
+                    "padding_mode": "zeros",
+                    "conv_norm": None,
+                    "conv_norm_params": None,
+                    "conv_activation": "relu",
+                    "conv_dropout": 0.0,
+                    "pool_function": "max",
+                    "pool_kernel_size": 2,
+                    "pool_stride": None,
+                    "pool_padding": 0,
+                    "pool_dilation": 1,
+                    "fc_layers": None,
+                    "num_fc_layers": 1,
+                    "output_size": 128,
+                    "fc_use_bias": True,
+                    "fc_weights_initializer": "xavier_uniform",
+                    "fc_bias_initializer": "zeros",
+                    "fc_norm": None,
+                    "fc_norm_params": None,
+                    "fc_activation": "relu",
+                    "fc_dropout": 0.0,
                 },
                 "column": "image_input_feature",
                 "proc_column": "image_input_feature_mZFLky",
                 "tied": None,
-                "preprocessing": {},
+                "preprocessing": {
+                    "missing_value_strategy": "bfill",
+                    "fill_value": None,
+                    "computed_fill_value": None,
+                    "height": None,
+                    "width": None,
+                    "num_channels": None,
+                    "resize_method": "interpolate",
+                    "infer_image_num_channels": True,
+                    "infer_image_dimensions": True,
+                    "infer_image_max_height": 256,
+                    "infer_image_max_width": 256,
+                    "infer_image_sample_size": 100,
+                    "scaling": "pixel_normalization",
+                    "in_memory": True,
+                    "num_processes": 1,
+                },
             },
         ],
-        OUTPUT_FEATURES: [
+        "output_features": [
             {
                 "type": "number",
                 "name": "number_output_feature",
                 "column": "number_output_feature",
+                "proc_column": "number_output_feature_mZFLky",
+                "loss": {"type": "mean_squared_error", "weight": 1.0},
                 "decoder": {
                     "type": "regressor",
+                    "fc_layers": None,
+                    "num_fc_layers": 0,
+                    "fc_output_size": 256,
+                    "fc_use_bias": True,
+                    "fc_weights_initializer": "xavier_uniform",
+                    "fc_bias_initializer": "zeros",
+                    "fc_norm": None,
+                    "fc_norm_params": None,
+                    "fc_activation": "relu",
+                    "fc_dropout": 0.0,
+                    "input_size": None,
+                    "use_bias": True,
+                    "weights_initializer": "xavier_uniform",
+                    "bias_initializer": "zeros",
                 },
-                "proc_column": "number_output_feature_mZFLky",
-                "loss": {"type": "mean_squared_error", "weight": 1},
+                "clip": None,
                 "dependencies": [],
                 "reduce_input": "sum",
                 "reduce_dependencies": "sum",
-                "preprocessing": {"missing_value_strategy": "drop_row"},
+                "preprocessing": {
+                    "missing_value_strategy": "drop_row",
+                    "fill_value": 0.0,
+                    "computed_fill_value": 0.0,
+                    "normalization": None,
+                },
+                "input_size": None,
+                "num_classes": None,
             }
         ],
-        HYPEROPT: {
+        "hyperopt": {
             "parameters": {
                 "number_input_feature.num_fc_layers": {},
                 "number_output_feature.embedding_size": {},
@@ -342,20 +364,22 @@ def test_merge_with_defaults():
             "search_alg": {"type": "variant_generator"},
         },
         "trainer": {
-            "type": "trainer",
+            "learning_rate": 0.001,
+            "validation_metric": "loss",
+            "validation_field": "combined",
             "eval_batch_size": None,
-            "optimizer": {"type": "adadelta", "rho": 0.9, "eps": 1e-06, "lr": 1.0, "weight_decay": 0.0},
+            "early_stop": 5,
+            "evaluate_training_set": True,
+            "optimizer": {"type": "adadelta", "lr": 1.0, "rho": 0.9, "eps": 1e-06, "weight_decay": 0.0},
             "epochs": 100,
             "train_steps": None,
             "regularization_lambda": 0.0,
             "regularization_type": "l2",
             "should_shuffle": True,
-            "learning_rate": 0.001,
             "batch_size": 128,
-            "early_stop": 5,
+            "max_batch_size": MAX_POSSIBLE_BATCH_SIZE,
             "steps_per_checkpoint": 0,
             "checkpoints_per_epoch": 0,
-            "evaluate_training_set": True,
             "reduce_learning_rate_on_plateau": 0.0,
             "reduce_learning_rate_on_plateau_patience": 5,
             "reduce_learning_rate_on_plateau_rate": 0.5,
@@ -364,7 +388,6 @@ def test_merge_with_defaults():
             "increase_batch_size_on_plateau": 0,
             "increase_batch_size_on_plateau_patience": 5,
             "increase_batch_size_on_plateau_rate": 2.0,
-            "increase_batch_size_on_plateau_max": 512,
             "increase_batch_size_eval_metric": "loss",
             "increase_batch_size_eval_split": "training",
             "decay": False,
@@ -372,22 +395,14 @@ def test_merge_with_defaults():
             "decay_rate": 0.96,
             "staircase": False,
             "gradient_clipping": {"clipglobalnorm": 0.5, "clipnorm": None, "clipvalue": None},
-            "validation_field": "combined",
-            "validation_metric": "loss",
             "learning_rate_warmup_epochs": 1.0,
             "learning_rate_scaling": "linear",
         },
-        PREPROCESSING: {
-            "split": BASE_PREPROCESSING_SPLIT_CONFIG,
-            "undersample_majority": None,
-            "oversample_minority": None,
-            "sample_ratio": 1.0,
-        },
-        DEFAULTS: {
+        "defaults": {
             "text": {
-                PREPROCESSING: {
-                    "tokenizer": "space_punct",
+                "preprocessing": {
                     "pretrained_model_name_or_path": None,
+                    "tokenizer": "space_punct",
                     "vocab_file": None,
                     "max_sequence_length": 256,
                     "most_common": 20000,
@@ -401,99 +416,101 @@ def test_merge_with_defaults():
                 }
             },
             "category": {
-                PREPROCESSING: {
-                    "most_common": 10000,
-                    "lowercase": False,
+                "preprocessing": {
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
                     "computed_fill_value": "<UNK>",
+                    "lowercase": False,
+                    "most_common": 10000,
                 }
             },
             "set": {
-                PREPROCESSING: {
+                "preprocessing": {
                     "tokenizer": "space",
-                    "most_common": 10000,
-                    "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
                     "computed_fill_value": "<UNK>",
+                    "lowercase": False,
+                    "most_common": 10000,
                 }
             },
             "bag": {
-                PREPROCESSING: {
+                "preprocessing": {
                     "tokenizer": "space",
-                    "most_common": 10000,
-                    "lowercase": False,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
                     "computed_fill_value": "<UNK>",
+                    "lowercase": False,
+                    "most_common": 10000,
                 }
             },
             "binary": {
-                PREPROCESSING: {
+                "preprocessing": {
                     "missing_value_strategy": "fill_with_false",
+                    "fill_value": None,
                     "computed_fill_value": None,
                     "fallback_true_label": None,
-                    "fill_value": None,
                 }
             },
             "number": {
-                PREPROCESSING: {
-                    "computed_fill_value": 0.0,
+                "preprocessing": {
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": 0.0,
+                    "computed_fill_value": 0.0,
                     "normalization": None,
                 }
             },
             "sequence": {
-                PREPROCESSING: {
+                "preprocessing": {
+                    "tokenizer": "space",
+                    "vocab_file": None,
                     "max_sequence_length": 256,
                     "most_common": 20000,
                     "padding_symbol": "<PAD>",
                     "unknown_symbol": "<UNK>",
                     "padding": "right",
-                    "tokenizer": "space",
                     "lowercase": False,
-                    "vocab_file": None,
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": "<UNK>",
                     "computed_fill_value": "<UNK>",
                 }
             },
             "timeseries": {
-                PREPROCESSING: {
+                "preprocessing": {
+                    "tokenizer": "space",
                     "timeseries_length_limit": 256,
                     "padding_value": 0.0,
                     "padding": "right",
-                    "tokenizer": "space",
                     "missing_value_strategy": "fill_with_const",
-                    "computed_fill_value": "",
                     "fill_value": "",
+                    "computed_fill_value": "",
                 }
             },
             "image": {
-                PREPROCESSING: {
-                    "computed_fill_value": None,
+                "preprocessing": {
+                    "missing_value_strategy": "bfill",
                     "fill_value": None,
+                    "computed_fill_value": None,
                     "height": None,
                     "width": None,
                     "num_channels": None,
-                    "missing_value_strategy": "backfill",
-                    "in_memory": True,
                     "resize_method": "interpolate",
-                    "scaling": "pixel_normalization",
-                    "num_processes": 1,
                     "infer_image_num_channels": True,
                     "infer_image_dimensions": True,
                     "infer_image_max_height": 256,
                     "infer_image_max_width": 256,
                     "infer_image_sample_size": 100,
+                    "scaling": "pixel_normalization",
+                    "in_memory": True,
+                    "num_processes": 1,
                 }
             },
             "audio": {
-                PREPROCESSING: {
+                "preprocessing": {
                     "audio_file_length_limit_in_s": 7.5,
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": "bfill",
+                    "fill_value": None,
+                    "computed_fill_value": None,
                     "in_memory": True,
                     "padding_value": 0.0,
                     "norm": None,
@@ -503,34 +520,39 @@ def test_merge_with_defaults():
                     "num_fft_points": None,
                     "window_type": "hamming",
                     "num_filter_bands": 80,
-                    "computed_fill_value": None,
-                    "fill_value": None,
                 }
             },
             "h3": {
-                PREPROCESSING: {
+                "preprocessing": {
                     "missing_value_strategy": "fill_with_const",
                     "fill_value": 576495936675512319,
                     "computed_fill_value": 576495936675512319,
                 }
             },
             "date": {
-                PREPROCESSING: {
+                "preprocessing": {
                     "missing_value_strategy": "fill_with_const",
-                    "computed_fill_value": "",
                     "fill_value": "",
+                    "computed_fill_value": "",
                     "datetime_format": None,
                 }
             },
             "vector": {
-                PREPROCESSING: {
-                    "missing_value_strategy": "fill_with_const",
-                    "computed_fill_value": "",
-                    "fill_value": "",
+                "preprocessing": {
                     "vector_size": None,
+                    "missing_value_strategy": "fill_with_const",
+                    "fill_value": "",
+                    "computed_fill_value": "",
                 }
             },
         },
+        "preprocessing": {
+            "split": {"type": "random", "probabilities": [0.7, 0.1, 0.2]},
+            "undersample_majority": None,
+            "oversample_minority": None,
+            "sample_ratio": 1.0,
+        },
+        "model_type": "ecd",
         "combiner": {
             "type": "concat",
             "fc_layers": None,

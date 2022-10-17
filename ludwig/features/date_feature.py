@@ -24,7 +24,6 @@ from dateutil.parser import parse
 from ludwig.constants import COLUMN, DATE, ENCODER, PROC_COLUMN, TIED, TYPE
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
@@ -55,7 +54,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def preprocessing_defaults():
-        return DateInputFeatureConfig().preprocessing.__dict__
+        return DateInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -76,7 +75,7 @@ class DateFeatureMixin(BaseFeatureMixin):
                 datetime_obj = parse(date_str)
         except Exception as e:
             logger.error(
-                f"Error parsing date: {date_str} with error {e} "
+                f"Error parsing date: '{date_str}' with error '{e}' "
                 "Please provide a datetime format that parses it "
                 "in the preprocessing section of the date feature "
                 "in the config. "
@@ -112,7 +111,6 @@ class DateFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(DATE)
 class DateInputFeature(DateFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: Union[DateInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
         input_feature_config = self.load_config(input_feature_config)

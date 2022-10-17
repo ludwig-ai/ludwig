@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import string
@@ -16,7 +17,6 @@ from tests.integration_tests.utils import (
     category_feature,
     generate_data,
     image_feature,
-    init_backend,
     LocalTestBackend,
     number_feature,
     sequence_feature,
@@ -25,9 +25,14 @@ from tests.integration_tests.utils import (
 NUM_EXAMPLES = 20
 
 
-@pytest.mark.parametrize("backend", ["local", "ray"])
-@pytest.mark.distributed
-def test_sample_ratio(backend, tmpdir):
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_ratio = 0.25
 
@@ -45,16 +50,15 @@ def test_sample_ratio(backend, tmpdir):
         "preprocessing": {"sample_ratio": sample_ratio},
     }
 
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_csv,
-            skip_save_processed_input=True,
-        )
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_csv,
+        skip_save_processed_input=True,
+    )
 
-        sample_size = num_examples * sample_ratio
-        count = len(train_set) + len(val_set) + len(test_set)
-        assert sample_size == count
+    sample_size = num_examples * sample_ratio
+    count = len(train_set) + len(val_set) + len(test_set)
+    assert sample_size == count
 
 
 def test_strip_whitespace_category(csv_filename, tmpdir):
@@ -80,9 +84,14 @@ def test_strip_whitespace_category(csv_filename, tmpdir):
     assert len(np.unique(train_ds.dataset[cat_feat[PROC_COLUMN]])) == cat_feat[DECODER]["vocab_size"]
 
 
-@pytest.mark.parametrize("backend", ["local", "ray"])
-@pytest.mark.distributed
-def test_with_split(backend, csv_filename, tmpdir):
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
     num_examples = NUM_EXAMPLES
     train_set_size = int(num_examples * 0.8)
     val_set_size = int(num_examples * 0.1)
@@ -105,20 +114,19 @@ def test_with_split(backend, csv_filename, tmpdir):
         "preprocessing": {"split": {"type": "fixed"}},
     }
 
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_csv,
-            skip_save_processed_input=False,
-        )
-        assert len(train_set) == train_set_size
-        assert len(val_set) == val_set_size
-        assert len(test_set) == test_set_size
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_csv,
+        skip_save_processed_input=False,
+    )
+    assert len(train_set) == train_set_size
+    assert len(val_set) == val_set_size
+    assert len(test_set) == test_set_size
 
 
-@pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
 @pytest.mark.distributed
-def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
+@pytest.mark.parametrize("feature_fn", [image_feature, audio_feature])
+def test_dask_known_divisions(feature_fn, csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
     input_features = [feature_fn(os.path.join(tmpdir, "generated_output"))]
@@ -136,16 +144,15 @@ def test_dask_known_divisions(feature_fn, csv_filename, tmpdir):
     }
 
     backend = "ray"
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_df,
-            skip_save_processed_input=False,
-        )
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_df,
+        skip_save_processed_input=False,
+    )
 
 
 @pytest.mark.distributed
-def test_drop_empty_partitions(csv_filename, tmpdir):
+def test_drop_empty_partitions(csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
@@ -164,16 +171,15 @@ def test_drop_empty_partitions(csv_filename, tmpdir):
     }
 
     backend = "ray"
-    with init_backend(backend):
-        model = LudwigModel(config, backend=backend)
-        train_set, val_set, test_set, _ = model.preprocess(
-            data_df,
-            skip_save_processed_input=True,
-        )
-        for dataset in [train_set, val_set, test_set]:
-            df = dataset.ds.to_dask()
-            for partition in df.partitions:
-                assert len(partition) > 0, "empty partitions found in dataset"
+    model = LudwigModel(config, backend=backend)
+    train_set, val_set, test_set, _ = model.preprocess(
+        data_df,
+        skip_save_processed_input=True,
+    )
+    for dataset in [train_set, val_set, test_set]:
+        df = dataset.ds.to_dask()
+        for partition in df.partitions:
+            assert len(partition) > 0, "empty partitions found in dataset"
 
 
 @pytest.mark.parametrize("generate_images_as_numpy", [False, True])
@@ -340,9 +346,14 @@ def test_presplit_override(format, tmpdir):
     assert np.all(test_set.to_df()[num_feat[PROC_COLUMN]].values == test_df[num_feat[COLUMN]].values)
 
 
-@pytest.mark.parametrize("backend", ["local", "ray"])
-@pytest.mark.distributed
-def test_empty_training_set_error(backend, tmpdir):
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
     """Tests that an error is raised if one or more of the splits is empty after preprocessing."""
     data_csv_path = os.path.join(tmpdir, "data.csv")
 
@@ -358,7 +369,117 @@ def test_empty_training_set_error(backend, tmpdir):
     # rows, this will result in the dataset being empty after preprocessing.
     df[out_feat[COLUMN]] = None
 
-    with init_backend(backend):
-        ludwig_model = LudwigModel(config, backend=backend)
-        with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
-            ludwig_model.preprocess(dataset=df)
+    ludwig_model = LudwigModel(config, backend=backend)
+    with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
+        ludwig_model.preprocess(dataset=df)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize(
+    "backend",
+    [
+        pytest.param("local", id="local"),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+    ],
+)
+def test_in_memory_dataset_size(backend, tmpdir, ray_cluster_2cpu):
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+
+    out_feat = binary_feature()
+    input_features = [number_feature()]
+    output_features = [out_feat]
+    config = {"input_features": input_features, "output_features": output_features}
+
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    ludwig_model = LudwigModel(config, backend=backend)
+    training_dataset, validation_dataset, test_dataset, _ = ludwig_model.preprocess(dataset=df)
+
+    assert training_dataset.in_memory_size_bytes > 0
+    assert validation_dataset.in_memory_size_bytes > 0
+    assert test_dataset.in_memory_size_bytes > 0
+
+
+@pytest.mark.parametrize(
+    "binary_as_input, expected_preprocessing",
+    [
+        pytest.param(
+            True,
+            {
+                "missing_value_strategy": "fill_with_false",
+                "fill_value": None,
+                "computed_fill_value": "<=50K",
+                "fallback_true_label": ">50K",
+            },
+            id="binary_as_input",
+        ),
+        pytest.param(
+            False,
+            {
+                "missing_value_strategy": "drop_row",
+                "fill_value": None,
+                "computed_fill_value": None,
+                "fallback_true_label": ">50K",
+            },
+            id="binary_as_output",
+        ),
+    ],
+)
+def test_non_conventional_bool_with_fallback(binary_as_input, expected_preprocessing, tmpdir):
+    # Specify a non-conventional boolean feature with a fallback true label.
+    bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": ">50K"})
+
+    # Generate data with the non-conventional boolean feature.
+    if binary_as_input:
+        input_features = [bin_feature]
+        output_features = [number_feature()]
+    else:
+        input_features = [number_feature()]
+        output_features = [bin_feature]
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # Preprocess the data.
+    ludwig_model = LudwigModel(config)
+    _, _, _, training_set_metadata = ludwig_model.preprocess(dataset=df)
+
+    # Check that true/false labels are set correctly.
+    assert training_set_metadata[bin_feature[NAME]] == {
+        "str2bool": {"<=50K": False, ">50K": True},
+        "bool2str": ["<=50K", ">50K"],
+        "fallback_true_label": ">50K",
+        "preprocessing": expected_preprocessing,
+    }
+
+
+@pytest.mark.parametrize(
+    "binary_as_input", [pytest.param(True, id="binary_as_input"), pytest.param(False, id="binary_as_output")]
+)
+def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, caplog, tmpdir):
+    # Specify a non-conventional boolean feature without a fallback true label.
+    bin_feature = binary_feature(bool2str=["<=50K", ">50K"], preprocessing={"fallback_true_label": None})
+
+    # Generate data with the non-conventional boolean feature.
+    if binary_as_input:
+        input_features = [bin_feature]
+        output_features = [number_feature()]
+    else:
+        input_features = [number_feature()]
+        output_features = [bin_feature]
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+    df = pd.read_csv(training_data_csv_path)
+
+    # Preprocess the data.
+    with caplog.at_level(logging.WARN, logger="ludwig.features.binary_feature"):
+        ludwig_model = LudwigModel(config)
+        ludwig_model.preprocess(dataset=df)
+
+    # Check that a warning is logged.
+    assert "unconventional boolean value" in caplog.text

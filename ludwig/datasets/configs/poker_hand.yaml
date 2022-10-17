@@ -1,0 +1,30 @@
+version: 1.0
+name: poker_hand
+download_urls:
+  - http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-training-true.data
+  - http://archive.ics.uci.edu/ml/machine-learning-databases/poker/poker-hand-testing.data
+train_filenames: poker-hand-training-true.data
+test_filenames: poker-hand-testing.data
+sha256:
+  poker-hand-testing.data: 3cd75958e19dd321ed5ca3f7f154c0f6aad544aab9f37731ac545b5f66b232c7
+  poker-hand-training-true.data: 37becdf87d5f8cbf2b91d6471e965a25b86cb4a6d878c0f94a4025969fca464f
+columns:
+  - S1
+  - C1
+  - S2
+  - C2
+  - S3
+  - C3
+  - S4
+  - C4
+  - S5
+  - C5
+  - hand
+description: |
+  Each record is an example of a hand consisting of five playing cards
+  drawn from a standard deck of 52. Each card is described using two
+  attributes (suit and rank), for a total of 10 predictive attributes.
+  There is one Class attribute that describes the "Poker Hand". The
+  order of cards is important, which is why there are 480 possible
+  Royal Flush hands as compared to 4.
+  https://archive.ics.uci.edu/ml/datasets/Poker+Hand

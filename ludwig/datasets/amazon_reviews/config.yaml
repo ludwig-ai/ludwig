@@ -1,8 +1,0 @@
-version: 1.0
-download_urls:
-  - "https://s3.amazonaws.com/fast-ai-nlp/amazon_review_full_csv.tgz"
-split_filenames:
-  train_file: train.csv
-  test_file: test.csv
-download_file_type: csv
-csv_filename: amazon_reviews.csv
