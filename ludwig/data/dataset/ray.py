@@ -108,7 +108,7 @@ class RayDataset(Dataset):
                 self.ds = self.ds.map_batches(lambda x: x, batch_size=None)
 
             # set instance state so calls to __len__ will also use the fully_executed version
-            # self.ds = self.ds.fully_executed()
+            self.ds = self.ds.fully_executed()
 
         if window_size_bytes is None:
             pipe = self.ds.repeat()
@@ -260,7 +260,7 @@ class RayDatasetBatcher(Batcher):
     def _fetch_next_epoch(self):
         pipeline = next(self.dataset_epoch_iterator)
 
-        read_parallelism = 0
+        read_parallelism = 1
         if read_parallelism == 1:
             self.dataset_batch_iter = self._create_async_reader(pipeline)
         elif read_parallelism > 1:
@@ -268,7 +268,6 @@ class RayDatasetBatcher(Batcher):
             #  very good with 1 parallelism
             self.dataset_batch_iter = self._create_async_parallel_reader(pipeline, read_parallelism)
         else:
-            print("!!! CREATE SYNC READER !!!")
             self.dataset_batch_iter = self._create_sync_reader(pipeline)
 
         self._step = 0

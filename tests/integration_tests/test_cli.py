@@ -41,7 +41,7 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["python -m ludwig.cli", command]
+    commands = ["ludwig", command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
