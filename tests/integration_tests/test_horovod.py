@@ -96,5 +96,5 @@ def test_horovod_implicit(csv_filename):
 @pytest.mark.distributed
 def test_horovod_gpu_memory_limit(csv_filename):
     """Test Horovod with explicit GPU memory limit set."""
-    ludwig_kwargs = dict(gpu_memory_limit=128)
+    ludwig_kwargs = dict(gpu_memory_limit="0.5")
     _run_horovod(csv_filename, **ludwig_kwargs)
