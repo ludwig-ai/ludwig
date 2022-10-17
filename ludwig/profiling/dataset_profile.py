@@ -49,8 +49,8 @@ def get_column_profile_views_from_proto(
     """Returns a mapping of feature name to ColumnProfileView."""
     column_profile_views: Dict[str, ColumnProfileView] = {}
     for feature_name, feature_profile in dataset_profile_proto.feature_profiles.items():
-        # column_profile_views[feature_name] = ColumnProfileView.from_protobuf(feature_profile.whylogs_metrics)
         whylogs_metrics_proto = ColumnMessage()
+        # Extra copy+deserialization to avoid TypeError.
         whylogs_metrics_proto.ParseFromString(feature_profile.whylogs_metrics.SerializeToString())
         column_profile_views[feature_name] = ColumnProfileView.from_protobuf(whylogs_metrics_proto)
     return column_profile_views
