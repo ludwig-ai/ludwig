@@ -41,7 +41,7 @@ def _run_commands(commands, **ludwig_kwargs):
 
 
 def _run_ludwig(command, **ludwig_kwargs):
-    commands = ["ludwig", command]
+    commands = ["python -m ludwig.cli", command]
     return _run_commands(commands, **ludwig_kwargs)
 
 
@@ -118,6 +118,15 @@ def test_train_cli_dataset(tmpdir, csv_filename):
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
+
+
+def test_train_cli_gpu_memory_limit(tmpdir, csv_filename):
+    """Test training using `ludwig train --dataset --gpu_memory_limit`."""
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig(
+        "train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir), gpu_memory_limit="0.5"
+    )
 
 
 def test_train_cli_training_set(tmpdir, csv_filename):
