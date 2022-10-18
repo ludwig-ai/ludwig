@@ -155,7 +155,8 @@ class HyperoptTestCallback(TuneCallback):
         if os.path.isfile(model_hyperparameters):
             try:
                 with open(model_hyperparameters) as f:
-                    json.load(f)
+                    config = json.load(f)
+                    assert config, f"Trial {trial} rendered config was empty."
                 self.rendered_config[trial.trial_id] = True
             except OSError:
                 logging.exception("Could not load rendered config from trial logdir.")
@@ -164,7 +165,8 @@ class HyperoptTestCallback(TuneCallback):
         if os.path.isfile(model_hyperparameters):
             try:
                 with open(model_hyperparameters) as f:
-                    json.load(f)
+                    config = json.load(f)
+                    assert config, "Trial {trial} user config was empty."
                 self.rendered_config[trial.trial_id] = True
             except OSError:
                 logging.exception("Could not load rendered config from trial logdir.")
