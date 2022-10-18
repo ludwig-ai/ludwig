@@ -73,7 +73,7 @@ def train_twice(backend, csv_filename, tmpdir):
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
 
     # Generate training data
-    training_data_csv_path = generate_data(input_features, output_features, csv_filename)
+    training_data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
     ludwig_model_1 = LudwigModel(config, logging_level=logging.ERROR, backend=backend)
     ludwig_model_2 = LudwigModel(config, logging_level=logging.ERROR, backend=backend)
