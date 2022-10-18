@@ -463,7 +463,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "AutoTransformerEncoder": {
@@ -564,7 +564,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "BERTEncoder": {
@@ -945,7 +945,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "BagEmbedWeightedEncoder": {
@@ -1615,7 +1615,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "CamemBERTEncoder": {
@@ -1994,7 +1994,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "CategoricalEmbedEncoder": {
@@ -3378,7 +3378,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "ELECTRAEncoder": {
@@ -3759,7 +3759,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "FlauBERTEncoder": {
@@ -4260,7 +4260,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "GPT2Encoder": {
@@ -4559,7 +4559,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "GPTEncoder": {
@@ -4847,7 +4847,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "H3Embed": {
@@ -5961,7 +5961,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "MLPMixerEncoder": {
@@ -6528,7 +6528,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "ParallelCNN": {
@@ -6947,7 +6947,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "use_bias": ParameterMetadata(
             ui_display_name="Use Bias",
@@ -7602,7 +7602,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "SequenceEmbedEncoder": {
@@ -9225,7 +9225,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "strides": ParameterMetadata(
             ui_display_name="Stride",
@@ -9959,7 +9959,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "state_size": ParameterMetadata(
             ui_display_name=None,
@@ -10488,7 +10488,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "stacked_layers": ParameterMetadata(
             ui_display_name=None,
@@ -11031,7 +11031,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "state_size": ParameterMetadata(
             ui_display_name=None,
@@ -11531,7 +11531,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "transformer_output_size": ParameterMetadata(
             ui_display_name="Transformer Output Size",
@@ -11919,7 +11919,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "TransformerXLEncoder": {
@@ -12409,7 +12409,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "ViTEncoder": {
@@ -13253,7 +13253,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "XLMRoBERTaEncoder": {
@@ -13441,7 +13441,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "XLNetEncoder": {
@@ -13951,7 +13951,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "encoder": {

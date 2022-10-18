@@ -521,7 +521,7 @@ def get_model_type_jsonschema():
         "type": "string",
         "enum": [MODEL_ECD, MODEL_GBM, "ecd_ray_legacy"],
         "default": MODEL_ECD,
-        "title": "type",
+        "title": "model_type",
         "description": "Select the model type.",
     }
 
