@@ -735,7 +735,7 @@ class StackedRNNConfig(BaseEncoderConfig):
 
     num_layers: int = schema_utils.PositiveInteger(
         default=1,
-        description="the number of stacked recurrent layers.",
+        description="The number of stacked recurrent layers.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["num_layers"],
     )
 
@@ -1234,7 +1234,7 @@ class StackedTransformerConfig(BaseEncoderConfig):
 
     num_layers: int = schema_utils.PositiveInteger(
         default=1,
-        description="the number of stacked recurrent layers.",
+        description="The number of transformer layers.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["num_layers"],
     )
 

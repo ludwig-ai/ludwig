@@ -309,8 +309,10 @@ class MT5Config(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["MT5Encoder"]["relative_attention_num_buckets"],
     )
 
-    dropout_rate: float = schema_utils.NonNegativeFloat(
+    dropout_rate: float = schema_utils.FloatRange(
         default=0.1,
+        min=0,
+        max=1,
         description="The ratio for all dropout layers.",
         parameter_metadata=ENCODER_METADATA["MT5Encoder"]["dropout_rate"],
     )
@@ -2276,6 +2278,8 @@ class T5Config(BaseEncoderConfig):
 
     dropout_rate: float = schema_utils.FloatRange(
         default=0.1,
+        min=0,
+        max=1,
         description="The ratio for all dropout layers.",
         parameter_metadata=ENCODER_METADATA["T5Encoder"]["dropout_rate"],
     )

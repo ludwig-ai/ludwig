@@ -40,6 +40,7 @@ def get_input_feature_jsonschema():
             "additionalProperties": True,
             "allOf": get_input_feature_conds(),
             "required": ["name", "type"],
+            "title": "input_features",
         },
     }
 
@@ -86,6 +87,7 @@ def get_output_feature_jsonschema():
             "additionalProperties": True,
             "allOf": get_output_feature_conds(),
             "required": ["name", "type"],
+            "title": "output_features",
         },
     }
 

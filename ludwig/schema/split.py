@@ -3,7 +3,7 @@ from dataclasses import field
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import TYPE
+from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -55,6 +55,7 @@ class FixedSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=SPLIT,
         description="The column name to use for fixed splitting.",
     )
 

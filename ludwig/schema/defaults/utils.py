@@ -21,12 +21,12 @@ def DefaultsDataclassField(feature_type: str):
             if value is None:
                 return None
             if isinstance(value, dict):
-                input_feature_mixin = input_mixin_registry[feature_type]
-                output_feature_mixin = output_mixin_registry.get(feature_type, None)
+                input_feature_class = input_mixin_registry[feature_type]
+                output_feature_class = output_mixin_registry.get(feature_type, None)
                 try:
-                    input_schema = input_feature_mixin.Schema().load(value)
-                    if output_feature_mixin:
-                        output_schema = output_feature_mixin.Schema().load(value)
+                    input_schema = input_feature_class.Schema().load(value)
+                    if output_feature_class:
+                        output_schema = output_feature_class.Schema().load(value)
                         combined = input_schema + output_schema
                     else:
                         combined = input_schema
