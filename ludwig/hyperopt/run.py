@@ -90,7 +90,7 @@ def hyperopt(
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
-    tune_callbacks: List["TuneCallback"] = None,
+    tune_callbacks: List[TuneCallback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
