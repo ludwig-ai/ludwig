@@ -37,7 +37,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 @dataclass(order=True)
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
-    
+
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
         allow_none=False,
@@ -71,8 +71,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
         description=(
-                "Maximum number of training steps the algorithm is intended to be run over. "
-                + "If unset, then `epochs` is used to determine training length."
+            "Maximum number of training steps the algorithm is intended to be run over. "
+            + "If unset, then `epochs` is used to determine training length."
         ),
         parameter_metadata=TRAINER_METADATA["train_steps"],
     )
@@ -95,7 +95,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["early_stop"],
     )
-    
+
     batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
         default=DEFAULT_BATCH_SIZE,
         allow_none=False,
@@ -155,7 +155,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
-    
+
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
     )
@@ -369,7 +369,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default="serial",
         description="Type of tree learner to use with GBM trainer.",
     )
-    
+
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
         ["gbdt", "rf", "dart", "goss"],

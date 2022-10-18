@@ -13,7 +13,7 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     sample_ratio: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="The ratio of the dataset to use. For instance, if 0.5, half of the dataset "
-                    "provided will be used.",
+        "provided will be used.",
         parameter_metadata=PREPROCESSING_METADATA["sample_ratio"],
     )
 

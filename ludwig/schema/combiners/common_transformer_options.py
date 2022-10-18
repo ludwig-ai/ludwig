@@ -35,7 +35,7 @@ class CommonTransformerConfig:
     num_layers: int = schema_utils.PositiveInteger(
         default=1,
         description="The number of transformer layers",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_layers"]
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_layers"],
     )
 
     num_heads: int = schema_utils.NonNegativeInteger(

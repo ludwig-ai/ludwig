@@ -14,13 +14,13 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     entity_1: List[str] = schema_utils.List(
         default=None,
         description="The list of input features composing the first entity to compare.",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_1"]
+        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_1"],
     )
 
     entity_2: List[str] = schema_utils.List(
         default=None,
         description="The list of input features composing the second entity to compare.",
-        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_2"]
+        parameter_metadata=COMBINER_METADATA["ComparatorCombiner"]["entity_2"],
     )
 
     dropout: float = schema_utils.FloatRange(
