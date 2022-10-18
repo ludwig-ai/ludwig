@@ -3,7 +3,7 @@ from typing import List, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import BINARY, CATEGORY, NUMBER, VECTOR
+from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 
@@ -19,7 +19,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     "Name corresponding to an encoder."
 
 
-@register_encoder_config("passthrough", [CATEGORY, NUMBER, VECTOR])
+@register_encoder_config("passthrough", [NUMBER, VECTOR])
 @dataclass
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""

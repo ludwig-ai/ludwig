@@ -9,6 +9,20 @@ from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
+@register_encoder_config("passthrough", CATEGORY)
+@dataclass
+class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
+    """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
+    passthrough encoder."""
+
+    type: str = schema_utils.StringOptions(
+        ["passthrough"],
+        default="passthrough",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+
 @register_encoder_config("dense", CATEGORY)
 @dataclass
 class CategoricalEmbedConfig(BaseEncoderConfig):

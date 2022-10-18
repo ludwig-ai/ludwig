@@ -39,7 +39,7 @@ def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str
             yield feature_name, metric
 
 
-@register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
+@register_trainer(MODEL_GBM)
 class LightGBMTrainer(BaseTrainer):
     TRAIN_KEY = "train"
     VALID_KEY = "validation"
@@ -854,7 +854,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
     return ray_params
 
 
-@register_ray_trainer("lightgbm_trainer", MODEL_GBM, default=True)
+@register_ray_trainer(MODEL_GBM)
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,

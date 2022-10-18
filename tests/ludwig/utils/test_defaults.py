@@ -1,7 +1,6 @@
 import copy
 
 import pytest
-from marshmallow import ValidationError
 
 from ludwig.constants import (
     CATEGORY,
@@ -17,7 +16,6 @@ from ludwig.constants import (
     MAX_POSSIBLE_BATCH_SIZE,
     MISSING_VALUE_STRATEGY,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -147,56 +145,6 @@ def test_default_model_type():
     merged_config = merge_with_defaults(config)
 
     assert merged_config[MODEL_TYPE] == MODEL_ECD
-
-
-@pytest.mark.parametrize(
-    "model_trainer_type",
-    [
-        (MODEL_ECD, "trainer"),
-        (MODEL_GBM, "lightgbm_trainer"),
-    ],
-)
-def test_default_trainer_type(model_trainer_type):
-    model_type, expected_trainer_type = model_trainer_type
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config[TRAINER][TYPE] == expected_trainer_type
-
-
-def test_overwrite_trainer_type():
-    expected_trainer_type = "ray_legacy_trainer"
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: MODEL_ECD,
-        "trainer": {"type": expected_trainer_type},
-    }
-
-    merged_config = merge_with_defaults(config)
-
-    assert merged_config[TRAINER][TYPE] == expected_trainer_type
-
-
-@pytest.mark.parametrize(
-    "model_type",
-    [MODEL_ECD, MODEL_GBM],
-)
-def test_invalid_trainer_type(model_type):
-    config = {
-        INPUT_FEATURES: [category_feature()],
-        OUTPUT_FEATURES: [category_feature()],
-        MODEL_TYPE: model_type,
-        "trainer": {"type": "invalid_trainer"},
-    }
-
-    with pytest.raises(ValidationError):
-        merge_with_defaults(config)
 
 
 def test_set_default_values():
@@ -416,7 +364,6 @@ def test_merge_with_defaults():
             "search_alg": {"type": "variant_generator"},
         },
         "trainer": {
-            "type": "trainer",
             "learning_rate": 0.001,
             "validation_metric": "loss",
             "validation_field": "combined",

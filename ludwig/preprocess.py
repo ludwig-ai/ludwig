@@ -122,8 +122,8 @@ def preprocess_cli(
         model and the training progress files.
     :param gpus: (list, default: `None`) list of GPUs that are available
         for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-        allocate per GPU device.
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
