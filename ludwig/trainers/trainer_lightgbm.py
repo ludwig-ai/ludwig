@@ -955,7 +955,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         feat_cols = in_feat + out_feat
 
         lgb_train = RayDMatrix(
-            training_set.ds.map_batches(lambda df: df[feat_cols]),
+            training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=20), # works: .repartition(2)
             label=label_col,
             distributed=False,
         )
@@ -964,7 +964,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             lgb_val = RayDMatrix(
-                validation_set.ds.map_batches(lambda df: df[feat_cols]),
+                validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=5),
                 label=label_col,
                 distributed=False,
             )
@@ -973,7 +973,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
         if test_set is not None:
             lgb_test = RayDMatrix(
-                test_set.ds.map_batches(lambda df: df[feat_cols]),
+                test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=5),
                 label=label_col,
                 distributed=False,
             )
