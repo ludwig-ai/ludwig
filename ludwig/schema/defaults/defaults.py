@@ -37,4 +37,11 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
 def get_defaults_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
-    return schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
+    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
+    props = preproc_schema["properties"]
+    return {
+        "type": "object",
+        "properties": props,
+        "title": "global_defaults_options",
+        "description": "Set global defaults for input and output features",
+    }

@@ -45,7 +45,7 @@ VALIDATION_LOCK = Lock()
 
 
 @lru_cache(maxsize=2)
-def get_schema(model_type: str):
+def get_schema(model_type: str = MODEL_ECD):
     schema = {
         "type": "object",
         "properties": {
@@ -88,4 +88,4 @@ def validate_config(config):
     with VALIDATION_LOCK:
         # There is a race condition during schema validation that can cause the marshmallow schema class to
         # be missing during validation if more than one thread is trying to validate at once.
-        validate(instance=updated_config, schema=get_schema(model_type), cls=get_validator())
+        validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())

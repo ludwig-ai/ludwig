@@ -1,5 +1,5 @@
 version: 1.0
-name: fake_job_postings
+name: fake_job_postings2
 download_urls:
   - https://automl-mm-bench.s3.amazonaws.com/fake_job_postings2/train.csv
   - https://automl-mm-bench.s3.amazonaws.com/fake_job_postings2/test.csv

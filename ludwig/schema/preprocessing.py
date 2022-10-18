@@ -47,6 +47,6 @@ def get_preprocessing_jsonschema():
         "type": "object",
         "properties": props,
         "additionalProperties": False,
-        "title": "type",
+        "title": "global_preprocessing_options",
         "description": "Select the preprocessing type.",
     }
