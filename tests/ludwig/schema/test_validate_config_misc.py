@@ -1,7 +1,19 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import DECODER, ENCODER, LOSS, MODEL_ECD, MODEL_GBM, MODEL_TYPE, PREPROCESSING, TRAINER
+from ludwig.constants import (
+    CATEGORY,
+    DECODER,
+    DEFAULTS,
+    ENCODER,
+    LOSS,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
+    NAME,
+    PREPROCESSING,
+    TRAINER,
+)
 from ludwig.features.audio_feature import AudioFeatureMixin
 from ludwig.features.bag_feature import BagFeatureMixin
 from ludwig.features.binary_feature import BinaryFeatureMixin
@@ -300,6 +312,11 @@ def test_validate_defaults_schema():
     }
 
     validate_config(config)
+
+    config[DEFAULTS][CATEGORY][NAME] = "TEST"
+
+    with pytest.raises(ValidationError):
+        validate_config(config)
 
 
 def test_validate_no_trainer_type():
