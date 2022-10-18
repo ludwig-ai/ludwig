@@ -80,6 +80,9 @@ class BaseMarshmallowConfig:
         unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
+        ordered = True
+        "Flag that maintains the order of defined parameters in the schema"
+
     def to_dict(self):
         """Method for getting a dictionary representation of this dataclass.
 
@@ -97,7 +100,7 @@ def assert_is_a_marshmallow_class(cls):
 def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
     schema["additionalProperties"] = additional_properties
     return schema
 
