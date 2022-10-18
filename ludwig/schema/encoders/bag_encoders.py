@@ -20,10 +20,30 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout probability for the embedding.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["dropout"],
+    )
+
+    activation: str = schema_utils.ActivationOptions(
+        description="The default activation function that will be used for each layer.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["activation"],
+    )
+
     vocab: List[str] = schema_utils.List(
         default=None,
         description="Vocabulary of the encoder",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["vocab"],
+    )
+
+    representation: str = schema_utils.StringOptions(
+        ["dense", "sparse"],
+        default="dense",
+        description="The representation of the embedding. Either dense or sparse.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["representation"],
     )
 
     embedding_size: int = schema_utils.PositiveInteger(
@@ -33,13 +53,6 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         "is the number of different strings appearing in the training set in the input column (plus 1 for "
         "the unknown token placeholder <UNK>).",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["embedding_size"],
-    )
-
-    representation: str = schema_utils.StringOptions(
-        ["dense", "sparse"],
-        default="dense",
-        description="The representation of the embedding. Either dense or sparse.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["representation"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
@@ -78,30 +91,16 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["embeddings_on_cpu"],
     )
 
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["fc_layers"],
-    )
-
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="This is the number of stacked fully connected layers that the input to the feature passes "
-        "through. Their output is projected in the feature's output space.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["num_fc_layers"],
-    )
-
-    output_size: int = schema_utils.PositiveInteger(
-        default=10,
-        description="If output_size is not already specified in fc_layers this is the default output_size that will "
-        "be used for each layer. It indicates the size of the output of a fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["output_size"],
-    )
-
     use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["use_bias"],
+    )
+
+    bias_initializer: str = schema_utils.InitializerOptions(
+        default="zeros",
+        description="Initializer to use for the bias vector.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["bias_initializer"],
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
@@ -109,10 +108,11 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["weights_initializer"],
     )
 
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["bias_initializer"],
+    output_size: int = schema_utils.PositiveInteger(
+        default=10,
+        description="If output_size is not already specified in fc_layers this is the default output_size that will "
+        "be used for each layer. It indicates the size of the output of a fully connected layer.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["output_size"],
     )
 
     norm: str = schema_utils.StringOptions(
@@ -128,15 +128,15 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["norm_params"],
     )
 
-    activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["activation"],
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="This is the number of stacked fully connected layers that the input to the feature passes "
+        "through. Their output is projected in the feature's output space.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["num_fc_layers"],
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["dropout"],
+    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+        default=None,
+        description="List of dictionaries containing the parameters for each fully connected layer.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["fc_layers"],
     )

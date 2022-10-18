@@ -8,7 +8,7 @@ from ludwig.schema.combiners.common_transformer_options import CommonTransformer
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(order=True)
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 

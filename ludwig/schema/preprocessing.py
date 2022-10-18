@@ -6,17 +6,14 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 
 
-@dataclass
+@dataclass(order=True)
 class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing."""
 
-    split: BaseSplitConfig = SplitDataclassField(
-        default=RANDOM,
-    )
-
     sample_ratio: float = schema_utils.NonNegativeFloat(
         default=1.0,
-        description="Ratio of the dataset to use for training. If 1.0, all the data is used for training.",
+        description="The ratio of the dataset to use. For instance, if 0.5, half of the dataset "
+                    "provided will be used.",
         parameter_metadata=PREPROCESSING_METADATA["sample_ratio"],
     )
 
@@ -34,6 +31,10 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         description="If not None, the majority class will be undersampled to reach the specified ratio respective "
         "to the minority class. ",
         parameter_metadata=PREPROCESSING_METADATA["undersample_majority"],
+    )
+
+    split: BaseSplitConfig = SplitDataclassField(
+        default=RANDOM,
     )
 
 

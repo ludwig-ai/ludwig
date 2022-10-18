@@ -60,7 +60,7 @@ def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
-        "then": {"properties": {k: v for k, v in then_pred.items()}},
+        "then": {"properties": then_pred},
     }
 
 

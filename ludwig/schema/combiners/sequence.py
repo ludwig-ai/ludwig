@@ -8,7 +8,7 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(order=True)
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
@@ -18,15 +18,15 @@ class SequenceCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["main_sequence_feature"],
     )
 
-    reduce_output: Optional[str] = schema_utils.ReductionOptions(
-        default=None,
-        description="",
-        parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["reduce_output"],
-    )
-
     encoder: Optional[str] = schema_utils.StringOptions(
         list(sequence_encoder_registry.keys()),
         default=None,
         description="",
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["encoder"],
+    )
+
+    reduce_output: Optional[str] = schema_utils.ReductionOptions(
+        default=None,
+        description="",
+        parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["reduce_output"],
     )

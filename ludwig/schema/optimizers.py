@@ -6,7 +6,7 @@ import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, INTERNAL_ONLY
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.utils import (
     BaseMarshmallowConfig,
@@ -49,7 +49,7 @@ class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
        Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
        result in a `ValidationError`."""
 
-    lr: float = NonNegativeFloat(default=1e-03, description="Learning rate.")
+    lr: float = NonNegativeFloat(default=1e-03, description="Learning rate.", parameter_metadata=INTERNAL_ONLY)
 
 
 @register_optimizer(name="sgd")
@@ -389,7 +389,12 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(optimizer_registry.keys()), "default": default["type"]},
+                    "type": {
+                        "type": "string",
+                        "enum": list(optimizer_registry.keys()),
+                        "default": default["type"],
+                        "description": "The type of optimizer to use during the learning process"
+                    },
                 },
                 "title": "optimizer_options",
                 "allOf": get_optimizer_conds(),
@@ -459,7 +464,8 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
                     )
             raise ValidationError("Field should be None or dict")
 
-        def _jsonschema_type_mapping(self):
+        @staticmethod
+        def _jsonschema_type_mapping():
             return {
                 "oneOf": [
                     {"type": "null", "title": "disabled", "description": "Disable gradient clipping."},
