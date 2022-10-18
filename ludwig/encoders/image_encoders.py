@@ -476,7 +476,9 @@ class TVBaseEncoder(Encoder):
                 )
 
         # get torchvision transforms object
-        self.transforms_obj = torchvision_model_registry[model_id].weights_class.DEFAULT.transforms()
+        transforms_obj = torchvision_model_registry[model_id].weights_class.DEFAULT.transforms()
+        self.num_channels = len(transforms_obj.mean)
+        self.crop_size = transforms_obj.crop_size
 
         logger.debug(f"  {model_id}")
         # create pretrained model with pretrained weights or None for untrained model
@@ -509,7 +511,7 @@ class TVBaseEncoder(Encoder):
         # len(transforms_obj.mean) determines the number of channels
         # transforms_obj.crop_size determines the height and width of image
         # [num_channels, height, width]
-        return torch.Size([len(self.transforms_obj.mean), *(2 * self.transforms_obj.crop_size)])
+        return torch.Size([self.num_channels, *(2 * self.crop_size)])
 
 
 # TVModelVariant(variant_id, create_model_function, model_weights)
