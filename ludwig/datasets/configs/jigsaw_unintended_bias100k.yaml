@@ -1,5 +1,5 @@
 version: 1.0
-name: jigsaw_unintended_bias_100k
+name: jigsaw_unintended_bias100K
 download_urls:
   - https://automl-mm-bench.s3.amazonaws.com/jigsaw_unintended_bias100K/train.pq
   - https://automl-mm-bench.s3.amazonaws.com/jigsaw_unintended_bias100K/test.pq
