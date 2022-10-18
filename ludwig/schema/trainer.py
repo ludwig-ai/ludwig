@@ -1,9 +1,9 @@
 from abc import ABC
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, MODEL_GBM, TRAINING, TYPE
+from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -17,9 +17,9 @@ from ludwig.utils.registry import Registry
 trainer_schema_registry = Registry()
 
 
-def register_trainer_schema(name: str):
+def register_trainer_schema(model_type: str):
     def wrap(trainer_config: BaseTrainerConfig):
-        trainer_schema_registry[name] = trainer_config
+        trainer_schema_registry[model_type] = trainer_config
         return trainer_config
 
     return wrap
@@ -28,8 +28,6 @@ def register_trainer_schema(name: str):
 @dataclass
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
-
-    type: str
 
     learning_rate: Union[float, str] = schema_utils.OneOfOptionsField(
         default=0.001,
@@ -93,20 +91,11 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
-@register_trainer_schema("trainer")
+@register_trainer_schema("ecd_ray_legacy")
+@register_trainer_schema(MODEL_ECD)
 @dataclass
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
-
-    type: str = schema_utils.StringOptions(
-        ["trainer", "ray_legacy_trainer"],
-        default="trainer",
-        description=(
-            "Trainer to use for training the model. Must be one of ['trainer', 'ray_legacy_trainer'] - "
-            "corresponds to name in `ludwig.trainers.registry.(ray_)trainers_registry` (default: 'trainer')"
-        ),
-        allow_none=False,
-    )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
@@ -156,6 +145,16 @@ class ECDTrainerConfig(BaseTrainerConfig):
             schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
+    )
+
+    max_batch_size: int = schema_utils.PositiveInteger(
+        default=MAX_POSSIBLE_BATCH_SIZE,
+        allow_none=True,
+        description=(
+            "Auto batch size tuning and increasing batch size on plateau will be capped at this value. The default "
+            "value is 2^40."
+        ),
+        parameter_metadata=TRAINER_METADATA["max_batch_size"],
     )
 
     steps_per_checkpoint: int = schema_utils.NonNegativeInteger(
@@ -215,7 +214,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
-        description="Number to increase the batch size by on a plateau.",
+        description="The number of times to increase the batch size on a plateau.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau"],
     )
 
@@ -229,12 +228,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=2.0,
         description="Rate at which the batch size increases.",
         parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_rate"],
-    )
-
-    increase_batch_size_on_plateau_max: int = schema_utils.PositiveInteger(
-        default=512,
-        description="Maximum size of the batch.",
-        parameter_metadata=TRAINER_METADATA["increase_batch_size_on_plateau_max"],
     )
 
     increase_batch_size_eval_metric: str = schema_utils.String(
@@ -300,21 +293,10 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
 
-@register_trainer_schema("lightgbm_trainer")
+@register_trainer_schema(MODEL_GBM)
 @dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
-
-    type: str = schema_utils.StringOptions(
-        ["lightgbm_trainer"],
-        default="lightgbm_trainer",
-        description=(
-            "Trainer to use for training the model. Must be one of ['lightgbm_trainer'] - "
-            "corresponds to name in `ludwig.trainers.registry.(ray_)trainers_registry` "
-            "(default: 'lightgbm_trainer')"
-        ),
-        allow_none=False,
-    )
 
     # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
     # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
@@ -537,46 +519,21 @@ class GBMTrainerConfig(BaseTrainerConfig):
 def get_model_type_jsonschema():
     return {
         "type": "string",
-        "enum": [MODEL_ECD, MODEL_GBM],
+        "enum": [MODEL_ECD, MODEL_GBM, "ecd_ray_legacy"],
         "default": MODEL_ECD,
-        "title": "type",
+        "title": "model_type",
         "description": "Select the model type.",
     }
 
 
-def get_trainer_jsonschema():
-    def allowed_types_for_trainer_schema(cls) -> List[str]:
-        """Returns the allowed values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].validate.choices
-
-    conds = []
-    all_trainer_types = []
-    for trainer in trainer_schema_registry:
-        trainer_cls = trainer_schema_registry[trainer]
-
-        allowed_trainer_types = allowed_types_for_trainer_schema(trainer_cls)
-        all_trainer_types.extend(allowed_trainer_types)
-
-        other_props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
-        other_props.pop("type")
-        for trainer_type in allowed_trainer_types:
-            trainer_cond = schema_utils.create_cond(
-                {"type": trainer_type},
-                other_props,
-            )
-            conds.append(trainer_cond)
+def get_trainer_jsonschema(model_type: str):
+    trainer_cls = trainer_schema_registry[model_type]
+    props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
 
     return {
         "type": "object",
-        "properties": {
-            "type": {
-                "type": "string",
-                "enum": all_trainer_types,
-                "title": "type",
-                "description": "Select the trainer type.",
-            },
-        },
+        "properties": props,
         "title": "trainer_options",
-        "allOf": conds,
-        "description": "Use type 'trainer' for training ECD models, or 'lightgbm_trainer' for Tree models.",
+        "additionalProperties": False,
+        "description": "Schema for trainer determined by Model Type",
     }

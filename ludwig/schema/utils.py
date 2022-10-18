@@ -33,19 +33,12 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD, TYPE
+    from ludwig.constants import MODEL_ECD
     from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 
     trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 
-    def default_type_for_trainer_schema(cls):
-        """Returns the default values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].dump_default
-
-    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
-    kwargs_with_type = {**{TYPE: default_type_for_trainer_schema(trainer_schema)}, **kwargs}
-
-    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+    return load_config_with_kwargs(trainer_schema, kwargs)
 
 
 def load_config_with_kwargs(
@@ -101,11 +94,11 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
-    schema["additionalProperties"] = True
+    schema["additionalProperties"] = additional_properties
     return schema
 
 
@@ -457,8 +450,15 @@ def FloatRange(
     )
 
 
-def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
+def Dict(
+    default: Union[None, TDict] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, dict)
@@ -469,7 +469,7 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
         metadata={
             "marshmallow_field": fields.Dict(
                 fields.String(),
-                allow_none=True,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={
@@ -483,7 +483,7 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-    list_type: Union[Type[str], Type[int], Type[float]] = str,
+    list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
     default: Union[None, TList[Any]] = None,
     description: str = "",
     allow_none: bool = True,
@@ -503,6 +503,8 @@ def List(
         field_type = fields.Integer()
     elif list_type is float:
         field_type = fields.Float()
+    elif list_type is list:
+        field_type = fields.List(fields.Float())
     else:
         raise ValueError(f"Invalid list type: `{list_type}`")
 

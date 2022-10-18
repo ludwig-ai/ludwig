@@ -14,8 +14,11 @@ class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
         default=RANDOM,
     )
 
-    sample_ratio: float = schema_utils.NonNegativeFloat(
+    sample_ratio: float = schema_utils.FloatRange(
         default=1.0,
+        min=0,
+        max=1,
+        min_inclusive=False,
         description="Ratio of the dataset to use for training. If 1.0, all the data is used for training.",
         parameter_metadata=PREPROCESSING_METADATA["sample_ratio"],
     )
@@ -46,6 +49,6 @@ def get_preprocessing_jsonschema():
         "type": "object",
         "properties": props,
         "additionalProperties": True,
-        "title": "type",
+        "title": "global_preprocessing_options",
         "description": "Select the preprocessing type.",
     }

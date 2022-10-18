@@ -17,6 +17,7 @@ import base64
 import collections.abc
 import contextlib
 import csv
+import dataclasses
 import functools
 import hashlib
 import json
@@ -675,6 +676,8 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif dataclasses.is_dataclass(obj):
+            return dataclasses.asdict(obj)
         else:
             return json.JSONEncoder.default(self, obj)
 

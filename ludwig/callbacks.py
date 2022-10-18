@@ -17,7 +17,10 @@
 from abc import ABC
 from typing import Any, Callable, Dict, List, Union
 
+from ludwig.api_annotations import PublicAPI
 
+
+@PublicAPI
 class Callback(ABC):
     def on_cmdline(self, cmd: str, *args: List[str]):
         """Called when Ludwig is run on the command line with the callback enabled.

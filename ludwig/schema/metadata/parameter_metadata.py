@@ -73,3 +73,6 @@ def convert_metadata_to_json(pm: ParameterMetadata):
     a string repr that is improperly parsed.
     """
     return json.loads(pm.to_json())
+
+
+INTERNAL_ONLY = ParameterMetadata(internal_only=True)

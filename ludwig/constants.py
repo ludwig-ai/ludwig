@@ -103,6 +103,7 @@ INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
 TRAINER = "trainer"
+LIGHTGBM_TRAINER = "lightgbm_trainer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"
@@ -128,7 +129,7 @@ FULL = "full"
 TRAIN_SPLIT = 0
 VALIDATION_SPLIT = 1
 TEST_SPLIT = 2
-MIN_VALIDATION_SET_ROWS = 3  # The minimum validation set size to ensure metric computation doesn't fail.
+MIN_DATASET_SPLIT_ROWS = 3  # The minimum number of rows in a split. Splits smaller than this size are treated as empty.
 
 META = "meta"
 
@@ -142,6 +143,9 @@ NUM_SAMPLES = "num_samples"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+MAX_CONCURRENT_TRIALS = "max_concurrent_trials"
+CPU_RESOURCES_PER_TRIAL = "cpu_resources_per_trial"
+GPU_RESOURCES_PER_TRIAL = "gpu_resources_per_trial"
 GOAL = "goal"
 GRID_SEARCH = "grid_search"
 
@@ -164,6 +168,9 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = 128
+MAX_POSSIBLE_BATCH_SIZE = (
+    1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
+)
 LEARNING_RATE = "learning_rate"
 USE_BIAS = "use_bias"
 BIAS = "bias"
@@ -179,6 +186,7 @@ DEPENDENCIES = "dependencies"
 REDUCE_INPUT = "reduce_input"
 REDUCE_DEPENDENCIES = "reduce_dependencies"
 
+BACKEND = "backend"
 COMBINER = "combiner"
 
 ENCODER = "encoder"
