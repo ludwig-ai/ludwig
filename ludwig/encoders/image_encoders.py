@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 import torchvision.models as tvm
-from torchvision.transforms._presets import ImageClassification
 
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
@@ -465,19 +464,19 @@ class TVBaseEncoder(Encoder):
             )
         else:
             weights_specification = None
-            logger.info(
-                f"Instantiating torchvision image encoder: '{self.torchvision_model_type}' "
-                "with no pretrained weights."
-            )
+            if saved_weights_in_checkpoint:
+                logger.info(
+                    f"Instantiating torchvision image encoder: '{self.torchvision_model_type}' "
+                    "with weights saved in the checkpoint."
+                )
+            else:
+                logger.info(
+                    f"Instantiating torchvision image encoder: '{self.torchvision_model_type}' "
+                    "with no pretrained weights."
+                )
 
-        # Extract from torchvision model transforms method the size of the image
-        # after the torchvision transforms method preprocesses the image
-        transforms_function = torchvision_model_registry[model_id].weights_class.DEFAULT.transforms
-        image_classification_object = ImageClassification(
-            *transforms_function.args,
-            **transforms_function.keywords,
-        )
-        self._input_shape = (3, *(2 * image_classification_object.crop_size))
+        # get torchvision transforms object
+        self.transforms_obj = torchvision_model_registry[model_id].weights_class.DEFAULT.transforms()
 
         logger.debug(f"  {model_id}")
         # create pretrained model with pretrained weights or None for untrained model
@@ -507,8 +506,10 @@ class TVBaseEncoder(Encoder):
     @property
     def input_shape(self) -> torch.Size:
         # expected shape after all pre-processing
+        # len(transforms_obj.mean) determines the number of channels
+        # transforms_obj.crop_size determines the height and width of image
         # [num_channels, height, width]
-        return torch.Size(self._input_shape)
+        return torch.Size([len(self.transforms_obj.mean), *(2 * self.transforms_obj.crop_size)])
 
 
 # TVModelVariant(variant_id, create_model_function, model_weights)
@@ -545,12 +546,6 @@ class TVResNetEncoder(TVBaseEncoder):
     def get_schema_cls():
         return TVResNetEncoderConfig
 
-    @property
-    def input_shape(self) -> torch.Size:
-        # resnet shape after all pre-processing
-        # [num_channels, height, width]
-        return torch.Size([3, 224, 224])
-
 
 VGG_VARIANTS = [
     TVModelVariant(11, tvm.vgg11, tvm.VGG11_Weights),
@@ -584,12 +579,6 @@ class TVVGGEncoder(TVBaseEncoder):
     def get_schema_cls():
         return TVVGGEncoderConfig
 
-    @property
-    def input_shape(self) -> torch.Size:
-        # resnet shape after all pre-processing
-        # [num_channels, height, width]
-        return torch.Size([3, 224, 224])
-
 
 ALEXNET_VARIANTS = [
     TVModelVariant("base", tvm.alexnet, tvm.AlexNet_Weights),
@@ -615,12 +604,6 @@ class TVAlexNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVAlexNetEncoderConfig
-
-    @property
-    def input_shape(self) -> torch.Size:
-        # resnet shape after all pre-processing
-        # [num_channels, height, width]
-        return torch.Size([3, 224, 224])
 
 
 EFFICIENTNET_VARIANTS = [
@@ -657,9 +640,3 @@ class TVEfficientNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVEfficientNetEncoderConfig
-
-    @property
-    def input_shape(self) -> torch.Size:
-        # resnet shape after all pre-processing
-        # [num_channels, height, width]
-        return torch.Size([3, 224, 224])
