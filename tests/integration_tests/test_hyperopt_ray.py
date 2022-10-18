@@ -91,7 +91,7 @@ def _get_config(search_alg, executor):
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
     return {
         "input_features": input_features,
@@ -205,7 +205,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
