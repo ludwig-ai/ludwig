@@ -41,6 +41,7 @@ from ludwig.constants import (
     TIED,
     TYPE,
 )
+from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
 from ludwig.utils import calibration, output_feature_utils, strings_utils
@@ -165,9 +166,8 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
         distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
-            raise ValueError(
-                f"Binary feature column {column.name} expects 2 distinct values, "
-                f"found: {distinct_values.values.tolist()}"
+            raise InputDataError(
+                column.name, BINARY, f"expects 2 distinct values, found {distinct_values.values.tolist()}"
             )
         if preprocessing_parameters["fallback_true_label"]:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
