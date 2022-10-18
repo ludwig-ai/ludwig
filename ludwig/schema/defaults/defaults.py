@@ -42,7 +42,6 @@ def get_defaults_jsonschema():
     return {
         "type": "object",
         "properties": props,
-        "additionalProperties": False,
         "title": "global_defaults_options",
         "description": "Set global defaults for input and output features",
     }
