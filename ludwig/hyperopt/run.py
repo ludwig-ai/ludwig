@@ -54,11 +54,10 @@ try:
 
     from ludwig.backend.ray import RayBackend
 except ImportError:
+    TuneCallback = object
 
     class RayBackend:
         pass
-
-    TuneCallback = object
 
 
 logger = logging.getLogger(__name__)
