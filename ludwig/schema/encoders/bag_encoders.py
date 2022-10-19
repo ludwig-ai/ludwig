@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("embed", BAG)
-@dataclass
+@dataclass(order=True)
 class BagEmbedWeightedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -55,26 +55,6 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["embedding_size"],
     )
 
-    embeddings_trainable: bool = schema_utils.Boolean(
-        default=True,
-        description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-        "has effect only when representation is dense as sparse one-hot encodings are not trainable.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["embeddings_trainable"],
-    )
-
-    pretrained_embeddings: str = schema_utils.String(
-        default=None,
-        description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-        "path to a file containing embeddings in the GloVe format. When the file containing the "
-        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-        "the others are discarded. If the vocabulary contains strings that have no match in the "
-        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-        "some random noise to make them different from each other. This parameter has effect only if "
-        "representation is dense.",
-        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["pretrained_embeddings"],
-    )
-
     force_embedding_size: bool = schema_utils.Boolean(
         default=False,
         description="Force the embedding size to be equal to the vocabulary size. This parameter has effect only if "
@@ -89,6 +69,26 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
         "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["embeddings_on_cpu"],
+    )
+
+    embeddings_trainable: bool = schema_utils.Boolean(
+        default=True,
+        description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
+        "may be useful when loading pretrained embeddings for avoiding fine tuning them. This parameter "
+        "has effect only when representation is dense as sparse one-hot encodings are not trainable.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["embeddings_trainable"],
+    )
+
+    pretrained_embeddings: str = schema_utils.String(
+        default=None,
+        description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
+        "path to a file containing embeddings in the GloVe format. When the file containing the "
+        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
+        "the others are discarded. If the vocabulary contains strings that have no match in the "
+        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
+        "some random noise to make them different from each other. This parameter has effect only if "
+        "representation is dense.",
+        parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["pretrained_embeddings"],
     )
 
     use_bias: bool = schema_utils.Boolean(
