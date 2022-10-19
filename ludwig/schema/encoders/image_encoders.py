@@ -137,7 +137,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     pool_kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
         default=2,
         description="An integer or pair of integers specifying the pooling size. If pool_kernel_size is not specified "
-                    "in conv_layers this is the default value that will be used for each layer.",
+        "in conv_layers this is the default value that will be used for each layer.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int, allow_none=False),
@@ -148,7 +148,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     pool_stride: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
         default=None,
         description="An integer or pair of integers specifying the pooling stride, which is the factor by which the "
-                    "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
+        "pooling layer downsamples the feature map. Defaults to pool_kernel_size.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int, allow_none=False),

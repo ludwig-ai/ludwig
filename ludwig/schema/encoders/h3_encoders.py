@@ -73,7 +73,7 @@ class H3EmbedConfig(BaseEncoderConfig):
     output_size: int = schema_utils.PositiveInteger(
         default=10,
         description="If an output_size is not already specified in fc_layers this is the default output_size that "
-                    "will be used for each layer. It indicates the size of the output of a fully connected layer.",
+        "will be used for each layer. It indicates the size of the output of a fully connected layer.",
         parameter_metadata=ENCODER_METADATA["H3Embed"]["output_size"],
     )
 
