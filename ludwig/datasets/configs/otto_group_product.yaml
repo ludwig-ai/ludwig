@@ -5,6 +5,7 @@ archive_filenames: otto-group-product-classification-challenge.zip
 sha256:
   otto-group-product-classification-challenge.zip: 81d1fa5805036772b7a2a2425311fdc7b1568af4fbb42f0ec8f9661d0d21ce42
 train_filenames: train.csv
+test_filenames: test.csv
 description: |
   The Otto Group Product Classification Challenge
   https://www.kaggle.com/c/otto-group-product-classification-challenge/overview
