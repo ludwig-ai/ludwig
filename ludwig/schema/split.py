@@ -15,7 +15,7 @@ def get_split_cls(name: str):
     return split_config_registry[name]
 
 
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
@@ -24,7 +24,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @split_config_registry.register("random")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
@@ -43,7 +43,7 @@ class RandomSplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("fixed")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -61,7 +61,7 @@ class FixedSplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("stratify")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -84,7 +84,7 @@ class StratifySplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("datetime")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -107,7 +107,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("hash")
-@dataclass
+@dataclass(order=True)
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 

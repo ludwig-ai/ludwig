@@ -10,7 +10,7 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
@@ -27,13 +27,13 @@ class SequenceCombinerConfig(BaseCombinerConfig):
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["main_sequence_feature"],
     )
 
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=SEQUENCE,
+        default="parallel_cnn",
+    )
+
     reduce_output: Optional[str] = schema_utils.ReductionOptions(
         default=None,
         description="",
         parameter_metadata=COMBINER_METADATA["SequenceCombiner"]["reduce_output"],
-    )
-
-    encoder: BaseEncoderConfig = EncoderDataclassField(
-        feature_type=SEQUENCE,
-        default="parallel_cnn",
     )

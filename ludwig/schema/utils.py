@@ -87,7 +87,7 @@ def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
-        "then": {"properties": {k: v for k, v in then_pred.items()}},
+        "then": {"properties": then_pred},
     }
 
 
@@ -106,6 +106,9 @@ class BaseMarshmallowConfig:
 
         unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
+
+        ordered = True
+        "Flag that maintains the order of defined parameters in the schema"
 
     def to_dict(self):
         """Method for getting a dictionary representation of this dataclass.
@@ -127,7 +130,7 @@ def assert_is_a_marshmallow_class(cls):
 def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
     schema["additionalProperties"] = additional_properties
     return schema
 
