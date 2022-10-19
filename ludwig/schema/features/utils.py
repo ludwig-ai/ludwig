@@ -1,3 +1,4 @@
+from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -57,6 +58,8 @@ def get_input_feature_conds():
         schema_cls = get_input_feature_cls(feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
+        for key in [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE]:  # TODO: Remove col/proc_col once train metadata decoupled
+            del feature_props[key]
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds
@@ -104,6 +107,8 @@ def get_output_feature_conds():
         schema_cls = get_output_feature_cls(feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
+        for key in [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE]:  # TODO: Remove col/proc_col once train metadata decoupled
+            del feature_props[key]
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds
