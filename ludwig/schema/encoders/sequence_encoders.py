@@ -72,7 +72,6 @@ class SequenceEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["representation"],
     )
 
-
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
@@ -592,38 +591,38 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
     embedding_size: int = schema_utils.PositiveInteger(
         default=256,
         description="The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
-                    "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
-                    "where `vocabulary_size` is the number of different strings appearing in the training set in the "
-                    "column the feature is named after (plus 1 for `<UNK>`).",
+        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
+        "where `vocabulary_size` is the number of different strings appearing in the training set in the "
+        "column the feature is named after (plus 1 for `<UNK>`).",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["embedding_size"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="by default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-                    "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-                    "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-                    "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
+        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
+        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
+        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["embeddings_on_cpu"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
         default=True,
         description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-                    "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-                    "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
+        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
+        "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-                    "path to a file containing embeddings in the GloVe format. When the file containing the "
-                    "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-                    "the others are discarded. If the vocabulary contains strings that have no match in the "
-                    "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-                    "some random noise to make them different from each other. This parameter has effect only if "
-                    "representation is dense.",
+        "path to a file containing embeddings in the GloVe format. When the file containing the "
+        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
+        "the others are discarded. If the vocabulary contains strings that have no match in the "
+        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
+        "some random noise to make them different from each other. This parameter has effect only if "
+        "representation is dense.",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["pretrained_embeddings"],
     )
 
@@ -792,38 +791,38 @@ class StackedRNNConfig(BaseEncoderConfig):
     embedding_size: int = schema_utils.PositiveInteger(
         default=256,
         description="The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
-                    "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
-                    "where `vocabulary_size` is the number of different strings appearing in the training set in the "
-                    "column the feature is named after (plus 1 for `<UNK>`).",
+        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
+        "where `vocabulary_size` is the number of different strings appearing in the training set in the "
+        "column the feature is named after (plus 1 for `<UNK>`).",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["embedding_size"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="by default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-                    "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-                    "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-                    "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
+        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
+        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
+        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["embeddings_on_cpu"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
         default=True,
         description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-                    "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-                    "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
+        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
+        "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-                    "path to a file containing embeddings in the GloVe format. When the file containing the "
-                    "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-                    "the others are discarded. If the vocabulary contains strings that have no match in the "
-                    "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-                    "some random noise to make them different from each other. This parameter has effect only if "
-                    "representation is dense.",
+        "path to a file containing embeddings in the GloVe format. When the file containing the "
+        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
+        "the others are discarded. If the vocabulary contains strings that have no match in the "
+        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
+        "some random noise to make them different from each other. This parameter has effect only if "
+        "representation is dense.",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["pretrained_embeddings"],
     )
 
@@ -1086,38 +1085,38 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     embedding_size: int = schema_utils.PositiveInteger(
         default=256,
         description="The maximum embedding size. The actual size will be `min(vocabulary_size, embedding_size)` for "
-                    "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
-                    "where `vocabulary_size` is the number of different strings appearing in the training set in the "
-                    "column the feature is named after (plus 1 for `<UNK>`).",
+        "`dense` representations and exactly `vocabulary_size` for the `sparse` encoding, "
+        "where `vocabulary_size` is the number of different strings appearing in the training set in the "
+        "column the feature is named after (plus 1 for `<UNK>`).",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["embedding_size"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-                    "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-                    "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-                    "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
+        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
+        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
+        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["embeddings_on_cpu"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
         default=True,
         description="If true embeddings are trained during the training process, if false embeddings are fixed. It "
-                    "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
-                    "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
+        "may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter "
+        "has effect only when representation is dense as sparse one-hot encodings are not trainable. ",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
         description="By default dense embeddings are initialized randomly, but this parameter allows to specify a "
-                    "path to a file containing embeddings in the GloVe format. When the file containing the "
-                    "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
-                    "the others are discarded. If the vocabulary contains strings that have no match in the "
-                    "embeddings file, their embeddings are initialized with the average of all other embedding plus "
-                    "some random noise to make them different from each other. This parameter has effect only if "
-                    "representation is dense.",
+        "path to a file containing embeddings in the GloVe format. When the file containing the "
+        "embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, "
+        "the others are discarded. If the vocabulary contains strings that have no match in the "
+        "embeddings file, their embeddings are initialized with the average of all other embedding plus "
+        "some random noise to make them different from each other. This parameter has effect only if "
+        "representation is dense.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["pretrained_embeddings"],
     )
 
@@ -1271,7 +1270,7 @@ class StackedTransformerConfig(BaseEncoderConfig):
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
-                    "resolve them.",
+        "resolve them.",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["embeddings_on_cpu"],
     )
 
