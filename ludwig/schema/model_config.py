@@ -238,7 +238,7 @@ class ModelConfig(BaseMarshmallowConfig):
         validate_config(config_dict)
 
     @staticmethod
-    def _get_config_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
+    def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
         """Helper function for getting the specified section class associated with the section type passed in.
 
         Args:
@@ -393,7 +393,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
                 # Check if nested section needs to be replaced
                 if TYPE in val and section.type != val[TYPE]:
-                    section = self._get_config_cls(key, val[TYPE], feature_type)
+                    section = self._get_config_nested_cls(key, val[TYPE], feature_type)
                     setattr(config_obj_lvl, key, section)
 
                 #  Now set the other defaults specified in the module
