@@ -176,7 +176,7 @@ jobs:
           RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
-        if: always() && ${{ !env.ACT }}t
+        if: always() && ${{ !env.ACT }}
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
