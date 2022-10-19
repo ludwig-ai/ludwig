@@ -5,6 +5,7 @@ archive_filenames: santander-customer-transaction-prediction.zip
 sha256:
   santander-customer-transaction-prediction.zip: b3a56d036b493a9cf0695018c968baba1ba7ef8c39d842cc5626e72f13c0ec69
 train_filenames: train.csv
+test_filenames: test.csv
 description: |
   Santander Customer Transaction Prediction.
   https://www.kaggle.com/c/santander-customer-transaction-prediction/overview
