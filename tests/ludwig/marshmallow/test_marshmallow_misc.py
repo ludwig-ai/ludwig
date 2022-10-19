@@ -1,5 +1,4 @@
 import pytest
-from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow.utils import EXCLUDE
 from marshmallow_dataclass import dataclass
 
