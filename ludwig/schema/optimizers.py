@@ -33,7 +33,7 @@ def register_optimizer(name: str):
 
 
 def get_optimizer_cls(name: str):
-    """Get the optimizer schema class from the optimizer schema class registry"""
+    """Get the optimizer schema class from the optimizer schema class registry."""
     return optimizer_registry[name][1]
 
 

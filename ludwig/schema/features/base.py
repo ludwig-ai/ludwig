@@ -20,7 +20,7 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.parameter_metadata import ParameterMetadata, INTERNAL_ONLY
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 
 logger = logging.getLogger(__name__)
 _error_console = Console(stderr=True, style="bold red")
