@@ -14,8 +14,8 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
 
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(
         description="This value controls the size of the embeddings. Valid values are `add` which uses the "
-                    "`hidden_size` value or an integer that is set to a specific value. In the case of an integer "
-                    "value, it must be smaller than hidden_size.",
+        "`hidden_size` value or an integer that is set to a specific value. In the case of an integer "
+        "value, it must be smaller than hidden_size.",
         parameter_metadata=COMBINER_METADATA["TabTransformerCombiner"]["embed_input_feature_name"],
     )
 

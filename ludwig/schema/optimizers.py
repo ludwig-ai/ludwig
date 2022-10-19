@@ -393,7 +393,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                         "type": "string",
                         "enum": list(optimizer_registry.keys()),
                         "default": default["type"],
-                        "description": "The type of optimizer to use during the learning process"
+                        "description": "The type of optimizer to use during the learning process",
                     },
                 },
                 "title": "optimizer_options",
