@@ -24,7 +24,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("dense", CATEGORY)
-@dataclass
+@dataclass(repr=False)
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -113,7 +113,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("sparse", CATEGORY)
-@dataclass
+@dataclass(repr=False)
 class CategoricalSparseConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

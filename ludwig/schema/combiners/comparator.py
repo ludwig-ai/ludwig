@@ -7,15 +7,22 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False)
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
     entity_1: List[str]
-    """TODO: Document parameters."""
+    """List of input features that compose the first entity to be compared."""
 
     entity_2: List[str]
-    """TODO: Document parameters."""
+    """List of input features that compose the second entity to be compared."""
+
+    type: str = schema_utils.StringOptions(
+        ["comparator"],
+        default="comparator",
+        allow_none=False,
+        description="Type of combiner.",
+    )
 
     fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
         description="",

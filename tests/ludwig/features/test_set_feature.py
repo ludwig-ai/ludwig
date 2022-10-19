@@ -6,6 +6,9 @@ import torch
 
 from ludwig.constants import ENCODER
 from ludwig.features.set_feature import SetInputFeature
+from ludwig.schema.features.set_feature import SetInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
@@ -45,10 +48,12 @@ def test_set_input_feature(set_config: Dict) -> None:
     set_def = deepcopy(set_config)
 
     # pickup any other missing parameters
-    SetInputFeature.populate_defaults(set_def)
+    defaults = SetInputFeatureConfig().to_dict()
+    set_def = merge_dict(defaults, set_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = SetInputFeature(set_def).to(DEVICE)
+    set_config, _ = load_config_with_kwargs(SetInputFeatureConfig, set_def)
+    input_feature_obj = SetInputFeature(set_config).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = torch.randint(0, 2, size=(BATCH_SIZE, len(set_def[ENCODER]["vocab"])), dtype=torch.int64).to(DEVICE)

@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("embed", BAG)
-@dataclass
+@dataclass(repr=False)
 class BagEmbedWeightedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

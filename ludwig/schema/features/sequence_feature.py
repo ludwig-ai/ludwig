@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import SEQUENCE, SEQUENCE_SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import LOSS, SEQUENCE, SEQUENCE_SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -17,6 +17,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -65,6 +66,13 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [LOSS],
+        default=LOSS,
+        description="Internal only use parameter: default validation metric for sequence output feature.",
+        parameter_metadata=INTERNAL_ONLY,
+    )
 
     dependencies: list = schema_utils.List(
         default=[],

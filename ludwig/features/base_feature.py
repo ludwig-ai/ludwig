@@ -14,7 +14,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod, abstractstaticmethod
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import torch
 from torch import Tensor
@@ -29,7 +29,6 @@ from ludwig.modules.metric_modules import MeanMetric
 from ludwig.modules.metric_registry import get_metric_classes, get_metric_cls
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.schema.features.base import BaseFeatureConfig, BaseOutputFeatureConfig
-from ludwig.schema.utils import assert_is_a_marshmallow_class
 from ludwig.utils import output_feature_utils
 from ludwig.utils.calibration import CalibrationModule
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -48,11 +47,6 @@ class BaseFeatureMixin(ABC):
     @abstractstaticmethod
     def type() -> str:
         """Returns the type of feature this mixin supports."""
-        raise NotImplementedError
-
-    @abstractstaticmethod
-    def preprocessing_defaults() -> Dict[str, Any]:
-        """Returns dict of preprocessing defaults."""
         raise NotImplementedError
 
     @abstractstaticmethod
@@ -137,14 +131,6 @@ class BaseFeature:
             feature.proc_column = compute_feature_hash(type(feature).Schema().dump(feature))
         self.proc_column = feature.proc_column
 
-    @classmethod
-    def load_config(cls, feature: Union[BaseFeatureConfig, Dict]) -> BaseFeatureConfig:
-        if isinstance(feature, dict):
-            schema_cls = cls.get_schema_cls()
-            assert_is_a_marshmallow_class(schema_cls)
-            return schema_cls.Schema().load(feature)
-        return feature
-
 
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
@@ -155,12 +141,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def populate_defaults(input_feature):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
     def initialize_encoder(self, encoder_config):
@@ -430,11 +411,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             **logits,
         }
 
-    @property
-    @abstractmethod
-    def default_validation_metric(self):
-        pass
-
     @abstractmethod
     def postprocess_predictions(
         self,
@@ -453,17 +429,12 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     @staticmethod
     @abstractmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
     @abstractmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def populate_defaults(input_feature):
         pass
 
     def output_specific_fully_connected(self, inputs, mask=None):

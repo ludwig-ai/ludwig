@@ -11,7 +11,11 @@ split_config_registry = Registry()
 DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
 
 
-@dataclass
+def get_split_cls(name: str):
+    return split_config_registry[name]
+
+
+@dataclass(repr=False)
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
@@ -20,7 +24,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @split_config_registry.register("random")
-@dataclass
+@dataclass(repr=False)
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
@@ -39,7 +43,7 @@ class RandomSplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("fixed")
-@dataclass
+@dataclass(repr=False)
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -57,7 +61,7 @@ class FixedSplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("stratify")
-@dataclass
+@dataclass(repr=False)
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -80,7 +84,7 @@ class StratifySplitConfig(BaseSplitConfig):
 
 
 @split_config_registry.register("datetime")
-@dataclass
+@dataclass(repr=False)
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 

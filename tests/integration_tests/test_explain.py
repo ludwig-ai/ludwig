@@ -49,7 +49,7 @@ def test_abstract_explainer_instantiation(tmpdir):
     "additional_config",
     [
         pytest.param({}, id="default"),
-        pytest.param({"preprocessing": {"split": {"type": "fixed"}}}, id="fixed_split"),
+        pytest.param({"preprocessing": {"split": {"type": "fixed", "column": "split"}}}, id="fixed_split"),
     ],
 )
 def test_explainer_api(explainer_class, model_type, additional_config, tmpdir):

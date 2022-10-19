@@ -14,23 +14,23 @@ from ludwig.constants import (
     PREPROCESSING,
     TRAINER,
 )
-from ludwig.features.audio_feature import AudioFeatureMixin
-from ludwig.features.bag_feature import BagFeatureMixin
-from ludwig.features.binary_feature import BinaryFeatureMixin
-from ludwig.features.category_feature import CategoryFeatureMixin
-from ludwig.features.date_feature import DateFeatureMixin
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.features.h3_feature import H3FeatureMixin
-from ludwig.features.image_feature import ImageFeatureMixin
-from ludwig.features.number_feature import NumberFeatureMixin
-from ludwig.features.sequence_feature import SequenceFeatureMixin
-from ludwig.features.set_feature import SetFeatureMixin
-from ludwig.features.text_feature import TextFeatureMixin
-from ludwig.features.timeseries_feature import TimeseriesFeatureMixin
-from ludwig.features.vector_feature import VectorFeatureMixin
 from ludwig.schema import validate_config
 from ludwig.schema.defaults.defaults import DefaultsConfig
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
+from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
+from ludwig.schema.features.preprocessing.binary import BinaryPreprocessingConfig
+from ludwig.schema.features.preprocessing.category import CategoryPreprocessingConfig
+from ludwig.schema.features.preprocessing.date import DatePreprocessingConfig
+from ludwig.schema.features.preprocessing.h3 import H3PreprocessingConfig
+from ludwig.schema.features.preprocessing.image import ImagePreprocessingConfig
+from ludwig.schema.features.preprocessing.number import NumberPreprocessingConfig
+from ludwig.schema.features.preprocessing.sequence import SequencePreprocessingConfig
+from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
+from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
+from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
+from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -83,7 +83,8 @@ def test_config_features():
     validate_config(config)
 
     # make sure all defaults provided also registers as valid
-    config = merge_with_defaults(config)
+
+    config = ModelConfig.from_dict(config).to_dict()
     validate_config(config)
 
     # test various invalid output features
@@ -226,29 +227,27 @@ def test_validate_with_preprocessing_defaults():
         "input_features": [
             audio_feature(
                 "/tmp/destination_folder",
-                preprocessing=AudioFeatureMixin.preprocessing_defaults(),
+                preprocessing=AudioPreprocessingConfig().to_dict(),
                 encoder={"type": "parallel_cnn"},
             ),
-            bag_feature(preprocessing=BagFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
-            binary_feature(preprocessing=BinaryFeatureMixin.preprocessing_defaults(), encoder={"type": "passthrough"}),
-            category_feature(preprocessing=CategoryFeatureMixin.preprocessing_defaults(), encoder={"type": "dense"}),
-            date_feature(preprocessing=DateFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
-            h3_feature(preprocessing=H3FeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
+            bag_feature(preprocessing=BagPreprocessingConfig().to_dict(), encoder={"type": "embed"}),
+            binary_feature(preprocessing=BinaryPreprocessingConfig().to_dict(), encoder={"type": "passthrough"}),
+            category_feature(preprocessing=CategoryPreprocessingConfig().to_dict(), encoder={"type": "dense"}),
+            date_feature(preprocessing=DatePreprocessingConfig().to_dict(), encoder={"type": "embed"}),
+            h3_feature(preprocessing=H3PreprocessingConfig().to_dict(), encoder={"type": "embed"}),
             image_feature(
                 "/tmp/destination_folder",
-                preprocessing=ImageFeatureMixin.preprocessing_defaults(),
+                preprocessing=ImagePreprocessingConfig().to_dict(),
                 encoder={"type": "stacked_cnn"},
             ),
-            number_feature(preprocessing=NumberFeatureMixin.preprocessing_defaults(), encoder={"type": "passthrough"}),
-            sequence_feature(
-                preprocessing=SequenceFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}
-            ),
-            set_feature(preprocessing=SetFeatureMixin.preprocessing_defaults(), encoder={"type": "embed"}),
-            text_feature(preprocessing=TextFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}),
+            number_feature(preprocessing=NumberPreprocessingConfig().to_dict(), encoder={"type": "passthrough"}),
+            sequence_feature(preprocessing=SequencePreprocessingConfig().to_dict(), encoder={"type": "parallel_cnn"}),
+            set_feature(preprocessing=SetPreprocessingConfig().to_dict(), encoder={"type": "embed"}),
+            text_feature(preprocessing=TextPreprocessingConfig().to_dict(), encoder={"type": "parallel_cnn"}),
             timeseries_feature(
-                preprocessing=TimeseriesFeatureMixin.preprocessing_defaults(), encoder={"type": "parallel_cnn"}
+                preprocessing=TimeseriesPreprocessingConfig().to_dict(), encoder={"type": "parallel_cnn"}
             ),
-            vector_feature(preprocessing=VectorFeatureMixin.preprocessing_defaults(), encoder={"type": "dense"}),
+            vector_feature(preprocessing=VectorPreprocessingConfig().to_dict(), encoder={"type": "dense"}),
         ],
         "output_features": [{"name": "target", "type": "category"}],
         TRAINER: {
@@ -260,7 +259,7 @@ def test_validate_with_preprocessing_defaults():
     }
 
     validate_config(config)
-    config = merge_with_defaults(config)
+    config = ModelConfig.from_dict(config).to_dict()
     validate_config(config)
 
 

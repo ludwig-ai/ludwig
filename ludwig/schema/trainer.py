@@ -25,7 +25,7 @@ def register_trainer_schema(model_type: str):
     return wrap
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -93,7 +93,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @register_trainer_schema("ecd_ray_legacy")
 @register_trainer_schema(MODEL_ECD)
-@dataclass
+@dataclass(repr=False)
 class ECDTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for ECD model training."""
 
@@ -294,7 +294,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 
 @register_trainer_schema(MODEL_GBM)
-@dataclass
+@dataclass(repr=False)
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 
@@ -448,7 +448,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     uniform_drop: bool = schema_utils.Boolean(
         default=False,
-        description=("Whether to use uniform dropout in the GBM trainer. Used only with boosting_type 'dart'."),
+        description="Whether to use uniform dropout in the GBM trainer. Used only with boosting_type 'dart'.",
     )
 
     drop_seed: int = schema_utils.Integer(

@@ -8,9 +8,16 @@ from ludwig.schema.combiners.common_transformer_options import CommonTransformer
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False)
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
+
+    type: str = schema_utils.StringOptions(
+        ["tabtransformer"],
+        default="tabtransformer",
+        allow_none=False,
+        description="Type of combiner.",
+    )
 
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(
         description="Must be an integer, 'add', or null. If an integer, specifies the embedding size for input "

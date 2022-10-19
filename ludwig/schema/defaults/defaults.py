@@ -1,6 +1,20 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    DATE,
+    H3,
+    IMAGE,
+    NUMBER,
+    SEQUENCE,
+    SET,
+    TEXT,
+    TIMESERIES,
+    VECTOR,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.utils import DefaultsDataclassField
 from ludwig.schema.features.base import BaseFeatureConfig
@@ -10,6 +24,8 @@ from ludwig.schema.features.base import BaseFeatureConfig
 class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
 
     audio: BaseFeatureConfig = DefaultsDataclassField(feature_type=AUDIO)
+
+    bag: BaseFeatureConfig = DefaultsDataclassField(feature_type=BAG)
 
     binary: BaseFeatureConfig = DefaultsDataclassField(feature_type=BINARY)
 
@@ -42,6 +58,7 @@ def get_defaults_jsonschema():
     return {
         "type": "object",
         "properties": props,
+        "additionalProperties": False,
         "title": "global_defaults_options",
         "description": "Set global defaults for input and output features",
     }

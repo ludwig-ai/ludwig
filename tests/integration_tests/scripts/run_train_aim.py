@@ -28,7 +28,7 @@ def run(csv_filename):
     try:
         # Inputs & Outputs
         input_features = [image_feature(folder=image_dest_folder)]
-        output_features = [category_feature()]
+        output_features = [category_feature(output_feature=True)]
         rel_path = generate_data(input_features, output_features, csv_filename)
 
         # Run experiment
