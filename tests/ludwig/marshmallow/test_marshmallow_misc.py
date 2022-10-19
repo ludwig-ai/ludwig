@@ -42,7 +42,3 @@ def test_load_config_with_kwargs():
     assert leftover == test_kwargs
     initialized_class, leftover = load_config_with_kwargs(lcc.TransformerCombinerConfig, {})
     assert leftover == {}
-
-    # ComparatorCombiner does have required arguments, so expect a failure:
-    with pytest.raises(MarshmallowValidationError):
-        initialized_class, leftover = load_config_with_kwargs(lcc.ComparatorCombinerConfig, test_kwargs)
