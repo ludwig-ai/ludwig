@@ -2,6 +2,8 @@ import pytest
 import torch
 
 from ludwig.features.audio_feature import AudioInputFeature
+from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from tests.integration_tests.utils import audio_feature
 
 BATCH_SIZE = 2
@@ -21,6 +23,7 @@ def test_audio_feature(enc_encoder):
     )
 
     # instantiate audio input feature object
+    audio_feature_config, _ = load_config_with_kwargs(AudioInputFeatureConfig, audio_feature_config)
     audio_input_feature = AudioInputFeature(audio_feature_config)
 
     # pass synthetic audio tensor through the audio input feature

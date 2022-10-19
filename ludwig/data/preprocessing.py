@@ -1283,7 +1283,7 @@ def build_preprocessing_parameters(
 
                     preprocessing_parameters = merge_dict(
                         preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                    )
+                    )  # TODO(Connor): Temporary fix, refactor this during preproc refactor
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
@@ -1858,13 +1858,18 @@ def preprocess_for_prediction(
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 
-    :param model_path: The input data that is joined with the model
-           hyperparameter file to create the config file
-    :param data_csv: The CSV input data file
-    :param data_hdf5: The hdf5 data file if there is no csv data file
-    :param training_set_metadata: Train set metadata for the input features
-    :param split: the split of dataset to return
-    :returns: Dataset, Train set metadata
+    Args:
+        config: Config dictionary corresponding to Ludwig Model
+        dataset: Dataset to be processed
+        training_set_metadata: Train set metadata for the input features
+        data_format: Format of the data
+        split: The split of dataset to return
+        include_outputs: Whether to include outputs
+        backend: Type of backend to use for preprocessing
+        callbacks: Any callbacks passed in
+
+    Returns:
+        Processed dataset along with updated training set metadata
     """
     # Sanity Check to make sure some data source is provided
     if dataset is None:

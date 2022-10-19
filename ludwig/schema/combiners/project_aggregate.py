@@ -7,8 +7,15 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass(order=True)
+@dataclass(order=True, repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
+
+    type: str = schema_utils.StringOptions(
+        ["project_aggregate"],
+        default="project_aggregate",
+        allow_none=False,
+        description="Type of combiner.",
+    )
 
     projection_size: int = schema_utils.PositiveInteger(
         default=128,

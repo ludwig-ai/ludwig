@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class SequencePassthroughConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -41,7 +41,7 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("embed", [SEQUENCE, TEXT])
-@dataclass
+@dataclass(repr=False)
 class SequenceEmbedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -118,7 +118,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class ParallelCNNConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -284,7 +284,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class StackedCNNConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -482,7 +482,7 @@ class StackedCNNConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class StackedParallelCNNConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -666,7 +666,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class StackedRNNConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -879,7 +879,7 @@ class StackedRNNConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class StackedCNNRNNConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -1173,7 +1173,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass
+@dataclass(repr=False)
 class StackedTransformerConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

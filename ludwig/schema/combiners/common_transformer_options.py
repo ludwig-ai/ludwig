@@ -6,7 +6,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass(order=True)
+@dataclass(repr=False, order=True)
 class CommonTransformerConfig:
     """Common transformer parameter values."""
 

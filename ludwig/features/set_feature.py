@@ -19,31 +19,11 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import (
-    COLUMN,
-    DECODER,
-    DEPENDENCIES,
-    ENCODER,
-    HIDDEN,
-    JACCARD,
-    LOGITS,
-    LOSS,
-    NAME,
-    PREDICTIONS,
-    PROBABILITIES,
-    PROC_COLUMN,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
-    SET,
-    THRESHOLD,
-    TIED,
-    TYPE,
-)
+from ludwig.constants import COLUMN, HIDDEN, JACCARD, LOGITS, LOSS, NAME, PREDICTIONS, PROBABILITIES, PROC_COLUMN, SET
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -160,10 +140,6 @@ class SetFeatureMixin(BaseFeatureMixin):
         return SET
 
     @staticmethod
-    def preprocessing_defaults():
-        return SetInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -210,8 +186,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
 
 class SetInputFeature(SetFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[SetInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: SetInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -236,14 +211,8 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return torch.Size([len(self.encoder_obj.config.vocab)])
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = SetInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
 
     @staticmethod
     def get_schema_cls():
@@ -260,7 +229,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, JACCARD: None}
-    default_validation_metric = JACCARD
 
     def __init__(
         self,
@@ -268,7 +236,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         self.threshold = output_feature_config.threshold
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
@@ -304,40 +271,40 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return torch.Size([self.decoder_obj.config.num_classes])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["num_classes"] = feature_metadata["vocab_size"]
-        if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["num_classes"]:
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.decoder.num_classes = feature_metadata["vocab_size"]
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
+            if len(feature_config.loss.class_weights) != feature_config.decoder.num_classes:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
-                        len(output_feature[LOSS]["class_weights"]),
-                        output_feature[DECODER]["num_classes"],
-                        output_feature[NAME],
+                        len(feature_config.loss.class_weights),
+                        feature_config.decoder.num_classes,
+                        feature_config.name,
                     )
                 )
 
-        if isinstance(output_feature[LOSS]["class_weights"], dict):
-            if feature_metadata["str2idx"].keys() != output_feature[LOSS]["class_weights"].keys():
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
                     "The class_weights keys ({}) are not compatible with "
                     "the classes ({}) of feature {}. "
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
-                        output_feature[LOSS]["class_weights"].keys(),
+                        feature_config.loss.class_weights.keys(),
                         feature_metadata["str2idx"].keys(),
-                        output_feature[NAME],
+                        feature_config.name,
                     )
                 )
             else:
-                class_weights = output_feature[LOSS]["class_weights"]
+                class_weights = feature_config.loss.class_weights
                 idx2str = feature_metadata["idx2str"]
                 class_weights_list = [class_weights[s] for s in idx2str]
-                output_feature[LOSS]["class_weights"] = class_weights_list
+                feature_config.loss.class_weights = class_weights_list
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
@@ -371,25 +338,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SetPostprocessing(metadata)
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = SetOutputFeatureConfig()
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-                THRESHOLD: defaults.threshold,
-            },
-        )
 
     @staticmethod
     def get_schema_cls():

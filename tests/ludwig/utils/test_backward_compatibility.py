@@ -21,17 +21,17 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema import validate_config
+from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
     _update_backend_cache_credentials,
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing_split,
+    upgrade_config_dict_to_latest_version,
     upgrade_missing_value_strategy,
     upgrade_model_progress,
-    upgrade_to_latest_version,
 )
-from ludwig.utils.defaults import merge_with_defaults
 
 
 def test_preprocessing_backward_compatibility():
@@ -332,7 +332,7 @@ def test_deprecated_field_aliases():
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     assert updated_config["input_features"][0][TYPE] == NUMBER
     assert updated_config["output_features"][0][TYPE] == NUMBER
@@ -373,7 +373,7 @@ def test_deprecated_split_aliases(stratify, force_split):
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     assert "force_split" not in updated_config[PREPROCESSING]
     assert "split_probabilities" not in updated_config[PREPROCESSING]
@@ -445,11 +445,11 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
     if use_scheduler:
         assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
 
-    merged_config = merge_with_defaults(updated_config)
+    merged_config = ModelConfig.from_dict(updated_config).to_dict()
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.
@@ -519,7 +519,7 @@ def test_update_increase_batch_size_on_plateau_max():
         },
     }
 
-    updated_config = upgrade_to_latest_version(old_valid_config)
+    updated_config = upgrade_config_dict_to_latest_version(old_valid_config)
     del updated_config["ludwig_version"]
 
     expected_config = copy.deepcopy(old_valid_config)
@@ -554,14 +554,14 @@ def test_old_class_weights_default():
         ],
     }
 
-    upgraded_config = upgrade_to_latest_version(old_config)
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
     del upgraded_config["ludwig_version"]
     assert new_config == upgraded_config
 
     old_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
     new_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
 
-    upgraded_config = upgrade_to_latest_version(old_config)
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
     del upgraded_config["ludwig_version"]
     assert new_config == upgraded_config
 

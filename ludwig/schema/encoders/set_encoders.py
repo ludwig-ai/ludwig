@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("embed", SET)
-@dataclass
+@dataclass(repr=False)
 class SetSparseEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

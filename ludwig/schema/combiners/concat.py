@@ -7,21 +7,15 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass(order=True)
+@dataclass(order=True, repr=False)
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
-    flatten_inputs: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to flatten input tensors to a vector.",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["flatten_inputs"],
-    )
-
-    residual: bool = schema_utils.Boolean(
-        default=False,
-        description="Whether to add a residual connection to each fully connected layer block. All fully connected "
-        "layers must have the same size ",
-        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["residual"],
+    type: str = schema_utils.StringOptions(
+        ["concat"],
+        default="concat",
+        allow_none=False,
+        description="Type of combiner.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -36,6 +30,19 @@ class ConcatCombinerConfig(BaseCombinerConfig):
         default="relu",
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["activation"],
+    )
+
+    flatten_inputs: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to flatten input tensors to a vector.",
+        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["flatten_inputs"],
+    )
+
+    residual: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to add a residual connection to each fully connected layer block. All fully connected "
+        "layers must have the same size ",
+        parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["residual"],
     )
 
     use_bias: bool = schema_utils.Boolean(

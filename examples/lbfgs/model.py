@@ -19,7 +19,7 @@ training_statistics, preprocessed_data, output_directory = model.train(
 )
 
 # Predict on unlabeled test
-model.config["preprocessing"] = {}
+model.config_dict["preprocessing"] = {}
 unlabeled_test = df[df.split == 2].reset_index(drop=True)
 preds, _ = model.predict(unlabeled_test)
 

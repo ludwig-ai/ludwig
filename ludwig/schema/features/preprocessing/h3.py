@@ -8,7 +8,7 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
 @register_preprocessor(H3)
-@dataclass
+@dataclass(repr=False)
 class H3PreprocessingConfig(BasePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

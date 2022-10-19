@@ -6,7 +6,7 @@ from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 
 
-@dataclass(order=True)
+@dataclass(repr=False, order=True)
 class PreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     """Global preprocessing config is a dataclass that configures the parameters used for global preprocessing."""
 

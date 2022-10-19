@@ -24,7 +24,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("dense", CATEGORY)
-@dataclass(order=True)
+@dataclass(repr=False, order=True)
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -159,7 +159,19 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         ],
         default=None,
         description="Initializer for the embedding matrix.",
-        parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["embedding_initializer"],
+        parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["embedding_initializer"],
+    )
+
+
+@register_encoder_config("sparse", CATEGORY)
+@dataclass(repr=False)
+class CategoricalSparseConfig(BaseEncoderConfig):
+
+    type: str = schema_utils.StringOptions(
+        ["sparse"],
+        default="sparse",
+        allow_none=False,
+        description="Type of encoder.",
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(

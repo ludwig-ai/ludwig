@@ -28,9 +28,10 @@ torchmetrics<0.9
 torchinfo
 filelock
 psutil
-protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
+protobuf
 experiment_impact_tracker
 gpustat
+rich~=12.4.4
 packaging
 
 # new data format support

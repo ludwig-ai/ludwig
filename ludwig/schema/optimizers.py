@@ -32,7 +32,12 @@ def register_optimizer(name: str):
     return wrap
 
 
-@dataclass
+def get_optimizer_cls(name: str):
+    """Get the optimizer schema class from the optimizer schema class registry."""
+    return optimizer_registry[name][1]
+
+
+@dataclass(repr=False)
 class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
 
@@ -53,7 +58,7 @@ class BaseOptimizerConfig(BaseMarshmallowConfig, ABC):
 
 
 @register_optimizer(name="sgd")
-@dataclass
+@dataclass(repr=False)
 class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
@@ -74,7 +79,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="lbfgs")
-@dataclass
+@dataclass(repr=False)
 class LBFGSOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
@@ -108,7 +113,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="adam")
-@dataclass
+@dataclass(repr=False)
 class AdamOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adam optimization."""
 
@@ -142,7 +147,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="adamw")
-@dataclass
+@dataclass(repr=False)
 class AdamWOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamw optimization."""
 
@@ -176,7 +181,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="adadelta")
-@dataclass
+@dataclass(repr=False)
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adadelta optimization."""
 
@@ -208,7 +213,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="adagrad")
-@dataclass
+@dataclass(repr=False)
 class AdagradOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adagrad optimization."""
 
@@ -233,7 +238,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="adamax")
-@dataclass
+@dataclass(repr=False)
 class AdamaxOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamax optimization."""
 
@@ -260,7 +265,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 
 # NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
-@dataclass
+@dataclass(repr=False)
 class FtrlOptimizerConfig(BaseOptimizerConfig):
 
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
@@ -276,7 +281,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="nadam")
-@dataclass
+@dataclass(repr=False)
 class NadamOptimizerConfig(BaseOptimizerConfig):
 
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
@@ -302,7 +307,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
 
 
 @register_optimizer(name="rmsprop")
-@dataclass
+@dataclass(repr=False)
 class RMSPropOptimizerConfig(BaseOptimizerConfig):
     """Parameters for rmsprop optimization."""
 
@@ -425,7 +430,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
-@dataclass
+@dataclass(repr=False)
 class GradientClippingConfig(BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 

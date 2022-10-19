@@ -7,6 +7,8 @@ import torch
 
 from ludwig.constants import ENCODER
 from ludwig.features.bag_feature import BagInputFeature
+from ludwig.schema.features.bag_feature import BagInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
@@ -36,6 +38,7 @@ def bag_config():
 @pytest.mark.parametrize("encoder", ["embed"])
 def test_bag_input_feature(bag_config: Dict, encoder: str) -> None:
     bag_config[ENCODER].update({"type": encoder})
+    bag_config, _ = load_config_with_kwargs(BagInputFeatureConfig, bag_config)
     bag_input_feature = BagInputFeature(bag_config).to(DEVICE)
     bag_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, BAG_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = bag_input_feature(bag_tensor)

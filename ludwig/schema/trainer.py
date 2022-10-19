@@ -25,7 +25,7 @@ def register_trainer_schema(model_type: str):
     return wrap
 
 
-@dataclass(order=True)
+@dataclass(repr=False, order=True)
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -296,7 +296,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 
 @register_trainer_schema(MODEL_GBM)
-@dataclass(order=True)
+@dataclass(repr=False, order=True)
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 

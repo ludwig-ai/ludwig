@@ -33,6 +33,7 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
+    SPLIT,
     TRAINER,
 )
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
@@ -79,11 +80,15 @@ def get_validator():
 def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
-    from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+    from ludwig.data.split import get_splitter
+    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
+
+    splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
+    splitter.validate(updated_config)
 
     with VALIDATION_LOCK:
         # There is a race condition during schema validation that can cause the marshmallow schema class to

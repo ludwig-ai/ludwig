@@ -1,9 +1,11 @@
+import copy
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Tuple, Type, Union
 
+import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -56,6 +58,31 @@ def load_config_with_kwargs(
     }
 
 
+def convert_submodules(config_dict: dict) -> TDict[str, any]:
+    """Helper function for converting submodules to dictionaries during a config object to dict transformation.
+
+    Args:
+        config_dict: Top level config dictionary with un-converted submodules
+
+    Returns:
+        The fully converted config dictionary
+    """
+    output_dict = copy.deepcopy(config_dict)
+
+    for k, v in output_dict.items():
+        if isinstance(v, dict):
+            convert_submodules(v)
+
+        elif isinstance(v, BaseMarshmallowConfig):
+            output_dict[k] = v.to_dict()
+            convert_submodules(output_dict[k])
+
+        else:
+            continue
+
+    return output_dict
+
+
 def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
@@ -88,7 +115,10 @@ class BaseMarshmallowConfig:
 
         Returns: dict for this dataclass
         """
-        return self.__dict__
+        return convert_submodules(self.__dict__)
+
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
 
 
 def assert_is_a_marshmallow_class(cls):
@@ -488,8 +518,8 @@ def Dict(
 def List(
     list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
     default: Union[None, TList[Any]] = None,
-    description: str = "",
     allow_none: bool = True,
+    description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""

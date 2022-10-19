@@ -2,6 +2,11 @@ import os
 
 import numpy as np
 import pytest
+
+try:
+    import ray as _ray
+except ImportError:
+    _ray = None
 import torch
 
 from ludwig.api import LudwigModel
@@ -63,9 +68,11 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
 def run_test_gbm_output_not_supported(tmpdir, backend_config):
     """Test that an error is raised when the output feature is not supported by the model."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [text_feature()]
+    output_features = [text_feature(output_feature=True)]
 
-    with pytest.raises(ValueError, match="Model type GBM only supports numerical, categorical, or binary features"):
+    with pytest.raises(
+        ValueError, match="Model type GBM only supports numerical, categorical, or binary output " "features.*"
+    ):
         _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
 
 

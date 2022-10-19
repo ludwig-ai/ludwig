@@ -7,7 +7,7 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass(order=True)
+@dataclass(repr=False, order=True)
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
