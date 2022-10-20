@@ -86,6 +86,13 @@ class BaseFeatureContainer:
             key: {k: v for k, v in value.items() if k in {NAME, TYPE, ACTIVE}} for key, value in self.to_dict().items()
         }
 
+    def get(self, feature_name):
+        """Gets a feature by name.
+
+        raises AttributeError if no feature with the specified name is present.
+        """
+        return getattr(self, feature_name)
+
     def __repr__(self):
         filtered_repr = self.filter_features()
         return yaml.dump(filtered_repr, sort_keys=True)
