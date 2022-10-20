@@ -23,7 +23,7 @@ def _dict_like(x):
     """Returns true if an object is a dict or convertible to one, false if not."""
     try:
         _ = dict(x)
-    except TypeError:
+    except (TypeError, ValueError):
         return False
     return True
 
@@ -32,7 +32,7 @@ def _enumerable(x):
     """Returns true if an object is enumerable, false if not."""
     try:
         _ = enumerate(x)
-    except TypeError:
+    except (TypeError, ValueError):
         return False
     return True
 
