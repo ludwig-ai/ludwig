@@ -1208,7 +1208,11 @@ def build_dataset(
     # At this point, there should be no missing values left in the dataframe, unless
     # the DROP_ROW preprocessing option was selected, in which case we need to drop those
     # rows.
-    dataset = dataset.dropna()
+    # Drop all rows with missing values except for the target columns.
+    # TODO(shreya): Drop all rows with missing values in all columns for train and val splits, and for test split
+    #  drop rows that have missing values in any column except for the target column.
+    drop_cols = [feature[PROC_COLUMN] for feature in features if ENCODER in feature]
+    dataset = dataset.dropna(subset=drop_cols)
 
     # NaNs introduced by outer join change dtype of dataset cols (upcast to float64), so we need to cast them back.
     col_name_to_dtype = {}
@@ -1815,11 +1819,18 @@ def _preprocess_df_for_training(
                 "Ignoring split configuration."
             )
 
+        split_probs = [
+            len(training_set),
+            0 if validation_set is None else len(validation_set),
+            0 if test_set is None else len(test_set),
+        ]
+        split_probs = [p / sum(split_probs) for p in split_probs]
         preprocessing_params = {
             **preprocessing_params,
             "split": {
                 "type": "fixed",
                 "column": SPLIT,
+                "probabilities": split_probs,
             },
         }
 
