@@ -8,9 +8,8 @@
 
 syntax = "proto3";
 
-package ludwigwhy;
+package dataset_profile;
 
-// import "whylogs_messages.proto";
 import "ludwig/profiling/proto/whylogs_messages.proto";
 
 

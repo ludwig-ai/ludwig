@@ -17,11 +17,11 @@ from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='ludwig/profiling/proto/whylogs_messages.proto',
-  package='ludwigwhy',
+  package='dataset_profile',
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n-ludwig/profiling/proto/whylogs_messages.proto\x12\tludwigwhy\x1a\x19google/protobuf/any.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x88\x01\n\x08\x44\x61taType\x12&\n\x04type\x18\x01 \x01(\x0e\x32\x18.ludwigwhy.DataType.Type\"T\n\x04Type\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x08\n\x04NULL\x10\x01\x12\x0e\n\nFRACTIONAL\x10\x02\x12\x0c\n\x08INTEGRAL\x10\x03\x12\x0b\n\x07\x42OOLEAN\x10\x04\x12\n\n\x06STRING\x10\x05\"\"\n\x10HllSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\",\n\x1a\x46requentItemsSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\"\"\n\x10KllSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\"\"\n\x10\x43pcSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\"\x86\x03\n\x16MetricComponentMessage\x12\x0f\n\x07type_id\x18\x01 \x01(\r\x12\x0b\n\x01n\x18\x02 \x01(\x03H\x00\x12\x0b\n\x01\x64\x18\x03 \x01(\x01H\x00\x12?\n\x0e\x66requent_items\x18\x04 \x01(\x0b\x32%.ludwigwhy.FrequentItemsSketchMessageH\x00\x12*\n\x03hll\x18\x05 \x01(\x0b\x32\x1b.ludwigwhy.HllSketchMessageH\x00\x12*\n\x03kll\x18\x06 \x01(\x0b\x32\x1b.ludwigwhy.KllSketchMessageH\x00\x12*\n\x03\x63pc\x18\x07 \x01(\x0b\x32\x1b.ludwigwhy.CpcSketchMessageH\x00\x12\x1a\n\x10serialized_bytes\x18\n \x01(\x0cH\x00\x12\x32\n\x0f\x64\x61taclass_param\x18\x0b \x01(\x0b\x32\x17.google.protobuf.StructH\x00\x12#\n\x03msg\x18\x0c \x01(\x0b\x32\x14.google.protobuf.AnyH\x00\x42\x07\n\x05value\"\xb6\x01\n\rMetricMessage\x12I\n\x11metric_components\x18\x01 \x03(\x0b\x32..ludwigwhy.MetricMessage.MetricComponentsEntry\x1aZ\n\x15MetricComponentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x30\n\x05value\x18\x02 \x01(\x0b\x32!.ludwigwhy.MetricComponentMessage:\x02\x38\x01\"\xb6\x01\n\rColumnMessage\x12I\n\x11metric_components\x18\x01 \x03(\x0b\x32..ludwigwhy.ColumnMessage.MetricComponentsEntry\x1aZ\n\x15MetricComponentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x30\n\x05value\x18\x02 \x01(\x0b\x32!.ludwigwhy.MetricComponentMessage:\x02\x38\x01\"\xd8\x02\n\x11\x44\x61tasetProperties\x12\x1c\n\x14schema_major_version\x18\x01 \x01(\r\x12\x1c\n\x14schema_minor_version\x18\x02 \x01(\r\x12\x1a\n\x12\x63reation_timestamp\x18\x04 \x01(\x04\x12\x19\n\x11\x64\x61taset_timestamp\x18\x05 \x01(\x04\x12\x34\n\x04tags\x18\x06 \x03(\x0b\x32&.ludwigwhy.DatasetProperties.TagsEntry\x12<\n\x08metadata\x18\x07 \x03(\x0b\x32*.ludwigwhy.DatasetProperties.MetadataEntry\x1a+\n\tTagsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x1f\n\x0c\x43hunkOffsets\x12\x0f\n\x07offsets\x18\x01 \x03(\x04\"\xb4\x01\n\x0c\x43hunkMessage\x12H\n\x11metric_components\x18\x01 \x03(\x0b\x32-.ludwigwhy.ChunkMessage.MetricComponentsEntry\x1aZ\n\x15MetricComponentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\x30\n\x05value\x18\x02 \x01(\x0b\x32!.ludwigwhy.MetricComponentMessage:\x02\x38\x01\"\x80\x01\n\x0b\x43hunkHeader\x12.\n\x04type\x18\x01 \x01(\x0e\x32 .ludwigwhy.ChunkHeader.ChunkType\x12\x0b\n\x03tag\x18\x02 \x01(\t\x12\x0e\n\x06length\x18\x03 \x01(\r\"$\n\tChunkType\x12\x0b\n\x07\x44\x41TASET\x10\x00\x12\n\n\x06\x43OLUMN\x10\x02\"\xb6\x03\n\x14\x44\x61tasetProfileHeader\x12\x30\n\nproperties\x18\x01 \x01(\x0b\x32\x1c.ludwigwhy.DatasetProperties\x12J\n\x0e\x63olumn_offsets\x18\x02 \x03(\x0b\x32\x32.ludwigwhy.DatasetProfileHeader.ColumnOffsetsEntry\x12/\n\x0emetric_offsets\x18\x03 \x03(\x0b\x32\x17.ludwigwhy.ChunkOffsets\x12\x0e\n\x06length\x18\x04 \x01(\x04\x12U\n\x14indexed_metric_paths\x18\x05 \x03(\x0b\x32\x37.ludwigwhy.DatasetProfileHeader.IndexedMetricPathsEntry\x1aM\n\x12\x43olumnOffsetsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.ludwigwhy.ChunkOffsets:\x02\x38\x01\x1a\x39\n\x17IndexedMetricPathsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"(\n\nSegmentTag\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\".\n\x07Segment\x12#\n\x04tags\x18\x01 \x03(\x0b\x32\x15.ludwigwhy.SegmentTag\"\xc1\x01\n\x14\x44\x61tasetSegmentHeader\x12\x14\n\x0chas_segments\x18\x01 \x01(\x08\x12$\n\x08segments\x18\x04 \x03(\x0b\x32\x12.ludwigwhy.Segment\x12=\n\x07offsets\x18\x05 \x03(\x0b\x32,.ludwigwhy.DatasetSegmentHeader.OffsetsEntry\x1a.\n\x0cOffsetsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\x62\x06proto3'
+  serialized_pb=b'\n-ludwig/profiling/proto/whylogs_messages.proto\x12\x0f\x64\x61taset_profile\x1a\x19google/protobuf/any.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x8e\x01\n\x08\x44\x61taType\x12,\n\x04type\x18\x01 \x01(\x0e\x32\x1e.dataset_profile.DataType.Type\"T\n\x04Type\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x08\n\x04NULL\x10\x01\x12\x0e\n\nFRACTIONAL\x10\x02\x12\x0c\n\x08INTEGRAL\x10\x03\x12\x0b\n\x07\x42OOLEAN\x10\x04\x12\n\n\x06STRING\x10\x05\"\"\n\x10HllSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\",\n\x1a\x46requentItemsSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\"\"\n\x10KllSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\"\"\n\x10\x43pcSketchMessage\x12\x0e\n\x06sketch\x18\x01 \x01(\x0c\"\x9e\x03\n\x16MetricComponentMessage\x12\x0f\n\x07type_id\x18\x01 \x01(\r\x12\x0b\n\x01n\x18\x02 \x01(\x03H\x00\x12\x0b\n\x01\x64\x18\x03 \x01(\x01H\x00\x12\x45\n\x0e\x66requent_items\x18\x04 \x01(\x0b\x32+.dataset_profile.FrequentItemsSketchMessageH\x00\x12\x30\n\x03hll\x18\x05 \x01(\x0b\x32!.dataset_profile.HllSketchMessageH\x00\x12\x30\n\x03kll\x18\x06 \x01(\x0b\x32!.dataset_profile.KllSketchMessageH\x00\x12\x30\n\x03\x63pc\x18\x07 \x01(\x0b\x32!.dataset_profile.CpcSketchMessageH\x00\x12\x1a\n\x10serialized_bytes\x18\n \x01(\x0cH\x00\x12\x32\n\x0f\x64\x61taclass_param\x18\x0b \x01(\x0b\x32\x17.google.protobuf.StructH\x00\x12#\n\x03msg\x18\x0c \x01(\x0b\x32\x14.google.protobuf.AnyH\x00\x42\x07\n\x05value\"\xc2\x01\n\rMetricMessage\x12O\n\x11metric_components\x18\x01 \x03(\x0b\x32\x34.dataset_profile.MetricMessage.MetricComponentsEntry\x1a`\n\x15MetricComponentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dataset_profile.MetricComponentMessage:\x02\x38\x01\"\xc2\x01\n\rColumnMessage\x12O\n\x11metric_components\x18\x01 \x03(\x0b\x32\x34.dataset_profile.ColumnMessage.MetricComponentsEntry\x1a`\n\x15MetricComponentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dataset_profile.MetricComponentMessage:\x02\x38\x01\"\xe4\x02\n\x11\x44\x61tasetProperties\x12\x1c\n\x14schema_major_version\x18\x01 \x01(\r\x12\x1c\n\x14schema_minor_version\x18\x02 \x01(\r\x12\x1a\n\x12\x63reation_timestamp\x18\x04 \x01(\x04\x12\x19\n\x11\x64\x61taset_timestamp\x18\x05 \x01(\x04\x12:\n\x04tags\x18\x06 \x03(\x0b\x32,.dataset_profile.DatasetProperties.TagsEntry\x12\x42\n\x08metadata\x18\x07 \x03(\x0b\x32\x30.dataset_profile.DatasetProperties.MetadataEntry\x1a+\n\tTagsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x1f\n\x0c\x43hunkOffsets\x12\x0f\n\x07offsets\x18\x01 \x03(\x04\"\xc0\x01\n\x0c\x43hunkMessage\x12N\n\x11metric_components\x18\x01 \x03(\x0b\x32\x33.dataset_profile.ChunkMessage.MetricComponentsEntry\x1a`\n\x15MetricComponentsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\x36\n\x05value\x18\x02 \x01(\x0b\x32\'.dataset_profile.MetricComponentMessage:\x02\x38\x01\"\x86\x01\n\x0b\x43hunkHeader\x12\x34\n\x04type\x18\x01 \x01(\x0e\x32&.dataset_profile.ChunkHeader.ChunkType\x12\x0b\n\x03tag\x18\x02 \x01(\t\x12\x0e\n\x06length\x18\x03 \x01(\r\"$\n\tChunkType\x12\x0b\n\x07\x44\x41TASET\x10\x00\x12\n\n\x06\x43OLUMN\x10\x02\"\xd4\x03\n\x14\x44\x61tasetProfileHeader\x12\x36\n\nproperties\x18\x01 \x01(\x0b\x32\".dataset_profile.DatasetProperties\x12P\n\x0e\x63olumn_offsets\x18\x02 \x03(\x0b\x32\x38.dataset_profile.DatasetProfileHeader.ColumnOffsetsEntry\x12\x35\n\x0emetric_offsets\x18\x03 \x03(\x0b\x32\x1d.dataset_profile.ChunkOffsets\x12\x0e\n\x06length\x18\x04 \x01(\x04\x12[\n\x14indexed_metric_paths\x18\x05 \x03(\x0b\x32=.dataset_profile.DatasetProfileHeader.IndexedMetricPathsEntry\x1aS\n\x12\x43olumnOffsetsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12,\n\x05value\x18\x02 \x01(\x0b\x32\x1d.dataset_profile.ChunkOffsets:\x02\x38\x01\x1a\x39\n\x17IndexedMetricPathsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"(\n\nSegmentTag\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"4\n\x07Segment\x12)\n\x04tags\x18\x01 \x03(\x0b\x32\x1b.dataset_profile.SegmentTag\"\xcd\x01\n\x14\x44\x61tasetSegmentHeader\x12\x14\n\x0chas_segments\x18\x01 \x01(\x08\x12*\n\x08segments\x18\x04 \x03(\x0b\x32\x18.dataset_profile.Segment\x12\x43\n\x07offsets\x18\x05 \x03(\x0b\x32\x32.dataset_profile.DatasetSegmentHeader.OffsetsEntry\x1a.\n\x0cOffsetsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\x62\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 
@@ -29,7 +29,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _DATATYPE_TYPE = _descriptor.EnumDescriptor(
   name='Type',
-  full_name='ludwigwhy.DataType.Type',
+  full_name='dataset_profile.DataType.Type',
   filename=None,
   file=DESCRIPTOR,
   create_key=_descriptor._internal_create_key,
@@ -67,14 +67,14 @@ _DATATYPE_TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=170,
-  serialized_end=254,
+  serialized_start=182,
+  serialized_end=266,
 )
 _sym_db.RegisterEnumDescriptor(_DATATYPE_TYPE)
 
 _CHUNKHEADER_CHUNKTYPE = _descriptor.EnumDescriptor(
   name='ChunkType',
-  full_name='ludwigwhy.ChunkHeader.ChunkType',
+  full_name='dataset_profile.ChunkHeader.ChunkType',
   filename=None,
   file=DESCRIPTOR,
   create_key=_descriptor._internal_create_key,
@@ -92,22 +92,22 @@ _CHUNKHEADER_CHUNKTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1829,
-  serialized_end=1865,
+  serialized_start=1919,
+  serialized_end=1955,
 )
 _sym_db.RegisterEnumDescriptor(_CHUNKHEADER_CHUNKTYPE)
 
 
 _DATATYPE = _descriptor.Descriptor(
   name='DataType',
-  full_name='ludwigwhy.DataType',
+  full_name='dataset_profile.DataType',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='type', full_name='ludwigwhy.DataType.type', index=0,
+      name='type', full_name='dataset_profile.DataType.type', index=0,
       number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -126,21 +126,21 @@ _DATATYPE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=118,
-  serialized_end=254,
+  serialized_start=124,
+  serialized_end=266,
 )
 
 
 _HLLSKETCHMESSAGE = _descriptor.Descriptor(
   name='HllSketchMessage',
-  full_name='ludwigwhy.HllSketchMessage',
+  full_name='dataset_profile.HllSketchMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='sketch', full_name='ludwigwhy.HllSketchMessage.sketch', index=0,
+      name='sketch', full_name='dataset_profile.HllSketchMessage.sketch', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -158,21 +158,21 @@ _HLLSKETCHMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=256,
-  serialized_end=290,
+  serialized_start=268,
+  serialized_end=302,
 )
 
 
 _FREQUENTITEMSSKETCHMESSAGE = _descriptor.Descriptor(
   name='FrequentItemsSketchMessage',
-  full_name='ludwigwhy.FrequentItemsSketchMessage',
+  full_name='dataset_profile.FrequentItemsSketchMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='sketch', full_name='ludwigwhy.FrequentItemsSketchMessage.sketch', index=0,
+      name='sketch', full_name='dataset_profile.FrequentItemsSketchMessage.sketch', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -190,21 +190,21 @@ _FREQUENTITEMSSKETCHMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=292,
-  serialized_end=336,
+  serialized_start=304,
+  serialized_end=348,
 )
 
 
 _KLLSKETCHMESSAGE = _descriptor.Descriptor(
   name='KllSketchMessage',
-  full_name='ludwigwhy.KllSketchMessage',
+  full_name='dataset_profile.KllSketchMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='sketch', full_name='ludwigwhy.KllSketchMessage.sketch', index=0,
+      name='sketch', full_name='dataset_profile.KllSketchMessage.sketch', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -222,21 +222,21 @@ _KLLSKETCHMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=338,
-  serialized_end=372,
+  serialized_start=350,
+  serialized_end=384,
 )
 
 
 _CPCSKETCHMESSAGE = _descriptor.Descriptor(
   name='CpcSketchMessage',
-  full_name='ludwigwhy.CpcSketchMessage',
+  full_name='dataset_profile.CpcSketchMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='sketch', full_name='ludwigwhy.CpcSketchMessage.sketch', index=0,
+      name='sketch', full_name='dataset_profile.CpcSketchMessage.sketch', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
@@ -254,84 +254,84 @@ _CPCSKETCHMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=374,
-  serialized_end=408,
+  serialized_start=386,
+  serialized_end=420,
 )
 
 
 _METRICCOMPONENTMESSAGE = _descriptor.Descriptor(
   name='MetricComponentMessage',
-  full_name='ludwigwhy.MetricComponentMessage',
+  full_name='dataset_profile.MetricComponentMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='type_id', full_name='ludwigwhy.MetricComponentMessage.type_id', index=0,
+      name='type_id', full_name='dataset_profile.MetricComponentMessage.type_id', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='n', full_name='ludwigwhy.MetricComponentMessage.n', index=1,
+      name='n', full_name='dataset_profile.MetricComponentMessage.n', index=1,
       number=2, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='d', full_name='ludwigwhy.MetricComponentMessage.d', index=2,
+      name='d', full_name='dataset_profile.MetricComponentMessage.d', index=2,
       number=3, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='frequent_items', full_name='ludwigwhy.MetricComponentMessage.frequent_items', index=3,
+      name='frequent_items', full_name='dataset_profile.MetricComponentMessage.frequent_items', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='hll', full_name='ludwigwhy.MetricComponentMessage.hll', index=4,
+      name='hll', full_name='dataset_profile.MetricComponentMessage.hll', index=4,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='kll', full_name='ludwigwhy.MetricComponentMessage.kll', index=5,
+      name='kll', full_name='dataset_profile.MetricComponentMessage.kll', index=5,
       number=6, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='cpc', full_name='ludwigwhy.MetricComponentMessage.cpc', index=6,
+      name='cpc', full_name='dataset_profile.MetricComponentMessage.cpc', index=6,
       number=7, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='serialized_bytes', full_name='ludwigwhy.MetricComponentMessage.serialized_bytes', index=7,
+      name='serialized_bytes', full_name='dataset_profile.MetricComponentMessage.serialized_bytes', index=7,
       number=10, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='dataclass_param', full_name='ludwigwhy.MetricComponentMessage.dataclass_param', index=8,
+      name='dataclass_param', full_name='dataset_profile.MetricComponentMessage.dataclass_param', index=8,
       number=11, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='msg', full_name='ludwigwhy.MetricComponentMessage.msg', index=9,
+      name='msg', full_name='dataset_profile.MetricComponentMessage.msg', index=9,
       number=12, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -349,33 +349,33 @@ _METRICCOMPONENTMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='value', full_name='ludwigwhy.MetricComponentMessage.value',
+      name='value', full_name='dataset_profile.MetricComponentMessage.value',
       index=0, containing_type=None,
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=411,
-  serialized_end=801,
+  serialized_start=423,
+  serialized_end=837,
 )
 
 
 _METRICMESSAGE_METRICCOMPONENTSENTRY = _descriptor.Descriptor(
   name='MetricComponentsEntry',
-  full_name='ludwigwhy.MetricMessage.MetricComponentsEntry',
+  full_name='dataset_profile.MetricMessage.MetricComponentsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.MetricMessage.MetricComponentsEntry.key', index=0,
+      name='key', full_name='dataset_profile.MetricMessage.MetricComponentsEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.MetricMessage.MetricComponentsEntry.value', index=1,
+      name='value', full_name='dataset_profile.MetricMessage.MetricComponentsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -393,20 +393,20 @@ _METRICMESSAGE_METRICCOMPONENTSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=896,
-  serialized_end=986,
+  serialized_start=938,
+  serialized_end=1034,
 )
 
 _METRICMESSAGE = _descriptor.Descriptor(
   name='MetricMessage',
-  full_name='ludwigwhy.MetricMessage',
+  full_name='dataset_profile.MetricMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='metric_components', full_name='ludwigwhy.MetricMessage.metric_components', index=0,
+      name='metric_components', full_name='dataset_profile.MetricMessage.metric_components', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -424,28 +424,28 @@ _METRICMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=804,
-  serialized_end=986,
+  serialized_start=840,
+  serialized_end=1034,
 )
 
 
 _COLUMNMESSAGE_METRICCOMPONENTSENTRY = _descriptor.Descriptor(
   name='MetricComponentsEntry',
-  full_name='ludwigwhy.ColumnMessage.MetricComponentsEntry',
+  full_name='dataset_profile.ColumnMessage.MetricComponentsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.ColumnMessage.MetricComponentsEntry.key', index=0,
+      name='key', full_name='dataset_profile.ColumnMessage.MetricComponentsEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.ColumnMessage.MetricComponentsEntry.value', index=1,
+      name='value', full_name='dataset_profile.ColumnMessage.MetricComponentsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -463,20 +463,20 @@ _COLUMNMESSAGE_METRICCOMPONENTSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=896,
-  serialized_end=986,
+  serialized_start=938,
+  serialized_end=1034,
 )
 
 _COLUMNMESSAGE = _descriptor.Descriptor(
   name='ColumnMessage',
-  full_name='ludwigwhy.ColumnMessage',
+  full_name='dataset_profile.ColumnMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='metric_components', full_name='ludwigwhy.ColumnMessage.metric_components', index=0,
+      name='metric_components', full_name='dataset_profile.ColumnMessage.metric_components', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -494,28 +494,28 @@ _COLUMNMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=989,
-  serialized_end=1171,
+  serialized_start=1037,
+  serialized_end=1231,
 )
 
 
 _DATASETPROPERTIES_TAGSENTRY = _descriptor.Descriptor(
   name='TagsEntry',
-  full_name='ludwigwhy.DatasetProperties.TagsEntry',
+  full_name='dataset_profile.DatasetProperties.TagsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.DatasetProperties.TagsEntry.key', index=0,
+      name='key', full_name='dataset_profile.DatasetProperties.TagsEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.DatasetProperties.TagsEntry.value', index=1,
+      name='value', full_name='dataset_profile.DatasetProperties.TagsEntry.value', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -533,27 +533,27 @@ _DATASETPROPERTIES_TAGSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1426,
-  serialized_end=1469,
+  serialized_start=1498,
+  serialized_end=1541,
 )
 
 _DATASETPROPERTIES_METADATAENTRY = _descriptor.Descriptor(
   name='MetadataEntry',
-  full_name='ludwigwhy.DatasetProperties.MetadataEntry',
+  full_name='dataset_profile.DatasetProperties.MetadataEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.DatasetProperties.MetadataEntry.key', index=0,
+      name='key', full_name='dataset_profile.DatasetProperties.MetadataEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.DatasetProperties.MetadataEntry.value', index=1,
+      name='value', full_name='dataset_profile.DatasetProperties.MetadataEntry.value', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -571,55 +571,55 @@ _DATASETPROPERTIES_METADATAENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1471,
-  serialized_end=1518,
+  serialized_start=1543,
+  serialized_end=1590,
 )
 
 _DATASETPROPERTIES = _descriptor.Descriptor(
   name='DatasetProperties',
-  full_name='ludwigwhy.DatasetProperties',
+  full_name='dataset_profile.DatasetProperties',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='schema_major_version', full_name='ludwigwhy.DatasetProperties.schema_major_version', index=0,
+      name='schema_major_version', full_name='dataset_profile.DatasetProperties.schema_major_version', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='schema_minor_version', full_name='ludwigwhy.DatasetProperties.schema_minor_version', index=1,
+      name='schema_minor_version', full_name='dataset_profile.DatasetProperties.schema_minor_version', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='creation_timestamp', full_name='ludwigwhy.DatasetProperties.creation_timestamp', index=2,
+      name='creation_timestamp', full_name='dataset_profile.DatasetProperties.creation_timestamp', index=2,
       number=4, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='dataset_timestamp', full_name='ludwigwhy.DatasetProperties.dataset_timestamp', index=3,
+      name='dataset_timestamp', full_name='dataset_profile.DatasetProperties.dataset_timestamp', index=3,
       number=5, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tags', full_name='ludwigwhy.DatasetProperties.tags', index=4,
+      name='tags', full_name='dataset_profile.DatasetProperties.tags', index=4,
       number=6, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='metadata', full_name='ludwigwhy.DatasetProperties.metadata', index=5,
+      name='metadata', full_name='dataset_profile.DatasetProperties.metadata', index=5,
       number=7, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -637,21 +637,21 @@ _DATASETPROPERTIES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1174,
-  serialized_end=1518,
+  serialized_start=1234,
+  serialized_end=1590,
 )
 
 
 _CHUNKOFFSETS = _descriptor.Descriptor(
   name='ChunkOffsets',
-  full_name='ludwigwhy.ChunkOffsets',
+  full_name='dataset_profile.ChunkOffsets',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='offsets', full_name='ludwigwhy.ChunkOffsets.offsets', index=0,
+      name='offsets', full_name='dataset_profile.ChunkOffsets.offsets', index=0,
       number=1, type=4, cpp_type=4, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -669,28 +669,28 @@ _CHUNKOFFSETS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1520,
-  serialized_end=1551,
+  serialized_start=1592,
+  serialized_end=1623,
 )
 
 
 _CHUNKMESSAGE_METRICCOMPONENTSENTRY = _descriptor.Descriptor(
   name='MetricComponentsEntry',
-  full_name='ludwigwhy.ChunkMessage.MetricComponentsEntry',
+  full_name='dataset_profile.ChunkMessage.MetricComponentsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.ChunkMessage.MetricComponentsEntry.key', index=0,
+      name='key', full_name='dataset_profile.ChunkMessage.MetricComponentsEntry.key', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.ChunkMessage.MetricComponentsEntry.value', index=1,
+      name='value', full_name='dataset_profile.ChunkMessage.MetricComponentsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -708,20 +708,20 @@ _CHUNKMESSAGE_METRICCOMPONENTSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1644,
-  serialized_end=1734,
+  serialized_start=1722,
+  serialized_end=1818,
 )
 
 _CHUNKMESSAGE = _descriptor.Descriptor(
   name='ChunkMessage',
-  full_name='ludwigwhy.ChunkMessage',
+  full_name='dataset_profile.ChunkMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='metric_components', full_name='ludwigwhy.ChunkMessage.metric_components', index=0,
+      name='metric_components', full_name='dataset_profile.ChunkMessage.metric_components', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -739,35 +739,35 @@ _CHUNKMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1554,
-  serialized_end=1734,
+  serialized_start=1626,
+  serialized_end=1818,
 )
 
 
 _CHUNKHEADER = _descriptor.Descriptor(
   name='ChunkHeader',
-  full_name='ludwigwhy.ChunkHeader',
+  full_name='dataset_profile.ChunkHeader',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='type', full_name='ludwigwhy.ChunkHeader.type', index=0,
+      name='type', full_name='dataset_profile.ChunkHeader.type', index=0,
       number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tag', full_name='ludwigwhy.ChunkHeader.tag', index=1,
+      name='tag', full_name='dataset_profile.ChunkHeader.tag', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='length', full_name='ludwigwhy.ChunkHeader.length', index=2,
+      name='length', full_name='dataset_profile.ChunkHeader.length', index=2,
       number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -786,28 +786,28 @@ _CHUNKHEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1737,
-  serialized_end=1865,
+  serialized_start=1821,
+  serialized_end=1955,
 )
 
 
 _DATASETPROFILEHEADER_COLUMNOFFSETSENTRY = _descriptor.Descriptor(
   name='ColumnOffsetsEntry',
-  full_name='ludwigwhy.DatasetProfileHeader.ColumnOffsetsEntry',
+  full_name='dataset_profile.DatasetProfileHeader.ColumnOffsetsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.DatasetProfileHeader.ColumnOffsetsEntry.key', index=0,
+      name='key', full_name='dataset_profile.DatasetProfileHeader.ColumnOffsetsEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.DatasetProfileHeader.ColumnOffsetsEntry.value', index=1,
+      name='value', full_name='dataset_profile.DatasetProfileHeader.ColumnOffsetsEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -825,27 +825,27 @@ _DATASETPROFILEHEADER_COLUMNOFFSETSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2170,
-  serialized_end=2247,
+  serialized_start=2284,
+  serialized_end=2367,
 )
 
 _DATASETPROFILEHEADER_INDEXEDMETRICPATHSENTRY = _descriptor.Descriptor(
   name='IndexedMetricPathsEntry',
-  full_name='ludwigwhy.DatasetProfileHeader.IndexedMetricPathsEntry',
+  full_name='dataset_profile.DatasetProfileHeader.IndexedMetricPathsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.DatasetProfileHeader.IndexedMetricPathsEntry.key', index=0,
+      name='key', full_name='dataset_profile.DatasetProfileHeader.IndexedMetricPathsEntry.key', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.DatasetProfileHeader.IndexedMetricPathsEntry.value', index=1,
+      name='value', full_name='dataset_profile.DatasetProfileHeader.IndexedMetricPathsEntry.value', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -863,48 +863,48 @@ _DATASETPROFILEHEADER_INDEXEDMETRICPATHSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2249,
-  serialized_end=2306,
+  serialized_start=2369,
+  serialized_end=2426,
 )
 
 _DATASETPROFILEHEADER = _descriptor.Descriptor(
   name='DatasetProfileHeader',
-  full_name='ludwigwhy.DatasetProfileHeader',
+  full_name='dataset_profile.DatasetProfileHeader',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='properties', full_name='ludwigwhy.DatasetProfileHeader.properties', index=0,
+      name='properties', full_name='dataset_profile.DatasetProfileHeader.properties', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='column_offsets', full_name='ludwigwhy.DatasetProfileHeader.column_offsets', index=1,
+      name='column_offsets', full_name='dataset_profile.DatasetProfileHeader.column_offsets', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='metric_offsets', full_name='ludwigwhy.DatasetProfileHeader.metric_offsets', index=2,
+      name='metric_offsets', full_name='dataset_profile.DatasetProfileHeader.metric_offsets', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='length', full_name='ludwigwhy.DatasetProfileHeader.length', index=3,
+      name='length', full_name='dataset_profile.DatasetProfileHeader.length', index=3,
       number=4, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='indexed_metric_paths', full_name='ludwigwhy.DatasetProfileHeader.indexed_metric_paths', index=4,
+      name='indexed_metric_paths', full_name='dataset_profile.DatasetProfileHeader.indexed_metric_paths', index=4,
       number=5, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -922,28 +922,28 @@ _DATASETPROFILEHEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1868,
-  serialized_end=2306,
+  serialized_start=1958,
+  serialized_end=2426,
 )
 
 
 _SEGMENTTAG = _descriptor.Descriptor(
   name='SegmentTag',
-  full_name='ludwigwhy.SegmentTag',
+  full_name='dataset_profile.SegmentTag',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.SegmentTag.key', index=0,
+      name='key', full_name='dataset_profile.SegmentTag.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.SegmentTag.value', index=1,
+      name='value', full_name='dataset_profile.SegmentTag.value', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -961,21 +961,21 @@ _SEGMENTTAG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2308,
-  serialized_end=2348,
+  serialized_start=2428,
+  serialized_end=2468,
 )
 
 
 _SEGMENT = _descriptor.Descriptor(
   name='Segment',
-  full_name='ludwigwhy.Segment',
+  full_name='dataset_profile.Segment',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='tags', full_name='ludwigwhy.Segment.tags', index=0,
+      name='tags', full_name='dataset_profile.Segment.tags', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -993,28 +993,28 @@ _SEGMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2350,
-  serialized_end=2396,
+  serialized_start=2470,
+  serialized_end=2522,
 )
 
 
 _DATASETSEGMENTHEADER_OFFSETSENTRY = _descriptor.Descriptor(
   name='OffsetsEntry',
-  full_name='ludwigwhy.DatasetSegmentHeader.OffsetsEntry',
+  full_name='dataset_profile.DatasetSegmentHeader.OffsetsEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='ludwigwhy.DatasetSegmentHeader.OffsetsEntry.key', index=0,
+      name='key', full_name='dataset_profile.DatasetSegmentHeader.OffsetsEntry.key', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='ludwigwhy.DatasetSegmentHeader.OffsetsEntry.value', index=1,
+      name='value', full_name='dataset_profile.DatasetSegmentHeader.OffsetsEntry.value', index=1,
       number=2, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -1032,34 +1032,34 @@ _DATASETSEGMENTHEADER_OFFSETSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2546,
-  serialized_end=2592,
+  serialized_start=2684,
+  serialized_end=2730,
 )
 
 _DATASETSEGMENTHEADER = _descriptor.Descriptor(
   name='DatasetSegmentHeader',
-  full_name='ludwigwhy.DatasetSegmentHeader',
+  full_name='dataset_profile.DatasetSegmentHeader',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='has_segments', full_name='ludwigwhy.DatasetSegmentHeader.has_segments', index=0,
+      name='has_segments', full_name='dataset_profile.DatasetSegmentHeader.has_segments', index=0,
       number=1, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='segments', full_name='ludwigwhy.DatasetSegmentHeader.segments', index=1,
+      name='segments', full_name='dataset_profile.DatasetSegmentHeader.segments', index=1,
       number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='offsets', full_name='ludwigwhy.DatasetSegmentHeader.offsets', index=2,
+      name='offsets', full_name='dataset_profile.DatasetSegmentHeader.offsets', index=2,
       number=5, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1077,8 +1077,8 @@ _DATASETSEGMENTHEADER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2399,
-  serialized_end=2592,
+  serialized_start=2525,
+  serialized_end=2730,
 )
 
 _DATATYPE.fields_by_name['type'].enum_type = _DATATYPE_TYPE
@@ -1163,42 +1163,42 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 DataType = _reflection.GeneratedProtocolMessageType('DataType', (_message.Message,), {
   'DESCRIPTOR' : _DATATYPE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.DataType)
+  # @@protoc_insertion_point(class_scope:dataset_profile.DataType)
   })
 _sym_db.RegisterMessage(DataType)
 
 HllSketchMessage = _reflection.GeneratedProtocolMessageType('HllSketchMessage', (_message.Message,), {
   'DESCRIPTOR' : _HLLSKETCHMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.HllSketchMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.HllSketchMessage)
   })
 _sym_db.RegisterMessage(HllSketchMessage)
 
 FrequentItemsSketchMessage = _reflection.GeneratedProtocolMessageType('FrequentItemsSketchMessage', (_message.Message,), {
   'DESCRIPTOR' : _FREQUENTITEMSSKETCHMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.FrequentItemsSketchMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.FrequentItemsSketchMessage)
   })
 _sym_db.RegisterMessage(FrequentItemsSketchMessage)
 
 KllSketchMessage = _reflection.GeneratedProtocolMessageType('KllSketchMessage', (_message.Message,), {
   'DESCRIPTOR' : _KLLSKETCHMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.KllSketchMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.KllSketchMessage)
   })
 _sym_db.RegisterMessage(KllSketchMessage)
 
 CpcSketchMessage = _reflection.GeneratedProtocolMessageType('CpcSketchMessage', (_message.Message,), {
   'DESCRIPTOR' : _CPCSKETCHMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.CpcSketchMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.CpcSketchMessage)
   })
 _sym_db.RegisterMessage(CpcSketchMessage)
 
 MetricComponentMessage = _reflection.GeneratedProtocolMessageType('MetricComponentMessage', (_message.Message,), {
   'DESCRIPTOR' : _METRICCOMPONENTMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.MetricComponentMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.MetricComponentMessage)
   })
 _sym_db.RegisterMessage(MetricComponentMessage)
 
@@ -1207,12 +1207,12 @@ MetricMessage = _reflection.GeneratedProtocolMessageType('MetricMessage', (_mess
   'MetricComponentsEntry' : _reflection.GeneratedProtocolMessageType('MetricComponentsEntry', (_message.Message,), {
     'DESCRIPTOR' : _METRICMESSAGE_METRICCOMPONENTSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.MetricMessage.MetricComponentsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.MetricMessage.MetricComponentsEntry)
     })
   ,
   'DESCRIPTOR' : _METRICMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.MetricMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.MetricMessage)
   })
 _sym_db.RegisterMessage(MetricMessage)
 _sym_db.RegisterMessage(MetricMessage.MetricComponentsEntry)
@@ -1222,12 +1222,12 @@ ColumnMessage = _reflection.GeneratedProtocolMessageType('ColumnMessage', (_mess
   'MetricComponentsEntry' : _reflection.GeneratedProtocolMessageType('MetricComponentsEntry', (_message.Message,), {
     'DESCRIPTOR' : _COLUMNMESSAGE_METRICCOMPONENTSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.ColumnMessage.MetricComponentsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.ColumnMessage.MetricComponentsEntry)
     })
   ,
   'DESCRIPTOR' : _COLUMNMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.ColumnMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.ColumnMessage)
   })
 _sym_db.RegisterMessage(ColumnMessage)
 _sym_db.RegisterMessage(ColumnMessage.MetricComponentsEntry)
@@ -1237,19 +1237,19 @@ DatasetProperties = _reflection.GeneratedProtocolMessageType('DatasetProperties'
   'TagsEntry' : _reflection.GeneratedProtocolMessageType('TagsEntry', (_message.Message,), {
     'DESCRIPTOR' : _DATASETPROPERTIES_TAGSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetProperties.TagsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.DatasetProperties.TagsEntry)
     })
   ,
 
   'MetadataEntry' : _reflection.GeneratedProtocolMessageType('MetadataEntry', (_message.Message,), {
     'DESCRIPTOR' : _DATASETPROPERTIES_METADATAENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetProperties.MetadataEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.DatasetProperties.MetadataEntry)
     })
   ,
   'DESCRIPTOR' : _DATASETPROPERTIES,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetProperties)
+  # @@protoc_insertion_point(class_scope:dataset_profile.DatasetProperties)
   })
 _sym_db.RegisterMessage(DatasetProperties)
 _sym_db.RegisterMessage(DatasetProperties.TagsEntry)
@@ -1258,7 +1258,7 @@ _sym_db.RegisterMessage(DatasetProperties.MetadataEntry)
 ChunkOffsets = _reflection.GeneratedProtocolMessageType('ChunkOffsets', (_message.Message,), {
   'DESCRIPTOR' : _CHUNKOFFSETS,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.ChunkOffsets)
+  # @@protoc_insertion_point(class_scope:dataset_profile.ChunkOffsets)
   })
 _sym_db.RegisterMessage(ChunkOffsets)
 
@@ -1267,12 +1267,12 @@ ChunkMessage = _reflection.GeneratedProtocolMessageType('ChunkMessage', (_messag
   'MetricComponentsEntry' : _reflection.GeneratedProtocolMessageType('MetricComponentsEntry', (_message.Message,), {
     'DESCRIPTOR' : _CHUNKMESSAGE_METRICCOMPONENTSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.ChunkMessage.MetricComponentsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.ChunkMessage.MetricComponentsEntry)
     })
   ,
   'DESCRIPTOR' : _CHUNKMESSAGE,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.ChunkMessage)
+  # @@protoc_insertion_point(class_scope:dataset_profile.ChunkMessage)
   })
 _sym_db.RegisterMessage(ChunkMessage)
 _sym_db.RegisterMessage(ChunkMessage.MetricComponentsEntry)
@@ -1280,7 +1280,7 @@ _sym_db.RegisterMessage(ChunkMessage.MetricComponentsEntry)
 ChunkHeader = _reflection.GeneratedProtocolMessageType('ChunkHeader', (_message.Message,), {
   'DESCRIPTOR' : _CHUNKHEADER,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.ChunkHeader)
+  # @@protoc_insertion_point(class_scope:dataset_profile.ChunkHeader)
   })
 _sym_db.RegisterMessage(ChunkHeader)
 
@@ -1289,19 +1289,19 @@ DatasetProfileHeader = _reflection.GeneratedProtocolMessageType('DatasetProfileH
   'ColumnOffsetsEntry' : _reflection.GeneratedProtocolMessageType('ColumnOffsetsEntry', (_message.Message,), {
     'DESCRIPTOR' : _DATASETPROFILEHEADER_COLUMNOFFSETSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetProfileHeader.ColumnOffsetsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.DatasetProfileHeader.ColumnOffsetsEntry)
     })
   ,
 
   'IndexedMetricPathsEntry' : _reflection.GeneratedProtocolMessageType('IndexedMetricPathsEntry', (_message.Message,), {
     'DESCRIPTOR' : _DATASETPROFILEHEADER_INDEXEDMETRICPATHSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetProfileHeader.IndexedMetricPathsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.DatasetProfileHeader.IndexedMetricPathsEntry)
     })
   ,
   'DESCRIPTOR' : _DATASETPROFILEHEADER,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetProfileHeader)
+  # @@protoc_insertion_point(class_scope:dataset_profile.DatasetProfileHeader)
   })
 _sym_db.RegisterMessage(DatasetProfileHeader)
 _sym_db.RegisterMessage(DatasetProfileHeader.ColumnOffsetsEntry)
@@ -1310,14 +1310,14 @@ _sym_db.RegisterMessage(DatasetProfileHeader.IndexedMetricPathsEntry)
 SegmentTag = _reflection.GeneratedProtocolMessageType('SegmentTag', (_message.Message,), {
   'DESCRIPTOR' : _SEGMENTTAG,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.SegmentTag)
+  # @@protoc_insertion_point(class_scope:dataset_profile.SegmentTag)
   })
 _sym_db.RegisterMessage(SegmentTag)
 
 Segment = _reflection.GeneratedProtocolMessageType('Segment', (_message.Message,), {
   'DESCRIPTOR' : _SEGMENT,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.Segment)
+  # @@protoc_insertion_point(class_scope:dataset_profile.Segment)
   })
 _sym_db.RegisterMessage(Segment)
 
@@ -1326,12 +1326,12 @@ DatasetSegmentHeader = _reflection.GeneratedProtocolMessageType('DatasetSegmentH
   'OffsetsEntry' : _reflection.GeneratedProtocolMessageType('OffsetsEntry', (_message.Message,), {
     'DESCRIPTOR' : _DATASETSEGMENTHEADER_OFFSETSENTRY,
     '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-    # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetSegmentHeader.OffsetsEntry)
+    # @@protoc_insertion_point(class_scope:dataset_profile.DatasetSegmentHeader.OffsetsEntry)
     })
   ,
   'DESCRIPTOR' : _DATASETSEGMENTHEADER,
   '__module__' : 'ludwig.profiling.proto.whylogs_messages_pb2'
-  # @@protoc_insertion_point(class_scope:ludwigwhy.DatasetSegmentHeader)
+  # @@protoc_insertion_point(class_scope:dataset_profile.DatasetSegmentHeader)
   })
 _sym_db.RegisterMessage(DatasetSegmentHeader)
 _sym_db.RegisterMessage(DatasetSegmentHeader.OffsetsEntry)
