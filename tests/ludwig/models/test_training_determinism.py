@@ -6,6 +6,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
+from ludwig.utils.numerical_test_utils import assert_all_finite
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -31,6 +32,11 @@ def test_training_determinism_ray_backend(csv_filename, tmpdir, ray_cluster_4cpu
     eval_stats_1, train_stats_1, _, _ = experiment_output_1
     eval_stats_2, train_stats_2, _, _ = experiment_output_2
 
+    assert_all_finite(eval_stats_1)
+    assert_all_finite(eval_stats_2)
+    assert_all_finite(train_stats_1)
+    assert_all_finite(train_stats_2)
+
     np.testing.assert_equal(eval_stats_1, eval_stats_2)
     np.testing.assert_equal(train_stats_1, train_stats_2)
 
@@ -40,6 +46,11 @@ def test_training_determinism_local_backend(csv_filename, tmpdir):
 
     eval_stats_1, train_stats_1, _, _ = experiment_output_1
     eval_stats_2, train_stats_2, _, _ = experiment_output_2
+
+    assert_all_finite(eval_stats_1)
+    assert_all_finite(eval_stats_2)
+    assert_all_finite(train_stats_1)
+    assert_all_finite(train_stats_2)
 
     np.testing.assert_equal(eval_stats_1, eval_stats_2)
     np.testing.assert_equal(train_stats_1, train_stats_2)
