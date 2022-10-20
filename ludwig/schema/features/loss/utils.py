@@ -13,7 +13,7 @@ def get_loss_conds(feature_type: str):
     for loss in get_loss_classes(feature_type):
         loss_cls = get_loss_cls(feature_type, loss).get_schema_cls()
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(loss_cls)["properties"]
-        other_props.pop("type")
+        schema_utils.remove_duplicate_fields(other_props)
         loss_cond = schema_utils.create_cond(
             {"type": loss},
             other_props,
