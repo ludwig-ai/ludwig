@@ -36,6 +36,7 @@ import torch
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
 from ludwig.callbacks import Callback
 from ludwig.constants import (
@@ -100,6 +101,7 @@ from ludwig.utils.types import TorchDevice
 logger = logging.getLogger(__name__)
 
 
+@PublicAPI
 @dataclass
 class EvaluationFrequency:
     """Represents the frequency of periodic evaluation of a metric during training. For example:
@@ -118,6 +120,7 @@ class EvaluationFrequency:
     STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
 
 
+@PublicAPI
 @dataclass
 class TrainingStats:
     """Training stats were previously represented as a tuple or a dict.
@@ -146,6 +149,7 @@ class TrainingStats:
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
+@PublicAPI
 @dataclass
 class PreprocessedDataset:
     training_set: Dataset
@@ -161,6 +165,7 @@ class PreprocessedDataset:
         return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
 
 
+@PublicAPI
 @dataclass
 class TrainingResults:
     train_stats: TrainingStats
@@ -182,6 +187,7 @@ class TrainingResults:
         return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
+@PublicAPI
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
