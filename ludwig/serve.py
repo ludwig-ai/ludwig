@@ -60,7 +60,8 @@ def server(model, allowed_origins=None):
     middleware = [Middleware(CORSMiddleware, allow_origins=allowed_origins)] if allowed_origins else None
     app = FastAPI(middleware=middleware)
 
-    input_features = {f[COLUMN] for f in model.config_dict["input_features"]}
+    config = model.config
+    input_features = {f[COLUMN] for f in config["input_features"]}
 
     @app.get("/")
     def check_health():

@@ -55,7 +55,7 @@ def _get_output_dicts(config: Dict[str, Any]) -> str:
 
 
 def generate_neuropod_torchscript(model: LudwigModel):
-    config = model.config_dict
+    config = model.config
     inference_module = model.to_torchscript()
     with tempfile.TemporaryDirectory() as tmpdir:
         ts_path = os.path.join(tmpdir, "generated.py")
