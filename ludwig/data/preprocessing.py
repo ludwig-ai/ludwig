@@ -1652,7 +1652,10 @@ def preprocess_for_training(
             if training_set_size == 0:
                 raise ValueError("Training data is empty following preprocessing.")
             elif training_set_size < MIN_DATASET_SPLIT_ROWS:
-                raise ValueError(f"Training dataset has only {training_set_size} rows following preprocessing.")
+                raise ValueError(
+                    f"Training dataset has only {training_set_size} rows following preprocessing, need"
+                    f" at least {MIN_DATASET_SPLIT_ROWS} to compute metrics."
+                )
 
             validation_dataset = None
             if validation_set is not None:
@@ -1666,8 +1669,8 @@ def preprocess_for_training(
                     validation_dataset = None
                 elif validation_set_size < MIN_DATASET_SPLIT_ROWS:
                     logger.warning(
-                        f"Validation set ({validation_set_size}) too small to compute metrics. Evaluation of validation"
-                        " set will be skipped"
+                        f"Validation set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
+                        f" {validation_set_size} after preprocessing. Evaluation of validation set will be skipped."
                     )
                     validation_dataset = None
 
@@ -1683,8 +1686,8 @@ def preprocess_for_training(
                     test_dataset = None
                 elif test_set_size < MIN_DATASET_SPLIT_ROWS:
                     logger.warning(
-                        f"Test set ({test_set_size}) too small to compute metrics. Evaluation of test set will be"
-                        " skipped"
+                        f"Test set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
+                        f" {test_set_size} after preprocessing. Evaluation of test set will be skipped."
                     )
                     validation_dataset = None
 
