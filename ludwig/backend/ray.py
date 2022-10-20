@@ -29,9 +29,11 @@ import ray.train as rt
 import torch
 import tqdm
 from fsspec.config import conf
+from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
-from ray.data.dataset_pipeline import DatasetPipeline
+
+# from ray.data.dataset_pipeline import DatasetPipeline
 from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
 from ray.train.horovod import HorovodConfig
 from ray.train.trainer import Trainer
@@ -44,22 +46,13 @@ if TYPE_CHECKING:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import (
-    CPU_RESOURCES_PER_TRIAL,
-    EXECUTOR,
-    MODEL_ECD,
-    MODEL_GBM,
-    NAME,
-    PREPROCESSING,
-    PROC_COLUMN,
-    TYPE,
-)
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
@@ -73,31 +66,17 @@ from ludwig.utils.types import Series
 
 logger = logging.getLogger(__name__)
 
-try:
-    from horovod.ray import RayExecutor
-except ImportError as e:
-    logger.warn(f"ImportError (ray.py) from horovod.ray import RayExecutor failed with error: \n\t{e}")
-    RayExecutor = None
+_ray_200 = version.parse(ray.__version__) >= version.parse("2.0.0")
+if _ray_200:
+    from ray.air.config import ScalingConfig
+    from ray.train.horovod import HorovodTrainer
+else:
+    ScalingConfig = None
+    HorovodTrainer = None
+
 
 RAY_DEFAULT_PARALLELISM = 200
 FIFTEEN_MINS_IN_S = 15 * 60
-
-
-# TODO: deprecated v0.5
-def get_horovod_kwargs(use_gpu=None):
-    # Our goal is to have a worker per resource used for training.
-    # The priority is GPUs, but can fall back to CPUs if there are no
-    # GPUs available.
-    if use_gpu is None:
-        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
-
-    resource = "GPU" if use_gpu else "CPU"
-    num_workers = int(ray.cluster_resources().get(resource, 0))
-
-    return dict(
-        num_workers=num_workers,
-        use_gpu=use_gpu,
-    )
 
 
 def _num_nodes() -> int:
@@ -366,13 +345,37 @@ def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
 def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
     with spread_env(**trainer_kwargs):
-        trainer = Trainer(**trainer_kwargs)
+        yield RayAirRunner(trainer_kwargs)
 
+    trainer = Trainer(**trainer_kwargs)
     trainer.start()
     try:
         yield trainer
     finally:
         trainer.shutdown()
+
+
+class RayAirRunner:
+    def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
+        trainer_kwargs = copy.copy(trainer_kwargs)
+        trainer_kwargs.pop("backend", None)
+
+        # When training on GPU, you want to pack workers together to limit network latency during
+        # allreduce. Conversely, for CPU training you want to spread out the workers to limit
+        # CPU and memory contention.
+        strategy = "PACK" if trainer_kwargs.get("use_gpu") else "SPREAD"
+        self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
+
+    def run(
+        self, train_loop_per_worker: Callable, config: Dict[str, Any], callbacks: List[Any], dataset: Dict[str, Any]
+    ) -> List[Any]:
+        trainer = HorovodTrainer(
+            train_loop_per_worker=train_loop_per_worker,
+            train_loop_config=config,
+            datasets=dataset,
+            scaling_config=self.scaling_config,
+        )
+        return trainer.fit()
 
 
 @register_ray_trainer(MODEL_ECD, default=True)
@@ -518,112 +521,10 @@ class RayTrainerV2(BaseTrainer):
         pass
 
 
-def legacy_train_fn(
-    trainer: RemoteTrainer = None,
-    remote_model: "LudwigModel" = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
-    features: Dict[str, Dict] = None,
-    train_shards: List[DatasetPipeline] = None,
-    val_shards: List[DatasetPipeline] = None,
-    test_shards: List[DatasetPipeline] = None,
-    **kwargs,
-):
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    initialize_pytorch(horovod=hvd)
-
-    train_shard = RayDatasetShard(
-        train_shards[hvd.rank()],
-        features,
-        training_set_metadata,
-    )
-
-    val_shard = val_shards[hvd.rank()] if val_shards else None
-    if val_shard is not None:
-        val_shard = RayDatasetShard(
-            val_shard,
-            features,
-            training_set_metadata,
-        )
-
-    test_shard = test_shards[hvd.rank()] if test_shards else None
-    if test_shard is not None:
-        test_shard = RayDatasetShard(
-            test_shard,
-            features,
-            training_set_metadata,
-        )
-
-    results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
-    return results
-
-
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
         horovod = initialize_horovod()
         super().__init__(horovod=horovod, **kwargs)
-
-
-@register_ray_trainer("ecd_ray_legacy")
-class RayLegacyTrainer(BaseTrainer):
-    def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
-        # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
-        if RayExecutor is None:
-            logger.error(
-                "RayLegacyTrainer failed to initialize: RayExecutor is None. Make sure horovod[ray] is installed."
-            )
-            return
-        setting = RayExecutor.create_settings(timeout_s=30)
-
-        self.executor = RayExecutor(setting, **{**get_horovod_kwargs(), **horovod_kwargs})
-        self.executor.start(executable_cls=HorovodRemoteTrainer, executable_kwargs=executable_kwargs)
-
-    @staticmethod
-    def get_schema_cls():
-        return ECDTrainerConfig
-
-    def train(self, model, training_set, validation_set=None, test_set=None, **kwargs):
-        workers = self.executor.driver.workers
-        train_shards = training_set.pipeline().split(n=len(workers), locality_hints=workers, equal=True)
-        val_shards = (
-            validation_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers)
-            if validation_set
-            else None
-        )
-        test_shards = (
-            test_set.pipeline(shuffle=False).split(n=len(workers), locality_hints=workers) if test_set else None
-        )
-
-        results = self.executor.execute(
-            lambda trainer: legacy_train_fn(
-                trainer,
-                model,
-                training_set.training_set_metadata,
-                training_set.features,
-                train_shards,
-                val_shards,
-                test_shards,
-                **kwargs,
-            )
-        )
-
-        return results
-
-    def train_online(self, model, *args, **kwargs):
-        results = self.executor.execute(lambda trainer: trainer.train_online(model, *args, **kwargs))
-
-        return results[0]
-
-    @property
-    def validation_field(self):
-        return self.executor.execute_single(lambda trainer: trainer.validation_field)
-
-    @property
-    def validation_metric(self):
-        return self.executor.execute_single(lambda trainer: trainer.validation_metric)
-
-    def shutdown(self):
-        self.executor.shutdown()
 
 
 def eval_fn(
@@ -827,14 +728,13 @@ class RayPredictor(BasePredictor):
 class RayBackend(RemoteTrainingMixin, Backend):
     BACKEND_TYPE = "ray"
 
-    def __init__(self, processor=None, trainer=None, loader=None, use_legacy=False, preprocessor_kwargs=None, **kwargs):
+    def __init__(self, processor=None, trainer=None, loader=None, preprocessor_kwargs=None, **kwargs):
         super().__init__(dataset_manager=RayDatasetManager(self), **kwargs)
         self._preprocessor_kwargs = preprocessor_kwargs or {}
         self._df_engine = _get_df_engine(processor)
         self._horovod_kwargs = trainer or {}
         self._pytorch_kwargs = {}
         self._data_loader_kwargs = loader or {}
-        self._use_legacy = use_legacy
         self._preprocessor_pg = None
 
     def initialize(self):
@@ -890,24 +790,21 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
-        if not self._use_legacy:
-            trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
 
-            # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
-            all_kwargs = {
-                "model": model,
-                "trainer_kwargs": copy.deepcopy(self._horovod_kwargs),
-                "data_loader_kwargs": self._data_loader_kwargs,
-                "executable_kwargs": executable_kwargs,
-            }
-            all_kwargs.update(kwargs)
-            return trainer_cls(**all_kwargs)
-        else:
-            if model.name == MODEL_GBM:
-                raise RuntimeError("Legacy trainer not supported for GBM models.")
+        trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
 
-            # TODO: deprecated 0.5
-            return RayLegacyTrainer(self._horovod_kwargs, executable_kwargs)
+        config: Union[ECDTrainerConfig, GBMTrainerConfig] = kwargs["config"]
+        trainer_cls = get_from_registry(config.type, trainers_for_model)
+
+        # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
+        all_kwargs = {
+            "model": model,
+            "trainer_kwargs": copy.deepcopy(self._horovod_kwargs),
+            "data_loader_kwargs": self._data_loader_kwargs,
+            "executable_kwargs": executable_kwargs,
+        }
+        all_kwargs.update(kwargs)
+        return trainer_cls(**all_kwargs)
 
     def create_predictor(self, model: BaseModel, **kwargs):
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
