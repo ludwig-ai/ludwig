@@ -9,7 +9,7 @@ sha256:
   articles.csv.zip: 1c62791bac6a3db3df56e78c1509f45350ea98f083be8380c1d27a6f02bd014c
   customers.csv.zip: 52b11c76e72dfe315c8a2e0a55d292e9f233a4fb0f5c69bf665be4b54cca9f23
   transactions_train.csv.zip: 5fcc90e80355e35aa04c04aa5c47587f4c6817eb3ba4ed3dc685b89a591559e3
-# loader: hm_fashion_recommendations.HMLoader
+loader: hm_fashion_recommendations.HMLoader
 description: |
   H&M Group data for recommendations based on data from previous transactions, as well as from customer and 
   product meta data. The available meta data spans from simple data, such as garment type and customer age, 
