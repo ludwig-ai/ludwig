@@ -24,6 +24,7 @@ def get_input_feature_jsonschema():
     input_feature_types = sorted(list(input_config_registry.keys()))
     return {
         "type": "array",
+        "minItems": 1,
         "items": {
             "type": "object",
             "properties": {
@@ -70,6 +71,7 @@ def get_output_feature_jsonschema():
     output_feature_types = sorted(list(output_config_registry.keys()))
     return {
         "type": "array",
+        "minItems": 1,
         "items": {
             "type": "object",
             "properties": {

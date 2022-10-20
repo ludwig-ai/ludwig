@@ -15,7 +15,7 @@ from ludwig.combiners.combiners import (
     TabTransformerCombiner,
     TransformerCombiner,
 )
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, TYPE
 from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -292,7 +292,7 @@ def test_sequence_combiner(
         config=load_config(
             SequenceCombinerConfig,
             main_sequence_feature=main_sequence_feature,
-            encoder=encoder,
+            encoder={TYPE: encoder},
             reduce_output=reduce_output,
         ),
         # following emulates encoder parameters passed in from config file

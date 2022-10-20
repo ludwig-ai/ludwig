@@ -11,7 +11,7 @@ from ludwig.utils.torch_utils import initializer_registry
 
 
 @register_encoder_config("stacked_cnn", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -19,6 +19,20 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default="stacked_cnn",
         allow_none=False,
         description="Type of encoder.",
+    )
+
+    conv_dropout: Optional[int] = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout rate",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_dropout"],
+    )
+
+    conv_activation: str = schema_utils.ActivationOptions(
+        description="If an activation is not already specified in conv_layers this is the default activation that "
+        "will be used for each layer. It indicates the activation function applied to the output.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_activation"],
     )
 
     height: int = schema_utils.NonNegativeInteger(
@@ -31,18 +45,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default=None,
         description="Width of the input image.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["width"],
-    )
-
-    conv_layers: Optional[List[dict]] = schema_utils.DictList(
-        default=None,
-        description="List of convolutional layers to use in the encoder. ",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_layers"],
-    )
-
-    num_conv_layers: Optional[int] = schema_utils.NonNegativeInteger(
-        default=None,
-        description="Number of convolutional layers to use in the encoder. ",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_conv_layers"],
     )
 
     num_channels: Optional[int] = schema_utils.NonNegativeInteger(
@@ -84,6 +86,14 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["stride"],
     )
 
+    padding_mode: Optional[str] = schema_utils.StringOptions(
+        options=["zeros", "reflect", "replicate", "circular"],
+        default="zeros",
+        description="If padding_mode is not already specified in conv_layers, specifies the default padding_mode of "
+        "the 2D convolutional kernel that will be used for each layer.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["padding_mode"],
+    )
+
     padding: Optional[Union[int, Tuple[int], str]] = schema_utils.OneOfOptionsField(
         default="valid",
         description="An int, pair of ints (h, w), or one of ['valid', 'same'] specifying the padding used for"
@@ -115,49 +125,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         "divided into groups separate groups, where each output channel depends only on the inputs in its "
         "respective input channel group. in_channels and out_channels must both be divisible by groups.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["groups"],
-    )
-
-    conv_use_bias: Optional[bool] = schema_utils.Boolean(
-        default=True,
-        description="If bias not already specified in conv_layers, specifies if the 2D convolutional kernel should "
-        "have a bias term.",
-    )
-
-    padding_mode: Optional[str] = schema_utils.StringOptions(
-        options=["zeros", "reflect", "replicate", "circular"],
-        default="zeros",
-        description="If padding_mode is not already specified in conv_layers, specifies the default padding_mode of "
-        "the 2D convolutional kernel that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["padding_mode"],
-    )
-
-    conv_norm: Optional[str] = schema_utils.StringOptions(
-        ["batch", "layer"],
-        default=None,
-        description="If a norm is not already specified in conv_layers this is the default norm that will be used for "
-        "each layer. It indicates the normalization applied to the activations and can be null, "
-        "batch or layer.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_norm"],
-    )
-
-    conv_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
-        default=None,
-        description="Parameters used if conv_norm is either batch or layer. ",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_norm_params"],
-    )
-
-    conv_activation: str = schema_utils.ActivationOptions(
-        description="If an activation is not already specified in conv_layers this is the default activation that "
-        "will be used for each layer. It indicates the activation function applied to the output.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_activation"],
-    )
-
-    conv_dropout: Optional[int] = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_dropout"],
     )
 
     pool_function: Optional[str] = schema_utils.StringOptions(
@@ -203,27 +170,10 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default=1,
         description="An integer or pair of ints specifying pooling dilation rate (h, w).",
         field_options=[
-            schema_utils.PositiveInteger(description="", default=None, allow_none=False),
+            schema_utils.PositiveInteger(default=None, allow_none=False, description=""),
             schema_utils.List(list_type=int, allow_none=False),
         ],
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["pool_dilation"],
-    )
-
-    fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
-        default=None,
-        description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-        "of the list determines the number of stacked fully connected layers and the content of each "
-        "dictionary determines the parameters for a specific layer. The available parameters for each "
-        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-        "weights_initializer. If any of those values is missing from the dictionary, the default one "
-        "specified as a parameter of the encoder will be used instead. ",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
-    )
-
-    num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
-        default=1,
-        description="The number of stacked fully connected layers.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_fc_layers"],
     )
 
     output_size: Optional[int] = schema_utils.PositiveInteger(
@@ -233,17 +183,57 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["output_size"],
     )
 
+    conv_use_bias: Optional[bool] = schema_utils.Boolean(
+        default=True,
+        description="If bias not already specified in conv_layers, specifies if the 2D convolutional kernel should "
+        "have a bias term.",
+    )
+
+    conv_norm: Optional[str] = schema_utils.StringOptions(
+        ["batch", "layer"],
+        default=None,
+        description="If a norm is not already specified in conv_layers this is the default norm that will be used for "
+        "each layer. It indicates the normalization applied to the activations and can be null, "
+        "batch or layer.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_norm"],
+    )
+
+    conv_norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
+        default=None,
+        description="Parameters used if conv_norm is either batch or layer. ",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_norm_params"],
+    )
+
+    num_conv_layers: Optional[int] = schema_utils.NonNegativeInteger(
+        default=None,
+        description="Number of convolutional layers to use in the encoder. ",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_conv_layers"],
+    )
+
+    conv_layers: Optional[List[dict]] = schema_utils.DictList(
+        default=None,
+        description="List of convolutional layers to use in the encoder. ",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["conv_layers"],
+    )
+
+    fc_dropout: Optional[float] = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout rate",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_dropout"],
+    )
+
+    fc_activation: Optional[str] = schema_utils.ActivationOptions(
+        description="If an activation is not already specified in fc_layers this is the default activation that will "
+        "be used for each layer. It indicates the activation function applied to the output.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_activation"],
+    )
+
     fc_use_bias: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_use_bias"],
-    )
-
-    fc_weights_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
-        default="xavier_uniform",
-        description="Initializer for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_weights_initializer"],
     )
 
     fc_bias_initializer: Optional[str] = schema_utils.StringOptions(
@@ -251,6 +241,13 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         default="zeros",
         description="Initializer for the bias vector.",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_bias_initializer"],
+    )
+
+    fc_weights_initializer: Optional[str] = schema_utils.StringOptions(
+        sorted(list(initializer_registry.keys())),
+        default="xavier_uniform",
+        description="Initializer for the weights matrix.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_weights_initializer"],
     )
 
     fc_norm: Optional[str] = schema_utils.StringOptions(
@@ -269,23 +266,26 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_norm_params"],
     )
 
-    fc_activation: Optional[str] = schema_utils.ActivationOptions(
-        description="If an activation is not already specified in fc_layers this is the default activation that will "
-        "be used for each layer. It indicates the activation function applied to the output.",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_activation"],
+    num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
+        default=1,
+        description="The number of stacked fully connected layers.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["num_fc_layers"],
     )
 
-    fc_dropout: Optional[float] = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate",
-        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_dropout"],
+    fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
+        default=None,
+        description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
     )
 
 
 @register_encoder_config("resnet", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class ResNetEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -293,6 +293,20 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         default="resnet",
         allow_none=False,
         description="Type of encoder.",
+    )
+
+    dropout: Optional[float] = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout rate",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["dropout"],
+    )
+
+    activation: Optional[str] = schema_utils.ActivationOptions(
+        description="if an activation is not already specified in fc_layers this is the default activation that will "
+        "be used for each layer. It indicates the activation function applied to the output.",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["activation"],
     )
 
     height: int = schema_utils.NonNegativeInteger(
@@ -382,34 +396,17 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["batch_norm_epsilon"],
     )
 
-    fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
-        default=None,
-        description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-        "of the list determines the number of stacked fully connected layers and the content of each "
-        "dictionary determines the parameters for a specific layer. The available parameters for each "
-        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-        "weights_initializer. If any of those values is missing from the dictionary, the default one "
-        "specified as a parameter of the encoder will be used instead. ",
-        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["fc_layers"],
-    )
-
-    num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
-        default=1,
-        description="The number of stacked fully connected layers.",
-        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["num_fc_layers"],
-    )
-
-    output_size: Optional[int] = schema_utils.PositiveInteger(
-        default=128,
-        description="if output_size is not already specified in fc_layers this is the default output_size that will "
-        "be used for each layer. It indicates the size of the output of a fully connected layer. ",
-        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["output_size"],
-    )
-
     use_bias: Optional[bool] = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector.",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["use_bias"],
+    )
+
+    bias_initializer: Optional[str] = schema_utils.StringOptions(
+        sorted(list(initializer_registry.keys())),
+        default="zeros",
+        description="initializer for the bias vector.",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["bias_initializer"],
     )
 
     weights_initializer: Optional[str] = schema_utils.StringOptions(
@@ -419,11 +416,11 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["weights_initializer"],
     )
 
-    bias_initializer: Optional[str] = schema_utils.StringOptions(
-        sorted(list(initializer_registry.keys())),
-        default="zeros",
-        description="initializer for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["bias_initializer"],
+    output_size: Optional[int] = schema_utils.PositiveInteger(
+        default=128,
+        description="if output_size is not already specified in fc_layers this is the default output_size that will "
+        "be used for each layer. It indicates the size of the output of a fully connected layer. ",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["output_size"],
     )
 
     norm: Optional[str] = schema_utils.StringOptions(
@@ -442,23 +439,26 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["norm_params"],
     )
 
-    activation: Optional[str] = schema_utils.ActivationOptions(
-        description="if an activation is not already specified in fc_layers this is the default activation that will "
-        "be used for each layer. It indicates the activation function applied to the output.",
-        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["activation"],
+    num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
+        default=1,
+        description="The number of stacked fully connected layers.",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["num_fc_layers"],
     )
 
-    dropout: Optional[float] = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate",
-        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["dropout"],
+    fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
+        default=None,
+        description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["fc_layers"],
     )
 
 
 @register_encoder_config("mlp_mixer", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class MLPMixerEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -466,6 +466,14 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
         default="mlp_mixer",
         allow_none=False,
         description="Type of encoder.",
+    )
+
+    dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout rate.",
+        parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["dropout"],
     )
 
     height: int = schema_utils.NonNegativeInteger(
@@ -517,14 +525,6 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["num_layers"],
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate.",
-        parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["dropout"],
-    )
-
     avg_pool: bool = schema_utils.Boolean(
         default=True,
         description="If true, pools output over patch dimension, outputs a vector of shape (embed_size). If false, "
@@ -535,7 +535,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("vit", IMAGE)
-@dataclass
+@dataclass(repr=False)
 class ViTEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -557,47 +557,16 @@ class ViTEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["width"],
     )
 
-    use_pretrained: bool = schema_utils.Boolean(
-        default=True,
-        description="Use pre-trained model weights from Hugging Face.",
-        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["use_pretrained"],
-    )
-
-    pretrained_model: str = schema_utils.String(
-        default="google/vit-base-patch16-224",
-        description="The name of the pre-trained model to use.",
-        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["pretrained_model"],
-    )
-
-    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
-        default=False,
-        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-        "True for trained models to prevent loading pretrained encoder weights from model hub.",
-        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["saved_weights_in_checkpoint"],
-    )
-
-    hidden_size: int = schema_utils.PositiveInteger(
-        default=768,
-        description="Dimensionality of the encoder layers and the pooling layer.",
-        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["hidden_size"],
-    )
-
     num_hidden_layers: int = schema_utils.PositiveInteger(
         default=12,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["num_hidden_layers"],
     )
 
-    num_attention_heads: int = schema_utils.PositiveInteger(
-        default=12,
-        description="Number of attention heads in each attention layer.",
-        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["num_attention_heads"],
-    )
-
-    intermediate_size: int = schema_utils.PositiveInteger(
-        default=3072,
-        description="Dimensionality of the intermediate (i.e., feed-forward) layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["intermediate_size"],
+    hidden_size: int = schema_utils.PositiveInteger(
+        default=768,
+        description="Dimensionality of the encoder layers and the pooling layer.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["hidden_size"],
     )
 
     hidden_act: str = schema_utils.StringOptions(
@@ -613,10 +582,22 @@ class ViTEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["hidden_dropout_prob"],
     )
 
+    num_attention_heads: int = schema_utils.PositiveInteger(
+        default=12,
+        description="Number of attention heads in each attention layer.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["num_attention_heads"],
+    )
+
     attention_probs_dropout_prob: float = schema_utils.NonNegativeFloat(
         default=0.1,
         description="The dropout rate for the attention probabilities.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["attention_probs_dropout_prob"],
+    )
+
+    intermediate_size: int = schema_utils.PositiveInteger(
+        default=3072,
+        description="Dimensionality of the intermediate (i.e., feed-forward) layer in the Transformer encoder.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["intermediate_size"],
     )
 
     initializer_range: float = schema_utils.NonNegativeFloat(
@@ -644,8 +625,27 @@ class ViTEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["patch_size"],
     )
 
+    saved_weights_in_checkpoint: bool = schema_utils.Boolean(
+        default=False,
+        description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["saved_weights_in_checkpoint"],
+    )
+
     trainable: bool = schema_utils.Boolean(
         default=True,
         description="Is the encoder trainable.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["trainable"],
+    )
+
+    use_pretrained: bool = schema_utils.Boolean(
+        default=True,
+        description="Use pre-trained model weights from Hugging Face.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["use_pretrained"],
+    )
+
+    pretrained_model: str = schema_utils.String(
+        default="google/vit-base-patch16-224",
+        description="The name of the pre-trained model to use.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["pretrained_model"],
     )

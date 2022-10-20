@@ -8,19 +8,15 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 
 
-@dataclass
+@dataclass(repr=False, order=True)
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for encoders.
-
-    Not meant to be used directly.
-    """
+    """Base class for encoders."""
 
     type: str
-    "Name corresponding to an encoder."
 
 
 @register_encoder_config("passthrough", [NUMBER, VECTOR])
-@dataclass
+@dataclass(order=True)
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
@@ -33,7 +29,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
 
 @register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
-@dataclass
+@dataclass(repr=False, order=True)
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 
@@ -44,19 +40,22 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout rate.",
+    )
+
+    activation: str = schema_utils.StringOptions(
+        ["elu", "leakyRelu", "logSigmoid", "relu", "sigmoid", "tanh", "softmax"],
+        default="relu",
+        description="Activation function to apply to the output.",
+    )
+
     input_size: int = schema_utils.PositiveInteger(
         default=None,
         description="Size of the input to the dense encoder.",
-    )
-
-    fc_layers: List[dict] = schema_utils.DictList(
-        default=None,
-        description="List of fully connected layers to use in the encoder.",
-    )
-
-    num_layers: int = schema_utils.PositiveInteger(
-        default=1,
-        description="Number of stacked fully connected layers that the input to the feature passes through.",
     )
 
     output_size: int = schema_utils.PositiveInteger(
@@ -69,13 +68,13 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Whether the layer uses a bias vector.",
     )
 
-    weights_initializer: Union[str, dict] = schema_utils.InitializerOptions(
-        description="Initializer for the weight matrix.",
-    )
-
     bias_initializer: Union[str, dict] = schema_utils.InitializerOptions(
         default="zeros",
         description="Initializer for the bias vector.",
+    )
+
+    weights_initializer: Union[str, dict] = schema_utils.InitializerOptions(
+        description="Initializer for the weight matrix.",
     )
 
     norm: Union[str] = schema_utils.StringOptions(
@@ -90,15 +89,12 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Parameters for normalization if norm is either batch or layer.",
     )
 
-    activation: str = schema_utils.StringOptions(
-        ["elu", "leakyRelu", "logSigmoid", "relu", "sigmoid", "tanh", "softmax"],
-        default="relu",
-        description="Activation function to apply to the output.",
+    num_layers: int = schema_utils.PositiveInteger(
+        default=1,
+        description="Number of stacked fully connected layers that the input to the feature passes through.",
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout rate.",
+    fc_layers: List[dict] = schema_utils.DictList(
+        default=None,
+        description="List of fully connected layers to use in the encoder.",
     )

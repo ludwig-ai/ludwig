@@ -14,16 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TIMESERIES, TYPE
+from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -106,10 +105,6 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return TIMESERIES
 
     @staticmethod
-    def preprocessing_defaults():
-        return TimeseriesInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 
@@ -173,8 +168,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
-    def __init__(self, input_feature_config: Union[TimeseriesInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: TimeseriesInputFeatureConfig, encoder_obj=None, **kwargs):
         # add required sequence encoder parameters for time series
         input_feature_config.encoder.embedding_size = 1
         input_feature_config.encoder.should_embed = False
@@ -201,14 +195,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return torch.float32
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_timeseries_length"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = TimeseriesInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.max_sequence_length = feature_metadata["max_timeseries_length"]
 
     @staticmethod
     def get_schema_cls():

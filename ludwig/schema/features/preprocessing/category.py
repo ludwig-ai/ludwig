@@ -9,7 +9,7 @@ from ludwig.utils import strings_utils
 
 
 @register_preprocessor(CATEGORY)
-@dataclass
+@dataclass(repr=False)
 class CategoryPreprocessingConfig(BasePreprocessingConfig):
     """CategoryPreprocessingConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -53,7 +53,7 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
 
 
 @register_preprocessor("category_output")
-@dataclass
+@dataclass(repr=False)
 class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

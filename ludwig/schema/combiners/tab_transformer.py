@@ -8,16 +8,21 @@ from ludwig.schema.combiners.common_transformer_options import CommonTransformer
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False, order=True)
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 
+    type: str = schema_utils.StringOptions(
+        ["tabtransformer"],
+        default="tabtransformer",
+        allow_none=False,
+        description="Type of combiner.",
+    )
+
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(
-        description="Must be an integer, 'add', or null. If an integer, specifies the embedding size for input "
-        "feature names. Input feature name embeddings will be concatenated to hidden representations. "
-        "Must be less than or equal to hidden_size. If 'add', input feature names use embeddings the same "
-        "size as hidden_size, and are added (element-wise) to the hidden representations. If null, "
-        "input feature embeddings are not used.",
+        description="This value controls the size of the embeddings. Valid values are `add` which uses the "
+        "`hidden_size` value or an integer that is set to a specific value. In the case of an integer "
+        "value, it must be smaller than hidden_size.",
         parameter_metadata=COMBINER_METADATA["TabTransformerCombiner"]["embed_input_feature_name"],
     )
 

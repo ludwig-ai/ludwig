@@ -3,6 +3,7 @@ from collections import namedtuple
 import pytest
 
 from ludwig.models.base import BaseModel
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -102,7 +103,11 @@ def test_tied_micro_level(input_feature_options):
     if input_feature_options.tie_features:
         input_feature_configs[1]["tied"] = "input_feature_1"
 
-    input_features = BaseModel.build_inputs(input_feature_configs)
+    config_obj = ModelConfig.from_dict(
+        {"input_features": input_feature_configs, "output_features": [{"name": "dummy_feature", "type": "binary"}]}
+    )
+
+    input_features = BaseModel.build_inputs(input_feature_configs=config_obj.input_features)
 
     if input_feature_options.tie_features:
         # should be same encoder
@@ -138,7 +143,7 @@ def test_tied_macro_level(tied_use_case: TiedUseCase, csv_filename: str):
     input_features[2]["tied"] = input_features[1]["name"]
 
     # setup output feature
-    output_features = [tied_use_case.output_feature()]
+    output_features = [tied_use_case.output_feature(output_feature=True)]
 
     # Generate test data and run full_experiment
     rel_path = generate_data(input_features, output_features, csv_filename)

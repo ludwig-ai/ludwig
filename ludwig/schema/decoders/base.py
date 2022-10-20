@@ -9,15 +9,11 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
-    """Base class for decoders.
-
-    Not meant to be used directly.
-    """
+    """Base class for decoders."""
 
     type: str
-    "Name corresponding to a decoder."
 
     fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
         default=None, description="List of dictionaries containing the parameters for each fully connected layer."
@@ -59,7 +55,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
-@dataclass
+@dataclass(repr=False)
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
@@ -72,7 +68,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 
 
 @register_decoder_config("regressor", [BINARY, NUMBER])
-@dataclass
+@dataclass(repr=False)
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
@@ -108,7 +104,7 @@ class RegressorConfig(BaseDecoderConfig):
 
 
 @register_decoder_config("projector", [VECTOR])
-@dataclass
+@dataclass(repr=False)
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
@@ -166,7 +162,7 @@ class ProjectorConfig(BaseDecoderConfig):
 
 
 @register_decoder_config("classifier", [CATEGORY, SET])
-@dataclass
+@dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
 
     type: str = schema_utils.StringOptions(

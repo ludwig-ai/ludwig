@@ -107,7 +107,9 @@ def test_triton_torchscript(csv_filename, tmpdir):
     assert triton_postprocessor is not None
 
     # Forward data through models.
-    data_to_predict = to_inference_module_input_from_dataframe(df, ludwig_model.config, load_paths=True, device="cpu")
+    data_to_predict = to_inference_module_input_from_dataframe(
+        df, ludwig_model.config_dict, load_paths=True, device="cpu"
+    )
     triton_preprocessor_output = triton_preprocessor(*data_to_predict.values())
     triton_predictor_output = triton_predictor(*triton_preprocessor_output)
     triton_postprocessor_output = triton_postprocessor(*triton_predictor_output)

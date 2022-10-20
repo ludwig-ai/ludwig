@@ -29,7 +29,7 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 try:
@@ -91,7 +91,7 @@ def _get_config(search_alg, executor):
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
     return {
         "input_features": input_features,
@@ -142,7 +142,7 @@ def run_hyperopt_executor(
         df["split"] = 0
         df.to_csv(rel_path)
 
-    config = merge_with_defaults(config)
+    config = ModelConfig.from_dict(config).to_dict()
 
     hyperopt_config = config["hyperopt"]
 
@@ -205,7 +205,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 

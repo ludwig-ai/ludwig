@@ -106,4 +106,4 @@ trainer:
   min_sum_hessian_in_leaf: 8
   num_boost_round: 382
   num_leaves: 434
-type: gbm
+model_type: gbm
