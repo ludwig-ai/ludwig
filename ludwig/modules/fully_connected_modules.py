@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from copy import deepcopy
 from typing import Dict, List, Optional
 
 import torch
@@ -143,7 +144,8 @@ class FCStack(LudwigModule):
             for i in range(num_layers):
                 self.layers.append({})
         else:
-            self.layers = layers
+            # deep copy the layer definitions so that we don't modify the original
+            self.layers = deepcopy(layers)
 
         if len(self.layers) > 0 and "input_size" not in self.layers[0]:
             self.layers[0]["input_size"] = first_layer_input_size
