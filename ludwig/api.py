@@ -1651,10 +1651,15 @@ class LudwigModel:
 
     @property
     def config(self) -> Dict[str, Any]:
+        """Returns the fully-rendered config of this model including default values."""
         return self.config_obj.to_dict()
 
     @config.setter
     def config(self, user_config: Dict[str, Any]):
+        """Updates the config of this model.
+
+        WARNING: this can have unexpected results on an already trained model.
+        """
         self._user_config = user_config
         self.config_obj = ModelConfig.from_dict(self._user_config)
 
