@@ -401,10 +401,11 @@ class RayTuneExecutor:
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        if best_model.config_dict[TRAINER]["eval_batch_size"]:
-            batch_size = best_model.config_dict[TRAINER]["eval_batch_size"]
+        config = best_model.config
+        if config[TRAINER]["eval_batch_size"]:
+            batch_size = config[TRAINER]["eval_batch_size"]
         else:
-            batch_size = best_model.config_dict[TRAINER]["batch_size"]
+            batch_size = config[TRAINER]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
