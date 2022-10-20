@@ -76,7 +76,7 @@ class ModinEngine(DataFrameEngine):
 
     def read_predictions(self, path: str) -> pd.DataFrame:
         pred_df = pd.read_parquet(path)
-        column_shapes = load_json(os.path.join(os.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
+        column_shapes = load_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
         return unflatten_df(pred_df, column_shapes, self)
 
     def to_ray_dataset(self, df):

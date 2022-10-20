@@ -231,7 +231,7 @@ class DaskEngine(DataFrameEngine):
         if not _ray200:
             # fallback to slow unflatten_df
             pred_df = dd.read_parquet(path)
-            column_shapes = load_json(os.path.join(os.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
+            column_shapes = load_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
             return unflatten_df(pred_df, column_shapes, self)
 
         fs, path = get_fs_and_path(path)
