@@ -324,32 +324,21 @@ class Trainer(BaseTrainer):
 
     def train_for_tuning(
         self,
-        dataset,
         batch_size: int,
         total_steps: int = 3,
     ):
         """Function to be used by tune_batch_size."""
         self.model.train()  # Sets model training mode.
-        with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
-
-            step_count = 0
-            while not batcher.last_batch() and step_count < total_steps:
-                batch = batcher.next_batch()
-                inputs = {
-                    i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                        self.device
-                    )
-                    for i_feat in self.model.input_features.values()
-                }
-                targets = {
-                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                        self.device
-                    )
-                    for o_feat in self.model.output_features.values()
-                }
-
-                self.train_step(inputs, targets)
-                step_count += 1
+        for _ in range(total_steps):
+            inputs = {
+                input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
+                for input_feature_name, input_feature in self.model.input_features.items()
+            }
+            targets = {
+                output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(self.device)
+                for output_feature_name, output_feature in self.model.output_features.items()
+            }
+            self.train_step(inputs, targets)
         return self.model
 
     def tune_learning_rate(
@@ -510,7 +499,7 @@ class Trainer(BaseTrainer):
                     gc.collect()
 
                     try:
-                        self.train_for_tuning(training_set, batch_size, total_steps=3)
+                        self.train_for_tuning(batch_size, total_steps=3)
                         best_batch_size = batch_size
                         count += 1
 
