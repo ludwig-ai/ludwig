@@ -45,6 +45,7 @@ from ludwig.utils.data_utils import (
     replace_file_extension,
 )
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.types import DataFrame
@@ -293,10 +294,13 @@ def _extract_ground_truth_values(
 def _get_cols_from_predictions(predictions_paths, cols, metadata):
     results_per_model = []
     for predictions_path in predictions_paths:
-        shapes_fname = replace_file_extension(predictions_path, "shapes.json")
-        column_shapes = load_json(shapes_fname)
         pred_df = pd.read_parquet(predictions_path)
-        pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+
+        shapes_fname = replace_file_extension(predictions_path, "shapes.json")
+        if path_exists(shapes_fname):
+            column_shapes = load_json(shapes_fname)
+            pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND.df_engine)
+
         for col in cols:
             # Convert categorical features back to indices
             if col.endswith(_PREDICTIONS_SUFFIX):

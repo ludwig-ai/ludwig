@@ -1,9 +1,10 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from ludwig.constants import DASK_MODULE_NAME
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.types import DataFrame
 
 
@@ -25,42 +26,31 @@ def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  
     return False
 
 
-def _get_shapes(row: pd.Series) -> Dict[str, Any]:
-    return {k: np.array(v).shape for k, v in row.items()}
-
-
-def _flatten(df_part: pd.DataFrame) -> pd.Series:
-    for c in df_part.columns:
-        df_part[c] = df_part[c].map(lambda x: np.array(x).reshape(-1))
-    return df_part
-
-
-def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
+def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
-    df = backend.df_engine.persist(df)
-    shapes_per_row = backend.df_engine.apply_objects(df, lambda row: _get_shapes(row))
+    column_shapes = {}
+    for c in df.columns:
+        df = df_engine.persist(df)
+        shape = df_engine.compute(
+            df_engine.map_objects(
+                df[c],
+                lambda x: np.array(x).shape,
+            ).max()
+        )
 
-    def reduce_fn(series):
-        merged_shapes = None
-        for shapes in series:
-            if merged_shapes is None:
-                merged_shapes = shapes.copy()
-            else:
-                merged_shapes = {k: max(v1, v2) for (k, v1), (_, v2) in zip(merged_shapes.items(), shapes.items())}
-        return merged_shapes
-
-    column_shapes = backend.df_engine.reduce_objects(shapes_per_row, reduce_fn)
-    df = backend.df_engine.map_partitions(df, lambda x: _flatten(x))
+        if len(shape) > 1:
+            column_shapes[c] = shape
+            df[c] = df_engine.map_objects(df[c], lambda x: np.array(x).reshape(-1))
     return df, column_shapes
 
 
-def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], backend: "Backend") -> DataFrame:  # noqa: F821
+def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], df_engine: DataFrameEngine) -> DataFrame:  # noqa: F821
     """Returns an unflattened dataframe, the reverse of flatten_df."""
     for c in df.columns:
         shape = column_shapes.get(c)
         if shape:
-            df[c] = backend.df_engine.map_objects(df[c], lambda x: np.array(x).reshape(shape))
+            df[c] = df_engine.map_objects(df[c], lambda x: np.array(x).reshape(shape))
     return df
 
 

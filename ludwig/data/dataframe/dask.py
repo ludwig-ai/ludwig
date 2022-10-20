@@ -20,11 +20,16 @@ from typing import Dict
 import dask
 import dask.array as da
 import dask.dataframe as dd
+import pandas as pd
 from dask.diagnostics import ProgressBar
+from pyarrow.fs import FSSpecHandler, PyFileSystem
+from ray.data import read_parquet
+from ray.data.extensions import TensorArray
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.data_utils import get_pa_schema, split_by_slices
 from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.utils.fs_utils import get_fs_and_path
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
@@ -194,6 +199,25 @@ class DaskEngine(DataFrameEngine):
                 write_index=index,
                 schema=schema,
             )
+
+    def write_predictions(self, df: dd.DataFrame, path: str):
+        ds = self.to_ray_dataset(df)
+
+        def to_tensors(batch: pd.DataFrame) -> pd.DataFrame:
+            data = {}
+            for c in batch.columns:
+                data[c] = TensorArray(batch[c])
+            return pd.DataFrame(data)
+
+        ds = ds.map_batches(to_tensors)
+
+        fs, path = get_fs_and_path(path)
+        ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+
+    def read_predictions(self, path: str) -> dd.DataFrame:
+        fs, path = get_fs_and_path(path)
+        ds = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+        return self.from_ray_dataset(ds)
 
     def to_ray_dataset(self, df):
         from ray.data import from_dask

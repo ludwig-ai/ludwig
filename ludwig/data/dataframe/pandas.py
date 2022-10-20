@@ -13,11 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
+
 import numpy as np
 import pandas as pd
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import split_by_slices
+from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
+from ludwig.utils.data_utils import load_json, save_json, split_by_slices
+from ludwig.utils.dataframe_utils import flatten_df, unflatten_df
 
 
 class PandasEngine(DataFrameEngine):
@@ -66,6 +70,16 @@ class PandasEngine(DataFrameEngine):
 
     def to_parquet(self, df, path, index=False):
         df.to_parquet(path, engine="pyarrow", index=index)
+
+    def write_predictions(self, df: pd.DataFrame, path: str):
+        df, column_shapes = flatten_df(df, self)
+        self.to_parquet(df, path)
+        save_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
+
+    def read_predictions(self, path: str) -> pd.DataFrame:
+        pred_df = pd.read_parquet(path)
+        column_shapes = load_json(os.path.join(os.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
+        return unflatten_df(pred_df, column_shapes, self)
 
     def to_ray_dataset(self, df):
         from ray.data import from_pandas
