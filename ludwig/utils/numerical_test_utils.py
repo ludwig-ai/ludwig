@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # Copyright (c) 2022 Predibase, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +37,7 @@ def _enumerable(x):
 
 
 def assert_all_finite(x: Any, keypath=""):
-    """Ensures that all scalars at all levels of the dictionary, list, tensor, or scalar are finite.
+    """Ensures that all scalars at all levels of the dictionary, list, array, or scalar are finite.
 
     keypath is only used for logging error messages, to indicate where the non-finite value was detected.
     """
@@ -57,7 +56,7 @@ def assert_all_finite(x: Any, keypath=""):
         for k, v in dict(x).items():
             assert_all_finite(v, keypath=keypath + "." + str(k) if keypath else str(k))
     elif _enumerable(x):
-        # x is a list, set, or other enumerable type, but not a string or dict.
+        # x is a list, set or other enumerable type, but not a string, dict, or numpy array.
         for i, v in enumerate(x):
             assert_all_finite(v, keypath=keypath + f"[{i}]")
     else:
