@@ -6,9 +6,9 @@ import torch
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+import ludwig.schema.utils as schema_utils
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, INTERNAL_ONLY
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
-import ludwig.schema.utils as schema_utils
 from ludwig.utils.registry import Registry
 
 optimizer_registry = Registry()
@@ -45,9 +45,7 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
        result in a `ValidationError`."""
 
     lr: float = schema_utils.NonNegativeFloat(
-        default=1e-03,
-        description="Learning rate.",
-        parameter_metadata=INTERNAL_ONLY
+        default=1e-03, description="Learning rate.", parameter_metadata=INTERNAL_ONLY
     )
 
 
@@ -228,7 +226,9 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 
     weight_decay: float = schema_utils.FloatRange(default=0, description="Weight decay ($L2$ penalty).")
 
-    eps: float = schema_utils.FloatRange(default=1e-10, description="Term added to the denominator to improve numerical stability.")
+    eps: float = schema_utils.FloatRange(
+        default=1e-10, description="Term added to the denominator to improve numerical stability."
+    )
 
 
 @register_optimizer(name="adamax")
@@ -468,7 +468,10 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
             return {
                 "oneOf": [
                     {"type": "null", "title": "disabled", "description": "Disable gradient clipping."},
-                    {**schema_utils.unload_jsonschema_from_marshmallow_class(GradientClippingConfig), "title": "enabled_options"},
+                    {
+                        **schema_utils.unload_jsonschema_from_marshmallow_class(GradientClippingConfig),
+                        "title": "enabled_options",
+                    },
                 ],
                 "title": "gradient_clipping_options",
                 "description": description,
