@@ -52,7 +52,7 @@ from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayData
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
@@ -68,10 +68,11 @@ logger = logging.getLogger(__name__)
 
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0.0")
 if _ray_200:
-    from ray.air.config import ScalingConfig
+    from ray.air.config import ScalingConfig, DatasetConfig
     from ray.train.horovod import HorovodTrainer
 else:
     ScalingConfig = None
+    DatasetConfig = None
     HorovodTrainer = None
 
 
@@ -367,13 +368,19 @@ class RayAirRunner:
         self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
 
     def run(
-        self, train_loop_per_worker: Callable, config: Dict[str, Any], callbacks: List[Any], dataset: Dict[str, Any]
+        self,
+        train_loop_per_worker: Callable,
+        config: Dict[str, Any],
+        callbacks: List[Any],
+        dataset: Dict[str, Any],
+        dataset_config: Dict[str, DatasetConfig],
     ) -> List[Any]:
         trainer = HorovodTrainer(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
             datasets=dataset,
             scaling_config=self.scaling_config,
+            dataset_config=dataset_config,
         )
         return trainer.fit()
 
@@ -414,19 +421,31 @@ class RayTrainerV2(BaseTrainer):
             **kwargs,
         }
 
-        dataset = {"train": training_set.pipeline(**self.data_loader_kwargs)}
+        fully_executed = self.data_loader_kwargs.pop("fully_executed", True)
+
+        dataset = {"train": training_set.set_fully_execucted(fully_executed)}
+        dataset_config = {"train": DatasetConfig(**training_set.get_dataset_config(**self.data_loader_kwargs))}
         if validation_set is not None:
-            dataset["val"] = validation_set.pipeline(shuffle=False, **self.data_loader_kwargs)
+            dataset["val"] = validation_set.set_fully_execucted(fully_executed)
+            dataset_config["val"] = DatasetConfig(
+                **validation_set.get_dataset_config(**self.data_loader_kwargs, shuffle=False)
+            )
         if test_set is not None:
-            dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
+            dataset["test"] = test_set.set_fully_execucted(fully_executed)
+            dataset_config["test"] = DatasetConfig(
+                **test_set.get_dataset_config(**self.data_loader_kwargs, shuffle=False)
+            )
 
         with create_runner(**self.trainer_kwargs) as runner:
-            results, self._validation_field, self._validation_metric = runner.run(
+            results = runner.run(
                 lambda config: train_fn(**config),
                 config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
-            )[0]
+                dataset_config=dataset_config,
+            )  # [0]
+            # , self._validation_field, self._validation_metric
+            print(results)
 
         # load state dict back into the model
         state_dict, *args = results
