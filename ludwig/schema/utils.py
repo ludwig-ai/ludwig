@@ -1,9 +1,11 @@
+import copy
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Tuple, Type, Union
 
+import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
@@ -33,19 +35,12 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD, TYPE
+    from ludwig.constants import MODEL_ECD
     from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 
     trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 
-    def default_type_for_trainer_schema(cls):
-        """Returns the default values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].dump_default
-
-    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
-    kwargs_with_type = {**{TYPE: default_type_for_trainer_schema(trainer_schema)}, **kwargs}
-
-    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+    return load_config_with_kwargs(trainer_schema, kwargs)
 
 
 def load_config_with_kwargs(
@@ -63,11 +58,36 @@ def load_config_with_kwargs(
     }
 
 
+def convert_submodules(config_dict: dict) -> TDict[str, any]:
+    """Helper function for converting submodules to dictionaries during a config object to dict transformation.
+
+    Args:
+        config_dict: Top level config dictionary with un-converted submodules
+
+    Returns:
+        The fully converted config dictionary
+    """
+    output_dict = copy.deepcopy(config_dict)
+
+    for k, v in output_dict.items():
+        if isinstance(v, dict):
+            convert_submodules(v)
+
+        elif isinstance(v, BaseMarshmallowConfig):
+            output_dict[k] = v.to_dict()
+            convert_submodules(output_dict[k])
+
+        else:
+            continue
+
+    return output_dict
+
+
 def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
-        "then": {"properties": {k: v for k, v in then_pred.items()}},
+        "then": {"properties": then_pred},
     }
 
 
@@ -87,12 +107,18 @@ class BaseMarshmallowConfig:
         unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
+        ordered = True
+        "Flag that maintains the order of defined parameters in the schema"
+
     def to_dict(self):
         """Method for getting a dictionary representation of this dataclass.
 
         Returns: dict for this dataclass
         """
-        return self.__dict__
+        return convert_submodules(self.__dict__)
+
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
 
 
 def assert_is_a_marshmallow_class(cls):
@@ -104,7 +130,7 @@ def assert_is_a_marshmallow_class(cls):
 def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
     schema["additionalProperties"] = additional_properties
     return schema
 
@@ -532,8 +558,8 @@ def Dict(
 def List(
     list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
     default: Union[None, TList[Any]] = None,
-    description: str = "",
     allow_none: bool = True,
+    description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""

@@ -174,7 +174,7 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     training_set_metadata_json_fp = os.path.join(ludwigmodel_path, TRAIN_SET_METADATA_FILE_NAME)
 
     dataset, training_set_metadata = preprocess_for_prediction(
-        ludwig_model.config,
+        ludwig_model.config_obj.to_dict(),
         dataset=data_csv_path,
         training_set_metadata=training_set_metadata_json_fp,
         include_outputs=False,
@@ -466,7 +466,7 @@ def test_torchscript_preproc_vector_alternative_type(tmpdir, csv_filename, vecto
 
     # Obtain preprocessed inputs from Python model
     preproc_inputs_expected, _ = preprocess_for_prediction(
-        ludwig_model.config,
+        ludwig_model.config_obj.to_dict(),
         training_data_csv_path,
         ludwig_model.training_set_metadata,
         backend=backend,
@@ -526,7 +526,7 @@ def test_torchscript_preproc_timeseries_alternative_type(tmpdir, csv_filename, p
 
     # Obtain preprocessed inputs from Python model
     preproc_inputs_expected, _ = preprocess_for_prediction(
-        ludwig_model.config,
+        ludwig_model.config_obj.to_dict(),
         training_data_csv_path,
         ludwig_model.training_set_metadata,
         backend=backend,
@@ -591,7 +591,7 @@ def test_torchscript_preproc_with_nans(tmpdir, csv_filename, feature):
 
     # Obtain preprocessed inputs from Python model
     preproc_inputs_expected, _ = preprocess_for_prediction(
-        ludwig_model.config,
+        ludwig_model.config_obj.to_dict(),
         training_data_csv_path,
         ludwig_model.training_set_metadata,
         backend=backend,

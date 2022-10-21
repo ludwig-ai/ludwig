@@ -59,7 +59,7 @@ from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayData
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
@@ -375,7 +375,7 @@ def create_runner(**kwargs):
         trainer.shutdown()
 
 
-@register_ray_trainer("trainer", MODEL_ECD, default=True)
+@register_ray_trainer(MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
@@ -564,7 +564,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
         super().__init__(horovod=horovod, **kwargs)
 
 
-@register_ray_trainer("ray_legacy_trainer", MODEL_ECD)
+@register_ray_trainer("ecd_ray_legacy")
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
@@ -891,10 +891,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
-            trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
-
-            config: Union[ECDTrainerConfig, GBMTrainerConfig] = kwargs["config"]
-            trainer_cls = get_from_registry(config.type, trainers_for_model)
+            trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
 
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
             all_kwargs = {

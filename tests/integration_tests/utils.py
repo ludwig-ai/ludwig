@@ -500,8 +500,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum"),
-        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}),
+        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum", output_feature=True),
+        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}, output_feature=True),
         number_feature(),
     ]
 

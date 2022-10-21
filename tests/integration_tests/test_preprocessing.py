@@ -111,7 +111,7 @@ def test_with_split(backend, csv_filename, tmpdir, ray_cluster_2cpu):
         "trainer": {
             "epochs": 2,
         },
-        "preprocessing": {"split": {"type": "fixed"}},
+        "preprocessing": {"split": {"type": "fixed", "column": "split"}},
     }
 
     model = LudwigModel(config, backend=backend)
@@ -156,7 +156,7 @@ def test_drop_empty_partitions(csv_filename, tmpdir, ray_cluster_2cpu):
     import dask.dataframe as dd
 
     input_features = [image_feature(os.path.join(tmpdir, "generated_output"))]
-    output_features = [category_feature(vocab_size=5, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=5, reduce_input="sum", output_feature=True)]
 
     # num_examples and npartitions set such that each post-split DataFrame has >1 samples, but empty partitions.
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=25)

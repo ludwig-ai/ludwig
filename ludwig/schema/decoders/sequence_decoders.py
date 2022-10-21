@@ -8,7 +8,7 @@ from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
 @register_decoder_config("generator", [SEQUENCE, TEXT])
-@dataclass
+@dataclass(repr=False)
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -59,7 +59,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
 
 @register_decoder_config("tagger", [SEQUENCE, TEXT])
-@dataclass
+@dataclass(repr=False)
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
 
     type: str = schema_utils.StringOptions(

@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import SET, SIGMOID_CROSS_ENTROPY
+from ludwig.constants import JACCARD, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -17,6 +17,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -63,6 +64,13 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 @dataclass(repr=False)
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [JACCARD],
+        default=JACCARD,
+        description="Internal only use parameter: default validation metric for set output feature.",
+        parameter_metadata=INTERNAL_ONLY,
+    )
 
     dependencies: list = schema_utils.List(
         default=[],

@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
+from ludwig.constants import LOSS, SEQUENCE_SOFTMAX_CROSS_ENTROPY, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -17,6 +17,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -69,6 +70,13 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [LOSS],
+        default=LOSS,
+        description="Internal only use parameter: default validation metric for binary output feature.",
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(

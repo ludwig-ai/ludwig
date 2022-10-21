@@ -47,8 +47,8 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
         # binary feature
         (binary_feature(), binary_feature(), None),
         # Categorical feature
-        (category_feature(), category_feature(), None),
-        (category_feature(), category_feature(), {"loss": {"type": "softmax_cross_entropy"}}),
+        (category_feature(), category_feature(output_feature=True), None),
+        (category_feature(), category_feature(output_feature=True), {"loss": {"type": "softmax_cross_entropy"}}),
     ],
 )
 def test_feature(input_test_feature, output_test_feature, output_loss_parameter, csv_filename):

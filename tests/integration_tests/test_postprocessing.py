@@ -23,7 +23,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, NAME, TRAINER
+from ludwig.constants import DECODER, NAME, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -176,7 +176,7 @@ def test_set_feature_saving(tmpdir, pct_positive):
         text_feature(encoder={"vocab_size": 3}),
     ]
 
-    feature = set_feature()
+    feature = set_feature(output_feature=True)
     output_features = [
         feature,
     ]
@@ -196,7 +196,7 @@ def test_set_feature_saving(tmpdir, pct_positive):
         partial(
             random_set_logits,
             num_predict_samples=len(data_df),
-            vocab_size=feature[ENCODER]["vocab_size"] + 1,  # +1 for UNK
+            vocab_size=feature[DECODER]["vocab_size"] + 1,  # +1 for UNK
             pct_positive=pct_positive,
         ),
     )

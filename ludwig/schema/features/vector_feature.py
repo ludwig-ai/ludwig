@@ -17,6 +17,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -67,6 +68,13 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConf
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [MEAN_SQUARED_ERROR],
+        default=MEAN_SQUARED_ERROR,
+        description="Internal only use parameter: default validation metric for binary output feature.",
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="vector_output")

@@ -33,9 +33,9 @@ TestCase = namedtuple("TestCase", "output_features validation_metrics")
             ],
         ),
         TestCase([binary_feature()], ["loss", "accuracy"]),
-        TestCase([category_feature()], ["loss", "accuracy", "hits_at_k"]),
+        TestCase([category_feature(output_feature=True)], ["loss", "accuracy", "hits_at_k"]),
         TestCase(
-            [text_feature()],
+            [text_feature(output_feature=True)],
             ["loss", "token_accuracy"],
         ),
     ],
@@ -89,7 +89,10 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
 # test for multiple output features
 @pytest.mark.parametrize(
     "test_case",
-    [TestCase([number_feature(), number_feature()], []), TestCase([category_feature(), number_feature()], [])],
+    [
+        TestCase([number_feature(), number_feature()], []),
+        TestCase([category_feature(output_feature=True), number_feature()], []),
+    ],
 )
 def test_validation_metrics_mulitiple_output(test_case: TestCase, csv_filename: str):
     test_validation_metrics(test_case, csv_filename)

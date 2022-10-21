@@ -9,6 +9,8 @@ import torch
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BFILL, PROC_COLUMN
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
+from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 
@@ -42,6 +44,7 @@ def test_audio_input_feature(encoder: str) -> None:
         },
     }
 
+    audio_config, _ = load_config_with_kwargs(AudioInputFeatureConfig, audio_config)
     audio_input_feature = AudioInputFeature(audio_config)
 
     audio_tensor = torch.randn([BATCH_SIZE, SEQ_SIZE, AUDIO_W_SIZE], dtype=torch.float32).to(DEVICE)

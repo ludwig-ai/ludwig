@@ -59,7 +59,7 @@ from ludwig.utils.image_utils import (
     resize_image,
     torchvision_model_registry,
 )
-from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -134,10 +134,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return IMAGE
-
-    @staticmethod
-    def preprocessing_defaults():
-        return ImageInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -557,8 +553,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[ImageInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: ImageInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -596,7 +591,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         defaults = ImageInputFeatureConfig()
         set_default_value(input_feature, TIED, defaults.tied)
         set_default_value(input_feature, PREPROCESSING, {})
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+        set_default_value(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():

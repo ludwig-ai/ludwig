@@ -7,7 +7,7 @@ from ludwig.schema.encoders.utils import register_encoder_config
 
 
 @register_encoder_config("passthrough", BINARY)
-@dataclass
+@dataclass(repr=False)
 class BinaryPassthroughEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(

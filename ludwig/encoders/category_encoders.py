@@ -22,9 +22,42 @@ from ludwig.constants import CATEGORY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
-from ludwig.schema.encoders.category_encoders import CategoricalEmbedConfig, CategoricalSparseConfig
+from ludwig.schema.encoders.category_encoders import (
+    CategoricalEmbedConfig,
+    CategoricalPassthroughEncoderConfig,
+    CategoricalSparseConfig,
+)
 
 logger = logging.getLogger(__name__)
+
+
+@register_encoder("passthrough", [CATEGORY])
+class CategoricalPassthroughEncoder(Encoder):
+    def __init__(self, input_size=1, encoder_config=None, **kwargs):
+        super().__init__()
+        self.config = encoder_config
+
+        logger.debug(f" {self.name}")
+        self.input_size = input_size
+
+    def forward(self, inputs, mask=None):
+        """
+        :param inputs: The inputs fed into the encoder.
+               Shape: [batch x 1]
+        """
+        return inputs.float()
+
+    @staticmethod
+    def get_schema_cls():
+        return CategoricalPassthroughEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size([self.input_size])
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.input_shape
 
 
 @register_encoder("dense", CATEGORY)

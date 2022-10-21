@@ -1,16 +1,18 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
 
 from ludwig.combiners.combiners import Combiner
-from ludwig.constants import COMBINED, LOSS, NAME, TIED, TYPE
+from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.features.base_feature import InputFeature, OutputFeature
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
+from ludwig.schema.model_config import InputFeaturesContainer, OutputFeaturesContainer
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
 from ludwig.utils.misc_utils import get_from_registry
@@ -47,54 +49,58 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         self.output_features = LudwigFeatureDict()
 
     @classmethod
-    def build_inputs(cls, input_features_def: List[Dict[str, Any]]) -> Dict[str, InputFeature]:
+    def build_inputs(cls, input_feature_configs: InputFeaturesContainer) -> Dict[str, InputFeature]:
         """Builds and returns input features in topological order."""
         input_features = OrderedDict()
-        input_features_def = topological_sort_feature_dependencies(input_features_def)
+        input_features_def = topological_sort_feature_dependencies(input_feature_configs.to_list())
         for input_feature_def in input_features_def:
-            input_features[input_feature_def[NAME]] = cls.build_single_input(input_feature_def, input_features)
+            input_features[input_feature_def[NAME]] = cls.build_single_input(
+                getattr(input_feature_configs, input_feature_def[NAME]), input_features
+            )
         return input_features
 
     @staticmethod
     def build_single_input(
-        input_feature_def: Dict[str, Any], other_input_features: Optional[Dict[str, InputFeature]]
+        feature_config: BaseInputFeatureConfig, other_input_features: Optional[Dict[str, InputFeature]]
     ) -> InputFeature:
         """Builds a single input feature from the input feature definition."""
-        logger.debug(f"Input {input_feature_def[TYPE]} feature {input_feature_def[NAME]}")
+        logger.debug(f"Input {feature_config.type} feature {feature_config.name}")
 
         encoder_obj = None
-        if input_feature_def.get(TIED, None) is not None:
-            tied_input_feature_name = input_feature_def[TIED]
+        if feature_config.tied is not None:
+            tied_input_feature_name = feature_config.tied
             if tied_input_feature_name in other_input_features:
                 encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
-        input_feature_class = get_from_registry(input_feature_def[TYPE], input_type_registry)
-        input_feature_obj = input_feature_class(input_feature_def, encoder_obj=encoder_obj)
+        input_feature_class = get_from_registry(feature_config.type, input_type_registry)
+        input_feature_obj = input_feature_class(feature_config, encoder_obj=encoder_obj)
         return input_feature_obj
 
     @classmethod
-    def build_outputs(cls, output_features_def: List[Dict[str, Any]], combiner: Combiner) -> Dict[str, OutputFeature]:
+    def build_outputs(
+        cls, output_feature_configs: OutputFeaturesContainer, combiner: Combiner
+    ) -> Dict[str, OutputFeature]:
         """Builds and returns output features in topological order."""
-        output_features_def = topological_sort_feature_dependencies(output_features_def)
+        output_features_def = topological_sort_feature_dependencies(output_feature_configs.to_list())
         output_features = {}
 
         for output_feature_def in output_features_def:
             # TODO(Justin): Check that the semantics of input_size align with what the combiner's output shape returns
             # for seq2seq.
-            output_feature_def["input_size"] = combiner.output_shape[-1]
-            output_feature = cls.build_single_output(output_feature_def, output_features)
-            output_features[output_feature_def[NAME]] = output_feature
-
+            setattr(getattr(output_feature_configs, output_feature_def[NAME]), "input_size", combiner.output_shape[-1])
+            output_features[output_feature_def[NAME]] = cls.build_single_output(
+                getattr(output_feature_configs, output_feature_def[NAME]), output_features
+            )
         return output_features
 
     @staticmethod
     def build_single_output(
-        output_feature_def: Dict[str, Any], output_features: Optional[Dict[str, OutputFeature]]
+        feature_config: BaseOutputFeatureConfig, output_features: Optional[Dict[str, OutputFeature]]
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
-        logger.debug(f"Output {output_feature_def[TYPE]} feature {output_feature_def[NAME]}")
-        output_feature_class = get_from_registry(output_feature_def[TYPE], output_type_registry)
-        output_feature_obj = output_feature_class(output_feature_def, output_features=output_features)
+        logger.debug(f"Output {feature_config.type} feature {feature_config.name}")
+        output_feature_class = get_from_registry(feature_config.type, output_type_registry)
+        output_feature_obj = output_feature_class(feature_config, output_features=output_features)
         return output_feature_obj
 
     def get_model_inputs(self):

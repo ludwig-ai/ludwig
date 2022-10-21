@@ -17,7 +17,7 @@ import logging
 
 import torch
 
-from ludwig.constants import BINARY, CATEGORY, NUMBER, VECTOR
+from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.fully_connected_modules import FCStack
@@ -26,7 +26,7 @@ from ludwig.schema.encoders.base import DenseEncoderConfig, PassthroughEncoderCo
 logger = logging.getLogger(__name__)
 
 
-@register_encoder("passthrough", [CATEGORY, NUMBER, VECTOR])
+@register_encoder("passthrough", [NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
     def __init__(self, input_size=1, encoder_config=None, **kwargs):
         super().__init__()
