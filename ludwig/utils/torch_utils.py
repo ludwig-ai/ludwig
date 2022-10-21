@@ -2,6 +2,7 @@ import math
 import os
 import warnings
 from abc import abstractmethod
+from functools import lru_cache
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -9,14 +10,6 @@ from torch import nn
 from torch.nn import Module, ModuleDict
 
 from ludwig.utils.strings_utils import SpecialSymbol
-
-try:
-    # Python 3.8 and above only
-    from functools import cached_property
-except ImportError:
-    # Fallback to normal property instead
-    cached_property = property
-
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
 
@@ -201,9 +194,9 @@ class LudwigModule(Module):
     @property
     def output_shape(self) -> torch.Size:
         """Returns size of the output tensor without the batch dimension."""
-        return self._computed_output_shape
+        return self._computed_output_shape()
 
-    @cached_property
+    @lru_cache(maxsize=1)
     def _computed_output_shape(self) -> torch.Size:
         dummy_input = torch.rand(2, *self.input_shape, device=self.device)
         output_tensor = self.forward(dummy_input.type(self.input_dtype))

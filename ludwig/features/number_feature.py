@@ -316,6 +316,9 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def get_schema_cls():
         return NumberInputFeatureConfig
 
+    def create_sample_input(self, batch_size: int = 2):
+        return torch.rand([batch_size])
+
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "float32"

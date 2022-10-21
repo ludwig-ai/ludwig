@@ -240,7 +240,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return BinaryInputFeatureConfig
 
     def create_sample_input(self, batch_size: int = 2):
-        return torch.rand([batch_size, 1]) > 0.5
+        return torch.rand([batch_size]) > 0.5
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:

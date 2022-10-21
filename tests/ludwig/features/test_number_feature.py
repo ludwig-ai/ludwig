@@ -35,7 +35,7 @@ def test_number_input_feature(
 
     # check one forward pass through input feature
     input_tensor = input_feature_obj.create_sample_input(batch_size=BATCH_SIZE)
-    assert input_tensor.shape == torch.Size((BATCH_SIZE, 1))
+    assert input_tensor.shape == torch.Size([BATCH_SIZE])
     assert input_tensor.dtype == torch.float32
 
     encoder_output = input_feature_obj(input_tensor)
