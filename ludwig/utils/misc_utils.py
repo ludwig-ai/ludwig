@@ -156,13 +156,15 @@ def get_proc_features_from_lists(*args):
 
 
 def set_saved_weights_in_checkpoint_flag(config_obj):
-    """Adds a flag to all input features indicating that the weights are saved in the checkpoint.
+    """Adds a flag to all input feature encoder configs indicating that the weights are saved in the checkpoint.
 
     Next time the model is loaded we will restore pre-trained encoder weights from ludwig model (and not load from cache
     or model hub).
     """
     for input_feature in config_obj.input_features.to_list():
-        setattr(getattr(config_obj.input_features, input_feature[NAME]), "saved_weights_in_checkpoint", True)
+        input_feature_name = input_feature[NAME]
+        encoder_obj = config_obj.input_features.get(input_feature_name).encoder
+        encoder_obj.saved_weights_in_checkpoint = True
 
 
 def remove_empty_lines(str):

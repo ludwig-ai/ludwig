@@ -293,16 +293,16 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        self.config_dict = config_dict
+        self._user_config = config_dict
 
         # Initialize the config object
-        self.config_obj = ModelConfig.from_dict(self.config_dict)
+        self.config_obj = ModelConfig.from_dict(self._user_config)
 
         # setup logging
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self.config_dict.get("backend"))
+        self.backend = initialize_backend(backend or self._user_config.get("backend"))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
@@ -428,7 +428,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        if HYPEROPT in self.config_dict:
+        if HYPEROPT in self._user_config:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
 
@@ -560,7 +560,7 @@ class LudwigModel:
 
             for callback in self.callbacks:
                 callback.on_train_init(
-                    base_config=self.config_dict,
+                    base_config=self._user_config,
                     experiment_directory=output_directory,
                     experiment_name=experiment_name,
                     model_name=model_name,
@@ -1180,7 +1180,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
-        if HYPEROPT in self.config_dict:
+        if HYPEROPT in self._user_config:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
 
@@ -1611,7 +1611,7 @@ class LudwigModel:
         )
 
     def _check_initialization(self):
-        if self.model is None or self.config_dict is None or self.training_set_metadata is None:
+        if self.model is None or self._user_config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
@@ -1648,6 +1648,20 @@ class LudwigModel:
             set_disable_progressbar(True)
         else:
             set_disable_progressbar(False)
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Returns the fully-rendered config of this model including default values."""
+        return self.config_obj.to_dict()
+
+    @config.setter
+    def config(self, user_config: Dict[str, Any]):
+        """Updates the config of this model.
+
+        WARNING: this can have unexpected results on an already trained model.
+        """
+        self._user_config = user_config
+        self.config_obj = ModelConfig.from_dict(self._user_config)
 
 
 def kfold_cross_validate(
