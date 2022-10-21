@@ -4,8 +4,6 @@ from ludwig.schema import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature
 
 
-# TODO: remove skip
-@pytest.mark.skip("temporary skip til schema validation requirements confirmed")
 def test_config_preprocessing():
     input_features = [category_feature(), category_feature()]
     output_features = [binary_feature()]
