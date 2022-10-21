@@ -177,13 +177,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["should_shuffle"],
     )
 
-    reduce_learning_rate_on_plateau: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
+    reduce_learning_rate_on_plateau: int = schema_utils.NonNegativeInteger(
+        default=0,
         description=(
-            "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does "
-            "not improve."
+            "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the"
+            "training set does not improve"
         ),
         parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau"],
     )
