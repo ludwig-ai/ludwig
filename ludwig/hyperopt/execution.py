@@ -401,10 +401,11 @@ class RayTuneExecutor:
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        if best_model.config_dict[TRAINER]["eval_batch_size"]:
-            batch_size = best_model.config_dict[TRAINER]["eval_batch_size"]
+        config = best_model.config
+        if config[TRAINER]["eval_batch_size"]:
+            batch_size = config[TRAINER]["eval_batch_size"]
         else:
-            batch_size = best_model.config_dict[TRAINER]["batch_size"]
+            batch_size = config[TRAINER]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
@@ -450,6 +451,10 @@ class RayTuneExecutor:
         trial_dir = Path(tune.get_trial_dir())
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
+
+        # Write out the unmerged config with sampled hyperparameters to the trial's local directory.
+        with open(os.path.join(trial_dir, "trial_hyperparameters.json"), "w") as f:
+            json.dump(hyperopt_dict["config"], f)
 
         modified_config = ModelConfig.from_dict(modified_config).to_dict()
 
@@ -659,6 +664,7 @@ class RayTuneExecutor:
         gpu_memory_limit=None,
         allow_parallel_threads=True,
         callbacks=None,
+        tune_callbacks=None,
         backend=None,
         random_seed=default_random_seed,
         debug=False,
@@ -762,7 +768,6 @@ class RayTuneExecutor:
             )
 
         tune_config = {}
-        tune_callbacks = []
         for callback in callbacks or []:
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,

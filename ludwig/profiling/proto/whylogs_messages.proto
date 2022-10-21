@@ -1,0 +1,129 @@
+// A copy of whylogs/proto/src/whylogs_messages.proto from
+// https://github.com/whylabs/whylogs/blob/mainline/proto/src/whylogs_messages.proto
+//
+// To generate compiled proto code, run:
+//   (if protoc not installed yet)
+//   > sudo apt install protobuf-compiler
+//   > protoc --proto_path=. --python_out=. \
+//       ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
+//
+// Read more on proto compilation: https://developers.google.com/protocol-buffers/docs/reference/python-generated
+
+syntax = "proto3";
+
+package dataset_profile;
+import "google/protobuf/any.proto";
+
+import "google/protobuf/struct.proto";
+
+message DataType {
+  enum Type {
+    UNKNOWN = 0;
+    NULL = 1;
+    FRACTIONAL = 2;
+    INTEGRAL = 3;
+    BOOLEAN = 4;
+    STRING = 5;
+  }
+
+  Type type = 1;
+}
+
+message HllSketchMessage {
+  bytes sketch = 1;
+}
+
+message FrequentItemsSketchMessage {
+  bytes sketch = 1;
+}
+
+message KllSketchMessage {
+  bytes sketch = 1;
+}
+
+message CpcSketchMessage {
+  bytes sketch = 1;
+}
+
+message MetricComponentMessage {
+  uint32 type_id = 1; // type ID. It might determine how a field gets serder and the aggregation logic
+
+  oneof value {
+    // first class citizens
+    int64 n = 2;
+    double d = 3;
+    FrequentItemsSketchMessage frequent_items = 4;
+    HllSketchMessage hll = 5;
+    KllSketchMessage kll = 6;
+    CpcSketchMessage cpc = 7;
+
+    // extension points
+    bytes serialized_bytes = 10;
+    google.protobuf.Struct dataclass_param = 11;
+    google.protobuf.Any msg = 12;
+  }
+}
+
+message MetricMessage {
+  map<string, MetricComponentMessage> metric_components = 1;
+}
+
+message ColumnMessage {
+  map<string, MetricComponentMessage> metric_components = 1;
+}
+
+message DatasetProperties {
+  uint32 schema_major_version = 1;
+  uint32 schema_minor_version = 2;
+
+  uint64 creation_timestamp = 4;
+  uint64 dataset_timestamp = 5;
+  map<string, string> tags = 6;
+  map<string, string> metadata = 7;
+}
+
+message ChunkOffsets {
+  repeated uint64 offsets = 1;
+}
+
+message ChunkMessage {
+  map<uint32, MetricComponentMessage> metric_components = 1;
+}
+
+message ChunkHeader {
+  enum ChunkType {
+    DATASET = 0;
+    COLUMN = 2;
+  }
+  ChunkType type = 1;
+  string tag = 2;
+  uint32 length = 3;
+}
+
+message DatasetProfileHeader {
+  DatasetProperties properties = 1;
+  map<string, ChunkOffsets> column_offsets = 2;
+  repeated ChunkOffsets metric_offsets = 3;
+  uint64 length = 4; // total length of the rest of the data for this profile.
+  map<uint32, string> indexed_metric_paths = 5;
+}
+
+message SegmentTag {
+  string key = 1;
+  string value = 2;
+}
+
+message Segment {
+  repeated SegmentTag tags = 1;
+}
+
+message DatasetSegmentHeader {
+  // whether the file contains segmented data or not
+  bool has_segments = 1;
+
+  // list of segments
+  repeated Segment segments = 4;
+
+  // we want the indices of the map of offsets to have static size, and thus we use fixed32 bytes
+  map<uint32, uint64> offsets = 5;
+}

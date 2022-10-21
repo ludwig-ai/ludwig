@@ -684,7 +684,7 @@ def get_device_types_and_counts(
 def get_inference_modules(model: LudwigModel, predictor_device_type: str) -> List[torch.jit.ScriptModule]:
     """Return the three inference modules."""
     inference_module = InferenceModule.from_ludwig_model(
-        model.model, model.config_dict, model.training_set_metadata, device=predictor_device_type
+        model.model, model.config, model.training_set_metadata, device=predictor_device_type
     )
     return [inference_module.preprocessor, inference_module.predictor, inference_module.postprocessor]
 
@@ -696,13 +696,14 @@ def get_example_input(
 
     Generates a synthetic example if one is not provided.
     """
+    config = model.config
     if data_example is None:
-        features = model.config_dict["input_features"] + model.config_dict["output_features"]
+        features = config["input_features"] + config["output_features"]
         df = build_synthetic_dataset(dataset_size=1, features=features)
         data = [row for row in df]
         data_example = pd.DataFrame(data[1:], columns=data[0])
     return to_inference_module_input_from_dataframe(
-        data_example.head(1), model.config_dict, load_paths=True, device=device_types[0]
+        data_example.head(1), config, load_paths=True, device=device_types[0]
     )
 
 
@@ -764,7 +765,7 @@ def export_triton(
             model_name=model_name,
             output_path=output_path,
             model_version=model_version,
-            ludwig_config=model.config_dict,
+            ludwig_config=model.config,
             device=device_types[i],
             model_instance_count=instance_counts[i],
         )
