@@ -64,8 +64,6 @@ from ludwig.utils.trainer_utils import (
     ProgressTracker,
 )
 
-logger = logging.getLogger(__name__)
-
 
 @register_trainer(MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
@@ -353,7 +351,7 @@ class Trainer(BaseTrainer):
         early_stop_threshold: int = 3,
         beta: float = 0.98,
     ) -> float:
-        logger.info("Tuning learning rate...")
+        logging.info("Tuning learning rate...")
 
         learning_rate = self.base_learning_rate
 
@@ -381,7 +379,7 @@ class Trainer(BaseTrainer):
                 best_lr = learning_rates[best_lr_index]
                 return best_lr
             except Exception:
-                logger.exception("Failed to detect optimal learning rate")
+                logging.exception("Failed to detect optimal learning rate")
                 return None
 
         self.model.train()  # Sets model training mode.
@@ -418,7 +416,7 @@ class Trainer(BaseTrainer):
                     # store learning rate and loss
                     learning_rates.append(current_learning_rate)
                     losses.append(smoothed_loss.detach().cpu().numpy())
-                    logger.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
+                    logging.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
 
                     # check whether loss is diverging
                     if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
@@ -443,10 +441,13 @@ class Trainer(BaseTrainer):
         if optimal_lr:
             learning_rate = optimal_lr
         else:
-            logger.info("Could not determine optimal learning rate, falling back to base default")
+            logging.info("Could not determine optimal learning rate, falling back to base default")
 
-        logger.info(f"Selected learning_rate={learning_rate}")
+        logging.info(f"Selected learning_rate={learning_rate}")
         return learning_rate
+
+    def is_cpu_training(self):
+        return torch.device(self.device) == torch.device("cpu")
 
     def tune_batch_size(
         self,
@@ -456,10 +457,10 @@ class Trainer(BaseTrainer):
         max_trials: int = 20,
         halving_limit: int = 3,
     ) -> int:
-        logger.info("Tuning batch size...")
+        logging.info("Tuning batch size...")
 
-        if torch.device(self.device) == torch.device("cpu"):
-            logger.warn(
+        if self.is_cpu_training():
+            logging.warn(
                 f'Batch size tuning is not supported on CPU, setting batch size from "auto" to default value '
                 f"{DEFAULT_BATCH_SIZE}"
             )
@@ -473,7 +474,7 @@ class Trainer(BaseTrainer):
                 is_under_max_batch_size = batch_size <= self.max_batch_size
                 is_valid = is_smaller_than_training_set and is_under_max_batch_size
                 if not is_valid:
-                    logger.info(
+                    logging.info(
                         f"Batch size {batch_size} is invalid, must be smaller than training set size "
                         f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
                     )
@@ -495,7 +496,7 @@ class Trainer(BaseTrainer):
             try:
                 count = 0
                 while count < max_trials and _is_valid_batch_size(batch_size):
-                    logger.info(f"Exploring batch_size={batch_size}")
+                    logging.info(f"Exploring batch_size={batch_size}")
                     gc.collect()
 
                     try:
@@ -505,10 +506,14 @@ class Trainer(BaseTrainer):
 
                         # double batch size
                         batch_size *= 2
-                    except RuntimeError:
+                    except RuntimeError as e:
                         # PyTorch only generates Runtime errors for CUDA OOM.
                         gc.collect()
-                        logger.info(f"OOM at batch_size={batch_size}")
+                        if "CUDA out of memory" in str(e):
+                            logging.info(f"OOM at batch_size={batch_size}")
+                        else:
+                            # Not a CUDA error
+                            raise
                         break
             finally:
                 # Restore original parameters to defaults
@@ -516,7 +521,7 @@ class Trainer(BaseTrainer):
                 self.skip_save_progress = skip_save_progress
                 self.skip_save_log = skip_save_log
 
-        logger.info(f"Selected batch_size={best_batch_size}")
+        logging.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
 
     def run_evaluation(
@@ -549,7 +554,7 @@ class Trainer(BaseTrainer):
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
         if self.is_coordinator():
-            logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
+            logging.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
         # init tables
@@ -628,9 +633,9 @@ class Trainer(BaseTrainer):
         elapsed_time = (time.time() - start_time) * 1000.0
 
         if self.is_coordinator():
-            logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
+            logging.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+                logging.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # ================ Validation Logic ================
         should_break = False
@@ -693,7 +698,7 @@ class Trainer(BaseTrainer):
                 only_of = next(iter(output_features))
                 if self.validation_metric in metrics_names[only_of]:
                     self._validation_field = only_of
-                    logger.warning(
+                    logging.warning(
                         "Replacing 'combined' validation field "
                         "with '{}' as the specified validation "
                         "metric {} is invalid for 'combined' "
@@ -800,19 +805,19 @@ class Trainer(BaseTrainer):
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
 
                 if self.is_coordinator():
-                    logger.info(
+                    logging.info(
                         f"Training for {self.total_steps} step(s), approximately "
                         f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
                     if self.early_stop < 0:
-                        logger.info("Early stopping policy: None")
+                        logging.info("Early stopping policy: None")
                     else:
-                        logger.info(
+                        logging.info(
                             f"Early stopping policy: {self.early_stop} round(s) of evaluation, or "
                             f"{early_stopping_steps} step(s), approximately "
                             f"{int(early_stopping_steps / batcher.steps_per_epoch)} epoch(s).\n"
                         )
-                    logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
+                    logging.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar_config = {
                     "desc": "Training",
@@ -862,7 +867,7 @@ class Trainer(BaseTrainer):
 
                     if self.is_coordinator():
                         # ========== Save training progress ==========
-                        logger.debug(
+                        logging.debug(
                             f"Epoch {progress_tracker.epoch} took: "
                             f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
                         )
@@ -990,7 +995,7 @@ class Trainer(BaseTrainer):
             progress_tracker.steps += 1
             progress_bar.update(1)
             if self.is_coordinator():
-                logger.debug(
+                logging.debug(
                     f"training: completed batch {progress_bar.total_steps} "
                     f"memory used: "
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
@@ -1124,13 +1129,13 @@ class Trainer(BaseTrainer):
 
             if self.is_coordinator() and not skip_save_model:
                 self.model.save(save_path)
-                logger.info(
+                logging.info(
                     f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
                 )
 
         progress_tracker.last_improvement = progress_tracker.steps - progress_tracker.last_improvement_steps
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
-            logger.info(
+            logging.info(
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
                 + f"{progress_tracker.last_improvement} step(s) ago.\n"
             )
@@ -1154,7 +1159,7 @@ class Trainer(BaseTrainer):
                 and progress_tracker.last_reduce_learning_rate_eval_metric_improvement > 0
                 and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
             ):
-                logger.info(
+                logging.info(
                     f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} step(s) "
                     f"ago, improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
                     f"{reduce_learning_rate_eval_metric} happened "
@@ -1182,7 +1187,7 @@ class Trainer(BaseTrainer):
                 and not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
                 and not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
             ):
-                logger.info(
+                logging.info(
                     "Last batch size increase "
                     f"happened {progress_tracker.last_increase_batch_size} step(s) ago, "
                     f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
@@ -1205,7 +1210,7 @@ class Trainer(BaseTrainer):
             should_early_stop = self.horovod.allreduce(should_early_stop)
         if should_early_stop.item():
             if self.is_coordinator():
-                logger.info(
+                logging.info(
                     "\nEARLY STOPPING due to lack of validation improvement. "
                     f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
                     f"last validation improvement.\n"
@@ -1221,17 +1226,17 @@ class Trainer(BaseTrainer):
         if not self.received_sigint:
             self.total_steps = 1
             self.received_sigint = True
-            logger.critical("\nReceived SIGINT, will finish this training step and then conclude training.")
-            logger.critical("Send another SIGINT to immediately interrupt the process.")
+            logging.critical("\nReceived SIGINT, will finish this training step and then conclude training.")
+            logging.critical("Send another SIGINT to immediately interrupt the process.")
         else:
-            logger.critical("\nReceived a second SIGINT, will now quit")
+            logging.critical("\nReceived a second SIGINT, will now quit")
             if self.original_sigint_handler:
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
         if self.is_coordinator():
-            logger.info(f"Resuming training of model: {training_progress_tracker_path}")
+            logging.info(f"Resuming training of model: {training_progress_tracker_path}")
         progress_tracker = ProgressTracker.load(training_progress_tracker_path)
         return progress_tracker
 
@@ -1285,7 +1290,7 @@ class Trainer(BaseTrainer):
                     progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
 
                     if self.is_coordinator():
-                        logger.info(
+                        logging.info(
                             f"PLATEAU REACHED, reducing learning rate to {progress_tracker.learning_rate} due to lack "
                             f"of improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
                             f"{validation_metric}."
@@ -1297,7 +1302,7 @@ class Trainer(BaseTrainer):
 
                     if progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau:
                         if self.is_coordinator():
-                            logger.info(
+                            logging.info(
                                 f"Learning rate was already reduced {progress_tracker.num_reductions_learning_rate} "
                                 "time(s), not reducing it anymore."
                             )
@@ -1354,7 +1359,7 @@ class Trainer(BaseTrainer):
                     )
 
                     if self.is_coordinator():
-                        logger.info(
+                        logging.info(
                             f"PLATEAU REACHED, increasing batch size to {progress_tracker.batch_size} due to lack of "
                             f"improvement of {validation_output_feature_name} {increase_batch_size_eval_split} "
                             f"{validation_metric}."
@@ -1366,13 +1371,13 @@ class Trainer(BaseTrainer):
 
                     if progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau:
                         if self.is_coordinator():
-                            logger.info(
+                            logging.info(
                                 f"Batch size was already increased {progress_tracker.num_increases_batch_size} times, "
                                 "not increasing it anymore."
                             )
                     elif progress_tracker.batch_size >= increase_batch_size_on_plateau_max:
                         if self.is_coordinator():
-                            logger.info(
+                            logging.info(
                                 f"Batch size was already increased {progress_tracker.num_increases_batch_size} times, "
                                 f"currently it is {progress_tracker.batch_size}, the maximum allowed."
                             )

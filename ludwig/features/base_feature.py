@@ -217,7 +217,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
                 self.dependency_reducers[dependency] = SequenceReducer(reduce_mode=self.reduce_dependencies)
 
     def create_sample_output(self, batch_size: int = 2):
-        return torch.rand([batch_size, *self.output_shape]).to(self.get_output_dtype())
+        output_shape = self.output_shape
+        shape = [batch_size, *self.output_shape] if output_shape != torch.Size([1]) else [batch_size]
+        return torch.rand(shape).to(self.get_output_dtype())
 
     @abstractmethod
     def get_prediction_set(self):
