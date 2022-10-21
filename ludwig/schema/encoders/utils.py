@@ -4,7 +4,7 @@ from typing import List, Union
 from marshmallow import fields, ValidationError
 
 from ludwig.constants import TYPE
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.utils.registry import Registry
 
 encoder_config_registry = Registry()

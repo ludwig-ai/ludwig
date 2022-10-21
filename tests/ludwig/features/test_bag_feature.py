@@ -8,7 +8,7 @@ import torch
 from ludwig.constants import ENCODER
 from ludwig.features.bag_feature import BagInputFeature
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
-from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.schema.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2

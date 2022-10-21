@@ -4,7 +4,7 @@ from typing import List, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import BINARY, NUMBER, VECTOR
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 
 

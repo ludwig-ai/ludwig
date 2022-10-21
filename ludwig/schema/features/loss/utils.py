@@ -4,7 +4,7 @@ from marshmallow import fields, ValidationError
 
 from ludwig.constants import TYPE
 from ludwig.modules.loss_modules import get_loss_classes, get_loss_cls
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 
 
 def get_loss_conds(feature_type: str):

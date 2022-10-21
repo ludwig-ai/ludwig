@@ -4,7 +4,7 @@ from ludwig.constants import COMBINED, LOSS
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.category_feature import CategoryOutputFeatureConfig
-from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.schema.schema_utils import load_config_with_kwargs
 from ludwig.utils import trainer_utils
 from ludwig.utils.metric_utils import TrainerMetric
 

@@ -10,7 +10,7 @@ from ludwig.backend import LOCAL_BACKEND
 from ludwig.constants import BFILL, PROC_COLUMN
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.schema.schema_utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import audio_feature, category_feature, generate_data
 

@@ -4,7 +4,7 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import SPLIT, TYPE
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()

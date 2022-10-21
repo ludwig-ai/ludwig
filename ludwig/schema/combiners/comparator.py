@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 

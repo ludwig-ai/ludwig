@@ -3,7 +3,7 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import SEQUENCE
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField

@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 import ludwig.combiners.combiners as lcc
 from ludwig.schema.trainer import ECDTrainerConfig
-from ludwig.schema.utils import assert_is_a_marshmallow_class, BaseMarshmallowConfig, load_config_with_kwargs
+from ludwig.schema.schema_utils import assert_is_a_marshmallow_class, BaseMarshmallowConfig, load_config_with_kwargs
 
 
 @dataclass

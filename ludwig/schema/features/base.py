@@ -19,8 +19,7 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
-from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
+from ludwig.schema import schema_utils as schema_utils
 
 logger = logging.getLogger(__name__)
 _error_console = Console(stderr=True, style="bold red")
@@ -42,19 +41,6 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
         allow_none=True,
         options=[AUDIO, BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMBER, SEQUENCE, SET, TEXT, TIMESERIES, VECTOR],
         description="Type of the feature.",
-    )
-
-    column: str = schema_utils.String(
-        allow_none=True,
-        default=None,
-        description="The column name of this feature. Defaults to name if not specified.",
-    )
-
-    proc_column: str = schema_utils.String(
-        allow_none=True,
-        default=None,
-        description="The name of the preprocessed column name of this feature. Internal only.",
-        parameter_metadata=ParameterMetadata(internal_only=True),
     )
 
     def enable(self):
@@ -108,12 +94,6 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         "dimension (second if you count the batch dimension)",
     )
 
-    default_validation_metric: str = schema_utils.String(
-        default=None,
-        description="Internal only use parameter: default validation metric for output feature.",
-        parameter_metadata=INTERNAL_ONLY,
-    )
-
     dependencies: List[str] = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
@@ -122,16 +102,4 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
-    )
-
-    input_size: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Size of the input to the decoder.",
-        parameter_metadata=ParameterMetadata(internal_only=True),
-    )
-
-    num_classes: int = schema_utils.PositiveInteger(
-        default=None,
-        description="Size of the input to the decoder.",
-        parameter_metadata=ParameterMetadata(internal_only=True),
     )

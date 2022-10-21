@@ -24,7 +24,7 @@ from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
 from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
-from ludwig.schema.utils import load_config
+from ludwig.schema.schema_utils import load_config
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated

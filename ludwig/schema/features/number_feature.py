@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -19,8 +19,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
-from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.schema_utils import BaseMarshmallowConfig
 
 
 @input_mixin_registry.register(NUMBER)
@@ -75,13 +74,6 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
         min=0,
         max=999999999,
         description="Clip the predicted output to the specified range.",
-    )
-
-    default_validation_metric: str = schema_utils.StringOptions(
-        [MEAN_SQUARED_ERROR],
-        default=MEAN_SQUARED_ERROR,
-        description="Internal only use parameter: default validation metric for number output feature.",
-        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(

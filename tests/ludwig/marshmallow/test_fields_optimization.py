@@ -6,7 +6,7 @@ from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
 import ludwig.schema.optimizers as lso
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 
 # Tests for custom dataclass/marshmallow fields:
 

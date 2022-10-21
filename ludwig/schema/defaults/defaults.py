@@ -15,7 +15,7 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
-from ludwig.schema import utils as schema_utils
+from ludwig.schema import schema_utils as schema_utils
 from ludwig.schema.defaults.utils import DefaultsDataclassField
 from ludwig.schema.features.base import BaseFeatureConfig
 
