@@ -321,6 +321,7 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
     ]
     output_features = [
         binary_feature(),
+        category_feature(),
         number_feature(),
         vector_feature(),
         # TODO: feature type not yet supported

@@ -219,7 +219,11 @@ class DaskEngine(DataFrameEngine):
         def to_tensors(batch: pd.DataFrame) -> pd.DataFrame:
             data = {}
             for c in batch.columns:
-                data[c] = TensorArray(batch[c])
+                try:
+                    data[c] = TensorArray(batch[c])
+                except TypeError:
+                    # Not a tensor, likely a string which pyarrow can handle natively
+                    pass
             return pd.DataFrame(data)
 
         ds = ds.map_batches(to_tensors)
