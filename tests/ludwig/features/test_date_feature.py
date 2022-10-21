@@ -7,6 +7,9 @@ import torch
 
 from ludwig.features import date_feature
 from ludwig.features.date_feature import DateInputFeature
+from ludwig.schema.features.date_feature import DateInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
 
 BATCH_SIZE = 2
@@ -24,10 +27,12 @@ def test_date_input_feature(date_config: Dict[str, Any]):
     feature_def = deepcopy(date_config)
 
     # pickup any other missing parameters
-    DateInputFeature.populate_defaults(feature_def)
+    defaults = DateInputFeatureConfig().to_dict()
+    set_def = merge_dict(defaults, feature_def)
 
     # ensure no exceptions raised during build
-    input_feature_obj = DateInputFeature(feature_def).to(DEVICE)
+    feature_config, _ = load_config_with_kwargs(DateInputFeatureConfig, set_def)
+    input_feature_obj = DateInputFeature(feature_config).to(DEVICE)
 
     # check one forward pass through input feature
     input_tensor = input_feature_obj.create_sample_input(batch_size=BATCH_SIZE)
