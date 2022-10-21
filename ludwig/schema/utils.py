@@ -93,9 +93,10 @@ def create_cond(if_pred: TDict, then_pred: TDict):
 
 
 def remove_duplicate_fields(properties: dict) -> None:
-    """
-    Util function for removing duplicated schema elements. For example, input feature json schema mapping has a type
-    param defined directly on the json schema, but also has a parameter defined on the schema class. We need both -
+    """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
+    type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
+    both -
+
     json schema level for validation and schema class level for config object - though we only need the json schema
     level for validation, so we get rid of the duplicates when converting to json schema.
 

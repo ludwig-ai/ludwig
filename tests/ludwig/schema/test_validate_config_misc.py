@@ -19,7 +19,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.schema import validate_config, get_schema
+from ludwig.schema import get_schema, validate_config
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
@@ -363,11 +363,19 @@ def test_schema_no_duplicates():
         assert field not in schema["properties"]["input_features"]["items"]["allOf"][0]["then"]["properties"]
         assert field not in schema["properties"]["output_features"]["items"]["allOf"][0]["then"]["properties"]
         assert field not in schema["properties"]["combiner"]["allOf"][0]["then"]["properties"]
-        assert field not in schema["properties"]["trainer"]["properties"]["optimizer"]["allOf"][0]["then"][
-                "properties"]
-        assert field not in schema["properties"]["preprocessing"]["properties"]["split"]["allOf"][0]["then"][
-                "properties"]
-        assert field not in schema["properties"]["input_features"]["items"]["allOf"][0]["then"]["properties"][
-                "encoder"]["allOf"][0]["then"]["properties"]
-        assert field not in schema["properties"]["output_features"]["items"]["allOf"][0]["then"]["properties"][
-                "decoder"]["allOf"][0]["then"]["properties"]
+        assert field not in schema["properties"]["trainer"]["properties"]["optimizer"]["allOf"][0]["then"]["properties"]
+        assert (
+            field not in schema["properties"]["preprocessing"]["properties"]["split"]["allOf"][0]["then"]["properties"]
+        )
+        assert (
+            field
+            not in schema["properties"]["input_features"]["items"]["allOf"][0]["then"]["properties"]["encoder"][
+                "allOf"
+            ][0]["then"]["properties"]
+        )
+        assert (
+            field
+            not in schema["properties"]["output_features"]["items"]["allOf"][0]["then"]["properties"]["decoder"][
+                "allOf"
+            ][0]["then"]["properties"]
+        )
