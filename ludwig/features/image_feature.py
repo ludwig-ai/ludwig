@@ -582,9 +582,9 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         for key in ["height", "width", "num_channels", "standardize_image"]:
-            input_feature[ENCODER][key] = feature_metadata[PREPROCESSING][key]
+            setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
 
     @staticmethod
     def populate_defaults(input_feature):
