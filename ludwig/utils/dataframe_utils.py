@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.constants import DASK_MODULE_NAME
+from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.types import DataFrame
 
 
@@ -25,14 +26,14 @@ def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  
     return False
 
 
-def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
+def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
     column_shapes = {}
     for c in df.columns:
-        df = backend.df_engine.persist(df)
-        shape = backend.df_engine.compute(
-            backend.df_engine.map_objects(
+        df = df_engine.persist(df)
+        shape = df_engine.compute(
+            df_engine.map_objects(
                 df[c],
                 lambda x: np.array(x).shape,
             ).max()
@@ -40,16 +41,16 @@ def flatten_df(df: DataFrame, backend: "Backend") -> Tuple[DataFrame, Dict[str, 
 
         if len(shape) > 1:
             column_shapes[c] = shape
-            df[c] = backend.df_engine.map_objects(df[c], lambda x: np.array(x).reshape(-1))
+            df[c] = df_engine.map_objects(df[c], lambda x: np.array(x).reshape(-1))
     return df, column_shapes
 
 
-def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], backend: "Backend") -> DataFrame:  # noqa: F821
+def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], df_engine: DataFrameEngine) -> DataFrame:  # noqa: F821
     """Returns an unflattened dataframe, the reverse of flatten_df."""
     for c in df.columns:
         shape = column_shapes.get(c)
         if shape:
-            df[c] = backend.df_engine.map_objects(df[c], lambda x: np.array(x).reshape(shape))
+            df[c] = df_engine.map_objects(df[c], lambda x: np.array(x).reshape(shape))
     return df
 
 
