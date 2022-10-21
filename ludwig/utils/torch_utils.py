@@ -11,10 +11,11 @@ from torch.nn import Module, ModuleDict
 from ludwig.utils.strings_utils import SpecialSymbol
 
 try:
+    # Python 3.8 and above only
     from functools import cached_property
 except ImportError:
-    # Python 3.8 and above, so just use identity function instead
-    cached_property = lambda fn: fn
+    # Fallback to normal property instead
+    cached_property = property
 
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
