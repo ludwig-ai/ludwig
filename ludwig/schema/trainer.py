@@ -301,6 +301,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
                     "example in the batch. The specified feature should be either a sequence or text feature and the "
                     "encoder encoding it has to be rnn. When used, bucketing improves speed of rnn encoding up to "
                     "1.5x, depending on the length distribution of the inputs.",
+        parameter_metadata=TRAINER_METADATA["bucketing_field"]
     )
 
 
