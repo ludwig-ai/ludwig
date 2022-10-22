@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from ludwig.encoders.image_encoders import (
+from ludwig.encoders.image_encoders import (  # ViTEncoder,
     ALEXNET_VARIANTS,
     EFFICIENTNET_VARIANTS,
     MLPMixerEncoder,
@@ -12,7 +12,6 @@ from ludwig.encoders.image_encoders import (
     TVResNetEncoder,
     TVVGGEncoder,
     VGG_VARIANTS,
-    # ViTEncoder,
 )
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated

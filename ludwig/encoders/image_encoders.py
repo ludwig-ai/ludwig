@@ -27,15 +27,13 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import (
+from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # TODO: Remove; ViTEncoderConfig,  # TODO: Remove
     MLPMixerEncoderConfig,
-    # ResNetEncoderConfig,  # TODO: Remove
     Stacked2DCNNEncoderConfig,
     TVAlexNetEncoderConfig,
     TVEfficientNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
-    # ViTEncoderConfig,  # TODO: Remove
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
 from ludwig.utils.pytorch_utils import freeze_parameters
@@ -263,11 +261,11 @@ class Stacked2DCNN(Encoder):
 @register_encoder("mlp_mixer", IMAGE)
 class MLPMixerEncoder(Encoder):
     def __init__(
-            self,
-            height: int,
-            width: int,
-            num_channels: int = None,
-            patch_size: int = 16,
+        self,
+        height: int,
+        width: int,
+        num_channels: int = None,
+        patch_size: int = 16,
         embed_size: int = 512,
         token_size: int = 2048,
         channel_dim: int = 256,
@@ -431,12 +429,12 @@ class MLPMixerEncoder(Encoder):
 
 class TVBaseEncoder(Encoder):
     def __init__(
-            self,
-            model_variant: Union[str, int] = None,
-            use_pretrained: bool = True,
-            saved_weights_in_checkpoint: bool = False,
-            model_cache_dir: Optional[str] = None,
-            trainable: bool = True,
+        self,
+        model_variant: Union[str, int] = None,
+        use_pretrained: bool = True,
+        saved_weights_in_checkpoint: bool = False,
+        model_cache_dir: Optional[str] = None,
+        trainable: bool = True,
         **kwargs,
     ):
         super().__init__()
