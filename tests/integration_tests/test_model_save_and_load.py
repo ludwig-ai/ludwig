@@ -355,8 +355,6 @@ def test_model_save_reload_tv_model(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_exp)
 
 
-# TODO: jimthompson5802
-@pytest.mark.skip(reason="rework assertion test to confirm pre-trained weights are not re-downloaded")
 def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
@@ -402,7 +400,8 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     )
 
     # confirm that pretrained model weight was downloaded
-    assert os.path.isdir("/root/.cache/huggingface")
+    # file count represents the vocab.txt for tokenizer and pretrained weights
+    assert len(os.listdir("/root/.cache/huggingface/transformers")) == 9
 
     preds_1, _ = ludwig_model1.predict(dataset=validation_set)
 
@@ -440,17 +439,19 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     ludwig_model1.save(tmpdir)
     ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
 
-    # confirm that hugging face model was not downloaded again
-    assert not os.path.isdir("/root/.cache/huggingface")
-
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_loaded)
+
+    # confirm that hugging face model was not downloaded again
+    # file count represents the vocab.txt for tokenizer only
+    assert len(os.listdir("/root/.cache/huggingface/transformers")) == 3
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
 
-    # confirm that hugging face model was not downloaded again
-    assert not os.path.isdir("/root/.cache/huggingface")
-
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_exp)
+
+    # confirm that hugging face model was not downloaded again
+    # file count represents the vocab.txt for tokenizer only
+    assert len(os.listdir("/root/.cache/huggingface/transformers")) == 3
