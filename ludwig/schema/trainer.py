@@ -566,6 +566,5 @@ def get_trainer_jsonschema(model_type: str):
         "type": "object",
         "properties": props,
         "title": "trainer_options",
-        "additionalProperties": False,
         "description": "Schema for trainer determined by Model Type",
     }
