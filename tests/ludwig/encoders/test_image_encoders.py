@@ -6,14 +6,13 @@ from ludwig.encoders.image_encoders import (
     EFFICIENTNET_VARIANTS,
     MLPMixerEncoder,
     RESNET_TORCH_VARIANTS,
-    ResNetEncoder,
     Stacked2DCNN,
     TVAlexNetEncoder,
     TVEfficientNetEncoder,
     TVResNetEncoder,
     TVVGGEncoder,
     VGG_VARIANTS,
-    ViTEncoder,
+    # ViTEncoder,
 )
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
@@ -40,21 +39,22 @@ def test_stacked2d_cnn(height: int, width: int, num_conv_layers: int, num_channe
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-@pytest.mark.parametrize("height,width,num_channels", [(224, 224, 1), (224, 224, 3)])
-def test_resnet_encoder(height: int, width: int, num_channels: int):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    resnet = ResNetEncoder(height=height, width=width, num_channels=num_channels)
-    inputs = torch.rand(2, num_channels, height, width)
-    outputs = resnet(inputs)
-    assert outputs["encoder_output"].shape[1:] == resnet.output_shape
-
-    # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
-
-    assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+# TODO: Remove at end of torchvision work, in favor of Torchvision implementation
+# @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 1), (224, 224, 3)])
+# def test_resnet_encoder(height: int, width: int, num_channels: int):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+#
+#     resnet = ResNetEncoder(height=height, width=width, num_channels=num_channels)
+#     inputs = torch.rand(2, num_channels, height, width)
+#     outputs = resnet(inputs)
+#     assert outputs["encoder_output"].shape[1:] == resnet.output_shape
+#
+#     # check for parameter updating
+#     target = torch.randn(outputs["encoder_output"].shape)
+#     fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
+#
+#     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
 @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])
@@ -74,33 +74,34 @@ def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-@pytest.mark.parametrize("image_size,num_channels", [(224, 3)])
-@pytest.mark.parametrize("use_pretrained", [True, False])
-def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
-    # make repeatable
-    set_random_seed(RANDOM_SEED)
-
-    vit = ViTEncoder(
-        height=image_size,
-        width=image_size,
-        num_channels=num_channels,
-        use_pretrained=use_pretrained,
-        output_attentions=True,
-    )
-    inputs = torch.rand(2, num_channels, image_size, image_size)
-    outputs = vit(inputs)
-    assert outputs["encoder_output"].shape[1:] == vit.output_shape
-    config = vit.transformer.config
-    num_patches = (224 // config.patch_size) ** 2 + 1  # patches of the image + cls_token
-    attentions = outputs["attentions"]
-    assert len(attentions) == config.num_hidden_layers
-    assert attentions[0].shape == torch.Size([2, config.num_attention_heads, num_patches, num_patches])
-
-    # check for parameter updating
-    target = torch.randn(outputs["encoder_output"].shape)
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(vit, (inputs,), target)
-
-    assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
+# TODO: Temporarily comment out, may be re-enabled later date as HF encoder
+# @pytest.mark.parametrize("image_size,num_channels", [(224, 3)])
+# @pytest.mark.parametrize("use_pretrained", [True, False])
+# def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
+#     # make repeatable
+#     set_random_seed(RANDOM_SEED)
+#
+#     vit = ViTEncoder(
+#         height=image_size,
+#         width=image_size,
+#         num_channels=num_channels,
+#         use_pretrained=use_pretrained,
+#         output_attentions=True,
+#     )
+#     inputs = torch.rand(2, num_channels, image_size, image_size)
+#     outputs = vit(inputs)
+#     assert outputs["encoder_output"].shape[1:] == vit.output_shape
+#     config = vit.transformer.config
+#     num_patches = (224 // config.patch_size) ** 2 + 1  # patches of the image + cls_token
+#     attentions = outputs["attentions"]
+#     assert len(attentions) == config.num_hidden_layers
+#     assert attentions[0].shape == torch.Size([2, config.num_attention_heads, num_patches, num_patches])
+#
+#     # check for parameter updating
+#     target = torch.randn(outputs["encoder_output"].shape)
+#     fpc, tpc, upc, not_updated = check_module_parameters_updated(vit, (inputs,), target)
+#
+#     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
 @pytest.mark.parametrize("trainable", [True, False])
