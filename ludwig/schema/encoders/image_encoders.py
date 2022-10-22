@@ -275,11 +275,11 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-                    "of the list determines the number of stacked fully connected layers and the content of each "
-                    "dictionary determines the parameters for a specific layer. The available parameters for each "
-                    "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-                    "weights_initializer. If any of those values is missing from the dictionary, the default one "
-                    "specified as a parameter of the encoder will be used instead. ",
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
     )
 
@@ -528,8 +528,8 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     avg_pool: bool = schema_utils.Boolean(
         default=True,
         description="If true, pools output over patch dimension, outputs a vector of shape (embed_size). If false, "
-                    "the output tensor is of shape (n_patches, embed_size), where n_patches is img_height x img_width "
-                    "/ patch_size².",
+        "the output tensor is of shape (n_patches, embed_size), where n_patches is img_height x img_width "
+        "/ patch_size².",
         parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["avg_pool"],
     )
 
