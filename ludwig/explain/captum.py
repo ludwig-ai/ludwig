@@ -32,7 +32,7 @@ class WrapperModule(torch.nn.Module):
 
     def forward(self, *args):
         preds = self.predict_from_encoded(*args)
-        return get_pred_col(preds, self.target).cpu()
+        return get_pred_col(preds, self.target)
 
     def predict_from_encoded(self, *args):
         # Add back the dictionary structure so it conforms to ECD format.
@@ -131,7 +131,7 @@ class IntegratedGradientsExplainer(Explainer):
 
         # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
         # TODO(travis): pre-compute this during training from the full training dataset.
-        baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in sample_encoded]
+        baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0).to(DEVICE) for t in sample_encoded]
 
         # Configure the explainer, which includes wrapping the model so its interface conforms to
         # the format expected by Captum.
@@ -141,23 +141,39 @@ class IntegratedGradientsExplainer(Explainer):
         # Compute attribution for each possible output feature label separately.
         expected_values = []
         for target_idx in range(self.vocab_size):
-            attribution, delta = explainer.attribute(
-                tuple(inputs_encoded),
-                baselines=tuple(baseline),
-                target=target_idx if self.is_category_target else None,
-                internal_batch_size=self.model.config_obj.trainer.batch_size,
-                return_convergence_delta=True,
-            )
+            total_attribution = None
+            total_delta = None
 
-            # Attribution over the feature embeddings returns a vector with the same dimensions of
-            # shape [batch_size, embedding_size], so take the sum over this vector in order to return a single
-            # floating point attribution value per input feature.
-            attribution = np.array([t.detach().numpy().sum(1) for t in attribution])
+            inputs_encoded_splits = [ipt.split(self.model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
+            for input_batch in zip(*inputs_encoded_splits):
+                input_batch = [ipt.to(DEVICE) for ipt in input_batch]
+                attribution, delta = explainer.attribute(
+                    tuple(input_batch),
+                    baselines=tuple(baseline),
+                    target=target_idx if self.is_category_target else None,
+                    internal_batch_size=self.model.config_obj.trainer.batch_size,
+                    return_convergence_delta=True,
+                )
 
-            # Transpose to [batch_size, num_input_features]
-            attribution = attribution.T
+                # Attribution over the feature embeddings returns a vector with the same dimensions of
+                # shape [batch_size, embedding_size], so take the sum over this vector in order to return a single
+                # floating point attribution value per input feature.
+                attribution = np.array([t.detach().cpu().numpy().sum(1) for t in attribution])
 
-            for feature_attributions, explanation in zip(attribution, self.explanations):
+                # Transpose to [batch_size, num_input_features]
+                attribution = attribution.T
+
+                delta = delta.detach().cpu().numpy()
+
+                if total_attribution is not None:
+                    print(total_attribution.shape, attribution.shape)
+                    total_attribution = np.concatenate([total_attribution, attribution], axis=0)
+                    total_delta = np.concatenate([total_delta, delta], axis=0)
+                else:
+                    total_attribution = attribution
+                    total_delta = delta
+
+            for feature_attributions, explanation in zip(total_attribution, self.explanations):
                 # Add the feature attributions to the explanation object for this row.
                 explanation.add(feature_attributions)
 
@@ -165,7 +181,7 @@ class IntegratedGradientsExplainer(Explainer):
             # average delta for the feature.
             # TODO(travis): this isn't really the expected value as it is for shap, so
             #  find a better name.
-            expected_value = delta.detach().numpy().mean()
+            expected_value = total_delta.mean()
             expected_values.append(expected_value)
 
             if self.is_binary_target:
