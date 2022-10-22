@@ -27,7 +27,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # TODO: Remove; ViTEncoderConfig,  # TODO: Remove
+from ludwig.schema.encoders.image_encoders import (
     MLPMixerEncoderConfig,
     Stacked2DCNNEncoderConfig,
     TVAlexNetEncoderConfig,
