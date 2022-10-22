@@ -49,7 +49,7 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
             encoder={"vocab_size": 3, "type": "rnn", "cell_type": "lstm", "num_layers": 2, "bidirectional": False}
         ),
         vector_feature(),
-        image_feature(image_dest_folder),
+        image_feature(image_dest_folder, encoder={"type": "mlp_mixer", "patch_size": 12}),
         audio_feature(audio_dest_folder, encoder={"type": "stacked_cnn"}),
         timeseries_feature(encoder={"type": "parallel_cnn"}),
         sequence_feature(encoder={"vocab_size": 3, "type": "stacked_parallel_cnn"}),
