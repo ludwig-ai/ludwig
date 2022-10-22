@@ -32,6 +32,7 @@ from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # T
     Stacked2DCNNEncoderConfig,
     TVAlexNetEncoderConfig,
     TVConvNeXtEncoderConfig,
+    TVDenseNetEncoderConfig,
     TVEfficientNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
@@ -528,7 +529,7 @@ ALEXNET_VARIANTS = [
 @register_torchvision_variant(ALEXNET_VARIANTS)
 @register_encoder("alexnet_torch", IMAGE)
 class TVAlexNetEncoder(TVBaseEncoder):
-    # specify base torchvison model
+    # specify base torchvision model
     torchvision_model_type: str = "alexnet_torch"
 
     def __init__(
@@ -557,7 +558,7 @@ CONVNEXT_VARIANTS = [
 @register_torchvision_variant(CONVNEXT_VARIANTS)
 @register_encoder("convnext_torch", IMAGE)
 class TVConvNeXtEncoder(TVBaseEncoder):
-    # specify base torchvison model
+    # specify base torchvision model
     torchvision_model_type: str = "convnext_torch"
 
     def __init__(
@@ -569,6 +570,35 @@ class TVConvNeXtEncoder(TVBaseEncoder):
 
     def _remove_last_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVConvNeXtEncoderConfig
+
+
+DENSENET_VARIANTS = [
+    TVModelVariant(121, tvm.densenet121, tvm.DenseNet121_Weights),
+    TVModelVariant(161, tvm.densenet161, tvm.DenseNet161_Weights),
+    TVModelVariant(169, tvm.densenet169, tvm.DenseNet169_Weights),
+    TVModelVariant(201, tvm.densenet201, tvm.DenseNet201_Weights),
+]
+
+
+@register_torchvision_variant(DENSENET_VARIANTS)
+@register_encoder("densenet_torch", IMAGE)
+class TVDenseNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "densenet_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier = torch.nn.Identity()
 
     @staticmethod
     def get_schema_cls():
@@ -593,7 +623,7 @@ EFFICIENTNET_VARIANTS = [
 @register_torchvision_variant(EFFICIENTNET_VARIANTS)
 @register_encoder("efficientnet_torch", IMAGE)
 class TVEfficientNetEncoder(TVBaseEncoder):
-    # specify base torchvison model
+    # specify base torchvision model
     torchvision_model_type: str = "efficientnet_torch"
 
     def __init__(

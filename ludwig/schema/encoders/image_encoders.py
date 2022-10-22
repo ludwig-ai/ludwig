@@ -716,6 +716,25 @@ class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("densenet_torch", IMAGE)
+@dataclass
+class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["densenet_torch"],
+        default="densenet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.IntegerOptions(
+        [121, 161, 169, 201],
+        default=121,
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVDenseNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("efficientnet_torch", IMAGE)
 @dataclass
 class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
