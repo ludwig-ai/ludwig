@@ -532,8 +532,8 @@ class TVAlexNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "alexnet_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -561,8 +561,8 @@ class TVConvNeXtEncoder(TVBaseEncoder):
     torchvision_model_type: str = "convnext_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -597,8 +597,8 @@ class TVEfficientNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "efficientnet_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
