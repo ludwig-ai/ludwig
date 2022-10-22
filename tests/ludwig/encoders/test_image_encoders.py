@@ -206,10 +206,10 @@ def test_tv_alexnet_encoder(
 )  # TODO: do we need to check download, True])
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in CONVNEXT_VARIANTS])
 def test_tv_convnext_encoder(
-        model_variant: int,
-        use_pretrained: bool,
-        saved_weights_in_checkpoint: bool,
-        trainable: bool,
+    model_variant: int,
+    use_pretrained: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
 ):
     # make repeatable
     set_random_seed(RANDOM_SEED)
