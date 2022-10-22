@@ -678,6 +678,75 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
     )
 
 
+@register_encoder_config("alexnet_torch", IMAGE)
+@dataclass
+class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["alexnet_torch"],
+        default="alexnet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["base"],
+        default="base",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVAlexNetEncoder"]["model_variant"],
+    )
+
+
+@register_encoder_config("convnext_torch", IMAGE)
+@dataclass
+class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["convnext_torch"],
+        default="convnext_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["tiny", "small", "base", "large"],
+        default="base",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVConvNeXtEncoder"]["model_variant"],
+    )
+
+
+@register_encoder_config("efficientnet_torch", IMAGE)
+@dataclass
+class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["efficientnet_torch"],
+        default="efficientnet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        [
+            "b0",
+            "b1",
+            "b2",
+            "b3",
+            "b4",
+            "b5",
+            "b6",
+            "b7",
+            "v2_",
+            "v2_m",
+            "v2_l",
+        ],
+        default="b0",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVEfficientNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
@@ -733,54 +802,4 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
             ),
         ],
         parameter_metadata=ENCODER_METADATA["TVVGGEncoder"]["model_variant"],
-    )
-
-
-@register_encoder_config("alexnet_torch", IMAGE)
-@dataclass
-class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["alexnet_torch"],
-        default="alexnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
-
-    model_variant: Optional[int] = schema_utils.StringOptions(
-        ["base"],
-        default="base",
-        allow_none=False,
-        description="Pretrained model variant to use.",
-        parameter_metadata=ENCODER_METADATA["TVAlexNetEncoder"]["model_variant"],
-    )
-
-
-@register_encoder_config("efficientnet_torch", IMAGE)
-@dataclass
-class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["efficientnet_torch"],
-        default="efficientnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
-
-    model_variant: Optional[int] = schema_utils.StringOptions(
-        [
-            "b0",
-            "b1",
-            "b2",
-            "b3",
-            "b4",
-            "b5",
-            "b6",
-            "b7",
-            "v2_",
-            "v2_m",
-            "v2_l",
-        ],
-        default="b0",
-        allow_none=False,
-        description="Pretrained model variant to use.",
-        parameter_metadata=ENCODER_METADATA["TVEfficientNetEncoder"]["model_variant"],
     )

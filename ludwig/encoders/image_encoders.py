@@ -31,6 +31,7 @@ from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # T
     MLPMixerEncoderConfig,
     Stacked2DCNNEncoderConfig,
     TVAlexNetEncoderConfig,
+    TVConvNeXtEncoderConfig,
     TVEfficientNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
@@ -519,6 +520,97 @@ class TVBaseEncoder(Encoder):
 #   create_model_function: TorchVision function to create model class
 #   model_weights: Torchvision class for model weights
 
+ALEXNET_VARIANTS = [
+    TVModelVariant("base", tvm.alexnet, tvm.AlexNet_Weights),
+]
+
+
+@register_torchvision_variant(ALEXNET_VARIANTS)
+@register_encoder("alexnet_torch", IMAGE)
+class TVAlexNetEncoder(TVBaseEncoder):
+    # specify base torchvison model
+    torchvision_model_type: str = "alexnet_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVAlexNetEncoderConfig
+
+
+CONVNEXT_VARIANTS = [
+    TVModelVariant("tiny", tvm.convnext_tiny, tvm.convnext.ConvNeXt_Tiny_Weights),
+    TVModelVariant("small", tvm.convnext_small, tvm.convnext.ConvNeXt_Small_Weights),
+    TVModelVariant("base", tvm.convnext_base, tvm.ConvNeXt_Base_Weights),
+    TVModelVariant("large", tvm.convnext_large, tvm.ConvNeXt_Large_Weights),
+]
+
+
+@register_torchvision_variant(CONVNEXT_VARIANTS)
+@register_encoder("convnext_torch", IMAGE)
+class TVConvNeXtEncoder(TVBaseEncoder):
+    # specify base torchvison model
+    torchvision_model_type: str = "convnext_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVConvNeXtEncoderConfig
+
+
+EFFICIENTNET_VARIANTS = [
+    TVModelVariant("b0", tvm.efficientnet_b0, tvm.EfficientNet_B0_Weights),
+    TVModelVariant("b1", tvm.efficientnet_b1, tvm.EfficientNet_B1_Weights),
+    TVModelVariant("b2", tvm.efficientnet_b2, tvm.EfficientNet_B2_Weights),
+    TVModelVariant("b3", tvm.efficientnet_b3, tvm.EfficientNet_B3_Weights),
+    TVModelVariant("b4", tvm.efficientnet_b4, tvm.EfficientNet_B4_Weights),
+    TVModelVariant("b5", tvm.efficientnet_b5, tvm.EfficientNet_B5_Weights),
+    TVModelVariant("b6", tvm.efficientnet_b6, tvm.EfficientNet_B6_Weights),
+    TVModelVariant("b7", tvm.efficientnet_b7, tvm.EfficientNet_B7_Weights),
+    TVModelVariant("v2_s", tvm.efficientnet_v2_s, tvm.EfficientNet_V2_S_Weights),
+    TVModelVariant("v2_m", tvm.efficientnet_v2_m, tvm.EfficientNet_V2_M_Weights),
+    TVModelVariant("v2_l", tvm.efficientnet_v2_l, tvm.EfficientNet_V2_L_Weights),
+]
+
+
+@register_torchvision_variant(EFFICIENTNET_VARIANTS)
+@register_encoder("efficientnet_torch", IMAGE)
+class TVEfficientNetEncoder(TVBaseEncoder):
+    # specify base torchvison model
+    torchvision_model_type: str = "efficientnet_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVEfficientNetEncoderConfig
+
+
 RESNET_TORCH_VARIANTS = [
     TVModelVariant(18, tvm.resnet18, tvm.ResNet18_Weights),
     TVModelVariant(34, tvm.resnet34, tvm.ResNet34_Weights),
@@ -580,65 +672,3 @@ class TVVGGEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVVGGEncoderConfig
-
-
-ALEXNET_VARIANTS = [
-    TVModelVariant("base", tvm.alexnet, tvm.AlexNet_Weights),
-]
-
-
-@register_torchvision_variant(ALEXNET_VARIANTS)
-@register_encoder("alexnet_torch", IMAGE)
-class TVAlexNetEncoder(TVBaseEncoder):
-    # specify base torchvison model
-    torchvision_model_type: str = "alexnet_torch"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_last_layer(self):
-        self.model.classifier[-1] = torch.nn.Identity()
-
-    @staticmethod
-    def get_schema_cls():
-        return TVAlexNetEncoderConfig
-
-
-EFFICIENTNET_VARIANTS = [
-    TVModelVariant("b0", tvm.efficientnet_b0, tvm.EfficientNet_B0_Weights),
-    TVModelVariant("b1", tvm.efficientnet_b1, tvm.EfficientNet_B1_Weights),
-    TVModelVariant("b2", tvm.efficientnet_b2, tvm.EfficientNet_B2_Weights),
-    TVModelVariant("b3", tvm.efficientnet_b3, tvm.EfficientNet_B3_Weights),
-    TVModelVariant("b4", tvm.efficientnet_b4, tvm.EfficientNet_B4_Weights),
-    TVModelVariant("b5", tvm.efficientnet_b5, tvm.EfficientNet_B5_Weights),
-    TVModelVariant("b6", tvm.efficientnet_b6, tvm.EfficientNet_B6_Weights),
-    TVModelVariant("b7", tvm.efficientnet_b7, tvm.EfficientNet_B7_Weights),
-    TVModelVariant("v2_s", tvm.efficientnet_v2_s, tvm.EfficientNet_V2_S_Weights),
-    TVModelVariant("v2_m", tvm.efficientnet_v2_m, tvm.EfficientNet_V2_M_Weights),
-    TVModelVariant("v2_l", tvm.efficientnet_v2_l, tvm.EfficientNet_V2_L_Weights),
-]
-
-
-@register_torchvision_variant(EFFICIENTNET_VARIANTS)
-@register_encoder("efficientnet_torch", IMAGE)
-class TVEfficientNetEncoder(TVBaseEncoder):
-    # specify base torchvison model
-    torchvision_model_type: str = "efficientnet_torch"
-
-    def __init__(
-        self,
-        **kwargs,
-    ):
-        logger.debug(f" {self.name}")
-        super().__init__(**kwargs)
-
-    def _remove_last_layer(self):
-        self.model.classifier[-1] = torch.nn.Identity()
-
-    @staticmethod
-    def get_schema_cls():
-        return TVEfficientNetEncoderConfig
