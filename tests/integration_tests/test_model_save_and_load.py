@@ -5,6 +5,7 @@ import shutil
 
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 
 from ludwig.api import LudwigModel
@@ -354,6 +355,9 @@ def test_model_save_reload_tv_model(tmpdir, csv_filename, tmp_path):
     check_model_equal(ludwig_model_exp)
 
 
+@pytest.mark.skip(
+    reason="(jimthompson5802)Pending decision on need for this test and how to test for downloading of weights"
+)
 def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
