@@ -71,8 +71,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
         description=(
-                "Maximum number of training steps the algorithm is intended to be run over. "
-                + "If unset, then `epochs` is used to determine training length."
+            "Maximum number of training steps the algorithm is intended to be run over. "
+            + "If unset, then `epochs` is used to determine training length."
         ),
         parameter_metadata=TRAINER_METADATA["train_steps"],
     )
@@ -283,13 +283,13 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ["constant", "sqrt", "linear"],
         default="linear",
         description="Scale by which to increase the learning rate as the number of distributed workers increases. "
-                    "Traditionally the learning rate is scaled linearly with the number of workers to reflect the "
-                    "proportion by"
-                    " which the effective batch size is increased. For very large batch sizes, a softer square-root "
-                    "scale can "
-                    "sometimes lead to better model performance. If the learning rate is hand-tuned for a given "
-                    "number of "
-                    "workers, setting this value to constant can be used to disable scale-up.",
+        "Traditionally the learning rate is scaled linearly with the number of workers to reflect the "
+        "proportion by"
+        " which the effective batch size is increased. For very large batch sizes, a softer square-root "
+        "scale can "
+        "sometimes lead to better model performance. If the learning rate is hand-tuned for a given "
+        "number of "
+        "workers, setting this value to constant can be used to disable scale-up.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scaling"],
     )
 
