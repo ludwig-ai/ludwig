@@ -15,7 +15,6 @@
 # ==============================================================================
 import copy
 import logging
-import random
 from typing import Any, Dict, Union
 
 import numpy as np
@@ -301,10 +300,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def create_sample_input(self):
-        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
-        return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
@@ -320,6 +315,9 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     @staticmethod
     def get_schema_cls():
         return NumberInputFeatureConfig
+
+    def create_sample_input(self, batch_size: int = 2):
+        return torch.rand([batch_size])
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
