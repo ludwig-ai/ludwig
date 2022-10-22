@@ -603,7 +603,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 #
 #     initializer_range: float = schema_utils.NonNegativeFloat(
 #         default=0.02,
-#         description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices.",  # noqa: E501
+#      description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices.",
 #         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["initializer_range"],
 #     )
 #
