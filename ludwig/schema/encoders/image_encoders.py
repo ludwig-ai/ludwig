@@ -289,7 +289,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 # @dataclass(repr=False)
 # class ResNetEncoderConfig(BaseEncoderConfig):
 #
-#     type: str = schema_utils.StringOptions(
+#     #type: str = schema_utils.StringOptions(
 #         ["resnet"],
 #         default="resnet",
 #         allow_none=False,
@@ -539,7 +539,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 # @dataclass(repr=False)
 # class ViTEncoderConfig(BaseEncoderConfig):
 #
-#     type: str = schema_utils.StringOptions(
+#        #type: str = schema_utils.StringOptions(
 #         ["vit"],
 #         default="vit",
 #         allow_none=False,
