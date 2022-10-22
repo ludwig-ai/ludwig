@@ -6,6 +6,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     CONVNEXT_VARIANTS,
     DENSENET_VARIANTS,
     EFFICIENTNET_VARIANTS,
+    GOOGLENET_VARIANTS,
     MLPMixerEncoder,
     RESNET_TORCH_VARIANTS,
     Stacked2DCNN,
@@ -13,6 +14,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     TVConvNeXtEncoder,
     TVDenseNetEncoder,
     TVEfficientNetEncoder,
+    TVGoogLeNetEncoder,
     TVResNetEncoder,
     TVVGGEncoder,
     VGG_VARIANTS,
@@ -280,3 +282,34 @@ def test_tv_efficientnet_encoder(
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+@pytest.mark.skip(reason="GoogLeNet returns custom object, not a torch.Tensor, more R&D needed")
+@pytest.mark.parametrize("trainable", [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in GOOGLENET_VARIANTS])
+def test_tv_googlenet_encoder(
+        model_variant: int,
+        use_pretrained: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
+):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    pretrained_model = TVGoogLeNetEncoder(
+        model_variant=model_variant,
+        use_pretrained=use_pretrained,
+        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+        trainable=trainable,
+    )
+    inputs = torch.rand(2, *pretrained_model.input_shape)
+    if pretrained_model.model.aux_logits:
+        outputs, aux_logits = pretrained_model(inputs)
+        assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape

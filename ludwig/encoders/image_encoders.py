@@ -34,6 +34,7 @@ from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # T
     TVConvNeXtEncoderConfig,
     TVDenseNetEncoderConfig,
     TVEfficientNetEncoderConfig,
+    TVGoogLeNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
 )
@@ -602,7 +603,7 @@ class TVDenseNetEncoder(TVBaseEncoder):
 
     @staticmethod
     def get_schema_cls():
-        return TVConvNeXtEncoderConfig
+        return TVDenseNetEncoderConfig
 
 
 EFFICIENTNET_VARIANTS = [
@@ -639,6 +640,55 @@ class TVEfficientNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVEfficientNetEncoderConfig
+
+
+GOOGLENET_VARIANTS = [
+    TVModelVariant("base", tvm.googlenet, tvm.GoogLeNet_Weights),
+]
+
+
+@register_torchvision_variant(GOOGLENET_VARIANTS)
+@register_encoder("googlenet_torch", IMAGE)
+class TVGoogLeNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "googlenet_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVGoogLeNetEncoderConfig
+
+    # TODO: WIP more work is needed to resolve custom object return
+    #       Research need for aux_logits
+    #       https://discuss.pytorch.org/t/why-auxiliary-logits-set-to-false-in-train-mode/40705
+    # override TVBaseEncoder property and forward method because GoogLeNet
+    # does not return a tensor but a custom object wih the tensor embedded
+    @property
+    def output_shape(self) -> torch.Size:
+        # create synthetic image and run through forward method
+        inputs = torch.randn([1, *self.input_shape])
+        if self.model.training and self.model.aux_logits:
+            logits, aux_logits = self.model(inputs)
+        else:
+            logits = self.model(inputs)
+
+        return torch.Size(logits.shape[1:])
+
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+        if self.model.training and self.model.aux_logits:
+            logits, aux_logits = self.model(inputs)
+            return {"encoder_output": logits}
+        else:
+            return {"encoder_output": self.model(inputs)}
 
 
 RESNET_TORCH_VARIANTS = [

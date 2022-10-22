@@ -766,6 +766,25 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("googlenet_torch", IMAGE)
+@dataclass
+class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["googlenet_torch"],
+        default="googlenet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["base"],
+        default="base",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVGoogLeNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
