@@ -675,19 +675,18 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
     def output_shape(self) -> torch.Size:
         # create synthetic image and run through forward method
         inputs = torch.randn([1, *self.input_shape])
-        if self.model.training and self.model.aux_logits:
-            logits, aux_logits = self.model(inputs)
-        else:
-            logits = self.model(inputs)
+        outputs = self.model(inputs)
+        if not isinstance(outputs, torch.Tensor):
+            outputs = outputs[0]
 
-        return torch.Size(logits.shape[1:])
+        return torch.Size(outputs.shape[1:])
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-        if self.model.training and self.model.aux_logits:
-            logits, aux_logits = self.model(inputs)
-            return {"encoder_output": logits}
-        else:
-            return {"encoder_output": self.model(inputs)}
+        outputs = self.model(inputs)
+        if not isinstance(outputs, torch.Tensor):
+            outputs = outputs[0]
+
+        return {"encoder_output": outputs}
 
 
 RESNET_TORCH_VARIANTS = [

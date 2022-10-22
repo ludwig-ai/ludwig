@@ -310,6 +310,5 @@ def test_tv_googlenet_encoder(
         trainable=trainable,
     )
     inputs = torch.rand(2, *pretrained_model.input_shape)
-    if pretrained_model.model.aux_logits:
-        outputs, aux_logits = pretrained_model(inputs)
-        assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+    outputs = pretrained_model(inputs)
+    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
