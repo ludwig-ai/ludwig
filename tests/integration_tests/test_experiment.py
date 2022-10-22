@@ -682,7 +682,9 @@ def test_visual_question_answering(tmpdir):
         image_feature(
             folder=image_dest_folder,
             preprocessing={"in_memory": True, "height": 32, "width": 32, "num_channels": 3, "num_processes": 5},
-            encoder={"type": "stacked_cnn", },
+            encoder={
+                "type": "stacked_cnn",
+            },
         ),
         text_feature(encoder={"type": "embed", "min_len": 1}),
     ]
@@ -707,7 +709,9 @@ def test_image_resizing_num_channel_handling(tmpdir):
         image_feature(
             folder=image_dest_folder,
             preprocessing={"in_memory": True, "height": 32, "width": 32, "num_channels": 3, "num_processes": 5},
-            encoder={"type": "stacked_cnn", },
+            encoder={
+                "type": "stacked_cnn",
+            },
         ),
         text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="minmax"),
