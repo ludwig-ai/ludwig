@@ -592,8 +592,8 @@ class TVDenseNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "densenet_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -654,8 +654,8 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "googlenet_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
