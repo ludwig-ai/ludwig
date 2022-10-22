@@ -27,14 +27,6 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: float = schema_utils.NonNegativeFloat(
-        default=None,
-        allow_none=True,
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["computed_fill_value"],
-    )
-
     height: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,

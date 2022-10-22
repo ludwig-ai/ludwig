@@ -34,14 +34,6 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[AUDIO][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: float = schema_utils.NonNegativeFloat(
-        default=None,
-        allow_none=True,
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=FEATURE_METADATA[AUDIO][PREPROCESSING]["computed_fill_value"],
-    )
-
     in_memory: bool = schema_utils.Boolean(
         default=True,
         description="Defines whether the audio dataset will reside in memory during the training process or will be "

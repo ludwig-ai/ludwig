@@ -37,14 +37,6 @@ class SetPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[SET][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: str = schema_utils.String(
-        default=strings_utils.UNKNOWN_SYMBOL,
-        allow_none=False,
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=FEATURE_METADATA[SET][PREPROCESSING]["computed_fill_value"],
-    )
-
     lowercase: bool = schema_utils.Boolean(
         default=False,
         description="If true, converts the string to lowercase before tokenizing.",

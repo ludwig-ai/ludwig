@@ -35,19 +35,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
-        default=None,
-        allow_none=True,
-        field_options=[
-            schema_utils.FloatRange(default=1.0, allow_none=False, min=0, max=1, description=""),
-            schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
-            schema_utils.Boolean(default=True, description=""),
-        ],
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["computed_fill_value"],
-    )
-
     fallback_true_label: str = schema_utils.String(
         default=None,
         allow_none=True,

@@ -25,11 +25,3 @@ class H3PreprocessingConfig(BasePreprocessingConfig):
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
         parameter_metadata=FEATURE_METADATA[H3][PREPROCESSING]["fill_value"],
     )
-
-    computed_fill_value: int = schema_utils.PositiveInteger(
-        default=576495936675512319,
-        allow_none=False,
-        description="The internally computed fill value to replace missing values with in case the "
-        "missing_value_strategy is fill_with_mode or fill_with_mean",
-        parameter_metadata=FEATURE_METADATA[H3][PREPROCESSING]["computed_fill_value"],
-    )
