@@ -24,7 +24,7 @@ import torchvision.models as tvm
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
-from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
+from ludwig.modules.convolutional_modules import Conv2DStack
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
 from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # TODO: Remove; ViTEncoderConfig,  # TODO: Remove
@@ -39,7 +39,6 @@ from ludwig.schema.encoders.image_encoders import (  # ResNetEncoderConfig,  # T
     TVVGGEncoderConfig,
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
-from ludwig.utils.pytorch_utils import freeze_parameters
 
 logger = logging.getLogger(__name__)
 
