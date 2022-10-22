@@ -332,7 +332,9 @@ def image_feature(folder, **kwargs):
         "type": "image",
         "name": "image_" + random_string(),
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
-        ENCODER: {"type": "stacked_cnn", },
+        ENCODER: {
+            "type": "stacked_cnn",
+        },
         "destination_folder": folder,
     }
     recursive_update(feature, kwargs)
