@@ -567,7 +567,7 @@ VGG_VARIANTS = [
 @register_encoder("vgg_torch", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
     # specify base torchvison model
-    torchvision_model_type: str = "vgg"
+    torchvision_model_type: str = "vgg_torch"
 
     def __init__(
         self,
@@ -593,7 +593,7 @@ ALEXNET_VARIANTS = [
 @register_encoder("alexnet_torch", IMAGE)
 class TVAlexNetEncoder(TVBaseEncoder):
     # specify base torchvison model
-    torchvision_model_type: str = "alexnet"
+    torchvision_model_type: str = "alexnet_torch"
 
     def __init__(
         self,
@@ -629,7 +629,7 @@ EFFICIENTNET_VARIANTS = [
 @register_encoder("efficientnet_torch", IMAGE)
 class TVEfficientNetEncoder(TVBaseEncoder):
     # specify base torchvison model
-    torchvision_model_type: str = "efficientnet"
+    torchvision_model_type: str = "efficientnet_torch"
 
     def __init__(
         self,

@@ -697,12 +697,12 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
-@register_encoder_config("vgg", IMAGE)
+@register_encoder_config("vgg_torch", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.StringOptions(
-        ["vgg"],
-        default="vgg",
+        ["vgg_torch"],
+        default="vgg_torch",
         allow_none=False,
         description="Type of encoder.",
     )
@@ -736,12 +736,12 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
     )
 
 
-@register_encoder_config("alexnet", IMAGE)
+@register_encoder_config("alexnet_torch", IMAGE)
 @dataclass
 class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.StringOptions(
-        ["alexnet"],
-        default="alexnet",
+        ["alexnet_torch"],
+        default="alexnet_torch",
         allow_none=False,
         description="Type of encoder.",
     )
@@ -755,12 +755,12 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
-@register_encoder_config("efficientnet", IMAGE)
+@register_encoder_config("efficientnet_torch", IMAGE)
 @dataclass
 class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
     type: str = schema_utils.StringOptions(
-        ["efficientnet"],
-        default="efficientnet",
+        ["efficientnet_torch"],
+        default="efficientnet_torch",
         allow_none=False,
         description="Type of encoder.",
     )
