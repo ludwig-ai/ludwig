@@ -804,6 +804,25 @@ class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("mobilenetv2_torch", IMAGE)
+@dataclass
+class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["mobilenetv2_torch"],
+        default="mobilenetv2_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["base"],
+        default="base",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVMNASNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):

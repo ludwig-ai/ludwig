@@ -36,6 +36,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVEfficientNetEncoderConfig,
     TVGoogLeNetEncoderConfig,
     TVMNASNetEncoderConfig,
+    TVMobileNetV2EncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
 )
@@ -717,6 +718,32 @@ class TVMNASNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVMNASNetEncoderConfig
+
+
+MOBILENETV2_VARIANTS = [
+    TVModelVariant("base", tvm.mobilenet_v2, tvm.MobileNet_V2_Weights),
+]
+
+
+@register_torchvision_variant(MOBILENETV2_VARIANTS)
+@register_encoder("mobilenetv2_torch", IMAGE)
+class TVMobileNetV2Encoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "mobilenetv2_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVMobileNetV2EncoderConfig
 
 
 RESNET_TORCH_VARIANTS = [
