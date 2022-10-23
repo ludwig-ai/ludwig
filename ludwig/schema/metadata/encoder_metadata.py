@@ -12923,6 +12923,36 @@ ENCODER_METADATA = {
             internal_only=False,
         ),
     },
+    "TVWideResNetEncoder": {
+        "model_variant": ParameterMetadata(
+            ui_display_name=None,
+            default_value_reasoning=None,
+            example_value=None,
+            related_parameters=None,
+            other_information=None,
+            description_implications=None,
+            suggested_values=None,
+            suggested_values_reasoning=None,
+            commonly_used=False,
+            expected_impact=ExpectedImpact.UNKNOWN,
+            literature_references=None,
+            internal_only=False,
+        ),
+        "type": ParameterMetadata(
+            ui_display_name=None,
+            default_value_reasoning=None,
+            example_value=None,
+            related_parameters=None,
+            other_information=None,
+            description_implications=None,
+            suggested_values=None,
+            suggested_values_reasoning=None,
+            commonly_used=False,
+            expected_impact=ExpectedImpact.UNKNOWN,
+            literature_references=None,
+            internal_only=False,
+        ),
+    },
     "ViTEncoder": {
         "attention_probs_dropout_prob": ParameterMetadata(
             ui_display_name="Attention Dropout",
@@ -12931,8 +12961,8 @@ ENCODER_METADATA = {
             related_parameters=["hidden_dropout_prob,\nattention_probs_dropout_prob"],
             other_information=None,
             description_implications="Dropout is a computationally cheap regularization method where during training, "
-            "some neurons are randomly ignored or “dropped out”. Increasing dropout has the "
-            "effect of making the training process more noisy and lowering overall network "
+                                     "some neurons are randomly ignored or “dropped out”. Increasing dropout has the "
+                                     "effect of making the training process more noisy and lowering overall network "
             "capacity, but it can be an effective regularization method to reduce "
             "overfitting and improve generalization.",
             suggested_values="0.05 - 0.8",

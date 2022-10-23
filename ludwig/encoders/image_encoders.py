@@ -45,6 +45,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVSwinTransformerEncoderConfig,
     TVVGGEncoderConfig,
     TVViTEncoderConfig,
+    TVWideResNetEncoderConfig,
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
 
@@ -995,3 +996,30 @@ class TVViTEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVViTEncoderConfig
+
+
+WIDE_RESNET_VARIANTS = [
+    TVModelVariant("50_2", tvm.wide_resnet50_2, tvm.Wide_ResNet50_2_Weights),
+    TVModelVariant("101_2", tvm.wide_resnet101_2, tvm.Wide_ResNet101_2_Weights),
+]
+
+
+@register_torchvision_variant(WIDE_RESNET_VARIANTS)
+@register_encoder("wide_resnet_torch", IMAGE)
+class TVWideResNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "wide_resnet_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVWideResNetEncoderConfig

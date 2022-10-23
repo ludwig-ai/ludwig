@@ -688,7 +688,7 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
         default="base",
         allow_none=False,
@@ -707,7 +707,7 @@ class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         ["tiny", "small", "base", "large"],
         default="base",
         allow_none=False,
@@ -745,7 +745,7 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         [
             "b0",
             "b1",
@@ -776,7 +776,7 @@ class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
         default="base",
         allow_none=False,
@@ -795,7 +795,7 @@ class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         ["0_5", "0_75", "1_0", "1_3"],
         default="0_5",
         allow_none=False,
@@ -814,7 +814,7 @@ class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
         default="base",
         allow_none=False,
@@ -833,7 +833,7 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         [
             "small",
             "large",
@@ -855,7 +855,7 @@ class TVRegNetEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         [
             "x_1_6gf",
             "x_16gf",
@@ -909,7 +909,7 @@ class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         ["50_32x4d", "101_32x8d", "101_64x4d"],
         default="50_32x4d",
         allow_none=False,
@@ -928,7 +928,7 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         [
             "x0_5",
             "x1_0",
@@ -952,7 +952,7 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         [
             "t",
             "s",
@@ -975,7 +975,7 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    model_variant: Optional[int] = schema_utils.StringOptions(
+    model_variant: Optional[str] = schema_utils.StringOptions(
         [
             "b_16",
             "b_32",
@@ -1026,4 +1026,23 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
             ),
         ],
         parameter_metadata=ENCODER_METADATA["TVVGGEncoder"]["model_variant"],
+    )
+
+
+@register_encoder_config("wide_resnet_torch", IMAGE)
+@dataclass
+class TVWideResNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["wide_resnet_torch"],
+        default="wide_resnet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[str] = schema_utils.StringOptions(
+        ["50_2", "101_2", ],
+        default="50_2",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVViTEncoder"]["model_variant"],
     )

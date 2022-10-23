@@ -34,8 +34,10 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     TVSwinTransformerEncoder,
     TVVGGEncoder,
     TVViTEncoder,
+    TVWideResNetEncoder,
     VGG_VARIANTS,
     VIT_VARIANTS,
+    WIDE_RESNET_VARIANTS,
 )
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
@@ -556,6 +558,35 @@ def test_tv_vit_encoder(
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVViTEncoder(
+        model_variant=model_variant,
+        use_pretrained=use_pretrained,
+        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+        trainable=trainable,
+    )
+    inputs = torch.rand(2, *pretrained_model.input_shape)
+    outputs = pretrained_model(inputs)
+    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in WIDE_RESNET_VARIANTS])
+def test_tv_wide_resnet_encoder(
+    model_variant: str,
+    use_pretrained: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
+):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    pretrained_model = TVWideResNetEncoder(
         model_variant=model_variant,
         use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,
