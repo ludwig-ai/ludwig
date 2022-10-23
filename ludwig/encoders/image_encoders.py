@@ -40,6 +40,8 @@ from ludwig.schema.encoders.image_encoders import (
     TVMobileNetV3EncoderConfig,
     TVRegNetEncoderConfig,
     TVResNetEncoderConfig,
+    TVResNeXtEncoderConfig,
+    TVShuffleNetV2EncoderConfig,
     TVVGGEncoderConfig,
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
@@ -843,6 +845,63 @@ class TVResNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVResNetEncoderConfig
+
+
+RESNEXT_VARIANTS = [
+    TVModelVariant("50_32x4d", tvm.resnext50_32x4d, tvm.ResNeXt50_32X4D_Weights),
+    TVModelVariant("101_328xd", tvm.resnext101_32x8d, tvm.ResNeXt101_32X8D_Weights),
+    TVModelVariant("101_64x4d", tvm.resnext101_64x4d, tvm.ResNeXt101_64X4D_Weights),
+]
+
+
+@register_torchvision_variant(RESNEXT_VARIANTS)
+@register_encoder("resnext_torch", IMAGE)
+class TVResNeXtEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "resnext_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVResNeXtEncoderConfig
+
+
+SHUFFLENET_V2_VARIANTS = [
+    TVModelVariant("x0_5", tvm.shufflenet_v2_x0_5, tvm.ShuffleNet_V2_X0_5_Weights),
+    TVModelVariant("x1_0", tvm.shufflenet_v2_x1_0, tvm.ShuffleNet_V2_X1_0_Weights),
+    TVModelVariant("x1_5", tvm.shufflenet_v2_x1_5, tvm.ShuffleNet_V2_X1_5_Weights),
+    TVModelVariant("x2_0", tvm.shufflenet_v2_x2_0, tvm.ShuffleNet_V2_X2_0_Weights),
+]
+
+
+@register_torchvision_variant(SHUFFLENET_V2_VARIANTS)
+@register_encoder("shufflenet_v2_torch", IMAGE)
+class TVShuffleNetV2Encoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "shufflenet_v2_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVShuffleNetV2EncoderConfig
 
 
 VGG_VARIANTS = [

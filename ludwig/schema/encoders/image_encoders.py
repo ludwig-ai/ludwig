@@ -899,6 +899,44 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("resnext_torch", IMAGE)
+@dataclass
+class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["resnext_torch"],
+        default="resnext_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["50_32x4d", "101_32x8d", "101_64x4d"],
+        default="50_32x4d",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVResNeXtEncoder"]["model_variant"],
+    )
+
+
+@register_encoder_config("shufflenet_v2_torch", IMAGE)
+@dataclass
+class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["shufflenet_v2_torch"],
+        default="shufflenet_v2_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["x0_5", "x1_0", "x1_5", "x2_0", ],
+        default="x0_5",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVShuffleNetV2Encoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("vgg_torch", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
