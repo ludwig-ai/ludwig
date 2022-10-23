@@ -30,6 +30,9 @@ class GBMExplainer(Explainer):
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
+        if self.average:
+            feat_imp = feat_imp.mean(axis=0)
+
         expected_values = []
         for _ in range(self.vocab_size):
             for explanation in self.explanations:

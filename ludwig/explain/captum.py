@@ -145,7 +145,6 @@ class IntegratedGradientsExplainer(Explainer):
         expected_values = []
         for target_idx in tqdm(range(self.vocab_size), desc="Explain"):
             total_attribution = None
-
             for input_batch in zip(*inputs_encoded_splits):
                 input_batch = [ipt.to(DEVICE) for ipt in input_batch]
                 attribution = explainer.attribute(
@@ -163,9 +162,17 @@ class IntegratedGradientsExplainer(Explainer):
                 attribution = attribution.T
 
                 if total_attribution is not None:
-                    total_attribution = np.concatenate([total_attribution, attribution], axis=0)
+                    if self.average:
+                        total_attribution += attribution.sum(dim=0)
+                    else:
+                        total_attribution = np.concatenate([total_attribution, attribution], axis=0)
                 else:
-                    total_attribution = attribution
+                    if self.average:
+                        total_attribution = attribution.sum(dim=0)
+                    else:
+                        total_attribution = attribution
+
+            total_attribution /= len(self.inputs_df)
 
             for feature_attributions, explanation in zip(total_attribution, self.explanations):
                 # Add the feature attributions to the explanation object for this row.
