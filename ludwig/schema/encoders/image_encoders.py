@@ -842,6 +842,41 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("regnet_torch", IMAGE)
+@dataclass
+class TVRegNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["regnet_torch"],
+        default="regnet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        [
+            "x_1_6gf",
+            "x_16gf",
+            "x_32gf",
+            "x_3_2gf",
+            "x_400mf",
+            "x_800mf",
+            "x_8gf",
+            "y_128gf",
+            "y_16gf",
+            "y_1_6gf",
+            "y_32gf",
+            "y_3_2gf",
+            "y_400mf",
+            "y_800mf",
+            "y_8gf",
+        ],
+        default="x_1_6gf",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVRegNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):

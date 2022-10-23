@@ -38,6 +38,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVMNASNetEncoderConfig,
     TVMobileNetV2EncoderConfig,
     TVMobileNetV3EncoderConfig,
+    TVRegNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
 )
@@ -772,6 +773,46 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVMobileNetV3EncoderConfig
+
+
+REGNET_VARIANTS = [
+    TVModelVariant("x_16gf", tvm.regnet_x_16gf, tvm.RegNet_X_16GF_Weights),
+    TVModelVariant("x_1_6gf", tvm.regnet_x_1_6gf, tvm.RegNet_X_1_6GF_Weights),
+    TVModelVariant("x_32gf", tvm.regnet_x_32gf, tvm.RegNet_X_32GF_Weights),
+    TVModelVariant("x_3_2gf", tvm.regnet_x_3_2gf, tvm.RegNet_X_3_2GF_Weights),
+    TVModelVariant("x_400mf", tvm.regnet_x_400mf, tvm.RegNet_X_400MF_Weights),
+    TVModelVariant("x_800mf", tvm.regnet_x_800mf, tvm.RegNet_X_800MF_Weights),
+    TVModelVariant("x_8gf", tvm.regnet_x_8gf, tvm.RegNet_X_8GF_Weights),
+    TVModelVariant("y_128gf", tvm.regnet_y_128gf, tvm.RegNet_Y_128GF_Weights),
+    TVModelVariant("y_16gf", tvm.regnet_y_16gf, tvm.RegNet_Y_16GF_Weights),
+    TVModelVariant("y_1_6gf", tvm.regnet_y_1_6gf, tvm.RegNet_Y_1_6GF_Weights),
+    TVModelVariant("y_32gf", tvm.regnet_y_32gf, tvm.RegNet_Y_32GF_Weights),
+    TVModelVariant("y_3_2gf", tvm.regnet_y_3_2gf, tvm.RegNet_Y_3_2GF_Weights),
+    TVModelVariant("y_400mf", tvm.regnet_y_400mf, tvm.RegNet_Y_400MF_Weights),
+    TVModelVariant("y_800mf", tvm.regnet_y_800mf, tvm.RegNet_Y_800MF_Weights),
+    TVModelVariant("y_8gf", tvm.regnet_y_8gf, tvm.RegNet_Y_8GF_Weights),
+]
+
+
+@register_torchvision_variant(REGNET_VARIANTS)
+@register_encoder("regnet_torch", IMAGE)
+class TVRegNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "regnet_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVRegNetEncoderConfig
 
 
 RESNET_TORCH_VARIANTS = [
