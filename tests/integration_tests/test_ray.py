@@ -477,7 +477,10 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder={"type": "stacked_cnn", "output_size": 16, },
+            encoder={
+                "type": "stacked_cnn",
+                "output_size": 16,
+            },
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
         ),
     ]
@@ -558,7 +561,10 @@ def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder={"type": "stacked_cnn", "output_size": 16, },
+            encoder={
+                "type": "stacked_cnn",
+                "output_size": 16,
+            },
             preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
         ),
     ]
