@@ -834,7 +834,10 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
     )
 
     model_variant: Optional[int] = schema_utils.StringOptions(
-        ["small", "large", ],
+        [
+            "small",
+            "large",
+        ],
         default="small",
         allow_none=False,
         description="Pretrained model variant to use.",
