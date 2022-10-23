@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 from captum.attr import IntegratedGradients
 from torch.autograd import Variable
+from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
@@ -38,7 +39,7 @@ class WrapperModule(torch.nn.Module):
         # Add back the dictionary structure so it conforms to ECD format.
         encoded_inputs = {}
         for k, v in zip(self.model.input_features.keys(), args):
-            encoded_inputs[k] = {"encoder_output": v.to(DEVICE)}
+            encoded_inputs[k] = {"encoder_output": v}
 
         # Run the combiner and decoder separately since we already encoded the input.
         combined_outputs = self.model.combine(encoded_inputs)
@@ -138,21 +139,19 @@ class IntegratedGradientsExplainer(Explainer):
         explanation_model = WrapperModule(self.model.model, self.target_feature_name)
         explainer = IntegratedGradients(explanation_model)
 
+        inputs_encoded_splits = [ipt.split(self.model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
+
         # Compute attribution for each possible output feature label separately.
         expected_values = []
-        for target_idx in range(self.vocab_size):
+        for target_idx in tqdm(range(self.vocab_size), desc="Explain"):
             total_attribution = None
-            total_delta = None
 
-            inputs_encoded_splits = [ipt.split(self.model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
             for input_batch in zip(*inputs_encoded_splits):
                 input_batch = [ipt.to(DEVICE) for ipt in input_batch]
-                attribution, delta = explainer.attribute(
+                attribution = explainer.attribute(
                     tuple(input_batch),
                     baselines=tuple(baseline),
                     target=target_idx if self.is_category_target else None,
-                    internal_batch_size=self.model.config_obj.trainer.batch_size,
-                    return_convergence_delta=True,
                 )
 
                 # Attribution over the feature embeddings returns a vector with the same dimensions of
@@ -163,26 +162,17 @@ class IntegratedGradientsExplainer(Explainer):
                 # Transpose to [batch_size, num_input_features]
                 attribution = attribution.T
 
-                delta = delta.detach().cpu().numpy()
-
                 if total_attribution is not None:
-                    print(total_attribution.shape, attribution.shape)
                     total_attribution = np.concatenate([total_attribution, attribution], axis=0)
-                    total_delta = np.concatenate([total_delta, delta], axis=0)
                 else:
                     total_attribution = attribution
-                    total_delta = delta
 
             for feature_attributions, explanation in zip(total_attribution, self.explanations):
                 # Add the feature attributions to the explanation object for this row.
                 explanation.add(feature_attributions)
 
-            # The convergence delta is given per row, so take the mean to compute the
-            # average delta for the feature.
-            # TODO(travis): this isn't really the expected value as it is for shap, so
-            #  find a better name.
-            expected_value = total_delta.mean()
-            expected_values.append(expected_value)
+            # TODO(travis): for force plots, need something similar to SHAP E[X]
+            expected_values.append(0.0)
 
             if self.is_binary_target:
                 # For binary targets, we only need to compute attribution for the positive class (see below).
@@ -194,6 +184,7 @@ class IntegratedGradientsExplainer(Explainer):
                 le_true = explanation.label_explanations[0]
                 explanation.add(le_true.feature_attributions * -1)
 
-            expected_values.append(expected_values[0] * -1)
+            # TODO(travis): for force plots, need something similar to SHAP E[X]
+            expected_values.append(0.0)
 
         return self.explanations, expected_values
