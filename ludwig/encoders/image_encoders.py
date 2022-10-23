@@ -734,8 +734,8 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
     torchvision_model_type: str = "mobilenetv2_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -761,8 +761,8 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
     torchvision_model_type: str = "mobilenetv3_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
@@ -801,8 +801,8 @@ class TVRegNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "regnet_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
