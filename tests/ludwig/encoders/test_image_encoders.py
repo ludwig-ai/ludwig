@@ -29,6 +29,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
 )
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
+from tests.integration_tests.utils import slow
 
 RANDOM_SEED = 1919
 
@@ -351,6 +352,7 @@ def test_tv_mobilenetv3_encoder(
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
+@slow
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
