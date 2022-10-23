@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -129,52 +129,20 @@ class IntegratedGradientsExplainer(Explainer):
         # Convert input data into embedding tensors from the output of the model encoders.
         inputs_encoded = get_input_tensors(self.model, self.inputs_df)
         sample_encoded = get_input_tensors(self.model, self.sample_df)
-
-        # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
-        # TODO(travis): pre-compute this during training from the full training dataset.
-        baseline = [torch.unsqueeze(torch.mean(t, dim=0), 0).to(DEVICE) for t in sample_encoded]
-
-        # Configure the explainer, which includes wrapping the model so its interface conforms to
-        # the format expected by Captum.
-        explanation_model = WrapperModule(self.model.model, self.target_feature_name)
-        explainer = IntegratedGradients(explanation_model)
-
-        inputs_encoded_splits = [ipt.split(self.model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
+        baseline = get_baseline(sample_encoded)
 
         # Compute attribution for each possible output feature label separately.
         expected_values = []
         for target_idx in tqdm(range(self.vocab_size), desc="Explain"):
-            total_attribution = None
-            for input_batch in zip(*inputs_encoded_splits):
-                input_batch = [ipt.to(DEVICE) for ipt in input_batch]
-                attribution = explainer.attribute(
-                    tuple(input_batch),
-                    baselines=tuple(baseline),
-                    target=target_idx if self.is_category_target else None,
-                )
-
-                # Attribution over the feature embeddings returns a vector with the same dimensions of
-                # shape [batch_size, embedding_size], so take the sum over this vector in order to return a single
-                # floating point attribution value per input feature.
-                attribution = np.array([t.detach().cpu().numpy().sum(1) for t in attribution])
-
-                # Transpose to [batch_size, num_input_features]
-                attribution = attribution.T
-
-                if total_attribution is not None:
-                    if self.use_global:
-                        total_attribution += attribution.sum(axis=0, keepdims=True)
-                    else:
-                        total_attribution = np.concatenate([total_attribution, attribution], axis=0)
-                else:
-                    if self.use_global:
-                        total_attribution = attribution.sum(axis=0, keepdims=True)
-                    else:
-                        total_attribution = attribution
-
-            if self.use_global:
-                total_attribution /= len(self.inputs_df)
-            print(total_attribution.shape)
+            total_attribution = get_total_attribution(
+                self.model,
+                self.target_feature_name,
+                target_idx if self.is_category_target else None,
+                inputs_encoded,
+                baseline,
+                self.use_global,
+                len(self.inputs_df),
+            )
 
             for feature_attributions, explanation in zip(total_attribution, self.explanations):
                 # Add the feature attributions to the explanation object for this row.
@@ -197,3 +165,61 @@ class IntegratedGradientsExplainer(Explainer):
             expected_values.append(0.0)
 
         return self.explanations, expected_values
+
+
+def get_baseline(sample_encoded: List[Variable]) -> List[Variable]:
+    # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
+    # TODO(travis): pre-compute this during training from the full training dataset.
+    return [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in sample_encoded]
+
+
+def get_total_attribution(
+    model: LudwigModel,
+    target_feature_name: str,
+    target_idx: Optional[int],
+    inputs_encoded: List[Variable],
+    baseline: List[Variable],
+    use_global: bool,
+    nsamples: int,
+) -> np.array:
+
+    # Configure the explainer, which includes wrapping the model so its interface conforms to
+    # the format expected by Captum.
+    explanation_model = WrapperModule(model.model, target_feature_name)
+    explainer = IntegratedGradients(explanation_model)
+
+    inputs_encoded_splits = [ipt.split(model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
+    baseline = [t.to(DEVICE) for t in baseline]
+
+    total_attribution = None
+    for input_batch in zip(*inputs_encoded_splits):
+        input_batch = [ipt.to(DEVICE) for ipt in input_batch]
+        attribution = explainer.attribute(
+            tuple(input_batch),
+            baselines=tuple(baseline),
+            target=target_idx,
+        )
+
+        # Attribution over the feature embeddings returns a vector with the same dimensions of
+        # shape [batch_size, embedding_size], so take the sum over this vector in order to return a single
+        # floating point attribution value per input feature.
+        attribution = np.array([t.detach().cpu().numpy().sum(1) for t in attribution])
+
+        # Transpose to [batch_size, num_input_features]
+        attribution = attribution.T
+
+        if total_attribution is not None:
+            if use_global:
+                total_attribution += attribution.sum(axis=0, keepdims=True)
+            else:
+                total_attribution = np.concatenate([total_attribution, attribution], axis=0)
+        else:
+            if use_global:
+                total_attribution = attribution.sum(axis=0, keepdims=True)
+            else:
+                total_attribution = attribution
+
+    if use_global:
+        total_attribution /= nsamples
+
+    return total_attribution
