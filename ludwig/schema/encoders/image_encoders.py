@@ -1040,7 +1040,10 @@ class TVWideResNetEncoderConfig(TVBaseEncoderConfig):
     )
 
     model_variant: Optional[str] = schema_utils.StringOptions(
-        ["50_2", "101_2", ],
+        [
+            "50_2",
+            "101_2",
+        ],
         default="50_2",
         allow_none=False,
         description="Pretrained model variant to use.",

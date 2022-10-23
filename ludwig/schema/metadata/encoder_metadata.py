@@ -12961,8 +12961,8 @@ ENCODER_METADATA = {
             related_parameters=["hidden_dropout_prob,\nattention_probs_dropout_prob"],
             other_information=None,
             description_implications="Dropout is a computationally cheap regularization method where during training, "
-                                     "some neurons are randomly ignored or “dropped out”. Increasing dropout has the "
-                                     "effect of making the training process more noisy and lowering overall network "
+            "some neurons are randomly ignored or “dropped out”. Increasing dropout has the "
+            "effect of making the training process more noisy and lowering overall network "
             "capacity, but it can be an effective regularization method to reduce "
             "overfitting and improve generalization.",
             suggested_values="0.05 - 0.8",
