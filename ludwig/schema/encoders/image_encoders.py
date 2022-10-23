@@ -937,6 +937,25 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("swin_transformer_torch", IMAGE)
+@dataclass
+class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["swin_transformer_torch"],
+        default="swin_transformer_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["t", "s", "b", ],
+        default="t",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVShuffleNetV2Encoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("vgg_torch", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):

@@ -42,6 +42,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVResNetEncoderConfig,
     TVResNeXtEncoderConfig,
     TVShuffleNetV2EncoderConfig,
+    TVSwinTransformerEncoderConfig,
     TVVGGEncoderConfig,
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
@@ -902,6 +903,34 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVShuffleNetV2EncoderConfig
+
+
+SWIN_TRANSFORMER_VARIANTS = [
+    TVModelVariant("t", tvm.swin_t, tvm.Swin_T_Weights),
+    TVModelVariant("s", tvm.swin_s, tvm.Swin_S_Weights),
+    TVModelVariant("b", tvm.swin_b, tvm.Swin_B_Weights),
+]
+
+
+@register_torchvision_variant(SWIN_TRANSFORMER_VARIANTS)
+@register_encoder("swin_transformer_torch", IMAGE)
+class TVSwinTransformerEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "swin_transformer_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.head = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVSwinTransformerEncoderConfig
 
 
 VGG_VARIANTS = [
