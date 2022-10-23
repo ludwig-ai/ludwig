@@ -163,16 +163,18 @@ class IntegratedGradientsExplainer(Explainer):
 
                 if total_attribution is not None:
                     if self.use_global:
-                        total_attribution += attribution.sum(dim=0)
+                        total_attribution += attribution.sum(axis=0, keepdims=True)
                     else:
                         total_attribution = np.concatenate([total_attribution, attribution], axis=0)
                 else:
                     if self.use_global:
-                        total_attribution = attribution.sum(dim=0)
+                        total_attribution = attribution.sum(axis=0, keepdims=True)
                     else:
                         total_attribution = attribution
 
-            total_attribution /= len(self.inputs_df)
+            if self.use_global:
+                total_attribution /= len(self.inputs_df)
+            print(total_attribution.shape)
 
             for feature_attributions, explanation in zip(total_attribution, self.explanations):
                 # Add the feature attributions to the explanation object for this row.

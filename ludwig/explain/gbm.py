@@ -31,7 +31,7 @@ class GBMExplainer(Explainer):
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
         if self.use_global:
-            feat_imp = feat_imp.mean(axis=0)
+            feat_imp = feat_imp.mean(axis=0, keepdims=True)
 
         expected_values = []
         for _ in range(self.vocab_size):
