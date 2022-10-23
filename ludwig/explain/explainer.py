@@ -13,7 +13,12 @@ from ludwig.explain.util import prepare_data
 @DeveloperAPI
 class Explainer(metaclass=ABCMeta):
     def __init__(
-        self, model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.DataFrame, target: str, average: bool = False
+        self,
+        model: LudwigModel,
+        inputs_df: pd.DataFrame,
+        sample_df: pd.DataFrame,
+        target: str,
+        use_global: bool = False,
     ):
         """Constructor for the explainer.
 
@@ -23,13 +28,13 @@ class Explainer(metaclass=ABCMeta):
         :param inputs_df: (pd.DataFrame) The input data to explain.
         :param sample_df: (pd.DataFrame) A sample of the ground truth data.
         :param target: (str) The name of the target to explain.
-        :param average: (bool) Return average explanation for all rows if True (default: False).
+        :param use_global: (bool) Return global explanation aggregated over all rows if True (default: False).
         """
         self.model = model
         self.inputs_df = inputs_df
         self.sample_df = sample_df
         self.target = target
-        self.average = average
+        self.use_global = use_global
         self.inputs_df, self.sample_df, self.feature_cols, self.target_feature_name = prepare_data(
             model, inputs_df, sample_df, target
         )

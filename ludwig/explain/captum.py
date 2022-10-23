@@ -162,12 +162,12 @@ class IntegratedGradientsExplainer(Explainer):
                 attribution = attribution.T
 
                 if total_attribution is not None:
-                    if self.average:
+                    if self.use_global:
                         total_attribution += attribution.sum(dim=0)
                     else:
                         total_attribution = np.concatenate([total_attribution, attribution], axis=0)
                 else:
-                    if self.average:
+                    if self.use_global:
                         total_attribution = attribution.sum(dim=0)
                     else:
                         total_attribution = attribution
