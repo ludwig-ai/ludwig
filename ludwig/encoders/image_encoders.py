@@ -43,6 +43,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVResNeXtEncoderConfig,
     TVShuffleNetV2EncoderConfig,
     TVSwinTransformerEncoderConfig,
+    TVViTEncoderConfig,
     TVVGGEncoderConfig,
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
@@ -964,3 +965,33 @@ class TVVGGEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVVGGEncoderConfig
+
+
+VIT_VARIANTS = [
+    TVModelVariant("b_16", tvm.vit_b_16, tvm.ViT_B_16_Weights),
+    TVModelVariant("b_32", tvm.vit_b_32, tvm.ViT_B_32_Weights),
+    TVModelVariant("l_16", tvm.vit_l_16, tvm.ViT_L_16_Weights),
+    TVModelVariant("l_32", tvm.vit_l_32, tvm.ViT_L_32_Weights),
+    TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),
+]
+
+
+@register_torchvision_variant(VIT_VARIANTS)
+@register_encoder("vit_torch", IMAGE)
+class TVViTEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "vit_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.heads[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVViTEncoderConfig

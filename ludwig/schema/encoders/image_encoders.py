@@ -952,7 +952,26 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
         default="t",
         allow_none=False,
         description="Pretrained model variant to use.",
-        parameter_metadata=ENCODER_METADATA["TVShuffleNetV2Encoder"]["model_variant"],
+        parameter_metadata=ENCODER_METADATA["TVSwinTransformerEncoder"]["model_variant"],
+    )
+
+
+@register_encoder_config("vit_torch", IMAGE)
+@dataclass
+class TVViTEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["vit_torch"],
+        default="vit_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["b_16", "b_32", "l_16", "l_32", "h_14", ],
+        default="b_16",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVViTEncoder"]["model_variant"],
     )
 
 
