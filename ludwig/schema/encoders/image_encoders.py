@@ -929,7 +929,12 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
     )
 
     model_variant: Optional[int] = schema_utils.StringOptions(
-        ["x0_5", "x1_0", "x1_5", "x2_0", ],
+        [
+            "x0_5",
+            "x1_0",
+            "x1_5",
+            "x2_0",
+        ],
         default="x0_5",
         allow_none=False,
         description="Pretrained model variant to use.",
@@ -948,7 +953,11 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
     )
 
     model_variant: Optional[int] = schema_utils.StringOptions(
-        ["t", "s", "b", ],
+        [
+            "t",
+            "s",
+            "b",
+        ],
         default="t",
         allow_none=False,
         description="Pretrained model variant to use.",
@@ -967,7 +976,13 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
     )
 
     model_variant: Optional[int] = schema_utils.StringOptions(
-        ["b_16", "b_32", "l_16", "l_32", "h_14", ],
+        [
+            "b_16",
+            "b_32",
+            "l_16",
+            "l_32",
+            "h_14",
+        ],
         default="b_16",
         allow_none=False,
         description="Pretrained model variant to use.",

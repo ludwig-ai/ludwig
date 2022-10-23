@@ -43,8 +43,8 @@ from ludwig.schema.encoders.image_encoders import (
     TVResNeXtEncoderConfig,
     TVShuffleNetV2EncoderConfig,
     TVSwinTransformerEncoderConfig,
-    TVViTEncoderConfig,
     TVVGGEncoderConfig,
+    TVViTEncoderConfig,
 )
 from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
 
