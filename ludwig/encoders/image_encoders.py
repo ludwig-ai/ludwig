@@ -35,6 +35,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVDenseNetEncoderConfig,
     TVEfficientNetEncoderConfig,
     TVGoogLeNetEncoderConfig,
+    TVMNASNetEncoderConfig,
     TVResNetEncoderConfig,
     TVVGGEncoderConfig,
 )
@@ -687,6 +688,35 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
             outputs = outputs[0]
 
         return {"encoder_output": outputs}
+
+
+MNASNET_VARIANTS = [
+    TVModelVariant("0_5", tvm.mnasnet0_5, tvm.mnasnet.MNASNet0_5_Weights),
+    TVModelVariant("0_75", tvm.mnasnet0_75, tvm.mnasnet.MNASNet0_75_Weights),
+    TVModelVariant("1_0", tvm.mnasnet1_0, tvm.mnasnet.MNASNet1_0_Weights),
+    TVModelVariant("1_3", tvm.mnasnet1_3, tvm.mnasnet.MNASNet1_3_Weights),
+]
+
+
+@register_torchvision_variant(MNASNET_VARIANTS)
+@register_encoder("mnasnet_torch", IMAGE)
+class TVMNASNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "mnasnet_torch"
+
+    def __init__(
+            self,
+            **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVMNASNetEncoderConfig
 
 
 RESNET_TORCH_VARIANTS = [

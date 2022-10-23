@@ -7,6 +7,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     DENSENET_VARIANTS,
     EFFICIENTNET_VARIANTS,
     GOOGLENET_VARIANTS,
+    MNASNET_VARIANTS,
     MLPMixerEncoder,
     RESNET_TORCH_VARIANTS,
     Stacked2DCNN,
@@ -15,6 +16,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     TVDenseNetEncoder,
     TVEfficientNetEncoder,
     TVGoogLeNetEncoder,
+    TVMNASNetEncoder,
     TVResNetEncoder,
     TVVGGEncoder,
     VGG_VARIANTS,
@@ -304,6 +306,35 @@ def test_tv_googlenet_encoder(
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVGoogLeNetEncoder(
+        model_variant=model_variant,
+        use_pretrained=use_pretrained,
+        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+        trainable=trainable,
+    )
+    inputs = torch.rand(2, *pretrained_model.input_shape)
+    outputs = pretrained_model(inputs)
+    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in MNASNET_VARIANTS])
+def test_tv_mnasnet_encoder(
+        model_variant: int,
+        use_pretrained: bool,
+        saved_weights_in_checkpoint: bool,
+        trainable: bool,
+):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    pretrained_model = TVMNASNetEncoder(
         model_variant=model_variant,
         use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,

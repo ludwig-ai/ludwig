@@ -785,6 +785,25 @@ class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("mnasnet_torch", IMAGE)
+@dataclass
+class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["mnasnet_torch"],
+        default="mnasnet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[int] = schema_utils.StringOptions(
+        ["0_5", "0_75", "1_0", "1_3"],
+        default="0_5",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVMNASNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
