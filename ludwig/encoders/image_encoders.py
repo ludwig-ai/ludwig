@@ -705,8 +705,8 @@ class TVMNASNetEncoder(TVBaseEncoder):
     torchvision_model_type: str = "mnasnet_torch"
 
     def __init__(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
