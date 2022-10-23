@@ -972,7 +972,7 @@ VIT_VARIANTS = [
     TVModelVariant("b_32", tvm.vit_b_32, tvm.ViT_B_32_Weights),
     TVModelVariant("l_16", tvm.vit_l_16, tvm.ViT_L_16_Weights),
     TVModelVariant("l_32", tvm.vit_l_32, tvm.ViT_L_32_Weights),
-    TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),
+    # TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),  # TODO: resolve image size mismatch to re-enable
 ]
 
 
