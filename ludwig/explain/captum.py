@@ -65,7 +65,6 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
 
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
-
     # Convert raw input data into preprocessed tensor data
     dataset, _ = preprocess_for_prediction(
         model.config_obj.to_dict(),
