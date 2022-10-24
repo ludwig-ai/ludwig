@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Union, List
+from typing import List, Union
 
 from ludwig.constants import (
     ACCURACY,
@@ -34,7 +34,7 @@ class InternalEncoderMetadata:
 class InternalDecoderMetadata:
     """Class for internal decoder parameters."""
 
-    pass
+    vocab_size: int = None
 
 
 @dataclass
@@ -45,14 +45,26 @@ class InternalPreprocessingMetadata:
 
 
 @dataclass
+class InternalOptimizerMetadata:
+    """Class for internal optimizer parameters"""
+
+    lr: float = 1e-03
+
+
+@dataclass
+class InternalTrainerMetadata:
+    """Class for internal trainer parameters"""
+
+    optimizer: InternalOptimizerMetadata = field(default_factory=InternalOptimizerMetadata)
+
+
+@dataclass
 class InternalInputFeatureMetadata(BaseFeatureConfig):
     """Base class for feature metadata."""
 
     column: str = None
 
     proc_column: str = None
-
-    type: str = None
 
     encoder: InternalEncoderMetadata = field(default_factory=InternalEncoderMetadata)
 
@@ -66,8 +78,6 @@ class InternalOutputFeatureMetadata(BaseFeatureConfig):
     column: str = None
 
     proc_column: str = None
-
-    type: str = None
 
     default_validation_metric: str = None
 
@@ -127,15 +137,3 @@ class TextOutputFeatureMetadata(InternalOutputFeatureMetadata):
 class VectorOutputFeatureMetadata(InternalOutputFeatureMetadata):
 
     default_validation_metric: str = MEAN_SQUARED_ERROR
-
-
-@dataclass
-class InternalOptimizerMetadata:
-
-    lr: float = 1e-03
-
-
-@dataclass
-class InternalTrainerMetadata:
-
-    optimizer: InternalOptimizerMetadata = field(default_factory=InternalOptimizerMetadata)

@@ -23,10 +23,14 @@ class ModelMetadata:
 
         set_feature_column(config_dict)
         set_proc_column(config_dict)
-        self._initialize_input_feature_metadata(config_dict[INPUT_FEATURES])
+        self._initialize_input_features(config_dict[INPUT_FEATURES])
         self._initialize_output_features(config_dict[OUTPUT_FEATURES])
 
-    def _initialize_input_feature_metadata(self, feature_dicts: List[dict]) -> None:
+    @classmethod
+    def from_dict(cls, dict_config):
+        return cls(dict_config)
+
+    def _initialize_input_features(self, feature_dicts: List[dict]) -> None:
         """This function initializes the input features on the ModelMetadata object that are specified in the user
         defined config dictionary.
 
@@ -54,4 +58,4 @@ class ModelMetadata:
             feature_metadata_config = get_output_metadata_cls(feature_dict[TYPE])()
 
             # Assign feature on output features container
-            setattr(self.input_features, feature_dict[NAME], feature_metadata_config)
+            setattr(self.output_features, feature_dict[NAME], feature_metadata_config)

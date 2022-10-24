@@ -36,13 +36,17 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
-from ludwig.schema.config.utils import InputFeaturesContainer, OutputFeaturesContainer
+from ludwig.schema.config.utils import (
+    InputFeaturesContainer,
+    OutputFeaturesContainer,
+    set_feature_column,
+    set_proc_column,
+)
 from ludwig.schema.decoders.utils import get_decoder_cls
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
@@ -89,8 +93,8 @@ class ModelConfig(BaseMarshmallowConfig):
             self._set_attributes(self.defaults, upgraded_config_dict[DEFAULTS])
 
         # ===== Features =====
-        self._set_feature_column(upgraded_config_dict)
-        self._set_proc_column(upgraded_config_dict)
+        set_feature_column(upgraded_config_dict)
+        set_proc_column(upgraded_config_dict)
         self._initialize_input_features(upgraded_config_dict[INPUT_FEATURES])
         self._set_input_features(upgraded_config_dict[INPUT_FEATURES])
         self._initialize_output_features(upgraded_config_dict[OUTPUT_FEATURES])
@@ -163,18 +167,6 @@ class ModelConfig(BaseMarshmallowConfig):
             except yaml.YAMLError as e:
                 raise yaml.YAMLError(f"Cannot parse input yaml file: {e}")
         return cls(yaml_config)
-
-    @staticmethod
-    def _set_feature_column(config: dict) -> None:
-        for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
-            if COLUMN not in feature:
-                feature[COLUMN] = feature[NAME]
-
-    @staticmethod
-    def _set_proc_column(config: dict) -> None:
-        for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
-            if PROC_COLUMN not in feature:
-                feature[PROC_COLUMN] = compute_feature_hash(feature)
 
     @staticmethod
     def _upgrade_config(config_dict: dict) -> dict:
