@@ -1,3 +1,4 @@
+import logging
 import os
 
 import numpy as np
@@ -10,7 +11,7 @@ from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.gbm import GBMExplainer
-from tests.integration_tests.utils import category_feature, generate_data, number_feature
+from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, number_feature
 
 
 def test_explanation_dataclass():
@@ -38,6 +39,7 @@ def test_abstract_explainer_instantiation(tmpdir):
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
 
+@pytest.mark.parametrize("use_global", [True, False])
 @pytest.mark.parametrize(
     "explainer_class, model_type",
     [
@@ -52,7 +54,27 @@ def test_abstract_explainer_instantiation(tmpdir):
         pytest.param({"preprocessing": {"split": {"type": "fixed", "column": "split"}}}, id="fixed_split"),
     ],
 )
-def test_explainer_api(explainer_class, model_type, additional_config, tmpdir):
+def test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir):
+    run_test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("use_global", [True, False])
+def test_explainer_api_ray(use_global, tmpdir, ray_cluster_2cpu):
+    from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
+
+    run_test_explainer_api(
+        RayIntegratedGradientsExplainer,
+        "ecd",
+        {},
+        use_global,
+        tmpdir,
+        resources_per_task={"num_cpus": 1},
+        num_workers=1,
+    )
+
+
+def run_test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir, **kwargs):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     vocab_size = 3
     output_features = [category_feature(decoder={"vocab_size": vocab_size})]
@@ -66,13 +88,17 @@ def test_explainer_api(explainer_class, model_type, additional_config, tmpdir):
 
     # Train model
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
+    if model_type == MODEL_ECD:
+        config["trainer"] = {"epochs": 2}
     config.update(additional_config)
 
-    model = LudwigModel(config)
+    model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())
     model.train(df)
 
     # Explain model
-    explainer = explainer_class(model, inputs_df=df, sample_df=df, target=output_features[0]["name"])
+    explainer = explainer_class(
+        model, inputs_df=df, sample_df=df, target=output_features[0]["name"], use_global=use_global, **kwargs
+    )
 
     assert not explainer.is_binary_target
     assert explainer.is_category_target
@@ -80,8 +106,9 @@ def test_explainer_api(explainer_class, model_type, additional_config, tmpdir):
 
     explanations, expected_values = explainer.explain()
 
-    # Verify shapes
-    assert len(explanations) == len(df)
+    # Verify shapes. One explanation per row, or 1 averaged explanation if `use_global=True`
+    expected_explanations = len(df) if not use_global else 1
+    assert len(explanations) == expected_explanations
     for e in explanations:
         assert e.to_array().shape == (vocab_size, len(input_features))
 

@@ -26,7 +26,9 @@ class GBMExplainer(Explainer):
             raise ValueError("Model has not been trained yet.")
 
         # Get global feature importance from the model, use it for each row in the batch.
+        # TODO(travis): support local feature importance
         feat_imp = gbm.booster_.feature_importance(importance_type="gain")
+
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 
