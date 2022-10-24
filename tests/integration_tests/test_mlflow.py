@@ -57,10 +57,11 @@ def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, tes
 
     assert "ludwig" in loaded_model.metadata.flavors
     flavor = loaded_model.metadata.flavors["ludwig"]
+    config = model.config
 
     def compare_features(key):
-        assert len(model.config[key]) == len(flavor["ludwig_schema"][key])
-        for feature, schema_feature in zip(model.config[key], flavor["ludwig_schema"][key]):
+        assert len(config[key]) == len(flavor["ludwig_schema"][key])
+        for feature, schema_feature in zip(config[key], flavor["ludwig_schema"][key]):
             assert feature["name"] == schema_feature["name"]
             assert feature["type"] == schema_feature["type"]
 
@@ -92,7 +93,7 @@ def test_mlflow(tmpdir):
     num_examples = 32
 
     input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum", output_feature=True)]
 
     config = {
         "input_features": input_features,
@@ -121,7 +122,7 @@ def test_export_mlflow_local(tmpdir):
     num_examples = 32
 
     input_features = [sequence_feature(reduce_output="sum")]
-    output_features = [category_feature(vocab_size=2, reduce_input="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum", output_feature=True)]
 
     config = {
         "input_features": input_features,

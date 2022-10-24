@@ -44,9 +44,9 @@ from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.run import hyperopt
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import load_json, use_credentials
-from ludwig.utils.defaults import merge_with_defaults
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -124,7 +124,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
-    config = merge_with_defaults(config)
+    config = ModelConfig.from_dict(config).to_dict()
 
     return config, rel_path
 
@@ -434,7 +434,7 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
         category_feature(vocab_size=3),
     ]
 
-    output_features = [category_feature(vocab_size=3)]
+    output_features = [category_feature(vocab_size=3, output_feature=True)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 

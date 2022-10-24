@@ -24,6 +24,7 @@ def get_input_feature_jsonschema():
     input_feature_types = sorted(list(input_config_registry.keys()))
     return {
         "type": "array",
+        "minItems": 1,
         "items": {
             "type": "object",
             "properties": {
@@ -39,6 +40,7 @@ def get_input_feature_jsonschema():
             "additionalProperties": True,
             "allOf": get_input_feature_conds(),
             "required": ["name", "type"],
+            "title": "input_features",
         },
     }
 
@@ -55,6 +57,7 @@ def get_input_feature_conds():
         schema_cls = get_input_feature_cls(feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
+        schema_utils.remove_duplicate_fields(feature_props)
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds
@@ -69,6 +72,7 @@ def get_output_feature_jsonschema():
     output_feature_types = sorted(list(output_config_registry.keys()))
     return {
         "type": "array",
+        "minItems": 1,
         "items": {
             "type": "object",
             "properties": {
@@ -84,6 +88,7 @@ def get_output_feature_jsonschema():
             "additionalProperties": True,
             "allOf": get_output_feature_conds(),
             "required": ["name", "type"],
+            "title": "output_features",
         },
     }
 
@@ -100,6 +105,7 @@ def get_output_feature_conds():
         schema_cls = get_output_feature_cls(feature_type)
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
+        schema_utils.remove_duplicate_fields(feature_props)
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds

@@ -59,10 +59,10 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     output_features = [
         binary_feature(),
         number_feature(),
-        category_feature(decoder={"vocab_size": 3}),
-        sequence_feature(decoder={"vocab_size": 3}),
-        text_feature(decoder={"vocab_size": 3}),
-        set_feature(decoder={"vocab_size": 3}),
+        category_feature(decoder={"vocab_size": 3}, output_feature=True),
+        sequence_feature(decoder={"vocab_size": 3}, output_feature=True),
+        text_feature(decoder={"vocab_size": 3}, output_feature=True),
+        set_feature(decoder={"vocab_size": 3}, output_feature=True),
         vector_feature(),
     ]
 
@@ -137,7 +137,7 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     np.random.seed(1)
 
     input_features = [binary_feature(), number_feature(), category_feature(encoder={"vocab_size": 3})]
-    output_features = [category_feature(decoder={"vocab_size": 3})]
+    output_features = [category_feature(decoder={"vocab_size": 3}, output_feature=True)]
 
     # Generate test data
     data_csv_path = generate_data(input_features, output_features, csv_filename)

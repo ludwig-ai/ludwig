@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import CATEGORY, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -17,6 +17,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -69,6 +70,13 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
     calibration: bool = schema_utils.Boolean(
         default=False,
         description="Calibrate the model's output probabilities using temperature scaling.",
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [ACCURACY],
+        default=ACCURACY,
+        description="Internal only use parameter: default validation metric for category output feature.",
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(

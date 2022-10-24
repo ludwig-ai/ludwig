@@ -19,6 +19,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -74,6 +75,13 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
         min=0,
         max=999999999,
         description="Clip the predicted output to the specified range.",
+    )
+
+    default_validation_metric: str = schema_utils.StringOptions(
+        [MEAN_SQUARED_ERROR],
+        default=MEAN_SQUARED_ERROR,
+        description="Internal only use parameter: default validation metric for number output feature.",
+        parameter_metadata=INTERNAL_ONLY,
     )
 
     dependencies: list = schema_utils.List(

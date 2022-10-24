@@ -17,7 +17,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import torchinfo
@@ -43,7 +43,7 @@ def collect_activations(
     batch_size: int = 128,
     output_directory: str = "results",
     gpus: List[str] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
@@ -75,8 +75,8 @@ def collect_activations(
         model and the training progress files.
     :param gpus: (list, default: `None`) list of GPUs that are available
         for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-        allocate per GPU device.
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
         to use multithreading parallelism to improve performance at
         the cost of determinism.
@@ -267,7 +267,11 @@ def cli_collect_activations(sys_argv):
     # ------------------
     parser.add_argument("-g", "--gpus", type=int, default=0, help="list of gpu to use")
     parser.add_argument(
-        "-gml", "--gpu_memory_limit", type=int, default=None, help="maximum memory in MB to allocate per GPU device"
+        "-gml",
+        "--gpu_memory_limit",
+        type=float,
+        default=None,
+        help="maximum memory fraction [0, 1] allowed to allocate per GPU device",
     )
     parser.add_argument(
         "-dpt",

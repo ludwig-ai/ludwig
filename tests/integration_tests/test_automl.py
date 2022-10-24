@@ -10,7 +10,7 @@ import pytest
 from packaging import version
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TRAINER, TYPE
+from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -198,7 +198,7 @@ def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
 
         if time_budget > 1:
             assert isinstance(best_model, LudwigModel)
-            assert best_model.config[TRAINER]["early_stop"] == -1
+            assert best_model.config_obj.trainer.early_stop == -1
             assert mock_fn.call_count == 0
         else:
             assert best_model is None

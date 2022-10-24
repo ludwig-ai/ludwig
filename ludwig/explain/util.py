@@ -12,10 +12,11 @@ def filter_cols(df, cols):
 
 
 def prepare_data(model: LudwigModel, inputs_df: pd.DataFrame, sample_df: pd.DataFrame, target: str):
-    feature_cols = [feature[COLUMN] for feature in model.config[INPUT_FEATURES]]
-    if SPLIT in model.config.get(PREPROCESSING, {}):
+    config = model.config
+    feature_cols = [feature[COLUMN] for feature in config[INPUT_FEATURES]]
+    if SPLIT in config.get(PREPROCESSING, {}):
         # Keep columns required for Ludwig preprocessing
-        splitter = get_splitter(**model.config[PREPROCESSING][SPLIT])
+        splitter = get_splitter(**config[PREPROCESSING][SPLIT])
         feature_cols += splitter.required_columns
     target_feature_name = get_feature_name(model, target)
 

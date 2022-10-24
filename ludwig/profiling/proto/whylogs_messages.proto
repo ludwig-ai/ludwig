@@ -1,8 +1,6 @@
 // A copy of whylogs/proto/src/whylogs_messages.proto from
 // https://github.com/whylabs/whylogs/blob/mainline/proto/src/whylogs_messages.proto
 //
-// Why a copy? One alternative would be to add whylogs as a submodule.
-//
 // To generate compiled proto code, run:
 //   (if protoc not installed yet)
 //   > sudo apt install protobuf-compiler
@@ -13,7 +11,7 @@
 
 syntax = "proto3";
 
-package ludwigwhy;
+package dataset_profile;
 import "google/protobuf/any.proto";
 
 import "google/protobuf/struct.proto";

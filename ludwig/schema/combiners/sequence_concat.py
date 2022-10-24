@@ -7,9 +7,16 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False)
 class SequenceConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence concat combiner."""
+
+    type: str = schema_utils.StringOptions(
+        ["sequence_concat"],
+        default="sequence_concat",
+        allow_none=False,
+        description="Type of combiner.",
+    )
 
     main_sequence_feature: Optional[str] = schema_utils.String(
         default=None,

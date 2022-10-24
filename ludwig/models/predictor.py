@@ -14,16 +14,11 @@ import torch
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
-from ludwig.globals import (
-    is_progressbar_disabled,
-    PREDICTIONS_PARQUET_FILE_NAME,
-    PREDICTIONS_SHAPES_FILE_NAME,
-    TEST_STATISTICS_FILE_NAME,
-)
+from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.dataframe_utils import flatten_df, from_numpy_dataset
+from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.strings_utils import make_safe_filename
@@ -316,9 +311,9 @@ def save_prediction_outputs(
     output_directory,
     backend,
 ):
-    postprocessed_output, column_shapes = flatten_df(postprocessed_output, backend)
-    backend.df_engine.to_parquet(postprocessed_output, os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME))
-    save_json(os.path.join(output_directory, PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
+    backend.df_engine.write_predictions(
+        postprocessed_output, os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+    )
     if not backend.df_engine.partitioned:
         # csv can only be written out for unpartitioned df format (i.e., pandas)
         postprocessed_dict = convert_to_dict(postprocessed_output, output_features)

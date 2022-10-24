@@ -9,7 +9,7 @@ from ludwig.utils import strings_utils
 
 
 @register_preprocessor(SET)
-@dataclass
+@dataclass(repr=False)
 class SetPreprocessingConfig(BasePreprocessingConfig):
 
     tokenizer: str = schema_utils.String(
@@ -61,7 +61,7 @@ class SetPreprocessingConfig(BasePreprocessingConfig):
 
 
 @register_preprocessor("set_output")
-@dataclass
+@dataclass(repr=False)
 class SetOutputPreprocessingConfig(SetPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

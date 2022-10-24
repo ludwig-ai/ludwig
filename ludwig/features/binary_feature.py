@@ -23,9 +23,6 @@ from ludwig.constants import (
     ACCURACY,
     BINARY,
     COLUMN,
-    DECODER,
-    DEPENDENCIES,
-    ENCODER,
     HIDDEN,
     LOGITS,
     LOSS,
@@ -34,13 +31,9 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
     ROC_AUC,
-    THRESHOLD,
-    TIED,
-    TYPE,
 )
+from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
 from ludwig.utils import calibration, output_feature_utils, strings_utils
@@ -51,7 +44,6 @@ from ludwig.utils.eval_utils import (
     roc_auc_score,
     roc_curve,
 )
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -133,10 +125,6 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         return BINARY
 
     @staticmethod
-    def preprocessing_defaults() -> Dict[str, Any]:
-        return BinaryInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         """Cast column of dtype object to bool.
 
@@ -165,9 +153,8 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
         distinct_values = backend.df_engine.compute(column.drop_duplicates())
         if len(distinct_values) > 2:
-            raise ValueError(
-                f"Binary feature column {column.name} expects 2 distinct values, "
-                f"found: {distinct_values.values.tolist()}"
+            raise InputDataError(
+                column.name, BINARY, f"expects 2 distinct values, found {distinct_values.values.tolist()}"
             )
         if preprocessing_parameters["fallback_true_label"]:
             fallback_true_label = preprocessing_parameters["fallback_true_label"]
@@ -214,8 +201,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[BinaryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -246,21 +232,15 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = BinaryInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def get_schema_cls():
         return BinaryInputFeatureConfig
 
-    def create_sample_input(self):
-        return torch.Tensor([True, False])
+    def create_sample_input(self, batch_size: int = 2):
+        return torch.rand([batch_size]) > 0.5
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
@@ -273,7 +253,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
-    default_validation_metric = ROC_AUC
 
     def __init__(
         self,
@@ -281,7 +260,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         self.threshold = output_feature_config.threshold
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
@@ -332,7 +310,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         return torch.Size([1])
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
     @staticmethod
@@ -400,27 +378,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             )
 
         return result
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = BinaryOutputFeatureConfig()
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-                THRESHOLD: defaults.threshold,
-            },
-        )
 
     @staticmethod
     def get_schema_cls():

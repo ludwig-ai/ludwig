@@ -27,7 +27,7 @@ def get_combiner_jsonschema():
                 "type": "string",
                 "enum": combiner_types,
                 "default": "concat",
-                "title": "type",
+                "title": "combiner_options",
                 "description": "Select the combiner type.",
                 "parameter_metadata": parameter_metadata,
             },
@@ -47,6 +47,7 @@ def get_combiner_conds():
         schema_cls = combiner_cls.get_schema_cls()
         combiner_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         combiner_props = combiner_schema["properties"]
+        schema_utils.remove_duplicate_fields(combiner_props)
         combiner_cond = schema_utils.create_cond({"type": combiner_type}, combiner_props)
         conds.append(combiner_cond)
     return conds

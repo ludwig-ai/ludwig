@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 
+from ludwig.profiling import dataset_profile_pb2
 from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries,
     get_column_profile_summaries_from_proto,
@@ -152,3 +153,13 @@ def test_get_ludwig_type_map_from_column_profile_summaries():
         "legs": "number",
         "weight": "number",
     }
+
+
+def test_dataset_profile_works():
+    dataset_profile = dataset_profile_pb2.DatasetProfile()
+    dataset_profile.num_examples = 10
+
+    from_serialized = dataset_profile_pb2.DatasetProfile()
+    from_serialized.ParseFromString(dataset_profile.SerializeToString())
+
+    assert from_serialized.num_examples == 10

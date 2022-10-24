@@ -616,7 +616,9 @@ def test_api_callbacks_fixed_train_steps_less_than_one_epoch(tmpdir, csv_filenam
 def test_api_save_torchscript(tmpdir):
     """Tests successful saving and loading of model in TorchScript format."""
     input_features = [category_feature(encoder={"vocab_size": 5})]
-    output_features = [category_feature(name="class", encoder={"vocab_size": 5}, reduce_input="sum")]
+    output_features = [
+        category_feature(name="class", decoder={"vocab_size": 5}, reduce_input="sum", output_feature=True)
+    ]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
@@ -646,7 +648,7 @@ def test_api_save_torchscript(tmpdir):
 def test_saved_weights_in_checkpoint(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [text_feature(), image_feature(image_dest_folder)]
-    output_features = [category_feature(name="class")]
+    output_features = [category_feature(name="class", output_feature=True)]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
     val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
@@ -666,5 +668,7 @@ def test_saved_weights_in_checkpoint(tmpdir):
         saved_config = json.load(f)
     saved_input_features = saved_config["input_features"]
     for saved_input_feature in saved_input_features:
-        assert "saved_weights_in_checkpoint" in saved_input_feature
-        assert saved_input_feature["saved_weights_in_checkpoint"]
+        assert "encoder" in saved_input_feature
+        input_feature_encoder = saved_input_feature["encoder"]
+        assert "saved_weights_in_checkpoint" in input_feature_encoder
+        assert input_feature_encoder["saved_weights_in_checkpoint"]
