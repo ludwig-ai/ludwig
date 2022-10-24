@@ -27,7 +27,10 @@ def test_binary_input_feature(binary_config: Dict, encoder: str):
     binary_config.update({ENCODER: {"type": encoder}})
     binary_config, _ = load_config_with_kwargs(BinaryInputFeatureConfig, binary_config)
     binary_input_feature = BinaryInputFeature(binary_config).to(DEVICE)
-    binary_tensor = torch.randn([BATCH_SIZE, BINARY_W_SIZE], dtype=torch.float32).to(DEVICE)
+
+    binary_tensor = binary_input_feature.create_sample_input(batch_size=BATCH_SIZE)
+    assert binary_tensor.shape == torch.Size([BATCH_SIZE])
+    assert binary_tensor.dtype == torch.bool
 
     encoder_output = binary_input_feature(binary_tensor)
 
