@@ -15,9 +15,9 @@ from ludwig.utils.torch_utils import get_torch_device
 
 @PublicAPI(stability="experimental")
 class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
-    def __init__(self, resources_per_task: Dict[str, Any], num_workers: int, *args, **kwargs):
+    def __init__(self, *args, resources_per_task: Dict[str, Any] = None, num_workers: int = 1, **kwargs):
         super().__init__(*args, **kwargs)
-        self.resources_per_task = resources_per_task
+        self.resources_per_task = resources_per_task or {}
         self.num_workers = num_workers
 
     def explain(self) -> Tuple[List[Explanation], List[float]]:
