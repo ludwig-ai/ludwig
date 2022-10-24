@@ -39,7 +39,10 @@ class Explainer(metaclass=ABCMeta):
             model, inputs_df, sample_df, target
         )
 
-        self.explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
+        if self.use_global:
+            self.explanations = [Explanation(self.target_feature_name)]
+        else:
+            self.explanations = [Explanation(self.target_feature_name) for _ in self.inputs_df.index]
 
         # Lookup from column name to output feature
         config = self.model.config
