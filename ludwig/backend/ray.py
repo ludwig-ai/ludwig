@@ -36,7 +36,6 @@ from ray import ObjectRef
 # from ray.data.dataset_pipeline import DatasetPipeline
 from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
 from ray.train.horovod import HorovodConfig
-from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
@@ -233,6 +232,7 @@ def tune_batch_size_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
+        # TODO: Bring back pipeline object
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
             pipe,
@@ -266,6 +266,7 @@ def tune_learning_rate_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
+        # TODO: Bring back pipeline object
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
             pipe,
@@ -347,13 +348,6 @@ def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
     with spread_env(**trainer_kwargs):
         yield RayAirRunner(trainer_kwargs)
-
-    trainer = Trainer(**trainer_kwargs)
-    trainer.start()
-    try:
-        yield trainer
-    finally:
-        trainer.shutdown()
 
 
 class RayAirRunner:
@@ -443,7 +437,7 @@ class RayTrainerV2(BaseTrainer):
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
                 dataset_config=dataset_config,
-            )  # [0]
+            )
             # , self._validation_field, self._validation_metric
             print(results)
 
@@ -654,12 +648,13 @@ class RayPredictor(BasePredictor):
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         with create_runner(**self.trainer_kwargs) as runner:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
-            datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
+            datasets = {"eval": dataset.set_fully_execucted(self.data_loader_kwargs.pop("fully_executed", True))}
+            dataset_config = {"eval": DatasetConfig(**dataset.get_dataset_config(**self.data_loader_kwargs))}
             predictor_kwargs = {
                 **self.predictor_kwargs,
                 "collect_predictions": False,
             }
-            eval_stats, _ = runner.run(
+            eval_stats = runner.run(
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
@@ -669,7 +664,8 @@ class RayPredictor(BasePredictor):
                     **kwargs,
                 },
                 dataset=datasets,
-            )[0]
+                dataset_config=dataset_config,
+            )
 
         predictions = None
         if collect_predictions:
