@@ -1670,6 +1670,7 @@ class LudwigModel:
         self.config_obj = ModelConfig.from_dict(self._user_config)
 
 
+@PublicAPI
 def kfold_cross_validate(
     num_folds: int,
     config: Union[dict, str],
@@ -1891,6 +1892,7 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+@PublicAPI
 def get_experiment_description(
     config,
     dataset=None,
