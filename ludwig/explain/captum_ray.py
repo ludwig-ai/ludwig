@@ -57,11 +57,10 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
             # there is significant overhead to spawning a Ray task.
             target_splits = split_list(list(range(self.vocab_size)), self.num_workers)
         else:
-            target_splits = [[None]]
-
-        if self.is_binary_target:
+            # No target index to compare against exists for number features.
             # For binary targets, we only need to compute attribution for the positive class (see below).
-            target_splits = [target_splits[0][0]]
+            # May need to revisit in the future for additional feature types.
+            target_splits = [[None]]
 
         # Compute attribution for each possible output feature label separately.
         total_attribution_refs = []

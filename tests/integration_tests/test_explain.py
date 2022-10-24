@@ -6,12 +6,18 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import MODEL_ECD, MODEL_GBM
+from ludwig.constants import BINARY, CATEGORY, MODEL_ECD, MODEL_GBM
 from ludwig.explain.captum import IntegratedGradientsExplainer
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.gbm import GBMExplainer
-from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, number_feature
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    LocalTestBackend,
+    number_feature,
+)
 
 
 def test_explanation_dataclass():
@@ -55,17 +61,24 @@ def test_abstract_explainer_instantiation(tmpdir):
     ],
 )
 def test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir):
-    run_test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir)
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+    run_test_explainer_api(explainer_class, model_type, output_features, additional_config, use_global, tmpdir)
 
 
 @pytest.mark.distributed
+@pytest.mark.parametrize(
+    "output_feature",
+    [binary_feature(), number_feature(), category_feature(decoder={"vocab_size": 3})],
+    ids=["binary", "number", "category"],
+)
 @pytest.mark.parametrize("use_global", [True, False])
-def test_explainer_api_ray(use_global, tmpdir, ray_cluster_2cpu):
+def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu):
     from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
 
     run_test_explainer_api(
         RayIntegratedGradientsExplainer,
         "ecd",
+        [output_feature],
         {},
         use_global,
         tmpdir,
@@ -74,10 +87,10 @@ def test_explainer_api_ray(use_global, tmpdir, ray_cluster_2cpu):
     )
 
 
-def run_test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir, **kwargs):
+def run_test_explainer_api(
+    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
+):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    vocab_size = 3
-    output_features = [category_feature(decoder={"vocab_size": vocab_size})]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")
@@ -100,8 +113,17 @@ def run_test_explainer_api(explainer_class, model_type, additional_config, use_g
         model, inputs_df=df, sample_df=df, target=output_features[0]["name"], use_global=use_global, **kwargs
     )
 
-    assert not explainer.is_binary_target
-    assert explainer.is_category_target
+    is_binary = output_features[0].get("type") == BINARY
+    is_category = output_features[0].get("type") == CATEGORY
+
+    vocab_size = 1
+    if is_binary:
+        vocab_size = 2
+    elif is_category:
+        vocab_size = output_features[0].get("decoder", {}).get("vocab_size")
+
+    assert explainer.is_binary_target == is_binary
+    assert explainer.is_category_target == is_category
     assert explainer.vocab_size == vocab_size
 
     explanations, expected_values = explainer.explain()
