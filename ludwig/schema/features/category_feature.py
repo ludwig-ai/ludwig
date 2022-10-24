@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
