@@ -60,7 +60,7 @@ class InternalTrainerMetadata:
 
 @dataclass
 class InternalInputFeatureMetadata(BaseFeatureConfig):
-    """Base class for feature metadata."""
+    """Base class for input feature metadata."""
 
     column: str = None
 
@@ -73,7 +73,7 @@ class InternalInputFeatureMetadata(BaseFeatureConfig):
 
 @dataclass
 class InternalOutputFeatureMetadata(BaseFeatureConfig):
-    """Base class for feature metadata."""
+    """Base class for output feature metadata."""
 
     column: str = None
 
@@ -93,6 +93,7 @@ class InternalOutputFeatureMetadata(BaseFeatureConfig):
 @internal_output_config_registry.register(BINARY)
 @dataclass
 class BinaryOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for binary output feature metadata."""
 
     default_validation_metric: str = ROC_AUC
 
@@ -100,6 +101,7 @@ class BinaryOutputFeatureMetadata(InternalOutputFeatureMetadata):
 @internal_output_config_registry.register(CATEGORY)
 @dataclass
 class CategoryOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for category output feature metadata."""
 
     default_validation_metric: str = ACCURACY
 
@@ -107,6 +109,7 @@ class CategoryOutputFeatureMetadata(InternalOutputFeatureMetadata):
 @internal_output_config_registry.register(NUMBER)
 @dataclass
 class NumberOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for number output feature metadata."""
 
     default_validation_metric: str = MEAN_SQUARED_ERROR
 
@@ -114,6 +117,7 @@ class NumberOutputFeatureMetadata(InternalOutputFeatureMetadata):
 @internal_output_config_registry.register(SEQUENCE)
 @dataclass
 class SequenceOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for sequence output feature metadata."""
 
     default_validation_metric: str = LOSS
 
@@ -121,6 +125,7 @@ class SequenceOutputFeatureMetadata(InternalOutputFeatureMetadata):
 @internal_output_config_registry.register(SET)
 @dataclass
 class SetOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for set output feature metadata."""
 
     default_validation_metric: str = JACCARD
 
@@ -128,6 +133,7 @@ class SetOutputFeatureMetadata(InternalOutputFeatureMetadata):
 @internal_output_config_registry.register(TEXT)
 @dataclass
 class TextOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for text output feature metadata."""
 
     default_validation_metric: str = LOSS
 
@@ -135,5 +141,6 @@ class TextOutputFeatureMetadata(InternalOutputFeatureMetadata):
 @internal_output_config_registry.register(VECTOR)
 @dataclass
 class VectorOutputFeatureMetadata(InternalOutputFeatureMetadata):
+    """Base class for vector output feature metadata."""
 
     default_validation_metric: str = MEAN_SQUARED_ERROR
