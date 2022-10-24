@@ -19,6 +19,7 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
 from ludwig.backend import Backend, initialize_backend
@@ -142,6 +143,7 @@ def auto_train(
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
 
+@DeveloperAPI
 def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     target: Union[str, List[str]],
@@ -207,6 +209,7 @@ def create_auto_config(
     return model_config
 
 
+@DeveloperAPI
 def train_with_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     config: dict,
