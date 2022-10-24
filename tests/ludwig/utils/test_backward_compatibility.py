@@ -21,7 +21,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema import validate_config
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
     _update_backend_cache_credentials,

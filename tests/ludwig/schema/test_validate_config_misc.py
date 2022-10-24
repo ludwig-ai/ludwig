@@ -34,7 +34,7 @@ from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,

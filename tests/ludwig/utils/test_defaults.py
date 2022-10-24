@@ -30,7 +30,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import merge_dict, set_default_values

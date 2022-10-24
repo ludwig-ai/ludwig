@@ -7,7 +7,7 @@ from ludwig.combiners.combiners import ConcatCombiner
 from ludwig.constants import CATEGORY, DECODER, NUMBER, SEQUENCE, TYPE
 from ludwig.models.base import BaseModel
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from tests.integration_tests.utils import generate_output_features_with_dependencies, number_feature
 

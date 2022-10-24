@@ -3,7 +3,7 @@ from typing import List
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import BAG
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
@@ -33,7 +33,7 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["activation"],
     )
 
-    vocab: List[str] = schema_utils.List(
+    vocab: List[str] = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the encoder",
         parameter_metadata=ENCODER_METADATA["BagEmbedWeightedEncoder"]["vocab"],

@@ -4,14 +4,14 @@
 #                                 Ludwig configs.
 # ├── __init__.py             <-- Contains fully assembled Ludwig schema (`get_schema()`), `validate_config()` for YAML
 #                                 validation, and all "top-level" schema functions.
-# ├── schema_utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
+# ├── utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
 #                                 elsewhere in Ludwig.
 # ├── trainer.py              <-- Contains `TrainerConfig()` and `get_trainer_jsonschema`
 # ├── optimizers.py           <-- Contains every optimizer config (e.g. `SGDOptimizerConfig`, `AdamOptimizerConfig`,
 #                                 etc.) and related marshmallow fields/methods.
 # └── combiners/
 #     ├── __init__.py         <-- Imports for each combiner config file (making imports elsewhere more convenient).
-#     ├── schema_utils.py            <-- Location of `combiner_registry`, `get_combiner_jsonschema()`, `get_combiner_conds()`
+#     ├── utils.py            <-- Location of `combiner_registry`, `get_combiner_jsonschema()`, `get_combiner_conds()`
 #     ├── base.py             <-- Location of `BaseCombinerConfig`
 #     ├── comparator.py       <-- Location of `ComparatorCombinerConfig`
 #     ... <file for each combiner> ...

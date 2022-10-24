@@ -1,4 +1,4 @@
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
 input_config_registry = Registry()

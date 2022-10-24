@@ -12,7 +12,7 @@ from ludwig.constants import (
     SIGMOID_CROSS_ENTROPY,
     SOFTMAX_CROSS_ENTROPY,
 )
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 
 
 @dataclass(repr=False)

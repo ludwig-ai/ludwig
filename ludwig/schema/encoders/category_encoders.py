@@ -3,7 +3,7 @@ from typing import List
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import CATEGORY
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
@@ -42,7 +42,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["dropout"],
     )
 
-    vocab: List[str] = schema_utils.List(
+    vocab: List[str] = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the encoder",
         parameter_metadata=ENCODER_METADATA["CategoricalEmbedEncoder"]["vocab"],
@@ -131,7 +131,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["dropout"],
     )
 
-    vocab: List[str] = schema_utils.List(
+    vocab: List[str] = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the encoder",
         parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["vocab"],

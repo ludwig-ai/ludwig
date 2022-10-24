@@ -3,7 +3,7 @@ from typing import List
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
@@ -72,7 +72,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["representation"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary for the encoder",
         parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["vocab"],
@@ -154,7 +154,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["representation"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary for the encoder",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["vocab"],
@@ -320,7 +320,7 @@ class StackedCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["representation"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary for the encoder",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["vocab"],
@@ -519,7 +519,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["representation"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the input feature to encode",
         parameter_metadata=ENCODER_METADATA["StackedParallelCNN"]["vocab"],
@@ -728,7 +728,7 @@ class StackedRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["cell_type"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the input feature to encode",
         parameter_metadata=ENCODER_METADATA["StackedRNN"]["vocab"],
@@ -954,7 +954,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["cell_type"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the input feature to encode",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["vocab"],
@@ -1205,7 +1205,7 @@ class StackedTransformerConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["representation"],
     )
 
-    vocab: list = schema_utils.List(
+    vocab: list = schema_utils.List(  # TODO: Remove during metadata refactor
         default=None,
         description="Vocabulary of the input feature to encode",
         parameter_metadata=ENCODER_METADATA["StackedTransformer"]["vocab"],

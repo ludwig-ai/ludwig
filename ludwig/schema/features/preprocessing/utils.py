@@ -2,7 +2,7 @@ from dataclasses import field
 
 from marshmallow import fields, ValidationError
 
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.utils.registry import Registry
 

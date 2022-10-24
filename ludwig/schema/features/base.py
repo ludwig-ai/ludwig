@@ -19,7 +19,7 @@ from ludwig.constants import (
     TIMESERIES,
     VECTOR,
 )
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 
 logger = logging.getLogger(__name__)
 _error_console = Console(stderr=True, style="bold red")

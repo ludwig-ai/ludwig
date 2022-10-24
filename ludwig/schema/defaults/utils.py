@@ -2,7 +2,7 @@ from dataclasses import field
 
 from marshmallow import fields, ValidationError
 
-import ludwig.schema.schema_utils as schema_utils
+import ludwig.schema.utils as schema_utils
 from ludwig.schema.features.utils import input_mixin_registry, output_mixin_registry
 
 

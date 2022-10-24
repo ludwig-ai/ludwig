@@ -71,7 +71,7 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from ludwig.utils import metric_utils
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (

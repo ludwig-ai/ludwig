@@ -3,7 +3,7 @@ from typing import Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import BINARY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA

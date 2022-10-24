@@ -1,37 +1,15 @@
 import yaml
 
-from ludwig.constants import (
-    ACTIVE,
-    BINARY,
-    CATEGORY,
-    COLUMN,
-    COMBINER,
-    DECODER,
-    DEFAULT_VALIDATION_METRIC,
-    DEFAULTS,
-    ENCODER,
-    EXECUTOR,
-    HYPEROPT,
-    INPUT_FEATURES,
-    LOSS,
-    MODEL_ECD,
-    MODEL_GBM,
-    MODEL_TYPE,
-    NAME,
-    NUMBER,
-    OPTIMIZER,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    PROC_COLUMN,
-    RAY,
-    SEQUENCE,
-    SPLIT,
-    TIED,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import ACTIVE, COLUMN, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PROC_COLUMN, TYPE
+from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.schema.utils import convert_submodules
+from ludwig.utils.registry import Registry
 
-from ludwig.schema.schema_utils import convert_submodules
+internal_output_config_registry = Registry()
+
+
+def get_output_metadata_cls(name: str):
+    return internal_output_config_registry[name]
 
 
 class BaseFeatureContainer:
@@ -82,3 +60,15 @@ class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
     pass
+
+
+def set_feature_column(config: dict) -> None:
+    for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
+        if COLUMN not in feature:
+            feature[COLUMN] = feature[NAME]
+
+
+def set_proc_column(config: dict) -> None:
+    for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)

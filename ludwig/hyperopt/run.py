@@ -42,7 +42,7 @@ from ludwig.hyperopt.utils import (
     should_tune_preprocessing,
     update_hyperopt_params_with_defaults,
 )
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed

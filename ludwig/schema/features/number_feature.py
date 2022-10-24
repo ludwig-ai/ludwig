@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
-from ludwig.schema import schema_utils as schema_utils
+from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -19,7 +19,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
-from ludwig.schema.schema_utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig
 
 
 @input_mixin_registry.register(NUMBER)
