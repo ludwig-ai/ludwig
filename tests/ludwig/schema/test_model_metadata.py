@@ -1,11 +1,12 @@
 from typing import Union
+
 from ludwig.constants import ACCURACY
 from ludwig.schema.config.model_metadata import ModelMetadata
 
 
 def check_membership(obj, attributes: Union[list, str], contains: bool = True):
-    """ Helper function to determine if a metadata object or nested metadata
-        object has or doesn't have a certain attribute"""
+    """Helper function to determine if a metadata object or nested metadata object has or doesn't have a certain
+    attribute."""
     if isinstance(attributes, str):
         attributes = list(attributes)
 
@@ -68,27 +69,14 @@ def test_config_object():
 
     # Check input feature metadata contains proper field and doesn't contain anything it shouldn't
     assert len(model_metadata.input_features.to_list()) == 2
-    check_membership(
-        model_metadata.input_features.text_feature,
-        ["name", "type", "column", "proc_column"]
-    )
-    check_membership(
-        model_metadata.input_features.text_feature.preprocessing,
-        "computed_fill_value"
-    )
-    check_membership(
-        model_metadata.input_features.text_feature.preprocessing,
-        "missing_value_strategy",
-        contains=False
-    )
-    check_membership(
-        model_metadata.input_features.image_feature_1.encoder,
-        ["vocab", "vocab_size", "should_embed"]
-    )
+    check_membership(model_metadata.input_features.text_feature, ["name", "type", "column", "proc_column"])
+    check_membership(model_metadata.input_features.text_feature.preprocessing, "computed_fill_value")
+    check_membership(model_metadata.input_features.text_feature.preprocessing, "missing_value_strategy", contains=False)
+    check_membership(model_metadata.input_features.image_feature_1.encoder, ["vocab", "vocab_size", "should_embed"])
     check_membership(
         model_metadata.input_features.image_feature_1.encoder,
         ["num_channels", "dropout", "resnet_size"],
-        contains=False
+        contains=False,
     )
 
     # Check output feature metadata contains proper field and doesn't contain anything it shouldn't
@@ -98,36 +86,16 @@ def test_config_object():
         model_metadata.output_features.category_feature,
         ["name", "type", "column", "proc_column", "default_validation_metric", "input_size", "num_classes"],
     )
+    check_membership(model_metadata.output_features.category_feature, "top_k", contains=False)
+    check_membership(model_metadata.output_features.category_feature.preprocessing, "computed_fill_value")
     check_membership(
-        model_metadata.output_features.category_feature,
-        "top_k",
-        contains=False
+        model_metadata.output_features.category_feature.preprocessing, "missing_value_strategy", contains=False
     )
+    check_membership(model_metadata.output_features.category_feature.decoder, "vocab_size")
     check_membership(
-        model_metadata.output_features.category_feature.preprocessing,
-        "computed_fill_value")
-    check_membership(
-        model_metadata.output_features.category_feature.preprocessing,
-        "missing_value_strategy",
-        contains=False
-    )
-    check_membership(
-        model_metadata.output_features.category_feature.decoder,
-        "vocab_size"
-    )
-    check_membership(
-        model_metadata.output_features.category_feature.decoder,
-        ["type", "num_classes", "use_bias"],
-        contains=False
+        model_metadata.output_features.category_feature.decoder, ["type", "num_classes", "use_bias"], contains=False
     )
 
     # Check trainer metadata contains proper field and doesn't contain anything it shouldn't
-    check_membership(
-        model_metadata.trainer.optimizer,
-        "lr"
-    )
-    check_membership(
-        model_metadata.trainer.optimizer,
-        "type",
-        contains=False
-    )
+    check_membership(model_metadata.trainer.optimizer, "lr")
+    check_membership(model_metadata.trainer.optimizer, "type", contains=False)

@@ -39,21 +39,21 @@ class InternalDecoderMetadata:
 
 @dataclass
 class InternalPreprocessingMetadata:
-    """Class for internal feature preprocessing parameters"""
+    """Class for internal feature preprocessing parameters."""
 
     computed_fill_value: Union[str, bool, int, float] = None
 
 
 @dataclass
 class InternalOptimizerMetadata:
-    """Class for internal optimizer parameters"""
+    """Class for internal optimizer parameters."""
 
     lr: float = 1e-03
 
 
 @dataclass
 class InternalTrainerMetadata:
-    """Class for internal trainer parameters"""
+    """Class for internal trainer parameters."""
 
     optimizer: InternalOptimizerMetadata = field(default_factory=InternalOptimizerMetadata)
 
