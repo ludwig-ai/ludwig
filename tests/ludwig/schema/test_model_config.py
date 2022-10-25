@@ -30,7 +30,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
 config_sections = {INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER, COMBINER, DEFAULTS, HYPEROPT}

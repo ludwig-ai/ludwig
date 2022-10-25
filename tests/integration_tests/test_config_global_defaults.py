@@ -17,7 +17,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.config.model_config import ModelConfig
 from tests.integration_tests.utils import category_feature, generate_data, run_experiment, text_feature
 
 logger = logging.getLogger(__name__)
