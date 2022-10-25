@@ -1743,7 +1743,7 @@ def _preprocess_file_for_training(
 
         # Data is pre-split, so we override whatever split policy the user specified
         if preprocessing_params["split"]:
-            warnings.warn(
+            logger.debug(
                 'Preprocessing "split" section provided, but pre-split dataset given as input. '
                 "Ignoring split configuration."
             )
@@ -1814,7 +1814,7 @@ def _preprocess_df_for_training(
 
         # Data is pre-split, so we override whatever split policy the user specified
         if preprocessing_params["split"]:
-            warnings.warn(
+            logger.debug(
                 'Preprocessing "split" section provided, but pre-split dataset given as input. '
                 "Ignoring split configuration."
             )
