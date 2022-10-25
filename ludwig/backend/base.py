@@ -202,7 +202,7 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
         """Returns a shared singleton LocalBackend instance."""
         if not hasattr(cls, "_shared_instance"):
             cls._shared_instance = cls()
-        return cls.instance
+        return cls._shared_instance
 
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
