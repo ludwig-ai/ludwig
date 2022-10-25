@@ -11,7 +11,7 @@ sha256:
   transactions_train.csv.zip: 5fcc90e80355e35aa04c04aa5c47587f4c6817eb3ba4ed3dc685b89a591559e3
 loader: hm_fashion_recommendations.HMLoader
 description: |
-  H&M Group data for recommendations based on data from previous transactions, as well as from customer and 
-  product meta data. The available meta data spans from simple data, such as garment type and customer age, 
+  H&M Group data for recommendations based on data from previous transactions, as well as from customer and
+  product meta data. The available meta data spans from simple data, such as garment type and customer age,
   to text data from product descriptions, to image data from garment images.
   https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations
