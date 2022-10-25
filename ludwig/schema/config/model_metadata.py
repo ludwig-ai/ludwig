@@ -11,7 +11,7 @@ from ludwig.schema.config.utils import (
 )
 
 
-class ModelMetadata:
+class InternalParameters:
     """Metadata class for internal only parameters used in the Ludwig Pipeline."""
 
     def __init__(self, config_dict: dict):

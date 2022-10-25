@@ -12,7 +12,7 @@ def get_output_metadata_cls(name: str):
     return internal_output_config_registry[name]
 
 
-class BaseFeatureContainer:
+class BaseFeaturesContainer:
     """Base Feature container for input and output features."""
 
     def to_dict(self):
@@ -50,13 +50,13 @@ class BaseFeatureContainer:
         return yaml.dump(filtered_repr, sort_keys=True)
 
 
-class InputFeaturesContainer(BaseFeatureContainer):
+class InputFeaturesContainer(BaseFeaturesContainer):
     """InputFeatures is a container for all input features."""
 
     pass
 
 
-class OutputFeaturesContainer(BaseFeatureContainer):
+class OutputFeaturesContainer(BaseFeaturesContainer):
     """OutputFeatures is a container for all output features."""
 
     pass

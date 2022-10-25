@@ -1,7 +1,7 @@
 from typing import Union
 
 from ludwig.constants import ACCURACY
-from ludwig.schema.config.model_metadata import ModelMetadata
+from ludwig.schema.config.model_metadata import InternalParameters
 
 
 def check_membership(obj, attributes: Union[list, str], contains: bool = True):
@@ -65,7 +65,7 @@ def test_config_object():
         },
     }
 
-    model_metadata = ModelMetadata.from_dict(config)
+    model_metadata = InternalParameters.from_dict(config)
 
     # Check input feature metadata contains proper field and doesn't contain anything it shouldn't
     assert len(model_metadata.input_features.to_list()) == 2
