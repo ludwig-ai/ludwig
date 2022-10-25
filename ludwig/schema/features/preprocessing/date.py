@@ -26,6 +26,14 @@ class DatePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[DATE][PREPROCESSING]["fill_value"],
     )
 
+    computed_fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=FEATURE_METADATA[DATE][PREPROCESSING]["computed_fill_value"],
+    )
+
     datetime_format: str = schema_utils.String(
         default=None,
         allow_none=True,

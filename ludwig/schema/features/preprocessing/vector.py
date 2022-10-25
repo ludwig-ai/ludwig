@@ -34,6 +34,15 @@ class VectorPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[VECTOR][PREPROCESSING]["fill_value"],
     )
 
+    computed_fill_value: str = schema_utils.String(
+        default="",
+        allow_none=False,
+        pattern=r"^([0-9]+(\.[0-9]*)?\s*)*$",
+        description="The internally computed fill value to replace missing values with in case the "
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=FEATURE_METADATA[VECTOR][PREPROCESSING]["computed_fill_value"],
+    )
+
 
 @register_preprocessor("vector_output")
 @dataclass(repr=False)

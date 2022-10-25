@@ -98,6 +98,14 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["fill_value"],
     )
 
+    computed_fill_value: str = schema_utils.String(
+        default=strings_utils.UNKNOWN_SYMBOL,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["computed_fill_value"],
+    )
+
 
 @register_preprocessor("text_output")
 @dataclass(repr=False)

@@ -27,6 +27,14 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["fill_value"],
     )
 
+    computed_fill_value: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        allow_none=False,
+        description="The internally computed fill value to replace missing values with in case the "
+        "missing_value_strategy is fill_with_mode or fill_with_mean",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["computed_fill_value"],
+    )
+
     normalization: str = schema_utils.StringOptions(
         ["zscore", "minmax", "log1p"],
         default=None,
