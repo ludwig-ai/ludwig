@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from ludwig.profiling.api import get_column_profile_summaries
+from ludwig.profiling.dataset_profile import get_column_profile_summaries
 from ludwig.profiling.utils import (
     get_distinct_values,
     get_distinct_values_balance,
