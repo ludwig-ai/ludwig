@@ -281,10 +281,8 @@ class TqdmCallback(ray.tune.callback.Callback):
         self.progress_bars = {}
 
     def on_trial_result(self, iteration, trials, trial, result, **info):
-        """
-        Called after receiving a result from a trial
-        https://docs.ray.io/en/latest/_modules/ray/tune/callback.html#Callback.on_trial_result
-        """
+        """Called after receiving a result from a trial
+        https://docs.ray.io/en/latest/_modules/ray/tune/callback.html#Callback.on_trial_result."""
         progress_bar_opts = result.get("progress_bar")
         if not progress_bar_opts:
             return
