@@ -171,15 +171,8 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
-    features = input_features + output_features
-    df = build_synthetic_dataset(num_examples, features)
-    data = [next(df) for _ in range(num_examples + 1)]
-
-    dataframe = pd.DataFrame(data[1:], columns=data[0])
-    if nan_percent > 0:
-        add_nans_to_df_in_place(dataframe, nan_percent)
-    dataframe.to_csv(filename, index=False)
-
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df.to_csv(filename, index=False)
     return filename
 
 
