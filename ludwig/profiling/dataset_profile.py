@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Union
+from typing import Dict, Tuple, Union
 
 import whylogs as why
 from whylogs.core.proto import ColumnMessage
@@ -7,41 +7,36 @@ from whylogs.core.view.column_profile_view import ColumnProfileView
 from whylogs.core.view.dataset_profile_view import DatasetProfileView
 
 from ludwig.profiling import dataset_profile_pb2
-from ludwig.profiling.utils import get_ludwig_type_from_column_profile_summary
+from ludwig.profiling.types import ColumnProfileSummary
 from ludwig.utils.data_utils import load_dataset
 from ludwig.utils.types import DataFrame
 
+# Absolute cap on the data that is used for profiling.
+PROFILING_CAP = 100000
 
-def get_dataset_profile_view(dataset: Union[str, DataFrame]) -> DatasetProfileView:
+
+def get_dataset_profile_view(dataset: Union[str, DataFrame]) -> Tuple[DatasetProfileView, int]:
     """Returns whylogs dataset profile view."""
     dataframe = load_dataset(dataset)
 
-    # Hard cap to 10k rows.
-    dataframe = dataset.head(10000)
+    # Manual cap, also takes care of converting dask to pandas.
+    dataframe = dataframe.head(PROFILING_CAP)
 
+    size_bytes = sum(dataframe.memory_usage(deep=True))
     results = why.log(pandas=dataframe)
     profile = results.profile()
     profile_view = profile.view()
-    return profile_view
+    return profile_view, size_bytes
 
 
-def get_ludwig_type_map_from_column_profile_summaries(column_profile_summaries: Dict[str, Any]) -> Dict[str, str]:
-    ludwig_type_map = {}
-    for feature_name, column_profile_summary in column_profile_summaries.items():
-        ludwig_type_map[feature_name] = get_ludwig_type_from_column_profile_summary(
-            feature_name, column_profile_summary
-        )
-    return ludwig_type_map
-
-
-def get_dataset_profile_proto(df: DataFrame, profile_view: DatasetProfileView) -> dataset_profile_pb2.DatasetProfile:
+def get_dataset_profile_proto(profile_view: DatasetProfileView, size_bytes: int) -> dataset_profile_pb2.DatasetProfile:
     """Returns a Ludwig DatasetProfile from a whylogs DatasetProfileView."""
     profile_view_pandas = profile_view.to_pandas()
 
     dataset_profile = dataset_profile_pb2.DatasetProfile()
     dataset_profile.timestamp = int(time.time())
     dataset_profile.num_examples = profile_view_pandas.iloc[0]["counts/n"]
-    dataset_profile.size_bytes = sum(df.memory_usage(deep=True))
+    dataset_profile.size_bytes = size_bytes
     for column_name, column_profile_view in profile_view.get_columns().items():
         feature_profile = dataset_profile_pb2.FeatureProfile()
         # Ideally, this line of code would simply be:
@@ -58,7 +53,7 @@ def get_dataset_profile_proto(df: DataFrame, profile_view: DatasetProfileView) -
 
 def get_column_profile_summaries_from_proto(
     dataset_profile_proto: dataset_profile_pb2.DatasetProfile,
-) -> Dict[str, Dict[str, Any]]:
+) -> Dict[str, ColumnProfileSummary]:
     """Returns a mapping of feature name to ColumnProfileView."""
     column_profile_views: Dict[str, ColumnProfileView] = {}
     for feature_name, feature_profile in dataset_profile_proto.feature_profiles.items():
@@ -71,9 +66,9 @@ def get_column_profile_summaries_from_proto(
 
 
 def get_column_profile_summaries(
-    pandas_df: DataFrame,
-) -> Dict[str, Dict[str, Any]]:
+    dataset: Union[str, DataFrame],
+) -> Dict[str, ColumnProfileSummary]:
     """Get WhyLogs column summaries directly from a pandas dataframe."""
-    dataset_profile_view = get_dataset_profile_view(pandas_df)
-    dataset_profile_view_proto = get_dataset_profile_proto(pandas_df, dataset_profile_view)
+    dataset_profile_view, size_bytes = get_dataset_profile_view(dataset)
+    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view, size_bytes)
     return get_column_profile_summaries_from_proto(dataset_profile_view_proto)
