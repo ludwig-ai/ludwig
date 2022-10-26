@@ -15,6 +15,10 @@ from ludwig.utils.types import DataFrame
 def get_dataset_profile_view(dataset: Union[str, DataFrame]) -> DatasetProfileView:
     """Returns whylogs dataset profile view."""
     dataframe = load_dataset(dataset)
+
+    # Hard cap to 10k rows.
+    dataframe = dataset.head(10000)
+
     results = why.log(pandas=dataframe)
     profile = results.profile()
     profile_view = profile.view()

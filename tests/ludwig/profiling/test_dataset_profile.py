@@ -1,4 +1,9 @@
+import os
+import tempfile
+
+import dask.dataframe as dd
 import pandas as pd
+import pytest
 
 from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries,
@@ -7,6 +12,23 @@ from ludwig.profiling.dataset_profile import (
     get_dataset_profile_view,
     get_ludwig_type_map_from_column_profile_summaries,
 )
+from tests.integration_tests.utils import category_feature, generate_data, number_feature
+
+
+@pytest.fixture(scope="module")
+def test_data():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_features = [
+            number_feature(),
+            number_feature(),
+            category_feature(encoder={"vocab_size": 3}),
+            category_feature(encoder={"vocab_size": 3}),
+        ]
+        output_features = [category_feature(decoder={"vocab_size": 3})]
+        dataset_csv = generate_data(
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100
+        )
+        yield input_features, output_features, dataset_csv
 
 
 def test_get_dataset_profile_view_works():
@@ -27,6 +49,17 @@ def test_get_dataset_profile_view_works():
         "legs",
         "weight",
     }
+
+
+def test_get_dataset_profile_view_works_dask(test_data):
+    input_features, output_features, dataset_csv = test_data
+    df = dd.read_csv(dataset_csv)
+
+    dataset_profile_view = get_dataset_profile_view(df)
+    dataset_profile_view_proto = get_dataset_profile_proto(df, dataset_profile_view)
+    column_profile_summaries = get_column_profile_summaries_from_proto(dataset_profile_view_proto)
+
+    assert len(column_profile_summaries.keys()) == 5
 
 
 def test_get_ludwig_type_map_from_column_profile_summaries():
