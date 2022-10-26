@@ -1,32 +1,12 @@
-import os
-import tempfile
-
 import dask.dataframe as dd
 import pandas as pd
-import pytest
 
 from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries_from_proto,
     get_dataset_profile_proto,
     get_dataset_profile_view,
 )
-from tests.integration_tests.utils import category_feature, generate_data, number_feature
-
-
-@pytest.fixture(scope="module")
-def test_data():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        input_features = [
-            number_feature(),
-            number_feature(),
-            category_feature(encoder={"vocab_size": 3}),
-            category_feature(encoder={"vocab_size": 3}),
-        ]
-        output_features = [category_feature(decoder={"vocab_size": 3})]
-        dataset_csv = generate_data(
-            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100
-        )
-        yield input_features, output_features, dataset_csv
+from tests.integration_tests.utils import category_feature, generate_data_as_dataframe, number_feature
 
 
 def test_get_dataset_profile_view_works():
@@ -49,9 +29,16 @@ def test_get_dataset_profile_view_works():
     }
 
 
-def test_get_dataset_profile_view_works_dask(test_data):
-    input_features, output_features, dataset_csv = test_data
-    df = dd.read_csv(dataset_csv)
+def test_get_dataset_profile_view_works_dask():
+    input_features = [
+        number_feature(),
+        number_feature(),
+        category_feature(encoder={"vocab_size": 3}),
+        category_feature(encoder={"vocab_size": 3}),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 3})]
+    dataset = generate_data_as_dataframe(input_features, output_features, num_examples=100)
+    df = dd.from_pandas(dataset, npartitions=5)
 
     dataset_profile_view, size_bytes = get_dataset_profile_view(df)
     dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view, size_bytes)
