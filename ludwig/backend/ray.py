@@ -713,7 +713,7 @@ class RayPredictor(BasePredictor):
                 config={
                     "predictor_kwargs": predictor_kwargs,
                     "model_ref": ray.put(self.model),
-                    "data_loader_kwargs": self.data_loader_kwargs,
+                    "data_loader_kwargs": self.data_loader_kwargs if self.data_loader_kwargs else {},
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,
