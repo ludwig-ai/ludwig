@@ -25,4 +25,7 @@ class AllstateClaimsSeverityLoader(DatasetLoader):
             # train.csv has been updated with quoted test rows at the end; don't load these, only load the original
             # training set.
             return pd.read_csv(file_path, nrows=188319)
+        if os.path.basename(file_path) == "test.csv":
+            # we limit the loaded rows for the same reason as the training set.
+            return pd.read_csv(file_path, nrows=125547)
         super().load_file_to_dataframe(file_path)

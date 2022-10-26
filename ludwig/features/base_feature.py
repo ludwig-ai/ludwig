@@ -135,9 +135,9 @@ class BaseFeature:
 class InputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all input features."""
 
-    def create_sample_input(self):
+    def create_sample_input(self, batch_size: int = 2):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
-        return torch.rand([2, *self.input_shape]).to(self.input_dtype)
+        return torch.rand([batch_size, *self.input_shape]).to(self.input_dtype)
 
     @staticmethod
     @abstractmethod
@@ -216,8 +216,10 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             for dependency in self.dependencies:
                 self.dependency_reducers[dependency] = SequenceReducer(reduce_mode=self.reduce_dependencies)
 
-    def create_sample_output(self):
-        return torch.rand(self.output_shape, dtype=self.get_output_dtype())
+    def create_sample_output(self, batch_size: int = 2):
+        output_shape = self.output_shape
+        shape = [batch_size, *self.output_shape] if output_shape != torch.Size([1]) else [batch_size]
+        return torch.rand(shape).to(self.get_output_dtype())
 
     @abstractmethod
     def get_prediction_set(self):

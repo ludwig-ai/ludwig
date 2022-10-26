@@ -38,7 +38,7 @@ def get_decoder_conds(feature_type: str):
     for decoder in get_decoder_classes(feature_type):
         decoder_cls = get_decoder_cls(feature_type, decoder)
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(decoder_cls)["properties"]
-        other_props.pop("type")
+        schema_utils.remove_duplicate_fields(other_props)
         decoder_cond = schema_utils.create_cond(
             {"type": decoder},
             other_props,

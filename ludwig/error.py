@@ -44,3 +44,6 @@ class InputDataError(LudwigError, ValueError):
 
     def __str__(self):
         return f'Column "{self.column_name}" as {self.feature_type} feature: {self.message}'
+
+    def __reduce__(self):
+        return type(self), (self.column_name, self.feature_type, self.message)

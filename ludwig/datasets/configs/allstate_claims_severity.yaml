@@ -5,6 +5,7 @@ archive_filenames: allstate-claims-severity.zip
 sha256:
   allstate-claims-severity.zip: 165f7b4bc5ed40f43656dc958da6572143a7e126e2d37bcd41f1299bfbaa68e2
 train_filenames: train.csv
+test_filenames: test.csv
 loader: allstate_claims_severity.AllstateClaimsSeverityLoader
 description: |
   Allstate Claims Severity.

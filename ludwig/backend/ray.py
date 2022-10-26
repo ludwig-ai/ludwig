@@ -226,7 +226,7 @@ def train_fn(
     return train_results
 
 
-@ray.remote
+@ray.remote(max_calls=1)
 def tune_batch_size_fn(
     dataset: RayDataset = None,
     data_loader_kwargs: Dict[str, Any] = None,
@@ -254,7 +254,7 @@ def tune_batch_size_fn(
         hvd.shutdown()
 
 
-@ray.remote
+@ray.remote(max_calls=1)
 def tune_learning_rate_fn(
     dataset: RayDataset,
     config: Dict[str, Any],
