@@ -637,7 +637,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
-def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_4cpu):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
