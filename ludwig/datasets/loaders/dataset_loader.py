@@ -279,7 +279,7 @@ class DatasetLoader:
         :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
         0: train, 1: validation, 2: test.
         """
-        self._download_and_process()
+        self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         if self.state == DatasetState.TRANSFORMED:
             dataset_df = self.load_transformed_dataset()
             if split:
@@ -297,6 +297,7 @@ class DatasetLoader:
                 kaggle_competition=self.config.kaggle_competition,
                 kaggle_username=kaggle_username,
                 kaggle_key=kaggle_key,
+                filenames=self.download_filenames,
             )
         else:
             for url, filename in zip(self.download_urls, self.download_filenames):
