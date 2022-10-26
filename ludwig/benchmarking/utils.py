@@ -12,6 +12,7 @@ import fsspec
 import pandas as pd
 import yaml
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
@@ -125,6 +126,9 @@ def download_artifacts(
     ), "Experiments not downloaded to the same path"
 
     return local_dir, dataset_names
+
+
+DeveloperAPI
 
 
 async def download_one(
