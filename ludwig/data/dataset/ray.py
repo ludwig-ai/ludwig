@@ -40,7 +40,6 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
 
-_ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
 _ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
@@ -162,11 +161,6 @@ class RayDatasetShard(Dataset):
                     for the dataset.
         """
         if fully_executed:
-            if _ray113:
-                # Workaround for: https://github.com/ray-project/ray/issues/25643
-                # TODO(travis): remove after 1.13.1
-                self.dataset_shard = self.dataset_shard.map_batches(lambda x: x, batch_size=None)
-
             # set instance state so calls to __len__ will also use the fully_executed version
             self.dataset_shard = self.dataset_shard.fully_executed()
 
