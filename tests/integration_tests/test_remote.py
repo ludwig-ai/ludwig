@@ -31,7 +31,7 @@ from tests.integration_tests.utils import (
     [("file", None, None), private_param(("s3", "ludwig-tests", minio_test_creds()))],
     ids=["file", "s3"],
 )
-def test_remote_training_set(csv_filename, fs_protocol, bucket, creds, backend, ray_cluster_2cpu):
+def test_remote_training_set(csv_filename, fs_protocol, bucket, creds, backend, ray_cluster_4cpu):
     with remote_tmpdir(fs_protocol, bucket) as tmpdir:
         with use_credentials(creds):
             input_features = [sequence_feature(encoder={"reduce_output": "sum"})]

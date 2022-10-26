@@ -59,7 +59,7 @@ def random_set_logits(*args, num_predict_samples, vocab_size, pct_positive, **kw
     ],
 )
 @pytest.mark.parametrize("distinct_values", [(False, True), ("No", "Yes")])
-def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
+def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_4cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]
@@ -118,7 +118,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     ],
 )
 @pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
-def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_2cpu):
+def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_4cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]

@@ -217,7 +217,7 @@ def run_test_with_features(
 
 @pytest.mark.parametrize("df_engine", ["pandas", "dask"])
 @pytest.mark.distributed
-def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
+def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_4cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -265,7 +265,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
         ),
     ],
 )
-def test_ray_tabular(df_engine, ray_cluster_2cpu):
+def test_ray_tabular(df_engine, ray_cluster_4cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
         number_feature(normalization="zscore"),
@@ -289,7 +289,7 @@ def test_ray_tabular(df_engine, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_tabular_save_inputs(dataset_type, ray_cluster_2cpu):
+def test_ray_tabular_save_inputs(dataset_type, ray_cluster_4cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
         number_feature(normalization="zscore"),
@@ -315,7 +315,7 @@ def test_ray_tabular_save_inputs(dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
+def test_ray_save_outputs(dataset_type, ray_cluster_4cpu):
     input_features = [
         binary_feature(),
     ]
@@ -341,7 +341,7 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
+def test_ray_text_sequence_timeseries(ray_cluster_4cpu, dataset_type):
     input_features = [
         text_feature(),
         sequence_feature(encoder={"reduce_output": "sum"}),
@@ -364,7 +364,7 @@ def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_vector(dataset_type, ray_cluster_2cpu):
+def test_ray_vector(dataset_type, ray_cluster_4cpu):
     input_features = [
         vector_feature(),
     ]
@@ -383,7 +383,7 @@ def test_ray_vector(dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
+def test_ray_audio(tmpdir, dataset_type, ray_cluster_4cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -412,7 +412,7 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet", "pandas+numpy_images"])
 @pytest.mark.distributed
-def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
+def test_ray_image(tmpdir, dataset_type, ray_cluster_4cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
@@ -440,7 +440,7 @@ def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
     ids=["first_row_none", "last_row_none", "first_and_last_row_none_bfill", "first_and_last_row_none_ffill"],
 )
 @pytest.mark.distributed
-def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2cpu):
+def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_4cpu):
     first_row_none, last_row_none, missing_value_strategy = settings
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
@@ -473,7 +473,7 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
 @pytest.mark.distributed
 @pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
-def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
+def test_ray_image_modin(tmpdir, ray_cluster_4cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
@@ -495,7 +495,7 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
+def test_ray_image_multiple_features(tmpdir, ray_cluster_4cpu):
     input_features = [
         image_feature(
             folder=os.path.join(tmpdir, "generated_images_1"),
@@ -522,7 +522,7 @@ def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
 
 @pytest.mark.skip(reason="flaky: ray is running out of resources")
 @pytest.mark.distributed
-def test_ray_split(ray_cluster_2cpu):
+def test_ray_split(ray_cluster_4cpu):
     input_features = [
         number_feature(normalization="zscore"),
         set_feature(),
@@ -537,7 +537,7 @@ def test_ray_split(ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
+def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_4cpu):
     audio_dest_folder = os.path.join(tmpdir, "generated_audio")
     input_features = [
         audio_feature(
@@ -554,7 +554,7 @@ def test_ray_lazy_load_audio_error(tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
+def test_ray_lazy_load_image_error(tmpdir, ray_cluster_4cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
         image_feature(
@@ -596,7 +596,7 @@ def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
         ("undersample_majority", 0.75),
     ],
 )
-def test_balance_ray(method, balance, ray_cluster_2cpu):
+def test_balance_ray(method, balance, ray_cluster_4cpu):
     config = {
         "input_features": [
             {"name": "Index", "proc_column": "Index", "type": "number"},
@@ -662,7 +662,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_4cpu):
 
 
 @pytest.mark.distributed
-def test_ray_progress_bar(ray_cluster_2cpu):
+def test_ray_progress_bar(ray_cluster_4cpu):
     # This is a simple test that is just meant to make sure that the progress bar isn't breaking
     input_features = [
         sequence_feature(encoder={"reduce_output": "sum"}),
@@ -679,7 +679,7 @@ def test_ray_progress_bar(ray_cluster_2cpu):
 
 @pytest.mark.parametrize("calibration", [True, False])
 @pytest.mark.distributed
-def test_ray_calibration(calibration, ray_cluster_2cpu):
+def test_ray_calibration(calibration, ray_cluster_4cpu):
     input_features = [
         number_feature(normalization="zscore"),
         set_feature(),
@@ -693,7 +693,7 @@ def test_ray_calibration(calibration, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
+def test_ray_distributed_predict(tmpdir, ray_cluster_4cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
@@ -742,7 +742,7 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
+def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_4cpu):
     preprocessing_params = {
         "audio_file_length_limit_in_s": 3.0,
         "missing_value_strategy": BFILL,
