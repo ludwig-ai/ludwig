@@ -19,7 +19,6 @@ import pandas as pd
 
 from ludwig.backend.base import LocalBackend
 from ludwig.constants import SPLIT
-from ludwig.data.negative_sampling import negative_sample
 from ludwig.data.split import get_splitter
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
@@ -105,17 +104,12 @@ class HMLoader(DatasetLoader):
         # for a customer are across all splits
         train_df, val_df, test_df = _split(df)
 
-        # 3. Negative sample each split separately
-        train_df = negative_sample(train_df, neg_pos_ratio=10, neg_val=0, log_pct=100)
-        val_df = negative_sample(val_df, neg_pos_ratio=10, neg_val=0, log_pct=100)
-        test_df = negative_sample(test_df, neg_pos_ratio=10, neg_val=0, log_pct=100)
-
         train_df[SPLIT] = 0
         val_df[SPLIT] = 1
         test_df[SPLIT] = 2
         df = pd.concat([train_df, val_df, test_df])
 
-        # 4. Add customer and article features
+        # 3. Add customer and article features
         articles_df = pd.read_csv(file_paths[0])
         customers_df = pd.read_csv(file_paths[1])
         df = _merge_dataframes(df, articles_df, customers_df)
