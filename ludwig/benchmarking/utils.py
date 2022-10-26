@@ -128,9 +128,7 @@ def download_artifacts(
     return local_dir, dataset_names
 
 
-DeveloperAPI
-
-
+@DeveloperAPI
 async def download_one(
     fs, download_base_path: str, dataset_name: str, experiment_name: str, local_dir: str
 ) -> Tuple[str, str]:
