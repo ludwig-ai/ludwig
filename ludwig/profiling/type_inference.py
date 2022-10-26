@@ -10,9 +10,6 @@ from ludwig.utils import strings_utils
 def get_ludwig_type_from_column_profile_summary(feature_name: str, column_profile_summary: ColumnProfileSummary) -> str:
     """Returns the Ludwig type for the given feature, derived from the whylogs column profile summary."""
     distinct_values = get_distinct_values(column_profile_summary)
-    print(f"distinct_values for {feature_name}: {distinct_values}")
-    print(f"column_profile_summary[TYPES_STRING]: {column_profile_summary[TYPES_STRING]}")
-    print(f"column_profile_summary[TYPES_FRACTIONAL]: {column_profile_summary[TYPES_FRACTIONAL]}")
 
     # Check for unstructured types.
     if are_values_images(distinct_values, feature_name):
@@ -40,7 +37,6 @@ def get_ludwig_type_from_column_profile_summary(feature_name: str, column_profil
         if get_pct_distinct_values(column_profile_summary) < 0.5:
             return CATEGORY
         if distinct_values and strings_utils.are_all_numbers(distinct_values):
-            # For some reason, if there are many many floats, distinct values is empty AND TYPES_FRACTIONAL is wrong.
             return NUMBER
     # Fallback to TEXT.
     return TEXT
