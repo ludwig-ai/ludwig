@@ -212,7 +212,7 @@ def train_fn(
         session.report(metrics={"train_results": train_results})
     finally:
         hvd.shutdown()
-    return train_results
+        return train_results
 
 
 @ray.remote(max_calls=1)
@@ -271,95 +271,36 @@ def tune_learning_rate_fn(
         hvd.shutdown()
 
 
-# @DeveloperAPI
-# class TqdmCallback(rt.TrainingCallback):
-#     """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
-
-#     def __init__(self) -> None:
-#         """Constructor for TqdmCallback."""
-#         super().__init__()
-#         self.progess_bars = {}
-
-#     def process_results(self, results: List[Dict], **info) -> None:
-#         """Called everytime ray.train.report is called from subprocesses. See
-#         https://docs.ray.io/en/latest/train/api.html#trainingcallback.
-
-#         # Inputs
-
-#         :param results: (List[Dict]) List of results from the training function.
-#             Each value in the list corresponds to the output of the training function from each worker.
-
-#         # Return
-
-#         :return: (None) `None`
-#         """
-#         for result in results:
-#             progress_bar_opts = result.get("progress_bar")
-#             if not progress_bar_opts:
-#                 continue
-#             # Skip commands received by non-coordinators
-#             if not progress_bar_opts["is_coordinator"]:
-#                 continue
-#             _id = progress_bar_opts["id"]
-#             action = progress_bar_opts.pop("action")
-#             if action == "create":
-#                 progress_bar_config = progress_bar_opts.get("config")
-#                 self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
-#             elif action == "close":
-#                 self.progess_bars[_id].close()
-#             elif action == "update":
-#                 update_by = progress_bar_opts.pop("update_by")
-#                 self.progess_bars[_id].update(update_by)
-
-
 @DeveloperAPI
-class TqdmCallback(ray.tune.Callback):
-    """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
+class TqdmCallback(ray.tune.callback.Callback):
+    """Class for a custom Ray callback that updates tqdm progress bars in the driver process."""
 
     def __init__(self) -> None:
         """Constructor for TqdmCallback."""
         super().__init__()
-        self.progess_bars = {}
+        self.progress_bars = {}
 
-    def on_trial_result(iteration: int, trials: List["Trial"], trial: "Trial", result: Dict, **info):
-        print("On_Trial_Result")
-        print(f">>> iteration: {iteration}")
-        print(f">>> trials: {trials}")
-        print(f">>> trial: {trial}")
-        print(f">>> result: {result}")
-        print(f">>> info: {info}")
-
-    # TODO(Arnav): Ensure compatibility with on_trial_result
-    def process_results(self, results: List[Dict], **info) -> None:
-        """Called everytime ray.train.report is called from subprocesses. See
-        https://docs.ray.io/en/latest/train/api.html#trainingcallback.
-
-        # Inputs
-
-        :param results: (List[Dict]) List of results from the training function.
-            Each value in the list corresponds to the output of the training function from each worker.
-
-        # Return
-
-        :return: (None) `None`
+    def on_trial_result(self, iteration, trials, trial, result, **info):
         """
-        for result in results:
-            progress_bar_opts = result.get("progress_bar")
-            if not progress_bar_opts:
-                continue
-            # Skip commands received by non-coordinators
-            if not progress_bar_opts["is_coordinator"]:
-                continue
-            _id = progress_bar_opts["id"]
-            action = progress_bar_opts.pop("action")
-            if action == "create":
-                progress_bar_config = progress_bar_opts.get("config")
-                self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
-            elif action == "close":
-                self.progess_bars[_id].close()
-            elif action == "update":
-                update_by = progress_bar_opts.pop("update_by")
-                self.progess_bars[_id].update(update_by)
+        Called after receiving a result from a trial
+        https://docs.ray.io/en/latest/_modules/ray/tune/callback.html#Callback.on_trial_result
+        """
+        progress_bar_opts = result.get("progress_bar")
+        if not progress_bar_opts:
+            return
+        # Skip commands received by non-coordinators
+        if not progress_bar_opts["is_coordinator"]:
+            return
+        _id = progress_bar_opts["id"]
+        action = progress_bar_opts.pop("action")
+        if action == "create":
+            progress_bar_config = progress_bar_opts.get("config")
+            self.progress_bars[_id] = tqdm.tqdm(**progress_bar_config)
+        elif action == "close":
+            self.progress_bars[_id].close()
+        elif action == "update":
+            update_by = progress_bar_opts.pop("update_by")
+            self.progress_bars[_id].update(update_by)
 
 
 @contextlib.contextmanager
@@ -415,13 +356,8 @@ class RayAirRunner:
                 "val": DatasetConfig(split=True),
                 "test": DatasetConfig(split=True),
             },
-            # run_config=RunConfig(
-            #     callbacks=callbacks,
-            #     verbose=2,
-            # ),
-            # resume_from_checkpoint=None,
+            run_config=RunConfig(callbacks=callbacks),
         )
-        # tuner = ray.tune.Tuner(trainer)
         return trainer.fit()
 
 
