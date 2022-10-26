@@ -25,7 +25,6 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
-import ray.train as rt
 import torch
 import tqdm
 from fsspec.config import conf
@@ -33,7 +32,6 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 
-# from ray.data.dataset_pipeline import DatasetPipeline
 from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
 from ray.train.horovod import HorovodConfig
 from ray.util.dask import ray_dask_get
@@ -67,12 +65,15 @@ logger = logging.getLogger(__name__)
 
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0.0")
 if _ray_200:
-    from ray.air.config import ScalingConfig, DatasetConfig
+    from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
     from ray.train.horovod import HorovodTrainer
+    from ray.air import session
 else:
-    ScalingConfig = None
     DatasetConfig = None
+    RunConfig = None
+    ScalingConfig = None
     HorovodTrainer = None
+    session = None
 
 
 RAY_DEFAULT_PARALLELISM = 200
@@ -167,14 +168,14 @@ def train_fn(
         initialize_pytorch(horovod=hvd)
 
         train_shard = RayDatasetShard(
-            rt.get_dataset_shard("train"),
+            session.get_dataset_shard("train"),
             features,
             training_set_metadata,
             data_loader_kwargs,
         )
 
         try:
-            val_shard = rt.get_dataset_shard("val")
+            val_shard = session.get_dataset_shard("val")
         except KeyError:
             val_shard = None
 
@@ -190,7 +191,7 @@ def train_fn(
             )
 
         try:
-            test_shard = rt.get_dataset_shard("test")
+            test_shard = session.get_dataset_shard("test")
         except KeyError:
             test_shard = None
 
@@ -218,6 +219,9 @@ def train_fn(
 
         train_results = results, trainer.validation_field, trainer.validation_metric
 
+        # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
+        # So, make a final call to session.report with the train_results object above.
+        session.report(metrics={"train_results": train_results})
     finally:
         hvd.shutdown()
     return train_results
@@ -279,8 +283,49 @@ def tune_learning_rate_fn(
         hvd.shutdown()
 
 
+# @DeveloperAPI
+# class TqdmCallback(rt.TrainingCallback):
+#     """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
+
+#     def __init__(self) -> None:
+#         """Constructor for TqdmCallback."""
+#         super().__init__()
+#         self.progess_bars = {}
+
+#     def process_results(self, results: List[Dict], **info) -> None:
+#         """Called everytime ray.train.report is called from subprocesses. See
+#         https://docs.ray.io/en/latest/train/api.html#trainingcallback.
+
+#         # Inputs
+
+#         :param results: (List[Dict]) List of results from the training function.
+#             Each value in the list corresponds to the output of the training function from each worker.
+
+#         # Return
+
+#         :return: (None) `None`
+#         """
+#         for result in results:
+#             progress_bar_opts = result.get("progress_bar")
+#             if not progress_bar_opts:
+#                 continue
+#             # Skip commands received by non-coordinators
+#             if not progress_bar_opts["is_coordinator"]:
+#                 continue
+#             _id = progress_bar_opts["id"]
+#             action = progress_bar_opts.pop("action")
+#             if action == "create":
+#                 progress_bar_config = progress_bar_opts.get("config")
+#                 self.progess_bars[_id] = tqdm.tqdm(**progress_bar_config)
+#             elif action == "close":
+#                 self.progess_bars[_id].close()
+#             elif action == "update":
+#                 update_by = progress_bar_opts.pop("update_by")
+#                 self.progess_bars[_id].update(update_by)
+
+
 @DeveloperAPI
-class TqdmCallback(rt.TrainingCallback):
+class TqdmCallback(ray.tune.Callback):
     """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
 
     def __init__(self) -> None:
@@ -288,6 +333,15 @@ class TqdmCallback(rt.TrainingCallback):
         super().__init__()
         self.progess_bars = {}
 
+    def on_trial_result(iteration: int, trials: List["Trial"], trial: "Trial", result: Dict, **info):
+        print("On_Trial_Result")
+        print(f">>> iteration: {iteration}")
+        print(f">>> trials: {trials}")
+        print(f">>> trial: {trial}")
+        print(f">>> result: {result}")
+        print(f">>> info: {info}")
+
+    # TODO(Arnav): Ensure compatibility with on_trial_result
     def process_results(self, results: List[Dict], **info) -> None:
         """Called everytime ray.train.report is called from subprocesses. See
         https://docs.ray.io/en/latest/train/api.html#trainingcallback.
@@ -356,9 +410,12 @@ class RayAirRunner:
         strategy = "PACK" if trainer_kwargs.get("use_gpu") else "SPREAD"
         self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
 
-    # TODO(Arnav): Add way to pass in callbacks
     def run(
-        self, train_loop_per_worker: Callable, config: Dict[str, Any], callbacks: List[Any], dataset: Dict[str, Any]
+        self,
+        train_loop_per_worker: Callable,
+        config: Dict[str, Any],
+        dataset: Dict[str, Any],
+        callbacks: List[Any] = [],
     ) -> List[Any]:
         trainer = HorovodTrainer(
             train_loop_per_worker=train_loop_per_worker,
@@ -370,7 +427,13 @@ class RayAirRunner:
                 "val": DatasetConfig(split=True),
                 "test": DatasetConfig(split=True),
             },
+            # run_config=RunConfig(
+            #     callbacks=callbacks,
+            #     verbose=2,
+            # ),
+            # resume_from_checkpoint=None,
         )
+        # tuner = ray.tune.Tuner(trainer)
         return trainer.fit()
 
 
@@ -417,7 +480,7 @@ class RayTrainerV2(BaseTrainer):
             dataset["test"] = test_set.ds
 
         with create_runner(**self.trainer_kwargs) as runner:
-            results = runner.run(
+            trainer_results = runner.run(
                 lambda config: train_fn(**config),
                 config={
                     "executable_kwargs": executable_kwargs,
@@ -428,8 +491,8 @@ class RayTrainerV2(BaseTrainer):
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
             )
-            # , self._validation_field, self._validation_metric
-            print(results)
+
+        results, self._validation_field, self._validation_metric = trainer_results.metrics["train_results"]
 
         # load state dict back into the model
         state_dict, *args = results
@@ -544,7 +607,7 @@ def eval_fn(
         initialize_pytorch(horovod=hvd)
 
         eval_shard = RayDatasetShard(
-            rt.get_dataset_shard("eval"),
+            session.get_dataset_shard("eval"),
             features,
             training_set_metadata,
             data_loader_kwargs,
@@ -555,7 +618,11 @@ def eval_fn(
         model = model.to(device)
 
         predictor = RemotePredictor(model=model, horovod=hvd, report_tqdm_to_ray=True, **predictor_kwargs)
-        return predictor.batch_evaluation(eval_shard, **kwargs)
+        results = predictor.batch_evaluation(eval_shard, **kwargs)
+
+        # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
+        # So, make a final call to session.report with the eval_results object above.
+        session.report(metrics={"eval_results": results})
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
@@ -642,7 +709,7 @@ class RayPredictor(BasePredictor):
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
-            eval_stats = runner.run(
+            eval_results = runner.run(
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
@@ -654,6 +721,8 @@ class RayPredictor(BasePredictor):
                 },
                 dataset=datasets,
             )
+
+        eval_stats = eval_results.metrics["eval_results"][0]
 
         predictions = None
         if collect_predictions:
