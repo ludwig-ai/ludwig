@@ -167,6 +167,7 @@ def train_fn(
         except KeyError:
             val_shard = None
 
+        # Override shuffle to False to prevent shuffling of validation and test sets
         eval_data_loader_kwargs = copy.deepcopy(data_loader_kwargs)
         eval_data_loader_kwargs["shuffle"] = False
 
