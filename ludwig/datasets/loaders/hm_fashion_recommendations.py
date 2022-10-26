@@ -19,9 +19,9 @@ import pandas as pd
 
 from ludwig.backend.base import LocalBackend
 from ludwig.constants import SPLIT
+from ludwig.data.negative_sampling import negative_sample
 from ludwig.data.split import get_splitter
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
-from ludwig.datasets.loaders.utils import negative_sample
 
 
 def _merge_dataframes(transactions_df, articles_df, customers_df):
