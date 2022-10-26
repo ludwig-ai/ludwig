@@ -78,6 +78,16 @@ def _split(df):
 
 class HMLoader(DatasetLoader):
     def load_unprocessed_dataframe(self, file_paths: List[str], sample=True) -> pd.DataFrame:
+        """Load the dataframes from the given file paths.
+
+        Params:
+            file_paths: A list of file paths to load the dataframes from.
+            sample: Whether to sample the dataframes. Since the dataset is quite large (31M transactions), this defaults
+                to True, which takes data after August 21, 2020 for a sample of 100 customers.
+
+        Returns:
+            A single dataframe containing transactions, articles, and customers data.
+        """
         # Load transactions
         df = pd.read_csv(file_paths[2])
         df["t_dat"] = pd.to_datetime(df.t_dat)
