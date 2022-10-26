@@ -61,7 +61,6 @@ from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
-
 logger = logging.getLogger(__name__)
 
 
