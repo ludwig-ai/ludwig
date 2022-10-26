@@ -1,5 +1,5 @@
-import dask.dataframe as dd
 import pandas as pd
+import pytest
 
 from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries_from_proto,
@@ -29,7 +29,10 @@ def test_get_dataset_profile_view_works():
     }
 
 
+@pytest.mark.distributed
 def test_get_dataset_profile_view_works_dask():
+    import dask.dataframe as dd
+
     input_features = [
         number_feature(),
         number_feature(),
