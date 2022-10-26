@@ -36,7 +36,7 @@ from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 
-# from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
@@ -81,29 +81,6 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
-
-    def set_fully_execucted(self, fully_executed: bool = True) -> _Dataset:
-        """If fully_executed is true, force full evaluation of the Ray Dataset by loading all blocks into memory."""
-        if fully_executed:
-            if _ray113:
-                # Workaround for: https://github.com/ray-project/ray/issues/25643
-                # TODO(travis): remove after 1.13.1
-                self.ds = self.ds.map_batches(lambda x: x, batch_size=None)
-
-            # Set instance state so calls to __len__ will also use the fully_executed version
-            self.ds = self.ds.fully_executed()
-        return self.ds
-
-    def get_dataset_config(self, shuffle: bool = True, window_size_bytes: Optional[int] = None) -> Dict[str, Any]:
-        """Returns a dictionary with parameters for the DatasetConfig for the Ray Trainer."""
-        # Enabling stream_api allows for the creation of a DatasetPipeline from a Dataset
-        # Defaults to a stream_window_size of 1GB if not specified
-        dataset_config_kwargs = {"split": True, "use_stream_api": True}
-        if shuffle:
-            dataset_config_kwargs["global_shuffle"] = True
-        if window_size_bytes is not None:
-            dataset_config_kwargs["stream_window_size"] = window_size_bytes
-        return dataset_config_kwargs
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
@@ -161,14 +138,46 @@ class RayDatasetManager(DatasetManager):
 class RayDatasetShard(Dataset):
     def __init__(
         self,
-        dataset_shard: DatasetPipeline,
+        dataset_shard: _Dataset,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
+        data_loader_kwargs: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.epoch_iter = dataset_shard.iter_epochs()
+        self.epoch_iter = self.pipeline(**data_loader_kwargs)
+
+    def pipeline(
+        self,
+        shuffle: bool = True,
+        fully_executed: bool = True,
+        window_size_bytes: Optional[int] = None,
+        shuffle_seed: int = default_random_seed,
+    ) -> DatasetPipeline:
+        """
+        Args:
+            shuffle: If true, the entire dataset is shuffled in memory before batching.
+            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
+            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
+                    for the dataset.
+        """
+        if fully_executed:
+            if _ray113:
+                # Workaround for: https://github.com/ray-project/ray/issues/25643
+                # TODO(travis): remove after 1.13.1
+                self.dataset_shard = self.dataset_shard.map_batches(lambda x: x, batch_size=None)
+
+            # set instance state so calls to __len__ will also use the fully_executed version
+            self.dataset_shard = self.dataset_shard.fully_executed()
+
+        if window_size_bytes is None:
+            self.dataset_shard = self.dataset_shard.repeat()
+        else:
+            self.dataset_shard = self.dataset_shard.window(bytes_per_window=window_size_bytes).repeat()
+        if shuffle:
+            self.dataset_shard = self.dataset_shard.random_shuffle_each_window(seed=shuffle_seed)
+        return self.dataset_shard.iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):

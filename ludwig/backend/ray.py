@@ -156,6 +156,7 @@ def _get_df_engine(processor):
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    data_loader_kwargs: Dict[str, Any] = {},
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -169,6 +170,7 @@ def train_fn(
             rt.get_dataset_shard("train"),
             features,
             training_set_metadata,
+            data_loader_kwargs,
         )
 
         try:
@@ -176,11 +178,15 @@ def train_fn(
         except KeyError:
             val_shard = None
 
+        eval_data_loader_kwargs = copy.deepcopy(data_loader_kwargs)
+        eval_data_loader_kwargs["shuffle"] = False
+
         if val_shard is not None:
             val_shard = RayDatasetShard(
                 val_shard,
                 features,
                 training_set_metadata,
+                eval_data_loader_kwargs,
             )
 
         try:
@@ -193,6 +199,7 @@ def train_fn(
                 test_shard,
                 features,
                 training_set_metadata,
+                eval_data_loader_kwargs,
             )
 
         model = ray.get(model_ref)
@@ -232,13 +239,7 @@ def tune_batch_size_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
-        # TODO: Bring back pipeline object
-        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(
-            pipe,
-            features,
-            training_set_metadata,
-        )
+        train_shard = RayDatasetShard(dataset, features, training_set_metadata, data_loader_kwargs)
 
         device = get_torch_device()
         model = model.to(device)
@@ -266,13 +267,7 @@ def tune_learning_rate_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
-        # TODO: Bring back pipeline object
-        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(
-            pipe,
-            features,
-            training_set_metadata,
-        )
+        train_shard = RayDatasetShard(dataset, features, training_set_metadata, data_loader_kwargs)
 
         device = get_torch_device()
         model = model.to(device)
@@ -361,20 +356,20 @@ class RayAirRunner:
         strategy = "PACK" if trainer_kwargs.get("use_gpu") else "SPREAD"
         self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
 
+    # TODO(Arnav): Add way to pass in callbacks
     def run(
-        self,
-        train_loop_per_worker: Callable,
-        config: Dict[str, Any],
-        callbacks: List[Any],
-        dataset: Dict[str, Any],
-        dataset_config: Dict[str, DatasetConfig],
+        self, train_loop_per_worker: Callable, config: Dict[str, Any], callbacks: List[Any], dataset: Dict[str, Any]
     ) -> List[Any]:
         trainer = HorovodTrainer(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
             datasets=dataset,
             scaling_config=self.scaling_config,
-            dataset_config=dataset_config,
+            dataset_config={
+                "train": DatasetConfig(split=True),
+                "val": DatasetConfig(split=True),
+                "test": DatasetConfig(split=True),
+            },
         )
         return trainer.fit()
 
@@ -415,28 +410,23 @@ class RayTrainerV2(BaseTrainer):
             **kwargs,
         }
 
-        fully_executed = self.data_loader_kwargs.pop("fully_executed", True)
-
-        dataset = {"train": training_set.set_fully_execucted(fully_executed)}
-        dataset_config = {"train": DatasetConfig(**training_set.get_dataset_config(**self.data_loader_kwargs))}
+        dataset = {"train": training_set.ds}
         if validation_set is not None:
-            dataset["val"] = validation_set.set_fully_execucted(fully_executed)
-            dataset_config["val"] = DatasetConfig(
-                **validation_set.get_dataset_config(**self.data_loader_kwargs, shuffle=False)
-            )
+            dataset["val"] = validation_set.ds
         if test_set is not None:
-            dataset["test"] = test_set.set_fully_execucted(fully_executed)
-            dataset_config["test"] = DatasetConfig(
-                **test_set.get_dataset_config(**self.data_loader_kwargs, shuffle=False)
-            )
+            dataset["test"] = test_set.ds
 
         with create_runner(**self.trainer_kwargs) as runner:
             results = runner.run(
                 lambda config: train_fn(**config),
-                config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
+                config={
+                    "executable_kwargs": executable_kwargs,
+                    "model_ref": ray.put(self.model),
+                    "data_loader_kwargs": self.data_loader_kwargs if self.data_loader_kwargs else {},
+                    **kwargs,
+                },
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
-                dataset_config=dataset_config,
             )
             # , self._validation_field, self._validation_metric
             print(results)
@@ -543,6 +533,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
 def eval_fn(
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
+    data_loader_kwargs: Dict[str, Any] = {},
     training_set_metadata: Dict[str, Any] = None,
     features: Dict[str, Dict] = None,
     **kwargs,
@@ -556,6 +547,7 @@ def eval_fn(
             rt.get_dataset_shard("eval"),
             features,
             training_set_metadata,
+            data_loader_kwargs,
         )
 
         model = ray.get(model_ref)
@@ -648,23 +640,19 @@ class RayPredictor(BasePredictor):
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
         with create_runner(**self.trainer_kwargs) as runner:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
-            datasets = {"eval": dataset.set_fully_execucted(self.data_loader_kwargs.pop("fully_executed", True))}
-            dataset_config = {"eval": DatasetConfig(**dataset.get_dataset_config(**self.data_loader_kwargs))}
-            predictor_kwargs = {
-                **self.predictor_kwargs,
-                "collect_predictions": False,
-            }
+            datasets = {"eval": dataset.ds}
+            predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
             eval_stats = runner.run(
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
                     "model_ref": ray.put(self.model),
+                    "data_loader_kwargs": self.data_loader_kwargs,
                     "training_set_metadata": dataset.training_set_metadata,
                     "features": dataset.features,
                     **kwargs,
                 },
                 dataset=datasets,
-                dataset_config=dataset_config,
             )
 
         predictions = None
