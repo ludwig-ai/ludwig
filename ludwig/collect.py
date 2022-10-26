@@ -172,15 +172,15 @@ def print_model_summary(model_path: str, **kwargs) -> None:
     """
     model = LudwigModel.load(model_path)
     # Model's dict inputs are wrapped in a list, required by torchinfo.
-    print(torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()]))
+    logger.info(torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()], depth=20))
 
-    print("\nModules:\n")
+    logger.info("\nModules:\n")
     for name, _ in model.model.named_children():
-        print(name)
+        logger.info(name)
 
-    print("\nParameters:\n")
+    logger.info("\nParameters:\n")
     for name, _ in model.model.named_parameters():
-        print(name)
+        logger.info(name)
 
 
 def cli_collect_activations(sys_argv):
