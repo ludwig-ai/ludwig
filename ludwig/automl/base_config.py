@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend
 from ludwig.constants import (
     COLUMN,
@@ -58,6 +59,7 @@ encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.
 MAX_DISTINCT_VALUES_TO_RETURN = 10
 
 
+@DeveloperAPI
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class DatasetInfo:
@@ -210,10 +212,10 @@ def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param df: (Union[pd.DataFrame, dd.core.DataFrame]) Pandas or Dask dataframe.
 
     # Return
-    :return: (List[FieldInfo]) list of FieldInfo objects
+    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     source = wrap_data_source(df)
     return get_dataset_info_from_source(source)
@@ -236,7 +238,17 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
     return True
 
 
+@DeveloperAPI
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
+    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
+    inference.
+
+    # Inputs
+    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe.
+
+    # Return
+    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
+    """
     row_count = len(source)
     fields = []
     for field in source.columns:
@@ -324,6 +336,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
     return config
 
 
+@DeveloperAPI
 def get_field_metadata(
     fields: List[FieldInfo], row_count: int, resources: Resources, targets: Set[str] = None
 ) -> List[FieldMetadata]:
