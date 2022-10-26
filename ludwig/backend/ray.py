@@ -548,6 +548,7 @@ def eval_fn(
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
+        return results
 
 
 class RayPredictor(BasePredictor):
