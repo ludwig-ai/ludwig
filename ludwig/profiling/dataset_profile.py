@@ -18,11 +18,11 @@ PROFILING_CAP = 100000
 def get_dataset_profile_view(dataset: Union[str, DataFrame]) -> Tuple[DatasetProfileView, int]:
     """Returns whylogs dataset profile view."""
     dataframe = load_dataset(dataset)
+    size_bytes = sum(dataframe.memory_usage(deep=True))
 
     # Manual cap, also takes care of converting dask to pandas.
     dataframe = dataframe.head(PROFILING_CAP)
 
-    size_bytes = sum(dataframe.memory_usage(deep=True))
     results = why.log(pandas=dataframe)
     profile = results.profile()
     profile_view = profile.view()
