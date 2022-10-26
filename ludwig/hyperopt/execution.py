@@ -802,7 +802,7 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        @ray.remote
+        @ray.remote(num_cpus=0)
         def _register(name, trainable):
             register_trainable(name, trainable)
 

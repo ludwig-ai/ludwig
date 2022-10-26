@@ -5,6 +5,7 @@ archive_filenames: mercedes-benz-greener-manufacturing.zip
 sha256:
   mercedes-benz-greener-manufacturing.zip: 91143716085345a84dc4991b8eb1d5ff80d8aa134930de946b3b24be0f2e5d1a
 train_filenames: train.csv
+test_filenames: test.csv
 description: |
   The Mercedes-Benz Greener Manufacturing dataset.
   https://www.kaggle.com/c/mercedes-benz-greener-manufacturing
