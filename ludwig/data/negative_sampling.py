@@ -43,7 +43,7 @@ def negative_sample(
     label_col: str = "label",
     neg_pos_ratio: int = 1,
     neg_val: Any = 0,
-    log_pct: int = 50,
+    log_pct: int = 0,
 ):
     """Negative sampling for implicit feedback datasets.
 
@@ -54,7 +54,7 @@ def negative_sample(
         label_col: column name for interaction labels (e.g. 1 for positive interaction)
         n_neg: number of negative samples per positive sample
         neg_val: label value for the negative samples
-        percent_print: print progress every percent_print percent
+        percent_print: print progress every percent_print percent. 0 to disable
     Returns:
         Input DataFrame with negative samples appended
 
@@ -83,7 +83,7 @@ def negative_sample(
     user_indices, item_indices = [], []
     extra_samples = 0
     for user_idx, interaction_row in enumerate(interactions_dense):
-        if user_idx % niter_log == 0:
+        if log_pct > 0 and user_idx % niter_log == 0:
             logging.info(
                 f"Negative sampling progress: {float(user_idx) * 100 / nrows:0.0f}% in {time.time() - start_time:0.2f}s"
             )
