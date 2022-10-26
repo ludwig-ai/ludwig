@@ -4,9 +4,9 @@ from typing import Dict
 import tqdm
 
 try:
-    import ray.train as rt
+    from ray.air import session
 except ImportError:
-    rt = None
+    session = None
 
 
 class LudwigProgressBarActions:
@@ -20,7 +20,7 @@ class LudwigProgressBar:
 
     # Inputs
 
-    :param report_to_ray: (bool) use the ray.train.report method
+    :param report_to_ray: (bool) use the ray.air.session method
         to report progress to the ray driver. If false then this behaves as a normal tqdm
         progress bar
     :param config: (dict) the tqdm configs used for the progress bar. See https://github.com/tqdm/tqdm#parameters
@@ -50,7 +50,7 @@ class LudwigProgressBar:
 
         # Inputs
 
-        :param report_to_ray: (bool) use the ray.train.report method
+        :param report_to_ray: (bool) use the ray.air.session method
             to report progress to the ray driver. If false then this behaves as a normal tqdm
             progress bar
         :param config: (dict) the tqdm configs used for the progress bar. See https://github.com/tqdm/tqdm#parameters
@@ -61,7 +61,7 @@ class LudwigProgressBar:
 
         :return: (None) `None`
         """
-        if report_to_ray and rt is None:
+        if report_to_ray and session is None:
             raise ValueError("Set report_to_ray=True but ray is not installed. Run `pip install ray`")
 
         self.id = str(uuid.uuid4())[-8:]
@@ -82,12 +82,14 @@ class LudwigProgressBar:
             # All processes need to call ray.train.report since ray has a lock that blocks
             # a process when calling report if there are processes that haven't called it. Similar
             # to a distributed checkpoint. Therefore we pass the flag to the driver
-            rt.report(
-                progress_bar={
-                    "id": self.id,
-                    "config": self.config,
-                    "action": LudwigProgressBarActions.CREATE,
-                    "is_coordinator": self.is_coordinator,
+            session.report(
+                metrics={
+                    "progress_bar": {
+                        "id": self.id,
+                        "config": self.config,
+                        "action": LudwigProgressBarActions.CREATE,
+                        "is_coordinator": self.is_coordinator,
+                    }
                 }
             )
 
@@ -106,12 +108,14 @@ class LudwigProgressBar:
         if self.progress_bar:
             self.progress_bar.update(steps)
         elif self.report_to_ray:
-            rt.report(
-                progress_bar={
-                    "id": self.id,
-                    "update_by": steps,
-                    "is_coordinator": self.is_coordinator,
-                    "action": LudwigProgressBarActions.UPDATE,
+            session.report(
+                metrics={
+                    "progress_bar": {
+                        "id": self.id,
+                        "update_by": steps,
+                        "is_coordinator": self.is_coordinator,
+                        "action": LudwigProgressBarActions.UPDATE,
+                    }
                 }
             )
 
@@ -125,10 +129,12 @@ class LudwigProgressBar:
         if self.progress_bar:
             self.progress_bar.close()
         elif self.report_to_ray:
-            rt.report(
-                progress_bar={
-                    "id": self.id,
-                    "is_coordinator": self.is_coordinator,
-                    "action": LudwigProgressBarActions.CLOSE,
+            session.report(
+                metrics={
+                    "progress_bar": {
+                        "id": self.id,
+                        "is_coordinator": self.is_coordinator,
+                        "action": LudwigProgressBarActions.CLOSE,
+                    }
                 }
             )
