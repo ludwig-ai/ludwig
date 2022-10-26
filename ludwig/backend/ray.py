@@ -31,7 +31,6 @@ from fsspec.config import conf
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
-
 from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
 from ray.train.horovod import HorovodConfig
 from ray.util.dask import ray_dask_get
@@ -65,9 +64,9 @@ logger = logging.getLogger(__name__)
 
 _ray_200 = version.parse(ray.__version__) >= version.parse("2.0.0")
 if _ray_200:
+    from ray.air import session
     from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
     from ray.train.horovod import HorovodTrainer
-    from ray.air import session
 else:
     DatasetConfig = None
     RunConfig = None
