@@ -191,12 +191,14 @@ def generate_data_as_dataframe(
 ) -> pd.DataFrame:
     """Helper method to generate synthetic data based on input, output feature specs.
 
-    :param num_examples: number of examples to generate
-    :param input_features: schema
-    :param output_features: schema
-    :param filename: path to the file where data is stored
-    :param nan_percent: percent of values in a feature to be NaN
-    :return:
+    Args:
+        num_examples: number of examples to generate
+        input_features: schema
+        output_features: schema
+        nan_percent: percent of values in a feature to be NaN
+
+    Returns:
+        A pandas DataFrame
     """
     features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
