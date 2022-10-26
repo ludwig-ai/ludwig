@@ -13,13 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 from typing import List
-from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
 
+from ludwig.backend.base import LocalBackend
 from ludwig.constants import SPLIT
-from ludwig.data.dataframe.pandas import PandasEngine
 from ludwig.data.split import get_splitter
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.datasets.loaders.utils import negative_sample
@@ -60,9 +59,6 @@ def _split(df):
     Returns:
         A tuple of (train_df, validation_df, test_df).
     """
-    backend = Mock()
-    backend.df_engine = PandasEngine(_use_ray=False)
-
     splitter = get_splitter("datetime", column="year_month", probabilities=(0.7, 0.2, 0.1))
 
     if not isinstance(df, pd.DataFrame):
@@ -71,7 +67,7 @@ def _split(df):
     train_dfs, val_dfs, test_dfs = [], [], []
     for customer_id in df["customer_id"].unique():
         # Split per customer_id to ensure that interactions for a customer are across all splits
-        train_df, val_df, test_df = splitter.split(df[df["customer_id"] == customer_id], backend=backend)
+        train_df, val_df, test_df = splitter.split(df[df["customer_id"] == customer_id], backend=LocalBackend())
 
         train_dfs.append(train_df)
         val_dfs.append(val_df)
