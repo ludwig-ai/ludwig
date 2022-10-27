@@ -21,6 +21,7 @@ from typing import Any, Dict
 import torch
 from torch.nn import Linear, ModuleList
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.features.base_feature import InputFeature
@@ -59,6 +60,7 @@ def get_combiner_schema() -> Dict[str, Any]:
 
 
 # super class to house common properties
+@DeveloperAPI
 class Combiner(LudwigModule, ABC):
     def __init__(self, input_features: Dict[str, "InputFeature"]):
         super().__init__()
