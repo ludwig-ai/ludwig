@@ -22,12 +22,10 @@ from typing import Any, Dict, Iterator, Union
 
 import numpy as np
 import pandas as pd
-import ray
-from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
-from ray.data.extensions import TensorDtype
+from ray.data.extensions import TensorArray
 
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
@@ -38,22 +36,11 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
 
-_ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
-
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
-# https://github.com/ray-project/ray/issues/27031
-# TODO(geoffrey): remove this once Ray > 1.13 in our CI.
-if _ray_nightly:
-    from ray.data.extensions import TensorArray
 
-    def cast_as_tensor_dtype(series: Series) -> Series:
-        return TensorArray(series)
-
-else:
-
-    def cast_as_tensor_dtype(series: Series) -> Series:
-        return series.astype(TensorDtype())
+def cast_as_tensor_dtype(series: Series) -> Series:
+    return TensorArray(series)
 
 
 def read_remote_parquet(path: str):
