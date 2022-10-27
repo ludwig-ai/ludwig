@@ -40,9 +40,6 @@ def DefaultsDataclassField(feature_type: str):
         def _jsonschema_type_mapping():
             input_feature_cls = input_mixin_registry.get(feature_type)
             output_feature_cls = output_mixin_registry.get(feature_type, None)
-            # input_props = copy.deepcopy(
-            #     schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
-            # )
             input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
             if output_feature_cls:
                 output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]

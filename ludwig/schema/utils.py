@@ -1,5 +1,4 @@
 import copy
-import dataclasses
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -337,10 +336,6 @@ def PositiveInteger(
     val = validate.Range(min=1)
     allow_none = allow_none or default is None
 
-    if parameter_metadata is None:
-        parameter_metadata = ParameterMetadata()
-    parameter_metadata = ParameterMetadata(**dataclasses.asdict(parameter_metadata))
-
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -361,7 +356,7 @@ def PositiveInteger(
                 },
             )
         },
-        default_factory=lambda: default,
+        default=default,
     )
 
 
