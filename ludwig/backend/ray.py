@@ -106,7 +106,7 @@ def _num_nodes() -> int:
 def initialize_horovod():
     # Guarded import here to avoid causing import errors when doing hyperopt without
     # distributed training, where Horovod is an optional dependency.
-    from ludwig.utils.horovod_utils import _initialize_horovod
+    from ludwig.utils.horovod_utils import initialize_horovod as _initialize_horovod
 
     _initialize_horovod()
 
