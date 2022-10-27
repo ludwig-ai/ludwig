@@ -23,7 +23,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class _TimeseriesPreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by TimeseriesFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
@@ -204,7 +204,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return TimeseriesInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _TimeseriesPreprocessing(metadata)
 
 

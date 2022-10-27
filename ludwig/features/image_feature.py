@@ -44,7 +44,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -76,7 +76,7 @@ image_scaling_registry = {
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.height = metadata["preprocessing"]["height"]
         self.width = metadata["preprocessing"]["width"]
@@ -516,5 +516,5 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return ImageInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _ImagePreprocessing(metadata)

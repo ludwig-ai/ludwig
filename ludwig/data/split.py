@@ -30,7 +30,7 @@ from ludwig.schema.split import (
     RandomSplitConfig,
     StratifySplitConfig,
 )
-from ludwig.types import LudwigConfig, LudwigPreprocessingConfig
+from ludwig.types import ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame
@@ -51,7 +51,7 @@ class Splitter(ABC):
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         pass
 
-    def validate(self, config: LudwigConfig):
+    def validate(self, config: ModelConfigDict):
         pass
 
     def has_split(self, split_index: int) -> bool:
@@ -209,7 +209,7 @@ class StratifySplitter(Splitter):
 
         return df_train, df_val, df_test
 
-    def validate(self, config: LudwigConfig):
+    def validate(self, config: ModelConfigDict):
         features = config["input_features"] + config["output_features"]
         feature_names = {f[COLUMN] for f in features}
         if self.column not in feature_names:
@@ -271,7 +271,7 @@ class DatetimeSplitter(Splitter):
         # For Dask, split by partition, as splitting by row is very inefficient.
         return tuple(backend.df_engine.split(df, self.probabilities))
 
-    def validate(self, config: LudwigConfig):
+    def validate(self, config: ModelConfigDict):
         features = config["input_features"] + config["output_features"]
         feature_names = {f[COLUMN] for f in features}
         if self.column not in feature_names:
@@ -348,7 +348,7 @@ def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
 
 def split_dataset(
     df: DataFrame,
-    global_preprocessing_parameters: LudwigPreprocessingConfig,
+    global_preprocessing_parameters: PreprocessingConfigDict,
     backend: Backend,
     random_seed: float = default_random_seed,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:

@@ -9,7 +9,7 @@ import ludwig.modules.metric_modules  # noqa: F401
 from ludwig.benchmarking.utils import format_memory, format_time
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.modules.metric_registry import get_metric_classes, metric_feature_registry  # noqa: F401
-from ludwig.types import LudwigConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import load_json
 
 logger = logging.getLogger()
@@ -83,7 +83,7 @@ class MetricsSummary:
     experiment_local_directory: str
 
     # Full Ludwig config.
-    config: LudwigConfig
+    config: ModelConfigDict
 
     # LudwigModel output feature type.
     output_feature_type: str

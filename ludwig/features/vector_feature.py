@@ -35,7 +35,7 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -165,7 +165,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         feature_config.encoder.input_size = feature_metadata["vector_size"]
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _VectorPreprocessing()
 
     @staticmethod
@@ -238,7 +238,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return result
 
     @staticmethod
-    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _VectorPostprocessing()
 
     @staticmethod

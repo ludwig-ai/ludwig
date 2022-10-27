@@ -18,7 +18,7 @@ from abc import ABC
 from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import PublicAPI
-from ludwig.types import LudwigConfig, TrainingSetMetadata
+from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 
 
 @PublicAPI
@@ -31,14 +31,14 @@ class Callback(ABC):
         """
         pass
 
-    def on_preprocess_start(self, config: LudwigConfig):
+    def on_preprocess_start(self, config: ModelConfigDict):
         """Called before preprocessing starts.
 
         :param config: The config dictionary.
         """
         pass
 
-    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadata):
+    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadataDict):
         """Called after preprocessing ends.
 
         :param training_set: The training set.
@@ -119,7 +119,7 @@ class Callback(ABC):
 
     def on_train_init(
         self,
-        base_config: LudwigConfig,
+        base_config: ModelConfigDict,
         experiment_directory: str,
         experiment_name: str,
         model_name: str,
@@ -140,7 +140,7 @@ class Callback(ABC):
     def on_train_start(
         self,
         model,
-        config: LudwigConfig,
+        config: ModelConfigDict,
         config_fp: Union[str, None],
     ):
         """Called after creation of trainer, before the start of training.

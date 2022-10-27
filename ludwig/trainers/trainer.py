@@ -48,7 +48,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
-from ludwig.types import LudwigConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -454,7 +454,7 @@ class Trainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: LudwigConfig,
+        config: ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,

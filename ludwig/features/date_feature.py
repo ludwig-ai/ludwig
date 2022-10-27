@@ -24,7 +24,7 @@ from dateutil.parser import parse
 from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
-from ludwig.types import LudwigFeature, LudwigPreprocessingConfig, TrainingSetMetadata
+from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -34,7 +34,7 @@ DATE_VECTOR_LENGTH = 9
 
 
 class _DatePreprocessing(torch.nn.Module):
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
@@ -89,11 +89,11 @@ class DateFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config: LudwigFeature,
+        feature_config: FeatureConfigDict,
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
-        metadata: TrainingSetMetadata,
-        preprocessing_parameters: LudwigPreprocessingConfig,
+        metadata: TrainingSetMetadataDict,
+        preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
     ) -> None:
@@ -147,5 +147,5 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         return DateInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _DatePreprocessing(metadata)

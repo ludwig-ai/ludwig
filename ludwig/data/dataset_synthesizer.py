@@ -52,7 +52,7 @@ from ludwig.constants import (
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.types import LudwigConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc_utils import get_from_registry
@@ -161,7 +161,7 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset_df(dataset_size: int, config: LudwigConfig) -> pd.DataFrame:
+def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd.DataFrame:
     features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
     df = build_synthetic_dataset(dataset_size, features)
     data = [next(df) for _ in range(dataset_size + 1)]

@@ -35,7 +35,7 @@ from ludwig.models.inference import (
     _InferencePreprocessor,
     InferenceModule,
 )
-from ludwig.types import LudwigConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.misc_utils import remove_empty_lines
 from ludwig.utils.torch_utils import model_size, place_on_device
@@ -298,7 +298,7 @@ class TritonMaster:
     model_version: Union[int, str]
 
     # Ludwig config.
-    ludwig_config: LudwigConfig
+    ludwig_config: ModelConfigDict
 
     # One of "cpu", "cuda".
     device: str

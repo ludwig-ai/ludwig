@@ -37,7 +37,7 @@ from ludwig.constants import (
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 class _CategoryPreprocessing(torch.nn.Module):
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.str2idx = metadata["str2idx"]
         if UNKNOWN_SYMBOL in self.str2idx:
@@ -67,7 +67,7 @@ class _CategoryPreprocessing(torch.nn.Module):
 
 
 class _CategoryPostprocessing(torch.nn.Module):
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
         self.unk = UNKNOWN_SYMBOL
@@ -134,7 +134,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(column, metadata):
-        def __replace_token_with_idx(value: Any, metadata: TrainingSetMetadata, fallback_symbol_idx: int) -> int:
+        def __replace_token_with_idx(value: Any, metadata: TrainingSetMetadataDict, fallback_symbol_idx: int) -> int:
             stripped_value = value.strip()
             if stripped_value in metadata["str2idx"]:
                 return metadata["str2idx"][stripped_value]
@@ -231,7 +231,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return CategoryInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPreprocessing(metadata)
 
 
@@ -440,5 +440,5 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return CategoryOutputFeatureConfig
 
     @staticmethod
-    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)

@@ -39,7 +39,7 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -179,7 +179,7 @@ def get_transformer(metadata, preprocessing_parameters):
 
 
 class _NumberPreprocessing(torch.nn.Module):
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.computed_fill_value = float(metadata["preprocessing"]["computed_fill_value"])
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
@@ -195,7 +195,7 @@ class _NumberPreprocessing(torch.nn.Module):
 
 
 class _NumberPostprocessing(torch.nn.Module):
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
         self.predictions_key = PREDICTIONS
@@ -321,11 +321,11 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
         return torch.rand([batch_size])
 
     @classmethod
-    def get_preproc_input_dtype(cls, metadata: TrainingSetMetadata) -> str:
+    def get_preproc_input_dtype(cls, metadata: TrainingSetMetadataDict) -> str:
         return "float32"
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _NumberPreprocessing(metadata)
 
 
@@ -410,9 +410,9 @@ class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
         return NumberOutputFeatureConfig
 
     @classmethod
-    def get_postproc_output_dtype(cls, metadata: TrainingSetMetadata) -> str:
+    def get_postproc_output_dtype(cls, metadata: TrainingSetMetadataDict) -> str:
         return "float32"
 
     @staticmethod
-    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _NumberPostprocessing(metadata)

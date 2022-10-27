@@ -41,7 +41,7 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import (
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 class _SequencePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by SequenceFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
@@ -140,7 +140,7 @@ class _SequencePreprocessing(torch.nn.Module):
 
 
 class _SequencePostprocessing(torch.nn.Module):
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.max_sequence_length = int(metadata["max_sequence_length"])
         self.idx2str = metadata["idx2str"]
@@ -290,7 +290,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SequencePreprocessing(metadata)
 
 
@@ -472,7 +472,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         return result
 
     @staticmethod
-    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
 
     @staticmethod

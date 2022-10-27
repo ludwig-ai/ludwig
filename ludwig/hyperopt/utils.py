@@ -31,7 +31,7 @@ from ludwig.constants import (
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
-from ludwig.types import LudwigConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc_utils import (
     get_class_attributes,
@@ -104,7 +104,7 @@ def parameter_to_dict(name, value):
     return parameter_dict
 
 
-def feature_list_to_dict(config: LudwigConfig) -> LudwigConfig:
+def feature_list_to_dict(config: ModelConfigDict) -> ModelConfigDict:
     input_features_dict = {}
     for feature in config[INPUT_FEATURES]:
         input_features_dict[feature[NAME]] = feature
@@ -119,7 +119,7 @@ def feature_list_to_dict(config: LudwigConfig) -> LudwigConfig:
     return config
 
 
-def feature_dict_to_list(config: LudwigConfig) -> Dict[str, Any]:
+def feature_dict_to_list(config: ModelConfigDict) -> Dict[str, Any]:
     # This works because Python dicts are order-preserving, so we do not need to
     # do anything special to map from a key in the dict to an index in a list
     input_features_list = []
@@ -137,7 +137,7 @@ def feature_dict_to_list(config: LudwigConfig) -> Dict[str, Any]:
 
 
 def substitute_parameters(
-    config: LudwigConfig,
+    config: ModelConfigDict,
     parameters: Dict[str, Any],
 ):
     """Update Ludwig config with parameters sampled from the Hyperopt sampler."""

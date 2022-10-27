@@ -25,7 +25,7 @@ from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESS
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,
@@ -52,7 +52,7 @@ class _AudioPreprocessing(torch.nn.Module):
 
     audio_feature_dict: Dict[str, Union[float, int, str]]
 
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.audio_feature_dict = {
             key: value
@@ -453,7 +453,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         feature_config.encoder.should_embed = False
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _AudioPreprocessing(metadata)
 
     @staticmethod

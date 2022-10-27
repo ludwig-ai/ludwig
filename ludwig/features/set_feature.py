@@ -23,7 +23,7 @@ from ludwig.constants import COLUMN, HIDDEN, JACCARD, LOGITS, LOSS, NAME, PREDIC
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
-from ludwig.types import TrainingSetMetadata
+from ludwig.types import TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
@@ -39,7 +39,7 @@ class _SetPreprocessing(torch.nn.Module):
     multi-hot vector for each sample indicating presence of each token.
     """
 
-    def __init__(self, metadata: TrainingSetMetadata, is_bag: bool = False):
+    def __init__(self, metadata: TrainingSetMetadataDict, is_bag: bool = False):
         super().__init__()
         if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
@@ -89,7 +89,7 @@ class _SetPreprocessing(torch.nn.Module):
 class _SetPostprocessing(torch.nn.Module):
     """Torchscript-enabled version of postprocessing done by SetFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadata):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
         self.predictions_key = PREDICTIONS
@@ -224,7 +224,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SetPreprocessing(metadata)
 
 
@@ -337,7 +337,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return result
 
     @staticmethod
-    def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SetPostprocessing(metadata)
 
     @staticmethod

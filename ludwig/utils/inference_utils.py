@@ -23,7 +23,7 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
-from ludwig.types import LudwigConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.image_utils import read_image_from_path
@@ -45,7 +45,7 @@ def get_filename_from_stage(stage: str, device: TorchDevice) -> str:
 
 
 def to_inference_module_input_from_dataframe(
-    dataset: pd.DataFrame, config: LudwigConfig, load_paths: bool = False, device: Optional[torch.device] = None
+    dataset: pd.DataFrame, config: ModelConfigDict, load_paths: bool = False, device: Optional[torch.device] = None
 ) -> Dict[str, TorchscriptPreprocessingInput]:
     """Converts a pandas DataFrame to be compatible with a torchscripted InferenceModule forward pass."""
     inputs = {}
