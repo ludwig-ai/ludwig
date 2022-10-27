@@ -1,5 +1,4 @@
 import copy
-import os
 from unittest.mock import patch
 
 import pytest
@@ -7,11 +6,10 @@ import pytest
 # Skip these tests if Ray is not installed
 ray = pytest.importorskip("ray")  # noqa
 
-from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV  # noqa
 from ray.train.horovod import HorovodConfig  # noqa
 
 from ludwig.backend import initialize_backend  # noqa
-from ludwig.backend.ray import get_trainer_kwargs, spread_env  # noqa
+from ludwig.backend.ray import get_trainer_kwargs  # noqa
 from ludwig.constants import AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, RAY  # noqa
 
 # Mark the entire module as distributed
@@ -98,36 +96,6 @@ def test_get_trainer_kwargs(trainer_config, cluster_resources, num_nodes, expect
             assert type(actual_backend) == type(expected_backend)
             assert actual_backend.nics == expected_backend.nics
             assert actual_kwargs == expected_kwargs
-
-
-@pytest.mark.parametrize(
-    "trainer_kwargs,current_env_value,expected_env_value",
-    [
-        ({"use_gpu": False, "num_workers": 2}, None, "1"),
-        ({"use_gpu": False, "num_workers": 1}, None, None),
-        ({"use_gpu": True, "num_workers": 2}, None, None),
-        ({"use_gpu": True, "num_workers": 2}, "1", "1"),
-        ({"use_gpu": True, "num_workers": 2}, "", ""),
-    ],
-)
-def test_spread_env(trainer_kwargs, current_env_value, expected_env_value):
-    prev_env = os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV)
-
-    # Set environment to state prior to override
-    if current_env_value is not None:
-        os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = current_env_value
-    elif TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
-        del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
-
-    with spread_env(**trainer_kwargs):
-        assert os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV) == expected_env_value
-    assert os.environ.get(TRAIN_ENABLE_WORKER_SPREAD_ENV) == current_env_value
-
-    # Return environment to original state
-    if prev_env is not None:
-        os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = prev_env
-    elif TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
-        del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
 
 
 @pytest.mark.distributed
