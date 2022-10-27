@@ -32,7 +32,6 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.air import session
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
-from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
 from ray.train.horovod import HorovodConfig, HorovodTrainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
@@ -304,28 +303,9 @@ class TqdmCallback(ray.tune.callback.Callback):
 
 
 @contextlib.contextmanager
-def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
-    if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
-        # User set this explicitly, so honor their selection
-        yield
-        return
-
-    try:
-        if not use_gpu and num_workers > 1:
-            # When doing CPU-only training, default to a SPREAD policy to avoid
-            # packing too many workers on a single machine
-            os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = "1"
-        yield
-    finally:
-        if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
-            del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
-
-
-@contextlib.contextmanager
 def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
-    with spread_env(**trainer_kwargs):
-        yield RayAirRunner(trainer_kwargs)
+    yield RayAirRunner(trainer_kwargs)
 
 
 class RayAirRunner:
@@ -335,8 +315,8 @@ class RayAirRunner:
 
         # When training on GPU, you want to pack workers together to limit network latency during
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
-        # CPU and memory contention.
-        strategy = "PACK" if trainer_kwargs.get("use_gpu") else "SPREAD"
+        # CPU and memory contention and avoid too many workers on a single machine.
+        strategy = "PACK" if trainer_kwargs.get("use_gpu", False) else "SPREAD"
         self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
 
     def run(
@@ -415,9 +395,6 @@ class RayTrainerV2(BaseTrainer):
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
             )
-
-        print(f"Trainer Results: {trainer_results}")
-        logger.info(f"Trainer Results: {trainer_results}")
 
         results, self._validation_field, self._validation_metric = trainer_results.metrics["train_results"]
 
