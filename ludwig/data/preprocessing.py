@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import logging
 import warnings
 from abc import ABC, abstractmethod
@@ -37,6 +38,7 @@ from ludwig.constants import (
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
+    MIN_DATASET_SPLIT_ROWS,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -99,7 +101,6 @@ from ludwig.utils.data_utils import (
     SPSS_FORMATS,
     STATA_FORMATS,
     TSV_FORMATS,
-    use_credentials,
 )
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
@@ -1154,7 +1155,7 @@ def build_dataset(
 
     for feature_config in feature_configs:
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_config[NAME]]
-        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters)
+        handle_missing_values(dataset_cols, feature_config, preprocessing_parameters, backend)
 
     # Happens after missing values are handled to avoid NaN casting issues.
     logger.debug("cast columns")
@@ -1284,7 +1285,7 @@ def build_preprocessing_parameters(
 
                     preprocessing_parameters = merge_dict(
                         preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                    )
+                    )  # TODO(Connor): Temporary fix, refactor this during preproc refactor
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
@@ -1345,7 +1346,7 @@ def build_data(
         preprocessing_parameters = training_set_metadata[feature_config[NAME]][PREPROCESSING]
 
         # Need to run this again here as cast_columns may have introduced new missing values
-        handle_missing_values(input_cols, feature_config, preprocessing_parameters)
+        handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
         get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
             feature_config,
@@ -1455,7 +1456,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     return None
 
 
-def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
+def handle_missing_values(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
 
     # Check for the precomputed fill value in the metadata
@@ -1472,6 +1473,15 @@ def handle_missing_values(dataset_cols, feature, preprocessing_parameters):
         dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
             method=missing_value_strategy,
         )
+
+        # If the first few rows or last few rows of a dataset is a NaN, it will still be a NaN after ffill or bfill are
+        # applied. This causes downstream errors with Dask (https://github.com/ludwig-ai/ludwig/issues/2452)
+        # To get around this issue, apply the primary missing value strategy (say bfill) first, and then follow it
+        # up with the other missing value strategy (ffill) to ensure all NaNs are filled
+        if backend.df_engine.compute(dataset_cols[feature[COLUMN]].isna().sum()) > 0:
+            dataset_cols[feature[COLUMN]] = dataset_cols[feature[COLUMN]].fillna(
+                method=BFILL if missing_value_strategy == FFILL else FFILL,
+            )
     elif missing_value_strategy == DROP_ROW:
         # Here we only drop from this series, but after preprocessing we'll do a second
         # round of dropping NA values from the entire output dataframe, which will
@@ -1567,7 +1577,7 @@ def preprocess_for_training(
         test_set = test_set.unwrap() if test_set is not None else None
 
         if data_format in CACHEABLE_FORMATS:
-            with use_credentials(backend.cache.credentials):
+            with backend.storage.cache.use_credentials():
                 cache_results = cache.get()
                 if cache_results is not None:
                     valid, *cache_values = cache_results
@@ -1594,7 +1604,7 @@ def preprocess_for_training(
         data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
 
         if cached or data_format == "hdf5":
-            with use_credentials(backend.cache.credentials):
+            with backend.storage.cache.use_credentials():
                 # Always interpret hdf5 files as preprocessed, even if missing from the cache
                 processed = data_format_processor.prepare_processed_data(
                     features,
@@ -1629,42 +1639,56 @@ def preprocess_for_training(
 
             # cache the dataset
             if backend.cache.can_cache(skip_save_processed_input):
-                with use_credentials(backend.cache.credentials):
+                with backend.storage.cache.use_credentials():
                     logger.debug("cache processed data")
                     processed = cache.put(*processed)
                     # set cached=True to ensure credentials are used correctly below
                     cached = True
             training_set, test_set, validation_set, training_set_metadata = processed
 
-        with use_credentials(backend.cache.credentials if cached else None):
+        with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
             logger.debug("create training dataset")
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
-            if not len(training_set):
+            training_set_size = len(training_dataset)
+            if training_set_size == 0:
                 raise ValueError("Training data is empty following preprocessing.")
+            elif training_set_size < MIN_DATASET_SPLIT_ROWS:
+                raise ValueError(
+                    f"Training dataset has only {training_set_size} rows following preprocessing, need"
+                    f" at least {MIN_DATASET_SPLIT_ROWS} to compute metrics."
+                )
 
             validation_dataset = None
             if validation_set is not None:
                 logger.debug("create validation dataset")
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
-                if not len(validation_dataset):
-                    # Validation dataset is empty.
+                validation_set_size = len(validation_dataset)
+                if validation_set_size == 0:
                     logger.warning(
-                        "Encountered empty validation dataset. If this is unintentional, please check the "
-                        "preprocessing configuration."
+                        "Validation set empty. If this is unintentional, please check the preprocessing configuration."
                     )
                     validation_dataset = None
+                elif validation_set_size < MIN_DATASET_SPLIT_ROWS:
+                    logger.warning(
+                        f"Validation set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
+                        f" {validation_set_size} after preprocessing."
+                    )
 
             test_dataset = None
             if test_set is not None:
                 logger.debug("create test dataset")
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
-                if not len(test_dataset):
-                    # Test dataset is empty.
+                test_set_size = len(test_dataset)
+                if test_set_size == 0:
                     logger.warning(
-                        "Encountered empty test dataset. If this is unintentional, please check the "
-                        "preprocessing configuration."
+                        "Test set empty. If this is unintentional, please check the preprocessing configuration."
                     )
                     test_dataset = None
+                elif test_set_size < MIN_DATASET_SPLIT_ROWS:
+                    logger.warning(
+                        f"Test set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
+                        f" {test_set_size} after preprocessing."
+                    )
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 
@@ -1850,13 +1874,18 @@ def preprocess_for_prediction(
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the Ludwig core.
 
-    :param model_path: The input data that is joined with the model
-           hyperparameter file to create the config file
-    :param data_csv: The CSV input data file
-    :param data_hdf5: The hdf5 data file if there is no csv data file
-    :param training_set_metadata: Train set metadata for the input features
-    :param split: the split of dataset to return
-    :returns: Dataset, Train set metadata
+    Args:
+        config: Config dictionary corresponding to Ludwig Model
+        dataset: Dataset to be processed
+        training_set_metadata: Train set metadata for the input features
+        data_format: Format of the data
+        split: The split of dataset to return
+        include_outputs: Whether to include outputs
+        backend: Type of backend to use for preprocessing
+        callbacks: Any callbacks passed in
+
+    Returns:
+        Processed dataset along with updated training set metadata
     """
     # Sanity Check to make sure some data source is provided
     if dataset is None:
@@ -1905,7 +1934,7 @@ def preprocess_for_prediction(
 
     training_set = test_set = validation_set = None
     if data_format in CACHEABLE_FORMATS and split != FULL:
-        with use_credentials(backend.cache.credentials):
+        with backend.storage.cache.use_credentials():
             cache_results = cache.get()
             if cache_results is not None:
                 valid, *cache_values = cache_results
@@ -1921,7 +1950,7 @@ def preprocess_for_prediction(
 
     data_format_processor = get_from_registry(data_format, data_format_preprocessor_registry)
     if cached:
-        with use_credentials(backend.cache.credentials):
+        with backend.storage.cache.use_credentials():
             processed = data_format_processor.prepare_processed_data(
                 features,
                 dataset=dataset,
@@ -1959,7 +1988,7 @@ def preprocess_for_prediction(
         "output_features": output_features,
     }
 
-    with use_credentials(backend.cache.credentials if cached else None):
+    with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
         dataset = backend.dataset_manager.create(
             dataset,
             config,

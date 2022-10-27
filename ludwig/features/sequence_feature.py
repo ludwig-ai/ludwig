@@ -23,10 +23,7 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    DECODER,
-    DEPENDENCIES,
     EDIT_DISTANCE,
-    ENCODER,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
@@ -37,31 +34,25 @@ from ludwig.constants import (
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
     SEQUENCE,
     SEQUENCE_ACCURACY,
-    TIED,
     TOKEN_ACCURACY,
-    TYPE,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.types import TrainingSetMetadata
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import get_from_registry, set_default_value, set_default_values
 from ludwig.utils.strings_utils import (
     build_sequence_matrix,
     create_vocabulary,
     SpecialSymbol,
     START_SYMBOL,
     STOP_SYMBOL,
-    tokenizer_registry,
     UNKNOWN_SYMBOL,
 )
+from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -74,7 +65,7 @@ class _SequencePreprocessing(torch.nn.Module):
         super().__init__()
         self.lowercase = metadata["preprocessing"]["lowercase"]
         self.tokenizer_type = metadata["preprocessing"]["tokenizer"]
-        self.tokenizer = get_from_registry(self.tokenizer_type, tokenizer_registry)(
+        self.tokenizer = get_tokenizer_from_registry(self.tokenizer_type)(
             pretrained_model_name_or_path=metadata["preprocessing"].get("pretrained_model_name_or_path", None)
         )
 
@@ -202,10 +193,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return SEQUENCE
 
     @staticmethod
-    def preprocessing_defaults():
-        return SequenceInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -260,10 +247,8 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(SEQUENCE)
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[SequenceInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: SequenceInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -287,16 +272,10 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return torch.int32
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = SequenceInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
+        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
 
     @staticmethod
     def get_schema_cls():
@@ -315,7 +294,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
-@register_output_feature(SEQUENCE)
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     metric_functions = {
         LOSS: None,
@@ -325,7 +303,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         PERPLEXITY: None,
         EDIT_DISTANCE: None,
     }
-    default_validation_metric = LOSS
 
     def __init__(
         self,
@@ -333,7 +310,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
         self.decoder_obj = self.initialize_decoder(output_feature_config.decoder)
         self._setup_loss()
@@ -362,27 +338,27 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.decoder.vocab_size = feature_metadata["vocab_size"]
+        feature_config.decoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
+            if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> and <PAD> class too.".format(
-                        len(output_feature[LOSS]["class_weights"]),
-                        output_feature[DECODER]["vocab_size"],
-                        output_feature[COLUMN],
+                        len(feature_config.loss.class_weights),
+                        feature_config.decoder.vocab_size,
+                        feature_config.column,
                     )
                 )
 
-        if output_feature[LOSS]["class_similarities_temperature"] > 0:
-            if "class_similarities" in output_feature[LOSS]:
-                similarities = output_feature[LOSS]["class_similarities"]
-                temperature = output_feature[LOSS]["class_similarities_temperature"]
+        if feature_config.loss.class_similarities_temperature > 0:
+            if "class_similarities" in feature_config.loss:
+                similarities = feature_config.loss.class_similarities
+                temperature = feature_config.loss.class_similarities_temperature
 
                 curr_row = 0
                 first_row_length = 0
@@ -400,7 +376,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                                 "of {} is {}, different from the length of "
                                 "the first row {}. All rows must have "
                                 "the same length.".format(
-                                    curr_row, output_feature[COLUMN], curr_row_length, first_row_length
+                                    curr_row, feature_config.column, curr_row_length, first_row_length
                                 )
                             )
                         else:
@@ -412,30 +388,30 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         "The class_similarities matrix of {} has "
                         "{} rows and {} columns, "
                         "their number must be identical.".format(
-                            output_feature[COLUMN], len(similarities), all_rows_length
+                            feature_config.column, len(similarities), all_rows_length
                         )
                     )
 
-                if all_rows_length != output_feature[DECODER]["vocab_size"]:
+                if all_rows_length != feature_config.decoder.vocab_size:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> and <PAD> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature[DECODER]["vocab_size"]
+                            feature_config.column, all_rows_length, feature_config.decoder.vocab_size
                         )
                     )
 
                 similarities = np.array(similarities, dtype=np.float32)
                 for i in range(len(similarities)):
                     similarities[i, :] = softmax(similarities[i, :], temperature=temperature)
-                output_feature[LOSS]["class_similarities"] = similarities
+                feature_config.loss.class_similarities = similarities
             else:
                 raise ValueError(
                     "class_similarities_temperature > 0, "
                     "but no class_similarities are provided "
-                    "for feature {}".format(output_feature[COLUMN])
+                    "for feature {}".format(feature_config.column)
                 )
 
     @staticmethod
@@ -494,27 +470,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             del result[lengths_col]
 
         return result
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = SequenceOutputFeatureConfig()
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        if DECODER in output_feature and TYPE in output_feature[DECODER] and output_feature[DECODER][TYPE] == "tagger":
-            set_default_value(output_feature, "reduce_input", None)
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-            },
-        )
 
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:

@@ -12,14 +12,14 @@ import copy
 import logging
 import os
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import yaml
-from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import PublicAPI
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
 from ludwig.backend import Backend, initialize_backend
@@ -27,10 +27,12 @@ from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
     AUTOML_DEFAULT_TEXT_ENCODER,
+    ENCODER,
     HYPEROPT,
     IMAGE,
     TABULAR,
     TEXT,
+    TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
@@ -42,7 +44,7 @@ from ludwig.utils.automl.utils import (
     has_imbalanced_output,
     set_output_feature_metric,
 )
-from ludwig.utils.data_utils import load_dataset
+from ludwig.utils.data_utils import load_dataset, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import merge_dict
@@ -52,10 +54,8 @@ try:
     import dask.dataframe as dd
     import ray
     from ray.tune import ExperimentAnalysis
-
-    _ray_113 = parse_version(ray.__version__) >= parse_version("1.13.0")
-except ImportError:
-    raise ImportError(" ray is not installed. In order to use auto_train please run pip install ludwig[ray]")
+except ImportError as e:
+    raise RuntimeError("ray is not installed. In order to use auto_train please run pip install ludwig[ray]") from e
 
 
 logger = logging.getLogger(__name__)
@@ -64,8 +64,9 @@ OUTPUT_DIR = "."
 
 
 class AutoTrainResults:
-    def __init__(self, experiment_analysis: ExperimentAnalysis):
+    def __init__(self, experiment_analysis: ExperimentAnalysis, creds: Dict[str, Any] = None):
         self._experiment_analysis = experiment_analysis
+        self._creds = creds
 
     @property
     def experiment_analysis(self):
@@ -82,13 +83,18 @@ class AutoTrainResults:
             logger.warning("No best model found")
             return None
 
-        if not _ray_113:
-            return LudwigModel.load(os.path.join(checkpoint, "model"))
+        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
+        if ckpt_type == "uri":
+            # Read remote URIs using Ludwig's internal remote file loading APIs, as
+            # Ray's do not handle custom credentials at the moment.
+            with use_credentials(self._creds):
+                return LudwigModel.load(os.path.join(ckpt_path, "model"))
+        else:
+            with checkpoint.as_directory() as ckpt_path:
+                return LudwigModel.load(os.path.join(ckpt_path, "model"))
 
-        with checkpoint.as_directory() as checkpoint:
-            return LudwigModel.load(os.path.join(checkpoint, "model"))
 
-
+@PublicAPI
 def auto_train(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     target: str,
@@ -127,11 +133,18 @@ def auto_train(
     :return: (AutoTrainResults) results containing hyperopt experiments and best model
     """
     config = create_auto_config(
-        dataset, target, time_limit_s, tune_for_memory, user_config, random_seed, use_reference_config
+        dataset,
+        target,
+        time_limit_s,
+        tune_for_memory,
+        user_config,
+        random_seed,
+        use_reference_config=use_reference_config,
     )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
 
+@PublicAPI
 def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     target: Union[str, List[str]],
@@ -139,6 +152,7 @@ def create_auto_config(
     tune_for_memory: bool,
     user_config: Dict = None,
     random_seed: int = default_random_seed,
+    imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
     backend: Union[Backend, str] = None,
 ) -> dict:
@@ -157,6 +171,7 @@ def create_auto_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
     :param use_reference_config: (bool) refine hyperopt search space by setting first
                                  search point from reference model config, if any
 
@@ -170,7 +185,7 @@ def create_auto_config(
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
     default_configs, features_metadata = _create_default_config(
-        dataset_info, target, time_limit_s, random_seed, backend
+        dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
     )
     model_config, model_category, row_count = _model_select(
         dataset_info, default_configs, features_metadata, user_config, use_reference_config
@@ -195,6 +210,7 @@ def create_auto_config(
     return model_config
 
 
+@PublicAPI
 def train_with_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame],
     config: dict,
@@ -236,8 +252,14 @@ def train_with_config(
                 "Consider increasing the time budget for experiment. "
             )
 
+    # Extract credentials needed to pull artifacts, if provided
+    creds = None
+    backend: Backend = initialize_backend(kwargs.get("backend"))
+    if backend is not None:
+        creds = backend.storage.artifacts.credentials
+
     experiment_analysis = hyperopt_results.experiment_analysis
-    return AutoTrainResults(experiment_analysis)
+    return AutoTrainResults(experiment_analysis, creds)
 
 
 def _model_select(
@@ -270,17 +292,25 @@ def _model_select(
         # text heuristics
         for input_feature in base_config["input_features"]:
             # default text encoder is bert
-            if input_feature["type"] == TEXT:
+            if input_feature[TYPE] == TEXT:
                 model_category = TEXT
-                input_feature["encoder"] = AUTOML_DEFAULT_TEXT_ENCODER
-                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+                if ENCODER in input_feature:
+                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
+                else:
+                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
 
             # TODO (ASN): add image heuristics
-            if input_feature["type"] == IMAGE:
+            if input_feature[TYPE] == IMAGE:
                 model_category = IMAGE
-                input_feature["encoder"] = AUTOML_DEFAULT_IMAGE_ENCODER
-                base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
+                if ENCODER in input_feature:
+                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
+                else:
+                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
+
+        # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
+        base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+        base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
     if user_config is not None:

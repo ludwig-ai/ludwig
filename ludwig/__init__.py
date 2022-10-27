@@ -18,3 +18,6 @@ import sys
 from ludwig.globals import LUDWIG_VERSION as __version__  # noqa
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
+
+# Disable annoying message about NUMEXPR_MAX_THREADS
+logging.getLogger("numexpr").setLevel(logging.WARNING)

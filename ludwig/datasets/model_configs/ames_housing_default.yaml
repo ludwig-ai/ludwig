@@ -1,15 +1,15 @@
 output_features:
   - name: SalePrice
-    type: numerical
+    type: number
 input_features:
   - name: MSSubClass
     type: category
   - name: MSZoning
     type: category
   - name: LotFrontage
-    type: numerical
+    type: number
   - name: LotArea
-    type: numerical
+    type: number
   - name: Street
     type: category
   - name: Alley
@@ -39,9 +39,9 @@ input_features:
   - name: OverallCond
     type: category
   - name: YearBuilt
-    type: numerical
+    type: number
   - name: YearRemodAdd
-    type: numerical
+    type: number
   - name: RoofStyle
     type: category
   - name: RoofMatl
@@ -53,7 +53,7 @@ input_features:
   - name: MasVnrType
     type: category
   - name: MasVnrArea
-    type: numerical
+    type: number
   - name: ExterQual
     type: category
   - name: ExterCond
@@ -69,15 +69,15 @@ input_features:
   - name: BsmtFinType1
     type: category
   - name: BsmtFinSF1
-    type: numerical
+    type: number
   - name: BsmtFinType2
     type: category
   - name: BsmtFinSF2
-    type: numerical
+    type: number
   - name: BsmtUnfSF
-    type: numerical
+    type: number
   - name: TotalBsmtSF
-    type: numerical
+    type: number
   - name: Heating
     type: category
   - name: HeatingQC
@@ -87,45 +87,45 @@ input_features:
   - name: Electrical
     type: category
   - name: 1stFlrSF
-    type: numerical
+    type: number
   - name: 2ndFlrSF
-    type: numerical
+    type: number
   - name: LowQualFinSF
-    type: numerical
+    type: number
   - name: GrLivArea
-    type: numerical
+    type: number
   - name: BsmtFullBath
-    type: numerical
+    type: number
   - name: BsmtHalfBath
-    type: numerical
+    type: number
   - name: FullBath
-    type: numerical
+    type: number
   - name: HalfBath
-    type: numerical
+    type: number
   - name: BedroomAbvGr
-    type: numerical
+    type: number
   - name: KitchenAbvGr
-    type: numerical
+    type: number
   - name: KitchenQual
     type: category
   - name: TotRmsAbvGrd
-    type: numerical
+    type: number
   - name: Functional
     type: category
   - name: Fireplaces
-    type: numerical
+    type: number
   - name: FireplaceQu
     type: category
   - name: GarageType
     type: category
   - name: GarageYrBlt
-    type: numerical
+    type: number
   - name: GarageFinish
     type: category
   - name: GarageCars
-    type: numerical
+    type: number
   - name: GarageArea
-    type: numerical
+    type: number
   - name: GarageQual
     type: category
   - name: GarageCond
@@ -133,17 +133,17 @@ input_features:
   - name: PavedDrive
     type: category
   - name: WoodDeckSF
-    type: numerical
+    type: number
   - name: OpenPorchSF
-    type: numerical
+    type: number
   - name: EnclosedPorch
-    type: numerical
+    type: number
   - name: 3SsnPorch
-    type: numerical
+    type: number
   - name: ScreenPorch
-    type: numerical
+    type: number
   - name: PoolArea
-    type: numerical
+    type: number
   - name: PoolQC
     type: category
   - name: Fence
@@ -151,11 +151,11 @@ input_features:
   - name: MiscFeature
     type: category
   - name: MiscVal
-    type: numerical
+    type: number
   - name: MoSold
     type: category
   - name: YrSold
-    type: numerical
+    type: number
   - name: SaleType
     type: category
   - name: SaleCondition

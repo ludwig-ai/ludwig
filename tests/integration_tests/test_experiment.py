@@ -99,7 +99,7 @@ def test_experiment_text_feature_HF_full(encoder, csv_filename):
 @pytest.mark.parametrize("encoder", ENCODERS)
 def test_experiment_seq_seq_generator(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "generator"})]
+    output_features = [text_feature(decoder={"type": "generator"}, output_feature=True)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
@@ -179,8 +179,8 @@ def test_experiment_multi_input_intent_classification(csv_filename, encoder):
 
 
 def test_experiment_with_torch_module_dict_feature_name(csv_filename):
-    input_features = [{"type": "category", "name": "type"}]
-    output_features = [{"type": "category", "name": "to"}]
+    input_features = [category_feature(name="type")]
+    output_features = [category_feature(name="to", output_feature=True)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
@@ -411,7 +411,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     )
     model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
-    model.config["input_features"][0]["preprocessing"]["in_memory"] = test_in_memory
+    model.config_obj.input_features.to_list()[0]["preprocessing"]["in_memory"] = test_in_memory
 
     # setup test data format to test
     test_data = generate_data(input_features, output_features, test_csv_filename)
@@ -458,7 +458,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
     # raised for different data set formats and in_memory setting
 
     input_features = [number_feature(), category_feature()]
-    output_features = [category_feature(), number_feature()]
+    output_features = [category_feature(output_feature=True), number_feature()]
 
     config = {
         "input_features": input_features,
@@ -578,7 +578,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
         TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
-            "encoder": "rnn",
+            "encoder": {"type": "rnn"},
             "main_sequence_feature": "seq1",
             "reduce_output": None,
         },
@@ -623,7 +623,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
         TRAINER: {"epochs": 2},
         "combiner": {
             "type": "sequence",
-            "encoder": "rnn",
+            "encoder": {"type": "rnn"},
             "main_sequence_feature": "seq1",
             "reduce_output": None,
         },

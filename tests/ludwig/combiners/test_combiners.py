@@ -15,7 +15,7 @@ from ludwig.combiners.combiners import (
     TabTransformerCombiner,
     TransformerCombiner,
 )
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, TYPE
 from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -292,7 +292,7 @@ def test_sequence_combiner(
         config=load_config(
             SequenceCombinerConfig,
             main_sequence_feature=main_sequence_feature,
-            encoder=encoder,
+            encoder={TYPE: encoder},
             reduce_output=reduce_output,
         ),
         # following emulates encoder parameters passed in from config file
@@ -385,7 +385,7 @@ def test_tabnet_combiner(features_to_test: Dict, size: int, output_size: int) ->
 
 
 @pytest.mark.parametrize("fc_layer", [None, [{"output_size": 64}, {"output_size": 32}]])
-@pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_2"]])
+@pytest.mark.parametrize("entity_1", [["text_feature_1", "text_feature_4"]])
 @pytest.mark.parametrize("entity_2", [["image_feature_1", "image_feature_2"]])
 def test_comparator_combiner(
     encoder_comparator_outputs: Tuple, fc_layer: Optional[List[Dict]], entity_1: str, entity_2: str
@@ -395,9 +395,9 @@ def test_comparator_combiner(
 
     encoder_comparator_outputs_dict, input_features_dict = encoder_comparator_outputs
     # clean out unneeded encoder outputs since we only have 2 layers
-    del encoder_comparator_outputs_dict["text_feature_3"]
+    del encoder_comparator_outputs_dict["text_feature_2"]
     del encoder_comparator_outputs_dict["image_feature_3"]
-    del encoder_comparator_outputs_dict["text_feature_4"]
+    del encoder_comparator_outputs_dict["text_feature_3"]
     del encoder_comparator_outputs_dict["image_feature_4"]
 
     # setup combiner to test set to 256 for case when none as it's the default size

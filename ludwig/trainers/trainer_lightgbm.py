@@ -40,7 +40,7 @@ def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str
             yield feature_name, metric
 
 
-@register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
+@register_trainer(MODEL_GBM)
 class LightGBMTrainer(BaseTrainer):
     TRAIN_KEY = "train"
     VALID_KEY = "validation"
@@ -352,18 +352,22 @@ class LightGBMTrainer(BaseTrainer):
     ) -> bool:
         self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
-        booster = None
         evals_result = {}
-        booster = self.train_step(
-            params, lgb_train, eval_sets, eval_names, booster, self.boosting_rounds_per_checkpoint, evals_result
+        self.model.lgbm_model = self.train_step(
+            params,
+            lgb_train,
+            eval_sets,
+            eval_names,
+            self.model.lgbm_model,
+            self.boosting_rounds_per_checkpoint,
+            evals_result,
         )
 
         progress_bar.update(self.boosting_rounds_per_checkpoint)
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
-        progress_tracker.last_improvement_steps = booster.best_iteration
+        progress_tracker.last_improvement_steps = self.model.lgbm_model.best_iteration_
 
         # convert to pytorch for inference
-        self.model.lgb_booster = booster
         self.model.compile()
         self.model = self.model.to(self.device)
 
@@ -464,10 +468,10 @@ class LightGBMTrainer(BaseTrainer):
         lgb_train: lgb.Dataset,
         eval_sets: List[lgb.Dataset],
         eval_names: List[str],
-        booster: lgb.Booster,
+        init_model: lgb.LGBMModel,
         boost_rounds_per_train_step: int,
         evals_result: Dict,
-    ) -> lgb.Booster:
+    ) -> lgb.LGBMModel:
         """Trains a LightGBM model.
 
         Args:
@@ -479,18 +483,21 @@ class LightGBMTrainer(BaseTrainer):
         Returns:
             LightGBM Booster model
         """
-        gbm = lgb.train(
-            params,
-            lgb_train,
-            init_model=booster,
-            num_boost_round=boost_rounds_per_train_step,
-            valid_sets=eval_sets,
-            valid_names=eval_names,
-            feature_name=list(self.model.input_features.keys()),
+        output_feature = next(iter(self.model.output_features.values()))
+        gbm_sklearn_cls = lgb.LGBMRegressor if output_feature.type() == NUMBER else lgb.LGBMClassifier
+
+        gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
+            X=lgb_train.get_data(),
+            y=lgb_train.get_label(),
+            init_model=init_model,
+            eval_set=[(ds.get_data(), ds.get_label()) for ds in eval_sets],
+            eval_names=eval_names,
+            # add early stopping callback to populate best_iteration
+            callbacks=[lgb.early_stopping(boost_rounds_per_train_step)],
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
-            evals_result=evals_result,
         )
+        evals_result.update(gbm.evals_result_)
 
         return gbm
 
@@ -514,10 +521,6 @@ class LightGBMTrainer(BaseTrainer):
             signal.signal(signal.SIGINT, self.set_steps_to_1_or_quit)
 
         # TODO: construct new datasets by running encoders (for text, image)
-
-        # TODO: only single task currently
-        if len(output_features) > 1:
-            raise ValueError("Only single task currently supported")
 
         metrics_names = get_metric_names(output_features)
 
@@ -720,16 +723,16 @@ class LightGBMTrainer(BaseTrainer):
     def _construct_lgb_params(self) -> Tuple[dict, dict]:
         output_params = {}
         feature = next(iter(self.model.output_features.values()))
-        if feature.type() == CATEGORY:
+        if feature.type() == BINARY or (hasattr(feature, "num_classes") and feature.num_classes == 2):
+            output_params = {
+                "objective": "binary",
+                "metric": ["binary_logloss"],
+            }
+        elif feature.type() == CATEGORY:
             output_params = {
                 "objective": "multiclass",
                 "metric": ["multi_logloss"],
                 "num_class": feature.num_classes,
-            }
-        elif feature.type() == BINARY:
-            output_params = {
-                "objective": "binary",
-                "metric": ["binary_logloss"],
             }
         elif feature.type() == NUMBER:
             output_params = {
@@ -800,15 +803,15 @@ class LightGBMTrainer(BaseTrainer):
         y_train = training_set.to_df(self.model.output_features.values())
 
         # create dataset for lightgbm
-        # if you want to re-use data, remember to set free_raw_data=False
-        lgb_train = lgb.Dataset(X_train, label=y_train)
+        # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
+        lgb_train = lgb.Dataset(X_train, label=y_train, free_raw_data=False).construct()
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             X_val = validation_set.to_df(self.model.input_features.values())
             y_val = validation_set.to_df(self.model.output_features.values())
-            lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train)
+            lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
         else:
@@ -818,7 +821,7 @@ class LightGBMTrainer(BaseTrainer):
         if test_set is not None:
             X_test = test_set.to_df(self.model.input_features.values())
             y_test = test_set.to_df(self.model.output_features.values())
-            lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train)
+            lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
             eval_sets.append(lgb_test)
             eval_names.append(LightGBMTrainer.TEST_KEY)
 
@@ -835,7 +838,7 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
 
-def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
+def _map_to_lgb_ray_params(params: Dict[str, Any]) -> "RayParams":  # noqa
     from lightgbm_ray import RayParams
 
     ray_params = {}
@@ -852,7 +855,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
     return ray_params
 
 
-@register_ray_trainer("lightgbm_trainer", MODEL_GBM, default=True)
+@register_ray_trainer(MODEL_GBM)
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
@@ -866,7 +869,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
-        trainer_kwargs: Optional[Dict] = None,
+        trainer_kwargs: Optional[Dict] = {},
         data_loader_kwargs: Optional[Dict] = None,
         executable_kwargs: Optional[Dict] = None,
         **kwargs,
@@ -885,7 +888,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             **kwargs,
         )
 
-        self.trainer_kwargs = trainer_kwargs or {}
+        self.ray_params = _map_to_lgb_ray_params(trainer_kwargs)
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs or {}
 
@@ -899,10 +902,10 @@ class LightGBMRayTrainer(LightGBMTrainer):
         lgb_train: "RayDMatrix",  # noqa: F821
         eval_sets: List["RayDMatrix"],  # noqa: F821
         eval_names: List[str],
-        booster: lgb.Booster,
+        init_model: lgb.LGBMModel,
         boost_rounds_per_train_step: int,
         evals_result: Dict,
-    ) -> lgb.Booster:
+    ) -> lgb.LGBMModel:
         """Trains a LightGBM model using ray.
 
         Args:
@@ -914,23 +917,26 @@ class LightGBMRayTrainer(LightGBMTrainer):
         Returns:
             LightGBM Booster model
         """
-        from lightgbm_ray import train as lgb_ray_train
+        from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
 
-        gbm = lgb_ray_train(
-            params,
-            lgb_train,
-            init_model=booster,
-            num_boost_round=boost_rounds_per_train_step,
-            valid_sets=eval_sets,
-            valid_names=eval_names,
-            feature_name=list(self.model.input_features.keys()),
-            evals_result=evals_result,
+        output_feature = next(iter(self.model.output_features.values()))
+        gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
+
+        gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
+            X=lgb_train,
+            y=None,
+            init_model=init_model,
+            eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
+            eval_names=eval_names,
+            # add early stopping callback to populate best_iteration
+            callbacks=[lgb.early_stopping(boost_rounds_per_train_step)],
+            ray_params=self.ray_params,
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
-            ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
         )
+        evals_result.update(gbm.evals_result_)
 
-        return gbm.booster_
+        return gbm.to_local()
 
     def _construct_lgb_datasets(
         self,
@@ -950,7 +956,9 @@ class LightGBMRayTrainer(LightGBMTrainer):
         feat_cols = in_feat + out_feat
 
         lgb_train = RayDMatrix(
-            training_set.ds.map_batches(lambda df: df[feat_cols]),
+            # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
+            # Need num_blocks to equal num_actors in order to feed all actors.
+            training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
             label=label_col,
             distributed=False,
         )
@@ -959,7 +967,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             lgb_val = RayDMatrix(
-                validation_set.ds.map_batches(lambda df: df[feat_cols]),
+                validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
                 distributed=False,
             )
@@ -968,7 +976,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
         if test_set is not None:
             lgb_test = RayDMatrix(
-                test_set.ds.map_batches(lambda df: df[feat_cols]),
+                test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
                 distributed=False,
             )

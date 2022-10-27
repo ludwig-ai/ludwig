@@ -1,0 +1,53 @@
+# Adapted from
+# https://github.com/yoheimuta/protolint/blob/master/_example/config/.protolint.yaml
+---
+# Lint directives.
+lint:
+  # Linter files to walk.
+  files:
+    # The specific files to exclude.
+    exclude:
+      # NOTE: UNIX paths will be properly accepted by both UNIX and Windows.
+      - ludwig/profiling/proto/whylogs_messages.proto
+
+  # Linter rules.
+  # Run `protolint list` to see all available rules.
+  rules:
+    # Set the default to all linters. This option works the other way around as no_default does.
+    # If you want to enable this option, delete the comment out below and no_default.
+    # all_default: true
+
+    # The specific linters to add.
+    add:
+      - FIELD_NAMES_LOWER_SNAKE_CASE
+      - MESSAGE_NAMES_UPPER_CAMEL_CASE
+      - MAX_LINE_LENGTH
+      - INDENT
+      - FIELD_NAMES_EXCLUDE_PREPOSITIONS
+      - FILE_NAMES_LOWER_SNAKE_CASE
+      - IMPORTS_SORTED
+      - PACKAGE_NAME_LOWER_CASE
+      - ORDER
+      - PROTO3_FIELDS_AVOID_REQUIRED
+      - PROTO3_GROUPS_AVOID
+      - REPEATED_FIELD_NAMES_PLURALIZED
+      - QUOTE_CONSISTENT
+
+  # Linter rules option.
+  rules_option:
+    # MAX_LINE_LENGTH rule option.
+    max_line_length:
+      # Enforces a maximum line length
+      max_chars: 120
+      # Specifies the character count for tab characters
+      tab_chars: 2
+
+    # FILE_NAMES_LOWER_SNAKE_CASE rule option.
+    file_names_lower_snake_case:
+      excludes:
+        - ../proto/invalidFileName.proto
+
+    # QUOTE_CONSISTENT rule option.
+    quote_consistent:
+      # Available quote are "double" or "single".
+      quote: double

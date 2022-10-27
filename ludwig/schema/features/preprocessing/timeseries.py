@@ -9,11 +9,11 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @register_preprocessor(TIMESERIES)
-@dataclass
+@dataclass(repr=False)
 class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
 
     tokenizer: str = schema_utils.StringOptions(
-        sorted(list(tokenizer_registry.keys())),
+        tokenizer_registry.keys(),
         default="space",
         allow_none=False,
         description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",

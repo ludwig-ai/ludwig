@@ -21,9 +21,6 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    DECODER,
-    DEPENDENCIES,
-    ENCODER,
     ERROR,
     HIDDEN,
     LOGITS,
@@ -32,21 +29,14 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     NAME,
     PREDICTIONS,
-    PREPROCESSING,
     PROC_COLUMN,
     R2,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
-    TIED,
-    TYPE,
     VECTOR,
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
-from ludwig.schema.features.utils import register_input_feature, register_output_feature
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.types import TrainingSetMetadata
 from ludwig.utils import output_feature_utils
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -98,10 +88,6 @@ class VectorFeatureMixin:
         return VECTOR
 
     @staticmethod
-    def preprocessing_defaults():
-        return VectorInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         return column
 
@@ -147,10 +133,8 @@ class VectorFeatureMixin:
         return proc_df
 
 
-@register_input_feature(VECTOR)
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[VectorInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: VectorInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         # input_feature_config.encoder.input_size = input_feature_config.encoder.vector_size
@@ -177,15 +161,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["input_size"] = feature_metadata["vector_size"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = VectorInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
-        set_default_value(input_feature, PREPROCESSING, {})
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.input_size = feature_metadata["vector_size"]
 
     @staticmethod
     def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:
@@ -196,10 +173,8 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
         return VectorInputFeatureConfig
 
 
-@register_output_feature(VECTOR)
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
-    default_validation_metric = MEAN_SQUARED_ERROR
 
     def __init__(
         self,
@@ -207,7 +182,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         self.vector_size = output_feature_config.vector_size
         super().__init__(output_feature_config, output_features, **kwargs)
         output_feature_config.decoder.output_size = self.vector_size
@@ -245,8 +219,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         return torch.Size([self.input_size])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["vector_size"] = feature_metadata["vector_size"]
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.vector_size = feature_metadata["vector_size"]
 
     @staticmethod
     def calculate_overall_stats(predictions, targets, train_set_metadata):
@@ -262,26 +236,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         if predictions_col in result:
             result[predictions_col] = result[predictions_col].map(lambda pred: pred.tolist())
         return result
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = VectorOutputFeatureConfig()
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-            },
-        )
 
     @staticmethod
     def create_postproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:

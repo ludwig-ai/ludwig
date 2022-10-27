@@ -17,6 +17,7 @@ import base64
 import collections.abc
 import contextlib
 import csv
+import dataclasses
 import functools
 import hashlib
 import json
@@ -33,6 +34,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import yaml
 from fsspec.config import conf, set_conf_files
 from pandas.errors import ParserError
@@ -43,6 +45,7 @@ from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_num
 from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.math_utils import cumsum
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.types import DataFrame
 
 try:
     import dask
@@ -673,6 +676,8 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif dataclasses.is_dataclass(obj):
+            return dataclasses.asdict(obj)
         else:
             return json.JSONEncoder.default(self, obj)
 
@@ -825,6 +830,41 @@ def string2ndarray(parm_string):
 def is_ludwig_ndarray_string(parm_string):
     # tests if parameter is a Ludwig custom ndarray string
     return isinstance(parm_string, str) and parm_string[:11] == "__ndarray__"
+
+
+def get_pa_dtype(obj: Any):
+    if np.isscalar(obj):
+        return pa.from_numpy_dtype(np.array(obj).dtype)
+    elif isinstance(obj, np.ndarray) or isinstance(obj, list) or isinstance(obj, tuple):
+        return pa.list_(get_pa_dtype(obj[0]))
+    else:
+        raise ValueError(f"Unsupported type for pyarrow dtype: {type(obj)}")
+
+
+def get_pa_schema(df: DataFrame):
+    """Gets the pyarrow schema associated with a given DataFrame.
+
+    This will fail in very specific conditions worth enumerating:
+    1. If the DataFrame is a Dask DataFrame which has a partition of size 1 and its only sample is a NaN, then the
+        `schema` dict will not contain the associated key. The value in this case will be inferred (likely incorrectly)
+        as a float64 downstream.
+    2. If the DataFrame contains NaNs in some column and the presence of NaNs changes the overall dtype of the column.
+        For example, if a number feature column contains some NaN-like value, then its dtype will be changed by the
+        below `fillna` call from float32 to float64. This will cause `to_parquet` to fail downstream.
+    """
+    head = df.head(100)
+
+    schema = {}
+    for k, v in head.items():
+        if sum(v.isna()) > 0:
+            v = v.fillna(np.nan).replace([np.nan], [None])  # Only fill NaNs if they are present
+        v = v.values
+
+        for i in range(len(v)):
+            if v[i] is not None and k not in schema:
+                schema[k] = get_pa_dtype(v[i])
+                break
+    return pa.schema(list(schema.items()))
 
 
 external_data_reader_registry = {

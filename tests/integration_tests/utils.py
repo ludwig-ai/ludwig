@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import multiprocessing
 import os
@@ -29,6 +30,7 @@ from typing import List, Union
 import cloudpickle
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from PIL import Image
 
@@ -38,8 +40,10 @@ from ludwig.constants import COLUMN, DECODER, ENCODER, NAME, PROC_COLUMN, TRAINE
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
 from ludwig.trainers.trainer import Trainer
-from ludwig.utils.data_utils import read_csv, replace_file_extension
+from ludwig.utils import fs_utils
+from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +128,7 @@ def parse_flag_from_env(key, default=False):
 
 
 _run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
+_run_private_tests = parse_flag_from_env("RUN_PRIVATE", default=False)
 
 
 def slow(test_case):
@@ -134,6 +139,20 @@ def slow(test_case):
     if not _run_slow_tests:
         test_case = unittest.skip("Skipping: this test is too slow")(test_case)
     return test_case
+
+
+def private_param(param):
+    """Wrap param to mark it as private, meaning it requires credentials to run.
+
+    Private tests are skipped by default. Set the RUN_PRIVATE environment variable to a truth value to run them.
+    """
+    return pytest.param(
+        *param,
+        marks=pytest.mark.skipif(
+            not _run_private_tests,
+            reason="Skipping: this test is marked private, set RUN_PRIVATE=1 in your environment to run",
+        ),
+    )
 
 
 def generate_data(
@@ -482,8 +501,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum"),
-        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}),
+        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum", output_feature=True),
+        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}, output_feature=True),
         number_feature(),
     ]
 
@@ -760,6 +779,29 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
     return dataset_to_use
 
 
+def augment_dataset_with_none(
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: List = []
+) -> pd.DataFrame:
+    """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
+
+    :param df: dataframe containg input features/output features
+    :type df: pd.DataFrame
+    :param first_row_none: indicates whether to set the first rowin the dataframe to np.nan
+    :type first_row_none: bool
+    :param last_row_none: indicates whether to set the last row in the dataframe to np.nan
+    :type last_row_none: bool
+    :param nan_cols: a list of columns in the dataframe to explicitly set the first or last rows to np.nan
+    :type nan_cols: list
+    """
+    if first_row_none:
+        for col in nan_cols:
+            df.iloc[0, df.columns.get_loc(col)] = np.nan
+    if last_row_none:
+        for col in nan_cols:
+            df.iloc[-1, df.columns.get_loc(col)] = np.nan
+    return df
+
+
 def train_with_backend(
     backend,
     config,
@@ -771,12 +813,11 @@ def train_with_backend(
     evaluate=True,
     callbacks=None,
     skip_save_processed_input=True,
+    skip_save_predictions=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
-    output_dir = None
-
-    try:
-        _, _, output_dir = model.train(
+    with tempfile.TemporaryDirectory() as output_directory:
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -785,14 +826,23 @@ def train_with_backend(
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,
+            output_directory=output_directory,
         )
 
         if dataset is None:
             dataset = training_set
 
         if predict:
-            preds, _ = model.predict(dataset=dataset)
+            preds, _ = model.predict(
+                dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
+            )
             assert preds is not None
+
+            if not skip_save_predictions:
+                read_preds = model.backend.df_engine.read_predictions(
+                    os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+                )
+                assert read_preds is not None
 
         if evaluate:
             eval_stats, eval_preds, _ = model.evaluate(
@@ -825,10 +875,41 @@ def train_with_backend(
                     for (name1, metric1), (name2, metric2) in zip(v1.items(), v2.items()):
                         assert name1 == name2
                         assert np.isclose(
-                            metric1, metric2, rtol=1e-04, atol=1e-5
+                            metric1, metric2, rtol=1e-03, atol=1e-04
                         ), f"metric {name1}: {metric1} != {metric2}"
 
         return model
+
+
+@contextlib.contextmanager
+def remote_tmpdir(fs_protocol, bucket):
+    if bucket is None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield f"{fs_protocol}://{tmpdir}"
+        return
+
+    prefix = f"tmp_{uuid.uuid4().hex}"
+    tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
+    try:
+        with use_credentials(minio_test_creds()):
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)
+        yield tmpdir
     finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
+        try:
+            with use_credentials(minio_test_creds()):
+                fs_utils.delete(tmpdir, recursive=True)
+        except FileNotFoundError as e:
+            logger.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+            pass
+
+
+def minio_test_creds():
+    return {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": os.environ.get("LUDWIG_MINIO_ENDPOINT", "http://localhost:9000"),
+                "aws_access_key_id": os.environ.get("LUDWIG_MINIO_ACCESS_KEY", "minio"),
+                "aws_secret_access_key": os.environ.get("LUDWIG_MINIO_SECRET_KEY", "minio123"),
+            }
+        }
+    }

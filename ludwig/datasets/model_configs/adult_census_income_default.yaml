@@ -3,15 +3,15 @@ output_features:
     type: category
 input_features:
   - name: age
-    type: numerical
+    type: number
   - name: workclass
     type: category
   - name: fnlwgt
-    type: numerical
+    type: number
   - name: education
     type: category
   - name: education-num
-    type: numerical
+    type: number
   - name: marital-status
     type: category
   - name: occupation
@@ -23,11 +23,11 @@ input_features:
   - name: sex
     type: category
   - name: capital-gain
-    type: numerical
+    type: number
   - name: capital-loss
-    type: numerical
+    type: number
   - name: hours-per-week
-    type: numerical
+    type: number
   - name: native-country
     type: category
 combiner:

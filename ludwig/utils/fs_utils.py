@@ -29,6 +29,7 @@ from urllib.parse import unquote, urlparse
 import certifi
 import fsspec
 import h5py
+import pyarrow.fs
 import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
@@ -117,9 +118,22 @@ def find_non_existing_dir_by_adding_suffix(directory_name):
     return curr_directory_name
 
 
+def abspath(url):
+    protocol, _ = split_protocol(url)
+    if protocol is not None:
+        # we assume any path containing an explicit protovol is fully qualified
+        return url
+    return os.path.abspath(url)
+
+
 def path_exists(url):
     fs, path = get_fs_and_path(url)
     return fs.exists(path)
+
+
+def listdir(url):
+    fs, path = get_fs_and_path(url)
+    return fs.listdir(path)
 
 
 def safe_move_file(src, dst):
@@ -163,17 +177,36 @@ def rename(src, tgt):
         safe_move_file(src, tgt)
 
 
+def upload_file(src, tgt):
+    protocol, _ = split_protocol(tgt)
+    fs = fsspec.filesystem(protocol)
+    fs.put(src, tgt)
+
+
+def copy(src, tgt, recursive=False):
+    protocol, _ = split_protocol(tgt)
+    fs = fsspec.filesystem(protocol)
+    fs.copy(src, tgt, recursive=recursive)
+
+
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
-    if not path_exists(url):
-        with fsspec.open(url, mode="wb"):
-            pass
 
 
 def delete(url, recursive=False):
     fs, path = get_fs_and_path(url)
     return fs.delete(path, recursive=recursive)
+
+
+def upload(lpath, rpath):
+    fs, path = get_fs_and_path(rpath)
+    pyarrow.fs.copy_files(lpath, path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
+
+
+def download(rpath, lpath):
+    fs, path = get_fs_and_path(rpath)
+    pyarrow.fs.copy_files(path, lpath, source_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
 
 
 def checksum(url):
@@ -200,11 +233,18 @@ def upload_output_directory(url):
         # then upload to the remote fs at the end.
         with tempfile.TemporaryDirectory() as tmpdir:
             fs, remote_path = get_fs_and_path(url)
+
+            # In cases where we are resuming from a previous run, we first need to download
+            # the artifacts from the remote filesystem
             if path_exists(url):
                 fs.get(url, tmpdir + "/", recursive=True)
 
             def put_fn():
-                fs.put(tmpdir, remote_path, recursive=True)
+                # Use pyarrow API here as fs.put() is inconsistent in where it uploads the file
+                # See: https://github.com/fsspec/filesystem_spec/issues/1062
+                pyarrow.fs.copy_files(
+                    tmpdir, remote_path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs))
+                )
 
             # Write to temp directory locally
             yield tmpdir, put_fn
@@ -226,9 +266,12 @@ def open_file(url, *args, **kwargs):
 
 @contextlib.contextmanager
 def download_h5(url):
-    local_path = fsspec.open_local(url)
-    with h5py.File(local_path, "r") as f:
-        yield f
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_path = os.path.join(tmpdir, os.path.basename(url))
+        fs, path = get_fs_and_path(url)
+        fs.get(path, local_path)
+        with h5py.File(local_path, "r") as f:
+            yield f
 
 
 @contextlib.contextmanager

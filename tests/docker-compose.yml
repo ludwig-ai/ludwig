@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  minio:
+    image: 'minio/minio:latest'
+    volumes:
+      - minio_storage:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+    command: server --console-address ":9001" /data
+volumes:
+  minio_storage:

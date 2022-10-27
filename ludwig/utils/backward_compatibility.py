@@ -90,7 +90,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
-def upgrade_to_latest_version(config: Dict) -> Dict:
+def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
 
@@ -160,6 +160,21 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
     elif isinstance(config, list):
         for v in config:
             _traverse_dicts(v, f)
+
+
+@register_config_transformation("0.6", "backend")
+def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
+    if "cache_credentials" in backend:
+        credentials = backend.get("credentials", {})
+        if "cache" in credentials:
+            warnings.warn("`cache` already found in `backend.credentials`, ignoring `cache_credentials`")
+        else:
+            warnings.warn(
+                "`backend.cache_credentials` has been renamed `backend.credentials.cache`", DeprecationWarning
+            )
+            credentials["cache"] = backend.pop("cache_credentials")
+        backend["credentials"] = credentials
+    return backend
 
 
 @register_config_transformation("0.6", ["output_features"])
@@ -599,15 +614,48 @@ def upgrade_missing_value_strategy(config: LudwigFeature) -> LudwigFeature:
     return config
 
 
+@register_config_transformation("0.6", ["trainer"])
+def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
+    if "increase_batch_size_on_plateau_max" in trainer:
+        warnings.warn(
+            'Config param "increase_batch_size_on_plateau_max" renamed to "max_batch_size" and will be '
+            "removed in v0.8",
+            DeprecationWarning,
+        )
+        increase_batch_size_on_plateau_max_val = trainer.pop("increase_batch_size_on_plateau_max")
+        if "max_batch_size" in trainer:
+            warnings.warn('"max_batch_size" config param already set. Discarding "increase_batch_size_on_plateau_max".')
+        else:
+            warnings.warn(
+                f'Setting "max_batch_size" config param to "increase_batch_size_on_plateau_max" value '
+                f'({increase_batch_size_on_plateau_max_val}) and discarding "increase_batch_size_on_plateau_max"'
+            )
+            trainer["max_batch_size"] = increase_batch_size_on_plateau_max_val
+    return trainer
+
+
+@register_config_transformation("0.6", ["trainer"])
+def remove_trainer_type(trainer: Dict[str, Any]) -> Dict[str, Any]:
+    if TYPE in trainer:
+        warnings.warn(
+            "Config param `type` has been removed from the trainer. The trainer type is determined by the top level "
+            " `model_type` parameter. Support for the `type` params in trainer will be removed in v0.8",
+            DeprecationWarning,
+        )
+        del trainer[TYPE]
+
+    return trainer
+
+
 def upgrade_metadata(metadata: TrainingSetMetadata) -> TrainingSetMetadata:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata
     metadata = copy.deepcopy(metadata)
-    _upgrade_metadata_mising_values(metadata)
+    _upgrade_metadata_missing_values(metadata)
     return metadata
 
 
-def _upgrade_metadata_mising_values(metadata: TrainingSetMetadata):
+def _upgrade_metadata_missing_values(metadata: TrainingSetMetadata):
     for k, v in metadata.items():
         if isinstance(v, dict) and _is_old_missing_value_strategy(v):
             _update_old_missing_value_strategy(v)

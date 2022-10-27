@@ -68,7 +68,7 @@ from ludwig.utils.trainer_utils import (
 logger = logging.getLogger(__name__)
 
 
-@register_trainer("trainer", MODEL_ECD, default=True)
+@register_trainer(MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
     """Trainer is a class that trains a model."""
 
@@ -144,6 +144,7 @@ class Trainer(BaseTrainer):
         self.decay_steps = config.decay_steps
         self.staircase = config.staircase
         self.batch_size = config.batch_size
+        self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
         self.should_shuffle = config.should_shuffle
         self._validation_field = config.validation_field
@@ -160,7 +161,6 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
         self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
-        self.increase_batch_size_on_plateau_max = config.increase_batch_size_on_plateau_max
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
         self.learning_rate_warmup_epochs = config.learning_rate_warmup_epochs
@@ -325,32 +325,21 @@ class Trainer(BaseTrainer):
 
     def train_for_tuning(
         self,
-        dataset,
         batch_size: int,
         total_steps: int = 3,
     ):
         """Function to be used by tune_batch_size."""
         self.model.train()  # Sets model training mode.
-        with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
-
-            step_count = 0
-            while not batcher.last_batch() and step_count < total_steps:
-                batch = batcher.next_batch()
-                inputs = {
-                    i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                        self.device
-                    )
-                    for i_feat in self.model.input_features.values()
-                }
-                targets = {
-                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                        self.device
-                    )
-                    for o_feat in self.model.output_features.values()
-                }
-
-                self.train_step(inputs, targets)
-                step_count += 1
+        for _ in range(total_steps):
+            inputs = {
+                input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
+                for input_feature_name, input_feature in self.model.input_features.items()
+            }
+            targets = {
+                output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(self.device)
+                for output_feature_name, output_feature in self.model.output_features.items()
+            }
+            self.train_step(inputs, targets)
         return self.model
 
     def tune_learning_rate(
@@ -460,6 +449,9 @@ class Trainer(BaseTrainer):
         logger.info(f"Selected learning_rate={learning_rate}")
         return learning_rate
 
+    def is_cpu_training(self):
+        return torch.device(self.device) == torch.device("cpu")
+
     def tune_batch_size(
         self,
         config: LudwigConfig,
@@ -470,7 +462,7 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
-        if torch.device(self.device) == torch.device("cpu"):
+        if self.is_cpu_training():
             logger.warn(
                 f'Batch size tuning is not supported on CPU, setting batch size from "auto" to default value '
                 f"{DEFAULT_BATCH_SIZE}"
@@ -481,7 +473,15 @@ class Trainer(BaseTrainer):
 
             def _is_valid_batch_size(batch_size):
                 # make sure that batch size is valid (e.g. less than size of ds)
-                return batch_size < len(training_set)
+                is_smaller_than_training_set = batch_size < len(training_set)
+                is_under_max_batch_size = batch_size <= self.max_batch_size
+                is_valid = is_smaller_than_training_set and is_under_max_batch_size
+                if not is_valid:
+                    logger.info(
+                        f"Batch size {batch_size} is invalid, must be smaller than training set size "
+                        f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
+                    )
+                return is_valid
 
             # TODO (ASN) : Circle back on how we want to set default placeholder value
             # Currently, since self.batch_size is originally set to auto, we provide a
@@ -503,16 +503,20 @@ class Trainer(BaseTrainer):
                     gc.collect()
 
                     try:
-                        self.train_for_tuning(training_set, batch_size, total_steps=3)
+                        self.train_for_tuning(batch_size, total_steps=3)
                         best_batch_size = batch_size
                         count += 1
 
                         # double batch size
                         batch_size *= 2
-                    except RuntimeError:
+                    except RuntimeError as e:
                         # PyTorch only generates Runtime errors for CUDA OOM.
                         gc.collect()
-                        logger.info(f"OOM at batch_size={batch_size}")
+                        if "CUDA out of memory" in str(e):
+                            logger.info(f"OOM at batch_size={batch_size}")
+                        else:
+                            # Not a CUDA error
+                            raise
                         break
             finally:
                 # Restore original parameters to defaults
@@ -653,7 +657,7 @@ class Trainer(BaseTrainer):
                 self.increase_batch_size_on_plateau,
                 self.increase_batch_size_on_plateau_patience,
                 self.increase_batch_size_on_plateau_rate,
-                self.increase_batch_size_on_plateau_max,
+                self.max_batch_size,
                 self.increase_batch_size_eval_metric,
                 self.increase_batch_size_eval_split,
                 early_stopping_steps,
@@ -808,12 +812,14 @@ class Trainer(BaseTrainer):
                         f"Training for {self.total_steps} step(s), approximately "
                         f"{int(self.total_steps / batcher.steps_per_epoch)} epoch(s)."
                     )
-                    logger.info(
-                        f"Early stopping policy: {self.early_stop} round(s) of evaluation, or {early_stopping_steps} "
-                        f"step(s), approximately {int(early_stopping_steps / batcher.steps_per_epoch)} "
-                        "epoch(s).\n"
-                    )
-
+                    if self.early_stop < 0:
+                        logger.info("Early stopping policy: None")
+                    else:
+                        logger.info(
+                            f"Early stopping policy: {self.early_stop} round(s) of evaluation, or "
+                            f"{early_stopping_steps} step(s), approximately "
+                            f"{int(early_stopping_steps / batcher.steps_per_epoch)} epoch(s).\n"
+                        )
                     logger.info(f"Starting with step {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
                 progress_bar_config = {
@@ -1351,7 +1357,7 @@ class Trainer(BaseTrainer):
                     )
                 ):
                     progress_tracker.batch_size = min(
-                        (increase_batch_size_on_plateau_rate * progress_tracker.batch_size),
+                        int(increase_batch_size_on_plateau_rate * progress_tracker.batch_size),
                         increase_batch_size_on_plateau_max,
                     )
 
@@ -1383,6 +1389,17 @@ class Trainer(BaseTrainer):
         if not self.horovod:
             return True
         return self.horovod.rank() == 0
+
+    @property
+    def local_rank(self):
+        if not self.horovod:
+            return 0
+        return self.horovod.local_rank()
+
+    def barrier(self):
+        if not self.horovod:
+            return
+        self.horovod.allreduce(torch.as_tensor([0], dtype=torch.int))
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():

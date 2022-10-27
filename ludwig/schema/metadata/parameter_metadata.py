@@ -73,3 +73,7 @@ def convert_metadata_to_json(pm: ParameterMetadata):
     a string repr that is improperly parsed.
     """
     return json.loads(pm.to_json())
+
+
+# This is a quick way to flag schema parameters as internal only via the `parameter_metadata` argument
+INTERNAL_ONLY = ParameterMetadata(internal_only=True)

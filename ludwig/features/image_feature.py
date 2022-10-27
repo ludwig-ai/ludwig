@@ -18,7 +18,7 @@ import os
 import warnings
 from collections import Counter
 from functools import partial
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -27,7 +27,6 @@ import torchvision
 from ludwig.constants import (
     CHECKSUM,
     COLUMN,
-    ENCODER,
     HEIGHT,
     IMAGE,
     INFER_IMAGE_DIMENSIONS,
@@ -39,15 +38,12 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     SRC,
-    TIED,
     TRAINING,
-    TYPE,
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.types import TrainingSetMetadata
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
@@ -60,7 +56,7 @@ from ludwig.utils.image_utils import (
     read_image_from_path,
     resize_image,
 )
-from ludwig.utils.misc_utils import set_default_value, set_default_values
+from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -129,10 +125,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return IMAGE
-
-    @staticmethod
-    def preprocessing_defaults():
-        return ImageInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -480,10 +472,8 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(IMAGE)
 class ImageInputFeature(ImageFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[ImageInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: ImageInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -517,16 +507,9 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         for key in ["height", "width", "num_channels", "scaling"]:
-            input_feature[ENCODER][key] = feature_metadata[PREPROCESSING][key]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = ImageInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_value(input_feature, PREPROCESSING, {})
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+            setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
 
     @staticmethod
     def get_schema_cls():

@@ -173,7 +173,7 @@ def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str
 
     :param dataset_size: (int) size of the dataset
     :param features: (List[dict]) list of features to generate in YAML format.
-        Provide a list contaning one dictionary for each feature,
+        Provide a list containing one dictionary for each feature,
         each dictionary must include a name, a type
         and can include some generation parameters depending on the type
     :param outdir: (str) Path to an output directory. Used for saving synthetic image and audio files.

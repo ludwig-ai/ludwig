@@ -35,6 +35,7 @@ from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.types import LudwigConfig, LudwigFeature, TrainingSetMetadata
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
@@ -88,7 +89,11 @@ class RayDataset(Dataset):
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
     def pipeline(
-        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
+        self,
+        shuffle: bool = True,
+        fully_executed: bool = True,
+        window_size_bytes: Optional[int] = None,
+        shuffle_seed: int = default_random_seed,
     ) -> DatasetPipeline:
         """
         Args:
@@ -111,7 +116,7 @@ class RayDataset(Dataset):
         else:
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
         if shuffle:
-            pipe = pipe.random_shuffle_each_window()
+            pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
         return pipe
 
     @contextlib.contextmanager

@@ -15,12 +15,12 @@
 # ==============================================================================
 import copy
 import logging
-import sys
 from collections import Counter
 from sys import platform
 
 import numpy as np
 import pandas as pd
+import ptitprince as pt
 from packaging import version
 
 from ludwig.constants import SPACE, TRAINING, VALIDATION
@@ -31,7 +31,10 @@ try:
     import matplotlib as mpl
 
     if platform == "darwin":  # OS X
-        mpl.use("TkAgg")
+        try:
+            mpl.use("TkAgg")
+        except ModuleNotFoundError:
+            logger.warning("Unable to set TkAgg backend for matplotlib. Your Python may not be configured for Tk")
     import matplotlib.patches as patches
     import matplotlib.path as path
     import matplotlib.patheffects as PathEffects
@@ -40,13 +43,12 @@ try:
     from matplotlib import ticker
     from matplotlib.lines import Line2D
     from mpl_toolkits.mplot3d import Axes3D
-except ImportError:
-    logger.error(
-        " matplotlib or seaborn are not installed. "
+except ImportError as e:
+    raise RuntimeError(
+        "matplotlib or seaborn are not installed. "
         "In order to install all visualization dependencies run "
         "pip install ludwig[viz]"
-    )
-    sys.exit(-1)
+    ) from e
 
 INT_QUANTILES = 10
 FLOAT_QUANTILES = 10
@@ -72,7 +74,15 @@ def visualize_callbacks(callbacks, fig):
 
 
 def learning_curves_plot(
-    train_values, vali_values, metric, algorithm_names=None, title=None, filename=None, callbacks=None
+    train_values,
+    vali_values,
+    metric,
+    x_label="epoch",
+    x_step=1,
+    algorithm_names=None,
+    title=None,
+    filename=None,
+    callbacks=None,
 ):
     num_algorithms = len(train_values)
     max_len = max(len(tv) for tv in train_values)
@@ -92,10 +102,10 @@ def learning_curves_plot(
     ax.grid(which="both")
     ax.grid(which="minor", alpha=0.5)
     ax.grid(which="major", alpha=0.75)
-    ax.set_xlabel("epochs")
+    ax.set_xlabel(x_label)
     ax.set_ylabel(metric.replace("_", " "))
 
-    xs = list(range(1, max_len + 1))
+    xs = np.arange(1, (max_len * x_step) + 1, x_step)
 
     for i in range(num_algorithms):
         name_prefix = algorithm_names[i] + " " if algorithm_names is not None and i < len(algorithm_names) else ""
@@ -1384,7 +1394,27 @@ def hyperopt_float_plot(hyperopt_results_df, hp_name, metric, title, filename, l
 def hyperopt_category_plot(hyperopt_results_df, hp_name, metric, title, filename, log_scale=True):
     sns.set_style("whitegrid")
     plt.figure()
-    seaborn_figure = sns.violinplot(x=hp_name, y=metric, data=hyperopt_results_df, fit_reg=False)
+
+    # Ensure that all parameter values have at least 2 trials, otherwise the Raincloud Plot will create awkward
+    # looking "flat clouds" in the cloud part of the plot (the "rain" part is ok with 1 trial). In this case,
+    # just use stripplots since they are categorical scatter plots.
+    parameter_to_trial_count = hyperopt_results_df[hp_name].value_counts()
+    parameter_to_trial_count = parameter_to_trial_count[parameter_to_trial_count < 2]
+
+    if len(parameter_to_trial_count) != 0:
+        seaborn_figure = sns.stripplot(x=hp_name, y=metric, data=hyperopt_results_df, size=5)
+    else:
+        seaborn_figure = pt.RainCloud(
+            x=hp_name,
+            y=metric,
+            data=hyperopt_results_df,
+            palette="Set2",
+            bw=0.2,
+            width_viol=0.7,
+            point_size=6,
+            cut=1,
+        )
+
     seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     sns.despine()
@@ -1401,6 +1431,10 @@ def hyperopt_pair_plot(hyperopt_results_df, metric, title, filename):
     params = sorted(list(hyperopt_results_df.keys()))
     params.remove(metric)
     num_param = len(params)
+
+    # Pair plot is empty if there's only 1 parameter, so skip creating a pair plot
+    if num_param == 1:
+        return
 
     sns.set_style("white")
     fig = plt.figure(figsize=(20, 20))

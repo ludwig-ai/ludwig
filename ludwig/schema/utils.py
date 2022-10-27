@@ -1,16 +1,24 @@
+import copy
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Tuple, Type, Union
 
+import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
+from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.torch_utils import activations, initializer_registry
+
+
+def get_marshmallow_field_class_name(field):
+    """Returns a human-readable string of the marshmallow class name."""
+    return field.metadata["marshmallow_field"].__class__.__name__
 
 
 def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallowConfig":  # noqa 0821
@@ -28,19 +36,12 @@ def load_trainer_with_kwargs(
     In particular, it chooses the correct default type for an incoming config (if it doesn't have one already), but
     otherwise passes all other parameters through without change.
     """
-    from ludwig.constants import MODEL_ECD, TYPE
+    from ludwig.constants import MODEL_ECD
     from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 
     trainer_schema = ECDTrainerConfig if model_type == MODEL_ECD else GBMTrainerConfig
 
-    def default_type_for_trainer_schema(cls):
-        """Returns the default values for the "type" field on the given trainer schema."""
-        return cls.Schema().fields[TYPE].dump_default
-
-    # Create a copy of kwargs with the correct default type (which will be overridden if kwargs already contains 'type')
-    kwargs_with_type = {**{TYPE: default_type_for_trainer_schema(trainer_schema)}, **kwargs}
-
-    return load_config_with_kwargs(trainer_schema, kwargs_with_type)
+    return load_config_with_kwargs(trainer_schema, kwargs)
 
 
 def load_config_with_kwargs(
@@ -58,12 +59,53 @@ def load_config_with_kwargs(
     }
 
 
+def convert_submodules(config_dict: dict) -> TDict[str, any]:
+    """Helper function for converting submodules to dictionaries during a config object to dict transformation.
+
+    Args:
+        config_dict: Top level config dictionary with un-converted submodules
+
+    Returns:
+        The fully converted config dictionary
+    """
+    output_dict = copy.deepcopy(config_dict)
+
+    for k, v in output_dict.items():
+        if isinstance(v, dict):
+            convert_submodules(v)
+
+        elif isinstance(v, BaseMarshmallowConfig):
+            output_dict[k] = v.to_dict()
+            convert_submodules(output_dict[k])
+
+        else:
+            continue
+
+    return output_dict
+
+
 def create_cond(if_pred: TDict, then_pred: TDict):
     """Returns a JSONSchema conditional for the given if-then predicates."""
     return {
         "if": {"properties": {k: {"const": v} for k, v in if_pred.items()}},
-        "then": {"properties": {k: v for k, v in then_pred.items()}},
+        "then": {"properties": then_pred},
     }
+
+
+def remove_duplicate_fields(properties: dict) -> None:
+    """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
+    type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
+    both -
+
+    json schema level for validation and schema class level for config object - though we only need the json schema
+    level for validation, so we get rid of the duplicates when converting to json schema.
+
+    Args:
+        properties: Dictionary of properties generated from a Ludwig schema class
+    """
+    for key in [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE]:  # TODO: Remove col/proc_col once train metadata decoupled
+        if key in properties:
+            del properties[key]
 
 
 class BaseMarshmallowConfig:
@@ -82,12 +124,18 @@ class BaseMarshmallowConfig:
         unknown = EXCLUDE
         "Flag that sets marshmallow `load` calls to ignore unknown properties passed as a parameter."
 
+        ordered = True
+        "Flag that maintains the order of defined parameters in the schema"
+
     def to_dict(self):
         """Method for getting a dictionary representation of this dataclass.
 
         Returns: dict for this dataclass
         """
-        return self.__dict__
+        return convert_submodules(self.__dict__)
+
+    def __repr__(self):
+        return yaml.dump(self.to_dict(), sort_keys=False)
 
 
 def assert_is_a_marshmallow_class(cls):
@@ -96,11 +144,11 @@ def assert_is_a_marshmallow_class(cls):
     ), f"Expected marshmallow class, but `{cls}` does not have the necessary `Schema` attribute."
 
 
-def unload_jsonschema_from_marshmallow_class(mclass) -> TDict:
+def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool = True) -> TDict:
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
-    schema = js().dump(mclass.Schema())["definitions"][mclass.__name__]
-    schema["additionalProperties"] = True
+    schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
+    schema["additionalProperties"] = additional_properties
     return schema
 
 
@@ -452,8 +500,15 @@ def FloatRange(
     )
 
 
-def Dict(default: Union[None, TDict] = None, description: str = "", parameter_metadata: ParameterMetadata = None):
+def Dict(
+    default: Union[None, TDict] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
+    allow_none = allow_none or default is None
+
     if default is not None:
         try:
             assert isinstance(default, dict)
@@ -464,7 +519,7 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
         metadata={
             "marshmallow_field": fields.Dict(
                 fields.String(),
-                allow_none=True,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={
@@ -478,9 +533,10 @@ def Dict(default: Union[None, TDict] = None, description: str = "", parameter_me
 
 
 def List(
-    list_type: Union[Type[str], Type[int], Type[float]] = str,
+    list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
     default: Union[None, TList[Any]] = None,
-    description="",
+    allow_none: bool = True,
+    description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
@@ -497,6 +553,8 @@ def List(
         field_type = fields.Integer()
     elif list_type is float:
         field_type = fields.Float()
+    elif list_type is list:
+        field_type = fields.List(fields.Float())
     else:
         raise ValueError(f"Invalid list type: `{list_type}`")
 
@@ -504,7 +562,7 @@ def List(
         metadata={
             "marshmallow_field": fields.List(
                 field_type,
-                allow_none=True,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={
@@ -757,8 +815,31 @@ def OneOfOptionsField(
     allow_none: bool = True,
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`."""
-    field_options_allow_none = any(option.metadata["marshmallow_field"].allow_none for option in field_options)
+    """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
+
+    NOTE: There can be at most one field_option with `allow_none=True`, or else a None value can be attributed to
+    multiple field_options, which this JSON validator does not permit.
+    """
+    if default is None:
+        # If the default is None, then this field allows none.
+        allow_none = True
+
+    fields_that_allow_none = [option for option in field_options if option.metadata["marshmallow_field"].allow_none]
+    if len(fields_that_allow_none) > 1 and allow_none:
+        raise ValueError(
+            f"The governing OneOf has allow_none=True, but there are some field options that themselves "
+            "allow_none=True, which is ambiguous for JSON validation. To maintain allow_none=True for the overall "
+            "field, add allow_none=False to each of the field_options: "
+            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}, and rely on the "
+            "governing OneOf's allow_none=True to set the allow_none policy."
+        )
+
+    if fields_that_allow_none and not allow_none:
+        raise ValueError(
+            "The governing OneOf has allow_none=False, while None is permitted by the following field_options: "
+            f"{[get_marshmallow_field_class_name(field) for field in fields_that_allow_none]}. This is contradictory. "
+            "Please set allow_none=False for each field option to make this consistent."
+        )
 
     class OneOfOptionsCombinatorialField(fields.Field):
         def _serialize(self, value, attr, obj, **kwargs):
@@ -814,12 +895,12 @@ def OneOfOptionsField(
                     tmp_json_schema["title"] = f"{self.name}_{mfield_meta_class_name}_option"
                     oneOf["oneOf"].append(tmp_json_schema)
 
-            # Add null as an option if none of the field options allow none:
-            oneOf["oneOf"] += (
-                [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
-                if allow_none and not field_options_allow_none
-                else []
+            # Add null as an option if we want to allow none but none of the field options allow none.
+            any_field_options_allow_none = any(
+                option.metadata["marshmallow_field"].allow_none for option in field_options
             )
+            if allow_none and not any_field_options_allow_none:
+                oneOf["oneOf"] += [{"type": "null", "title": "null_option", "description": "Disable this parameter."}]
 
             return oneOf
 

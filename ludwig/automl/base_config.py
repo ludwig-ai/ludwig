@@ -13,19 +13,32 @@
 
 import os
 from dataclasses import dataclass
-from typing import List, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend
-from ludwig.constants import COMBINER, EXECUTOR, HYPEROPT, SCHEDULER, SEARCH_ALG, TEXT, TYPE
+from ludwig.constants import (
+    COLUMN,
+    COMBINER,
+    EXECUTOR,
+    HYPEROPT,
+    PREPROCESSING,
+    SCHEDULER,
+    SEARCH_ALG,
+    SPLIT,
+    TEXT,
+    TYPE,
+)
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.system_utils import Resources
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -46,6 +59,7 @@ encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.
 MAX_DISTINCT_VALUES_TO_RETURN = 10
 
 
+@DeveloperAPI
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class DatasetInfo:
@@ -79,11 +93,37 @@ def allocate_experiment_resources(resources: Resources) -> dict:
     return experiment_resources
 
 
+def _get_hyperopt_config(experiment_resources: Dict[str, Any], time_limit_s: Union[int, float], random_seed: int):
+    executor = experiment_resources
+    executor.update({"time_budget_s": time_limit_s})
+    if time_limit_s is not None:
+        executor.update({SCHEDULER: {"max_t": time_limit_s}})
+
+    return {
+        HYPEROPT: {
+            SEARCH_ALG: {"random_state_seed": random_seed},
+            EXECUTOR: executor,
+        },
+    }
+
+
+def _get_stratify_split_config(field_meta: FieldMetadata) -> dict:
+    return {
+        PREPROCESSING: {
+            SPLIT: {
+                TYPE: "stratify",
+                COLUMN: field_meta.name,
+            }
+        }
+    }
+
+
 def _create_default_config(
     dataset_info: DatasetInfo,
     target_name: Union[str, List[str]],
     time_limit_s: Union[int, float],
     random_seed: int,
+    imbalance_threshold: float = 0.9,
     backend: Backend = None,
 ) -> dict:
     """Returns auto_train configs for three available combiner models. Coordinates the following tasks:
@@ -91,6 +131,8 @@ def _create_default_config(
     - extracts fields and generates list of FieldInfo objects
     - gets field metadata (i.e avg. words, total non-null entries)
     - builds input_features and output_features section of config
+    - for imbalanced datasets, a preprocessing section is added to perform stratified sampling if the imbalance ratio
+      is smaller than imbalance_threshold
     - for each combiner, adds default training, hyperopt
     - infers resource constraints and adds gpu and cpu resource allocation per
       trial
@@ -104,31 +146,41 @@ def _create_default_config(
                         there is a call to a random number generator, including
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
+    :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
 
     # Return
     :return: (dict) dictionaries contain auto train config files for all available
     combiner types
     """
+    base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
+
     resources = backend.get_available_resources()
-    experiment_resources = allocate_experiment_resources(resources)
 
     input_and_output_feature_config, features_metadata = get_features_config(
         dataset_info.fields, dataset_info.row_count, resources, target_name
     )
+    base_automl_config.update(input_and_output_feature_config)
+
     # create set of all feature types appearing in the dataset
     feature_types = [[feat[TYPE] for feat in features] for features in input_and_output_feature_config.values()]
     feature_types = set(sum(feature_types, []))
 
     model_configs = {}
 
-    # read in base config and update with experiment resources
-    base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-    base_automl_config[HYPEROPT][EXECUTOR].update(experiment_resources)
-    base_automl_config[HYPEROPT][EXECUTOR]["time_budget_s"] = time_limit_s
-    if time_limit_s is not None:
-        base_automl_config[HYPEROPT][EXECUTOR][SCHEDULER]["max_t"] = time_limit_s
-    base_automl_config[HYPEROPT][SEARCH_ALG]["random_state_seed"] = random_seed
-    base_automl_config.update(input_and_output_feature_config)
+    # update hyperopt config
+    experiment_resources = allocate_experiment_resources(resources)
+    base_automl_config = merge_dict(
+        base_automl_config, _get_hyperopt_config(experiment_resources, time_limit_s, random_seed)
+    )
+
+    # add preprocessing section if single output feature is imbalanced
+    outputs_metadata = [f for f in features_metadata if f.mode == "output"]
+    if len(outputs_metadata) == 1:
+        of_meta = outputs_metadata[0]
+        is_categorical = of_meta.config.type in ["category", "binary"]
+        is_imbalanced = of_meta.imbalance_ratio < imbalance_threshold
+        if is_categorical and is_imbalanced:
+            base_automl_config.update(_get_stratify_split_config(of_meta))
 
     model_configs["base_config"] = base_automl_config
 
@@ -160,10 +212,10 @@ def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param df: (Union[pd.DataFrame, dd.core.DataFrame]) Pandas or Dask dataframe.
 
     # Return
-    :return: (List[FieldInfo]) list of FieldInfo objects
+    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     source = wrap_data_source(df)
     return get_dataset_info_from_source(source)
@@ -186,7 +238,17 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
     return True
 
 
+@DeveloperAPI
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
+    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
+    inference.
+
+    # Inputs
+    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe.
+
+    # Return
+    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
+    """
     row_count = len(source)
     fields = []
     for field in source.columns:
@@ -225,7 +287,7 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
 def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
-    resources: dict,
+    resources: Resources,
     target_name: Union[str, List[str]] = None,
 ) -> dict:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
@@ -274,8 +336,9 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
     return config
 
 
+@DeveloperAPI
 def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: dict, targets: Set[str] = None
+    fields: List[FieldInfo], row_count: int, resources: Resources, targets: Set[str] = None
 ) -> List[FieldMetadata]:
     """Computes metadata for each field in dataset.
 

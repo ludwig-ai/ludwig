@@ -2,12 +2,12 @@ from typing import Any, Dict, Set, Union
 
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
-from ludwig.types import LudwigConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.misc_utils import get_from_registry
 
 
 def get_feature_type_parameter_values_from_section(
-    config: LudwigConfig, features_section: str, feature_type: str, parameter_name: str
+    config: ModelConfig, features_section: str, feature_type: str, parameter_name: str
 ) -> Set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""
@@ -38,6 +38,16 @@ def get_defaults_section_for_feature_type(
         return {}
 
     return config_defaults[feature_type][config_defaults_section]
+
+
+def get_preprocessing_params(config_obj: ModelConfig) -> Dict[str, Any]:
+    """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
+    parameters from config defaults."""
+    preprocessing_params = {}
+    preprocessing_params.update(config_obj.preprocessing.to_dict())
+    for feat_type in input_type_registry.keys():
+        preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
+    return preprocessing_params
 
 
 def merge_config_preprocessing_with_feature_specific_defaults(

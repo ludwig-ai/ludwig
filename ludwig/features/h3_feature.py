@@ -13,18 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Union
+from typing import List
 
 import numpy as np
 import torch
 
-from ludwig.constants import COLUMN, ENCODER, H3, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, H3, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
-from ludwig.schema.features.utils import register_input_feature
 from ludwig.types import TrainingSetMetadata
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -73,10 +71,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         return H3
 
     @staticmethod
-    def preprocessing_defaults():
-        return H3InputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         try:
             return column.astype(int)
@@ -110,10 +104,8 @@ class H3FeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-@register_input_feature(H3)
 class H3InputFeature(H3FeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[H3InputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: H3InputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -143,14 +135,8 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = H3InputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
 
     @staticmethod
     def create_preproc_module(metadata: TrainingSetMetadata) -> torch.nn.Module:

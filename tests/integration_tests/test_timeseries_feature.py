@@ -2,6 +2,8 @@ import pytest
 import torch
 
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from tests.integration_tests.utils import timeseries_feature
 
 BATCH_SIZE = 2
@@ -28,6 +30,7 @@ def test_timeseries_feature(enc_encoder):
     )
 
     # instantiate input feature object
+    timeseries_feature_config, _ = load_config_with_kwargs(TimeseriesInputFeatureConfig, timeseries_feature_config)
     timeseries_input_feature = TimeseriesInputFeature(timeseries_feature_config)
 
     # pass synthetic tensor through input feature

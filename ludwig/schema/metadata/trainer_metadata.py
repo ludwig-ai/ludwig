@@ -24,6 +24,19 @@ TRAINER_METADATA = (
                                      expected_impact=ExpectedImpact.HIGH,
                                      literature_references=None,
                                      internal_only=False),
+     'max_batch_size': ParameterMetadata(ui_display_name='Max Batch Size',
+                                         default_value_reasoning='Not typically required.',
+                                         example_value=[1024],
+                                         related_parameters=['batch_size', 'increase_batch_size_on_plateau'],
+                                         description_implications='Value used to manually limit the batch '
+                                                                  'sizes explored by auto batch size tuning '
+                                                                  'and batch size increasing on plateau.',
+                                         suggested_values=None,
+                                         suggested_values_reasoning=None,
+                                         commonly_used=False,
+                                         expected_impact=ExpectedImpact.MEDIUM,
+                                         literature_references=None,
+                                         internal_only=False),
      'checkpoints_per_epoch': ParameterMetadata(ui_display_name='Checkpoints per epoch',
                                                 default_value_reasoning='Per-epoch behavior, which scales according '
                                                                         'to the '
@@ -71,7 +84,7 @@ TRAINER_METADATA = (
                                                                            'a sub-epoch time scale, or every few '
                                                                            'thousand '
                                                                            'steps.',
-                                                commonly_used=True,
+                                                commonly_used=False,
                                                 expected_impact=ExpectedImpact.HIGH,
                                                 literature_references=None,
                                                 internal_only=False),
@@ -106,7 +119,7 @@ TRAINER_METADATA = (
                                                            'a learning rate schedule can give better training '
                                                            'performance '
                                                            'and make the model converge faster',
-                                commonly_used=True,
+                                commonly_used=False,
                                 expected_impact=ExpectedImpact.MEDIUM,
                                 literature_references=[
                                     'https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model'
@@ -168,7 +181,7 @@ TRAINER_METADATA = (
                                                                  '`decay_steps`. You can think of `decay_steps` as a '
                                                                  'rate '
                                                                  'of decay for the `decay_rate`.',
-                                      commonly_used=True,
+                                      commonly_used=False,
                                       expected_impact=ExpectedImpact.MEDIUM,
                                       literature_references=None,
                                       internal_only=False),
@@ -204,7 +217,7 @@ TRAINER_METADATA = (
                                                                 "is usually a good indicator that there's not much "
                                                                 "more to "
                                                                 'learn.',
-                                     commonly_used=True,
+                                     commonly_used=False,
                                      expected_impact=ExpectedImpact.MEDIUM,
                                      literature_references=None,
                                      internal_only=False),
@@ -296,7 +309,7 @@ TRAINER_METADATA = (
                                                                            'computed, so it will still be easy to spot '
                                                                            'signs of overfitting like when the '
                                                                            'training-validation loss curves diverge.',
-                                                commonly_used=True,
+                                                commonly_used=False,
                                                 expected_impact=ExpectedImpact.HIGH,
                                                 literature_references=None,
                                                 internal_only=False),
@@ -361,18 +374,6 @@ TRAINER_METADATA = (
                                                          expected_impact=ExpectedImpact.MEDIUM,
                                                          literature_references=None,
                                                          internal_only=False),
-     'increase_batch_size_on_plateau_max': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: Cap',
-                                                             default_value_reasoning=None,
-                                                             example_value=None,
-                                                             related_parameters=None,
-                                                             other_information=None,
-                                                             description_implications=None,
-                                                             suggested_values=None,
-                                                             suggested_values_reasoning=None,
-                                                             commonly_used=False,
-                                                             expected_impact=ExpectedImpact.MEDIUM,
-                                                             literature_references=None,
-                                                             internal_only=False),
      'increase_batch_size_on_plateau_patience': ParameterMetadata(ui_display_name='Batch Size Increase On Plateau: '
                                                                                   'Patience',
                                                                   default_value_reasoning=None,
@@ -547,7 +548,7 @@ TRAINER_METADATA = (
                                                                'choice. If you are in need of quick results without '
                                                                'extensive hypertuning, tend towards adaptive gradient '
                                                                'methods like adam or adamw.',
-                                    commonly_used=True,
+                                    commonly_used=False,
                                     expected_impact=ExpectedImpact.HIGH,
                                     literature_references=['https://www.youtube.com/watch?v=mdKjMPmcWjY'],
                                     internal_only=False),
@@ -657,7 +658,7 @@ TRAINER_METADATA = (
                                                                            '” with values '
                                                                            'often on a logarithmic scale between 0 and '
                                                                            '0.1, such as 0.1, 0.001, 0.0001, etc.',
-                                                commonly_used=True,
+                                                commonly_used=False,
                                                 expected_impact=ExpectedImpact.HIGH,
                                                 literature_references=[
                                                     'https://developers.google.com/machine-learning/crash-course'
@@ -688,7 +689,7 @@ TRAINER_METADATA = (
                                                                        'regularization is not.',
                                               suggested_values='L2',
                                               suggested_values_reasoning=None,
-                                              commonly_used=True,
+                                              commonly_used=False,
                                               expected_impact=ExpectedImpact.HIGH,
                                               literature_references=[
                                                   'https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2'
@@ -801,10 +802,22 @@ TRAINER_METADATA = (
                                                                           'a sub-epoch time scale, or every few '
                                                                           'thousand '
                                                                           'steps.',
-                                               commonly_used=True,
+                                               commonly_used=False,
                                                expected_impact=ExpectedImpact.HIGH,
                                                literature_references=None,
                                                internal_only=False),
+     'bucketing_field': ParameterMetadata(ui_display_name='Bucketing Field',
+                                          default_value_reasoning=None,
+                                          example_value=None,
+                                          related_parameters=None,
+                                          other_information=None,
+                                          description_implications=None,
+                                          suggested_values=None,
+                                          suggested_values_reasoning=None,
+                                          commonly_used=False,
+                                          expected_impact=ExpectedImpact.LOW,
+                                          literature_references=None,
+                                          internal_only=False),
      'train_steps': ParameterMetadata(ui_display_name='Train Steps',
                                       default_value_reasoning='This defaults to `epochs`, which is a very high '
                                                               'training '

@@ -17,6 +17,7 @@
 import contextlib
 import copy
 import logging
+import os
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
@@ -24,28 +25,41 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
+import ray.train as rt
 import torch
 import tqdm
 from fsspec.config import conf
-from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
+from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
+from ray.train.horovod import HorovodConfig
+from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN, TYPE
+from ludwig.constants import (
+    CPU_RESOURCES_PER_TRIAL,
+    EXECUTOR,
+    MODEL_ECD,
+    MODEL_GBM,
+    NAME,
+    PREPROCESSING,
+    PROC_COLUMN,
+    TYPE,
+)
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.types import LudwigConfig, LudwigFeature, TrainingSetMetadata
@@ -58,11 +72,6 @@ from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
 
-_ray112 = version.parse("1.12") <= version.parse(ray.__version__) < version.parse("1.13")
-
-import ray.train as rt  # noqa: E402
-from ray.train.trainer import Trainer  # noqa: E402
-
 logger = logging.getLogger(__name__)
 
 try:
@@ -71,10 +80,6 @@ except ImportError as e:
     logger.warn(f"ImportError (ray.py) from horovod.ray import RayExecutor failed with error: \n\t{e}")
     RayExecutor = None
 
-if _ray112:
-    from ludwig.backend._ray112_compat import HorovodConfig
-else:
-    from ray.train.horovod import HorovodConfig
 RAY_DEFAULT_PARALLELISM = 200
 FIFTEEN_MINS_IN_S = 15 * 60
 
@@ -96,24 +101,30 @@ def get_horovod_kwargs(use_gpu=None):
     )
 
 
-def get_trainer_kwargs(use_gpu=None):
+def _num_nodes() -> int:
+    node_resources = [node["Resources"] for node in ray.nodes()]
+    return len(node_resources)
+
+
+def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
+    kwargs = copy.deepcopy(kwargs)
+
     # Our goal is to have a worker per resource used for training.
     # The priority is GPUs, but can fall back to CPUs if there are no
     # GPUs available.
-    if use_gpu is None:
-        use_gpu = int(ray.cluster_resources().get("GPU", 0)) > 0
-
+    use_gpu = kwargs.get("use_gpu", int(ray.cluster_resources().get("GPU", 0)) > 0)
     if use_gpu:
         num_workers = int(ray.cluster_resources().get("GPU", 0))
     else:
-        # TODO: use placement groups or otherwise spread across nodes
-        node_resources = [node["Resources"] for node in ray.nodes()]
-        num_workers = len(node_resources)
+        num_workers = _num_nodes()
 
-    return dict(
-        # TODO travis: replace backend here once ray 1.8 released
-        # backend='horovod',
-        backend=HorovodConfig(),
+    # Explicitly override network interfaces Horovod will attempt to use
+    nics = kwargs.pop("nics", None)
+    if nics is not None:
+        nics = set(nics)
+
+    defaults = dict(
+        backend=HorovodConfig(nics=nics),
         num_workers=num_workers,
         use_gpu=use_gpu,
         resources_per_worker={
@@ -121,6 +132,7 @@ def get_trainer_kwargs(use_gpu=None):
             "GPU": 1 if use_gpu else 0,
         },
     )
+    return {**defaults, **kwargs}
 
 
 def _create_dask_engine(**kwargs):
@@ -226,7 +238,7 @@ def train_fn(
     return train_results
 
 
-@ray.remote
+@ray.remote(max_calls=1)
 def tune_batch_size_fn(
     dataset: RayDataset = None,
     data_loader_kwargs: Dict[str, Any] = None,
@@ -259,7 +271,7 @@ def tune_batch_size_fn(
         hvd.shutdown()
 
 
-@ray.remote
+@ray.remote(max_calls=1)
 def tune_learning_rate_fn(
     dataset: RayDataset,
     config: LudwigConfig,
@@ -292,6 +304,7 @@ def tune_learning_rate_fn(
         hvd.shutdown()
 
 
+@DeveloperAPI
 class TqdmCallback(rt.TrainingCallback):
     """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
 
@@ -332,7 +345,38 @@ class TqdmCallback(rt.TrainingCallback):
                 self.progess_bars[_id].update(update_by)
 
 
-@register_ray_trainer("trainer", MODEL_ECD, default=True)
+@contextlib.contextmanager
+def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
+    if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
+        # User set this explicitly, so honor their selection
+        yield
+        return
+
+    try:
+        if not use_gpu and num_workers > 1:
+            # When doing CPU-only training, default to a SPREAD policy to avoid
+            # packing too many workers on a single machine
+            os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV] = "1"
+        yield
+    finally:
+        if TRAIN_ENABLE_WORKER_SPREAD_ENV in os.environ:
+            del os.environ[TRAIN_ENABLE_WORKER_SPREAD_ENV]
+
+
+@contextlib.contextmanager
+def create_runner(**kwargs):
+    trainer_kwargs = get_trainer_kwargs(**kwargs)
+    with spread_env(**trainer_kwargs):
+        trainer = Trainer(**trainer_kwargs)
+
+    trainer.start()
+    try:
+        yield trainer
+    finally:
+        trainer.shutdown()
+
+
+@register_ray_trainer(MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
@@ -352,15 +396,6 @@ class RayTrainerV2(BaseTrainer):
     @staticmethod
     def get_schema_cls():
         return ECDTrainerConfig
-
-    @contextlib.contextmanager
-    def create_runner(self):
-        trainer = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
-        trainer.start()
-        try:
-            yield trainer
-        finally:
-            trainer.shutdown()
 
     def train(
         self,
@@ -383,7 +418,7 @@ class RayTrainerV2(BaseTrainer):
         if test_set is not None:
             dataset["test"] = test_set.pipeline(shuffle=False, **self.data_loader_kwargs)
 
-        with self.create_runner() as runner:
+        with create_runner(**self.trainer_kwargs) as runner:
             results, self._validation_field, self._validation_metric = runner.run(
                 lambda config: train_fn(**config),
                 config={"executable_kwargs": executable_kwargs, "model_ref": ray.put(self.model), **kwargs},
@@ -466,7 +501,7 @@ class RayTrainerV2(BaseTrainer):
 
     @property
     def resources_per_worker(self) -> Dict[str, Any]:
-        trainer_kwargs = {**get_trainer_kwargs(), **self.trainer_kwargs}
+        trainer_kwargs = get_trainer_kwargs(**self.trainer_kwargs)
         return trainer_kwargs.get("resources_per_worker", {})
 
     @property
@@ -530,7 +565,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
         super().__init__(horovod=horovod, **kwargs)
 
 
-@register_ray_trainer("ray_legacy_trainer", MODEL_ECD)
+@register_ray_trainer("ecd_ray_legacy")
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
@@ -634,7 +669,7 @@ class RayPredictor(BasePredictor):
         self.df_engine = df_engine
 
     def get_trainer_kwargs(self) -> Dict[str, Any]:
-        return {**get_trainer_kwargs(), **self.trainer_kwargs}
+        return get_trainer_kwargs(**self.trainer_kwargs)
 
     def get_resources_per_worker(self) -> Tuple[int, int]:
         trainer_kwargs = self.get_trainer_kwargs()
@@ -698,9 +733,7 @@ class RayPredictor(BasePredictor):
         # communication ops. However, Horovod is not suitable for transforming one big dataset to another. For that
         # we will use Ray Datasets. Therefore, we break this up into two separate steps, and two passes over the
         # dataset. In the future, we can explore ways to combine these into a single step to reduce IO.
-        runner = Trainer(**{**get_trainer_kwargs(), **self.trainer_kwargs})
-        runner.start()
-        try:
+        with create_runner(**self.trainer_kwargs) as runner:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.pipeline(shuffle=False, **self.data_loader_kwargs)}
             predictor_kwargs = {
@@ -718,8 +751,6 @@ class RayPredictor(BasePredictor):
                 },
                 dataset=datasets,
             )[0]
-        finally:
-            runner.shutdown()
 
         predictions = None
         if collect_predictions:
@@ -861,10 +892,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
-            trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
-
-            config: Union[ECDTrainerConfig, GBMTrainerConfig] = kwargs["config"]
-            trainer_cls = get_from_registry(config.type, trainers_for_model)
+            trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
 
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
             all_kwargs = {
@@ -988,6 +1016,35 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def get_available_resources(self) -> Resources:
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
+
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+        cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
+        num_cpus_available = self.get_available_resources().cpus
+
+        # No actors will compete for ray datasets tasks dataset tasks are cpu bound
+        if cpus_per_trial == 0:
+            return None
+
+        if num_cpus_available < 2:
+            logger.warning(
+                "At least 2 CPUs are required for hyperopt when using a RayBackend, but only found "
+                f"{num_cpus_available}. If you are not using an auto-scaling Ray cluster, your hyperopt "
+                "trials may hang."
+            )
+
+        # Ray requires at least 1 free CPU to ensure trials don't stall
+        max_possible_trials = int(num_cpus_available // cpus_per_trial) - 1
+
+        # Users may be using an autoscaling cluster, so return None
+        if max_possible_trials < 1:
+            logger.warning(
+                f"Hyperopt trials will request {cpus_per_trial} CPUs in addition to CPUs needed for Ray Datasets, "
+                f" but only {num_cpus_available} CPUs are currently available. If you are not using an auto-scaling "
+                " Ray cluster, your hyperopt trials may hang."
+            )
+            return None
+
+        return max_possible_trials
 
 
 def initialize_ray():
