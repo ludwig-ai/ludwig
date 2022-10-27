@@ -337,11 +337,7 @@ class RayAirRunner:
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
         # CPU and memory contention.
         strategy = "PACK" if trainer_kwargs.get("use_gpu") else "SPREAD"
-        # Set _max_cpu_fraction_per_node to 80% to prevent contention with Ray dataset tasks
-        # when passing in Datasets into Trainers.
-        self.scaling_config = ScalingConfig(
-            placement_strategy=strategy, _max_cpu_fraction_per_node=0.8, **trainer_kwargs
-        )
+        self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
 
     def run(
         self,
