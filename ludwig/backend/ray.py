@@ -152,6 +152,7 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
+    train_results = {}
     try:
         initialize_pytorch(horovod=hvd)
 
@@ -336,7 +337,11 @@ class RayAirRunner:
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
         # CPU and memory contention.
         strategy = "PACK" if trainer_kwargs.get("use_gpu") else "SPREAD"
-        self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
+        # Set _max_cpu_fraction_per_node to 80% to prevent contention with Ray dataset tasks
+        # when passing in Datasets into Trainers.
+        self.scaling_config = ScalingConfig(
+            placement_strategy=strategy, _max_cpu_fraction_per_node=0.8, **trainer_kwargs
+        )
 
     def run(
         self,
@@ -414,6 +419,9 @@ class RayTrainerV2(BaseTrainer):
                 callbacks=[TqdmCallback()],
                 dataset=dataset,
             )
+
+        print(f"Trainer Results: {trainer_results}")
+        logger.info(f"Trainer Results: {trainer_results}")
 
         results, self._validation_field, self._validation_metric = trainer_results.metrics["train_results"]
 
