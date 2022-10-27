@@ -19,13 +19,13 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         description="What strategy to follow when there's a missing value in a number column",
     )
 
-    fill_value: float = schema_utils.NonNegativeFloat(
+    fill_value: float = schema_utils.FloatRange(
         default=0.0,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
     )
 
-    computed_fill_value: float = schema_utils.NonNegativeFloat(
+    computed_fill_value: float = schema_utils.FloatRange(
         default=0.0,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
