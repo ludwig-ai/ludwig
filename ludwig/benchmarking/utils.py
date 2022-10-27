@@ -81,10 +81,10 @@ def export_artifacts(experiment: Dict[str, str], experiment_output_directory: st
             os.path.join(export_full_path, CONFIG_YAML),
         )
         logger.info(f"Uploaded experiment artifact to\n\t{export_full_path}")
-    except Exception:
+    except Exception as e:
         logger.exception(
             f"Failed to upload experiment artifacts for experiment *{experiment['experiment_name']}* on "
-            f"dataset {experiment['dataset_name']}"
+            f"dataset {experiment['dataset_name']}: {e}"
         )
 
 
