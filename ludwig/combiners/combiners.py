@@ -16,7 +16,7 @@
 import logging
 from abc import ABC
 from functools import lru_cache
-from typing import Any, Dict
+from typing import Dict
 
 import torch
 from torch.nn import Linear, ModuleList
@@ -38,25 +38,12 @@ from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
 from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
-from ludwig.schema.combiners.utils import combiner_registry, get_combiner_jsonschema, register_combiner
+from ludwig.schema.combiners.utils import register_combiner
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 
 logger = logging.getLogger(__name__)
-
-
-def get_combiner_class(combiner_type: str):
-    """Returns the corresponding combiner class from `ludwig.combiners.combiners.combiner_registry`.
-
-    :param combiner_type: identifier that should correspond to a registered combiner
-    :type combiner_type: str
-    """
-    return get_from_registry(combiner_type, combiner_registry)
-
-
-def get_combiner_schema() -> Dict[str, Any]:
-    return get_combiner_jsonschema()
 
 
 # super class to house common properties
