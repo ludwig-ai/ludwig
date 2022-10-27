@@ -837,7 +837,7 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
 
-def _map_to_lgb_ray_params(params: Dict[str, Any]) -> "RayParams":
+def _map_to_lgb_ray_params(params: Dict[str, Any]) -> "RayParams":  # noqa
     from lightgbm_ray import RayParams
 
     ray_params = {}
