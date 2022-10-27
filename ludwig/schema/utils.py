@@ -871,7 +871,13 @@ def OneOfOptionsField(
 
         def _jsonschema_type_mapping(self):
             """Constructs a oneOf schema by iteratively adding the schemas of `field_options` to a list."""
-            oneOf = {"oneOf": [], "description": description, "default": default, "title": self.name}
+            oneOf = {
+                "oneOf": [],
+                "description": description,
+                "default": default,
+                "title": self.name,
+                "parameter_metadata": parameter_metadata
+            }
 
             for idx, option in enumerate(field_options):
                 mfield_meta = option.metadata["marshmallow_field"]
