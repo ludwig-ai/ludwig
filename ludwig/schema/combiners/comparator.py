@@ -11,6 +11,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
+    type: str = schema_utils.StringOptions(
+        ["comparator"],
+        default="comparator",
+        allow_none=False,
+        description="Type of combiner.",
+    )
+
     entity_1: List[str] = schema_utils.List(
         default=None,
         description="The list of input features composing the first entity to compare.",

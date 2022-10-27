@@ -104,7 +104,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=True,
+                internal_only=False,
             ),
             "num_filter_bands": ParameterMetadata(
                 ui_display_name="Type",
@@ -225,7 +225,7 @@ FEATURE_METADATA = {
                 commonly_used=False,
                 expected_impact=ExpectedImpact.UNKNOWN,
                 literature_references=None,
-                internal_only=True,
+                internal_only=False,
             ),
         }
     },
