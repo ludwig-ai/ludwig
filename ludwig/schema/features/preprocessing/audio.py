@@ -1,3 +1,5 @@
+import copy
+
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import AUDIO, BFILL, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
@@ -104,5 +106,5 @@ class AudioPreprocessingConfig(BasePreprocessingConfig):
         default=80,
         description="Defines the number of filters used in the filterbank. Only needed if audio_feature_type "
         "is 'fbank'",
-        parameter_metadata=FEATURE_METADATA[AUDIO][PREPROCESSING]["num_filter_bands"],
+        parameter_metadata=copy.deepcopy(FEATURE_METADATA[AUDIO][PREPROCESSING]["num_filter_bands"]),
     )

@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -148,6 +149,11 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
+    # Check top-level ParameterMetadata:
+    for prop in schema["properties"]:
+        prop_schema = schema["properties"][prop]
+        if "parameter_metadata" in prop_schema:
+            prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
     schema["additionalProperties"] = additional_properties
     return schema
 
@@ -331,6 +337,10 @@ def PositiveInteger(
     val = validate.Range(min=1)
     allow_none = allow_none or default is None
 
+    if parameter_metadata is None:
+        parameter_metadata = ParameterMetadata()
+    parameter_metadata = ParameterMetadata(**dataclasses.asdict(parameter_metadata))
+
     if default is not None:
         try:
             assert isinstance(default, int)
@@ -351,7 +361,7 @@ def PositiveInteger(
                 },
             )
         },
-        default=default,
+        default_factory=lambda: default,
     )
 
 

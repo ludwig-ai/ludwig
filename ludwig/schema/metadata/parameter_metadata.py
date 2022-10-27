@@ -1,3 +1,4 @@
+import copy
 import json
 from dataclasses import dataclass
 from enum import Enum
@@ -72,7 +73,8 @@ def convert_metadata_to_json(pm: ParameterMetadata):
     NOTE: Without the json.loads call, to_json() returns
     a string repr that is improperly parsed.
     """
-    return json.loads(pm.to_json())
+    print("convert_pm")
+    return json.loads(copy.deepcopy(pm).to_json())
 
 
 # This is a quick way to flag schema parameters as internal only via the `parameter_metadata` argument
