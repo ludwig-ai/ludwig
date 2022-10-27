@@ -139,38 +139,11 @@ class RayDatasetShard(Dataset):
         dataset_shard: _Dataset,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
-        data_loader_kwargs: Dict[str, Any],
     ):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.epoch_iter = self.pipeline(**data_loader_kwargs)
-
-    def pipeline(
-        self,
-        shuffle: bool = True,
-        fully_executed: bool = True,
-        window_size_bytes: Optional[int] = None,
-        shuffle_seed: int = default_random_seed,
-    ) -> DatasetPipeline:
-        """
-        Args:
-            shuffle: If true, the entire dataset is shuffled in memory before batching.
-            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
-            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
-                    for the dataset.
-        """
-        if fully_executed:
-            # set instance state so calls to __len__ will also use the fully_executed version
-            self.dataset_shard = self.dataset_shard.fully_executed()
-
-        if window_size_bytes is None:
-            self.dataset_shard = self.dataset_shard.repeat()
-        else:
-            self.dataset_shard = self.dataset_shard.window(bytes_per_window=window_size_bytes).repeat()
-        if shuffle:
-            self.dataset_shard = self.dataset_shard.random_shuffle_each_window(seed=shuffle_seed)
-        return self.dataset_shard.iter_epochs()
+        self.epoch_iter = dataset_shard.iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
