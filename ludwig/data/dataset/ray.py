@@ -18,14 +18,13 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Optional, Union
+from typing import Any, Dict, Iterator, Union
 
 import numpy as np
 import pandas as pd
 import ray
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
-from ray.data import Dataset as _Dataset
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
@@ -35,7 +34,6 @@ from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
-from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
@@ -136,7 +134,7 @@ class RayDatasetManager(DatasetManager):
 class RayDatasetShard(Dataset):
     def __init__(
         self,
-        dataset_shard: _Dataset,
+        dataset_shard: DatasetPipeline,
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
     ):
