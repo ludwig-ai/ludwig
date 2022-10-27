@@ -62,7 +62,13 @@ from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
-from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
+from ludwig.typing import (
+    FeatureConfigDict,
+    HyperoptConfigDict,
+    ModelConfigDict,
+    TrainerConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -106,7 +112,7 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
-def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
+def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -1017,7 +1023,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
 
-    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
         num_cpus_available = self.get_available_resources().cpus
 

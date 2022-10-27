@@ -60,7 +60,14 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
+from ludwig.typing import (
+    FeatureConfigDict,
+    HyperoptConfigDict,
+    ModelConfigDict,
+    PreprocessingConfigDict,
+    TrainerConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
@@ -90,7 +97,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
-def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
+def upgrade_config_dict_to_latest_version(config: ModelConfigDict) -> ModelConfigDict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
 
@@ -178,7 +185,7 @@ def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]
 
 
 @register_config_transformation("0.6", ["output_features"])
-def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
+def update_class_weights_in_features(feature: FeatureConfigDict) -> FeatureConfigDict:
     if LOSS in feature:
         class_weights = feature[LOSS].get(CLASS_WEIGHTS, None)
         if not isinstance(class_weights, list):
@@ -189,7 +196,7 @@ def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.4")
-def _update_level_metadata(config: ModelConfigDict) -> Dict[str, Any]:
+def _update_level_metadata(config: ModelConfigDict) -> ModelConfigDict:
     # Replace parameters represented as keys with params represented as values.
     # Precedence is defined by first in the dictionary order, so if multiple
     # provided keys map to the same value, the one that appears earlier in this
@@ -238,7 +245,7 @@ def _update_level_metadata(config: ModelConfigDict) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.5")
-def rename_training_to_trainer(config: ModelConfigDict) -> Dict[str, Any]:
+def rename_training_to_trainer(config: ModelConfigDict) -> ModelConfigDict:
     if TRAINING in config:
         warnings.warn('Config section "training" renamed to "trainer" and will be removed in v0.6', DeprecationWarning)
         config[TRAINER] = config[TRAINING]
@@ -247,7 +254,7 @@ def rename_training_to_trainer(config: ModelConfigDict) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.5", ["input_features", "output_features"])
-def _upgrade_use_bias_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_use_bias_in_features(feature: FeatureConfigDict) -> FeatureConfigDict:
     def upgrade_use_bias(config):
         if BIAS in config:
             warnings.warn('Parameter "bias" renamed to "use_bias" and will be removed in v0.6', DeprecationWarning)
@@ -271,7 +278,7 @@ def _upgrade_use_bias_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.5", ["input_features", "output_features"])
-def _upgrade_feature(feature: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_feature(feature: FeatureConfigDict) -> FeatureConfigDict:
     """Upgrades feature config (in-place)"""
     if feature.get(TYPE) == "numerical":
         warnings.warn('Feature type "numerical" renamed to "number" and will be removed in v0.6', DeprecationWarning)
@@ -287,7 +294,7 @@ def _upgrade_feature(feature: Dict[str, Any]) -> Dict[str, Any]:
     return feature
 
 
-def upgrade_audio_preprocessing(preproc_dict: Dict[str, Any]) -> Dict[str, Any]:
+def upgrade_audio_preprocessing(preproc_dict: PreprocessingConfigDict) -> PreprocessingConfigDict:
     if "audio_feature" in preproc_dict:
         for k, v in preproc_dict["audio_feature"].items():
             preproc_dict[k] = v
@@ -296,16 +303,16 @@ def upgrade_audio_preprocessing(preproc_dict: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.6", ["input_features"])
-def _upgrade_encoder_params(feature: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_encoder_params(feature: FeatureConfigDict) -> FeatureConfigDict:
     return _upgrade_encoder_decoder_params(feature, True)
 
 
 @register_config_transformation("0.6", ["output_features"])
-def _upgrade_decoder_params(feature: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_decoder_params(feature: FeatureConfigDict) -> FeatureConfigDict:
     return _upgrade_encoder_decoder_params(feature, False)
 
 
-def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool) -> Dict[str, Any]:
+def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: bool) -> FeatureConfigDict:
     """
     This function nests un-nested encoder/decoder parameters to conform with the new config structure for 0.6
     Args:
@@ -396,7 +403,7 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
 
 
 @register_config_transformation("0.5", ["hyperopt"])
-def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_hyperopt(hyperopt: HyperoptConfigDict) -> HyperoptConfigDict:
     """Upgrades hyperopt config (in-place)"""
     # check for use of legacy "training" reference, if any found convert to "trainer"
     if PARAMETERS in hyperopt:
@@ -469,7 +476,7 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.5", ["trainer"])
-def _upgrade_trainer(trainer: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_trainer(trainer: TrainerConfigDict) -> TrainerConfigDict:
     """Upgrades trainer config (in-place)"""
     eval_batch_size = trainer.get(EVAL_BATCH_SIZE)
     if eval_batch_size == 0:
@@ -536,7 +543,7 @@ def _upgrade_preprocessing_defaults(config: ModelConfigDict) -> ModelConfigDict:
 
 
 @register_config_transformation("0.5", "preprocessing")
-def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_preprocessing_split(preprocessing: PreprocessingConfigDict) -> PreprocessingConfigDict:
     """Upgrade split related parameters in preprocessing."""
     split_params = {}
 
@@ -615,7 +622,7 @@ def upgrade_missing_value_strategy(config: FeatureConfigDict) -> FeatureConfigDi
 
 
 @register_config_transformation("0.6", ["trainer"])
-def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
+def _upgrade_max_batch_size(trainer: TrainerConfigDict) -> TrainerConfigDict:
     if "increase_batch_size_on_plateau_max" in trainer:
         warnings.warn(
             'Config param "increase_batch_size_on_plateau_max" renamed to "max_batch_size" and will be '
@@ -635,7 +642,7 @@ def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @register_config_transformation("0.6", ["trainer"])
-def remove_trainer_type(trainer: Dict[str, Any]) -> Dict[str, Any]:
+def remove_trainer_type(trainer: TrainerConfigDict) -> TrainerConfigDict:
     if TYPE in trainer:
         warnings.warn(
             "Config param `type` has been removed from the trainer. The trainer type is determined by the top level "

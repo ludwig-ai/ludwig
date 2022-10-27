@@ -24,7 +24,7 @@ from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class BagFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
@@ -57,7 +57,7 @@ class BagFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         def to_vector(set_str):
             bag_vector = np.zeros((len(metadata["str2idx"]),), dtype=np.float32)
             col_counter = Counter(set_str_to_idx(set_str, metadata["str2idx"], preprocessing_parameters["tokenizer"]))
@@ -69,7 +69,13 @@ class BagFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = BagFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]],

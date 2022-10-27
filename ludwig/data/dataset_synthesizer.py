@@ -52,7 +52,7 @@ from ludwig.constants import (
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.types import ModelConfigDict
+from ludwig.typing import ModelConfigDict
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc_utils import get_from_registry

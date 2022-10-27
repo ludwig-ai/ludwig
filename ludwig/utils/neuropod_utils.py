@@ -8,7 +8,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import NAME
-from ludwig.types import ModelConfigDict
+from ludwig.typing import ModelConfigDict
 from ludwig.utils.fs_utils import open_file
 
 logger = logging.getLogger(__name__)

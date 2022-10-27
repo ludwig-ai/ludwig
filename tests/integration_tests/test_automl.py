@@ -1,7 +1,7 @@
 import contextlib
 import os
 import tempfile
-from typing import Any, Dict, List, Set
+from typing import List, Set
 from unittest import mock
 
 import numpy as np
@@ -11,6 +11,7 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
+from ludwig.typing import FeatureConfigDict
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -58,7 +59,7 @@ def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
     df = dd.read_csv(dataset_csv)
     config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=tune_for_memory, backend="ray")
 
-    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+    def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)

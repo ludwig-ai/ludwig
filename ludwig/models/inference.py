@@ -12,7 +12,7 @@ from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
-from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.typing import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.inference_utils import get_filename_from_stage, to_inference_module_input_from_dataframe
@@ -36,8 +36,8 @@ class InferenceModule(nn.Module):
         preprocessor: torch.jit.ScriptModule,
         predictor: torch.jit.ScriptModule,
         postprocessor: torch.jit.ScriptModule,
-        config: Optional[Dict[str, Any]] = None,
-        training_set_metadata: Optional[Dict[str, Any]] = None,
+        config: Optional[ModelConfigDict] = None,
+        training_set_metadata: Optional[TrainingSetMetadataDict] = None,
     ):
         super().__init__()
         self.preprocessor = preprocessor

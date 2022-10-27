@@ -73,6 +73,7 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
+from ludwig.typing import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils import metric_utils
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
@@ -155,7 +156,7 @@ class PreprocessedDataset:
     training_set: Dataset
     validation_set: Dataset
     test_set: Dataset
-    training_set_metadata: Dict[str, Any]
+    training_set_metadata: TrainingSetMetadataDict
 
     # TODO(daniel): deprecate multiple return value unpacking and indexed access
     def __iter__(self):
@@ -1656,12 +1657,12 @@ class LudwigModel:
             set_disable_progressbar(False)
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> ModelConfigDict:
         """Returns the fully-rendered config of this model including default values."""
         return self.config_obj.to_dict()
 
     @config.setter
-    def config(self, user_config: Dict[str, Any]):
+    def config(self, user_config: ModelConfigDict):
         """Updates the config of this model.
 
         WARNING: this can have unexpected results on an already trained model.

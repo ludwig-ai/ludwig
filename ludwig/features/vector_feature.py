@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -35,7 +35,12 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -68,7 +73,7 @@ class _VectorPostprocessing(torch.nn.Module):
         self.predictions_key = PREDICTIONS
         self.logits_key = LOGITS
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         logits = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.logits_key)
 
@@ -92,12 +97,18 @@ class VectorFeatureMixin:
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         """Expects all the vectors to be of the same size.
 

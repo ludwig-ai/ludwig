@@ -19,12 +19,13 @@ import os.path
 import pathlib
 import shutil
 import subprocess
-from typing import Any, Dict, List, Set
+from typing import List, Set
 
 import pytest
 import yaml
 
 from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
+from ludwig.typing import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 
@@ -404,7 +405,7 @@ def test_init_config(tmpdir):
 
     config = load_yaml(output_config_path)
 
-    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
+    def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
         return {feature[NAME] for feature in features}
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)

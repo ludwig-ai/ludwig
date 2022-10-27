@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import time
-from typing import Any, Dict, Union
+from typing import Union
 
 import psutil
 import torch
@@ -26,6 +26,7 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
+from ludwig.typing import HyperoptConfigDict
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
@@ -85,6 +86,6 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
 
         return Resources(cpus=cpus, gpus=gpus)
 
-    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         # Return None since there is no Ray component
         return None

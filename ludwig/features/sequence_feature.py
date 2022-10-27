@@ -16,7 +16,7 @@
 
 import logging
 from functools import partial
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -41,7 +41,12 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import (
@@ -149,7 +154,7 @@ class _SequencePostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.probability_key = PROBABILITY
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         pred_predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         pred_probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
@@ -197,7 +202,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
@@ -218,7 +223,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         sequence_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata["str2idx"],
@@ -235,7 +240,13 @@ class SequenceFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         sequence_data = SequenceInputFeature.feature_data(
             input_df[feature_config[COLUMN]],

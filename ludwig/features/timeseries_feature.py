@@ -23,7 +23,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -110,7 +110,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
         column = column.astype(str)
         tokenizer = get_tokenizer_from_registry(preprocessing_parameters["tokenizer"])()
         max_length = 0
@@ -144,7 +144,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return backend.df_engine.map_objects(ts_vectors, pad)
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         timeseries_data = TimeseriesFeatureMixin.build_matrix(
             column,
             preprocessing_parameters["tokenizer"],
@@ -157,7 +157,13 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = TimeseriesFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]].astype(str),

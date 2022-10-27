@@ -31,7 +31,7 @@ from ludwig.constants import (
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
-from ludwig.types import ModelConfigDict
+from ludwig.typing import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc_utils import (
     get_class_attributes,
@@ -119,7 +119,7 @@ def feature_list_to_dict(config: ModelConfigDict) -> ModelConfigDict:
     return config
 
 
-def feature_dict_to_list(config: ModelConfigDict) -> Dict[str, Any]:
+def feature_dict_to_list(config: ModelConfigDict) -> ModelConfigDict:
     # This works because Python dicts are order-preserving, so we do not need to
     # do anything special to map from a key in the dict to an index in a list
     input_features_list = []
@@ -173,7 +173,9 @@ def substitute_parameters(
     return config
 
 
-def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str, Any], num_samples: int = 1) -> None:
+def log_warning_if_all_grid_type_parameters(
+    hyperopt_parameter_config: HyperoptConfigDict, num_samples: int = 1
+) -> None:
     """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
     duplicate trials being created."""
     if num_samples == 1:
@@ -195,7 +197,7 @@ def log_warning_if_all_grid_type_parameters(hyperopt_parameter_config: Dict[str,
     )
 
 
-def update_hyperopt_params_with_defaults(hyperopt_params: Dict[str, Any]) -> None:
+def update_hyperopt_params_with_defaults(hyperopt_params: HyperoptConfigDict) -> None:
     """Updates user's Ludwig config with default hyperopt parameters."""
     from ludwig.hyperopt.execution import executor_registry
 

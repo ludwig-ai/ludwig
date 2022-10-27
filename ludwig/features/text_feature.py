@@ -44,7 +44,7 @@ from ludwig.features.sequence_feature import (
     SequenceOutputFeature,
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
@@ -62,7 +62,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters, backend):
+    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
         (
             idx2str,
             str2idx,
@@ -95,7 +95,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         )
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
         tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
         (
             idx2str,
@@ -122,7 +122,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         # TODO(1891): Remove backward compatibility hack once all models have been retrained with Ludwig after
         # https://github.com/ludwig-ai/ludwig/pull/1859.
         prefix = ""
@@ -160,7 +160,13 @@ class TextFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = TextFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]],

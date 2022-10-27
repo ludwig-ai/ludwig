@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import pandas as pd
 import torch
@@ -23,7 +23,7 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
-from ludwig.types import ModelConfigDict
+from ludwig.typing import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.image_utils import read_image_from_path
@@ -62,7 +62,7 @@ def to_inference_module_input_from_dataframe(
 
 
 def to_inference_model_input_from_series(
-    s: pd.Series, feature_type: str, load_paths: bool = False, feature_config: Optional[Dict[str, Any]] = None
+    s: pd.Series, feature_type: str, load_paths: bool = False, feature_config: Optional[FeatureConfigDict] = None
 ) -> TorchscriptPreprocessingInput:
     """Converts a pandas Series to be compatible with a torchscripted InferenceModule forward pass."""
     if feature_type == IMAGE:

@@ -23,7 +23,12 @@ from ludwig.constants import COLUMN, HIDDEN, JACCARD, LOGITS, LOSS, NAME, PREDIC
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
@@ -96,7 +101,7 @@ class _SetPostprocessing(torch.nn.Module):
         self.probabilities_key = PROBABILITIES
         self.unk = UNKNOWN_SYMBOL
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
@@ -145,7 +150,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
@@ -163,7 +168,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         def to_dense(x):
             feature_vector = set_str_to_idx(x, metadata["str2idx"], preprocessing_parameters["tokenizer"])
 
@@ -175,7 +180,13 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = SetFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]],

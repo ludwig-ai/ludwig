@@ -15,7 +15,7 @@
 # ==============================================================================
 import copy
 import logging
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -39,7 +39,12 @@ from ludwig.constants import (
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
-from ludwig.types import TrainingSetMetadataDict
+from ludwig.typing import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.types import TorchscriptPreprocessingInput
@@ -200,7 +205,7 @@ class _NumberPostprocessing(torch.nn.Module):
         self.numeric_transformer = get_transformer(metadata, metadata["preprocessing"])
         self.predictions_key = PREDICTIONS
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
 
         return {self.predictions_key: self.numeric_transformer.inverse_transform_inference(predictions)}
@@ -232,7 +237,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return backend.df_engine.df_lib.to_numeric(column, errors="coerce").astype(np.float32)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get("normalization", None),
             numeric_transformation_registry,
@@ -246,7 +251,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         input_df,
         proc_df,
         metadata,
-        preprocessing_parameters,
+        preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
     ):

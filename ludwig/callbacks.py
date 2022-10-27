@@ -18,7 +18,7 @@ from abc import ABC
 from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import PublicAPI
-from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.typing import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
 
 
 @PublicAPI
@@ -96,14 +96,14 @@ class Callback(ABC):
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
         pass
 
-    def on_hyperopt_trial_start(self, parameters: Dict[str, Any]):
+    def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict):
         """Called before the start of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
         """
         pass
 
-    def on_hyperopt_trial_end(self, parameters: Dict[str, Any]):
+    def on_hyperopt_trial_end(self, parameters: HyperoptConfigDict):
         """Called after the end of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
