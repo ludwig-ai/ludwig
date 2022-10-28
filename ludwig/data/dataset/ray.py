@@ -64,7 +64,13 @@ def read_remote_parquet(path: str):
 
 
 class RayDataset(Dataset):
-    """Wrapper around ray.data.Dataset."""
+    """Wrapper around ray.data.Dataset.
+
+    Attributes:
+        df_engine:
+
+        window_size_bytes: Automatically determined shuffle window size for large datasets.
+    """
 
     def __init__(
         self,
@@ -82,6 +88,8 @@ class RayDataset(Dataset):
         self._processed_data_fp = df if isinstance(df, str) else None
         self.window_size_bytes = None
 
+        # Enable windowed shuffle if the available memory is less than
+        # 5x larger than the dataset
         ds_memory_size = self.in_memory_size_bytes
         cluster_memory_size = ray.cluster_resources()["memory"]
         if cluster_memory_size < 5.0 * ds_memory_size:
@@ -106,8 +114,10 @@ class RayDataset(Dataset):
             shuffle: If true, the entire dataset is shuffled in memory before batching.
             fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
             window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
-                    for the dataset.
+                    for the dataset. If None and the dataset is large, set to the window size determined at init.
         """
+        # If the user does not supply a window size, use the
+        # size determined at initialization.
         if window_size_bytes is None:
             window_size_bytes = self.window_size_bytes
 
