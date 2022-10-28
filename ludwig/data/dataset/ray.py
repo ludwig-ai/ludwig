@@ -80,6 +80,12 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
+        self.window_size_bytes = None
+
+        ds_memory_size = self.in_memory_size_bytes
+        cluster_memory_size = ray.cluster_resources()["memory"]
+        if cluster_memory_size < 5.0 * ds_memory_size:
+            self.window_size_bytes = cluster_memory_size // 5
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -102,6 +108,9 @@ class RayDataset(Dataset):
             window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
                     for the dataset.
         """
+        if window_size_bytes is None:
+            window_size_bytes = self.window_size_bytes
+
         if fully_executed:
             if _ray113:
                 # Workaround for: https://github.com/ray-project/ray/issues/25643
