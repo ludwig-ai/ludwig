@@ -60,7 +60,7 @@ def get_column_profile_summaries_from_proto(
         whylogs_metrics_proto = ColumnMessage()
         # Extra copy+deserialization to avoid TypeError.
         whylogs_metrics_proto.ParseFromString(feature_profile.whylogs_metrics.SerializeToString())
-        column_profile_view: ColumnProfileView = ColumnProfileView.from_protobuf(whylogs_metrics_proto)
+        column_profile_view = ColumnProfileView.from_protobuf(whylogs_metrics_proto)
         column_profile_views[feature_name] = column_profile_view.to_summary_dict()
     return column_profile_views
 
