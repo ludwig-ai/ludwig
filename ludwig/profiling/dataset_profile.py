@@ -21,6 +21,11 @@ def get_dataset_profile_view(dataset: Union[str, DataFrame], cap=PROFILING_CAP) 
     size_bytes = sum(dataframe.memory_usage(deep=True))
 
     # Manual cap, also takes care of converting dask to pandas.
+    # sample() would be ideal. However, there are some limitations that make this difficult to use.
+    # 1. sample(n) for pandas dataframes requires that n is strictly less than the total number of rows unless we set
+    #     replace=False, which seems unideal.
+    # 2. sample() for dask dataframes is ratio-based. It may be difficult to choose a proper ratio without checking
+    #     the total number of rows, which may be an expensive call.
     if cap:
         dataframe = dataframe.head(cap)
 
