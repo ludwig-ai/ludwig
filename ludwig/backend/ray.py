@@ -108,7 +108,7 @@ def initialize_horovod():
     # distributed training, where Horovod is an optional dependency.
     from ludwig.utils.horovod_utils import initialize_horovod as _initialize_horovod
 
-    _initialize_horovod()
+    return _initialize_horovod()
 
 
 def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
