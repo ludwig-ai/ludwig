@@ -41,4 +41,4 @@ openpyxl        # excel
 pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
 lxml            # html
 
-whylogs
+whylogs>=1.1.9

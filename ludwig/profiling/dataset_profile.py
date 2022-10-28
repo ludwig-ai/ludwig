@@ -15,13 +15,14 @@ from ludwig.utils.types import DataFrame
 PROFILING_CAP = 100000
 
 
-def get_dataset_profile_view(dataset: Union[str, DataFrame]) -> Tuple[DatasetProfileView, int]:
-    """Returns whylogs dataset profile view."""
+def get_dataset_profile_view(dataset: Union[str, DataFrame], cap=PROFILING_CAP) -> Tuple[DatasetProfileView, int]:
+    """Returns a tuple of the whylogs dataset profile view and the size of the dataset in bytes."""
     dataframe = load_dataset(dataset)
     size_bytes = sum(dataframe.memory_usage(deep=True))
 
     # Manual cap, also takes care of converting dask to pandas.
-    dataframe = dataframe.head(PROFILING_CAP)
+    if cap:
+        dataframe = dataframe.head(cap)
 
     results = why.log(pandas=dataframe)
     profile = results.profile()
