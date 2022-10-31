@@ -67,9 +67,8 @@ class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset.
 
     Attributes:
-        df_engine:
-
-        window_size_bytes: Automatically determined shuffle window size for large datasets.
+        auto_window: If True and the dataset is larger than available memory,
+            automatically set window size to `<available memory> // 5`.
     """
 
     def __init__(
@@ -78,6 +77,7 @@ class RayDataset(Dataset):
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
         backend: Backend,
+        auto_window: bool = True,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -86,14 +86,7 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
-        self.window_size_bytes = None
-
-        # Enable windowed shuffle if the available memory is less than
-        # 5x larger than the dataset
-        ds_memory_size = self.in_memory_size_bytes
-        cluster_memory_size = ray.cluster_resources()["memory"]
-        if cluster_memory_size < 5.0 * ds_memory_size:
-            self.window_size_bytes = cluster_memory_size // 5
+        self.auto_window = auto_window
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -116,10 +109,13 @@ class RayDataset(Dataset):
             window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
                     for the dataset. If None and the dataset is large, set to the window size determined at init.
         """
-        # If the user does not supply a window size, use the
-        # size determined at initialization.
-        if window_size_bytes is None:
-            window_size_bytes = self.window_size_bytes
+        # If the user does not supply a window size and the dataset is large,
+        # set the window size to `<available memory> // 5`.
+        if self.auto_window and not window_size_bytes:
+            ds_memory_size = self.in_memory_size_bytes
+            cluster_memory_size = ray.cluster_resources()["memory"]
+            if cluster_memory_size < 5.0 * ds_memory_size:
+                window_size_bytes = cluster_memory_size // 5
 
         if fully_executed:
             if _ray113:
