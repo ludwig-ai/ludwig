@@ -296,7 +296,12 @@ class RayAirRunner:
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
         # CPU and memory contention and avoid too many workers on a single machine.
         strategy = "PACK" if trainer_kwargs.get("use_gpu", False) else "SPREAD"
-        self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
+        self.scaling_config = ScalingConfig(
+            placement_strategy=strategy,
+            # Override the default of 1 to prevent unnecessary CPU usage.
+            trainer_resources={"CPU": 0},
+            **trainer_kwargs,
+        )
 
     # TODO: Enable dynamic window size frm backend.loader.window_size_bytes
     def run(
