@@ -18,7 +18,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Union
+from typing import Any, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -64,6 +64,7 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
+        self._processed_data_fp = df if isinstance(df, str) else None
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
@@ -81,6 +82,10 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    @property
+    def processed_data_fp(self) -> Optional[str]:
+        return self._processed_data_fp
 
     @property
     def in_memory_size_bytes(self):
