@@ -254,6 +254,8 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 #     ]
 #     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
+#     output_feature_name = output_features[0]["name"]
+
 #     rel_path = generate_data(input_features, output_features, csv_filename)
 
 #     config = {
@@ -264,30 +266,27 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 #         "backend": {
 #             "type": backend,
 #         },
-#     }
-
-#     output_feature_name = output_features[0]["name"]
-
-#     hyperopt_configs = {
-#         "parameters": {
-#             "trainer.learning_rate": {
-#                 "space": "loguniform",
-#                 "lower": 0.001,
-#                 "upper": 0.1,
+#         "hyperopt": {
+#             "parameters": {
+#                 "trainer.learning_rate": {
+#                     "space": "loguniform",
+#                     "lower": 0.001,
+#                     "upper": 0.1,
+#                 },
+#                 output_feature_name + ".output_size": {"space": "randint", "lower": 32, "upper": 64},
+#                 output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
 #             },
-#             output_feature_name + ".output_size": {"space": "randint", "lower": 32, "upper": 64},
-#             output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+#             "goal": "minimize",
+#             "output_feature": output_feature_name,
+#             "validation_metrics": "loss",
+#             "executor": {
+#                 "type": "ray",
+#                 "num_samples": 2,
+#                 "cpu_resources_per_trial": 2,
+#                 "max_concurrent_trials": "auto",
+#             },
+#             "search_alg": {"type": "variant_generator"},
 #         },
-#         "goal": "minimize",
-#         "output_feature": output_feature_name,
-#         "validation_metrics": "loss",
-#         "executor": {
-#             "type": "ray",
-#             "num_samples": 2,
-#             "cpu_resources_per_trial": 2,
-#             "max_concurrent_trials": "auto",
-#         },
-#         "search_alg": {"type": "variant_generator"},
 #     }
 
 #     @ray.remote(num_cpus=0)
@@ -309,9 +308,6 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 #             if progress_tracker.epoch == 1 and not ray.get(event.is_set.remote()):
 #                 ray.get(event.set.remote())
 #                 raise KeyboardInterrupt()
-
-#     # add hyperopt parameter space to the config
-#     config["hyperopt"] = hyperopt_configs
 
 #     # run for one epoch, then cancel, then resume from where we left off
 #     run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
