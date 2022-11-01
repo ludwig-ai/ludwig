@@ -118,7 +118,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     ],
 )
 @pytest.mark.parametrize("distinct_values", [(0.0, 1.0), (0, 1)])
-def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_4cpu):
+def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     input_features = [
         category_feature(encoder={"vocab_size": 3}),
     ]
