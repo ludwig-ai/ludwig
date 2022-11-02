@@ -133,7 +133,15 @@ class RayDatasetShard(Dataset):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.epoch_iter = dataset_shard.iter_epochs()
+        self.create_epoch_iter()
+
+    def create_epoch_iter(self) -> None:
+        if isinstance(self.dataset_shard, DatasetPipeline):
+            self.epoch_iter = self.dataset_shard.iter_epochs()
+        else:
+            # Dataset shard is a Ray Dataset object
+            # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
+            self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
