@@ -16,7 +16,7 @@ input_features:
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import torch
 
@@ -80,12 +80,28 @@ class SpaceStringToListTokenizer(torch.nn.Module):
         for sequence in inputs:
             split_sequence = sequence.strip().split(" ")
             token_sequence: List[str] = []
-            for token in split_sequence:
+            for token in self.yield_tokens(split_sequence):
                 if len(token) > 0:
                     token_sequence.append(token)
             tokens.append(token_sequence)
 
         return tokens[0] if isinstance(v, str) else tokens
+
+    def yield_tokens(self, tokens: List[str]) -> Iterable[str]:
+        yield from tokens
+
+
+class NgramTokenizer(SpaceStringToListTokenizer):
+    """Implements torchscript-compatible n-gram tokenization."""
+
+    def __init__(self, ngram_size: int = 2, **kwargs):
+        super().__init__()
+        self.n = ngram_size or 2
+
+    def yield_tokens(self, tokens: List[str]) -> Iterable[str]:
+        from torchtext.data.utils import ngrams_iterator
+
+        yield from ngrams_iterator(tokens, ngrams=self.n)
 
 
 class SpacePunctuationStringToListTokenizer(torch.nn.Module):
@@ -802,6 +818,7 @@ tokenizer_registry = {
     # Torchscript-compatible tokenizers. Torchtext tokenizers are also available below (requires torchtext>=0.12.0).
     "space": SpaceStringToListTokenizer,
     "space_punct": SpacePunctuationStringToListTokenizer,
+    "ngram": NgramTokenizer,
     # Tokenizers not compatible with torchscript
     "characters": CharactersToListTokenizer,
     "underscore": UnderscoreStringToListTokenizer,

@@ -80,6 +80,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             unknown_symbol=preprocessing_parameters["unknown_symbol"],
             padding_symbol=preprocessing_parameters["padding_symbol"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
+            ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
         return (
