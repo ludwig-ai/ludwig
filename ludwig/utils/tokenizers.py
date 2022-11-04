@@ -1151,22 +1151,21 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
+    import transformers
+    from transformers.utils.hub import cached_path
 
-    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
-        from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
+    hf_tokenizer = transformers.AutoTokenizer.from_pretrained(pretrained_model_name_or_path, use_fast=False)
 
-        if (
-            pretrained_model_name_or_path in PRETRAINED_VOCAB_FILES_MAP["vocab_file"]
-            and pretrained_model_name_or_path not in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
-        ):
-            logger.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
-            vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][pretrained_model_name_or_path]
-            init_kwargs = PRETRAINED_INIT_CONFIGURATION.get(pretrained_model_name_or_path, {})
-            return BERTTokenizer(
-                vocab_file,
-                is_hf_tokenizer=True,
-                **init_kwargs,
+    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, transformers.BertTokenizer):
+        try:
+            vocab_file = cached_path(f"https://huggingface.co/{pretrained_model_name_or_path}/raw/main/vocab.txt")
+            init_kwargs = load_json(
+                cached_path(f"https://huggingface.co/{pretrained_model_name_or_path}/raw/main/tokenizer_config.json")
             )
+            logger.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
+            return BERTTokenizer(vocab_file, is_hf_tokenizer=True, **init_kwargs)
+        except ValueError:
+            pass
 
     # If pretrained_model_name_or_path does not have a torchtext equivalent implementation, load the
     # HuggingFace implementation.
