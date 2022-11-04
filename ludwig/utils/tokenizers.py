@@ -1050,43 +1050,53 @@ try:
             self,
             vocab_file: Optional[str] = None,
             is_hf_tokenizer: Optional[bool] = False,
-            do_lower_case: Optional[bool] = False,
+            hf_tokenizer_attrs: Optional[Dict[str, Any]] = None,
             **kwargs,
         ):
             super().__init__()
-            from transformers.utils.hub import cached_path
 
             if vocab_file is None:
-                # By default, we use the uncased (all lowercased) BERT tokenizer from huggingface.
-                vocab_file = "https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt"
-                do_lower_case = True
-            self.vocab_file = cached_path(vocab_file)
+                # If vocab_file not passed in, use default "bert-base-uncased" vocab and kwargs.
+                kwargs = _get_bert_config("bert-base-uncased")
+                vocab_file = kwargs["vocab_file"]
+                vocab = self._init_vocab(vocab_file)
+                hf_tokenizer_attrs = {
+                    "pad_token": "[PAD]",
+                    "unk_token": "[UNK]",
+                    "sep_token_id": vocab["[SEP]"],
+                    "cls_token_id": vocab["[CLS]"],
+                }
+            else:
+                vocab = self._init_vocab(vocab_file)
+
+            self.vocab = vocab
+            # Values used by Ludwig extracted from the corresponding HF model.
+            self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
+            self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
+            self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
+            self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
+
+            tokenizer_kwargs = {}
+            if "do_lower_case" in kwargs:
+                tokenizer_kwargs["do_lower_case"] = kwargs["do_lower_case"]
+            if "strip_accents" in kwargs:
+                tokenizer_kwargs["strip_accents"] = kwargs["strip_accents"]
 
             self.is_hf_tokenizer = is_hf_tokenizer
 
             # Return tokens as raw tokens only if not being used as a HF tokenizer.
             self.return_tokens = not self.is_hf_tokenizer
+
             self.tokenizer = torchtext.transforms.BERTTokenizer(
-                vocab_path=self.vocab_file, return_tokens=self.return_tokens, do_lower_case=do_lower_case
+                vocab_path=vocab_file,
+                **tokenizer_kwargs,
+                return_tokens=self.return_tokens,
             )
 
-            self.str2idx = self._init_vocab(self.vocab_file)
+        def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
+            from transformers.models.bert.tokenization_bert import load_vocab
 
-            # Values from
-            # https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/tokenization_bert.py
-            self.pad_token = "[PAD]"
-            self.unk_token = "[UNK]"
-            self.cls_token_id = self.str2idx["[CLS]"]  # Used as start symbol
-            self.sep_token_id = self.str2idx["[SEP]"]  # Used as stop symbol
-
-        def _init_vocab(self, vocab_file: str) -> Dict[str, str]:
-            str2idx = {}
-            with open(vocab_file, encoding="utf-8") as reader:
-                tokens = reader.readlines()
-            for index, token in enumerate(tokens):
-                token = token.rstrip("\n")
-                str2idx[token] = index
-            return str2idx
+            return load_vocab(vocab_file)
 
         def forward(self, v: Union[str, List[str], torch.Tensor]) -> Any:
             """Implements forward pass for tokenizer.
@@ -1114,8 +1124,7 @@ try:
                 token_ids: List[List[int]] = []
                 for token_ids_str_i in token_ids_str:
                     token_ids_i = [int(token_id_str) for token_id_str in token_ids_str_i]
-                    token_ids_i.insert(0, self.cls_token_id)
-                    token_ids_i.append(self.sep_token_id)
+                    token_ids_i = self._add_special_token_ids(token_ids_i)
                     token_ids.append(token_ids_i)
                 return token_ids[0] if isinstance(v, str) else token_ids
 
@@ -1123,14 +1132,20 @@ try:
             assert torch.jit.isinstance(tokens, List[List[str]])
             return tokens[0] if isinstance(v, str) else tokens
 
-        def get_vocab(self) -> Dict[str, str]:
-            return self.str2idx
+        def get_vocab(self) -> Dict[str, int]:
+            return self.vocab
 
         def get_pad_token(self) -> str:
             return self.pad_token
 
         def get_unk_token(self) -> str:
             return self.unk_token
+
+        def _add_special_token_ids(self, token_ids: List[int]) -> List[int]:
+            """Adds special token ids to the token_ids list."""
+            token_ids.insert(0, self.cls_token_id)
+            token_ids.append(self.sep_token_id)
+            return token_ids
 
     tokenizer_registry.update(
         {
@@ -1151,26 +1166,58 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
-    import transformers
+    from transformers import AutoTokenizer, BertTokenizer
+
+    hf_name = pretrained_model_name_or_path
+    # use_fast=False to leverage python class inheritance
+    # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
+    hf_tokenizer = AutoTokenizer.from_pretrained(hf_name, use_fast=False)
+
+    breakpoint()
+
+    torchtext_tokenizer = None
+    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
+        tokenizer_kwargs = _get_bert_config(hf_name)
+        torchtext_tokenizer = BERTTokenizer(
+            **tokenizer_kwargs,
+            is_hf_tokenizer=True,
+            hf_tokenizer_attrs={
+                "pad_token": hf_tokenizer.pad_token,
+                "unk_token": hf_tokenizer.unk_token,
+                "cls_token_id": hf_tokenizer.cls_token_id,
+                "sep_token_id": hf_tokenizer.sep_token_id,
+            },
+        )
+
+    use_torchtext = torchtext_tokenizer is not None
+    if use_torchtext:
+        # If a torchtext tokenizer is instantiable, tenatively we will use it. However,
+        # if the tokenizer does not pass (lightweight) validation, then we will fall back to the vanilla HF tokenizer.
+        # TODO(geoffrey): can we better validate tokenizer parity before swapping in the TorchText tokenizer?
+        # Samples from https://github.com/huggingface/transformers/blob/main/tests/models/bert/test_tokenization_bert.py
+        for sample_input in ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHeLLo!how  \n Are yoU? [UNK]"]:
+            print("HF:", hf_tokenizer.encode(sample_input))
+            print("TT:", torchtext_tokenizer(sample_input))
+            if hf_tokenizer.encode(sample_input) != torchtext_tokenizer(sample_input):
+                use_torchtext = False
+                break
+
+    if use_torchtext:
+        logging.info(f"Loaded TorchText implementation of {hf_name} tokenizer")
+        return torchtext_tokenizer
+    else:
+        # If hf_name does not have a torchtext equivalent implementation, load the
+        # HuggingFace implementation.
+        logging.info(f"Loaded HuggingFace implementation of {hf_name} tokenizer")
+        return HFTokenizer(hf_name)
+
+
+def _get_bert_config(hf_name):
     from transformers.utils.hub import cached_path
 
-    hf_tokenizer = transformers.AutoTokenizer.from_pretrained(pretrained_model_name_or_path, use_fast=False)
-
-    if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, transformers.BertTokenizer):
-        try:
-            vocab_file = cached_path(f"https://huggingface.co/{pretrained_model_name_or_path}/raw/main/vocab.txt")
-            init_kwargs = load_json(
-                cached_path(f"https://huggingface.co/{pretrained_model_name_or_path}/raw/main/tokenizer_config.json")
-            )
-            logger.info(f"Loading TorchText implementation of {pretrained_model_name_or_path} tokenizer")
-            return BERTTokenizer(vocab_file, is_hf_tokenizer=True, **init_kwargs)
-        except ValueError:
-            pass
-
-    # If pretrained_model_name_or_path does not have a torchtext equivalent implementation, load the
-    # HuggingFace implementation.
-    logger.info(f"Loading HuggingFace implementation of {pretrained_model_name_or_path} tokenizer")
-    return HFTokenizer(pretrained_model_name_or_path)
+    vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
+    tokenizer_config = load_json(cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json"))
+    return {"vocab_file": vocab_file, **tokenizer_config}
 
 
 tokenizer_registry.update(
