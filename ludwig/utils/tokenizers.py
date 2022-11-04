@@ -1075,6 +1075,7 @@ try:
             self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
             self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
             self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
+            self.all_special_tokens = hf_tokenizer_attrs["all_special_tokens"]
 
             tokenizer_kwargs = {}
             if "do_lower_case" in kwargs:
@@ -1091,6 +1092,7 @@ try:
                 vocab_path=vocab_file,
                 **tokenizer_kwargs,
                 return_tokens=self.return_tokens,
+                never_split=self.all_special_tokens,
             )
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
@@ -1186,6 +1188,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
                 "unk_token": hf_tokenizer.unk_token,
                 "cls_token_id": hf_tokenizer.cls_token_id,
                 "sep_token_id": hf_tokenizer.sep_token_id,
+                "all_special_tokens": hf_tokenizer.all_special_tokens,
             },
         )
 
