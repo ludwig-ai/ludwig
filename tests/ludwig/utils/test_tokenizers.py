@@ -3,7 +3,7 @@ import torch
 import torchtext
 from transformers.models.bert.tokenization_bert import PRETRAINED_INIT_CONFIGURATION, PRETRAINED_VOCAB_FILES_MAP
 
-from ludwig.utils.tokenizers import SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
+from ludwig.utils.tokenizers import NgramTokenizer, SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
 
 
 @pytest.mark.parametrize(
@@ -41,3 +41,21 @@ def test_bert_hf_tokenizer_parity(pretrained_model_name_or_path):
     assert not isinstance(tokenizer_ids_only, HFTokenizer)
     assert tokens == tokens_expected
     assert token_ids == token_ids_expected
+
+
+def test_ngram_tokenizer():
+    inputs = "Hello, I'm a single sentence!"
+    tokenizer = NgramTokenizer(n=2)
+    tokens_expected = [
+        "Hello,",
+        "I'm",
+        "a",
+        "single",
+        "sentence!",
+        "Hello, I'm",
+        "I'm a",
+        "a single",
+        "single sentence!",
+    ]
+    tokens = tokenizer(inputs)
+    assert tokens == tokens_expected
