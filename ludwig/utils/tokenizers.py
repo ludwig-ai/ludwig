@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 
+from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
@@ -1070,20 +1071,27 @@ try:
                 vocab = self._init_vocab(vocab_file)
 
             self.vocab = vocab
-            # Values used by Ludwig extracted from the corresponding HF model.
-            self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
-            self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
-            self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
-            self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
-            self.all_special_tokens = hf_tokenizer_attrs["all_special_tokens"]
+
+            self.is_hf_tokenizer = is_hf_tokenizer
+            if self.is_hf_tokenizer:
+                # Values used by Ludwig extracted from the corresponding HF model.
+                self.pad_token = hf_tokenizer_attrs["pad_token"]  # Used as padding symbol
+                self.unk_token = hf_tokenizer_attrs["unk_token"]  # Used as unknown symbol
+                self.cls_token_id = hf_tokenizer_attrs["cls_token_id"]  # Used as start symbol. Only used if HF.
+                self.sep_token_id = hf_tokenizer_attrs["sep_token_id"]  # Used as stop symbol. Only used if HF.
+                self.never_split = hf_tokenizer_attrs["all_special_tokens"]
+            else:
+                self.pad_token = PADDING_SYMBOL
+                self.unk_token = UNKNOWN_SYMBOL
+                self.cls_token_id = None
+                self.sep_token_id = None
+                self.never_split = [UNKNOWN_SYMBOL]
 
             tokenizer_kwargs = {}
             if "do_lower_case" in kwargs:
                 tokenizer_kwargs["do_lower_case"] = kwargs["do_lower_case"]
             if "strip_accents" in kwargs:
                 tokenizer_kwargs["strip_accents"] = kwargs["strip_accents"]
-
-            self.is_hf_tokenizer = is_hf_tokenizer
 
             # Return tokens as raw tokens only if not being used as a HF tokenizer.
             self.return_tokens = not self.is_hf_tokenizer
@@ -1092,7 +1100,7 @@ try:
                 vocab_path=vocab_file,
                 **tokenizer_kwargs,
                 return_tokens=self.return_tokens,
-                never_split=self.all_special_tokens,
+                never_split=self.never_split,
             )
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
@@ -1175,8 +1183,6 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
     hf_tokenizer = AutoTokenizer.from_pretrained(hf_name, use_fast=False)
 
-    breakpoint()
-
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):
         tokenizer_kwargs = _get_bert_config(hf_name)
@@ -1199,10 +1205,12 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
         # TODO(geoffrey): can we better validate tokenizer parity before swapping in the TorchText tokenizer?
         # Samples from https://github.com/huggingface/transformers/blob/main/tests/models/bert/test_tokenization_bert.py
         for sample_input in ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHeLLo!how  \n Are yoU? [UNK]"]:
-            print("HF:", hf_tokenizer.encode(sample_input))
-            print("TT:", torchtext_tokenizer(sample_input))
-            if hf_tokenizer.encode(sample_input) != torchtext_tokenizer(sample_input):
+            hf_output = hf_tokenizer.encode(sample_input)
+            tt_output = torchtext_tokenizer(sample_input)
+            if hf_output != tt_output:
                 use_torchtext = False
+                logging.warning("Falling back to HuggingFace tokenizer because TorchText tokenizer failed validation.")
+                logging.warning(f"Sample input: {sample_input}\nHF output: {hf_output}\nTT output: {tt_output}")
                 break
 
     if use_torchtext:
