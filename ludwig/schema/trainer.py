@@ -177,13 +177,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["should_shuffle"],
     )
 
-    reduce_learning_rate_on_plateau: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
+    reduce_learning_rate_on_plateau: int = schema_utils.NonNegativeInteger(
+        default=0,
         description=(
-            "Reduces the learning rate when the algorithm hits a plateau (i.e. the performance on the validation does "
-            "not improve."
+            "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the"
+            "training set does not improve"
         ),
         parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau"],
     )
@@ -284,14 +282,26 @@ class ECDTrainerConfig(BaseTrainerConfig):
     learning_rate_scaling: str = schema_utils.StringOptions(
         ["constant", "sqrt", "linear"],
         default="linear",
-        description=(
-            "Scale by which to increase the learning rate as the number of distributed workers increases. "
-            "Traditionally the learning rate is scaled linearly with the number of workers to reflect the proportion by"
-            " which the effective batch size is increased. For very large batch sizes, a softer square-root scale can "
-            "sometimes lead to better model performance. If the learning rate is hand-tuned for a given number of "
-            "workers, setting this value to constant can be used to disable scale-up."
-        ),
+        description="Scale by which to increase the learning rate as the number of distributed workers increases. "
+        "Traditionally the learning rate is scaled linearly with the number of workers to reflect the "
+        "proportion by"
+        " which the effective batch size is increased. For very large batch sizes, a softer square-root "
+        "scale can "
+        "sometimes lead to better model performance. If the learning rate is hand-tuned for a given "
+        "number of "
+        "workers, setting this value to constant can be used to disable scale-up.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scaling"],
+    )
+
+    bucketing_field: str = schema_utils.String(
+        default=None,
+        description="When not null, when creating batches, instead of shuffling randomly, the length along the last "
+        "dimension of the matrix of the specified input feature is used for bucketing examples and then "
+        "randomly shuffled examples from the same bin are sampled. Padding is trimmed to the longest "
+        "example in the batch. The specified feature should be either a sequence or text feature and the "
+        "encoder encoding it has to be rnn. When used, bucketing improves speed of rnn encoding up to "
+        "1.5x, depending on the length distribution of the inputs.",
+        parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
 

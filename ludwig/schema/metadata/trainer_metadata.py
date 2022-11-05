@@ -24,19 +24,19 @@ TRAINER_METADATA = (
                                      expected_impact=ExpectedImpact.HIGH,
                                      literature_references=None,
                                      internal_only=False),
-      'max_batch_size': ParameterMetadata(ui_display_name='Max Batch Size',
-                                                  default_value_reasoning='Not typically required.',
-                                                  example_value=1024,
-                                                  related_parameters=['batch_size', 'increase_batch_size_on_plateau'],
-                                                  description_implications='Value used to manually limit the batch '
-                                                                           'sizes explored by auto batch size tuning '
-                                                                           'and batch size increasing on plateau.',
-                                                  suggested_values=None,
-                                                  suggested_values_reasoning=None,
-                                                  commonly_used=False,
-                                                  expected_impact=ExpectedImpact.MEDIUM,
-                                                  literature_references=None,
-                                                  internal_only=False),
+     'max_batch_size': ParameterMetadata(ui_display_name='Max Batch Size',
+                                         default_value_reasoning='Not typically required.',
+                                         example_value=[1024],
+                                         related_parameters=['batch_size', 'increase_batch_size_on_plateau'],
+                                         description_implications='Value used to manually limit the batch '
+                                                                  'sizes explored by auto batch size tuning '
+                                                                  'and batch size increasing on plateau.',
+                                         suggested_values=None,
+                                         suggested_values_reasoning=None,
+                                         commonly_used=False,
+                                         expected_impact=ExpectedImpact.MEDIUM,
+                                         literature_references=None,
+                                         internal_only=False),
      'checkpoints_per_epoch': ParameterMetadata(ui_display_name='Checkpoints per epoch',
                                                 default_value_reasoning='Per-epoch behavior, which scales according '
                                                                         'to the '
@@ -806,6 +806,18 @@ TRAINER_METADATA = (
                                                expected_impact=ExpectedImpact.HIGH,
                                                literature_references=None,
                                                internal_only=False),
+     'bucketing_field': ParameterMetadata(ui_display_name='Bucketing Field',
+                                          default_value_reasoning=None,
+                                          example_value=None,
+                                          related_parameters=None,
+                                          other_information=None,
+                                          description_implications=None,
+                                          suggested_values=None,
+                                          suggested_values_reasoning=None,
+                                          commonly_used=False,
+                                          expected_impact=ExpectedImpact.LOW,
+                                          literature_references=None,
+                                          internal_only=False),
      'train_steps': ParameterMetadata(ui_display_name='Train Steps',
                                       default_value_reasoning='This defaults to `epochs`, which is a very high '
                                                               'training '

@@ -6,8 +6,16 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
-from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, sequence_feature
+from ludwig.constants import DEFAULT_BATCH_SIZE, TRAINER
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature,
+    generate_data,
+    LocalTestBackend,
+    number_feature,
+    sequence_feature,
+    vector_feature,
+)
 
 try:
     import ray
@@ -42,10 +50,16 @@ except ImportError:
     ray = None
 
 
+@pytest.mark.parametrize("is_cpu", [True, False])
 @pytest.mark.parametrize("eval_batch_size", ["auto", None, 128])
-def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
+def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
     input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [
+        category_feature(decoder={"vocab_size": 2}, reduce_input="sum"),
+        number_feature(),
+        binary_feature(),
+        vector_feature(),
+    ]
 
     csv_filename = os.path.join(tmpdir, "training.csv")
     data_csv = generate_data(input_features, output_features, csv_filename)
@@ -75,14 +89,18 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size):
     assert model.config_obj.trainer.eval_batch_size == eval_batch_size
     assert model.config_obj.trainer.learning_rate == "auto"
 
-    _, _, output_directory = model.train(
-        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
-    )
+    with mock.patch("ludwig.trainers.trainer.Trainer.is_cpu_training") as mock_fn:
+        mock_fn.return_value = is_cpu
+        _, _, output_directory = model.train(
+            training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
+        )
 
     def check_postconditions(model):
         # check batch size
         assert model.config_obj.trainer.batch_size != "auto"
         assert model.config_obj.trainer.batch_size > 1
+        if is_cpu:
+            assert model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
 
         assert model.config_obj.trainer.eval_batch_size != "auto"
         assert model.config_obj.trainer.eval_batch_size > 1

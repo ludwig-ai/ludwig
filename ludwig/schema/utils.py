@@ -10,6 +10,7 @@ from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
+from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.torch_utils import activations, initializer_registry
@@ -91,6 +92,22 @@ def create_cond(if_pred: TDict, then_pred: TDict):
     }
 
 
+def remove_duplicate_fields(properties: dict) -> None:
+    """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
+    type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
+    both -
+
+    json schema level for validation and schema class level for config object - though we only need the json schema
+    level for validation, so we get rid of the duplicates when converting to json schema.
+
+    Args:
+        properties: Dictionary of properties generated from a Ludwig schema class
+    """
+    for key in [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE]:  # TODO: Remove col/proc_col once train metadata decoupled
+        if key in properties:
+            del properties[key]
+
+
 class BaseMarshmallowConfig:
     """Base marshmallow class for common attributes and metadata."""
 
@@ -131,6 +148,11 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
+    # Check top-level ParameterMetadata:
+    for prop in schema["properties"]:
+        prop_schema = schema["properties"][prop]
+        if "parameter_metadata" in prop_schema:
+            prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
     schema["additionalProperties"] = additional_properties
     return schema
 

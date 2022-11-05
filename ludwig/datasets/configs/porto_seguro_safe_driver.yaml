@@ -5,6 +5,7 @@ archive_filenames: porto-seguro-safe-driver-prediction.zip
 sha256:
   porto-seguro-safe-driver-prediction.zip: 53dd7b67b9b3df088c4e0814cba7317d3bc8f76094c726471c8f91e84f61ccdc
 train_filenames: train.csv
+test_filenames: test.csv
 description: |
   Predict the probability that an auto insurance policy holder files a claim.
   https://www.kaggle.com/competitions/porto-seguro-safe-driver-prediction

@@ -38,6 +38,7 @@ from ludwig.constants import (
     FILL_WITH_MEAN,
     FILL_WITH_MODE,
     FULL,
+    MIN_DATASET_SPLIT_ROWS,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -1647,32 +1648,46 @@ def preprocess_for_training(
         with backend.storage.cache.use_credentials() if cached else contextlib.nullcontext():
             logger.debug("create training dataset")
             training_dataset = backend.dataset_manager.create(training_set, config, training_set_metadata)
-            if not len(training_set):
+            training_set_size = len(training_dataset)
+            if training_set_size == 0:
                 raise ValueError("Training data is empty following preprocessing.")
+            elif training_set_size < MIN_DATASET_SPLIT_ROWS:
+                raise ValueError(
+                    f"Training dataset has only {training_set_size} rows following preprocessing, need"
+                    f" at least {MIN_DATASET_SPLIT_ROWS} to compute metrics."
+                )
 
             validation_dataset = None
             if validation_set is not None:
                 logger.debug("create validation dataset")
                 validation_dataset = backend.dataset_manager.create(validation_set, config, training_set_metadata)
-                if not len(validation_dataset):
-                    # Validation dataset is empty.
+                validation_set_size = len(validation_dataset)
+                if validation_set_size == 0:
                     logger.warning(
-                        "Encountered empty validation dataset. If this is unintentional, please check the "
-                        "preprocessing configuration."
+                        "Validation set empty. If this is unintentional, please check the preprocessing configuration."
                     )
                     validation_dataset = None
+                elif validation_set_size < MIN_DATASET_SPLIT_ROWS:
+                    logger.warning(
+                        f"Validation set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
+                        f" {validation_set_size} after preprocessing."
+                    )
 
             test_dataset = None
             if test_set is not None:
                 logger.debug("create test dataset")
                 test_dataset = backend.dataset_manager.create(test_set, config, training_set_metadata)
-                if not len(test_dataset):
-                    # Test dataset is empty.
+                test_set_size = len(test_dataset)
+                if test_set_size == 0:
                     logger.warning(
-                        "Encountered empty test dataset. If this is unintentional, please check the "
-                        "preprocessing configuration."
+                        "Test set empty. If this is unintentional, please check the preprocessing configuration."
                     )
                     test_dataset = None
+                elif test_set_size < MIN_DATASET_SPLIT_ROWS:
+                    logger.warning(
+                        f"Test set too small to compute metrics. Need at least {MIN_DATASET_SPLIT_ROWS} rows, got"
+                        f" {test_set_size} after preprocessing."
+                    )
 
         return (training_dataset, validation_dataset, test_dataset, training_set_metadata)
 
