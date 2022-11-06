@@ -936,6 +936,9 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
         super().__init__(**kwargs)
 
     def _remove_last_layer(self):
+        # SqueezeNet does not have a final nn.Linear() layer
+        # Use flatten output from last AdaptiveAvgPool2d layer
+        # as encoder output.
         pass
 
     @staticmethod
