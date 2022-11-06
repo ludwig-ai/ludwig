@@ -249,7 +249,7 @@ def test_tv_efficientnet_encoder(
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.skip(reason="GoogLeNet returns custom object, not a torch.Tensor, more R&D needed")
+# @pytest.mark.skip(reason="GoogLeNet returns custom object, not a torch.Tensor, more R&D needed")
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 import os
 from abc import abstractmethod
@@ -668,6 +669,13 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
     ):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
+
+        # # eliminate the network for the auxiliary logits
+        # self.aux1 = None
+        # self.aux2 = None
+        new_state_dict = copy.deepcopy(self.model.state_dict())
+        for p in new_state_dict:
+            print(p)
 
     def _remove_last_layer(self):
         self.model.fc = torch.nn.Identity()
