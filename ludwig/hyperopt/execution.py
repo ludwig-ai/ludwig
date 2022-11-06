@@ -18,13 +18,13 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import ray
 from ray import tune
 from ray.air import Checkpoint
-from ray.air.config import FailureConfig, RunConfig, CheckpointConfig
+from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
 from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
+from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
 from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
 from ray.tune.tuner import Tuner
 from ray.tune.utils import wait_for_gpu
-from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
