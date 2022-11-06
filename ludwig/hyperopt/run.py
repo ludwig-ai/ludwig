@@ -238,7 +238,7 @@ def hyperopt(
     # Infer max concurrent trials
     if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
         hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
-        logger.info(f"Set max_concurrent_trials to {hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS]}")
+        logger.info(f"Setting max_concurrent_trials to {hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS]}")
 
     # Print hyperopt config
     logger.info("Hyperopt Config")

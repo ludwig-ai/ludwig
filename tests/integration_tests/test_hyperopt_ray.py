@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import json
 import logging
 import os.path
@@ -111,25 +110,6 @@ def _get_config(search_alg, executor):
             "search_alg": search_alg,
         },
     }
-
-
-@contextlib.contextmanager
-def ray_start_4_cpus():
-    res = ray.init(
-        num_cpus=4,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
-@pytest.fixture(scope="module")
-def ray_cluster_4cpu():
-    with ray_start_4_cpus():
-        yield
 
 
 class HyperoptTestCallback(TuneCallback):
@@ -261,7 +241,7 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 #     config = {
 #         "input_features": input_features,
 #         "output_features": output_features,
-#         "combiner": {"type": "concat", "num_fc_layers": 2},
+#         "combiner": {"type": "concat"},
 #         TRAINER: {"epochs": 2, "learning_rate": 0.001},
 #         "backend": {
 #             "type": backend,
