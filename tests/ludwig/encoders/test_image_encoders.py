@@ -17,6 +17,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     RESNET_TORCH_VARIANTS,
     RESNEXT_VARIANTS,
     SHUFFLENET_V2_VARIANTS,
+    SQUEEZENET_VARIANTS,
     Stacked2DCNN,
     SWIN_TRANSFORMER_VARIANTS,
     TVAlexNetEncoder,
@@ -31,6 +32,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     TVResNetEncoder,
     TVResNeXtEncoder,
     TVShuffleNetV2Encoder,
+    TVSqueezeNetEncoder,
     TVSwinTransformerEncoder,
     TVVGGEncoder,
     TVViTEncoder,
@@ -471,6 +473,35 @@ def test_tv_shufflenet_v2_encoder(
     set_random_seed(RANDOM_SEED)
 
     pretrained_model = TVShuffleNetV2Encoder(
+        model_variant=model_variant,
+        use_pretrained=use_pretrained,
+        saved_weights_in_checkpoint=saved_weights_in_checkpoint,
+        trainable=trainable,
+    )
+    inputs = torch.rand(2, *pretrained_model.input_shape)
+    outputs = pretrained_model(inputs)
+    assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+@pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)  # TODO: do we need to check download, True])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in SQUEEZENET_VARIANTS])
+def test_tv_squeezenet_encoder(
+    model_variant: str,
+    use_pretrained: bool,
+    saved_weights_in_checkpoint: bool,
+    trainable: bool,
+):
+    # make repeatable
+    set_random_seed(RANDOM_SEED)
+
+    pretrained_model = TVSqueezeNetEncoder(
         model_variant=model_variant,
         use_pretrained=use_pretrained,
         saved_weights_in_checkpoint=saved_weights_in_checkpoint,

@@ -942,6 +942,28 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("squeezenet_torch", IMAGE)
+@dataclass
+class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["squeezenet_torch"],
+        default="squeezenet_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[str] = schema_utils.StringOptions(
+        [
+            "1_0",
+            "1_1",
+        ],
+        default="1_0",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVSqueezeNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("swin_transformer_torch", IMAGE)
 @dataclass
 class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):

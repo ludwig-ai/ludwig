@@ -42,6 +42,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVResNetEncoderConfig,
     TVResNeXtEncoderConfig,
     TVShuffleNetV2EncoderConfig,
+    TVSqueezeNetEncoderConfig,
     TVSwinTransformerEncoderConfig,
     TVVGGEncoderConfig,
     TVViTEncoderConfig,
@@ -905,6 +906,33 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVShuffleNetV2EncoderConfig
+
+
+SQUEEZENET_VARIANTS = [
+    TVModelVariant("1_0", tvm.squeezenet1_0, tvm.SqueezeNet1_0_Weights),
+    TVModelVariant("1_1", tvm.squeezenet1_1, tvm.SqueezeNet1_1_Weights),
+]
+
+
+@register_torchvision_variant(SQUEEZENET_VARIANTS)
+@register_encoder("squeezenet_torch", IMAGE)
+class TVSqueezeNetEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "squeezenet_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        pass
+
+    @staticmethod
+    def get_schema_cls():
+        return TVSqueezeNetEncoderConfig
 
 
 SWIN_TRANSFORMER_VARIANTS = [
