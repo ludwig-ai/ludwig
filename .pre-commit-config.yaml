@@ -71,6 +71,6 @@ repos:
           - mdformat_frontmatter
         exclude: CHANGELOG.md
   - repo: https://github.com/yoheimuta/protolint
-    rev: v0.40.0
+    rev: v0.41.0
     hooks:
       - id: protolint
