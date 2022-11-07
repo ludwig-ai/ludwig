@@ -670,7 +670,7 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-        # if auxliary network exists, eliminate auxiliary network
+        # if auxiliary network exists, eliminate auxiliary network
         # to resolve issue when loading a saved model which does not
         # contain the auxiliary network
         if self.model.aux_logits:
@@ -690,24 +690,24 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
     #       https://discuss.pytorch.org/t/why-auxiliary-logits-set-to-false-in-train-mode/40705
     # override TVBaseEncoder property and forward method because GoogLeNet
     # does not return a tensor but a custom object wih the tensor embedded
-    @property
-    def output_shape(self) -> torch.Size:
-        # create synthetic image and run through forward method
-        inputs = torch.randn([1, *self.input_shape])
-        outputs = self.model(inputs)
-        # TODO: remove once verified this check is not needed.
-        # if not isinstance(outputs, torch.Tensor):
-        #     outputs = outputs[0]
-
-        return torch.Size(outputs.shape[1:])
-
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-        outputs = self.model(inputs)
-        # TODO: remove once verified this check is not needed.
-        # if not isinstance(outputs, torch.Tensor):
-        #     outputs = outputs[0]
-
-        return {"encoder_output": outputs}
+    # @property
+    # def output_shape(self) -> torch.Size:
+    #     # create synthetic image and run through forward method
+    #     inputs = torch.randn([1, *self.input_shape])
+    #     outputs = self.model(inputs)
+    #     # TODO: remove once verified this check is not needed.
+    #     # if not isinstance(outputs, torch.Tensor):
+    #     #     outputs = outputs[0]
+    #
+    #     return torch.Size(outputs.shape[1:])
+    #
+    # def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    #     outputs = self.model(inputs)
+    #     # TODO: remove once verified this check is not needed.
+    #     # if not isinstance(outputs, torch.Tensor):
+    #     #     outputs = outputs[0]
+    #
+    #     return {"encoder_output": outputs}
 
 
 MNASNET_VARIANTS = [
