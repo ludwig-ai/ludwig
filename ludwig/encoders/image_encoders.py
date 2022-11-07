@@ -35,6 +35,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVDenseNetEncoderConfig,
     TVEfficientNetEncoderConfig,
     TVGoogLeNetEncoderConfig,
+    TVInceptionV3EncoderConfig,
     TVMNASNetEncoderConfig,
     TVMobileNetV2EncoderConfig,
     TVMobileNetV3EncoderConfig,
@@ -683,6 +684,39 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVGoogLeNetEncoderConfig
+
+
+INCEPTIONV3_VARIANTS = [
+    TVModelVariant("base", tvm.inception_v3, tvm.Inception_V3_Weights),
+]
+
+
+@register_torchvision_variant(INCEPTIONV3_VARIANTS)
+@register_encoder("inceptionv3_torch", IMAGE)
+class TVInceptionV3Encoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "inceptionv3_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+        # if auxiliary network exists, eliminate auxiliary network
+        # to resolve issue when loading a saved model which does not
+        # contain the auxiliary network
+        if self.model.aux_logits:
+            self.model.aux_logits = False
+            self.model.AuxLogits = None
+
+    def _remove_last_layer(self):
+        self.model.fc = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVInceptionV3EncoderConfig
 
 
 MNASNET_VARIANTS = [
