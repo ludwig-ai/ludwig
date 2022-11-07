@@ -1041,7 +1041,9 @@ except ImportError:
 try:
     import torchtext
 
-    if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 13, 0):
+    torchtext_version = torch.torch_version.TorchVersion(torchtext.__version__)
+
+    if torchtext_version >= (0, 13, 0):
         pass
     else:
         raise ImportError
@@ -1096,12 +1098,16 @@ try:
             # Return tokens as raw tokens only if not being used as a HF tokenizer.
             self.return_tokens = not self.is_hf_tokenizer
 
-            self.tokenizer = torchtext.transforms.BERTTokenizer(
-                vocab_path=vocab_file,
+            tokenizer_init_kwargs = {
                 **tokenizer_kwargs,
-                return_tokens=self.return_tokens,
-                never_split=self.never_split,
-            )
+                "vocab_path": vocab_file,
+                "return_tokens": self.return_tokens,
+            }
+            if torchtext_version > (0, 14, 0):
+                # never_split kwarg added in torchtext 0.14.0
+                tokenizer_init_kwargs["never_split"] = self.never_split
+
+            self.tokenizer = torchtext.transforms.BERTTokenizer(**tokenizer_init_kwargs)
 
         def _init_vocab(self, vocab_file: str) -> Dict[str, int]:
             from transformers.models.bert.tokenization_bert import load_vocab
@@ -1153,8 +1159,9 @@ try:
 
         def _add_special_token_ids(self, token_ids: List[int]) -> List[int]:
             """Adds special token ids to the token_ids list."""
-            token_ids.insert(0, self.cls_token_id)
-            token_ids.append(self.sep_token_id)
+            if torch.jit.isinstance(self.cls_token_id, int) and torch.jit.isinstance(self.sep_token_id, int):
+                token_ids.insert(0, self.cls_token_id)
+                token_ids.append(self.sep_token_id)
             return token_ids
 
     tokenizer_registry.update(
