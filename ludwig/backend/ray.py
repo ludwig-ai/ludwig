@@ -30,8 +30,10 @@ from fsspec.config import conf
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.air import session
+from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
 from ray.train.horovod import HorovodTrainer
+from ray.train.torch import TorchCheckpoint
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
@@ -159,7 +161,6 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    train_results = {}
     try:
         initialize_pytorch(horovod=hvd)
 
@@ -195,11 +196,22 @@ def train_fn(
 
         torch.cuda.empty_cache()
 
-        train_results = results, trainer.validation_field, trainer.validation_metric
+        # Passing objects containg Torch tensors as metrics is not supported as it will throw an
+        # exception on deserialization, so create a checkpoint and return via session.report() along
+        # with the path of the checkpoint
+        ckpt = Checkpoint.from_dict({"state_dict": results})
+        torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the train_results object above.
-        session.report(metrics={"train_results": train_results})
+        session.report(
+            metrics={
+                "validation_field": trainer.validation_field,
+                "validation_metric": trainer.validation_metric,
+                "ckpt_directory": torch_ckpt.to_directory(),
+            },
+            checkpoint=torch_ckpt,
+        )
     finally:
         hvd.shutdown()
 
@@ -395,7 +407,12 @@ class RayTrainerV2(BaseTrainer):
                 dataset=dataset,
             )
 
-        results, self._validation_field, self._validation_metric = trainer_results.metrics["train_results"]
+        # Set validation field and metric used by trainer
+        self._validation_field = trainer_results.metrics["validation_field"]
+        self._validation_metric = trainer_results.metrics["validation_metric"]
+
+        # Load model from checkpoint
+        results = Checkpoint.from_directory(trainer_results.metrics["ckpt_directory"]).to_dict()["state_dict"]
 
         # load state dict back into the model
         state_dict, *args = results
