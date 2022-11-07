@@ -80,7 +80,7 @@ RAY_BACKEND_CONFIG = {
     },
     "trainer": {
         "use_gpu": False,
-        "num_workers": 1,
+        "num_workers": 2,
         "resources_per_worker": {
             "CPU": 0.1,
             "GPU": 0,
