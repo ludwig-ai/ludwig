@@ -298,7 +298,7 @@ class DaskEngine(DataFrameEngine):
                     for col, dtype in zip(schema.names, schema.types)
                 }
             )
-        elif pa is not None and isinstance(schema, pa.Schema):
+        elif isinstance(schema, pa.Schema):
             if any(isinstance(type_, ArrowTensorType) for type_ in schema.types):
                 meta = pd.DataFrame(
                     {
