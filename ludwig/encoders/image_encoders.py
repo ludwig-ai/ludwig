@@ -670,12 +670,13 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-        # # eliminate the network for the auxiliary logits
-        # self.aux1 = None
-        # self.aux2 = None
-        new_state_dict = copy.deepcopy(self.model.state_dict())
-        for p in new_state_dict:
-            print(p)
+        # if auxliary network exists, eliminate auxiliary network
+        # to resolve issue when loading a saved model which does not
+        # contain the auxiliary network
+        if self.model.aux_logits:
+            self.model.aux_logits = False
+            self.model.aux1 = None
+            self.model.aux2 = None
 
     def _remove_last_layer(self):
         self.model.fc = torch.nn.Identity()
@@ -694,15 +695,17 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
         # create synthetic image and run through forward method
         inputs = torch.randn([1, *self.input_shape])
         outputs = self.model(inputs)
-        if not isinstance(outputs, torch.Tensor):
-            outputs = outputs[0]
+        # TODO: remove once verified this check is not needed.
+        # if not isinstance(outputs, torch.Tensor):
+        #     outputs = outputs[0]
 
         return torch.Size(outputs.shape[1:])
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         outputs = self.model(inputs)
-        if not isinstance(outputs, torch.Tensor):
-            outputs = outputs[0]
+        # TODO: remove once verified this check is not needed.
+        # if not isinstance(outputs, torch.Tensor):
+        #     outputs = outputs[0]
 
         return {"encoder_output": outputs}
 
