@@ -57,7 +57,7 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 0, "upper": 1},
+        "combiner.num_fc_layers": {"space": "randint", "lower": 0, "upper": 2},
         "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
         "utterance.fc_layers": {
             "space": "choice",
