@@ -2,6 +2,7 @@ from typing import Union
 
 import pytest
 import torch
+import torchvision.models as tvm
 
 from ludwig.encoders.image_encoders import (  # ViTEncoder,
     ALEXNET_VARIANTS,
@@ -43,6 +44,7 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
     VIT_VARIANTS,
     WIDE_RESNET_VARIANTS,
 )
+from ludwig.utils.image_utils import TVModelVariant
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 from tests.integration_tests.utils import slow
@@ -221,7 +223,13 @@ def test_tv_densenet_encoder(
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
-@pytest.mark.skip(reason="intermittent ci test failure for large memory usage")
+HIGH_MEMORY_EFFICIENT_VARIANTS = {
+    TVModelVariant("b6", tvm.efficientnet_b6, tvm.EfficientNet_B6_Weights),
+    TVModelVariant("b7", tvm.efficientnet_b7, tvm.EfficientNet_B7_Weights),
+}
+LOW_MEMORY_EFFICIENTNET_VARIANTS = set(EFFICIENTNET_VARIANTS) - HIGH_MEMORY_EFFICIENT_VARIANTS
+
+
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
@@ -230,7 +238,7 @@ def test_tv_densenet_encoder(
         False,
     ],
 )  # TODO: do we need to check download, True])
-@pytest.mark.parametrize("model_variant", [x.variant_id for x in EFFICIENTNET_VARIANTS])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_EFFICIENTNET_VARIANTS])
 def test_tv_efficientnet_encoder(
     model_variant: int,
     use_pretrained: bool,
