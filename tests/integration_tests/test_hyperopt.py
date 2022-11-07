@@ -29,7 +29,6 @@ from ludwig.constants import (
     CATEGORY,
     COMBINER,
     EXECUTOR,
-    GRID_SEARCH,
     HYPEROPT,
     INPUT_FEATURES,
     MAX_CONCURRENT_TRIALS,
