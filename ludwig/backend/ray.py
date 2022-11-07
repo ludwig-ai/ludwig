@@ -202,7 +202,6 @@ def train_fn(
         session.report(metrics={"train_results": train_results})
     finally:
         hvd.shutdown()
-        return train_results
 
 
 @ray.remote(max_calls=1)
@@ -524,7 +523,6 @@ def eval_fn(
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
-        return results
 
 
 class RayPredictor(BasePredictor):

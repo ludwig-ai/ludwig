@@ -817,7 +817,6 @@ class RayTuneExecutor:
                         search_alg=search_alg,
                         scheduler=self.scheduler,
                         num_samples=self.num_samples,
-                        max_concurrent_trials=self.max_concurrent_trials,
                         time_budget_s=self.time_budget_s,
                         reuse_actors=True,
                     ),
