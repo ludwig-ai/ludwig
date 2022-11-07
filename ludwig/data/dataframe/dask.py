@@ -31,7 +31,6 @@ from ludwig.utils.data_utils import get_pa_schema, split_by_slices
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 
-
 TMP_COLUMN = "__TMP_COLUMN__"
 
 
