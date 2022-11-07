@@ -70,7 +70,7 @@ repos:
           - mdformat-gfm
           - mdformat_frontmatter
         exclude: CHANGELOG.md
-  # - repo: https://github.com/yoheimuta/protolint
-  #   rev: v0.40.0
-  #   hooks:
-  #     - id: protolint
+  - repo: https://github.com/yoheimuta/protolint
+    rev: v0.40.0
+    hooks:
+      - id: protolint
