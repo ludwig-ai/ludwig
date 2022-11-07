@@ -20,7 +20,6 @@ from typing import Any, Dict, Optional, Tuple
 
 import pytest
 import torch
-from packaging import version
 
 from ludwig.backend import initialize_backend
 from ludwig.constants import (
@@ -59,8 +58,6 @@ from tests.integration_tests.utils import (
 ray = pytest.importorskip("ray")
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor  # noqa
-
-_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
 pytestmark = pytest.mark.distributed
 
@@ -421,14 +418,13 @@ def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
     }
 
     with remote_tmpdir(fs_protocol, bucket) as tmpdir:
-        with pytest.raises(ValueError) if not _ray200 else contextlib.nullcontext():
-            _run_hyperopt_run_hyperopt(
-                csv_filename,
-                "random",
-                tmpdir,
-                backend,
-                ray_cluster,
-            )
+        _run_hyperopt_run_hyperopt(
+            csv_filename,
+            "random",
+            tmpdir,
+            backend,
+            ray_cluster,
+        )
 
 
 def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster):

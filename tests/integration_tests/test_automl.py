@@ -1,4 +1,3 @@
-import contextlib
 import os
 import tempfile
 from typing import Any, Dict, List, Set
@@ -7,7 +6,6 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
-from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
@@ -28,8 +26,6 @@ import dask.dataframe as dd  # noqa
 
 from ludwig.automl.automl import create_auto_config, train_with_config  # noqa
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
-
-_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
 pytestmark = pytest.mark.distributed
 
@@ -145,8 +141,7 @@ def test_train_with_config_remote(fs_protocol, bucket, test_data, ray_cluster_2c
     }
 
     with remote_tmpdir(fs_protocol, bucket) as tmpdir:
-        with pytest.raises(ValueError) if not _ray200 else contextlib.nullcontext():
-            _run_train_with_config(200, test_data, tmpdir, backend=backend)
+        _run_train_with_config(200, test_data, tmpdir, backend=backend)
 
 
 def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):

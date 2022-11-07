@@ -15,27 +15,22 @@
 # ==============================================================================
 
 import logging
-import os
 from typing import Dict
 
 import dask
 import dask.array as da
 import dask.dataframe as dd
 import pandas as pd
-import ray
 from dask.diagnostics import ProgressBar
-from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.extensions import TensorArray
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
-from ludwig.utils.data_utils import get_pa_schema, load_json, save_json, split_by_slices
-from ludwig.utils.dataframe_utils import flatten_df, set_index_name, unflatten_df
+from ludwig.utils.data_utils import get_pa_schema, split_by_slices
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 
-_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
@@ -207,13 +202,6 @@ class DaskEngine(DataFrameEngine):
             )
 
     def write_predictions(self, df: dd.DataFrame, path: str):
-        if not _ray200:
-            # fallback to slow flatten_df
-            df, column_shapes = flatten_df(df, self)
-            self.to_parquet(df, path)
-            save_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
-            return
-
         ds = self.to_ray_dataset(df)
 
         def to_tensors(batch: pd.DataFrame) -> pd.DataFrame:
@@ -232,12 +220,6 @@ class DaskEngine(DataFrameEngine):
         ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
     def read_predictions(self, path: str) -> dd.DataFrame:
-        if not _ray200:
-            # fallback to slow unflatten_df
-            pred_df = dd.read_parquet(path)
-            column_shapes = load_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
-            return unflatten_df(pred_df, column_shapes, self)
-
         fs, path = get_fs_and_path(path)
         ds = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
         return self.from_ray_dataset(ds)
