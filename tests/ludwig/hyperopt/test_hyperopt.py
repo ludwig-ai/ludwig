@@ -1,7 +1,7 @@
 import pytest
 
 from ludwig.constants import INPUT_FEATURES, NAME, OUTPUT_FEATURES, TYPE
-from ludwig.hyperopt.utils import substitute_parameters
+from ludwig.hyperopt.utils import log_warning_if_all_grid_type_parameters, substitute_parameters
 
 BASE_CONFIG = {
     INPUT_FEATURES: [{NAME: "title", TYPE: "text"}],
@@ -75,3 +75,14 @@ BASE_CONFIG = {
 def test_substitute_parameters(parameters, expected):
     actual_config = substitute_parameters(BASE_CONFIG, parameters)
     assert actual_config == expected
+
+
+def test_grid_search_more_than_one_sample():
+    with pytest.warns(RuntimeWarning):
+        log_warning_if_all_grid_type_parameters(
+            {
+                "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.1]},
+                "defaults.text.encoder.type": {"space": "grid_search", "values": ["parallel_cnn", "stacked_cnn"]},
+            },
+            num_samples=2,
+        )
