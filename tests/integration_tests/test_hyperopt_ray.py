@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import json
 import logging
 import os.path
@@ -58,15 +57,14 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        "combiner.num_fc_layers": {"space": "randint", "lower": 0, "upper": 2},
         "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
         "utterance.fc_layers": {
             "space": "choice",
             "categories": [
-                [{"output_size": 64}, {"output_size": 32}],
-                [{"output_size": 64}],
-                [{"output_size": 32}],
+                [{"output_size": 16}, {"output_size": 8}],
+                [{"output_size": 16}],
+                [{"output_size": 8}],
             ],
         },
     },
@@ -103,7 +101,7 @@ def _get_config(search_alg, executor):
     return {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        "combiner": {"type": "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
@@ -111,25 +109,6 @@ def _get_config(search_alg, executor):
             "search_alg": search_alg,
         },
     }
-
-
-@contextlib.contextmanager
-def ray_start_4_cpus():
-    res = ray.init(
-        num_cpus=4,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
-@pytest.fixture(scope="module")
-def ray_cluster_4cpu():
-    with ray_start_4_cpus():
-        yield
 
 
 class HyperoptTestCallback(TuneCallback):
@@ -259,7 +238,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        "combiner": {"type": "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "backend": {
             "type": backend,
@@ -275,8 +254,8 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
                 "lower": 0.001,
                 "upper": 0.1,
             },
-            output_feature_name + ".output_size": {"space": "randint", "lower": 32, "upper": 64},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+            output_feature_name + ".output_size": {"space": "randint", "lower": 8, "upper": 16},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 0, "upper": 1},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
