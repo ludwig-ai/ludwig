@@ -282,7 +282,8 @@ def IntegerOptions(
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
-    """Returns a dataclass field with marshmallow metadata that enforces numeric string inputs must be one of `options`.
+    """Returns a dataclass field with marshmallow metadata that enforces numeric string inputs must be one of
+    `options`.
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
