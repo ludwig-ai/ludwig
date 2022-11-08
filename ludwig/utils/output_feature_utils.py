@@ -81,7 +81,6 @@ def concat_dependencies(
                 multipliers = (1, sequence_max_length, 1)
                 tiled_representation = torch.tile(torch.unsqueeze(feature_hidden_state, 1), multipliers)
 
-                # todo future: maybe modify this with TF2 mask mechanics
                 sequence_length = sequence_length_3D(combiner_hidden_state)
                 mask = sequence_mask(sequence_length, sequence_max_length)
                 tiled_representation = torch.mul(
