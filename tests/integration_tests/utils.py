@@ -61,9 +61,10 @@ from ludwig.constants import (
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
-from ludwig.utils.data_utils import read_csv, replace_file_extension
+from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -526,8 +527,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum"),
-        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}),
+        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum", output_feature=True),
+        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}, output_feature=True),
         number_feature(),
     ]
 
@@ -843,10 +844,8 @@ def train_with_backend(
     skip_save_predictions=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
-    output_dir = None
-
-    try:
-        _, _, output_dir = model.train(
+    with tempfile.TemporaryDirectory() as output_directory:
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -855,14 +854,23 @@ def train_with_backend(
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,
+            output_directory=output_directory,
         )
 
         if dataset is None:
             dataset = training_set
 
         if predict:
-            preds, _ = model.predict(dataset=dataset, skip_save_predictions=skip_save_predictions)
+            preds, _ = model.predict(
+                dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
+            )
             assert preds is not None
+
+            if not skip_save_predictions:
+                read_preds = model.backend.df_engine.read_predictions(
+                    os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+                )
+                assert read_preds is not None
 
         if evaluate:
             eval_stats, eval_preds, _ = model.evaluate(
@@ -899,9 +907,6 @@ def train_with_backend(
                         ), f"metric {name1}: {metric1} != {metric2}"
 
         return model
-    finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
 
 
 @contextlib.contextmanager
@@ -914,10 +919,25 @@ def remote_tmpdir(fs_protocol, bucket):
     prefix = f"tmp_{uuid.uuid4().hex}"
     tmpdir = f"{fs_protocol}://{bucket}/{prefix}"
     try:
+        with use_credentials(minio_test_creds()):
+            fs_utils.makedirs(f"{fs_protocol}://{bucket}", exist_ok=True)
         yield tmpdir
     finally:
         try:
-            fs_utils.delete(tmpdir, recursive=True)
+            with use_credentials(minio_test_creds()):
+                fs_utils.delete(tmpdir, recursive=True)
         except FileNotFoundError as e:
-            logging.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+            logger.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
             pass
+
+
+def minio_test_creds():
+    return {
+        "s3": {
+            "client_kwargs": {
+                "endpoint_url": os.environ.get("LUDWIG_MINIO_ENDPOINT", "http://localhost:9000"),
+                "aws_access_key_id": os.environ.get("LUDWIG_MINIO_ACCESS_KEY", "minio"),
+                "aws_secret_access_key": os.environ.get("LUDWIG_MINIO_SECRET_KEY", "minio123"),
+            }
+        }
+    }

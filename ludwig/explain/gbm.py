@@ -1,10 +1,12 @@
 from typing import List, Tuple
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.models.gbm import GBM
 
 
+@PublicAPI(stability="experimental")
 class GBMExplainer(Explainer):
     def explain(self) -> Tuple[List[Explanation], List[float]]:
         """Explain the model's predictions. Uses the feature importances from the model.
@@ -24,7 +26,9 @@ class GBMExplainer(Explainer):
             raise ValueError("Model has not been trained yet.")
 
         # Get global feature importance from the model, use it for each row in the batch.
+        # TODO(travis): support local feature importance
         feat_imp = gbm.booster_.feature_importance(importance_type="gain")
+
         # Scale the feature importance to sum to 1.
         feat_imp = feat_imp / feat_imp.sum() if feat_imp.sum() > 0 else feat_imp
 

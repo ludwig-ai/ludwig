@@ -6,33 +6,9 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False, order=True)
 class CommonTransformerConfig:
     """Common transformer parameter values."""
-
-    num_layers: int = schema_utils.PositiveInteger(
-        default=1, description="", parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_layers"]
-    )
-
-    hidden_size: int = schema_utils.NonNegativeInteger(
-        default=256,
-        description="The number of hidden units of the TransformerStack as well as the dimension that each incoming "
-        "input feature is projected to before feeding to the TransformerStack.",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["hidden_size"],
-    )
-
-    num_heads: int = schema_utils.NonNegativeInteger(
-        default=8,
-        description="Number of heads of the self attention in the transformer block.",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_heads"],
-    )
-
-    transformer_output_size: int = schema_utils.NonNegativeInteger(
-        default=256,
-        description="Size of the fully connected layer after self attention in the transformer block. This is usually "
-        "the same as `hidden_size` and `embedding_size`.",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["transformer_output_size"],
-    )
 
     dropout: float = schema_utils.FloatRange(
         default=0.1,
@@ -42,22 +18,30 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["dropout"],
     )
 
-    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
-        description="",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["fc_layers"],
-    )
-
-    # TODO(#1673): Add conditional logic for fields like this one:
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="The number of stacked fully connected layers (only applies if `reduce_output` is not null).",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_fc_layers"],
-    )
-
-    output_size: int = schema_utils.PositiveInteger(
+    transformer_output_size: int = schema_utils.NonNegativeInteger(
         default=256,
-        description="Output size of a fully connected layer.",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["output_size"],
+        description="Size of the fully connected layer after self attention in the transformer block. This is usually "
+        "the same as `hidden_size` and `embedding_size`.",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["transformer_output_size"],
+    )
+
+    hidden_size: int = schema_utils.NonNegativeInteger(
+        default=256,
+        description="The number of hidden units of the TransformerStack as well as the dimension that each incoming "
+        "input feature is projected to before feeding to the TransformerStack.",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["hidden_size"],
+    )
+
+    num_layers: int = schema_utils.PositiveInteger(
+        default=1,
+        description="The number of transformer layers",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_layers"],
+    )
+
+    num_heads: int = schema_utils.NonNegativeInteger(
+        default=8,
+        description="Number of heads of the self attention in the transformer block.",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_heads"],
     )
 
     use_bias: bool = schema_utils.Boolean(
@@ -66,16 +50,22 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["use_bias"],
     )
 
+    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
+        default="zeros",
+        description="",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["bias_initializer"],
+    )
+
     weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform",
         description="",
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["weights_initializer"],
     )
 
-    bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros",
-        description="",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["bias_initializer"],
+    output_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Output size of a fully connected layer.",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["output_size"],
     )
 
     norm: Optional[str] = schema_utils.StringOptions(
@@ -89,10 +79,16 @@ class CommonTransformerConfig:
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["norm_params"],
     )
 
-    fc_activation: str = schema_utils.ActivationOptions(
-        default="relu",
+    # TODO(#1673): Add conditional logic for fields like this one:
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="The number of stacked fully connected layers (only applies if `reduce_output` is not null).",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["num_fc_layers"],
+    )
+
+    fc_layers: Optional[List[Dict[str, Any]]] = schema_utils.DictList(
         description="",
-        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["fc_activation"],
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["fc_layers"],
     )
 
     fc_dropout: float = schema_utils.FloatRange(
@@ -101,6 +97,12 @@ class CommonTransformerConfig:
         max=1,
         description="",
         parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["fc_dropout"],
+    )
+
+    fc_activation: str = schema_utils.ActivationOptions(
+        default="relu",
+        description="",
+        parameter_metadata=COMBINER_METADATA["TransformerCombiner"]["fc_activation"],
     )
 
     fc_residual: bool = schema_utils.Boolean(

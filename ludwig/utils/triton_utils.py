@@ -696,13 +696,14 @@ def get_example_input(
 
     Generates a synthetic example if one is not provided.
     """
+    config = model.config
     if data_example is None:
-        features = model.config["input_features"] + model.config["output_features"]
+        features = config["input_features"] + config["output_features"]
         df = build_synthetic_dataset(dataset_size=1, features=features)
         data = [row for row in df]
         data_example = pd.DataFrame(data[1:], columns=data[0])
     return to_inference_module_input_from_dataframe(
-        data_example.head(1), model.config, load_paths=True, device=device_types[0]
+        data_example.head(1), config, load_paths=True, device=device_types[0]
     )
 
 

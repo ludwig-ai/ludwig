@@ -79,6 +79,7 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
+        self._processed_data_fp = df if isinstance(df, str) else None
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -134,6 +135,10 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    @property
+    def processed_data_fp(self) -> Optional[str]:
+        return self._processed_data_fp
 
     @property
     def in_memory_size_bytes(self):

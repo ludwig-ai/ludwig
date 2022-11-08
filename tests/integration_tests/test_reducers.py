@@ -8,7 +8,7 @@ from tests.integration_tests.utils import category_feature, generate_data, run_e
 def test_reduction(reduce_output, csv_filename):
     input_features = [sequence_feature(reduce_output=reduce_output)]
 
-    output_features = [category_feature()]
+    output_features = [category_feature(output_feature=True)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, dataset=rel_path)

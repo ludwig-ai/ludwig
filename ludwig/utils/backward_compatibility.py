@@ -89,7 +89,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
-def upgrade_to_latest_version(config: Dict) -> Dict:
+def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
 
@@ -159,6 +159,21 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
     elif isinstance(config, list):
         for v in config:
             _traverse_dicts(v, f)
+
+
+@register_config_transformation("0.6", "backend")
+def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
+    if "cache_credentials" in backend:
+        credentials = backend.get("credentials", {})
+        if "cache" in credentials:
+            warnings.warn("`cache` already found in `backend.credentials`, ignoring `cache_credentials`")
+        else:
+            warnings.warn(
+                "`backend.cache_credentials` has been renamed `backend.credentials.cache`", DeprecationWarning
+            )
+            credentials["cache"] = backend.pop("cache_credentials")
+        backend["credentials"] = credentials
+    return backend
 
 
 @register_config_transformation("0.6", ["output_features"])
@@ -615,6 +630,19 @@ def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
                 f'({increase_batch_size_on_plateau_max_val}) and discarding "increase_batch_size_on_plateau_max"'
             )
             trainer["max_batch_size"] = increase_batch_size_on_plateau_max_val
+    return trainer
+
+
+@register_config_transformation("0.6", ["trainer"])
+def remove_trainer_type(trainer: Dict[str, Any]) -> Dict[str, Any]:
+    if TYPE in trainer:
+        warnings.warn(
+            "Config param `type` has been removed from the trainer. The trainer type is determined by the top level "
+            " `model_type` parameter. Support for the `type` params in trainer will be removed in v0.8",
+            DeprecationWarning,
+        )
+        del trainer[TYPE]
+
     return trainer
 
 

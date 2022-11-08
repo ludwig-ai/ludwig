@@ -8,7 +8,7 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
 @register_preprocessor(NUMBER)
-@dataclass
+@dataclass(repr=False)
 class NumberPreprocessingConfig(BasePreprocessingConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -20,14 +20,14 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["missing_value_strategy"],
     )
 
-    fill_value: float = schema_utils.NonNegativeFloat(
+    fill_value: float = schema_utils.FloatRange(
         default=0.0,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: float = schema_utils.NonNegativeFloat(
+    computed_fill_value: float = schema_utils.FloatRange(
         default=0.0,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
@@ -45,7 +45,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 
 
 @register_preprocessor("number_output")
-@dataclass
+@dataclass(repr=False)
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

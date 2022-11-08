@@ -9,7 +9,7 @@ from ludwig.utils import strings_utils
 
 
 @register_preprocessor(SEQUENCE)
-@dataclass
+@dataclass(repr=False)
 class SequencePreprocessingConfig(BasePreprocessingConfig):
 
     tokenizer: str = schema_utils.String(
@@ -96,9 +96,16 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["computed_fill_value"],
     )
 
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["ngram_size"],
+    )
+
 
 @register_preprocessor("sequence_output")
-@dataclass
+@dataclass(repr=False)
 class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

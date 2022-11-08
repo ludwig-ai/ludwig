@@ -11,7 +11,7 @@ from ludwig.utils import strings_utils
 
 
 @register_preprocessor(BINARY)
-@dataclass
+@dataclass(repr=False)
 class BinaryPreprocessingConfig(BasePreprocessingConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -25,6 +25,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
     fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
+        allow_none=True,
         field_options=[
             schema_utils.FloatRange(default=None, allow_none=False, min=0, max=1, description=""),
             schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
@@ -36,6 +37,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
     computed_fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
+        allow_none=True,
         field_options=[
             schema_utils.FloatRange(default=1.0, allow_none=False, min=0, max=1, description=""),
             schema_utils.StringOptions(options=strings_utils.all_bool_strs(), default="Y", allow_none=False),
@@ -48,6 +50,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
     fallback_true_label: str = schema_utils.String(
         default=None,
+        allow_none=True,
         description="The label to interpret as 1 (True) when the binary feature doesn't have a "
         "conventional boolean value",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
@@ -55,7 +58,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
 
 @register_preprocessor("binary_output")
-@dataclass
+@dataclass(repr=False)
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

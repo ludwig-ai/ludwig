@@ -10,7 +10,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @register_preprocessor(BAG)
-@dataclass
+@dataclass(repr=False)
 class BagPreprocessingConfig(BasePreprocessingConfig):
 
     tokenizer: str = schema_utils.StringOptions(

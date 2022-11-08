@@ -16,6 +16,8 @@
 
 from abc import ABC, abstractmethod
 
+from ludwig.utils.types import DataFrame
+
 
 class DataFrameEngine(ABC):
     @abstractmethod
@@ -69,6 +71,14 @@ class DataFrameEngine(ABC):
 
         Optionally includes the DataFrame index in the Parquet file.
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_predictions(self, df: DataFrame, path: str):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def read_predictions(self, path: str) -> DataFrame:
         raise NotImplementedError()
 
     @abstractmethod

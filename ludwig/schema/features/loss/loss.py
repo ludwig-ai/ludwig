@@ -15,7 +15,7 @@ from ludwig.constants import (
 from ludwig.schema import utils as schema_utils
 
 
-@dataclass
+@dataclass(repr=False)
 class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -24,7 +24,7 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     weight: float = 1.0
 
 
-@dataclass
+@dataclass(repr=False)
 class MSELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -38,7 +38,7 @@ class MSELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class MAELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -52,7 +52,7 @@ class MAELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class RMSELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -66,7 +66,7 @@ class RMSELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class RMSPELossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -80,7 +80,7 @@ class RMSPELossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class BWCEWLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -103,7 +103,7 @@ class BWCEWLossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -121,6 +121,13 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
 
+    class_similarities: list = schema_utils.List(
+        list,
+        default=None,
+        description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
+        "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+    )
+
     class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -129,7 +136,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(
@@ -147,6 +154,13 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
     confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
 
+    class_similarities: list = schema_utils.List(
+        list,
+        default=None,
+        description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
+        "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+    )
+
     class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
 
     weight: float = schema_utils.NonNegativeFloat(
@@ -160,7 +174,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     )
 
 
-@dataclass
+@dataclass(repr=False)
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
 
     type: str = schema_utils.StringOptions(

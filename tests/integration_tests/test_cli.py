@@ -120,6 +120,15 @@ def test_train_cli_dataset(tmpdir, csv_filename):
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
 
 
+def test_train_cli_gpu_memory_limit(tmpdir, csv_filename):
+    """Test training using `ludwig train --dataset --gpu_memory_limit`."""
+    config_filename = os.path.join(tmpdir, "config.yaml")
+    dataset_filename = _prepare_data(csv_filename, config_filename)
+    _run_ludwig(
+        "train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir), gpu_memory_limit="0.5"
+    )
+
+
 def test_train_cli_training_set(tmpdir, csv_filename):
     """Test training using `ludwig train --training_set`."""
     config_filename = os.path.join(tmpdir, "config.yaml")
@@ -256,11 +265,7 @@ def test_collect_summary_activations_weights_cli(tmpdir, csv_filename):
     config_filename = os.path.join(tmpdir, "config.yaml")
     dataset_filename = _prepare_data(csv_filename, config_filename)
     _run_ludwig("train", dataset=dataset_filename, config=config_filename, output_directory=str(tmpdir))
-    completed_process = _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
-    stdout = completed_process.stdout.decode("utf-8")
-
-    assert "Modules" in stdout
-    assert "Parameters" in stdout
+    assert _run_ludwig("collect_summary", model=os.path.join(tmpdir, "experiment_run", "model"))
 
 
 def test_synthesize_dataset_cli(tmpdir, csv_filename):
