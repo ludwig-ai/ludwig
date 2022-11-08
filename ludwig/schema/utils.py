@@ -276,6 +276,50 @@ def StringOptions(
     )
 
 
+def IntegerOptions(
+    options: TList[int],
+    default: Union[None, str] = None,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+):
+    """Returns a dataclass field with marshmallow metadata that enforces numeric string inputs must be one of `options`.
+
+    By default, None is allowed (and automatically appended) to the allowed list of options.
+    """
+
+    class IntegerOptionsField(fields.Field):
+        def _deserialize(self, value, attr, data, **kwargs):
+            if isinstance(value, int):
+                if value not in options:
+                    raise ValidationError(f"Expected one of: {options}, found: {value}")
+                return value
+            raise ValidationError(f"Expected integer, found: {value}")
+
+        def _jsonschema_type_mapping(self):
+            return {
+                "type": "integer",
+                "enum": options,
+                "default": default,
+                "title": self.name,
+                "description": description,
+            }
+
+    return field(
+        metadata={
+            "marshmallow_field": IntegerOptionsField(
+                allow_none=False,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
+            )
+        },
+        default=default,
+    )
+
+
 def Boolean(default: bool, description: str, parameter_metadata: ParameterMetadata = None):
     if default is not None:
         try:
