@@ -30,8 +30,10 @@ from fsspec.config import conf
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.air import session
+from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
-from ray.train.horovod import HorovodConfig, HorovodTrainer
+from ray.train.horovod import HorovodTrainer
+from ray.train.torch import TorchCheckpoint
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
@@ -53,7 +55,6 @@ from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
-from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -71,7 +72,18 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
+def initialize_horovod():
+    # Guarded import here to avoid causing import errors when doing hyperopt without
+    # distributed training, where Horovod is an optional dependency.
+    from ludwig.utils.horovod_utils import initialize_horovod as _initialize_horovod
+
+    return _initialize_horovod()
+
+
 def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
+    # Horovod an optional import, so avoid importing at the top.
+    from ray.train.horovod import HorovodConfig
+
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -149,7 +161,6 @@ def train_fn(
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
     hvd = initialize_horovod()
-    train_results = {}
     try:
         initialize_pytorch(horovod=hvd)
 
@@ -185,14 +196,24 @@ def train_fn(
 
         torch.cuda.empty_cache()
 
-        train_results = results, trainer.validation_field, trainer.validation_metric
+        # Passing objects containg Torch tensors as metrics is not supported as it will throw an
+        # exception on deserialization, so create a checkpoint and return via session.report() along
+        # with the path of the checkpoint
+        ckpt = Checkpoint.from_dict({"state_dict": results})
+        torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the train_results object above.
-        session.report(metrics={"train_results": train_results})
+        session.report(
+            metrics={
+                "validation_field": trainer.validation_field,
+                "validation_metric": trainer.validation_metric,
+                "ckpt_directory": torch_ckpt.to_directory(),
+            },
+            checkpoint=torch_ckpt,
+        )
     finally:
         hvd.shutdown()
-        return train_results
 
 
 @ray.remote(max_calls=1)
@@ -296,7 +317,12 @@ class RayAirRunner:
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
         # CPU and memory contention and avoid too many workers on a single machine.
         strategy = "PACK" if trainer_kwargs.get("use_gpu", False) else "SPREAD"
-        self.scaling_config = ScalingConfig(placement_strategy=strategy, **trainer_kwargs)
+        self.scaling_config = ScalingConfig(
+            placement_strategy=strategy,
+            # Override the default of 1 to prevent unnecessary CPU usage.
+            trainer_resources={"CPU": 0},
+            **trainer_kwargs,
+        )
 
     # TODO: Enable dynamic window size frm backend.loader.window_size_bytes
     def run(
@@ -381,7 +407,12 @@ class RayTrainerV2(BaseTrainer):
                 dataset=dataset,
             )
 
-        results, self._validation_field, self._validation_metric = trainer_results.metrics["train_results"]
+        # Set validation field and metric used by trainer
+        self._validation_field = trainer_results.metrics["validation_field"]
+        self._validation_metric = trainer_results.metrics["validation_metric"]
+
+        # Load model from checkpoint
+        results = Checkpoint.from_directory(trainer_results.metrics["ckpt_directory"]).to_dict()["state_dict"]
 
         # load state dict back into the model
         state_dict, *args = results
@@ -509,7 +540,6 @@ def eval_fn(
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
-        return results
 
 
 class RayPredictor(BasePredictor):

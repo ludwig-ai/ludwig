@@ -16,13 +16,15 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import ray
-from packaging import version
 from ray import tune
-from ray.tune import ExperimentAnalysis, register_trainable, Stopper
+from ray.air import Checkpoint
+from ray.air.config import CheckpointConfig, FailureConfig, RunConfig
+from ray.tune import ExperimentAnalysis, register_trainable, Stopper, TuneConfig
+from ray.tune.execution.placement_groups import PlacementGroupFactory
 from ray.tune.schedulers.resource_changing_scheduler import DistributeResources, ResourceChangingScheduler
-from ray.tune.suggest import BasicVariantGenerator, ConcurrencyLimiter
+from ray.tune.search import BasicVariantGenerator, ConcurrencyLimiter, SEARCH_ALG_IMPORT
+from ray.tune.tuner import Tuner
 from ray.tune.utils import wait_for_gpu
-from ray.tune.utils.placement_groups import PlacementGroupFactory
 from ray.util.queue import Queue as RayQueue
 
 from ludwig.api import LudwigModel
@@ -33,6 +35,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
+from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
@@ -42,19 +45,7 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
-_ray_200 = version.parse(ray.__version__) >= version.parse("2.0")
-if _ray_200:
-    from ray.air import Checkpoint
-    from ray.tune.search import SEARCH_ALG_IMPORT
-
-    from ludwig.hyperopt.syncer import RemoteSyncer
-else:
-    from ray.ml import Checkpoint
-    from ray.tune.suggest import SEARCH_ALG_IMPORT
-
-
 logger = logging.getLogger(__name__)
-
 
 try:
     from ludwig.backend.ray import RayBackend
@@ -776,23 +767,19 @@ class RayTuneExecutor:
             )
 
         if _is_ray_backend(backend):
-            # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
-            # but we do want to enable it when GPUs are specified
             resources_per_trial = PlacementGroupFactory(
                 [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
                 if self._gpu_resources_per_trial_non_none
-                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}]
+                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}],
+                # When training on GPU, you want to pack workers together to limit network latency during
+                # allreduce. Conversely, for CPU training you want to spread out the workers to limit
+                # CPU and memory contention and avoid too many workers on a single machine.
+                strategy="PACK" if self._gpu_resources_per_trial_non_none else "SPREAD",
             )
 
         if has_remote_protocol(output_directory):
-            if _ray_200:
-                self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
-                self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
-            else:
-                raise ValueError(
-                    "Syncing to remote filesystems with hyperopt is not supported with ray<2.0, "
-                    "please upgrade to ray>=2.0"
-                )
+            self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
+            self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
             output_directory = None
         elif self.kubernetes_namespace:
             from ray.tune.integration.kubernetes import KubernetesSyncClient, NamespacedKubernetesSyncer
@@ -808,38 +795,56 @@ class RayTuneExecutor:
 
         ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
-        # Note that resume="AUTO" will attempt to resume the experiment if possible, and
-        # otherwise will start a new experiment:
-        # https://docs.ray.io/en/latest/tune/tutorials/tune-stopping.html
-        should_resume = "AUTO" if resume is None else resume
-
         try:
-            analysis = tune.run(
-                f"trainable_func_f{hash_dict(config).decode('ascii')}",
-                name=experiment_name,
-                config={
-                    **self.search_space,
-                    **tune_config,
-                },
-                scheduler=self.scheduler,
-                search_alg=search_alg,
-                num_samples=self.num_samples,
-                keep_checkpoints_num=1,
-                max_failures=1,  # retry a trial failure once
-                resources_per_trial=resources_per_trial,
-                time_budget_s=self.time_budget_s,
-                sync_config=self.sync_config,
-                local_dir=output_directory,
-                metric=metric,
-                mode=mode,
-                trial_name_creator=lambda trial: f"trial_{trial.trial_id}",
-                trial_dirname_creator=lambda trial: f"trial_{trial.trial_id}",
-                callbacks=tune_callbacks,
-                stop=CallbackStopper(callbacks),
-                verbose=hyperopt_log_verbosity,
-                resume=should_resume,
-                log_to_file=True,
-            )
+            if resume:
+                # Restore from experiment directory
+                tuner = Tuner.restore(
+                    path=os.path.join(output_directory, experiment_name), resume_unfinished=True, restart_errored=True
+                )
+            else:
+                tuner = Tuner(
+                    trainable=tune.with_resources(
+                        run_experiment_trial_params,
+                        resources=resources_per_trial,
+                    ),
+                    param_space={
+                        **self.search_space,
+                        **tune_config,
+                    },
+                    tune_config=TuneConfig(
+                        metric=metric,
+                        mode=mode,
+                        search_alg=search_alg,
+                        scheduler=self.scheduler,
+                        num_samples=self.num_samples,
+                        time_budget_s=self.time_budget_s,
+                        reuse_actors=True,
+                    ),
+                    run_config=RunConfig(
+                        name=experiment_name,
+                        local_dir=output_directory,
+                        stop=CallbackStopper(callbacks),
+                        callbacks=tune_callbacks,
+                        failure_config=FailureConfig(
+                            max_failures=1,
+                        ),
+                        sync_config=self.sync_config,
+                        checkpoint_config=CheckpointConfig(
+                            num_to_keep=2,
+                            checkpoint_score_attribute=metric,
+                            checkpoint_score_order=mode,
+                        ),
+                        verbose=hyperopt_log_verbosity,
+                        log_to_file=True,
+                    ),
+                    _tuner_kwargs={
+                        "trial_name_creator": lambda trial: f"trial_{trial.trial_id}",
+                        "trial_dirname_creator": lambda trial: f"trial_{trial.trial_id}",
+                    },
+                )
+            result_grid = tuner.fit()
+            # Get ExperimentAnalysis object from ResultGrid
+            analysis = result_grid._experiment_analysis
         except Exception as e:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
             # NOTE: Cascading the exception with "raise _ from e" still results in hanging.

@@ -205,6 +205,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             vocab_file=preprocessing_parameters["vocab_file"],
             unknown_symbol=preprocessing_parameters["unknown_symbol"],
             padding_symbol=preprocessing_parameters["padding_symbol"],
+            ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
         max_length = min(preprocessing_parameters["max_sequence_length"], max_length)
