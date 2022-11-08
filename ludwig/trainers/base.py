@@ -42,7 +42,7 @@ class BaseTrainer(ABC):
     # Remote implementations may override this
     def shutdown(self):
         pass
-    
+
     def barrier(self):
         pass
 
