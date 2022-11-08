@@ -180,7 +180,7 @@ def hyperopt(
         for training.
     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
         [0, 1] allowed to allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
         to use multithreading parallelism to improve performance at
         the cost of determinism.
     :param callbacks: (list, default: `None`) a list of
