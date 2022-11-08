@@ -831,8 +831,6 @@ class LightGBMTrainer(BaseTrainer):
             return True
         return self.horovod.rank() == 0
 
-    def barrier(self):
-        return
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():
