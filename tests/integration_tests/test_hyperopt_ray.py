@@ -57,15 +57,14 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        "combiner.num_fc_layers": {"space": "randint", "lower": 0, "upper": 2},
         "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
         "utterance.fc_layers": {
             "space": "choice",
             "categories": [
-                [{"output_size": 64}, {"output_size": 32}],
-                [{"output_size": 64}],
-                [{"output_size": 32}],
+                [{"output_size": 16}, {"output_size": 8}],
+                [{"output_size": 16}],
+                [{"output_size": 8}],
             ],
         },
     },
@@ -102,7 +101,7 @@ def _get_config(search_alg, executor):
     return {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        "combiner": {"type": "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
@@ -225,72 +224,76 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
     )
 
 
-# @pytest.mark.distributed
-# @pytest.mark.parametrize("backend", ["local", "ray"])
-# def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
-#     input_features = [
-#         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
-#         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
-#     ]
-#     output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
+@pytest.mark.distributed
+@pytest.mark.parametrize("backend", ["local"])  # "ray"
+def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
+    input_features = [
+        text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
-#     output_feature_name = output_features[0]["name"]
+    rel_path = generate_data(input_features, output_features, csv_filename)
 
-#     rel_path = generate_data(input_features, output_features, csv_filename)
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat"},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        "backend": {
+            "type": backend,
+        },
+    }
 
-#     config = {
-#         "input_features": input_features,
-#         "output_features": output_features,
-#         "combiner": {"type": "concat"},
-#         TRAINER: {"epochs": 2, "learning_rate": 0.001},
-#         "backend": {
-#             "type": backend,
-#         },
-#         "hyperopt": {
-#             "parameters": {
-#                 "trainer.learning_rate": {
-#                     "space": "loguniform",
-#                     "lower": 0.001,
-#                     "upper": 0.1,
-#                 },
-#                 output_feature_name + ".output_size": {"space": "randint", "lower": 32, "upper": 64},
-#                 output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
-#             },
-#             "goal": "minimize",
-#             "output_feature": output_feature_name,
-#             "validation_metrics": "loss",
-#             "executor": {
-#                 "type": "ray",
-#                 "num_samples": 2,
-#                 "cpu_resources_per_trial": 2,
-#                 "max_concurrent_trials": "auto",
-#             },
-#             "search_alg": {"type": "variant_generator"},
-#         },
-#     }
+    output_feature_name = output_features[0]["name"]
 
-#     @ray.remote(num_cpus=0)
-#     class Event:
-#         def __init__(self):
-#             self._set = False
+    hyperopt_configs = {
+        "parameters": {
+            "trainer.learning_rate": {
+                "space": "loguniform",
+                "lower": 0.001,
+                "upper": 0.1,
+            },
+            output_feature_name + ".output_size": {"space": "randint", "lower": 8, "upper": 16},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 0, "upper": 1},
+        },
+        "goal": "minimize",
+        "output_feature": output_feature_name,
+        "validation_metrics": "loss",
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+            "cpu_resources_per_trial": 2,
+            "max_concurrent_trials": "auto",
+        },
+        "search_alg": {"type": "variant_generator"},
+    }
 
-#         def is_set(self):
-#             return self._set
+    @ray.remote(num_cpus=0)
+    class Event:
+        def __init__(self):
+            self._set = False
 
-#         def set(self):
-#             self._set = True
+        def is_set(self):
+            return self._set
 
-#     # Used to trigger a cancel event in the trial, which should subsequently be retried
-#     event = Event.remote()
+        def set(self):
+            self._set = True
 
-#     class CancelCallback(Callback):
-#         def on_epoch_start(self, trainer, progress_tracker, save_path: str):
-#             if progress_tracker.epoch == 1 and not ray.get(event.is_set.remote()):
-#                 ray.get(event.set.remote())
-#                 raise KeyboardInterrupt()
+    # Used to trigger a cancel event in the trial, which should subsequently be retried
+    event = Event.remote()
 
-#     # run for one epoch, then cancel, then resume from where we left off
-#     run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
+    class CancelCallback(Callback):
+        def on_epoch_start(self, trainer, progress_tracker, save_path: str):
+            if progress_tracker.epoch == 1 and not ray.get(event.is_set.remote()):
+                ray.get(event.set.remote())
+                raise KeyboardInterrupt()
+
+    # add hyperopt parameter space to the config
+    config["hyperopt"] = hyperopt_configs
+
+    # run for one epoch, then cancel, then resume from where we left off
+    run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
 
 
 @pytest.mark.distributed

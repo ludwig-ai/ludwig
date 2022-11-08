@@ -16,7 +16,7 @@ import contextlib
 import json
 import os.path
 import uuid
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import pytest
 import torch
@@ -28,7 +28,6 @@ from ludwig.constants import (
     CATEGORY,
     COMBINER,
     EXECUTOR,
-    GRID_SEARCH,
     HYPEROPT,
     INPUT_FEATURES,
     MAX_CONCURRENT_TRIALS,
@@ -60,7 +59,6 @@ ray = pytest.importorskip("ray")
 from ludwig.hyperopt.execution import get_build_hyperopt_executor  # noqa
 
 pytestmark = pytest.mark.distributed
-
 
 RANDOM_SEARCH_SIZE = 2
 
@@ -105,11 +103,7 @@ SCHEDULERS_FOR_TESTING = [
 
 
 def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
-    input_features = [
-        text_feature(name="utterance", encoder={"reduce_output": "sum"}),
-        category_feature(encoder={"vocab_size": 3}),
-    ]
-
+    input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
@@ -117,59 +111,13 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        COMBINER: {TYPE: "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
     }
 
     config = ModelConfig.from_dict(config).to_dict()
 
     return config, rel_path
-
-
-def _setup_ludwig_config_with_shared_params(dataset_fp: str) -> Tuple[Dict, Any]:
-    input_features = [
-        text_feature(name="title", encoder={TYPE: "parallel_cnn"}),
-        text_feature(name="summary"),
-        category_feature(encoder={"vocab_size": 3}),
-        category_feature(encoder={"vocab_size": 3}),
-    ]
-
-    output_features = [category_feature(decoder={"vocab_size": 3})]
-
-    rel_path = generate_data(input_features, output_features, dataset_fp)
-
-    num_filters_search_space = [4, 8]
-    embedding_size_search_space = [4, 8]
-    reduce_input_search_space = ["sum", "mean"]
-
-    # Add default parameters in hyperopt parameter search space
-    config = {
-        INPUT_FEATURES: input_features,
-        OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
-        HYPEROPT: {
-            "parameters": {
-                "trainer.learning_rate": {"lower": 0.0001, "upper": 0.01, "space": "loguniform"},
-                "defaults.text.encoder.num_filters": {"space": "choice", "categories": num_filters_search_space},
-                "defaults.category.encoder.embedding_size": {
-                    "space": "choice",
-                    "categories": embedding_size_search_space,
-                },
-                "defaults.category.decoder.reduce_input": {
-                    "space": "choice",
-                    "categories": reduce_input_search_space,
-                },
-            },
-            "goal": "minimize",
-            "output_feature": output_features[0][NAME],
-            "validation_metrics": "loss",
-            "executor": {TYPE: "ray", "num_samples": RANDOM_SEARCH_SIZE},
-            "search_alg": {TYPE: "variant_generator"},
-        },
-    }
-
-    return config, rel_path, num_filters_search_space, embedding_size_search_space, reduce_input_search_space
 
 
 @contextlib.contextmanager
@@ -316,11 +264,7 @@ def test_hyperopt_scheduler(
 
 
 def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_cluster):
-    input_features = [
-        text_feature(name="utterance", encoder={"reduce_output": "sum"}),
-        category_feature(encoder={"vocab_size": 3}),
-    ]
-
+    input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -328,7 +272,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
     config = {
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
+        COMBINER: {TYPE: "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "backend": backend,
     }
@@ -353,14 +297,12 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
                 ],
             },
             output_feature_name + ".output_size": {"space": "choice", "categories": [16, 21, 26, 31, 36]},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 1, "upper": 6},
         }
     else:
         # grid search space will be product each parameter size
         search_parameters = {
-            "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.01]},
-            output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21, 36]},
-            output_feature_name + ".num_fc_layers": {"space": "grid_search", "values": [1, 3, 6]},
+            "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.01]},
+            output_feature_name + ".output_size": {"space": "grid_search", "values": [16, 21]},
         }
 
     hyperopt_configs = {
@@ -546,7 +488,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
                 TYPE: "ray",
                 "time_budget_s": 200,
                 "cpu_resources_per_trial": 1,
-                "num_samples": 4,
+                "num_samples": 2,
                 "scheduler": {TYPE: "fifo"},
             },
             "search_alg": {TYPE: "variant_generator"},
@@ -568,13 +510,8 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
                             },
                         },
                         {
-                            "combiner": {
-                                "type": "concat",
-                                "num_fc_layers": 2,
-                            },
-                            "trainer": {
-                                "learning_rate_scaling": "linear",
-                            },
+                            "combiner": {"type": "concat"},
+                            "trainer": {"learning_rate_scaling": "linear"},
                         },
                     ],
                 },
@@ -595,7 +532,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
     )
 
     results_df = results.experiment_analysis.results_df
-    assert len(results_df) == 4
+    assert len(results_df) == 2
 
     for _, trial_meta in results_df.iterrows():
         trial_dir = trial_meta["trial_dir"]
@@ -615,39 +552,6 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
             assert trial_config[TRAINER]["decay_rate"] == 0.8
             assert trial_config[TRAINER]["optimizer"]["type"] == "adam"
         else:
-            assert trial_config[COMBINER]["num_fc_layers"] == 2
             assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
 
         assert trial_config[TRAINER]["learning_rate"] in {0.7, 0.42}
-
-
-def test_hyperopt_grid_search_more_than_one_sample(csv_filename, tmpdir, ray_cluster):
-    input_features = [
-        text_feature(name="utterance", encoder={"reduce_output": "sum"}),
-        category_feature(encoder={"vocab_size": 3}),
-    ]
-
-    output_features = [category_feature(decoder={"vocab_size": 3})]
-
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    config = {
-        INPUT_FEATURES: input_features,
-        OUTPUT_FEATURES: output_features,
-        COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
-        HYPEROPT: {
-            "goal": "minimize",
-            "output_feature": output_features[0][NAME],
-            "validation_metrics": "loss",
-            "executor": {TYPE: "ray", "num_samples": 2},  # set to 2 intentionally
-            "search_alg": {TYPE: "variant_generator"},
-            "parameters": {
-                "trainer.learning_rate": {"space": GRID_SEARCH, "values": [0.001, 0.005]},
-                output_features[0][NAME] + ".output_size": {"space": GRID_SEARCH, "values": [16, 21]},
-            },
-        },
-    }
-
-    with pytest.warns(RuntimeWarning):
-        hyperopt(config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")

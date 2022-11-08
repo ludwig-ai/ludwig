@@ -148,6 +148,11 @@ def unload_jsonschema_from_marshmallow_class(mclass, additional_properties: bool
     """Helper method to directly get a marshmallow class's JSON schema without extra wrapping props."""
     assert_is_a_marshmallow_class(mclass)
     schema = js(props_ordered=True).dump(mclass.Schema())["definitions"][mclass.__name__]
+    # Check top-level ParameterMetadata:
+    for prop in schema["properties"]:
+        prop_schema = schema["properties"][prop]
+        if "parameter_metadata" in prop_schema:
+            prop_schema["parameter_metadata"] = copy.deepcopy(prop_schema["parameter_metadata"])
     schema["additionalProperties"] = additional_properties
     return schema
 

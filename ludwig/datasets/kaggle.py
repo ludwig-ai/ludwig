@@ -29,7 +29,6 @@ def download_kaggle_dataset(
     kaggle_competition: Optional[str] = None,
     kaggle_username: Optional[str] = None,
     kaggle_key: Optional[str] = None,
-    filenames: Optional[list] = None,
 ):
     """Download all files in a kaggle dataset. One of kaggle_dataset_id,
 
@@ -41,12 +40,8 @@ def download_kaggle_dataset(
         api = create_kaggle_client()
         api.authenticate()
     with upload_output_directory(download_directory) as (tmpdir, _):
-        dataset_or_competition = kaggle_competition or kaggle_dataset_id
-        if filenames:
-            download_fn = api.competition_download_file if kaggle_competition else api.dataset_download_file
-            for filename in filenames:
-                download_fn(dataset_or_competition, filename, path=tmpdir)
+        if kaggle_competition:
+            api.competition_download_files(kaggle_competition, path=tmpdir)
         else:
-            download_fn = api.competition_download_files if kaggle_competition else api.dataset_download_files
-            download_fn(dataset_or_competition, path=tmpdir)
+            api.dataset_download_files(kaggle_dataset_id, path=tmpdir)
     return [os.path.join(download_directory, f) for f in os.listdir(download_directory)]
