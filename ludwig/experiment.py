@@ -17,7 +17,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Union
+from typing import List, Optional, Union
 
 import pandas as pd
 
@@ -60,7 +60,7 @@ def experiment_cli(
     skip_collect_overall_stats: bool = False,
     output_directory: str = "results",
     gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
@@ -160,9 +160,9 @@ def experiment_cli(
          model and the training progress files.
      :param gpus: (list, default: `None`) list of GPUs that are available
          for training.
-     :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-         allocate per GPU device.
-     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
+     :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
          to use multithreading parallelism to improve performance at
          the cost of determinism.
      :param callbacks: (list, default: `None`) a list of
@@ -480,14 +480,18 @@ def cli(sys_argv):
     )
     parser.add_argument("-g", "--gpus", nargs="+", type=int, default=None, help="list of GPUs to use")
     parser.add_argument(
-        "-gml", "--gpu_memory_limit", type=int, default=None, help="maximum memory in MB to allocate per GPU device"
+        "-gml",
+        "--gpu_memory_limit",
+        type=float,
+        default=None,
+        help="maximum memory fraction [0, 1] allowed to allocate per GPU device",
     )
     parser.add_argument(
         "-dpt",
         "--disable_parallel_threads",
         action="store_false",
         dest="allow_parallel_threads",
-        help="disable TensorFlow from using multithreading for reproducibility",
+        help="disable PyTorch from using multithreading for reproducibility",
     )
     parser.add_argument(
         "-b",

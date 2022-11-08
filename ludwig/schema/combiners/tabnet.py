@@ -7,12 +7,27 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
-@dataclass
+@dataclass(repr=False, order=True)
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
 
+    type: str = schema_utils.StringOptions(
+        ["tabnet"],
+        default="tabnet",
+        allow_none=False,
+        description="Type of combiner.",
+    )
+
     size: int = schema_utils.PositiveInteger(
         default=32, description="`N_a` in the paper.", parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["size"]
+    )
+
+    dropout: float = schema_utils.FloatRange(
+        default=0.05,
+        min=0,
+        max=1,
+        description="Dropout rate for the transformer block.",
+        parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["dropout"],
     )
 
     output_size: int = schema_utils.PositiveInteger(
@@ -88,11 +103,3 @@ class TabNetCombinerConfig(BaseCombinerConfig):
         description="",
         parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["entmax_alpha"],
     )  # 1 corresponds to softmax, 2 is sparsemax.
-
-    dropout: float = schema_utils.FloatRange(
-        default=0.05,
-        min=0,
-        max=1,
-        description="Dropout rate for the transformer block.",
-        parameter_metadata=COMBINER_METADATA["TabNetCombiner"]["dropout"],
-    )

@@ -1,8 +1,46 @@
+from copy import deepcopy
 from datetime import datetime
+from typing import Any, Dict
 
 import pytest
+import torch
 
 from ludwig.features import date_feature
+from ludwig.features.date_feature import DateInputFeature
+from ludwig.schema.features.date_feature import DateInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.torch_utils import get_torch_device
+
+BATCH_SIZE = 2
+DATE_W_SIZE = 9
+DEVICE = get_torch_device()
+
+
+@pytest.fixture(scope="module")
+def date_config():
+    return {"name": "date_column_name", "type": "date"}
+
+
+def test_date_input_feature(date_config: Dict[str, Any]):
+    # setup image input feature definition
+    feature_def = deepcopy(date_config)
+
+    # pickup any other missing parameters
+    defaults = DateInputFeatureConfig().to_dict()
+    set_def = merge_dict(defaults, feature_def)
+
+    # ensure no exceptions raised during build
+    feature_config, _ = load_config_with_kwargs(DateInputFeatureConfig, set_def)
+    input_feature_obj = DateInputFeature(feature_config).to(DEVICE)
+
+    # check one forward pass through input feature
+    input_tensor = input_feature_obj.create_sample_input(batch_size=BATCH_SIZE)
+    assert input_tensor.shape == torch.Size((BATCH_SIZE, DATE_W_SIZE))
+    assert input_tensor.dtype == torch.int32
+
+    encoder_output = input_feature_obj(input_tensor)
+    assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)
 
 
 @pytest.mark.parametrize(

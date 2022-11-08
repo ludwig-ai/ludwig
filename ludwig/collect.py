@@ -17,7 +17,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import torchinfo
@@ -43,7 +43,7 @@ def collect_activations(
     batch_size: int = 128,
     output_directory: str = "results",
     gpus: List[str] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
     backend: Union[Backend, str] = None,
@@ -75,9 +75,9 @@ def collect_activations(
         model and the training progress files.
     :param gpus: (list, default: `None`) list of GPUs that are available
         for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-        allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
         to use multithreading parallelism to improve performance at
         the cost of determinism.
     :param callbacks: (list, default: `None`) a list of
@@ -172,15 +172,15 @@ def print_model_summary(model_path: str, **kwargs) -> None:
     """
     model = LudwigModel.load(model_path)
     # Model's dict inputs are wrapped in a list, required by torchinfo.
-    torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()])
+    logger.info(torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()], depth=20))
 
-    print("\nModules:\n")
+    logger.info("\nModules:\n")
     for name, _ in model.model.named_children():
-        print(name)
+        logger.info(name)
 
-    print("\nParameters:\n")
+    logger.info("\nParameters:\n")
     for name, _ in model.model.named_parameters():
-        print(name)
+        logger.info(name)
 
 
 def cli_collect_activations(sys_argv):
@@ -267,14 +267,18 @@ def cli_collect_activations(sys_argv):
     # ------------------
     parser.add_argument("-g", "--gpus", type=int, default=0, help="list of gpu to use")
     parser.add_argument(
-        "-gml", "--gpu_memory_limit", type=int, default=None, help="maximum memory in MB to allocate per GPU device"
+        "-gml",
+        "--gpu_memory_limit",
+        type=float,
+        default=None,
+        help="maximum memory fraction [0, 1] allowed to allocate per GPU device",
     )
     parser.add_argument(
         "-dpt",
         "--disable_parallel_threads",
         action="store_false",
         dest="allow_parallel_threads",
-        help="disable TensorFlow from using multithreading for reproducibility",
+        help="disable PyTorch from using multithreading for reproducibility",
     )
     parser.add_argument(
         "-b",

@@ -7,6 +7,7 @@ from typing import Any, Dict, Union
 
 import ludwig.datasets
 from ludwig.api import LudwigModel
+from ludwig.benchmarking.artifacts import BenchmarkingResult, build_benchmarking_result
 from ludwig.benchmarking.profiler_callbacks import LudwigProfilerCallback
 from ludwig.benchmarking.utils import (
     create_default_config,
@@ -14,7 +15,10 @@ from ludwig.benchmarking.utils import (
     delete_model_checkpoints,
     export_artifacts,
     load_from_module,
+    populate_benchmarking_config_with_defaults,
+    propagate_global_parameters,
     save_yaml,
+    validate_benchmarking_config,
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.hyperopt.run import hyperopt
@@ -26,15 +30,16 @@ logger = logging.getLogger()
 def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
     """Set up the backend and load the Ludwig config.
 
-    experiment: dictionary containing the dataset name, config path, and experiment name.
-    Returns a Ludwig config.
+    Args:
+        experiment: dictionary containing the dataset name, config path, and experiment name.
+        Returns a Ludwig config.
     """
     shutil.rmtree(os.path.join(experiment["experiment_name"]), ignore_errors=True)
     if "config_path" not in experiment:
         experiment["config_path"] = create_default_config(experiment)
     model_config = load_yaml(experiment["config_path"])
 
-    if "process_config_file_path" in experiment:
+    if experiment["process_config_file_path"]:
         process_config_spec = importlib.util.spec_from_file_location(
             "process_config_file_path.py", experiment["process_config_file_path"]
         )
@@ -52,8 +57,8 @@ def setup_experiment(experiment: Dict[str, str]) -> Dict[Any, Any]:
 def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
     """Run a Ludwig exepriment and track metrics given a dataset name.
 
-    experiment: dictionary containing the dataset name, config path, and experiment name.
-    export_artifacts_dict: dictionary containing an export boolean flag and a path to export to.
+    Args:
+        experiment: dictionary containing the dataset name, config path, and experiment name.
     """
     logger.info(f"\nRunning experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}*")
 
@@ -94,7 +99,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         model = LudwigModel(
             config=model_config, callbacks=ludwig_profiler_callbacks, logging_level=logging.ERROR, backend=backend
         )
-        _, _, _, output_directory = model.experiment(
+        model.experiment(
             dataset=dataset,
             output_directory=experiment["experiment_name"],
             skip_save_processed_input=True,
@@ -102,36 +107,37 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
             skip_save_predictions=True,
             skip_collect_predictions=True,
         )
-        delete_model_checkpoints(output_directory)
+        delete_model_checkpoints(experiment["experiment_name"])
 
 
-def benchmark(bench_config_path: str) -> None:
+def benchmark(benchmarking_config: Union[Dict[str, Any], str]) -> Dict[str, BenchmarkingResult]:
     """Launch benchmarking suite from a benchmarking config.
 
-    bench_config_path: config for the benchmarking tool. Specifies datasets and their
-        corresponding Ludwig configs, as well as export options.
+    Args:
+        benchmarking_config: config or config path for the benchmarking tool. Specifies datasets and their
+            corresponding Ludwig configs, as well as export options.
     """
-    benchmarking_config = load_yaml(bench_config_path)
-    for experiment in benchmarking_config["experiments"]:
+    if isinstance(benchmarking_config, str):
+        benchmarking_config = load_yaml(benchmarking_config)
+    validate_benchmarking_config(benchmarking_config)
+    benchmarking_config = populate_benchmarking_config_with_defaults(benchmarking_config)
+    benchmarking_config = propagate_global_parameters(benchmarking_config)
+
+    experiment_artifacts = {}
+    for experiment_idx, experiment in enumerate(benchmarking_config["experiments"]):
         try:
-            if "experiment_name" not in experiment:
-                experiment["experiment_name"] = benchmarking_config["experiment_name"]
-            if "hyperopt" not in experiment:
-                experiment["hyperopt"] = benchmarking_config["hyperopt"]
-            if "process_config_file_path" in benchmarking_config:
-                experiment["process_config_file_path"] = benchmarking_config["process_config_file_path"]
-            if "profiler" in benchmarking_config:
-                experiment["profiler"] = benchmarking_config["profiler"]
             benchmark_one(experiment)
+            dataset_name = experiment["dataset_name"]
+            experiment_artifacts[dataset_name] = build_benchmarking_result(benchmarking_config, experiment_idx)
         except Exception:
             logger.exception(
                 f"Experiment *{experiment['experiment_name']}* on dataset *{experiment['dataset_name']}* failed"
             )
-
         finally:
             if benchmarking_config["export"]["export_artifacts"]:
                 export_base_path = benchmarking_config["export"]["export_base_path"]
                 export_artifacts(experiment, experiment["experiment_name"], export_base_path)
+    return experiment_artifacts
 
 
 def cli(sys_argv):

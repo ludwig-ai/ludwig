@@ -80,7 +80,7 @@ COMBINER_METADATA = {
             internal_only=False,
         ),
         "entity_1": ParameterMetadata(
-            ui_display_name=None,
+            ui_display_name="Entity 1",
             default_value_reasoning=None,
             example_value=None,
             related_parameters=None,
@@ -90,11 +90,11 @@ COMBINER_METADATA = {
             suggested_values_reasoning=None,
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
-            literature_references=None,
+            literature_references=["https://ludwig.ai/0.6/configuration/combiner/#comparator-combiner"],
             internal_only=False,
         ),
         "entity_2": ParameterMetadata(
-            ui_display_name=None,
+            ui_display_name="Entity 2",
             default_value_reasoning=None,
             example_value=None,
             related_parameters=None,
@@ -104,7 +104,7 @@ COMBINER_METADATA = {
             suggested_values_reasoning=None,
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
-            literature_references=None,
+            literature_references=["https://ludwig.ai/0.6/configuration/combiner/#comparator-combiner"],
             internal_only=False,
         ),
         "fc_layers": ParameterMetadata(
@@ -1116,7 +1116,11 @@ COMBINER_METADATA = {
             "hidden representations ('add') is a good starting point.",
             example_value=[64],
             related_parameters=["hidden_size"],
-            other_information=None,
+            other_information="Must be an integer, 'add', or null. If an integer, specifies the embedding size for "
+            "input feature names. Input feature name embeddings will be concatenated to hidden "
+            "representations. Must be less than or equal to hidden_size. If 'add', input feature "
+            "names use embeddings the same size as hidden_size, and are added (element-wise) to the "
+            "hidden representations. If null, input feature embeddings are not used.",
             description_implications="Input feature name embeddings have been shown to improve performance of deep "
             "learning methods on tabular data. Feature name embeddings play a similar role "
             "to positional embeddings in a language model, allowing the network to learn "

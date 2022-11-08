@@ -3,15 +3,20 @@ from dataclasses import field
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import TYPE
+from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()
 DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
 
 
-@dataclass
+def get_split_cls(name: str):
+    return split_config_registry[name]
+
+
+@dataclass(repr=False, order=True)
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
 
@@ -20,7 +25,7 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @split_config_registry.register("random")
-@dataclass
+@dataclass(repr=False, order=True)
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
@@ -35,11 +40,12 @@ class RandomSplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Probabilities for splitting data into train, validation, and test sets.",
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
 @split_config_registry.register("fixed")
-@dataclass
+@dataclass(repr=False, order=True)
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -51,12 +57,13 @@ class FixedSplitConfig(BaseSplitConfig):
     )
 
     column: str = schema_utils.String(
+        default=SPLIT,
         description="The column name to use for fixed splitting.",
     )
 
 
 @split_config_registry.register("stratify")
-@dataclass
+@dataclass(repr=False, order=True)
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -75,11 +82,12 @@ class StratifySplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Probabilities for splitting data into train, validation, and test sets.",
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
 @split_config_registry.register("datetime")
-@dataclass
+@dataclass(repr=False, order=True)
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
@@ -98,11 +106,12 @@ class DateTimeSplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Proportion of data to split into train, validation, and test sets.",
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
 @split_config_registry.register("hash")
-@dataclass
+@dataclass(order=True)
 class HashSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the hash splitting config.
 
@@ -130,6 +139,7 @@ class HashSplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Proportion of data to split into train, validation, and test sets.",
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
@@ -140,7 +150,7 @@ def get_split_conds():
     for splitter in split_config_registry.data:
         splitter_cls = split_config_registry.data[splitter]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(splitter_cls)["properties"]
-        other_props.pop("type")
+        schema_utils.remove_duplicate_fields(other_props)
         splitter_cond = schema_utils.create_cond(
             {"type": splitter},
             other_props,

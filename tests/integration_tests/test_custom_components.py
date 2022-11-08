@@ -33,6 +33,9 @@ from tests.integration_tests.utils import (
 
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
+
+    type: str = "custom_combiner"
+
     foo: bool = schema_utils.Boolean(default=False, description="")
 
 

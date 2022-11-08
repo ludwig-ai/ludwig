@@ -25,13 +25,15 @@ repos:
       - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
+        exclude: "./proto/"
       - id: trailing-whitespace
       - id: mixed-line-ending
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.1.0
+    rev: v3.2.0
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
+        exclude: "./proto/"
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.5.0
     hooks:
@@ -42,16 +44,18 @@ repos:
     hooks:
       - id: isort
         name: Format imports
+        exclude: "./proto/"
   - repo: https://github.com/pycqa/flake8
     rev: "5.0.4"
     hooks:
       - id: flake8
+        exclude: "./proto/"
   - repo: https://github.com/psf/black
     rev: 22.10.0
     hooks:
       - id: black
         name: Format code
-
+        exclude: "./proto/"
   - repo: https://github.com/asottile/blacken-docs
     rev: v1.12.1
     hooks:
@@ -66,3 +70,7 @@ repos:
           - mdformat-gfm
           - mdformat_frontmatter
         exclude: CHANGELOG.md
+  - repo: https://github.com/yoheimuta/protolint
+    rev: v0.42.0
+    hooks:
+      - id: protolint

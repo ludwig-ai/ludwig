@@ -1,9 +1,10 @@
+# import copy
 from dataclasses import field
 
 from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
-from ludwig.schema.features.utils import input_config_registry, output_config_registry
+from ludwig.schema.features.utils import input_mixin_registry, output_mixin_registry
 
 
 def DefaultsDataclassField(feature_type: str):
@@ -21,8 +22,8 @@ def DefaultsDataclassField(feature_type: str):
             if value is None:
                 return None
             if isinstance(value, dict):
-                input_feature_class = input_config_registry[feature_type]
-                output_feature_class = output_config_registry.get(feature_type, None)
+                input_feature_class = input_mixin_registry[feature_type]
+                output_feature_class = output_mixin_registry.get(feature_type, None)
                 try:
                     input_schema = input_feature_class.Schema().load(value)
                     if output_feature_class:
@@ -37,8 +38,8 @@ def DefaultsDataclassField(feature_type: str):
 
         @staticmethod
         def _jsonschema_type_mapping():
-            input_feature_cls = input_config_registry.get(feature_type)
-            output_feature_cls = output_config_registry.get(feature_type, None)
+            input_feature_cls = input_mixin_registry.get(feature_type)
+            output_feature_cls = output_mixin_registry.get(feature_type, None)
             input_props = schema_utils.unload_jsonschema_from_marshmallow_class(input_feature_cls)["properties"]
             if output_feature_cls:
                 output_props = schema_utils.unload_jsonschema_from_marshmallow_class(output_feature_cls)["properties"]
@@ -48,12 +49,13 @@ def DefaultsDataclassField(feature_type: str):
             return {
                 "type": "object",
                 "properties": combined_props,
+                "additionalProperties": False,
                 "title": "defaults_options",
             }
 
     try:
-        input_cls = input_config_registry[feature_type]
-        output_cls = output_config_registry.get(feature_type, None)
+        input_cls = input_mixin_registry[feature_type]
+        output_cls = output_mixin_registry.get(feature_type, None)
         dump_default = input_cls.Schema().dump({"type": feature_type})
         if output_cls:
             output_dump = output_cls.Schema().dump({"type": feature_type})

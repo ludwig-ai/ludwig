@@ -73,8 +73,8 @@ def setup_model_scaffolding(raw_df, input_features, output_features):
         config, training_set=raw_df, skip_save_processed_input=True
     )
     model.training_set_metadata = training_set_metadata
-    update_config_with_metadata(model.config, training_set_metadata)
-    model.model = model.create_model(model.config)
+    update_config_with_metadata(model.config_obj, training_set_metadata)
+    model.model = model.create_model(model.config_obj)
 
     # setup batcher to go through synthetic data
     with training_set.initialize_batcher() as batcher:
@@ -140,7 +140,7 @@ def test_sequence_decoders(
         # gather expected components of the shape
         batch_size = combiner_outputs["hidden"].shape[0]
         seq_size = output_features[0][DECODER]["max_len"] + 2  # For start and stop symbols.
-        vocab_size = model.config["output_features"][0][DECODER]["vocab_size"]
+        vocab_size = model.config_obj.output_features.to_list()[0][DECODER]["vocab_size"]
 
         # confirm shape and format of decoder output
         assert list(decoder_out[LOGITS].size()) == [batch_size, seq_size, vocab_size]

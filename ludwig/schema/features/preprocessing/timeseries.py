@@ -9,7 +9,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @register_preprocessor(TIMESERIES)
-@dataclass
+@dataclass(repr=False)
 class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
 
     tokenizer: str = schema_utils.StringOptions(

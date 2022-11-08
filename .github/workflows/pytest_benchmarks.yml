@@ -1,0 +1,105 @@
+# This workflow will install Python dependencies, and run benchmarks on a few datasets
+# to test model performance regressions.
+
+name: benchmark
+
+on:
+  push:
+    branches: ["master", "release-*"]
+
+# we want an ongoing run of this workflow to be canceled by a later commit
+# so that there is only one concurrent run of this workflow for each branch
+concurrency:
+  group: benchmark-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark-pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.8]
+        test-markers: ["benchmark"]
+        include:
+          - python-version: 3.8
+            pytorch-version: 1.12.1
+            torchscript-version: 1.10.2
+            ray-version: 2.0.0
+    env:
+      PYTORCH: ${{ matrix.pytorch-version }}
+      MARKERS: ${{ matrix.test-markers }}
+      TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
+      RAY_VERSION: ${{ matrix.ray-version }}
+
+    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
+
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Linux
+        if: runner.os == 'linux'
+        run: |
+          sudo apt-get install -y cmake libsndfile1
+
+      - name: Setup macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install libuv
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-torch${{ matrix.pytorch-version }}-${{ matrix.test-markers }}-
+
+      - name: Install dependencies
+        env:
+          HOROVOD_WITH_PYTORCH: 1
+          HOROVOD_WITHOUT_MPI: 1
+          HOROVOD_WITHOUT_TENSORFLOW: 1
+          HOROVOD_WITHOUT_MXNET: 1
+        run: |
+          python --version
+          pip --version
+          python -m pip install -U pip
+          cmake --version
+
+          # skip installation of some requirements
+          echo > requirements-temp && mv requirements-temp requirements_hyperopt.txt
+          echo > requirements-temp && mv requirements-temp requirements_serve.txt
+          echo > requirements-temp && mv requirements-temp requirements_viz.txt
+          echo > requirements-temp && mv requirements-temp requirements_explain.txt
+
+          extra_index_url=https://download.pytorch.org/whl/cpu
+          pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          pip install ray==$RAY_VERSION
+          ray_expected=$(python -c "import ray; print(ray.__version__)")
+          torch_expected=$(python -c "import torch; print(torch.__version__)")
+          pip install '.[test]' --extra-index-url $extra_index_url
+          pip list
+          python -c "import torch; assert torch.__version__ == \"$torch_expected\", f\"torch {torch.__version__} != $torch_expected\""
+          python -c "import ray; assert ray.__version__ == \"$ray_expected\", f\"ray {ray.__version__} != $ray_expected\""
+        shell: bash
+
+      - name: Tests
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests/regression_tests/benchmark
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
+          path: pytest.xml

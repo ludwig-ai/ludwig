@@ -17,8 +17,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.feature_registries import input_type_registry
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import category_feature, generate_data, run_experiment, text_feature
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         category_feature(vocab_size=3),
     ]
 
-    output_features = [text_feature(name="article", embedding_size=3)]
+    output_features = [text_feature(name="article", embedding_size=3, output_feature=True)]
 
     dataset = generate_data(input_features, output_features, csv_filename)
 
@@ -67,35 +66,10 @@ def test_run_experiment_with_global_default_parameters(csv_filename):
     run_experiment(config=config, dataset=dataset)
 
 
-def test_global_default_parameters_merge_with_defaults(csv_filename):
-    config, _ = _prepare_data(csv_filename)
-
-    updated_config = merge_with_defaults(config)
-
-    assert DEFAULTS in updated_config
-
-    # Make sure no type specific parameters are in preprocessing
-    input_feature_types = set(input_type_registry)
-    for parameter in updated_config[PREPROCESSING]:
-        assert parameter not in input_feature_types
-
-    # All feature-specific preprocessing parameters should be in defaults
-    defaults_with_preprocessing = [
-        feature for feature in updated_config[DEFAULTS] if PREPROCESSING in updated_config[DEFAULTS][feature]
-    ]
-    assert len(defaults_with_preprocessing) == len(input_feature_types)
-
-    # Feature encoders and decoders should update
-    for feature in updated_config[INPUT_FEATURES]:
-        assert feature[ENCODER][TYPE] == updated_config[DEFAULTS][feature[TYPE]][ENCODER][TYPE]
-
-    output_feature = updated_config[OUTPUT_FEATURES][0]
-    assert output_feature[DECODER][TYPE] == updated_config[DEFAULTS][output_feature[TYPE]][DECODER][TYPE]
-
-
 def test_global_defaults_with_encoder_dependencies(csv_filename):
     input_features = [text_feature(name="title", reduce_output="sum")]
-    output_features = [category_feature(name="article", embedding_size=3)]
+    output_features = [category_feature(name="article", embedding_size=3, output_feature=True)]
+    del input_features[0][ENCODER]
 
     config = {
         INPUT_FEATURES: input_features,
@@ -108,7 +82,7 @@ def test_global_defaults_with_encoder_dependencies(csv_filename):
     }
 
     # Config should populate with the additional required fields for bert
-    updated_config = merge_with_defaults(config)
+    updated_config = ModelConfig.from_dict(config).to_dict()
 
     assert updated_config[INPUT_FEATURES][0][ENCODER][TYPE] == "bert"
-    assert updated_config[INPUT_FEATURES][0]["pretrained_model_name_or_path"] == "bert-base-uncased"
+    assert updated_config[INPUT_FEATURES][0][ENCODER]["pretrained_model_name_or_path"] == "bert-base-uncased"

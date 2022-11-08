@@ -6,7 +6,6 @@ aim
 wandb<0.12.11
 comet_ml
 mlflow
-whylogs<1.0
 
 # For testing optional Ray Tune Search Algorithms
 # search_alg: bohb
@@ -40,3 +39,5 @@ scikit-optimize
 
 # search_alg: zoopt
 zoopt
+
+s3fs>=2022.8.2

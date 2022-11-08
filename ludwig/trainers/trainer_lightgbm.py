@@ -39,7 +39,7 @@ def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str
             yield feature_name, metric
 
 
-@register_trainer("lightgbm_trainer", MODEL_GBM, default=True)
+@register_trainer(MODEL_GBM)
 class LightGBMTrainer(BaseTrainer):
     TRAIN_KEY = "train"
     VALID_KEY = "validation"
@@ -837,7 +837,7 @@ class LightGBMTrainer(BaseTrainer):
                 fn(callback)
 
 
-def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
+def _map_to_lgb_ray_params(params: Dict[str, Any]) -> "RayParams":  # noqa
     from lightgbm_ray import RayParams
 
     ray_params = {}
@@ -854,7 +854,7 @@ def _map_to_lgb_ray_params(params: Dict[str, Any]) -> Dict[str, Any]:
     return ray_params
 
 
-@register_ray_trainer("lightgbm_trainer", MODEL_GBM, default=True)
+@register_ray_trainer(MODEL_GBM)
 class LightGBMRayTrainer(LightGBMTrainer):
     def __init__(
         self,
@@ -868,7 +868,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
-        trainer_kwargs: Optional[Dict] = None,
+        trainer_kwargs: Optional[Dict] = {},
         data_loader_kwargs: Optional[Dict] = None,
         executable_kwargs: Optional[Dict] = None,
         **kwargs,
@@ -887,7 +887,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             **kwargs,
         )
 
-        self.trainer_kwargs = trainer_kwargs or {}
+        self.ray_params = _map_to_lgb_ray_params(trainer_kwargs)
         self.data_loader_kwargs = data_loader_kwargs or {}
         self.executable_kwargs = executable_kwargs or {}
 
@@ -929,7 +929,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             eval_names=eval_names,
             # add early stopping callback to populate best_iteration
             callbacks=[lgb.early_stopping(boost_rounds_per_train_step)],
-            ray_params=_map_to_lgb_ray_params(self.trainer_kwargs),
+            ray_params=self.ray_params,
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
         )
@@ -955,7 +955,9 @@ class LightGBMRayTrainer(LightGBMTrainer):
         feat_cols = in_feat + out_feat
 
         lgb_train = RayDMatrix(
-            training_set.ds.map_batches(lambda df: df[feat_cols]),
+            # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
+            # Need num_blocks to equal num_actors in order to feed all actors.
+            training_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
             label=label_col,
             distributed=False,
         )
@@ -964,7 +966,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             lgb_val = RayDMatrix(
-                validation_set.ds.map_batches(lambda df: df[feat_cols]),
+                validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
                 distributed=False,
             )
@@ -973,7 +975,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
         if test_set is not None:
             lgb_test = RayDMatrix(
-                test_set.ds.map_batches(lambda df: df[feat_cols]),
+                test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
                 distributed=False,
             )

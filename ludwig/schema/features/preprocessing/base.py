@@ -1,5 +1,3 @@
-from typing import ClassVar, Optional
-
 from ludwig.schema import utils as schema_utils
 
 
@@ -11,5 +9,4 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     from the preprocessing of each feature.
     """
 
-    feature_type: ClassVar[Optional[str]] = None
-    "Class variable pointing to the corresponding preprocessor."
+    pass
