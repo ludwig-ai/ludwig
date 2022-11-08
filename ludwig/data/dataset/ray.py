@@ -29,6 +29,7 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
+from retry.api import retry
 
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
@@ -61,6 +62,7 @@ else:
         return series.astype(TensorDtype())
 
 
+@retry(tries=5, delay=1, backoff=2, logger=logger)
 def read_remote_parquet(path: str):
     fs, path = get_fs_and_path(path)
     return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
