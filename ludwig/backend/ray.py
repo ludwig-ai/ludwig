@@ -987,7 +987,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
-            df = column.to_frame(name="value")
+            df = column.to_frame(name=column.name)
             df["idx"] = df.index
 
         if map_fn is not None:
