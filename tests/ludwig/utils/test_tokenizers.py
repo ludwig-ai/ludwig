@@ -4,13 +4,10 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.utils.tokenizers import NgramTokenizer, SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES
-
-TORCHTEXT_0_13_0_HF_NAMES = [
-    "bert-base-uncased",
-]
+from ludwig.utils.tokenizers import NgramTokenizer
 
 TORCHTEXT_0_14_0_HF_NAMES = [
+    "bert-base-uncased",
     "distilbert-base-uncased",
     "google/electra-small-discriminator",
     "dbmdz/bert-base-italian-cased",  # Community model
@@ -25,23 +22,9 @@ TORCHTEXT_0_14_0_HF_NAMES = [
             model_name,
             marks=[
                 pytest.mark.skipif(
-                    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
-                    reason="requires torchtext 0.14.0 or higher",
-                ),
-                pytest.mark.skipif(model_name in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES, reason="issue on torchtext side"),
-            ],
-        )
-        for model_name in TORCHTEXT_0_13_0_HF_NAMES
-    ]
-    + [
-        pytest.param(
-            model_name,
-            marks=[
-                pytest.mark.skipif(
                     torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
                     reason="requires torchtext 0.14.0 or higher",
                 ),
-                pytest.mark.skipif(model_name in SKIP_TORCHTEXT_BERT_HF_MODEL_NAMES, reason="issue on torchtext side"),
             ],
         )
         for model_name in TORCHTEXT_0_14_0_HF_NAMES
