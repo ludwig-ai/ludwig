@@ -1,11 +1,12 @@
 import pandas as pd
+import pytest
 
 from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries_from_proto,
     get_dataset_profile_proto,
     get_dataset_profile_view,
 )
-from tests.integration_tests.utils import category_feature, generate_data_as_dataframe, number_feature, spawn
+from tests.integration_tests.utils import category_feature, generate_data_as_dataframe, number_feature
 
 
 def test_get_dataset_profile_view_works():
@@ -28,7 +29,7 @@ def test_get_dataset_profile_view_works():
     }
 
 
-@spawn
+@pytest.mark.distributed
 def test_get_dataset_profile_view_works_dask():
     import dask.dataframe as dd
 
