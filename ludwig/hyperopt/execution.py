@@ -837,6 +837,10 @@ class RayTuneExecutor:
                         verbose=hyperopt_log_verbosity,
                         log_to_file=True,
                     ),
+                    _tuner_kwargs={
+                        "trial_name_creator": lambda trial: f"trial_{trial.trial_id}",
+                        "trial_dirname_creator": lambda trial: f"trial_{trial.trial_id}",
+                    },
                 )
             result_grid = tuner.fit()
             # Get ExperimentAnalysis object from ResultGrid
