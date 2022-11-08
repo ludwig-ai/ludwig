@@ -42,6 +42,9 @@ class BaseTrainer(ABC):
     # Remote implementations may override this
     def shutdown(self):
         pass
+    
+    def barrier(self):
+        pass
 
     # Functions needed to treat Trainer as a context manager
     def __enter__(self):
