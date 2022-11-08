@@ -774,7 +774,7 @@ class RayTuneExecutor:
                 # When training on GPU, you want to pack workers together to limit network latency during
                 # allreduce. Conversely, for CPU training you want to spread out the workers to limit
                 # CPU and memory contention and avoid too many workers on a single machine.
-                strategy="SPREAD" if self._gpu_resources_per_trial_non_none else "PACK",
+                strategy="PACK" if self._gpu_resources_per_trial_non_none else "SPREAD",
             )
 
         if has_remote_protocol(output_directory):
