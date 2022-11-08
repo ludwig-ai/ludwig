@@ -876,7 +876,7 @@ def OneOfOptionsField(
                 "description": description,
                 "default": default,
                 "title": self.name,
-                "parameter_metadata": parameter_metadata
+                "parameter_metadata": parameter_metadata,
             }
 
             for idx, option in enumerate(field_options):

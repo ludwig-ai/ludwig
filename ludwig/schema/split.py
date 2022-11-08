@@ -4,8 +4,8 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import SPLIT, TYPE
-from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()
@@ -40,7 +40,7 @@ class RandomSplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Probabilities for splitting data into train, validation, and test sets.",
-        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"]
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
@@ -82,7 +82,7 @@ class StratifySplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Probabilities for splitting data into train, validation, and test sets.",
-        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"]
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
@@ -106,7 +106,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Proportion of data to split into train, validation, and test sets.",
-        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"]
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
@@ -139,7 +139,7 @@ class HashSplitConfig(BaseSplitConfig):
         list_type=float,
         default=DEFAULT_PROBABILITIES,
         description="Proportion of data to split into train, validation, and test sets.",
-        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"]
+        parameter_metadata=PREPROCESSING_METADATA["split_probabilities"],
     )
 
 
