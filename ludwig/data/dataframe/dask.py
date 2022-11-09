@@ -36,7 +36,7 @@ from ray.util.client.common import ClientObjectRef
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
-from ludwig.utils.data_utils import get_pa_schema, load_json, save_json, split_by_slices
+from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, load_json, save_json, split_by_slices
 from ludwig.utils.dataframe_utils import flatten_df, set_index_name, unflatten_df
 from ludwig.utils.fs_utils import get_fs_and_path
 
@@ -211,6 +211,7 @@ class DaskEngine(DataFrameEngine):
                 engine="pyarrow",
                 write_index=index,
                 schema=schema,
+                name_function=get_parquet_filename,
             )
 
     def write_predictions(self, df: dd.DataFrame, path: str):
