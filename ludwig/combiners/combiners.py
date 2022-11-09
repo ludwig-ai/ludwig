@@ -46,9 +46,15 @@ from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
 logger = logging.getLogger(__name__)
 
 
-# super class to house common properties
 @DeveloperAPI
 class Combiner(LudwigModule, ABC):
+    """Base class for combiners, which implements common properties.
+
+    Subclasses will usually override:     __init__()        to set properties and allocate resources.  Should call
+    super().__init__(input_features).     forward()         performs the forward pass given a dictionary of encoder
+    outputs.     get_schema_cls()  must returns the class of the corresponding schema for the combiner type.
+    """
+
     def __init__(self, input_features: Dict[str, "InputFeature"]):
         super().__init__()
         self.input_features = input_features
