@@ -162,7 +162,7 @@ def experiment_cli(
          for training.
      :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
             [0, 1] allowed to allocate per GPU device.
-     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+     :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
          to use multithreading parallelism to improve performance at
          the cost of determinism.
      :param callbacks: (list, default: `None`) a list of
@@ -491,7 +491,7 @@ def cli(sys_argv):
         "--disable_parallel_threads",
         action="store_false",
         dest="allow_parallel_threads",
-        help="disable TensorFlow from using multithreading for reproducibility",
+        help="disable PyTorch from using multithreading for reproducibility",
     )
     parser.add_argument(
         "-b",

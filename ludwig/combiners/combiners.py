@@ -291,7 +291,6 @@ class SequenceConcatCombiner(Combiner):
         logger.debug(f"  concat_hidden: {hidden}")
 
         # ================ Mask ================
-        # todo future: maybe modify this with TF2 mask mechanics
         sequence_mask = torch_sequence_mask(sequence_length, sequence_max_length)
         hidden = torch.multiply(hidden, torch.unsqueeze(sequence_mask, -1).type(torch.float32))
 

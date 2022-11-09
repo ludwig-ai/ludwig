@@ -241,7 +241,7 @@ class H3RNNConfig(BaseEncoderConfig):
         default="rnn",
         description="The type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, "
         "`ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between "
-        "the cells please refer to TensorFlow's documentation. We suggest to use the `block` variants on "
+        "the cells please refer to PyTorch's documentation. We suggest to use the `block` variants on "
         "CPU and the `cudnn` variants on GPU because of their increased speed. ",
         parameter_metadata=ENCODER_METADATA["H3RNN"]["cell_type"],
     )

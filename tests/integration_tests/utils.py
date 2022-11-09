@@ -36,7 +36,28 @@ from PIL import Image
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, DECODER, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    COLUMN,
+    DATE,
+    DECODER,
+    ENCODER,
+    H3,
+    IMAGE,
+    NAME,
+    NUMBER,
+    PROC_COLUMN,
+    SEQUENCE,
+    SET,
+    SPLIT,
+    TEXT,
+    TIMESERIES,
+    TRAINER,
+    VECTOR,
+)
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
@@ -214,8 +235,8 @@ def random_string(length=5):
 
 def number_feature(normalization=None, **kwargs):
     feature = {
-        "name": "num_" + random_string(),
-        "type": "number",
+        "name": f"{NUMBER}_{random_string()}",
+        "type": NUMBER,
         "preprocessing": {"normalization": normalization},
     }
     recursive_update(feature, kwargs)
@@ -228,8 +249,8 @@ def category_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "category",
-        "name": "category_" + random_string(),
+        "name": f"{CATEGORY}_{random_string()}",
+        "type": CATEGORY,
     }
     if output_feature:
         feature.update(
@@ -253,8 +274,8 @@ def text_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "name": "text_" + random_string(),
-        "type": "text",
+        "name": f"{TEXT}_{random_string()}",
+        "type": TEXT,
     }
     if output_feature:
         feature.update(
@@ -285,8 +306,8 @@ def set_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "set",
-        "name": "set_" + random_string(),
+        "name": f"{SET}_{random_string()}",
+        "type": SET,
     }
     if output_feature:
         feature.update(
@@ -310,8 +331,8 @@ def sequence_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "sequence",
-        "name": "sequence_" + random_string(),
+        "name": f"{SEQUENCE}_{random_string()}",
+        "type": SEQUENCE,
     }
     if output_feature:
         feature.update(
@@ -346,8 +367,8 @@ def sequence_feature(output_feature=False, **kwargs):
 
 def image_feature(folder, **kwargs):
     feature = {
-        "type": "image",
-        "name": "image_" + random_string(),
+        "name": f"{IMAGE}_{random_string()}",
+        "type": IMAGE,
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         ENCODER: {
             "type": "resnet",
@@ -365,8 +386,8 @@ def image_feature(folder, **kwargs):
 
 def audio_feature(folder, **kwargs):
     feature = {
-        "name": "audio_" + random_string(),
-        "type": "audio",
+        "name": f"{AUDIO}_{random_string()}",
+        "type": AUDIO,
         "preprocessing": {
             "type": "fbank",
             "window_length_in_s": 0.04,
@@ -393,8 +414,8 @@ def audio_feature(folder, **kwargs):
 
 def timeseries_feature(**kwargs):
     feature = {
-        "name": "timeseries_" + random_string(),
-        "type": "timeseries",
+        "name": f"{TIMESERIES}_{random_string()}",
+        "type": TIMESERIES,
         ENCODER: {"type": "parallel_cnn", "max_len": 7},
     }
     recursive_update(feature, kwargs)
@@ -405,8 +426,8 @@ def timeseries_feature(**kwargs):
 
 def binary_feature(**kwargs):
     feature = {
-        "name": "binary_" + random_string(),
-        "type": "binary",
+        "name": f"{BINARY}_{random_string()}",
+        "type": BINARY,
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -416,8 +437,8 @@ def binary_feature(**kwargs):
 
 def bag_feature(**kwargs):
     feature = {
-        "name": "bag_" + random_string(),
-        "type": "bag",
+        "name": f"{BAG}_{random_string()}",
+        "type": BAG,
         ENCODER: {"type": "embed", "max_len": 5, "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
@@ -428,9 +449,11 @@ def bag_feature(**kwargs):
 
 def date_feature(**kwargs):
     feature = {
-        "name": "date_" + random_string(),
-        "type": "date",
-        "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
+        "name": f"{DATE}_{random_string()}",
+        "type": DATE,
+        "preprocessing": {
+            "datetime_format": random.choice(list(DATETIME_FORMATS.keys())),
+        },
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -439,7 +462,10 @@ def date_feature(**kwargs):
 
 
 def h3_feature(**kwargs):
-    feature = {"name": "h3_" + random_string(), "type": "h3"}
+    feature = {
+        "name": f"{H3}_{random_string()}",
+        "type": H3,
+    }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -448,8 +474,8 @@ def h3_feature(**kwargs):
 
 def vector_feature(**kwargs):
     feature = {
+        "name": f"{VECTOR}_{random_string()}",
         "type": VECTOR,
-        "name": "vector_" + random_string(),
         "preprocessing": {
             "vector_size": 5,
         },
@@ -690,6 +716,8 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     num_rows = len(df)
     num_nans_per_col = int(round(nan_percent * num_rows))
     for col in df.columns:
+        if col == SPLIT:  # do not add NaNs to the split column
+            continue
         col_idx = df.columns.get_loc(col)
         for row_idx in random.sample(range(num_rows), num_nans_per_col):
             df.iloc[row_idx, col_idx] = np.nan
