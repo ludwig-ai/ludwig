@@ -317,6 +317,7 @@ class RayAirRunner:
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
         # CPU and memory contention and avoid too many workers on a single machine.
         strategy = "PACK" if trainer_kwargs.get("use_gpu", False) else "SPREAD"
+        # Ray Tune automatically creates a PlacementGroupFactory from the ScalingConfig internally
         self.scaling_config = ScalingConfig(
             placement_strategy=strategy,
             # Override the default of 1 to prevent unnecessary CPU usage.

@@ -744,11 +744,6 @@ class RayTuneExecutor:
             else:
                 search_alg = ConcurrencyLimiter(search_alg, max_concurrent=self.max_concurrent_trials)
 
-        resources_per_trial = {
-            "cpu": self._cpu_resources_per_trial_non_none,
-            "gpu": self._gpu_resources_per_trial_non_none,
-        }
-
         def run_experiment_trial(config, local_hyperopt_dict, checkpoint_dir=None):
             return self._run_experiment(
                 config,
@@ -764,17 +759,6 @@ class RayTuneExecutor:
                 run_experiment_trial,
                 tune_config,
                 tune_callbacks,
-            )
-
-        if _is_ray_backend(backend):
-            resources_per_trial = PlacementGroupFactory(
-                [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
-                if self._gpu_resources_per_trial_non_none
-                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}],
-                # When training on GPU, you want to pack workers together to limit network latency during
-                # allreduce. Conversely, for CPU training you want to spread out the workers to limit
-                # CPU and memory contention and avoid too many workers on a single machine.
-                strategy="PACK" if self._gpu_resources_per_trial_non_none else "SPREAD",
             )
 
         if has_remote_protocol(output_directory):
@@ -803,10 +787,7 @@ class RayTuneExecutor:
                 )
             else:
                 tuner = Tuner(
-                    trainable=tune.with_resources(
-                        run_experiment_trial_params,
-                        resources=resources_per_trial,
-                    ),
+                    f"trainable_func_f{hash_dict(config).decode('ascii')}",
                     param_space={
                         **self.search_space,
                         **tune_config,
