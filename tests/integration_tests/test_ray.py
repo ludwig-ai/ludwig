@@ -423,6 +423,7 @@ def test_ray_tabular(tmpdir, df_engine, ray_cluster_2cpu):
     )
 
 
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
     input_features = [
