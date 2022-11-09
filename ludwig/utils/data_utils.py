@@ -115,6 +115,14 @@ PANDAS_DF = pd
 GLOBAL_CRED_LOCK = threading.Lock()
 
 
+def get_parquet_filename(n: int):
+    """Left pads the partition number with zeros to preserve order in downstream reads.
+
+    Downstream reads use the filename to determine the lexical order of the partitions.
+    """
+    return f"part.{str(n).zfill(8)}.parquet"
+
+
 def get_split_path(dataset_fp):
     return os.path.splitext(dataset_fp)[0] + ".split.parquet"
 
