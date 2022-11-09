@@ -18,8 +18,8 @@ def test_get_dataset_profile_view_works():
         }
     )
 
-    dataset_profile_view, size_bytes = get_dataset_profile_view(df)
-    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view, size_bytes)
+    dataset_profile_view = get_dataset_profile_view(df)
+    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view)
     column_profile_summaries = get_column_profile_summaries_from_proto(dataset_profile_view_proto)
 
     assert set(column_profile_summaries.keys()) == {
@@ -43,8 +43,8 @@ def test_get_dataset_profile_view_works_dask():
     dataset = generate_data_as_dataframe(input_features, output_features, num_examples=100)
     df = dd.from_pandas(dataset, npartitions=5)
 
-    dataset_profile_view, size_bytes = get_dataset_profile_view(df)
-    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view, size_bytes)
+    dataset_profile_view = get_dataset_profile_view(df)
+    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view)
     column_profile_summaries = get_column_profile_summaries_from_proto(dataset_profile_view_proto)
 
     assert len(column_profile_summaries.keys()) == 5

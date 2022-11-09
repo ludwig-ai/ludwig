@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 import whylogs as why
 from whylogs.core.proto import ColumnMessage
@@ -15,10 +15,12 @@ from ludwig.utils.types import DataFrame
 PROFILING_CAP = 100000
 
 
-def get_dataset_profile_view(dataset: Union[str, DataFrame], cap=PROFILING_CAP) -> Tuple[DatasetProfileView, int]:
+def get_dataset_profile_view(dataset: Union[str, DataFrame], cap=PROFILING_CAP) -> DatasetProfileView:
     """Returns a tuple of the whylogs dataset profile view and the size of the dataset in bytes."""
     dataframe = load_dataset(dataset)
-    size_bytes = sum(dataframe.memory_usage(deep=True))
+    # TODO(Justin): Add this back, or reconsider where this should be computed.
+    # Enabling this seems to cause a ray-reinit error. Commenting this out for now to unblock.
+    # size_bytes = sum(dataframe.memory_usage(deep=True))
 
     # Manual cap, also takes care of converting dask to pandas.
     # sample() would be ideal. However, there are some limitations that make this difficult to use.
@@ -32,17 +34,16 @@ def get_dataset_profile_view(dataset: Union[str, DataFrame], cap=PROFILING_CAP) 
     results = why.log(pandas=dataframe)
     profile = results.profile()
     profile_view = profile.view()
-    return profile_view, size_bytes
+    return profile_view
 
 
-def get_dataset_profile_proto(profile_view: DatasetProfileView, size_bytes: int) -> dataset_profile_pb2.DatasetProfile:
+def get_dataset_profile_proto(profile_view: DatasetProfileView) -> dataset_profile_pb2.DatasetProfile:
     """Returns a Ludwig DatasetProfile from a whylogs DatasetProfileView."""
     profile_view_pandas = profile_view.to_pandas()
 
     dataset_profile = dataset_profile_pb2.DatasetProfile()
     dataset_profile.timestamp = int(time.time())
     dataset_profile.num_examples = profile_view_pandas.iloc[0]["counts/n"]
-    dataset_profile.size_bytes = size_bytes
     for column_name, column_profile_view in profile_view.get_columns().items():
         feature_profile = dataset_profile_pb2.FeatureProfile()
         # Ideally, this line of code would simply be:
@@ -75,6 +76,6 @@ def get_column_profile_summaries(
     dataset: Union[str, DataFrame],
 ) -> Dict[str, ColumnProfileSummary]:
     """Get WhyLogs column summaries directly from a pandas dataframe."""
-    dataset_profile_view, size_bytes = get_dataset_profile_view(dataset)
-    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view, size_bytes)
+    dataset_profile_view = get_dataset_profile_view(dataset)
+    dataset_profile_view_proto = get_dataset_profile_proto(dataset_profile_view)
     return get_column_profile_summaries_from_proto(dataset_profile_view_proto)
