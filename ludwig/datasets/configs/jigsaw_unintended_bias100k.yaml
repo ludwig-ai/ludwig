@@ -1,0 +1,14 @@
+version: 1.0
+name: jigsaw_unintended_bias100K
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/jigsaw_unintended_bias100K/train.pq
+  - https://automl-mm-bench.s3.amazonaws.com/jigsaw_unintended_bias100K/test.pq
+sha256:
+  test.pq: f7a0ec60ac89ffdb94919bf95e514057588a444c90ebdcb8ac90dfb0bfec3d48
+  train.pq: 48916c037b0a20167f6e9176cc1eedcb0e6ef942beeedb7dc02f19dfebac0229
+train_filenames: train.pq
+test_filenames: test.pq
+description: |
+  A dataset labeled for identity mentions and optimizing a metric designed to measure unintended bias.
+  Disclaimer: The dataset for this competition contains text that may be considered profane, vulgar, or offensive.
+  https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification

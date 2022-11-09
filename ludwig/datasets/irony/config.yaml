@@ -1,5 +1,0 @@
-version: 1.0
-download_urls:
-  - https://raw.githubusercontent.com/bwallace/ACL-2014-irony/master/irony-labeled.csv
-download_file_type: csv
-csv_filename: irony-labeled.csv

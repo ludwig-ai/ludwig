@@ -1,0 +1,8 @@
+version: 1.0
+name: numerai28pt6
+kaggle_dataset_id: numerai/encrypted-stock-market-data-from-numerai
+archive_filenames: encrypted-stock-market-data-from-numerai.zip
+sha256:
+  encrypted-stock-market-data-from-numerai.zip: cc0714c5f4c8ac6b212f7569641c5110bd2296547af434cba77184ebb03f304b
+description: |
+  Encrypted Stock Market Data from Numerai dataset from Kaggle.

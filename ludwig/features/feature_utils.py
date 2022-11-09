@@ -21,7 +21,7 @@ import torch
 
 from ludwig.constants import NAME, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES
 from ludwig.utils.data_utils import hash_dict
-from ludwig.utils.strings_utils import tokenizer_registry, UNKNOWN_SYMBOL
+from ludwig.utils.strings_utils import get_tokenizer_from_registry, UNKNOWN_SYMBOL
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 FEATURE_NAME_SUFFIX = "__ludwig"
@@ -39,7 +39,7 @@ def should_regularize(regularize_layers):
 
 def set_str_to_idx(set_string, feature_dict, tokenizer_name):
     try:
-        tokenizer = tokenizer_registry[tokenizer_name]()
+        tokenizer = get_tokenizer_from_registry(tokenizer_name)()
     except ValueError:
         raise Exception(f"Tokenizer {tokenizer_name} not supported")
 
@@ -100,7 +100,22 @@ def sanitize(name):
 
 
 def compute_feature_hash(feature: dict) -> str:
-    preproc_hash = hash_dict(feature.get(PREPROCESSING, {}))
+    """
+    This function computes a hash for each feature based on the preprocessing dictionary associated with each feature.
+    The input is always the feature dict, however sometimes, this is called from BaseFeature which dumps the feature
+    dict from a ConfigObject and the preprocessing key corresponds to a nested Preprocessing config. This is why it
+    includes the if/else statement.
+    Args:
+        feature: Feature dictionary
+
+    Returns: Feature hash name
+
+    """
+    preproc = feature.get(PREPROCESSING, {})
+    if isinstance(preproc, dict):
+        preproc_hash = hash_dict(preproc)
+    else:
+        preproc_hash = hash_dict(preproc.to_dict())
     return sanitize(feature[NAME]) + "_" + preproc_hash.decode("ascii")
 
 

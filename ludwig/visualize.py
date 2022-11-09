@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
+import itertools
 import logging
 import os
 import sys
 from functools import partial
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -28,9 +29,10 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 from yaml import warnings
 
+from ludwig.api import TrainingStats
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT, TRAINING, VALIDATION
+from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
@@ -43,6 +45,7 @@ from ludwig.utils.data_utils import (
     replace_file_extension,
 )
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.types import DataFrame
@@ -112,8 +115,8 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
             raise RuntimeError(exception_message)
 
 
-def load_data_for_viz(load_type, model_file_statistics, **kwargs):
-    """Load model file data in to list of .
+def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> Dict[str, Any]:
+    """Load JSON files (training stats, evaluation stats...) for a list of models.
 
     :param load_type: type of the data loader to be used.
     :param model_file_statistics: JSON file or list of json files containing any
@@ -122,15 +125,33 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
     """
     supported_load_types = dict(
         load_json=load_json,
-        load_from_file=partial(
-            load_from_file, dtype=kwargs.get("dtype", int), ground_truth_split=kwargs.get("ground_truth_split", 2)
-        ),
+        load_from_file=partial(load_from_file, dtype=dtype, ground_truth_split=ground_truth_split),
     )
     loader = supported_load_types[load_type]
+    # Loads training stats from JSON file(s).
     try:
         stats_per_model = [loader(stats_f) for stats_f in model_file_statistics]
     except (TypeError, AttributeError):
         logger.exception(f"Unable to open model statistics file {model_file_statistics}!")
+        raise
+    return stats_per_model
+
+
+def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
+    """Load model file data (specifically training stats) for a list of models.
+
+    :param load_type: type of the data loader to be used.
+    :param model_file_statistics: JSON file or list of json files containing any
+           model experiment stats.
+    :return List of model statistics loaded as TrainingStats objects.
+    """
+    stats_per_model = load_data_for_viz(
+        load_type, model_file_statistics, dtype=dtype, ground_truth_split=ground_truth_split
+    )
+    try:
+        stats_per_model = [TrainingStats.Schema().load(j) for j in stats_per_model]
+    except Exception:
+        logger.exception(f"Failed to load model statistics {model_file_statistics}!")
         raise
     return stats_per_model
 
@@ -152,10 +173,9 @@ def _validate_output_feature_name_from_train_stats(output_feature_name, train_st
     :return output_feature_names: list of output_feature_name(s) containing ground truth
     """
     output_feature_names_set = set()
-    for ls in train_stats_per_model:
-        for _, values in ls.items():
-            for key in values:
-                output_feature_names_set.add(key)
+    for train_stats in train_stats_per_model:
+        for key in itertools.chain(train_stats.training.keys(), train_stats.validation.keys(), train_stats.test.keys()):
+            output_feature_names_set.add(key)
     try:
         if output_feature_name in output_feature_names_set:
             return [output_feature_name]
@@ -274,10 +294,13 @@ def _extract_ground_truth_values(
 def _get_cols_from_predictions(predictions_paths, cols, metadata):
     results_per_model = []
     for predictions_path in predictions_paths:
-        shapes_fname = replace_file_extension(predictions_path, "shapes.json")
-        column_shapes = load_json(shapes_fname)
         pred_df = pd.read_parquet(predictions_path)
-        pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND)
+
+        shapes_fname = replace_file_extension(predictions_path, "shapes.json")
+        if path_exists(shapes_fname):
+            column_shapes = load_json(shapes_fname)
+            pred_df = unflatten_df(pred_df, column_shapes, LOCAL_BACKEND.df_engine)
+
         for col in cols:
             # Convert categorical features back to indices
             if col.endswith(_PREDICTIONS_SUFFIX):
@@ -338,7 +361,7 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
 
     :return None:
     """
-    train_stats_per_model = load_data_for_viz("load_json", training_statistics)
+    train_stats_per_model = load_training_stats_for_viz("load_json", training_statistics)
     learning_curves(train_stats_per_model, **kwargs)
 
 
@@ -1284,28 +1307,32 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0][TRAINING][output_feature_name]:
+            if metric in train_stats_per_model_list[0].training[output_feature_name]:
                 filename = None
                 if filename_template_path:
                     filename = filename_template_path.format(output_feature_name, metric)
 
                 training_stats = [
-                    learning_stats[TRAINING][output_feature_name][metric]
+                    learning_stats.training[output_feature_name][metric]
                     for learning_stats in train_stats_per_model_list
                 ]
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
-                    if VALIDATION in learning_stats and output_feature_name in learning_stats[VALIDATION]:
-                        validation_stats.append(learning_stats[VALIDATION][output_feature_name][metric])
+                    if learning_stats.validation and output_feature_name in learning_stats.validation:
+                        validation_stats.append(learning_stats.validation[output_feature_name][metric])
                     else:
                         validation_stats.append(None)
+
+                evaluation_frequency = train_stats_per_model_list[0].evaluation_frequency
 
                 visualization_utils.learning_curves_plot(
                     training_stats,
                     validation_stats,
                     metric,
-                    model_names_list,
+                    x_label=evaluation_frequency.period,
+                    x_step=evaluation_frequency.frequency,
+                    algorithm_names=model_names_list,
                     title=f"Learning Curves {output_feature_name}",
                     filename=filename,
                     callbacks=callbacks,
@@ -3232,9 +3259,9 @@ def calibration_1_vs_all(
 
     :return: (None)
     """
+    feature_metadata = metadata[output_feature_name]
     if not isinstance(ground_truth, np.ndarray):
         # not np array, assume we need to translate raw value to encoded value
-        feature_metadata = metadata[output_feature_name]
         ground_truth = _vectorize_ground_truth(ground_truth, feature_metadata["str2idx"], ground_truth_apply_idx)
 
     probs = probabilities_per_model
@@ -3254,6 +3281,7 @@ def calibration_1_vs_all(
     brier_scores = []
 
     classes = min(num_classes, top_n_classes[0]) if top_n_classes[0] > 0 else num_classes
+    class_names = [feature_metadata["idx2str"][i] for i in range(classes)]
 
     for class_idx in range(classes):
         fraction_positives_class = []
@@ -3261,7 +3289,7 @@ def calibration_1_vs_all(
         probs_class = []
         brier_scores_class = []
         for prob in probs:
-            # ground_truth is an vector of integers, each integer is a class
+            # ground_truth is a vector of integers, each integer is a class
             # index to have a [0,1] vector we have to check if the value equals
             # the input class index and convert the resulting boolean vector
             # into an integer vector probabilities is a n x c matrix, n is the
@@ -3294,7 +3322,11 @@ def calibration_1_vs_all(
             filename = filename_template_path.format(class_idx)
 
         visualization_utils.calibration_plot(
-            fraction_positives_class, mean_predicted_vals_class, model_names_list, filename=filename
+            fraction_positives_class,
+            mean_predicted_vals_class,
+            model_names_list,
+            class_name=class_names[class_idx],
+            filename=filename,
         )
 
         filename = None
@@ -3309,7 +3341,13 @@ def calibration_1_vs_all(
         os.makedirs(output_directory, exist_ok=True)
         filename = filename_template_path.format("brier")
 
-    visualization_utils.brier_plot(np.array(brier_scores), model_names_list, filename=filename)
+    visualization_utils.brier_plot(
+        np.array(brier_scores),
+        algorithm_names=model_names_list,
+        class_names=class_names,
+        title="Brier scores for each class",
+        filename=filename,
+    )
 
 
 def calibration_multiclass(
@@ -3594,8 +3632,13 @@ def frequency_vs_f1(
             per_class_stats = test_stats[of_name]["per_class_stats"]
             class_names = metadata[of_name]["idx2str"]
 
+            # get np arrays of frequencies, f1s and labels
+            idx2freq = {metadata[of_name]["str2idx"][key]: val for key, val in metadata[of_name]["str2freq"].items()}
+            freq_np = np.array([idx2freq[class_id] for class_id in sorted(idx2freq)], dtype=np.int32)
+
             if k > 0:
                 class_names = class_names[:k]
+                freq_np = freq_np[:k]
 
             f1_scores = []
             labels = []
@@ -3605,9 +3648,6 @@ def frequency_vs_f1(
                 f1_scores.append(class_stats["f1_score"])
                 labels.append(class_name)
 
-            # get np arrays of frequencies, f1s and labels
-            idx2freq = {metadata[of_name]["str2idx"][key]: val for key, val in metadata[of_name]["str2freq"].items()}
-            freq_np = np.array([idx2freq[class_id] for class_id in sorted(idx2freq)], dtype=np.int32)
             f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
             labels_np = np.array(labels)
 
@@ -3889,7 +3929,7 @@ def cli(sys_argv):
     try:
         vis_func = visualizations_registry[args.visualization]
     except KeyError:
-        logging.info("Visualization argument not recognized")
+        logger.info("Visualization argument not recognized")
         raise
     vis_func(**vars(args))
 

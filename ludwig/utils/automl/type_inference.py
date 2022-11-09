@@ -24,10 +24,12 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
         return DATE
 
     num_distinct_values = field.num_distinct_values
-    if num_distinct_values == 0:
-        return CATEGORY
     distinct_values = field.distinct_values
-    if num_distinct_values <= 2 and missing_value_percent == 0:
+
+    if num_distinct_values <= 1:
+        return CATEGORY
+
+    if num_distinct_values == 2 and missing_value_percent == 0:
         # Check that all distinct values are conventional bools.
         if strings_utils.are_conventional_bools(distinct_values):
             return BINARY
@@ -64,13 +66,17 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
     if field.name in targets:
         return False
 
-    if field.num_distinct_values == 0:
+    if field.num_distinct_values <= 1:
         return True
 
     distinct_value_percent = float(field.num_distinct_values) / row_count
     if distinct_value_percent == 1.0:
         upper_name = field.name.upper()
-        if (idx == 0 and dtype == NUMBER) or upper_name.endswith("ID") or upper_name.startswith("ID"):
+        if (
+            (idx == 0 and "INDEX" in upper_name and dtype == NUMBER)
+            or upper_name.endswith("ID")
+            or upper_name.startswith("ID")
+        ):
             return True
 
     return False

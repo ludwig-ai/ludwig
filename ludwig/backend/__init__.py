@@ -14,16 +14,20 @@
 # limitations under the License.
 # ==============================================================================
 
+import contextlib
 import logging
 import os
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, LocalBackend
 from ludwig.utils.horovod_utils import has_horovodrun
 
 logger = logging.getLogger(__name__)
 
 
-LOCAL_BACKEND = LocalBackend()
+# TODO: remove LOCAL_BACKEND as a global constant, replace with singleton LocalBackend.shared_instance().
+LOCAL_BACKEND = LocalBackend.shared_instance()
+
 
 LOCAL = "local"
 DASK = "dask"
@@ -78,6 +82,7 @@ backend_registry = {
 }
 
 
+@DeveloperAPI
 def create_backend(type, **kwargs):
     if isinstance(type, Backend):
         return type
@@ -90,6 +95,7 @@ def create_backend(type, **kwargs):
     return backend_registry[type](**kwargs)
 
 
+@DeveloperAPI
 def initialize_backend(backend):
     if isinstance(backend, dict):
         backend = create_backend(**backend)
@@ -97,3 +103,12 @@ def initialize_backend(backend):
         backend = create_backend(backend)
     backend.initialize()
     return backend
+
+
+@contextlib.contextmanager
+def provision_preprocessing_workers(backend):
+    if backend.BACKEND_TYPE == RAY:
+        with backend.provision_preprocessing_workers():
+            yield
+    else:
+        yield

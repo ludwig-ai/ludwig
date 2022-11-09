@@ -20,10 +20,8 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
-    INPUT_FEATURES,
     NAME,
     NUMBER,
-    OUTPUT_FEATURES,
     PREPROCESSING,
     SEQUENCE,
     SET,
@@ -88,20 +86,26 @@ output_type_registry = {
 }
 
 
-def update_config_with_metadata(config, training_set_metadata):
+def update_config_with_metadata(config_obj, training_set_metadata):
     # populate input features fields depending on data
     # config = merge_with_defaults(config)
-    for input_feature in config[INPUT_FEATURES]:
+    for input_feature in config_obj.input_features.to_list():
         feature = get_from_registry(input_feature[TYPE], input_type_registry)
-        feature.populate_defaults(input_feature)
-        feature.update_config_with_metadata(input_feature, training_set_metadata[input_feature[NAME]], config=config)
+        feature.update_config_with_metadata(
+            getattr(config_obj.input_features, input_feature[NAME]),
+            training_set_metadata[input_feature[NAME]],
+        )
+
+        input_feature.update(config_obj.input_features.to_dict()[input_feature[NAME]])
+        input_feature[PREPROCESSING] = training_set_metadata[input_feature[NAME]][PREPROCESSING]
 
     # populate output features fields depending on data
-    for output_feature in config[OUTPUT_FEATURES]:
+    for output_feature in config_obj.output_features.to_list():
         feature = get_from_registry(output_feature[TYPE], output_type_registry)
-        feature.populate_defaults(output_feature)
-        feature.update_config_with_metadata(output_feature, training_set_metadata[output_feature[NAME]])
+        feature.update_config_with_metadata(
+            getattr(config_obj.output_features, output_feature[NAME]),
+            training_set_metadata[output_feature[NAME]],
+        )
 
-    for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
-        if PREPROCESSING in feature:
-            feature[PREPROCESSING] = training_set_metadata[feature[NAME]][PREPROCESSING]
+        output_feature.update(config_obj.output_features.to_dict()[output_feature[NAME]])
+        output_feature[PREPROCESSING] = training_set_metadata[output_feature[NAME]][PREPROCESSING]

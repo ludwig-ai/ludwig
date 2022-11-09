@@ -1,0 +1,15 @@
+version: 1.0
+name: fake_job_postings2
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/fake_job_postings2/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/fake_job_postings2/test.csv
+sha256:
+  test.csv: a5296f49129d440434e6274bb892a1320fe1dd4c26d5a1b085786d5ea1133dd8
+  train.csv: b6568e415ad49cb7bd23848dfbb8d381f9de590e133a5075abbf4c1a7c7c1711
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  This dataset contains 18K job descriptions out of which about 800 are fake.
+  The data consists of both textual information and meta-information about the jobs.
+  This dataset is "fake_job_postings2" in the AutoGluon paper.
+  https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction

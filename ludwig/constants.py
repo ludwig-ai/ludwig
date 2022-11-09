@@ -16,6 +16,8 @@
 INPUT_FEATURES = "input_features"
 OUTPUT_FEATURES = "output_features"
 
+INPUT = "input"
+OUTPUT = "output"
 BINARY = "binary"
 CATEGORY = "category"
 INT = "int"
@@ -38,7 +40,9 @@ INFER_IMAGE_DIMENSIONS = "infer_image_dimensions"
 INFER_IMAGE_MAX_HEIGHT = "infer_image_max_height"
 INFER_IMAGE_MAX_WIDTH = "infer_image_max_width"
 INFER_IMAGE_SAMPLE_SIZE = "infer_image_sample_size"
+NUM_CLASSES = "num_classes"
 NUM_CHANNELS = "num_channels"
+CLASS_WEIGHTS = "class_weights"
 LOSS = "loss"
 ROC_AUC = "roc_auc"
 EVAL_LOSS = "eval_loss"
@@ -48,6 +52,7 @@ SOFTMAX_CROSS_ENTROPY = "softmax_cross_entropy"
 SIGMOID_CROSS_ENTROPY = "sigmoid_cross_entropy"
 BINARY_WEIGHTED_CROSS_ENTROPY = "binary_weighted_cross_entropy"
 THRESHOLD = "threshold"
+VALIDATION_METRIC = "validation_metric"
 ACCURACY = "accuracy"
 HITS_AT_K = "hits_at_k"
 MEAN_HITS_AT_K = "mean_hits_at_k"
@@ -82,9 +87,7 @@ FILL_WITH_CONST = "fill_with_const"
 FILL_WITH_MODE = "fill_with_mode"
 FILL_WITH_MEAN = "fill_with_mean"
 FILL_WITH_FALSE = "fill_with_false"
-BACKFILL = "backfill"
 BFILL = "bfill"
-PAD = "pad"
 FFILL = "ffill"
 DROP_ROW = "drop_row"
 MISSING_VALUE_STRATEGY = "missing_value_strategy"
@@ -92,9 +95,7 @@ MISSING_VALUE_STRATEGY_OPTIONS = [
     FILL_WITH_CONST,
     FILL_WITH_MODE,
     FILL_WITH_MEAN,
-    BACKFILL,
     BFILL,
-    PAD,
     FFILL,
     DROP_ROW,
 ]
@@ -104,6 +105,8 @@ INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
 TRAINER = "trainer"
+LIGHTGBM_TRAINER = "lightgbm_trainer"
+OPTIMIZER = "optimizer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"
@@ -121,6 +124,7 @@ AVG_EXP = "avg_exp"
 TRAINING = "training"
 VALIDATION = "validation"
 TEST = "test"
+EVALUATION = "evaluation"
 SPLIT = "split"
 FORCE_SPLIT = "force_split"
 STRATIFY = "stratify"
@@ -128,7 +132,7 @@ FULL = "full"
 TRAIN_SPLIT = 0
 VALIDATION_SPLIT = 1
 TEST_SPLIT = 2
-MIN_VALIDATION_SET_ROWS = 3  # The minimum validation set size to ensure metric computation doesn't fail.
+MIN_DATASET_SPLIT_ROWS = 3  # The minimum number of rows in a split. Splits smaller than this size are treated as empty.
 
 META = "meta"
 
@@ -142,10 +146,16 @@ NUM_SAMPLES = "num_samples"
 SEARCH_ALG = "search_alg"
 SCHEDULER = "scheduler"
 PARAMETERS = "parameters"
+MAX_CONCURRENT_TRIALS = "max_concurrent_trials"
+CPU_RESOURCES_PER_TRIAL = "cpu_resources_per_trial"
+GPU_RESOURCES_PER_TRIAL = "gpu_resources_per_trial"
+GOAL = "goal"
+GRID_SEARCH = "grid_search"
 
 NAME = "name"
 COLUMN = "column"
 TYPE = "type"
+ACTIVE = "active"
 
 RAY = "ray"
 
@@ -158,10 +168,16 @@ PARQUET = "parquet"
 
 SRC = "dataset_src"
 
+EARLY_STOP = "early_stop"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
+DEFAULT_BATCH_SIZE = 128
+MAX_POSSIBLE_BATCH_SIZE = (
+    1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
+)
 LEARNING_RATE = "learning_rate"
+INPUT_SIZE = "input_size"
 USE_BIAS = "use_bias"
 BIAS = "bias"
 DEFAULT_USE_BIAS = "default_use_bias"
@@ -176,6 +192,7 @@ DEPENDENCIES = "dependencies"
 REDUCE_INPUT = "reduce_input"
 REDUCE_DEPENDENCIES = "reduce_dependencies"
 
+BACKEND = "backend"
 COMBINER = "combiner"
 
 ENCODER = "encoder"
@@ -183,6 +200,7 @@ DECODER = "decoder"
 
 DEFAULTS = "defaults"
 DEFAULT = "default"
+DEFAULT_VALIDATION_METRIC = "default_validation_metric"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05
@@ -226,6 +244,8 @@ POSTPROCESSOR = "postprocessor"
 
 S3 = "s3"
 CACHE = "cache"
-EXPERIMENT_RUN = "experiment_run"
-TRAIN_TAG = "train"
-EVAL_TAG = "evaluate"
+
+# If `use_torch_profiler=True` in LudwigProfiler, LUDWIG_TAG is prepended to the specified experiment tag
+# (LudwigProfiler(tag="...", ..)). This edited tag is passed in to `torch.profiler.record_function` so we can
+# retrieve torch ops for the tagged code blocks/functions.
+LUDWIG_TAG = "[ludwig]"

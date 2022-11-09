@@ -12,29 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
+import json
 import logging
 import os.path
+from typing import List
 
 import mlflow
 import pandas as pd
 import pytest
 from mlflow.tracking import MlflowClient
 
-from ludwig.constants import ACCURACY, TRAINER
+from ludwig.backend import initialize_backend
+from ludwig.callbacks import Callback
+from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs import MlflowCallback
-from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
-from ludwig.hyperopt.run import hyperopt, update_hyperopt_params_with_defaults
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.hyperopt.results import HyperoptResults
+from ludwig.hyperopt.run import hyperopt
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
+from ludwig.schema.model_config import ModelConfig
+from ludwig.utils.automl.utils import get_model_type
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 try:
     import ray
+    from ray.tune import Callback as TuneCallback
+    from ray.tune.trial import Trial
 
     from ludwig.hyperopt.execution import get_build_hyperopt_executor
-    from ludwig.hyperopt.results import RayTuneResults
 except ImportError:
     ray = None
+    Trial = None
+    TuneCallback = object  # needed to set up HyperoptTestCallback when not distributed
 
 
 logger = logging.getLogger(__name__)
@@ -48,15 +57,14 @@ HYPEROPT_CONFIG = {
             "lower": 0.001,
             "upper": 0.1,
         },
-        "combiner.num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+        "combiner.num_fc_layers": {"space": "randint", "lower": 0, "upper": 2},
         "utterance.cell_type": {"space": "grid_search", "values": ["rnn", "gru"]},
-        "utterance.bidirectional": {"space": "choice", "categories": [True, False]},
         "utterance.fc_layers": {
             "space": "choice",
             "categories": [
-                [{"output_size": 64}, {"output_size": 32}],
-                [{"output_size": 64}],
-                [{"output_size": 32}],
+                [{"output_size": 16}, {"output_size": 8}],
+                [{"output_size": 16}],
+                [{"output_size": 8}],
             ],
         },
     },
@@ -88,12 +96,12 @@ def _get_config(search_alg, executor):
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
 
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
     return {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        "combiner": {"type": "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
         "hyperopt": {
             **HYPEROPT_CONFIG,
@@ -103,23 +111,44 @@ def _get_config(search_alg, executor):
     }
 
 
-@contextlib.contextmanager
-def ray_start_4_cpus():
-    res = ray.init(
-        num_cpus=4,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
+class HyperoptTestCallback(TuneCallback):
+    def __init__(self, exp_name: str, model_type: str):
+        self.exp_name = exp_name
+        self.model_type = model_type
+        self.trial_ids = set()
+        self.trial_status = {}
+        self.user_config = {}
+        self.rendered_config = {}
 
+    def on_trial_start(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):
+        super().on_trial_start(iteration, trials, trial, **info)
+        self.trial_ids.add(trial.trial_id)
 
-@pytest.fixture(scope="module")
-def ray_cluster_4cpu():
-    with ray_start_4_cpus():
-        yield
+    def on_trial_complete(self, iteration: int, trials: List["Trial"], trial: "Trial", **info):  # noqa
+        super().on_trial_complete(iteration, trials, trial, **info)
+        self.trial_status[trial.trial_id] = trial.status
+
+        model_hyperparameters = os.path.join(
+            trial.logdir, f"{self.exp_name}_{self.model_type}", "model", MODEL_HYPERPARAMETERS_FILE_NAME
+        )
+        if os.path.isfile(model_hyperparameters):
+            try:
+                with open(model_hyperparameters) as f:
+                    config = json.load(f)
+                    assert config, f"Trial {trial} rendered config was empty."
+                self.rendered_config[trial.trial_id] = True
+            except OSError:
+                logging.exception("Could not load rendered config from trial logdir.")
+
+        model_hyperparameters = os.path.join(trial.logdir, "trial_hyperparameters.json")
+        if os.path.isfile(model_hyperparameters):
+            try:
+                with open(model_hyperparameters) as f:
+                    config = json.load(f)
+                    assert config, "Trial {trial} user config was empty."
+                self.rendered_config[trial.trial_id] = True
+            except OSError:
+                logging.exception("Could not load rendered config from trial logdir.")
 
 
 def run_hyperopt_executor(
@@ -139,7 +168,7 @@ def run_hyperopt_executor(
         df["split"] = 0
         df.to_csv(rel_path)
 
-    config = merge_with_defaults(config)
+    config = ModelConfig.from_dict(config).to_dict()
 
     hyperopt_config = config["hyperopt"]
 
@@ -148,7 +177,10 @@ def run_hyperopt_executor(
     if validation_metric:
         hyperopt_config["validation_metric"] = validation_metric
 
+    backend = initialize_backend("local")
     update_hyperopt_params_with_defaults(hyperopt_config)
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
     if search_alg.get("type", "") == "bohb":
@@ -161,17 +193,13 @@ def run_hyperopt_executor(
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
     search_alg = hyperopt_config["search_alg"]
+    executor = hyperopt_config["executor"]
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
-    hyperopt_executor.execute(
-        config,
-        dataset=rel_path,
-        output_directory=tmpdir,
-        backend="local",
-    )
+    hyperopt_executor.execute(config, dataset=rel_path, output_directory=tmpdir, backend=backend)
 
 
 @pytest.mark.distributed
@@ -197,21 +225,24 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
 
 
 @pytest.mark.distributed
-def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
+@pytest.mark.parametrize("backend", ["local", "ray"])
+def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
     ]
-
-    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum", output_feature=True)]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "num_fc_layers": 2},
+        "combiner": {"type": "concat"},
         TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        "backend": {
+            "type": backend,
+        },
     }
 
     output_feature_name = output_features[0]["name"]
@@ -223,19 +254,46 @@ def test_hyperopt_run_hyperopt(csv_filename, tmpdir, ray_cluster_4cpu):
                 "lower": 0.001,
                 "upper": 0.1,
             },
-            output_feature_name + ".output_size": {"space": "randint", "lower": 32, "upper": 64},
-            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 2, "upper": 6},
+            output_feature_name + ".output_size": {"space": "randint", "lower": 8, "upper": 16},
+            output_feature_name + ".num_fc_layers": {"space": "randint", "lower": 0, "upper": 1},
         },
         "goal": "minimize",
         "output_feature": output_feature_name,
         "validation_metrics": "loss",
-        "executor": {"type": "ray", "num_samples": 2},
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+            "cpu_resources_per_trial": 2,
+            "max_concurrent_trials": "auto",
+        },
         "search_alg": {"type": "variant_generator"},
     }
 
+    @ray.remote(num_cpus=0)
+    class Event:
+        def __init__(self):
+            self._set = False
+
+        def is_set(self):
+            return self._set
+
+        def set(self):
+            self._set = True
+
+    # Used to trigger a cancel event in the trial, which should subsequently be retried
+    event = Event.remote()
+
+    class CancelCallback(Callback):
+        def on_epoch_start(self, trainer, progress_tracker, save_path: str):
+            if progress_tracker.epoch == 1 and not ray.get(event.is_set.remote()):
+                ray.get(event.set.remote())
+                raise KeyboardInterrupt()
+
     # add hyperopt parameter space to the config
     config["hyperopt"] = hyperopt_configs
-    run_hyperopt(config, rel_path, tmpdir)
+
+    # run for one epoch, then cancel, then resume from where we left off
+    run_hyperopt(config, rel_path, tmpdir, callbacks=[CancelCallback()])
 
 
 @pytest.mark.distributed
@@ -273,16 +331,27 @@ def run_hyperopt(
     experiment_name="ray_hyperopt",
     callbacks=None,
 ):
+
+    tune_test_callback = HyperoptTestCallback(experiment_name, get_model_type(config))
+
     hyperopt_results = hyperopt(
         config,
         dataset=rel_path,
         output_directory=tmpdir,
         experiment_name=experiment_name,
         callbacks=callbacks,
+        tune_callbacks=[tune_test_callback],
     )
 
     # check for return results
-    assert isinstance(hyperopt_results, RayTuneResults)
+    assert isinstance(hyperopt_results, HyperoptResults)
 
     # check for existence of the hyperopt statistics file
     assert os.path.isfile(os.path.join(tmpdir, experiment_name, HYPEROPT_STATISTICS_FILE_NAME))
+
+    # check for evidence that the HyperoptTestCallback was active
+    assert len(tune_test_callback.trial_ids) > 0
+    for t in tune_test_callback.trial_ids:
+        if tune_test_callback.trial_status.get(t) == "terminated":
+            assert tune_test_callback.user_config[t].get()
+            assert tune_test_callback.rendered_config[t].get()

@@ -1,0 +1,20 @@
+version: 1.0
+name: dbpedia
+download_urls: https://s3.amazonaws.com/fast-ai-nlp/dbpedia_csv.tgz
+train_filenames: dbpedia_csv/train.csv
+test_filenames: dbpedia_csv/test.csv
+sha256:
+  dbpedia_csv.tgz: 42db5221ddedddb673a4cabcc5f3a7d869714c878bcfe4ba94b29d14aa38e417
+columns:
+  - label
+  - title
+  - content
+description: |
+  The DBPedia Ontology dataset.
+
+  Details:
+      40,000 training samples and 5,000 testing samples from 14
+      nonoverlapping classes from DBpedia 2014.
+  Dataset source:
+      Character-level Convolutional Networks for Text Classification
+      Xiang Zhang et al., 2015

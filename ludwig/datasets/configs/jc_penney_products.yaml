@@ -1,0 +1,14 @@
+version: 1.0
+name: jc_penney_products
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/jc_penney_products/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/jc_penney_products/test.csv
+sha256:
+  test.csv: 458fb13b07701897fbc0d88481823b90e884e92a42e65eeba816cdf3523b2e85
+  train.csv: e9e3d3da627dc544d01f4c27b1d023288c68e55ce2db2593fb7b2268a6b9b020
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  JCPenney products
+  20,000 product listings from JCPenney
+  https://www.kaggle.com/PromptCloudHQ/all-jc-penny-products

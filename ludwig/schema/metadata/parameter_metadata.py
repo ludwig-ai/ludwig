@@ -1,4 +1,4 @@
-import json
+import copy
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, List, Union
@@ -26,13 +26,13 @@ class ParameterMetadata:
     """Contains descriptive information that pertains to a Ludwig configuration parameter."""
 
     # How this parameter can be displayed in a human-readable form.
-    ui_display_name: str = ""
+    ui_display_name: Union[str, None] = ""
 
     # Why the default value for this parameter is the default.
     default_value_reasoning: Union[str, None] = None
 
     # Examples of other values that can be used for this parameter.
-    example_value: List[Any] = None
+    example_value: Union[List[Any], None] = None
 
     # List of related parameters that this parameter interacts with or depends on.
     related_parameters: Union[List[str], None] = None
@@ -72,4 +72,8 @@ def convert_metadata_to_json(pm: ParameterMetadata):
     NOTE: Without the json.loads call, to_json() returns
     a string repr that is improperly parsed.
     """
-    return json.loads(pm.to_json())
+    return copy.deepcopy(pm).to_json()
+
+
+# This is a quick way to flag schema parameters as internal only via the `parameter_metadata` argument
+INTERNAL_ONLY = ParameterMetadata(internal_only=True)

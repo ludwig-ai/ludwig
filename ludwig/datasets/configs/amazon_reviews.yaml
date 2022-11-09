@@ -1,0 +1,21 @@
+version: 1.0
+name: amazon_reviews
+download_urls: https://s3.amazonaws.com/fast-ai-nlp/amazon_review_full_csv.tgz
+train_filenames: amazon_review_full_csv/train.csv
+test_filenames: amazon_review_full_csv/test.csv
+sha256:
+  amazon_review_full_csv.tgz: 4af62eeee139d0142e0747340b68646d23483d9475c33ea0641ee9175b423443
+columns:
+  - label
+  - review_title
+  - review_text
+description: |
+  The Amazon Reviews dataset
+  Details:
+    34,686,770 Amazon reviews from 6,643,669 users on 2,441,053
+    products, from the Stanford Network Analysis Project (SNAP).
+    This dataset contains 600,000 training samples and 130,000
+    testing samples in each class.
+  Dataset source:
+    Character-level Convolutional Networks for Text Classification
+    Xiang Zhang et al., 2015

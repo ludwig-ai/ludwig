@@ -26,8 +26,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.math_utils import int_type
-from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.tokenizers import tokenizer_registry
+from ludwig.utils.tokenizers import get_tokenizer_from_registry
 from ludwig.utils.types import Series
 
 PANDAS_TRUE_STRS = {"true"}
@@ -209,6 +208,7 @@ def create_vocabulary(
     start_symbol: str = START_SYMBOL,
     stop_symbol: str = STOP_SYMBOL,
     pretrained_model_name_or_path: str = None,
+    ngram_size: Optional[int] = None,
     processor: DataFrameEngine = PANDAS,
 ):
     """Computes a vocabulary over the provided data frame.
@@ -237,6 +237,7 @@ def create_vocabulary(
         start_symbol: String representation for the START symbol.
         stop_symbol: String representation for the STOP symbol.
         pretrained_model_name_or_path: Name/path to huggingface model.
+        ngram_size: Size of the n-gram when using `ngram` tokenizer.
         processor: Which processor to use to process data.
 
     Returns:
@@ -254,9 +255,10 @@ def create_vocabulary(
     """
     vocab = None
 
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
+        ngram_size=ngram_size,
     )
 
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.
@@ -396,7 +398,7 @@ def build_sequence_matrix(
     pretrained_model_name_or_path=None,
     processor=PANDAS,
 ) -> np.ndarray:
-    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+    tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=tokenizer_vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )

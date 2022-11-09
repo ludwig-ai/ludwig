@@ -186,11 +186,24 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
 
 @dataclass
 class TritonArtifact:
+    """Dataclass for exported Triton artifacts."""
+
+    # Name of the model.
     model_name: str
+
+    # Model version.
     model_version: Union[int, str]
+
+    # Triton backend (e.g. "pytorch_libtorch").
     platform: str
+
+    # Model path.
     path: str
+
+    # Type of artifact (application/octet-stream, plain text, etc.)
     content_type: str
+
+    # Size of the artifact in bytes.
     content_length: int
 
 
@@ -281,7 +294,7 @@ class TritonMaster:
     output_path: str
 
     # Triton model version.
-    model_version: int
+    model_version: Union[int, str]
 
     # Ludwig config.
     ludwig_config: Dict[str, Any]
@@ -327,8 +340,11 @@ class TritonMaster:
 
         Return the appropriate artifact.
         """
+        if isinstance(self.model_version, str) and self.model_version.isdigit():
+            self.model_version = int(self.model_version)
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
+        pass
 
         # wrapper.py is optional and is just for visualizing the inputs/outputs to the model exported to Triton.
         wrapper_definition = TritonModel(
@@ -412,7 +428,7 @@ class TritonEnsembleConfig:
     output_path: str
 
     # Triton model version.
-    model_version: int
+    model_version: Union[int, str]
 
     def __post_init__(self):
         self.ensemble_model_name = self.model_name
@@ -484,6 +500,8 @@ class TritonEnsembleConfig:
 
     def save_ensemble_dummy_model(self) -> TritonArtifact:
         """Scripts the model and saves it."""
+        if isinstance(self.model_version, str) and self.model_version.isdigit():
+            self.model_version = int(self.model_version)
         if not isinstance(self.model_version, int) or self.model_version < 1:
             raise ValueError("Model version has to be a non-zero positive integer")
         pass
@@ -678,13 +696,14 @@ def get_example_input(
 
     Generates a synthetic example if one is not provided.
     """
+    config = model.config
     if data_example is None:
-        features = model.config["input_features"] + model.config["output_features"]
+        features = config["input_features"] + config["output_features"]
         df = build_synthetic_dataset(dataset_size=1, features=features)
         data = [row for row in df]
         data_example = pd.DataFrame(data[1:], columns=data[0])
     return to_inference_module_input_from_dataframe(
-        data_example.head(1), model.config, load_paths=True, device=device_types[0]
+        data_example.head(1), config, load_paths=True, device=device_types[0]
     )
 
 

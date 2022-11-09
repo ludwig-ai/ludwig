@@ -372,7 +372,7 @@ class H3RNN(Encoder):
                Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                For reference about the differences between the cells please
-               refer to TensorFlow's documentation. We suggest to use the
+               refer to PyTorch's documentation. We suggest to use the
                `block` variants on CPU and the `cudnn` variants on GPU
                because of their increased speed.
         :type cell_type: str

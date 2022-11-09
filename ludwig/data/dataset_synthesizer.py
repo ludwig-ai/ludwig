@@ -20,9 +20,10 @@ import random
 import string
 import sys
 import uuid
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
+import pandas as pd
 import torch
 import torchaudio
 import yaml
@@ -37,8 +38,10 @@ from ludwig.constants import (
     ENCODER,
     H3,
     IMAGE,
+    INPUT_FEATURES,
     NAME,
     NUMBER,
+    OUTPUT_FEATURES,
     PREPROCESSING,
     SEQUENCE,
     SET,
@@ -157,12 +160,19 @@ parameters_builders_registry = {
 }
 
 
+def build_synthetic_dataset_df(dataset_size: int, config: Dict[str, Any]) -> pd.DataFrame:
+    features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
+    df = build_synthetic_dataset(dataset_size, features)
+    data = [next(df) for _ in range(dataset_size + 1)]
+    return pd.DataFrame(data[1:], columns=data[0])
+
+
 def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
 
     :param dataset_size: (int) size of the dataset
     :param features: (List[dict]) list of features to generate in YAML format.
-        Provide a list contaning one dictionary for each feature,
+        Provide a list containing one dictionary for each feature,
         each dictionary must include a name, a type
         and can include some generation parameters depending on the type
     :param outdir: (str) Path to an output directory. Used for saving synthetic image and audio files.

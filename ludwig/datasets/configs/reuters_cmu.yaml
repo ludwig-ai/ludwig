@@ -1,0 +1,10 @@
+version: 1.0
+name: reuters_cmu
+download_urls: http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip
+sha256:
+  reuters-allcats-6.zip: 304ae223f9ca35f7ce9066c9d31558c06ed5c72cd91faa885f82b928b2aa6f34
+description: |
+  Reuters-21578 is a well-known newswire dataset containing 21,578 documents.
+
+  This is a subset of Reuters-21578 using only 6 categories, from this CMU course:
+  http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/

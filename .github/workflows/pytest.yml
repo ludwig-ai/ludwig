@@ -26,17 +26,17 @@ jobs:
         test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
-            pytorch-version: 1.10.2
-            torchscript-version: 1.10.2
-            ray-version: 1.13.0
-          - python-version: 3.8
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
             ray-version: 2.0.0
-          - python-version: 3.9
-            pytorch-version: 1.11.0
+          - python-version: 3.8
+            pytorch-version: 1.12.1
             torchscript-version: 1.10.2
-            ray-version: nightly
+            ray-version: 2.0.0 # TODO: Upgrade to 2.1.0.
+          - python-version: 3.9
+            pytorch-version: nightly
+            torchscript-version: 1.10.2
+            ray-version: 2.0.0 # TODO: Upgrade to nightly.
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -44,11 +44,29 @@ jobs:
       NEUROPOD_VERISON: "0.3.0-rc6"
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.LUDWIG_TESTS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LUDWIG_TESTS_AWS_SECRET_ACCESS_KEY }}
+      EXCLUDED_MARKERS: "benchmark"
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, ${{ matrix.test-markers }}, ${{ matrix.os }}
+    services:
+      minio:
+        image: fclairamb/minio-github-actions
+        env:
+          MINIO_ACCESS_KEY: minio
+          MINIO_SECRET_KEY: minio123
+        ports:
+          - 9000:9000
 
-    timeout-minutes: 60
+    timeout-minutes: 80
     steps:
+      - name: Setup ludwigai/ludwig-ray container for local testing with act.
+        if: ${{ env.ACT }}
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          sudo mkdir -p /opt/hostedtoolcache/
+          sudo chmod 777 -R /opt/hostedtoolcache/
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -66,6 +84,7 @@ jobs:
           brew install libuv
 
       - name: pip cache
+        if: ${{ !env.ACT }}
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
@@ -107,6 +126,9 @@ jobs:
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
               pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+
+              # NOTE: Pinned Ray nightly version to September 20, 2022 to get tests to pass
+              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/fa182d3c9e478ef4c169ccf7459764768996110f/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
               pip install ray==$RAY_VERSION
             fi
@@ -151,10 +173,10 @@ jobs:
 
       - name: Tests
         run: |
-          pytest -v --timeout 300 --durations 10 -m "$MARKERS" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
-        if: always()
+        if: ${{ always() && !env.ACT }}
         uses: actions/upload-artifact@v2
         with:
           name: Unit Test Results (Python ${{ matrix.python-version }} ${{ matrix.test-markers }})
@@ -317,6 +339,7 @@ jobs:
 
     steps:
       - name: Upload
+        if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v2
         with:
           name: Event File

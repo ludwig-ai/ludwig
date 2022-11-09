@@ -168,7 +168,7 @@ class SequenceEmbedEncoder(Encoder):
                 other keys for its parameters, e.g.
                 `{type: normal, mean: 0, stddev: 0}`.
                 To know the parameters of each initializer, please refer to
-                TensorFlow's documentation.
+                PyTorch's documentation.
         :type weights_initializer: str
         :param dropout: Tensor (torch.float) The dropout probability.
         :type dropout: Tensor
@@ -387,7 +387,7 @@ class ParallelCNN(Encoder):
                other keys for its parameters,
                e.g. `{type: normal, mean: 0, stddev: 0}`.
                To know the parameters of each initializer, please refer
-               to TensorFlow's documentation.
+               to PyTorch's documentation.
         :type initializer: str
         :param reduce_output: defines how to reduce the output tensor of
                the convolutional layers along the `s` sequence length
@@ -694,7 +694,7 @@ class StackedCNN(Encoder):
                other keys for its parameters,
                e.g. `{type: normal, mean: 0, stddev: 0}`.
                To know the parameters of each initializer, please refer
-               to TensorFlow's documentation.
+               to PyTorch's documentation.
         :type initializer: str
         :param reduce_output: defines how to reduce the output tensor of
                the convolutional layers along the `s` sequence length
@@ -1031,7 +1031,7 @@ class StackedParallelCNN(Encoder):
                other keys for its parameters,
                e.g. `{type: normal, mean: 0, stddev: 0}`.
                To know the parameters of each initializer, please refer
-               to TensorFlow's documentation.
+               to PyTorch's documentation.
         :type initializer: str
         :param reduce_output: defines how to reduce the output tensor of
                the convolutional layers along the `s` sequence length
@@ -1303,7 +1303,7 @@ class StackedRNN(Encoder):
                Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                For reference about the differences between the cells please
-               refer to TensorFlow's documentation. We suggest to use the
+               refer to PyTorch's documentation. We suggest to use the
                `block` variants on CPU and the `cudnn` variants on GPU
                because of their increased speed.
         :type cell_type: str
@@ -1329,7 +1329,7 @@ class StackedRNN(Encoder):
                other keys for its parameters,
                e.g. `{type: normal, mean: 0, stddev: 0}`.
                To know the parameters of each initializer, please refer
-               to TensorFlow's documentation.
+               to PyTorch's documentation.
         :type initializer: str
         :param reduce_output: defines how to reduce the output tensor of
                the convolutional layers along the `s` sequence length
@@ -1555,7 +1555,7 @@ class StackedCNNRNN(Encoder):
                Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                For reference about the differences between the cells please
-               refer to TensorFlow's documentation. We suggest to use the
+               refer to PyTorch's documentation. We suggest to use the
                `block` variants on CPU and the `cudnn` variants on GPU
                because of their increased speed.
         :type cell_type: str
@@ -1581,7 +1581,7 @@ class StackedCNNRNN(Encoder):
                other keys for its parameters,
                e.g. `{type: normal, mean: 0, stddev: 0}`.
                To know the parameters of each initializer, please refer
-               to TensorFlow's documentation.
+               to PyTorch's documentation.
         :type initializer: str
         :param reduce_output: defines how to reduce the output tensor of
                the convolutional layers along the `s` sequence length
@@ -1859,7 +1859,7 @@ class StackedTransformer(Encoder):
                Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`,
                `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`.
                For reference about the differences between the cells please
-               refer to TensorFlow's documentation. We suggest to use the
+               refer to PyTorch's documentation. We suggest to use the
                `block` variants on CPU and the `cudnn` variants on GPU
                because of their increased speed.
         :type cell_type: str
@@ -1883,7 +1883,7 @@ class StackedTransformer(Encoder):
                other keys for its parameters,
                e.g. `{type: normal, mean: 0, stddev: 0}`.
                To know the parameters of each initializer, please refer
-               to TensorFlow's documentation.
+               to PyTorch's documentation.
         :type initializer: str
         :param reduce_output: defines how to reduce the output tensor of
                the convolutional layers along the `s` sequence length

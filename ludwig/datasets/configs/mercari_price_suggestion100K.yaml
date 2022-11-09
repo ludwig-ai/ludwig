@@ -1,0 +1,14 @@
+version: 1.0
+name: mercari_price_suggestion100K
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/mercari_price_suggestion100K/train.pq
+  - https://automl-mm-bench.s3.amazonaws.com/mercari_price_suggestion100K/test.pq
+sha256:
+  test.pq: 60431577bd6cb433bae287ced2edc7a557497b66b1fe90e2fbec6ffc24bf35eb
+  train.pq: f60063847d9b828f1e9366eb69fa53774771b53291586d1cce506c931b7173f4
+train_filenames: train.pq
+test_filenames: test.pq
+description: |
+  Predict product price based on details like product category name, brand name, and item condition.
+  We have converted price to log price by log(1 + price).
+  https://www.kaggle.com/c/mercari-price-suggestion-challenge

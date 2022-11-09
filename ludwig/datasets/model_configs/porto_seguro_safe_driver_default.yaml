@@ -1,0 +1,127 @@
+output_features:
+  - name: target
+    type: binary
+input_features:
+  - name: ps_ind_01
+    type: number
+  - name: ps_ind_02_cat
+    type: category
+  - name: ps_ind_03
+    type: number
+  - name: ps_ind_04_cat
+    type: category
+  - name: ps_ind_05_cat
+    type: category
+  - name: ps_ind_06_bin
+    type: binary
+  - name: ps_ind_07_bin
+    type: binary
+  - name: ps_ind_08_bin
+    type: binary
+  - name: ps_ind_09_bin
+    type: binary
+  - name: ps_ind_10_bin
+    type: binary
+  - name: ps_ind_11_bin
+    type: binary
+  - name: ps_ind_12_bin
+    type: binary
+  - name: ps_ind_13_bin
+    type: binary
+  - name: ps_ind_14
+    type: number
+  - name: ps_ind_15
+    type: number
+  - name: ps_ind_16_bin
+    type: binary
+  - name: ps_ind_17_bin
+    type: binary
+  - name: ps_ind_18_bin
+    type: binary
+  - name: ps_reg_01
+    type: number
+  - name: ps_reg_02
+    type: number
+  - name: ps_reg_03
+    type: number
+  - name: ps_car_01_cat
+    type: category
+  - name: ps_car_02_cat
+    type: category
+  - name: ps_car_03_cat
+    type: category
+  - name: ps_car_04_cat
+    type: category
+  - name: ps_car_05_cat
+    type: category
+  - name: ps_car_06_cat
+    type: category
+  - name: ps_car_07_cat
+    type: category
+  - name: ps_car_08_cat
+    type: category
+  - name: ps_car_09_cat
+    type: category
+  - name: ps_car_10_cat
+    type: category
+  - name: ps_car_11_cat
+    type: category
+  - name: ps_car_11
+    type: number
+  - name: ps_car_12
+    type: number
+  - name: ps_car_13
+    type: number
+  - name: ps_car_14
+    type: number
+  - name: ps_car_15
+    type: number
+  - name: ps_calc_01
+    type: number
+  - name: ps_calc_02
+    type: number
+  - name: ps_calc_03
+    type: number
+  - name: ps_calc_04
+    type: number
+  - name: ps_calc_05
+    type: number
+  - name: ps_calc_06
+    type: number
+  - name: ps_calc_07
+    type: number
+  - name: ps_calc_08
+    type: number
+  - name: ps_calc_09
+    type: number
+  - name: ps_calc_10
+    type: number
+  - name: ps_calc_11
+    type: number
+  - name: ps_calc_12
+    type: number
+  - name: ps_calc_13
+    type: number
+  - name: ps_calc_14
+    type: number
+  - name: ps_calc_15_bin
+    type: binary
+  - name: ps_calc_16_bin
+    type: binary
+  - name: ps_calc_17_bin
+    type: binary
+  - name: ps_calc_18_bin
+    type: binary
+  - name: ps_calc_19_bin
+    type: binary
+  - name: ps_calc_20_bin
+    type: binary
+combiner:
+  type: concat
+  num_fc_layers: 3
+  fc_size: 128
+  dropout: 0.1
+training:
+  batch_size: 256
+  learning_rate: .001
+  epochs: 1

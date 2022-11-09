@@ -15,12 +15,12 @@
 # ==============================================================================
 import copy
 import logging
-import sys
 from collections import Counter
 from sys import platform
 
 import numpy as np
 import pandas as pd
+import ptitprince as pt
 from packaging import version
 
 from ludwig.constants import SPACE, TRAINING, VALIDATION
@@ -31,7 +31,10 @@ try:
     import matplotlib as mpl
 
     if platform == "darwin":  # OS X
-        mpl.use("TkAgg")
+        try:
+            mpl.use("TkAgg")
+        except ModuleNotFoundError:
+            logger.warning("Unable to set TkAgg backend for matplotlib. Your Python may not be configured for Tk")
     import matplotlib.patches as patches
     import matplotlib.path as path
     import matplotlib.patheffects as PathEffects
@@ -40,13 +43,12 @@ try:
     from matplotlib import ticker
     from matplotlib.lines import Line2D
     from mpl_toolkits.mplot3d import Axes3D
-except ImportError:
-    logger.error(
-        " matplotlib or seaborn are not installed. "
+except ImportError as e:
+    raise RuntimeError(
+        "matplotlib or seaborn are not installed. "
         "In order to install all visualization dependencies run "
         "pip install ludwig[viz]"
-    )
-    sys.exit(-1)
+    ) from e
 
 INT_QUANTILES = 10
 FLOAT_QUANTILES = 10
@@ -72,7 +74,15 @@ def visualize_callbacks(callbacks, fig):
 
 
 def learning_curves_plot(
-    train_values, vali_values, metric, algorithm_names=None, title=None, filename=None, callbacks=None
+    train_values,
+    vali_values,
+    metric,
+    x_label="epoch",
+    x_step=1,
+    algorithm_names=None,
+    title=None,
+    filename=None,
+    callbacks=None,
 ):
     num_algorithms = len(train_values)
     max_len = max(len(tv) for tv in train_values)
@@ -92,10 +102,10 @@ def learning_curves_plot(
     ax.grid(which="both")
     ax.grid(which="minor", alpha=0.5)
     ax.grid(which="major", alpha=0.75)
-    ax.set_xlabel("epochs")
+    ax.set_xlabel(x_label)
     ax.set_ylabel(metric.replace("_", " "))
 
-    xs = list(range(1, max_len + 1))
+    xs = np.arange(1, (max_len * x_step) + 1, x_step)
 
     for i in range(num_algorithms):
         name_prefix = algorithm_names[i] + " " if algorithm_names is not None and i < len(algorithm_names) else ""
@@ -898,6 +908,7 @@ def calibration_plot(
     fraction_positives,
     mean_predicted_values,
     algorithm_names=None,
+    class_name=None,
     filename=None,
     callbacks=None,
 ):
@@ -926,14 +937,14 @@ def calibration_plot(
         order = min(3, len(mean_predicted_values[i]) - 1)
 
         sns.regplot(
-            mean_predicted_values[i],
-            fraction_positives[i],
+            x=mean_predicted_values[i],
+            y=fraction_positives[i],
             order=order,
             x_estimator=np.mean,
             color=colors[i],
             marker="o",
             scatter_kws={"s": 40},
-            label=algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else "",
+            label=algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else f"Model {i}",
         )
 
     ticks = np.linspace(0.0, 1.0, num=11)
@@ -944,7 +955,10 @@ def calibration_plot(
     plt.ylim([-0.05, 1.05])
     plt.yticks(ticks)
     plt.legend(loc="lower right")
-    plt.title("Calibration (reliability curve)")
+    if class_name is not None:
+        plt.title(f"{class_name}: Calibration (reliability curve)")
+    else:
+        plt.title("Calibration (reliability curve)")
 
     plt.tight_layout()
     visualize_callbacks(callbacks, plt.gcf())
@@ -957,11 +971,13 @@ def calibration_plot(
 def brier_plot(
     brier_scores,
     algorithm_names=None,
+    class_names=None,
     title=None,
     filename=None,
     callbacks=None,
 ):
-    plt.figure()
+
+    fig, ax = plt.subplots()
     sns.set_style("whitegrid")
 
     if title is not None:
@@ -969,22 +985,31 @@ def brier_plot(
 
     colors = plt.get_cmap("tab10").colors
 
-    plt.grid(which="both")
-    plt.grid(which="minor", alpha=0.5)
-    plt.grid(which="major", alpha=0.75)
-    plt.xlabel("class")
-    plt.ylabel("brier")
+    n_algorithms = brier_scores.shape[1]
+    n_classes = brier_scores.shape[0]
+    x = np.arange(n_classes)
 
-    for i in range(brier_scores.shape[1]):
-        plt.plot(
-            brier_scores[:, i],
-            label=algorithm_names[i] + " " if algorithm_names is not None and i < len(algorithm_names) else "",
-            color=colors[i],
-            linewidth=3,
-        )
+    max_width = 0.35
+    bar_width = min(0.5 / n_algorithms, max_width)
+    bar_left = -bar_width * (n_algorithms // 2) + ((bar_width / 2) if (n_algorithms % 2) == 0 else 0)
 
-    plt.legend()
-    plt.tight_layout()
+    ax.grid(which="both")
+    ax.grid(which="minor", alpha=0.5)
+    ax.grid(which="major", alpha=0.75)
+    ax.set_xlabel("class")
+    ax.set_ylabel("brier score")
+    if class_names is not None:
+        ax.set_xticks(x, class_names)
+    else:
+        ax.set_xticks(x, [str(i) for i in range(n_classes)])
+
+    for i in range(n_algorithms):
+        # Plot bar for each class
+        label = algorithm_names[i] if algorithm_names is not None and i < len(algorithm_names) else f"Model {i}"
+        ax.bar(x + bar_left + (bar_width * i), brier_scores[:, i], bar_width, color=colors[i], label=label)
+
+    ax.legend()
+    fig.tight_layout()
     visualize_callbacks(callbacks, plt.gcf())
     if filename:
         plt.savefig(filename)
@@ -1369,7 +1394,27 @@ def hyperopt_float_plot(hyperopt_results_df, hp_name, metric, title, filename, l
 def hyperopt_category_plot(hyperopt_results_df, hp_name, metric, title, filename, log_scale=True):
     sns.set_style("whitegrid")
     plt.figure()
-    seaborn_figure = sns.violinplot(x=hp_name, y=metric, data=hyperopt_results_df, fit_reg=False)
+
+    # Ensure that all parameter values have at least 2 trials, otherwise the Raincloud Plot will create awkward
+    # looking "flat clouds" in the cloud part of the plot (the "rain" part is ok with 1 trial). In this case,
+    # just use stripplots since they are categorical scatter plots.
+    parameter_to_trial_count = hyperopt_results_df[hp_name].value_counts()
+    parameter_to_trial_count = parameter_to_trial_count[parameter_to_trial_count < 2]
+
+    if len(parameter_to_trial_count) != 0:
+        seaborn_figure = sns.stripplot(x=hp_name, y=metric, data=hyperopt_results_df, size=5)
+    else:
+        seaborn_figure = pt.RainCloud(
+            x=hp_name,
+            y=metric,
+            data=hyperopt_results_df,
+            palette="Set2",
+            bw=0.2,
+            width_viol=0.7,
+            point_size=6,
+            cut=1,
+        )
+
     seaborn_figure.set_title(title)
     seaborn_figure.set(ylabel=metric)
     sns.despine()
@@ -1386,6 +1431,10 @@ def hyperopt_pair_plot(hyperopt_results_df, metric, title, filename):
     params = sorted(list(hyperopt_results_df.keys()))
     params.remove(metric)
     num_param = len(params)
+
+    # Pair plot is empty if there's only 1 parameter, so skip creating a pair plot
+    if num_param == 1:
+        return
 
     sns.set_style("white")
     fig = plt.figure(figsize=(20, 20))

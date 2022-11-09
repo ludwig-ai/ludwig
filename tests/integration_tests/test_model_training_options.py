@@ -333,8 +333,8 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     train_losses = train_stats[TRAINING]["combined"]["loss"]
     last_entry = len(train_losses)
 
-    # ensure train loss for last entry is less than first entry
-    assert train_losses[last_entry - 1] < train_losses[0]
+    # ensure train loss for last entry is less than or equal to the first entry.
+    assert train_losses[last_entry - 1] <= train_losses[0]
 
 
 def test_regularization(generated_data, tmp_path):

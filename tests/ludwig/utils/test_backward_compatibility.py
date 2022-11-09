@@ -1,10 +1,17 @@
+import copy
+import math
+
 import pytest
 
 from ludwig.constants import (
+    BFILL,
+    CLASS_WEIGHTS,
+    DEFAULTS,
     EVAL_BATCH_SIZE,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
+    LOSS,
     NUMBER,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -14,14 +21,17 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.schema import validate_config
+from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
+    _update_backend_cache_credentials,
     _upgrade_encoder_decoder_params,
     _upgrade_feature,
     _upgrade_preprocessing_split,
-    upgrade_to_latest_version,
+    upgrade_config_dict_to_latest_version,
+    upgrade_missing_value_strategy,
+    upgrade_model_progress,
 )
-from ludwig.utils.defaults import merge_with_defaults
 
 
 def test_preprocessing_backward_compatibility():
@@ -47,7 +57,7 @@ def test_audio_feature_backward_compatibility():
         "type": "audio",
         "preprocessing": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -65,7 +75,7 @@ def test_audio_feature_backward_compatibility():
     global_preprocessing_config = {
         "audio": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -86,7 +96,7 @@ def test_audio_feature_backward_compatibility():
     assert global_preprocessing_config == {
         "audio": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -104,7 +114,7 @@ def test_audio_feature_backward_compatibility():
         "type": "audio",
         "preprocessing": {
             "audio_file_length_limit_in_s": 7.5,
-            "missing_value_strategy": "backfill",
+            "missing_value_strategy": BFILL,
             "in_memory": True,
             "padding_value": 0,
             "norm": None,
@@ -163,7 +173,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "type": "category",
                 "top_k": 3,
                 "preprocessing": {
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": BFILL,
                 },
                 "decoder": "classifier",
                 "num_classes": 10,
@@ -248,7 +258,7 @@ def test_encoder_decoder_backwards_compatibility():
                 "num_classes": 10,
                 "top_k": 3,
                 "preprocessing": {
-                    "missing_value_strategy": "backfill",
+                    "missing_value_strategy": BFILL,
                 },
                 "decoder": {
                     "type": "classifier",
@@ -314,12 +324,22 @@ def test_deprecated_field_aliases():
                 "search_alg": "bohb",
             },
         },
+        PREPROCESSING: {
+            "numerical": {
+                "fill_value": 2,
+                "missing_value_strategy": "fill_with_const",
+            },
+        },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     assert updated_config["input_features"][0][TYPE] == NUMBER
     assert updated_config["output_features"][0][TYPE] == NUMBER
+
+    # "numerical" preprocssing directive should be translated to "number" and moved into the defaults section.
+    assert PREPROCESSING not in updated_config
+    assert updated_config[DEFAULTS][NUMBER][PREPROCESSING]["fill_value"] == 2
 
     assert "training" not in updated_config
     assert updated_config[TRAINER]["epochs"] == 2
@@ -334,6 +354,8 @@ def test_deprecated_field_aliases():
     assert updated_config[HYPEROPT]["executor"]["type"] == "ray"
     assert "num_samples" in updated_config[HYPEROPT]["executor"]
     assert "scheduler" in updated_config[HYPEROPT]["executor"]
+
+    validate_config(updated_config)
 
 
 @pytest.mark.parametrize("force_split", [None, False, True])
@@ -351,7 +373,7 @@ def test_deprecated_split_aliases(stratify, force_split):
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
 
     assert "force_split" not in updated_config[PREPROCESSING]
     assert "split_probabilities" not in updated_config[PREPROCESSING]
@@ -423,11 +445,11 @@ def test_deprecated_hyperopt_sampler_early_stopping(use_scheduler):
         },
     }
 
-    updated_config = upgrade_to_latest_version(config)
+    updated_config = upgrade_config_dict_to_latest_version(config)
     if use_scheduler:
         assert SCHEDULER in updated_config[HYPEROPT][EXECUTOR]
 
-    merged_config = merge_with_defaults(updated_config)
+    merged_config = ModelConfig.from_dict(updated_config).to_dict()
 
     # When a scheulder is provided, early stopping in the rendered config needs to be disabled to allow the
     # hyperopt scheduler to manage trial lifecycle.
@@ -460,3 +482,189 @@ def test_validate_old_model_config():
 
     with pytest.raises(Exception):
         validate_config(old_invalid_config)
+
+
+@pytest.mark.parametrize("missing_value_strategy", ["backfill", "pad"])
+def test_update_missing_value_strategy(missing_value_strategy: str):
+    old_valid_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+                "preprocessing": {"missing_value_strategy": missing_value_strategy},
+            }
+        ],
+        "output_features": [
+            {"name": "output_feature_1", "type": "category"},
+        ],
+    }
+
+    updated_config = upgrade_missing_value_strategy(old_valid_config)
+
+    expected_config = copy.deepcopy(old_valid_config)
+    if missing_value_strategy == "backfill":
+        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "bfill"
+    else:
+        expected_config["input_features"][0]["preprocessing"]["missing_value_strategy"] == "ffill"
+
+    assert updated_config == expected_config
+
+
+def test_update_increase_batch_size_on_plateau_max():
+    old_valid_config = {
+        "input_features": [{"name": "input_feature_1", "type": "category"}],
+        "output_features": [{"name": "output_feature_1", "type": "category"}],
+        "trainer": {
+            "increase_batch_size_on_plateau_max": 256,
+        },
+    }
+
+    updated_config = upgrade_config_dict_to_latest_version(old_valid_config)
+    del updated_config["ludwig_version"]
+
+    expected_config = copy.deepcopy(old_valid_config)
+    del expected_config["trainer"]["increase_batch_size_on_plateau_max"]
+    expected_config["trainer"]["max_batch_size"] = 256
+
+    assert updated_config == expected_config
+
+
+def test_old_class_weights_default():
+    old_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+            }
+        ],
+        "output_features": [
+            {"name": "output_feature_1", "type": "category", "loss": {"class_weights": 1}},
+        ],
+    }
+
+    new_config = {
+        "input_features": [
+            {
+                "name": "input_feature_1",
+                "type": "category",
+            }
+        ],
+        "output_features": [
+            {"name": "output_feature_1", "type": "category", "loss": {"class_weights": None}},
+        ],
+    }
+
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
+    del upgraded_config["ludwig_version"]
+    assert new_config == upgraded_config
+
+    old_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
+    new_config[OUTPUT_FEATURES][0][LOSS][CLASS_WEIGHTS] = [0.5, 0.8, 1]
+
+    upgraded_config = upgrade_config_dict_to_latest_version(old_config)
+    del upgraded_config["ludwig_version"]
+    assert new_config == upgraded_config
+
+
+def test_upgrade_model_progress():
+    old_model_progress = {
+        "batch_size": 64,
+        "best_eval_metric": 0.5,
+        "best_increase_batch_size_eval_metric": math.inf,
+        "best_reduce_learning_rate_eval_metric": math.inf,
+        "epoch": 2,
+        "last_improvement": 1,
+        "last_improvement_epoch": 1,
+        "last_increase_batch_size": 0,
+        "last_increase_batch_size_epoch": 0,
+        "last_increase_batch_size_eval_metric_improvement": 0,
+        "last_learning_rate_reduction": 0,
+        "last_learning_rate_reduction_epoch": 0,
+        "last_reduce_learning_rate_eval_metric_improvement": 0,
+        "learning_rate": 0.001,
+        "num_increases_batch_size": 0,
+        "num_reductions_learning_rate": 0,
+        "steps": 224,
+        "test_metrics": {
+            "combined": {"loss": [0.59, 0.56]},
+            "delinquent": {
+                "accuracy": [0.77, 0.78],
+            },
+        },
+        "train_metrics": {"combined": {"loss": [0.58, 0.55]}, "delinquent": {"roc_auc": [0.53, 0.54]}},
+        "vali_metrics": {"combined": {"loss": [0.59, 0.60]}, "delinquent": {"roc_auc": [0.53, 0.44]}},
+    }
+
+    new_model_progress = upgrade_model_progress(old_model_progress)
+
+    for stat in ("improvement", "increase_batch_size", "learning_rate_reduction"):
+        assert f"last_{stat}_epoch" not in new_model_progress
+        assert f"last_{stat}_steps" in new_model_progress
+        assert (
+            new_model_progress[f"last_{stat}_steps"]
+            == old_model_progress[f"last_{stat}_epoch"] * old_model_progress["batch_size"]
+        )
+
+    assert "tune_checkpoint_num" in new_model_progress
+
+    assert "vali_metrics" not in new_model_progress
+    assert "validation_metrics" in new_model_progress
+
+    metric = new_model_progress["validation_metrics"]["combined"]["loss"][0]
+    assert len(metric) == 3
+    assert metric[-1] == 0.59
+
+    # Verify that we don't make changes to already-valid model progress dicts.
+    # To do so, we modify the batch size value and re-run the upgrade on the otherwise-valid `new_model_progress` dict.
+    new_model_progress["batch_size"] = 1
+    unchanged_model_progress = upgrade_model_progress(new_model_progress)
+    assert unchanged_model_progress == new_model_progress
+
+
+def test_upgrade_model_progress_already_valid():
+    # Verify that we don't make changes to already-valid model progress dicts.
+    valid_model_progress = {
+        "batch_size": 128,
+        "best_eval_metric": 5.541325569152832,
+        "best_increase_batch_size_eval_metric": math.inf,
+        "best_reduce_learning_rate_eval_metric": math.inf,
+        "epoch": 5,
+        "last_improvement": 0,
+        "last_improvement_steps": 25,
+        "last_increase_batch_size": 0,
+        "last_increase_batch_size_eval_metric_improvement": 0,
+        "last_increase_batch_size_steps": 0,
+        "last_learning_rate_reduction": 0,
+        "last_learning_rate_reduction_steps": 0,
+        "last_reduce_learning_rate_eval_metric_improvement": 0,
+        "learning_rate": 0.001,
+        "num_increases_batch_size": 0,
+        "num_reductions_learning_rate": 0,
+        "steps": 25,
+        "test_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.38]], "loss": [[0, 5, 7.35], [1, 10, 7.08]]},
+            "combined": {"loss": [[0, 5, 7.35], [1, 10, 6.24]]},
+        },
+        "train_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.40]], "loss": [[0, 5, 7.67], [1, 10, 6.57]]},
+            "combined": {"loss": [[0, 5, 7.67], [1, 10, 6.57]]},
+        },
+        "validation_metrics": {
+            "Survived": {"accuracy": [[0, 5, 0.38], [1, 10, 0.38]], "loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+            "combined": {"loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+        },
+        "tune_checkpoint_num": 0,
+    }
+
+    unchanged_model_progress = upgrade_model_progress(valid_model_progress)
+    assert unchanged_model_progress == valid_model_progress
+
+
+def test_cache_credentials_backward_compatibility():
+    # From v0.6.3.
+    creds = {"s3": {"client_kwargs": {}}}
+    backend = {"type": "local", "cache_dir": "/foo/bar", "cache_credentials": creds}
+
+    _update_backend_cache_credentials(backend)
+
+    assert backend == {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}

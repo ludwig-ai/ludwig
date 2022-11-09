@@ -17,11 +17,15 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
+import psutil
+import torch
 
+from ludwig.api_annotations import DeveloperAPI
+from ludwig.backend.utils.storage import StorageManager
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.data.dataset.base import DatasetManager
@@ -30,26 +34,34 @@ from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import Series
 
 
+@DeveloperAPI
 class Backend(ABC):
     def __init__(
         self,
         dataset_manager: DatasetManager,
         cache_dir: Optional[str] = None,
-        cache_credentials: Optional[Union[str, dict]] = None,
+        credentials: Optional[Dict[str, Dict[str, Any]]] = None,
     ):
+        credentials = credentials or {}
         self._dataset_manager = dataset_manager
-        self._cache_manager = CacheManager(self._dataset_manager, cache_dir, cache_credentials)
+        self._storage_manager = StorageManager(**credentials)
+        self._cache_manager = CacheManager(self._dataset_manager, cache_dir)
 
     @property
-    def cache(self):
+    def storage(self) -> StorageManager:
+        return self._storage_manager
+
+    @property
+    def cache(self) -> CacheManager:
         return self._cache_manager
 
     @property
-    def dataset_manager(self):
+    def dataset_manager(self) -> DatasetManager:
         return self._dataset_manager
 
     @abstractmethod
@@ -100,6 +112,14 @@ class Backend(ABC):
     def num_nodes(self) -> int:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_available_resources(self) -> Resources:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+        raise NotImplementedError()
+
 
 class LocalPreprocessingMixin:
     @property
@@ -143,9 +163,7 @@ class LocalTrainingMixin:
     ) -> "BaseTrainer":  # noqa: F821
         from ludwig.trainers.registry import trainers_registry
 
-        trainers_for_model = get_from_registry(model.type(), trainers_registry)
-
-        trainer_cls = get_from_registry(config.type, trainers_for_model)
+        trainer_cls = get_from_registry(model.type(), trainers_registry)
 
         return trainer_cls(config=config, model=model, **kwargs)
 
@@ -175,7 +193,17 @@ class RemoteTrainingMixin:
         return True
 
 
+@DeveloperAPI
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
+    BACKEND_TYPE = "local"
+
+    @classmethod
+    def shared_instance(cls):
+        """Returns a shared singleton LocalBackend instance."""
+        if not hasattr(cls, "_shared_instance"):
+            cls._shared_instance = cls()
+        return cls._shared_instance
+
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)
 
@@ -185,3 +213,11 @@ class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     @property
     def num_nodes(self) -> int:
         return 1
+
+    def get_available_resources(self) -> Resources:
+        return Resources(cpus=psutil.cpu_count(), gpus=torch.cuda.device_count())
+
+    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+        # Every trial will be run with Pandas and NO Ray Datasets. Allow Ray Tune to use all the
+        # trial resources it wants, because there is no Ray Datasets process to compete with it for CPUs.
+        return None

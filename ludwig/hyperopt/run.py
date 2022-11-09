@@ -1,47 +1,66 @@
+import copy
 import logging
 import os
-from collections import defaultdict
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import List, Optional, Union
 
 import pandas as pd
 import yaml
+from tabulate import tabulate
 
 from ludwig.api import LudwigModel
 from ludwig.backend import Backend, initialize_backend, LocalBackend
 from ludwig.callbacks import Callback
 from ludwig.constants import (
+    AUTO,
     COMBINED,
-    DECODER,
-    ENCODER,
     EXECUTOR,
+    GOAL,
     HYPEROPT,
-    INPUT_FEATURES,
     LOSS,
-    MINIMIZE,
+    MAX_CONCURRENT_TRIALS,
+    METRIC,
     NAME,
+    NUM_SAMPLES,
     OUTPUT_FEATURES,
+    PARAMETERS,
     PREPROCESSING,
+    SEARCH_ALG,
+    SPLIT,
     TEST,
     TRAINING,
     TYPE,
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_registries import output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
-from ludwig.hyperopt.utils import print_hyperopt_results, save_hyperopt_stats, should_tune_preprocessing
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.hyperopt.utils import (
+    log_warning_if_all_grid_type_parameters,
+    print_hyperopt_results,
+    save_hyperopt_stats,
+    should_tune_preprocessing,
+    update_hyperopt_params_with_defaults,
+)
+from ludwig.schema.model_config import ModelConfig
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.dataset_utils import generate_dataset_statistics
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
-from ludwig.utils.misc_utils import get_class_attributes, get_from_registry, set_default_value, set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 
 try:
+    from ray.tune import Callback as TuneCallback
+
     from ludwig.backend.ray import RayBackend
 except ImportError:
+    TuneCallback = object
 
     class RayBackend:
         pass
+
+
+logger = logging.getLogger(__name__)
 
 
 def hyperopt(
@@ -67,9 +86,10 @@ def hyperopt(
     skip_save_hyperopt_statistics: bool = False,
     output_directory: str = "results",
     gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
+    tune_callbacks: List[TuneCallback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
@@ -158,9 +178,9 @@ def hyperopt(
         model and the training progress files.
     :param gpus: (list, default: `None`) list of GPUs that are available
         for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-        allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
         to use multithreading parallelism to improve performance at
         the cost of determinism.
     :param callbacks: (list, default: `None`) a list of
@@ -188,48 +208,55 @@ def hyperopt(
     else:
         config_dict = config
 
-    # Get mapping of input/output features that don't have an encoder for shared parameters
-    features_eligible_for_shared_params = {
-        INPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, INPUT_FEATURES),
-        OUTPUT_FEATURES: get_features_eligible_for_shared_params(config_dict, OUTPUT_FEATURES),
-    }
-
-    # backwards compatibility
-    config = upgrade_to_latest_version(config_dict)
-
-    # merge config with defaults
-    config = merge_with_defaults(config)
-
     if HYPEROPT not in config:
         raise ValueError("Hyperopt Section not present in config")
 
-    hyperopt_config = config[HYPEROPT]
+    # backwards compatibility
+    upgraded_config = upgrade_config_dict_to_latest_version(config_dict)
+
+    # Initialize config object
+    config_obj = ModelConfig.from_dict(upgraded_config)
+
+    # Retain pre-merged config for hyperopt schema generation
+    premerged_config = copy.deepcopy(upgraded_config)
+
+    # Get full config with defaults
+    full_config = config_obj.to_dict()  # TODO (Connor): Refactor to use config object
+
+    hyperopt_config = full_config[HYPEROPT]
+
+    # Explicitly default to a local backend to avoid picking up Ray or Horovod
+    # backend from the environment.
+    backend = backend or config_dict.get("backend") or "local"
+    backend = initialize_backend(backend)
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
-    # print hyperopt config
-    logging.info("Hyperopt config")
-    logging.info(pformat(hyperopt_config, indent=4))
-    logging.info("\n")
+    # Check if all features are grid type parameters and log UserWarning if needed
+    log_warning_if_all_grid_type_parameters(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES))
 
-    logging.info(
-        "Features that may be updated in hyperopt trials if default parameters are specified in the search space"
-    )
-    logging.info(pformat(dict(features_eligible_for_shared_params), indent=4))
-    logging.info("\n")
+    # Infer max concurrent trials
+    if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
+        hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS] = backend.max_concurrent_trials(hyperopt_config)
+        logger.info(f"Set max_concurrent_trials to {hyperopt_config[EXECUTOR][MAX_CONCURRENT_TRIALS]}")
 
-    search_alg = hyperopt_config["search_alg"]
+    # Print hyperopt config
+    logger.info("Hyperopt Config")
+    logger.info(pformat(hyperopt_config, indent=4))
+    logger.info("\n")
+
+    search_alg = hyperopt_config[SEARCH_ALG]
     executor = hyperopt_config[EXECUTOR]
-    parameters = hyperopt_config["parameters"]
-    split = hyperopt_config["split"]
+    parameters = hyperopt_config[PARAMETERS]
+    split = hyperopt_config[SPLIT]
     output_feature = hyperopt_config["output_feature"]
-    metric = hyperopt_config["metric"]
-    goal = hyperopt_config["goal"]
+    metric = hyperopt_config[METRIC]
+    goal = hyperopt_config[GOAL]
 
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
-    splitter = get_splitter(**config[PREPROCESSING]["split"])
+    splitter = get_splitter(**full_config[PREPROCESSING]["split"])
     if split == TRAINING:
         if training_set is None and not splitter.has_split(0):
             raise ValueError(
@@ -262,7 +289,7 @@ def hyperopt(
         if metric != LOSS:
             raise ValueError('The only valid metric for "combined" output feature is "loss"')
     else:
-        output_feature_names = {of[NAME] for of in config[OUTPUT_FEATURES]}
+        output_feature_names = {of[NAME] for of in full_config[OUTPUT_FEATURES]}
         if output_feature not in output_feature_names:
             raise ValueError(
                 'The output feature specified for hyperopt "{}" '
@@ -271,7 +298,7 @@ def hyperopt(
             )
 
         output_feature_type = None
-        for of in config[OUTPUT_FEATURES]:
+        for of in full_config[OUTPUT_FEATURES]:
             if of[NAME] == output_feature:
                 output_feature_type = of[TYPE]
         feature_class = get_from_registry(output_feature_type, output_type_registry)
@@ -291,10 +318,6 @@ def hyperopt(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )
 
-    # Explicitly default to a local backend to avoid picking up Ray or Horovod
-    # backend from the environment.
-    backend = backend or config_dict.get("backend") or "local"
-    backend = initialize_backend(backend)
     if not (
         isinstance(backend, LocalBackend)
         or (isinstance(hyperopt_executor, RayTuneExecutor) and isinstance(backend, RayBackend))
@@ -306,13 +329,13 @@ def hyperopt(
     for callback in callbacks or []:
         callback.on_hyperopt_init(experiment_name)
 
-    if not should_tune_preprocessing(config):
+    if not should_tune_preprocessing(full_config):
         # preprocessing is not being tuned, so generate it once before starting trials
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_start(experiment_name)
 
         model = LudwigModel(
-            config=config,
+            config=full_config,
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -332,6 +355,11 @@ def hyperopt(
         )
         dataset = None
 
+        dataset_statistics = generate_dataset_statistics(training_set, validation_set, test_set)
+
+        logger.info("\nDataset Statistics")
+        logger.info(tabulate(dataset_statistics, headers="firstrow", tablefmt="fancy_grid"))
+
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_end(experiment_name)
 
@@ -339,7 +367,7 @@ def hyperopt(
         callback.on_hyperopt_start(experiment_name)
 
     hyperopt_results = hyperopt_executor.execute(
-        config,
+        premerged_config,
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -363,10 +391,10 @@ def hyperopt(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
+        tune_callbacks=tune_callbacks,
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,
-        features_eligible_for_shared_params=features_eligible_for_shared_params,
         **kwargs,
     )
 
@@ -374,87 +402,22 @@ def hyperopt(
         print_hyperopt_results(hyperopt_results)
 
         if not skip_save_hyperopt_statistics:
-            results_directory = os.path.join(output_directory, experiment_name)
-            makedirs(results_directory, exist_ok=True)
+            with backend.storage.artifacts.use_credentials():
+                results_directory = os.path.join(output_directory, experiment_name)
+                makedirs(results_directory, exist_ok=True)
 
-            hyperopt_stats = {
-                "hyperopt_config": hyperopt_config,
-                "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
-            }
+                hyperopt_stats = {
+                    "hyperopt_config": hyperopt_config,
+                    "hyperopt_results": [t.to_dict() for t in hyperopt_results.ordered_trials],
+                }
 
-            save_hyperopt_stats(hyperopt_stats, results_directory)
-            logging.info(f"Hyperopt stats saved to: {results_directory}")
+                save_hyperopt_stats(hyperopt_stats, results_directory)
+                logger.info(f"Hyperopt stats saved to: {results_directory}")
 
     for callback in callbacks or []:
         callback.on_hyperopt_end(experiment_name)
         callback.on_hyperopt_finish(experiment_name)
 
-    logging.info("Finished hyperopt")
+    logger.info("Finished hyperopt")
 
     return hyperopt_results
-
-
-def update_hyperopt_params_with_defaults(hyperopt_params):
-    from ludwig.hyperopt.execution import executor_registry
-
-    set_default_value(hyperopt_params, EXECUTOR, {})
-    set_default_value(hyperopt_params, "split", VALIDATION)
-    set_default_value(hyperopt_params, "output_feature", COMBINED)
-    set_default_value(hyperopt_params, "metric", LOSS)
-    set_default_value(hyperopt_params, "goal", MINIMIZE)
-
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: "ray"})
-    executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
-    executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
-    set_default_values(
-        hyperopt_params[EXECUTOR],
-        executor_defaults,
-    )
-
-
-def get_features_eligible_for_shared_params(
-    config_dict: Dict[str, Any], config_feature_type: str
-) -> Dict[str, Dict[str, Set]]:
-    """Generates a mapping of feature type to the corresponding set of features without an encoder or one using the
-    default encoder for that feature type.
-
-    These features may be considered for potential shared parameter search spaces depending on the parameter space
-    defined later within the hyperopt config. This applies to both config_feature_types (input_features and
-    output_features). The shared parameters for both config_feature_types must be specified separately.
-
-    Note that shared default parameter search spaces are not applied to features with non-default encoders or
-    non-default decoders, since shared default parameter values should only apply to default modules.
-
-    Returns:
-      Dict of feature type -> set of feature names with that type that are eligible for shared parameters (they use
-      the default encoder or default decoder).
-
-    TODO(#2167): Make sure each feature has a type defined in the JSONSchema for Hyperopt
-    """
-
-    if config_feature_type not in config_dict:
-        raise ValueError(f"{config_feature_type} must be defined in Ludwig config.")
-
-    features_eligible_for_shared_params = defaultdict(set)
-
-    features = config_dict.get(config_feature_type)
-    feature_registry = input_type_registry if config_feature_type == INPUT_FEATURES else output_type_registry
-
-    for feature in features:
-        if TYPE not in feature:
-            raise ValueError("Ludwig expects feature types to be defined for each feature within the config.")
-
-        feature_schema = get_from_registry(feature.get(TYPE), feature_registry).get_schema_cls()
-
-        if config_feature_type == INPUT_FEATURES:
-            default_encoder = feature_schema().encoder.type
-            if feature.get(ENCODER, None) and feature.get(ENCODER).get(TYPE, None) != default_encoder:
-                continue
-        else:
-            default_decoder = feature_schema().decoder.type
-            if feature.get(DECODER, None) and feature.get(DECODER).get(TYPE, None) != default_decoder:
-                continue
-
-        features_eligible_for_shared_params[feature[TYPE]].add(feature[NAME])
-
-    return features_eligible_for_shared_params

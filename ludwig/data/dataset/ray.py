@@ -34,6 +34,7 @@ from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
@@ -78,6 +79,7 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
+        self._processed_data_fp = df if isinstance(df, str) else None
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -87,7 +89,11 @@ class RayDataset(Dataset):
         # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
 
     def pipeline(
-        self, shuffle: bool = True, fully_executed: bool = True, window_size_bytes: Optional[int] = None
+        self,
+        shuffle: bool = True,
+        fully_executed: bool = True,
+        window_size_bytes: Optional[int] = None,
+        shuffle_seed: int = default_random_seed,
     ) -> DatasetPipeline:
         """
         Args:
@@ -110,7 +116,7 @@ class RayDataset(Dataset):
         else:
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
         if shuffle:
-            pipe = pipe.random_shuffle_each_window()
+            pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
         return pipe
 
     @contextlib.contextmanager
@@ -129,6 +135,16 @@ class RayDataset(Dataset):
     @property
     def size(self):
         return len(self)
+
+    @property
+    def processed_data_fp(self) -> Optional[str]:
+        return self._processed_data_fp
+
+    @property
+    def in_memory_size_bytes(self):
+        """Memory size may be unknown, so return 0 incase size_bytes() returns None
+        https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
+        return self.ds.size_bytes() if self.ds is not None else 0
 
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)

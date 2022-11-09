@@ -1,0 +1,15 @@
+version: 1.0
+name: product_sentiment_machine_hack
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/machine_hack_product_sentiment/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/machine_hack_product_sentiment/dev.csv
+sha256:
+  dev.csv: 33adff4dba7d9322397b398900c20f678d3fffc5d87b0ea825d9aa497a343150
+  train.csv: 85a229e162b6d8c4839d1b27f834c36ae5e244fd027534fe62a888d4f536f0ef
+train_filenames: train.csv
+test_filenames: dev.csv
+description: |
+  We challenge the machinehackers community to develop a machine learning model
+  to accurately classify various products into 4 different classes of sentiments
+  based on the raw text review provided by the user.
+  https://www.machinehack.com/hackathons/product_sentiment_classification_weekend_hackathon_19/overview

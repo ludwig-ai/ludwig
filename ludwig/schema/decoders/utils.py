@@ -1,19 +1,44 @@
 from dataclasses import field
+from typing import List, Union
 
 from marshmallow import fields, ValidationError
 
 from ludwig.constants import TYPE
-from ludwig.decoders.registry import get_decoder_classes, get_decoder_cls
 from ludwig.schema import utils as schema_utils
+from ludwig.utils.registry import Registry
+
+decoder_config_registry = Registry()
+
+
+def register_decoder_config(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            feature_registry = decoder_config_registry.get(feature, {})
+            feature_registry[name] = cls
+            decoder_config_registry[feature] = feature_registry
+        return cls
+
+    return wrap
+
+
+def get_decoder_cls(feature: str, name: str):
+    return decoder_config_registry[feature][name]
+
+
+def get_decoder_classes(feature: str):
+    return decoder_config_registry[feature]
 
 
 def get_decoder_conds(feature_type: str):
     """Returns a JSON schema of conditionals to validate against decoder types for specific feature types."""
     conds = []
     for decoder in get_decoder_classes(feature_type):
-        decoder_cls = get_decoder_cls(feature_type, decoder).get_schema_cls()
+        decoder_cls = get_decoder_cls(feature_type, decoder)
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(decoder_cls)["properties"]
-        other_props.pop("type")
+        schema_utils.remove_duplicate_fields(other_props)
         decoder_cond = schema_utils.create_cond(
             {"type": decoder},
             other_props,
@@ -37,7 +62,7 @@ def DecoderDataclassField(feature_type: str, default: str):
                 return None
             if isinstance(value, dict):
                 if TYPE in value and value[TYPE] in get_decoder_classes(feature_type):
-                    dec = get_decoder_cls(feature_type, value[TYPE]).get_schema_cls()
+                    dec = get_decoder_cls(feature_type, value[TYPE])
                     try:
                         return dec.Schema().load(value)
                     except (TypeError, ValidationError) as error:
@@ -63,7 +88,7 @@ def DecoderDataclassField(feature_type: str, default: str):
             }
 
     try:
-        decoder = get_decoder_cls(feature_type, default).get_schema_cls()
+        decoder = get_decoder_cls(feature_type, default)
         load_default = decoder.Schema().load({"type": default})
         dump_default = decoder.Schema().dump({"type": default})
 

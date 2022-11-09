@@ -1,0 +1,14 @@
+version: 1.0
+name: imdb_genre_prediction
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/imdb_genre_prediction/train.csv
+  - https://automl-mm-bench.s3.amazonaws.com/imdb_genre_prediction/test.csv
+sha256:
+  test.csv: 5bca7b6ca34f4057e2a4920d6034f481055bd03061bb0128c87d6c99a6b4661f
+  train.csv: b63f1f6fcad17f644d9266891a01d0f0e1187c277ccf6eecb80af72b92b0b621
+train_filenames: train.csv
+test_filenames: test.csv
+description: |
+  A data set of 1,000 most popular movies on IMDB in the last 10 years. The data points included are:
+  Title, Genre, Description, Director, Actors, Year, Runtime, Rating, Votes, Revenue, Metascrore
+  https://www.kaggle.com/PromptCloudHQ/imdb-data
