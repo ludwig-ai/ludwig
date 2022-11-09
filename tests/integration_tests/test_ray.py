@@ -787,7 +787,7 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
-class TestWindowedShuffleAutosizing:
+class TestDatasetWindowAutosizing:
     """Test dataset windowing with different dataset sizes and settings."""
 
     @property
