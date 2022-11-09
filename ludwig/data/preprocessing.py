@@ -1194,10 +1194,10 @@ def build_dataset(
         if column not in dataset_df:
             warnings.warn(
                 f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
-                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This may be acceptable in a "
-                "serving setting if, for example, the model was trained with a configuration that used a stratified "
-                "split on the target column, but for live predictions, a value for the target column is not to be "
-                "provided."
+                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable in a "
+                "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
+                "model was trained with a configuration that used a stratified split on the target column, but for "
+                "live predictions, a value for the target column is not to be provided."
             )
             continue
         proc_cols[column] = dataset_df[column]
