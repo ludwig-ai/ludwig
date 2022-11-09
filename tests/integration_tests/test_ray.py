@@ -837,8 +837,9 @@ class TestWindowedShuffleAutosizing:
 
         # Create a dataset using the model backend to ensure it
         # is initialized correctly.
-        ds = model.backend.dataset_manager.create(df, config=model.config, training_set_metadata={})
-        ds.auto_window = auto_window
+        ds = model.backend.dataset_manager.create(
+            df, config=model.config, training_set_metadata={}, auto_window=auto_window
+        )
         return ds
 
     def test_small_dataset(self, ray_cluster_small_object_store):
