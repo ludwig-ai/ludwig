@@ -118,7 +118,11 @@ class RayDataset(Dataset):
             ds_memory_size = self.in_memory_size_bytes
             cluster_memory_size = ray.cluster_resources()["object_store_memory"]
             if ds_memory_size > cluster_memory_size // 5:
-                logger.info("Dataset size is larger than object store, enabling windowed shuffle.")
+                logger.info(
+                    "In-memory dataset size is greater than 20% of object store memory. "
+                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
+                    "Read more here:"
+                )
                 window_size_bytes = int(cluster_memory_size // 5)
 
         if fully_executed:
@@ -173,8 +177,21 @@ class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
-        return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
+    def create(
+        self,
+        dataset: Union[str, DataFrame],
+        config: Dict[str, Any],
+        training_set_metadata: Dict[str, Any],
+        auto_window: bool = False,
+    ) -> RayDataset:
+        """Create a new Ray dataset with config.
+
+        Args:
+            auto_window: If True, enable autosizing of data windows for large datasets.
+        """
+        return RayDataset(
+            dataset, get_proc_features(config), training_set_metadata, self.backend, auto_window=auto_window
+        )
 
     def save(
         self,
