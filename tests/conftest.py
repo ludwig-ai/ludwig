@@ -177,6 +177,7 @@ def _get_default_ray_kwargs():
         "include_dashboard": False,
         "namespace": "default_test_namespace",
         "_system_config": system_config,
+        "ignore_reinit_error": True,
     }
     return ray_kwargs
 
