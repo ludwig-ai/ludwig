@@ -69,13 +69,15 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
     if is_http(path):
         try:
             return get_bytes_obj_from_http_path(path)
-        except Exception:
+        except Exception as e:
+            logger.warning(e)
             return None
     else:
         try:
             with open_file(path) as f:
                 return f.read()
-        except OSError:
+        except OSError as e:
+            logger.warning(e)
             return None
 
 

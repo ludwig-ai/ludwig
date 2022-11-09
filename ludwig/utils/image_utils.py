@@ -52,7 +52,8 @@ def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
         if isinstance(bytes_obj, bytes):
             return imghdr.what(None, bytes_obj) is not None
         return imghdr.what(bytes_obj) is not None
-    except Exception:
+    except Exception as e:
+        logger.warning(f"While assessing potential image in is_image() for column {column}, encountered exception: {e}")
         return False
 
 
