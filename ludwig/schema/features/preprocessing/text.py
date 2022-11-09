@@ -106,6 +106,13 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["computed_fill_value"],
     )
 
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
+    )
+
 
 @register_preprocessor("text_output")
 @dataclass(repr=False)
