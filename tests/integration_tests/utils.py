@@ -192,16 +192,32 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df.to_csv(filename, index=False)
+    return filename
+
+
+def generate_data_as_dataframe(
+    input_features,
+    output_features,
+    num_examples=25,
+    nan_percent=0.0,
+) -> pd.DataFrame:
+    """Helper method to generate synthetic data based on input, output feature specs.
+
+    Args:
+        num_examples: number of examples to generate
+        input_features: schema
+        output_features: schema
+        nan_percent: percent of values in a feature to be NaN
+    Returns:
+        A pandas DataFrame
+    """
     features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
 
-    dataframe = pd.DataFrame(data[1:], columns=data[0])
-    if nan_percent > 0:
-        add_nans_to_df_in_place(dataframe, nan_percent)
-    dataframe.to_csv(filename, index=False)
-
-    return filename
+    return pd.DataFrame(data[1:], columns=data[0])
 
 
 def recursive_update(dictionary, values):
