@@ -1190,8 +1190,17 @@ def build_dataset(
         )
 
     splitter = get_splitter(**split_params)
-    for col in splitter.required_columns:
-        proc_cols[col] = dataset_df[col]
+    for column in splitter.required_columns:
+        if column not in dataset_df:
+            warnings.warn(
+                f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
+                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable in a "
+                "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
+                "model was trained with a configuration that used a stratified split on the target column, but for "
+                "live predictions, a value for the target column is not to be provided."
+            )
+            continue
+        proc_cols[column] = dataset_df[column]
 
     # TODO pyarrow: this is needed for caching to work with pyarrow. if removed, the following error is raised:
     # "pyarrow.lib.ArrowInvalid: Can only convert 1-dimensional array values". The data is reshaped when loaded

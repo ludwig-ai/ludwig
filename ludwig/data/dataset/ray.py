@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import logging
 import math
 import queue
 import threading
@@ -49,7 +50,12 @@ def read_remote_parquet(path: str):
 
 
 class RayDataset(Dataset):
-    """Wrapper around ray.data.Dataset."""
+    """Wrapper around ray.data.Dataset.
+
+    Attributes:
+        auto_window: If True and the dataset is larger than available memory,
+            automatically set window size to `<available memory> // 5`.
+    """
 
     def __init__(
         self,
@@ -57,6 +63,7 @@ class RayDataset(Dataset):
         features: Dict[str, Dict],
         training_set_metadata: Dict[str, Any],
         backend: Backend,
+        auto_window: bool = False,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -65,6 +72,7 @@ class RayDataset(Dataset):
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
+        self.auto_window = auto_window
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
@@ -101,8 +109,21 @@ class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
-    def create(self, dataset: Union[str, DataFrame], config: Dict[str, Any], training_set_metadata: Dict[str, Any]):
-        return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
+    def create(
+        self,
+        dataset: Union[str, DataFrame],
+        config: Dict[str, Any],
+        training_set_metadata: Dict[str, Any],
+        auto_window: bool = False,
+    ) -> "RayDataset":
+        """Create a new Ray dataset with config.
+
+        Args:
+            auto_window: If True, enable autosizing of data windows for large datasets.
+        """
+        return RayDataset(
+            dataset, get_proc_features(config), training_set_metadata, self.backend, auto_window=auto_window
+        )
 
     def save(
         self,
