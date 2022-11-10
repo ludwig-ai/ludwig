@@ -291,7 +291,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    quantile_fraction = float = schema_utils.FloatRange(
+    quantile_fraction: float = schema_utils.FloatRange(
         default=0.25,
         allow_none=False,
         min=0,
@@ -362,7 +362,13 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 
     type: str = schema_utils.StringOptions(options=["pbt_replay"], default="pbt_replay", allow_none=False)
 
-    policy_file: str
+    # TODO: This should technically be a required paremeter. Do we need to add support for required params?
+    policy_file: str = schema_utils.String(
+        description=(
+            "The PBT policy file. Usually this is stored in ~/ray_results/experiment_name/pbt_policy_xxx.txt where xxx "
+            "is the trial ID."
+        )
+    )
 
 
 @register_scheduler_config("pb2")
@@ -416,7 +422,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
         ),
     )
 
-    quantile_fraction = float = schema_utils.FloatRange(
+    quantile_fraction: float = schema_utils.FloatRange(
         default=0.25,
         allow_none=False,
         min=0,
@@ -578,7 +584,7 @@ def SchedulerDataclassField(default={"type": "async_hyperband"}, description="Hy
     if not isinstance(default, dict) or "type" not in default or default["type"] not in scheduler_config_registry:
         raise ValidationError(f"Invalid default: `{default}`")
     try:
-        opt = scheduler_config_registry[default["type"].lower()][1]
+        opt = scheduler_config_registry[default["type"].lower()]
         load_default = opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 

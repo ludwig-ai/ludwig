@@ -1,4 +1,5 @@
 import copy
+from abc import ABC
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -108,7 +109,7 @@ def remove_duplicate_fields(properties: dict) -> None:
             del properties[key]
 
 
-class BaseMarshmallowConfig:
+class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
 
     class Meta:
@@ -822,7 +823,12 @@ def FloatRangeTupleDataclassField(
 
     def validate_range(data: Tuple):
         if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-            if all(list(map(lambda b: min <= b <= max, data))):
+            minmax_checks = []
+            if min is not None:
+                minmax_checks += list(map(lambda b: min <= b, data))
+            if max is not None:
+                minmax_checks += list(map(lambda b: b <= max, data))
+            if all(minmax_checks):
                 return data
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"

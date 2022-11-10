@@ -5,7 +5,7 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.hyperopt.scheduler import SchedulerConfig, SchedulerDataclassField
+from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
 
 
 @dataclass
@@ -24,7 +24,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
     kubernetes_namespace: Optional[str] = schema_utils.String(default=None, description="")
 
-    scheduler: SchedulerConfig = SchedulerDataclassField(description="")
+    scheduler: BaseSchedulerConfig = SchedulerDataclassField(description="")
 
 
 def ExecutorDataclassField(description: str, default: Dict = {}):
