@@ -513,6 +513,40 @@ class BOHBSchedulerConfig(BaseSchedulerConfig):
     )
 
 
+# TODO: Double-check support for this
+@register_scheduler_config("fifo")
+@dataclass
+class FIFOSchedulerConfig(BaseSchedulerConfig):
+    """FIFO trial scheduler settings."""
+
+    type: str = schema_utils.StringOptions(options=["fifo"], default="fifo", allow_none=False)
+
+
+# TODO: Double-check support for this as well as whether Callable args work properly
+@register_scheduler_config("resource_changing")
+@dataclass
+class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
+    """Resource changing scheduler settings."""
+
+    type: str = schema_utils.StringOptions(options=["resource_changing"], default="resource_changing", allow_none=False)
+
+    base_scheduler: Union[str, None, Callable] = schema_utils.String(
+        description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used.")
+    )
+
+    resources_allocation_function: Union[str, Callable] = schema_utils.String(
+        description=(
+            "The callable used to change live trial resource requiements during tuning. This callable will be called on"
+            " each trial as it finishes one step of training. The callable must take four arguments: TrialRunner, "
+            "current Trial, current result dict and the ResourceChangingScheduler calling it. The callable must return "
+            "a PlacementGroupFactory, Resources, dict or None (signifying no need for an update). If "
+            "resources_allocation_function is None, no resource requirements will be changed at any time. By default, "
+            "DistributeResources will be used, distributing available CPUs and GPUs over all running trials in a robust"
+            " way, without any prioritization."
+        )
+    )
+
+
 def get_scheduler_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
     `ludwig.modules.optimization_modules.optimizer_registry`."""
