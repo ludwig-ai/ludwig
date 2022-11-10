@@ -184,7 +184,7 @@ class RayDatasetManager(DatasetManager):
         config: Dict[str, Any],
         training_set_metadata: Dict[str, Any],
         auto_window: bool = False,
-    ) -> RayDataset:
+    ) -> "RayDataset":
         """Create a new Ray dataset with config.
 
         Args:
