@@ -800,18 +800,16 @@ def FloatRangeTupleDataclassField(
         def _jsonschema_type_mapping(self):
             if default is not None:
                 validate_range(default)
+            items_schema = {"type": "number"}
+            if min is not None:
+                items_schema["minimum"] = min
+            if max is not None:
+                items_schema["maximum"] = max
             return {
                 "oneOf": [
                     {
                         "type": "array",
-                        "items": [
-                            {
-                                "type": "number",
-                                "minimum": min,
-                                "maximum": max,
-                            }
-                        ]
-                        * n,
+                        "items": [{**items_schema}] * n,
                         "default": default,
                         "description": description,
                     },
