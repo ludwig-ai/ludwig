@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
-import logging
 import math
 import queue
 import threading
