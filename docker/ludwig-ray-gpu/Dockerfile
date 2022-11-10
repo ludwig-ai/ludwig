@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.0.0-py38-cu113
+FROM rayproject/ray:2.0.0-py38-cu116
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sudo apt-key del 7fa2af80 && \
@@ -38,6 +38,6 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu113 && \
+    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116 && \
     horovodrun --check-build && \
     python -c "import horovod.torch; horovod.torch.init()"
