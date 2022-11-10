@@ -52,6 +52,7 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @register_scheduler_config("async_hyperband")
+@register_scheduler_config("asynchyperband")
 @dataclass
 class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig):
     """Asynchronous hyperband (ASHA) scheduler settings."""
@@ -159,6 +160,7 @@ class HyperbandSchedulerConfig(BaseSchedulerConfig):
 
 
 @register_scheduler_config("median_stopping_rule")
+@register_scheduler_config("medianstoppingrule")
 @dataclass
 class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig):
     """Median Stopping Rule scheduler settings."""
@@ -461,7 +463,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig):
     )
 
 
-@register_scheduler_config("bohb")
+@register_scheduler_config("hb_bohb")
 @dataclass
 class BOHBSchedulerConfig(BaseSchedulerConfig):
     """Hyperband for BOHB scheduler settings."""
