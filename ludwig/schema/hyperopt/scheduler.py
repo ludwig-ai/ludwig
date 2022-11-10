@@ -8,7 +8,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
-# ------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # To prevent direct dependency on ray import, the following static key stores are duplicated:
 
 # from ray.tune.schedulers import SCHEDULER_IMPORT
@@ -25,7 +25,7 @@ DEFAULT_RESULT_KEYS = (TRAINING_ITERATION, TIME_TOTAL_S, TIMESTEPS_TOTAL, MEAN_A
 
 # from ray.tune.result import DEFAULT_METRIC
 RAY_TUNE_DESULT_DEFAULT_METRIC = "_metric"
-# ------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 scheduler_config_registry = Registry()
 
