@@ -6,8 +6,6 @@ on:
   push:
     branches: ["master", "release-*"]
     tags: ["v*.*.*"]
-  pull_request:
-    branches: ["master", "release-*"]
 
 jobs:
   start-runner:
@@ -63,9 +61,9 @@ jobs:
       fail-fast: false
       matrix:
         docker-image:
-          # - ludwig
-          # - ludwig-gpu
-          # - ludwig-ray
+          - ludwig
+          - ludwig-gpu
+          - ludwig-ray
           - ludwig-ray-gpu
 
     steps:
