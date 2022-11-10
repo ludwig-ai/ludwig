@@ -21,11 +21,18 @@ def _get_runs(experiment_id: str):
     return mlflow.tracking.client.MlflowClient().search_runs([experiment_id])
 
 
-def _get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
+@DeveloperAPI
+def get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
+    """Gets experiment id from mlflow."""
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is not None:
         return experiment.experiment_id
     return mlflow.create_experiment(name=experiment_name, artifact_location=artifact_uri)
+
+
+# Included for backwards compatibility, Deprecated.
+# TODO(daniel): delete this.
+_get_or_create_experiment_id = get_or_create_experiment_id
 
 
 @DeveloperAPI
@@ -46,7 +53,7 @@ class MlflowCallback(Callback):
             mlflow.set_tracking_uri(tracking_uri)
 
     def get_experiment_id(self, experiment_name):
-        return _get_or_create_experiment_id(experiment_name)
+        return get_or_create_experiment_id(experiment_name)
 
     def on_preprocess_end(
         self, training_set: Dataset, validation_set: Dataset, test_set: Dataset, training_set_metadata: Dict[str, Any]
