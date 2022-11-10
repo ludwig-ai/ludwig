@@ -806,7 +806,7 @@ class TestDatasetWindowAutosizing:
         """The number of Dask dataframe partitions to create."""
         return 100
 
-    def create_dataset(self, size: int, auto_window: bool = True) -> RayDataset:
+    def create_dataset(self, size: int, auto_window: bool = True) -> "RayDataset":
         """Create a dataset of specified size to test auto-sizing.
 
         Args:
