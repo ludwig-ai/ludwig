@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
@@ -14,15 +14,43 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
 
     type: str = schema_utils.StringOptions(options=["ray"], default="ray", allow_none=False)
 
-    num_samples: int = schema_utils.PositiveInteger(default=10, description="")
+    num_samples: int = schema_utils.PositiveInteger(
+        default=10,
+        description=(
+            "This parameter, along with the space specifications in the parameters section, controls how many "
+            "trials are generated "
+        ),
+    )
 
-    time_budget_s: int = schema_utils.PositiveInteger(default=3600, description="")
+    time_budget_s: int = schema_utils.PositiveInteger(
+        default=3600, description="The number of seconds for the entire hyperopt run."
+    )
 
-    cpu_resources_per_trial: int = schema_utils.PositiveInteger(default=1, description="")
+    cpu_resources_per_trial: int = schema_utils.PositiveInteger(
+        default=1, description="The number of CPU cores allocated to each trial"
+    )
 
-    gpu_resources_per_trial: int = schema_utils.NonNegativeInteger(default=0, description="")
+    gpu_resources_per_trial: int = schema_utils.NonNegativeInteger(
+        default=0, description="The number of GPU devices allocated to each trial"
+    )
 
-    kubernetes_namespace: Optional[str] = schema_utils.String(default=None, description="")
+    kubernetes_namespace: Optional[str] = schema_utils.String(
+        default=None,
+        description=(
+            "When running on Kubernetes, provide the namespace of the Ray cluster to sync results between "
+            "pods. See the Ray docs for more info."
+        ),
+    )
+
+    max_concurrent_trials: Union[str, int, None] = schema_utils.OneOfOptionsField(
+        default=0.001,
+        allow_none=True,
+        description=("The maximum number of trials to train concurrently. Defaults to auto if not specified."),
+        field_options=[
+            schema_utils.PositiveInteger(default=1, allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
 
     scheduler: BaseSchedulerConfig = SchedulerDataclassField(description="")
 
