@@ -15,7 +15,6 @@
 import os
 import tempfile
 
-import dask
 import numpy as np
 import pandas as pd
 import pytest
@@ -58,6 +57,7 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    import dask
     import modin
     import ray
 
@@ -82,6 +82,7 @@ try:
     ) >= version.parse("1.13.0")
 
 except ImportError:
+    dask = None
     modin = None
     ray = None
 
