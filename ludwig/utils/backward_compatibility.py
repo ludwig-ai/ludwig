@@ -458,7 +458,7 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
             hyperopt[EXECUTOR][SCHEDULER] = hyperopt[SAMPLER][SCHEDULER]
             warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
 
-        if len(hyperopt[EXECUTOR][SCHEDULER].keys()) == 0:
+        if SCHEDULER in hyperopt[EXECUTOR] and len(hyperopt[EXECUTOR][SCHEDULER].keys()) == 0:
             del hyperopt[EXECUTOR][SCHEDULER]
 
         # remove legacy section
