@@ -7,7 +7,7 @@ from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
-from ludwig.schema.hyperopt.search_algorithm import SearchAlgorithmConfig, SearchAlgorithmDataclassField
+from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
 
 
 def get_hyperopt_metric_options():
@@ -55,7 +55,7 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
-    search_alg: SearchAlgorithmConfig = SearchAlgorithmDataclassField(
+    search_alg: BaseSearchAlgorithmConfig = SearchAlgorithmDataclassField(
         description=(
             "Specifies the algorithm to sample the defined parameters space. Candidate algorithms are those "
             "found in Ray Tune's Search Algorithms."
@@ -80,5 +80,5 @@ def get_hyperopt_jsonschema():
         "type": "object",
         "properties": props,
         "title": "hyperopt_options",
-        "description": "Schema for hyperopt",
+        "description": "Settings for hyperopt",
     }

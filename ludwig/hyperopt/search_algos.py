@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 from importlib import import_module
-from typing import Dict, Type
+from typing import Dict
 
-from ludwig.hyperopt.registry import register_search_algorithm, search_algorithm_registry
+from ludwig.hyperopt.registry import register_search_algorithm
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,6 @@ class SearchAlgorithm(ABC):
     def check_for_random_seed(self, ludwig_random_seed: int) -> None:
         if self.random_seed_attribute_name not in self.search_alg_dict:
             self.search_alg_dict[self.random_seed_attribute_name] = ludwig_random_seed
-
-
-def get_search_algorithm_cls(name: str) -> Type[SearchAlgorithm]:
-    return search_algorithm_registry[name]
 
 
 @register_search_algorithm("random")

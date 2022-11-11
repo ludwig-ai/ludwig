@@ -43,12 +43,19 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     max_concurrent_trials: Union[str, int, None] = schema_utils.OneOfOptionsField(
-        default=0.001,
+        default="auto",
         allow_none=True,
         description=("The maximum number of trials to train concurrently. Defaults to auto if not specified."),
         field_options=[
-            schema_utils.PositiveInteger(default=1, allow_none=False),
-            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+            schema_utils.PositiveInteger(
+                default=1, allow_none=False, description="Manually set a number of concurrent trials."
+            ),
+            schema_utils.StringOptions(
+                options=["auto"],
+                default="auto",
+                allow_none=False,
+                description="Automatically set number of concurrent trials.",
+            ),
         ],
     )
 
