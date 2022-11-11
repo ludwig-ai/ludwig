@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Optional
 
 import pandas as pd
 
-from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 
 
