@@ -29,6 +29,9 @@ class DatasetConfig:
     # The readable description of the dataset
     description: str = ""
 
+    # The learning task(s) associated with this dataset.
+    task: str = ""
+
     # The kaggle competition this dataset belongs to, or None if this dataset is not hosted by a Kaggle competition.
     kaggle_competition: Optional[str] = None
 

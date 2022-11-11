@@ -80,6 +80,11 @@ def list_datasets() -> List[str]:
     return sorted(_get_dataset_configs().keys())
 
 
+def list_dataset_configs() -> Dict[str, DatasetConfig]:
+    """Returns a list of the names of all available datasets."""
+    return _get_dataset_configs()
+
+
 def describe_dataset(dataset_name: str) -> str:
     """Returns the description of the dataset."""
     return _get_dataset_configs()[dataset_name].description
