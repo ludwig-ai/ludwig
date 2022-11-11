@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.features.text_feature import TextFeatureMixin
+from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.utils import strings_utils
 
 
@@ -63,7 +63,7 @@ def test_are_conventional_bools():
 def test_create_vocabulary_chars():
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
-    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+    preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
@@ -85,7 +85,7 @@ def test_create_vocabulary_chars():
 def test_create_vocabulary_word():
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
-    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+    preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
@@ -108,7 +108,7 @@ def test_create_vocabulary_word():
 def test_create_vocabulary_no_special_symbols():
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
-    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+    preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,
@@ -129,7 +129,7 @@ def test_create_vocabulary_no_special_symbols():
 def test_create_vocabulary_from_hf():
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
-    preprocessing_parameters = TextFeatureMixin.preprocessing_defaults()
+    preprocessing_parameters = TextPreprocessingConfig().to_dict()
 
     vocabulary_output = strings_utils.create_vocabulary(
         column,

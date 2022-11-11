@@ -25,7 +25,7 @@ from collections.abc import Mapping
 import numpy
 import torch
 
-from ludwig.constants import PROC_COLUMN
+from ludwig.constants import ENCODER, NAME, PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
@@ -84,6 +84,10 @@ def resolve_pointers(dict1, dict2, dict2_name):
             if key_in_dict2 in dict2.keys():
                 value = dict2[key_in_dict2]
                 resolved_dict[key] = value
+            if ENCODER in dict2.keys():  # TODO(Connor): Temporary fix, remove this during preproc refactor
+                if key_in_dict2 in dict2[ENCODER].keys():
+                    value = dict2[ENCODER][key_in_dict2]
+                    resolved_dict[key] = value
     return resolved_dict
 
 
@@ -151,14 +155,16 @@ def get_proc_features_from_lists(*args):
     return {feature[PROC_COLUMN]: feature for features in args for feature in features}
 
 
-def set_saved_weights_in_checkpoint_flag(config):
-    """Adds a flag to all input features indicating that the weights are saved in the checkpoint.
+def set_saved_weights_in_checkpoint_flag(config_obj):
+    """Adds a flag to all input feature encoder configs indicating that the weights are saved in the checkpoint.
 
     Next time the model is loaded we will restore pre-trained encoder weights from ludwig model (and not load from cache
     or model hub).
     """
-    for input_feature in config.get("input_features", []):
-        input_feature["saved_weights_in_checkpoint"] = True
+    for input_feature in config_obj.input_features.to_list():
+        input_feature_name = input_feature[NAME]
+        encoder_obj = config_obj.input_features.get(input_feature_name).encoder
+        encoder_obj.saved_weights_in_checkpoint = True
 
 
 def remove_empty_lines(str):

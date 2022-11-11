@@ -7,7 +7,7 @@ from ludwig.combiners.combiners import ConcatCombiner
 from ludwig.constants import CATEGORY, DECODER, NUMBER, SEQUENCE, TYPE
 from ludwig.models.base import BaseModel
 from ludwig.modules.reduction_modules import SequenceReducer
-from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
 from tests.integration_tests.utils import generate_output_features_with_dependencies, number_feature
 
@@ -123,11 +123,15 @@ def test_construct_output_features_with_dependencies(output_feature_defs):
     # Gets name of output feature which has dependencies.
     dep_feature_name = [of for of in output_feature_defs if len(of.get("dependencies", [])) > 0][0]["name"]
     # Creates a dummy input feature and combiner.
-    input_feature_def = number_feature()
-    input_features = {input_feature_def["name"]: BaseModel.build_single_input(input_feature_def, {})}
-    combiner_config = ConcatCombinerConfig.Schema().load({"type": "concat", "output_size": 1})
-    combiner = ConcatCombiner(input_features=input_features, config=combiner_config)
-    output_features = BaseModel.build_outputs(output_feature_defs, combiner)
+    config = {
+        "input_features": [number_feature()],
+        "output_features": output_feature_defs,
+        "combiner": {"type": "concat", "output_size": 1},
+    }
+    config_obj = ModelConfig.from_dict(config)
+    input_features = BaseModel.build_inputs(config_obj.input_features)
+    combiner = ConcatCombiner(input_features=input_features, config=config_obj.combiner)
+    output_features = BaseModel.build_outputs(config_obj.output_features, combiner)
     # Gets the output feature object which has dependencies.
     feature_with_deps = output_features[dep_feature_name]
     n_dependencies = len(feature_with_deps.dependencies)

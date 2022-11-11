@@ -15,17 +15,16 @@
 # ==============================================================================
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
 from dateutil.parser import parse
 
-from ludwig.constants import COLUMN, DATE, ENCODER, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -51,10 +50,6 @@ class DateFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return DATE
-
-    @staticmethod
-    def preprocessing_defaults():
-        return DateInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -112,8 +107,7 @@ class DateFeatureMixin(BaseFeatureMixin):
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[DateInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: DateInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -140,17 +134,12 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
 
-    def create_sample_input(self):
-        return torch.Tensor([[2013, 2, 26, 1, 57, 0, 0, 0, 0], [2015, 2, 26, 1, 57, 0, 0, 0, 0]]).type(torch.int32)
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = DateInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    def create_sample_input(self, batch_size: int = 2):
+        date = [2013, 2, 26, 1, 57, 0, 0, 0, 0]
+        return torch.Tensor([date for _ in range(batch_size)]).type(torch.int32)
 
     @staticmethod
     def get_schema_cls():

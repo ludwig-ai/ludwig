@@ -1,5 +1,5 @@
 version: 1.0
-name: mercari_price_suggestion_100k
+name: mercari_price_suggestion100K
 download_urls:
   - https://automl-mm-bench.s3.amazonaws.com/mercari_price_suggestion100K/train.pq
   - https://automl-mm-bench.s3.amazonaws.com/mercari_price_suggestion100K/test.pq

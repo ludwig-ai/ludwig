@@ -16,11 +16,12 @@
 import logging
 from abc import ABC
 from functools import lru_cache
-from typing import Any, Dict
+from typing import Dict
 
 import torch
 from torch.nn import Linear, ModuleList
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER
 from ludwig.encoders.registry import sequence_encoder_registry
 from ludwig.features.base_feature import InputFeature
@@ -37,7 +38,7 @@ from ludwig.schema.combiners.sequence_concat import SequenceConcatCombinerConfig
 from ludwig.schema.combiners.tab_transformer import TabTransformerCombinerConfig
 from ludwig.schema.combiners.tabnet import TabNetCombinerConfig
 from ludwig.schema.combiners.transformer import TransformerCombinerConfig
-from ludwig.schema.combiners.utils import combiner_registry, get_combiner_jsonschema, register_combiner
+from ludwig.schema.combiners.utils import combiner_registry, register_combiner
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, sequence_length_3D
 from ludwig.utils.torch_utils import sequence_mask as torch_sequence_mask
@@ -54,12 +55,15 @@ def get_combiner_class(combiner_type: str):
     return get_from_registry(combiner_type, combiner_registry)
 
 
-def get_combiner_schema() -> Dict[str, Any]:
-    return get_combiner_jsonschema()
-
-
-# super class to house common properties
+@DeveloperAPI
 class Combiner(LudwigModule, ABC):
+    """Base class for combiners, which implements common properties.
+
+    Subclasses will usually override:     __init__()        to set properties and allocate resources.  Should call
+    super().__init__(input_features).     forward()         performs the forward pass given a dictionary of encoder
+    outputs.     get_schema_cls()  must returns the class of the corresponding schema for the combiner type.
+    """
+
     def __init__(self, input_features: Dict[str, "InputFeature"]):
         super().__init__()
         self.input_features = input_features
@@ -291,7 +295,6 @@ class SequenceConcatCombiner(Combiner):
         logger.debug(f"  concat_hidden: {hidden}")
 
         # ================ Mask ================
-        # todo future: maybe modify this with TF2 mask mechanics
         sequence_mask = torch_sequence_mask(sequence_length, sequence_max_length)
         hidden = torch.multiply(hidden, torch.unsqueeze(sequence_mask, -1).type(torch.float32))
 
@@ -328,7 +331,7 @@ class SequenceCombiner(Combiner):
             f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape}"
         )
 
-        self.encoder_obj = get_from_registry(config.encoder, sequence_encoder_registry)(
+        self.encoder_obj = get_from_registry(config.encoder.type, sequence_encoder_registry)(
             should_embed=False,
             reduce_output=config.reduce_output,
             embedding_size=self.combiner.output_shape[1],

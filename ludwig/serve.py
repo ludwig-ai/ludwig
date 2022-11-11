@@ -60,7 +60,8 @@ def server(model, allowed_origins=None):
     middleware = [Middleware(CORSMiddleware, allow_origins=allowed_origins)] if allowed_origins else None
     app = FastAPI(middleware=middleware)
 
-    input_features = {f[COLUMN] for f in model.config["input_features"]}
+    config = model.config
+    input_features = {f[COLUMN] for f in config["input_features"]}
 
     @app.get("/")
     def check_health():
@@ -77,7 +78,14 @@ def server(model, allowed_origins=None):
 
         try:
             if (entry.keys() & input_features) != input_features:
-                return NumpyJSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
+                missing_features = set(input_features) - set(entry.keys())
+                return NumpyJSONResponse(
+                    {
+                        "error": "Data received does not contain all input features. "
+                        f"Missing features: {missing_features}."
+                    },
+                    status_code=400,
+                )
             try:
                 resp, _ = model.predict(dataset=[entry], data_format=dict)
                 resp = resp.to_dict("records")[0]
@@ -100,7 +108,14 @@ def server(model, allowed_origins=None):
             return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
         if (set(data_df.columns) & input_features) != input_features:
-            return NumpyJSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
+            missing_features = set(input_features) - set(data_df.columns)
+            return NumpyJSONResponse(
+                {
+                    "error": "Data received does not contain all input features. "
+                    f"Missing features: {missing_features}."
+                },
+                status_code=400,
+            )
         try:
             resp, _ = model.predict(dataset=data_df)
             resp = resp.to_dict("split")

@@ -14,20 +14,38 @@
 # limitations under the License.
 # ==============================================================================
 
+import collections
 import logging
-from typing import Dict
+import os
+from typing import Any, Dict, Iterable, Tuple, Union
 
 import dask
 import dask.array as da
 import dask.dataframe as dd
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import ray
 from dask.diagnostics import ProgressBar
+from packaging import version
+from pyarrow.fs import FSSpecHandler, PyFileSystem
+from ray.data import Dataset, read_parquet
+from ray.data.block import Block, BlockAccessor
+from ray.data.extensions import ArrowTensorType, TensorArray, TensorDtype
+from ray.util.client.common import ClientObjectRef
 
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.utils.data_utils import get_pa_schema, split_by_slices
-from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
+from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, load_json, save_json, split_by_slices
+from ludwig.utils.dataframe_utils import flatten_df, set_index_name, unflatten_df
+from ludwig.utils.fs_utils import get_fs_and_path
+
+_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
+# This is to be compatible with pyarrow.lib.schema
+PandasBlockSchema = collections.namedtuple("PandasBlockSchema", ["names", "types"])
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +160,7 @@ class DaskEngine(DataFrameEngine):
 
         ds = ray.data.from_dask(series)
         ds = ds.map_batches(map_fn, batch_format="pandas")
-        return ds.to_dask()
+        return self._to_dask(ds)
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
@@ -193,7 +211,44 @@ class DaskEngine(DataFrameEngine):
                 engine="pyarrow",
                 write_index=index,
                 schema=schema,
+                name_function=get_parquet_filename,
             )
+
+    def write_predictions(self, df: dd.DataFrame, path: str):
+        if not _ray200:
+            # fallback to slow flatten_df
+            df, column_shapes = flatten_df(df, self)
+            self.to_parquet(df, path)
+            save_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
+            return
+
+        ds = self.to_ray_dataset(df)
+
+        def to_tensors(batch: pd.DataFrame) -> pd.DataFrame:
+            data = {}
+            for c in batch.columns:
+                try:
+                    data[c] = TensorArray(batch[c])
+                except TypeError:
+                    # Not a tensor, likely a string which pyarrow can handle natively
+                    pass
+            return pd.DataFrame(data)
+
+        ds = ds.map_batches(to_tensors)
+
+        fs, path = get_fs_and_path(path)
+        ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+
+    def read_predictions(self, path: str) -> dd.DataFrame:
+        if not _ray200:
+            # fallback to slow unflatten_df
+            pred_df = dd.read_parquet(path)
+            column_shapes = load_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
+            return unflatten_df(pred_df, column_shapes, self)
+
+        fs, path = get_fs_and_path(path)
+        ds = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+        return self.from_ray_dataset(ds)
 
     def to_ray_dataset(self, df):
         from ray.data import from_dask
@@ -201,10 +256,67 @@ class DaskEngine(DataFrameEngine):
         return from_dask(df)
 
     def from_ray_dataset(self, dataset) -> dd.DataFrame:
-        return dataset.to_dask()
+        return self._to_dask(dataset)
 
     def reset_index(self, df):
         return reset_index_across_all_partitions(df)
+
+    def _to_dask(
+        self,
+        dataset: Dataset,
+        meta: Union[
+            pd.DataFrame,
+            pd.Series,
+            Dict[str, Any],
+            Iterable[Any],
+            Tuple[Any],
+            None,
+        ] = None,
+    ) -> dd.DataFrame:
+        """Custom Ray to_dask() conversion implementation with meta inference added for compatibility with Ray 2.0
+        and Ray 2.1. Useful for Ray Datasets that have image and audio features.
+
+        TODO(Arnav): Remove in Ray 2.2
+        """
+
+        @dask.delayed
+        def block_to_df(block: Block):
+            if isinstance(block, (ray.ObjectRef, ClientObjectRef)):
+                raise ValueError(
+                    "Dataset.to_dask() must be used with Dask-on-Ray, please "
+                    "set the Dask scheduler to ray_dask_get (located in "
+                    "ray.util.dask)."
+                )
+            block = BlockAccessor.for_block(block)
+            return block.to_pandas()
+
+        # Infer Dask metadata from Datasets schema.
+        schema = dataset.schema()
+        if isinstance(schema, PandasBlockSchema):
+            meta = pd.DataFrame(
+                {
+                    col: pd.Series(dtype=(dtype if not isinstance(dtype, TensorDtype) else np.object_))
+                    for col, dtype in zip(schema.names, schema.types)
+                }
+            )
+        elif isinstance(schema, pa.Schema):
+            if any(isinstance(type_, ArrowTensorType) for type_ in schema.types):
+                meta = pd.DataFrame(
+                    {
+                        col: pd.Series(
+                            dtype=(dtype.to_pandas_dtype() if not isinstance(dtype, ArrowTensorType) else np.object_)
+                        )
+                        for col, dtype in zip(schema.names, schema.types)
+                    }
+                )
+            else:
+                meta = schema.empty_table().to_pandas()
+
+        ddf = dd.from_delayed(
+            [block_to_df(block) for block in dataset.get_internal_block_refs()],
+            meta=meta,
+        )
+        return ddf
 
     @property
     def array_lib(self):

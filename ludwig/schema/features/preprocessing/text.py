@@ -10,7 +10,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @register_preprocessor(TEXT)
-@dataclass
+@dataclass(repr=False)
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -106,9 +106,16 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["computed_fill_value"],
     )
 
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
+    )
+
 
 @register_preprocessor("text_output")
-@dataclass
+@dataclass(repr=False)
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):
 
     missing_value_strategy: str = schema_utils.StringOptions(

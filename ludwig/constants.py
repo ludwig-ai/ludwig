@@ -40,6 +40,7 @@ INFER_IMAGE_DIMENSIONS = "infer_image_dimensions"
 INFER_IMAGE_MAX_HEIGHT = "infer_image_max_height"
 INFER_IMAGE_MAX_WIDTH = "infer_image_max_width"
 INFER_IMAGE_SAMPLE_SIZE = "infer_image_sample_size"
+NUM_CLASSES = "num_classes"
 NUM_CHANNELS = "num_channels"
 CLASS_WEIGHTS = "class_weights"
 LOSS = "loss"
@@ -51,6 +52,7 @@ SOFTMAX_CROSS_ENTROPY = "softmax_cross_entropy"
 SIGMOID_CROSS_ENTROPY = "sigmoid_cross_entropy"
 BINARY_WEIGHTED_CROSS_ENTROPY = "binary_weighted_cross_entropy"
 THRESHOLD = "threshold"
+VALIDATION_METRIC = "validation_metric"
 ACCURACY = "accuracy"
 HITS_AT_K = "hits_at_k"
 MEAN_HITS_AT_K = "mean_hits_at_k"
@@ -103,6 +105,8 @@ INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
 TRAINER = "trainer"
+LIGHTGBM_TRAINER = "lightgbm_trainer"
+OPTIMIZER = "optimizer"
 METRIC = "metric"
 PREDICTION = "prediction"
 LOGITS = "logits"
@@ -151,6 +155,7 @@ GRID_SEARCH = "grid_search"
 NAME = "name"
 COLUMN = "column"
 TYPE = "type"
+ACTIVE = "active"
 
 RAY = "ray"
 
@@ -163,6 +168,7 @@ PARQUET = "parquet"
 
 SRC = "dataset_src"
 
+EARLY_STOP = "early_stop"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
@@ -171,6 +177,7 @@ MAX_POSSIBLE_BATCH_SIZE = (
     1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
 )
 LEARNING_RATE = "learning_rate"
+INPUT_SIZE = "input_size"
 USE_BIAS = "use_bias"
 BIAS = "bias"
 DEFAULT_USE_BIAS = "default_use_bias"
@@ -193,6 +200,7 @@ DECODER = "decoder"
 
 DEFAULTS = "defaults"
 DEFAULT = "default"
+DEFAULT_VALIDATION_METRIC = "default_validation_metric"
 
 BALANCE_PERCENTAGE_TOLERANCE = 0.03
 IMBALANCE_DETECTION_RATIO = 0.05

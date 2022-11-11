@@ -10,7 +10,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
 @register_encoder_config("embed", SET)
-@dataclass
+@dataclass(repr=False)
 class SetSparseEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.StringOptions(
@@ -20,10 +20,17 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
-    vocab: List[str] = schema_utils.List(
-        default=None,
-        description="Vocabulary of the encoder",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["vocab"],
+    dropout: float = schema_utils.FloatRange(
+        default=0.0,
+        min=0,
+        max=1,
+        description="Dropout probability for the embedding.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["dropout"],
+    )
+
+    activation: str = schema_utils.ActivationOptions(
+        description="The default activation function that will be used for each layer.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["activation"],
     )
 
     representation: str = schema_utils.StringOptions(
@@ -33,6 +40,29 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["representation"],
     )
 
+    vocab: List[str] = schema_utils.List(
+        default=None,
+        description="Vocabulary of the encoder",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["vocab"],
+    )
+
+    use_bias: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether the layer uses a bias vector.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["use_bias"],
+    )
+
+    bias_initializer: str = schema_utils.InitializerOptions(
+        default="zeros",
+        description="Initializer to use for the bias vector.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["bias_initializer"],
+    )
+
+    weights_initializer: str = schema_utils.InitializerOptions(
+        description="Initializer to use for the weights matrix.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["weights_initializer"],
+    )
+
     embedding_size: int = schema_utils.PositiveInteger(
         default=50,
         description="The maximum embedding size, the actual size will be min(vocabulary_size, embedding_size) for "
@@ -40,6 +70,15 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         "is the number of different strings appearing in the training set in the input column (plus 1 for "
         "the unknown token placeholder <UNK>).",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["embedding_size"],
+    )
+
+    embeddings_on_cpu: bool = schema_utils.Boolean(
+        default=False,
+        description="By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
+        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
+        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
+        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["embeddings_on_cpu"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
@@ -62,50 +101,11 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["pretrained_embeddings"],
     )
 
-    embeddings_on_cpu: bool = schema_utils.Boolean(
-        default=False,
-        description="By default embedding matrices are stored on GPU memory if a GPU is used, as it allows for faster "
-        "access, but in some cases the embedding matrix may be too large. This parameter forces the "
-        "placement of the embedding matrix in regular memory and the CPU is used for embedding lookup, "
-        "slightly slowing down the process as a result of data transfer between CPU and GPU memory.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["embeddings_on_cpu"],
-    )
-
-    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
-        default=None,
-        description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["fc_layers"],
-    )
-
-    num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description="This is the number of stacked fully connected layers that the input to the feature passes "
-        "through. Their output is projected in the feature's output space.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["num_fc_layers"],
-    )
-
     output_size: int = schema_utils.PositiveInteger(
         default=10,
         description="If output_size is not already specified in fc_layers this is the default output_size that will "
         "be used for each layer. It indicates the size of the output of a fully connected layer.",
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["output_size"],
-    )
-
-    use_bias: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether the layer uses a bias vector.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["use_bias"],
-    )
-
-    weights_initializer: str = schema_utils.InitializerOptions(
-        description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["weights_initializer"],
-    )
-
-    bias_initializer: str = schema_utils.InitializerOptions(
-        default="zeros",
-        description="Initializer to use for the bias vector.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["bias_initializer"],
     )
 
     norm: str = schema_utils.StringOptions(
@@ -121,15 +121,15 @@ class SetSparseEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["norm_params"],
     )
 
-    activation: str = schema_utils.ActivationOptions(
-        description="The default activation function that will be used for each layer.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["activation"],
+    num_fc_layers: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="This is the number of stacked fully connected layers that the input to the feature passes "
+        "through. Their output is projected in the feature's output space.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["num_fc_layers"],
     )
 
-    dropout: float = schema_utils.FloatRange(
-        default=0.0,
-        min=0,
-        max=1,
-        description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["dropout"],
+    fc_layers: List[dict] = schema_utils.DictList(  # TODO (Connor): Add nesting logic for fc_layers
+        default=None,
+        description="List of dictionaries containing the parameters for each fully connected layer.",
+        parameter_metadata=ENCODER_METADATA["SetSparseEncoder"]["fc_layers"],
     )

@@ -24,6 +24,7 @@ import pandas as pd
 import psutil
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.utils.storage import StorageManager
 from ludwig.data.cache.manager import CacheManager
 from ludwig.data.dataframe.pandas import PANDAS
@@ -38,6 +39,7 @@ from ludwig.utils.torch_utils import initialize_pytorch
 from ludwig.utils.types import Series
 
 
+@DeveloperAPI
 class Backend(ABC):
     def __init__(
         self,
@@ -161,9 +163,7 @@ class LocalTrainingMixin:
     ) -> "BaseTrainer":  # noqa: F821
         from ludwig.trainers.registry import trainers_registry
 
-        trainers_for_model = get_from_registry(model.type(), trainers_registry)
-
-        trainer_cls = get_from_registry(config.type, trainers_for_model)
+        trainer_cls = get_from_registry(model.type(), trainers_registry)
 
         return trainer_cls(config=config, model=model, **kwargs)
 
@@ -193,8 +193,16 @@ class RemoteTrainingMixin:
         return True
 
 
+@DeveloperAPI
 class LocalBackend(LocalPreprocessingMixin, LocalTrainingMixin, Backend):
     BACKEND_TYPE = "local"
+
+    @classmethod
+    def shared_instance(cls):
+        """Returns a shared singleton LocalBackend instance."""
+        if not hasattr(cls, "_shared_instance"):
+            cls._shared_instance = cls()
+        return cls._shared_instance
 
     def __init__(self, **kwargs):
         super().__init__(dataset_manager=PandasDatasetManager(self), **kwargs)

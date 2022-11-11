@@ -194,10 +194,10 @@ class LudwigModule(Module):
     @property
     def output_shape(self) -> torch.Size:
         """Returns size of the output tensor without the batch dimension."""
-        return self._compute_output_shape()
+        return self._computed_output_shape()
 
     @lru_cache(maxsize=1)
-    def _compute_output_shape(self) -> torch.Size:
+    def _computed_output_shape(self) -> torch.Size:
         dummy_input = torch.rand(2, *self.input_shape, device=self.device)
         output_tensor = self.forward(dummy_input.type(self.input_dtype))
 

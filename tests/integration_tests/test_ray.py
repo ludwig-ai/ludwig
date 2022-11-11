@@ -24,13 +24,27 @@ from packaging import version
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
 from ludwig.constants import (
+    AUDIO,
+    BAG,
     BALANCE_PERCENTAGE_TOLERANCE,
     BFILL,
+    BINARY,
+    CATEGORY,
     COLUMN,
+    DATE,
     DEFAULT_BATCH_SIZE,
+    H3,
+    IMAGE,
     NAME,
+    NUMBER,
     PREPROCESSING,
+    SEQUENCE,
+    SET,
+    SPLIT,
+    TEXT,
+    TIMESERIES,
     TRAINER,
+    VECTOR,
 )
 from ludwig.data.preprocessing import balance_data
 from ludwig.utils.data_utils import read_parquet
@@ -56,11 +70,13 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    import dask
     import modin
     import ray
 
     from ludwig.backend.ray import get_trainer_kwargs, RayBackend
     from ludwig.data.dataframe.dask import DaskEngine
+    from ludwig.data.dataset.ray import RayDataset
 
     @ray.remote(num_cpus=1, num_gpus=1)
     def train_gpu(config, dataset, output_directory):
@@ -80,6 +96,7 @@ try:
     ) >= version.parse("1.13.0")
 
 except ImportError:
+    dask = None
     modin = None
     ray = None
 
@@ -138,6 +155,97 @@ def run_split_api_experiment(config, data_parquet, backend_config):
         evaluate=False,
         predict=False,
     )
+
+
+def run_preprocessing(
+    tmpdir,
+    df_engine,
+    input_features,
+    output_features,
+    dataset_type="parquet",
+    num_examples_per_split=20,
+    nan_percent=0.0,
+):
+    # Split the dataset manually to avoid randomness in splitting
+    split_to_df = {}
+    for split in range(3):
+        csv_filename = os.path.join(tmpdir, f"{split}_dataset.csv")
+        dataset_csv_path = generate_data(
+            input_features,
+            output_features,
+            csv_filename,
+            num_examples=num_examples_per_split,
+        )
+        dataset_df = pd.read_csv(dataset_csv_path)
+        dataset_df[SPLIT] = split
+        dataset_df.to_csv(dataset_csv_path, index=False)
+        split_to_df[split] = dataset_df
+    full_df_path = os.path.join(tmpdir, "dataset.csv")
+    pd.concat(split_to_df.values()).to_csv(full_df_path, index=False)
+    dataset_path = create_data_set_to_use(dataset_type, full_df_path, nan_percent=nan_percent)
+
+    # Configure ray backend
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": 2, "batch_size": 8},
+        PREPROCESSING: {
+            SPLIT: {
+                "type": "fixed",
+            },
+        },
+    }
+    backend_config = {**RAY_BACKEND_CONFIG}
+    if df_engine:
+        backend_config["processor"]["type"] = df_engine
+
+    # Run preprocessing with ray backend
+    ray_model = LudwigModel(config, backend=backend_config)
+    *ray_datasets, ray_training_set_metadata = ray_model.preprocess(
+        skip_save_processed_input=False,  # Save the processed input to test pyarrow write/read
+        dataset=dataset_path,
+    )
+
+    # Run preprocessing with local backend using the ray_training_set_metadata to ensure parity of
+    # token assignments, etc.
+    local_model = LudwigModel(config, backend=LOCAL_BACKEND)
+    *local_datasets, _ = local_model.preprocess(
+        training_set_metadata=ray_training_set_metadata,
+        dataset=dataset_path,
+    )
+
+    for ray_dataset, local_dataset in zip(ray_datasets, local_datasets):
+        ray_df = ray_model.backend.df_engine.compute(ray_dataset.to_df())
+        local_df = local_model.backend.df_engine.compute(local_dataset.to_df())
+        check_preprocessed_df_equal(local_df, ray_df)
+
+
+def check_preprocessed_df_equal(df1, df2):
+    for column in df1.columns:
+        vals1 = df1[column].values
+        vals2 = df2[column].values
+
+        if any(feature_name in column for feature_name in [BINARY, CATEGORY]):
+            is_equal = np.all(vals1 == vals2)
+        elif any(feature_name in column for feature_name in [NUMBER]):
+            is_equal = np.allclose(vals1, vals2)
+        elif any(feature_name in column for feature_name in [SET, BAG, H3, DATE, TEXT, SEQUENCE, TIMESERIES, VECTOR]):
+            is_equal = np.all([np.all(rv == lv) for rv, lv in zip(vals1, vals2)])
+        elif any(feature_name in column for feature_name in [AUDIO, IMAGE]):
+            is_equal = True
+            for v1, v2 in zip(vals1, vals2):
+                # We reshape both because there is a difference after preprocessing across the two backends.
+                # With the distributed backend, the data is flattened and then later reshaped to its original shape
+                # during training. With the local backend, the data is kept its original shape throughout.
+                # TODO: Determine whether this is desired behavior. Tracked here:
+                # https://github.com/ludwig-ai/ludwig/issues/2645
+                v1 = v1.reshape(-1)
+                v2 = v2.reshape(-1)
+                is_equal &= np.allclose(v1, v2, atol=1e-5)
+                if not is_equal:
+                    break
+        assert is_equal, f"Column {column} is not equal. Expected {vals1[:2]}, got {vals2[:2]}"
 
 
 def split(data_parquet):
@@ -254,68 +362,9 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
-@pytest.mark.distributed
-@pytest.mark.parametrize(
-    "df_engine",
-    [
-        "dask",
-        pytest.param(
-            "modin",
-            marks=pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
-        ),
-    ],
-)
-def test_ray_tabular(df_engine, ray_cluster_2cpu):
-    input_features = [
-        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
-        number_feature(normalization="zscore"),
-        set_feature(),
-        binary_feature(),
-        bag_feature(),
-        h3_feature(),
-        date_feature(),
-    ]
-    output_features = [
-        binary_feature(bool2str=["No", "Yes"]),
-        binary_feature(),
-        number_feature(normalization="zscore"),
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine=df_engine,
-    )
-
-
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_tabular_save_inputs(dataset_type, ray_cluster_2cpu):
-    input_features = [
-        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
-        number_feature(normalization="zscore"),
-        set_feature(),
-        binary_feature(),
-        bag_feature(),
-        date_feature(),
-        # TODO: feature type not yet supported
-        # h3_feature(),  # ValueError casting large int strings (e.g. '5.864041857092157e+17') to int (#2588)
-    ]
-    output_features = [
-        category_feature(decoder={"vocab_size": 5}),  # Regression test for #1991 requires multi-class predictions.
-    ]
-    run_test_with_features(
-        input_features,
-        output_features,
-        df_engine="dask",
-        dataset_type=dataset_type,
-        skip_save_processed_input=False,
-        nan_percent=0.1,
-    )
-
-
-@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-@pytest.mark.distributed
-def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
+def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
@@ -325,6 +374,8 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
         vector_feature(),
         # TODO: feature type not yet supported
         # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
+        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
+        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
     # NOTE: This test runs without NaNs because having multiple output features with DROP_ROWS strategy leads to
     # flakiness in the test having to do with uneven allocation of samples between Ray workers.
@@ -339,8 +390,73 @@ def test_ray_save_outputs(dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
+@pytest.mark.parametrize(
+    "df_engine",
+    [
+        "dask",
+        pytest.param(
+            "modin",
+            marks=[
+                pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0"),
+                pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643"),
+            ],
+        ),
+    ],
+)
+def test_ray_tabular(tmpdir, df_engine, ray_cluster_2cpu):
+    input_features = [
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+        bag_feature(),
+        h3_feature(),
+        date_feature(),
+    ]
+    output_features = [
+        binary_feature(bool2str=["No", "Yes"]),
+        binary_feature(),
+        number_feature(normalization="zscore"),
+    ]
+    run_preprocessing(
+        tmpdir,
+        df_engine,
+        input_features,
+        output_features,
+    )
+
+
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
+@pytest.mark.distributed
+def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
+    input_features = [
+        category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
+        number_feature(normalization="zscore"),
+        set_feature(),
+        binary_feature(),
+        bag_feature(),
+        date_feature(
+            preprocessing={"fill_value": "2020-01-01"}
+        ),  # fill_value must be set to achieve parity between backends (otherwise fill value would be "now")
+        # TODO: feature type not yet supported
+        # h3_feature(),  # ValueError casting large int strings (e.g. '5.864041857092157e+17') to int (#2588)
+    ]
+    output_features = [
+        category_feature(decoder={"vocab_size": 5}),  # Regression test for #1991 requires multi-class predictions.
+    ]
+    run_preprocessing(
+        tmpdir,
+        "dask",
+        input_features,
+        output_features,
+        dataset_type=dataset_type,
+        nan_percent=0.1,
+    )
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
+def test_ray_text_sequence_timeseries(tmpdir, ray_cluster_2cpu, dataset_type):
     input_features = [
         text_feature(),
         sequence_feature(encoder={"reduce_output": "sum"}),
@@ -348,34 +464,32 @@ def test_ray_text_sequence_timeseries(ray_cluster_2cpu, dataset_type):
     ]
     output_features = [
         binary_feature(),
-        # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
-        # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type=dataset_type,
-        skip_save_processed_input=False,
         nan_percent=0.1,
     )
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
-def test_ray_vector(dataset_type, ray_cluster_2cpu):
+def test_ray_vector(tmpdir, dataset_type, ray_cluster_2cpu):
     input_features = [
         vector_feature(),
     ]
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type=dataset_type,
-        skip_save_processed_input=False,
         nan_percent=0.0,  # NaN handling not supported for vectors.
     )
 
@@ -399,12 +513,12 @@ def test_ray_audio(tmpdir, dataset_type, ray_cluster_2cpu):
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type=dataset_type,
-        skip_save_processed_input=False,
         nan_percent=0.1,
     )
 
@@ -423,12 +537,12 @@ def test_ray_image(tmpdir, dataset_type, ray_cluster_2cpu):
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type=dataset_type,
-        skip_save_processed_input=False,
         nan_percent=0.1,
     )
 
@@ -456,7 +570,9 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
             encoder={"output_size": 16, "num_filters": 8},
         ),
     ]
-    output_features = [binary_feature()]
+    output_features = [
+        binary_feature(),
+    ]
     run_test_with_features(
         input_features,
         output_features,
@@ -472,6 +588,7 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
 # TODO(geoffrey): Fold modin tests into test_ray_image as @pytest.mark.parametrized once tests are optimized
 @pytest.mark.distributed
 @pytest.mark.skipif(_modin_ray_incompatible, reason="modin<=0.15.2 does not support ray>=1.13.0")
+@pytest.mark.skip(reason="https://github.com/ludwig-ai/ludwig/issues/2643")
 def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
@@ -484,10 +601,11 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "modin",
         input_features,
         output_features,
-        df_engine="modin",
         dataset_type="csv",
         nan_percent=0.1,
     )
@@ -510,10 +628,11 @@ def test_ray_image_multiple_features(tmpdir, ray_cluster_2cpu):
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type="csv",
         nan_percent=0.1,
     )
@@ -655,9 +774,9 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
     assert (
-        model.config[TRAINER]["batch_size"] == DEFAULT_BATCH_SIZE
+        model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
     )  # On CPU, batch size tuning is disabled, so assert it is equal to default
-    assert model.config[TRAINER]["learning_rate"] != "auto"
+    assert model.config_obj.trainer.learning_rate != "auto"
 
 
 @pytest.mark.distributed
@@ -781,3 +900,105 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
             skip_save_log=True,
         )
         preds, _ = model.predict(dataset=dataset)
+
+
+@pytest.mark.distributed
+class TestDatasetWindowAutosizing:
+    """Test dataset windowing with different dataset sizes and settings."""
+
+    @property
+    def object_store_size(self):
+        """The amount of object store memory available to the cluster fixture."""
+        return int(ray.available_resources()["object_store_memory"])
+
+    @property
+    def auto_window_size(self):
+        """The heuristic size of the automatic window in bytes."""
+        return int(self.object_store_size // 5)
+
+    @property
+    def num_partitions(self):
+        """The number of Dask dataframe partitions to create."""
+        return 100
+
+    def create_dataset(self, size: int, auto_window: bool = True) -> "RayDataset":
+        """Create a dataset of specified size to test auto-sizing.
+
+        Args:
+            size: Total size of the dataset in bytes
+            auto_window: Flag determining whether autosizing is enabled
+
+        Returns:
+            A Ludwig RayDataset of the specified size.
+        """
+        # Create a dataset of the specified size with 100 partitions.
+        # This translates to 100 blocks within the `ray.data.Dataset`.
+        df = pd.DataFrame(
+            {
+                "in_column": np.random.randint(0, 1, size=(size // 2,), dtype=np.uint8),
+                "out_column": np.random.randint(0, 1, size=(size // 2,), dtype=np.uint8),
+            }
+        )
+        df = dask.dataframe.from_pandas(df, npartitions=self.num_partitions)
+
+        # Create a model with the dataset and
+        config = {
+            "input_features": [{"name": "in_column", "type": "binary"}],
+            "output_features": [{"name": "out_column", "type": "binary"}],
+            TRAINER: {"epochs": 1, "batch_size": 128},
+        }
+        backend_config = {**RAY_BACKEND_CONFIG}
+        backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
+        model = LudwigModel(config, backend=backend_config)
+
+        # Create a dataset using the model backend to ensure it
+        # is initialized correctly.
+        ds = model.backend.dataset_manager.create(
+            df, config=model.config, training_set_metadata={}, auto_window=auto_window
+        )
+        return ds
+
+    def test_small_dataset(self, ray_cluster_small_object_store):
+        """A small dataset should not trigger automatic window sizing."""
+        ds = self.create_dataset(self.object_store_size // 8)
+        pipe = ds.pipeline()
+        rep = next(iter(pipe._base_iterable))()
+
+        # Without automatic window sizing, the number of blocks in the pipeline
+        # should match the number of partitions in the Dask dataframe.
+        assert rep.num_blocks() == self.num_partitions
+
+    def test_large_dataset(self, ray_cluster_small_object_store):
+        """A large dataset should trigger windowing."""
+        ds = self.create_dataset(self.object_store_size * 8)
+        pipe = ds.pipeline()
+
+        # In the windowed case, each window corresponds to a dataset that has
+        # at least one and fewer than `self.num_partitions` blocks.
+        # Because the pipeline is infinitely repeated, check the first 100
+        # windows to ensure coverage of the whole dataset.
+        for i, wds in enumerate(pipe._base_iterable):
+            assert wds().num_blocks() < self.num_partitions
+            if i > 99:
+                break
+
+    def test_window_autosizing_disabled(self, ray_cluster_small_object_store):
+        """If window autosizing is disabled, no datasets should be windowed."""
+        ds = self.create_dataset(self.object_store_size * 8, auto_window=False)
+        pipe = ds.pipeline()
+        rep = next(iter(pipe._base_iterable))()
+        assert rep.num_blocks() == self.num_partitions
+
+    def test_user_window_size(self, ray_cluster_small_object_store):
+        """If the user supplies a window size, do not autosize."""
+        # This pipeline should use the heuristic window size.
+        ds = self.create_dataset(self.object_store_size * 8)
+        pipe = ds.pipeline()
+        rep = next(iter(pipe._base_iterable))()
+        auto_num_blocks = rep.num_blocks()
+
+        # This pipeline should have fewer windows but more blocks per window
+        # than the autosized pipeline.
+        pipe = ds.pipeline(window_size_bytes=self.auto_window_size * 2)
+        rep = next(iter(pipe._base_iterable))()
+        assert auto_num_blocks < rep.num_blocks()

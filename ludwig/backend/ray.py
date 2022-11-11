@@ -33,7 +33,6 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
-from ray.train.horovod import HorovodConfig
 from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
@@ -59,13 +58,12 @@ from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayData
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
-from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
+from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
-from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
@@ -105,7 +103,18 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
+def initialize_horovod():
+    # Guarded import here to avoid causing import errors when doing hyperopt without
+    # distributed training, where Horovod is an optional dependency.
+    from ludwig.utils.horovod_utils import initialize_horovod as _initialize_horovod
+
+    return _initialize_horovod()
+
+
 def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
+    # Horovod an optional import, so avoid importing at the top.
+    from ray.train.horovod import HorovodConfig
+
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -237,7 +246,7 @@ def train_fn(
     return train_results
 
 
-@ray.remote
+@ray.remote(max_calls=1)
 def tune_batch_size_fn(
     dataset: RayDataset = None,
     data_loader_kwargs: Dict[str, Any] = None,
@@ -270,7 +279,7 @@ def tune_batch_size_fn(
         hvd.shutdown()
 
 
-@ray.remote
+@ray.remote(max_calls=1)
 def tune_learning_rate_fn(
     dataset: RayDataset,
     config: Dict[str, Any],
@@ -375,7 +384,7 @@ def create_runner(**kwargs):
         trainer.shutdown()
 
 
-@register_ray_trainer("trainer", MODEL_ECD, default=True)
+@register_ray_trainer(MODEL_ECD, default=True)
 class RayTrainerV2(BaseTrainer):
     def __init__(
         self,
@@ -564,7 +573,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
         super().__init__(horovod=horovod, **kwargs)
 
 
-@register_ray_trainer("ray_legacy_trainer", MODEL_ECD)
+@register_ray_trainer("ecd_ray_legacy")
 class RayLegacyTrainer(BaseTrainer):
     def __init__(self, horovod_kwargs: Dict[str, Any], executable_kwargs: Dict[str, Any], **kwargs):
         # TODO ray: make this more configurable by allowing YAML overrides of timeout_s, etc.
@@ -891,10 +900,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
     def create_trainer(self, model: BaseModel, **kwargs) -> "BaseTrainer":  # noqa: F821
         executable_kwargs = {**kwargs, **self._pytorch_kwargs}
         if not self._use_legacy:
-            trainers_for_model = get_from_registry(model.type(), ray_trainers_registry)
-
-            config: Union[ECDTrainerConfig, GBMTrainerConfig] = kwargs["config"]
-            trainer_cls = get_from_registry(config.type, trainers_for_model)
+            trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
 
             # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
             all_kwargs = {

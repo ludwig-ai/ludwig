@@ -42,15 +42,19 @@ from ludwig.hyperopt.utils import (
     should_tune_preprocessing,
     update_hyperopt_params_with_defaults,
 )
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
+from ludwig.schema.model_config import ModelConfig
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
 from ludwig.utils.misc_utils import get_from_registry
 
 try:
+    from ray.tune import Callback as TuneCallback
+
     from ludwig.backend.ray import RayBackend
 except ImportError:
+    TuneCallback = object
 
     class RayBackend:
         pass
@@ -82,9 +86,10 @@ def hyperopt(
     skip_save_hyperopt_statistics: bool = False,
     output_directory: str = "results",
     gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     callbacks: List[Callback] = None,
+    tune_callbacks: List[TuneCallback] = None,
     backend: Union[Backend, str] = None,
     random_seed: int = default_random_seed,
     hyperopt_log_verbosity: int = 3,
@@ -173,9 +178,9 @@ def hyperopt(
         model and the training progress files.
     :param gpus: (list, default: `None`) list of GPUs that are available
         for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-        allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
         to use multithreading parallelism to improve performance at
         the cost of determinism.
     :param callbacks: (list, default: `None`) a list of
@@ -203,19 +208,22 @@ def hyperopt(
     else:
         config_dict = config
 
-    # backwards compatibility
-    config = upgrade_to_latest_version(config_dict)
-
-    # Retain pre-merged config for hyperopt schema generation
-    premerged_config = copy.deepcopy(config)
-
-    # merge config with defaults
-    config = merge_with_defaults(config)
-
     if HYPEROPT not in config:
         raise ValueError("Hyperopt Section not present in config")
 
-    hyperopt_config = config[HYPEROPT]
+    # backwards compatibility
+    upgraded_config = upgrade_config_dict_to_latest_version(config_dict)
+
+    # Initialize config object
+    config_obj = ModelConfig.from_dict(upgraded_config)
+
+    # Retain pre-merged config for hyperopt schema generation
+    premerged_config = copy.deepcopy(upgraded_config)
+
+    # Get full config with defaults
+    full_config = config_obj.to_dict()  # TODO (Connor): Refactor to use config object
+
+    hyperopt_config = full_config[HYPEROPT]
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
     # backend from the environment.
@@ -248,7 +256,7 @@ def hyperopt(
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
-    splitter = get_splitter(**config[PREPROCESSING]["split"])
+    splitter = get_splitter(**full_config[PREPROCESSING]["split"])
     if split == TRAINING:
         if training_set is None and not splitter.has_split(0):
             raise ValueError(
@@ -281,7 +289,7 @@ def hyperopt(
         if metric != LOSS:
             raise ValueError('The only valid metric for "combined" output feature is "loss"')
     else:
-        output_feature_names = {of[NAME] for of in config[OUTPUT_FEATURES]}
+        output_feature_names = {of[NAME] for of in full_config[OUTPUT_FEATURES]}
         if output_feature not in output_feature_names:
             raise ValueError(
                 'The output feature specified for hyperopt "{}" '
@@ -290,7 +298,7 @@ def hyperopt(
             )
 
         output_feature_type = None
-        for of in config[OUTPUT_FEATURES]:
+        for of in full_config[OUTPUT_FEATURES]:
             if of[NAME] == output_feature:
                 output_feature_type = of[TYPE]
         feature_class = get_from_registry(output_feature_type, output_type_registry)
@@ -321,13 +329,13 @@ def hyperopt(
     for callback in callbacks or []:
         callback.on_hyperopt_init(experiment_name)
 
-    if not should_tune_preprocessing(config):
+    if not should_tune_preprocessing(full_config):
         # preprocessing is not being tuned, so generate it once before starting trials
         for callback in callbacks or []:
             callback.on_hyperopt_preprocessing_start(experiment_name)
 
         model = LudwigModel(
-            config=config,
+            config=full_config,
             backend=backend,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -383,6 +391,7 @@ def hyperopt(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         callbacks=callbacks,
+        tune_callbacks=tune_callbacks,
         backend=backend,
         random_seed=random_seed,
         hyperopt_log_verbosity=hyperopt_log_verbosity,

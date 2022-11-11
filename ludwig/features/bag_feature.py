@@ -15,17 +15,16 @@
 # ==============================================================================
 import logging
 from collections import Counter
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import numpy as np
 import torch
 
-from ludwig.constants import BAG, COLUMN, ENCODER, NAME, PROC_COLUMN, TIED, TYPE
+from ludwig.constants import BAG, COLUMN, NAME, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
@@ -35,10 +34,6 @@ class BagFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return BAG
-
-    @staticmethod
-    def preprocessing_defaults():
-        return BagInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -86,8 +81,7 @@ class BagFeatureMixin(BaseFeatureMixin):
 
 
 class BagInputFeature(BagFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[BagInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: BagInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -112,14 +106,8 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = BagInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
 
     @staticmethod
     def get_schema_cls():

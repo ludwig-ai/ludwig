@@ -178,11 +178,6 @@ class Classifier(Decoder):
         if LOSS in kwargs and TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
             self.sampled_loss = kwargs[LOSS][TYPE].startswith("sampled")
 
-        # this is needed because TF2 initializes the weights at the first call
-        # so the first time we need to compute the full dense,
-        # otherwise the weights of the Dense layer would not be initialized
-        self.first_call = True
-
     @staticmethod
     def get_schema_cls():
         return ClassifierConfig

@@ -21,7 +21,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.modules.metric_registry import metric_registry
-from ludwig.utils.defaults import default_combiner_type
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ def get_model_type(config: dict) -> str:
     elif COMBINER in config and TYPE in config[COMBINER]:
         model_type = config[COMBINER][TYPE]
     else:
+        default_combiner_type = get_combiner_jsonschema()["properties"]["type"]["default"]
         model_type = default_combiner_type
     return model_type
 
@@ -113,7 +114,7 @@ def set_output_feature_metric(base_config):
         return base_config
     output_name = base_config["output_features"][0][NAME]
     output_type = base_config["output_features"][0][TYPE]
-    output_metric = output_type_registry[output_type].default_validation_metric
+    output_metric = output_type_registry[output_type].get_schema_cls().default_validation_metric
     output_goal = metric_registry[output_metric].get_objective()
     if "validation_field" not in base_config[TRAINER] and "validation_metric" not in base_config[TRAINER]:
         base_config[TRAINER]["validation_field"] = output_name

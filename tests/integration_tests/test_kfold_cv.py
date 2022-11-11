@@ -43,7 +43,7 @@ FEATURES_TO_TEST = [
         # input feature
         [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
-        [category_feature(encoder={"vocab_size": 4}, reduce_input="sum")],
+        [category_feature(decoder={"vocab_size": 4}, reduce_input="sum", output_feature=True)],
     ),
     FeaturesToUse(
         # input feature
@@ -60,6 +60,7 @@ FEATURES_TO_TEST = [
                     "attention": "bahdanau",
                 },
                 reduce_input=None,
+                output_feature=True,
             )
         ],
     ),
@@ -67,17 +68,17 @@ FEATURES_TO_TEST = [
         # input feature
         [
             sequence_feature(
-                encoder={"min_len": 5, "max_len": 10, "encoder": "rnn", "cell_type": "lstm", "reduce_output": None}
+                encoder={"min_len": 5, "max_len": 10, "type": "rnn", "cell_type": "lstm", "reduce_output": None}
             )
         ],
         # output feature
-        [sequence_feature(decoder={"max_len": 10, "decoder": "tagger"}, reduce_input=None)],
+        [sequence_feature(decoder={"max_len": 10, "type": "tagger"}, reduce_input=None, output_feature=True)],
     ),
     FeaturesToUse(
         # input feature
         [number_feature(normalization="zscore"), number_feature(normalization="zscore")],
         # output feature
-        [text_feature()],
+        [text_feature(output_feature=True)],
     ),
 ]
 

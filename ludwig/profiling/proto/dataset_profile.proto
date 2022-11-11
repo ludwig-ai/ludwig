@@ -1,0 +1,43 @@
+// To generate compiled proto code, run:
+//   (if protoc not installed yet)
+//   > sudo apt install protobuf-compiler
+//   > protoc --proto_path=. --python_out=. \
+//       ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
+//
+// Read more on proto compilation: https://developers.google.com/protocol-buffers/docs/reference/python-generated
+
+syntax = "proto3";
+
+package dataset_profile;
+
+import "ludwig/profiling/proto/whylogs_messages.proto";
+
+
+// Dataset profile represents a collection of in-memory profiling stats for a
+// dataset. Used for recommending Ludwig configs and Ludwig data type inference.
+message DatasetProfile {
+  // When the profile was calculated.
+  int64 timestamp = 1;
+
+  // The number of examples in this dataset.
+  int64 num_examples = 2;
+
+  // The total size of this dataset in bytes.
+  int64 size_bytes = 3;
+
+  // Map of feature name to FeatureProfile.
+  map<string, FeatureProfile> feature_profiles = 20;
+}
+
+// Feature profile represents a collection of in-memory profiling stats for a
+// single feature column.
+message FeatureProfile {
+  // Whylogs metrics.
+  // optional whylogs.ColumnMessage whylogs_metrics = 1;
+  ColumnMessage whylogs_metrics = 1;
+
+  // Any additional metrics that are not easily captured by whylogs's custom
+  // metrics framework. I don't anticipate this being a real issue, but using
+  // a sub-message gives us extra insurance for reimplementation and
+  // customizability if it comes down to that.
+}

@@ -35,9 +35,10 @@ from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -400,10 +401,11 @@ class RayTuneExecutor:
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
         )
-        if best_model.config[TRAINER]["eval_batch_size"]:
-            batch_size = best_model.config[TRAINER]["eval_batch_size"]
+        config = best_model.config
+        if config[TRAINER]["eval_batch_size"]:
+            batch_size = config[TRAINER]["eval_batch_size"]
         else:
-            batch_size = best_model.config[TRAINER]["batch_size"]
+            batch_size = config[TRAINER]["batch_size"]
         try:
             eval_stats, _, _ = best_model.evaluate(
                 dataset=dataset,
@@ -450,7 +452,11 @@ class RayTuneExecutor:
 
         modified_config = substitute_parameters(copy.deepcopy(hyperopt_dict["config"]), config)
 
-        modified_config = merge_with_defaults(modified_config)
+        # Write out the unmerged config with sampled hyperparameters to the trial's local directory.
+        with open(os.path.join(trial_dir, "trial_hyperparameters.json"), "w") as f:
+            json.dump(hyperopt_dict["config"], f)
+
+        modified_config = ModelConfig.from_dict(modified_config).to_dict()
 
         hyperopt_dict["config"] = modified_config
         hyperopt_dict["experiment_name "] = f'{hyperopt_dict["experiment_name"]}_{trial_id}'
@@ -658,6 +664,7 @@ class RayTuneExecutor:
         gpu_memory_limit=None,
         allow_parallel_threads=True,
         callbacks=None,
+        tune_callbacks=None,
         backend=None,
         random_seed=default_random_seed,
         debug=False,
@@ -761,7 +768,6 @@ class RayTuneExecutor:
             )
 
         tune_config = {}
-        tune_callbacks = []
         for callback in callbacks or []:
             run_experiment_trial, tune_config = callback.prepare_ray_tune(
                 run_experiment_trial,
@@ -796,7 +802,7 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        @ray.remote
+        @ray.remote(num_cpus=0)
         def _register(name, trainable):
             register_trainable(name, trainable)
 

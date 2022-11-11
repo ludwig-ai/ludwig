@@ -2,8 +2,12 @@ import os
 
 import numpy as np
 import pytest
+
+try:
+    import ray as _ray
+except ImportError:
+    _ray = None
 import torch
-from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
@@ -64,9 +68,11 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
 def run_test_gbm_output_not_supported(tmpdir, backend_config):
     """Test that an error is raised when the output feature is not supported by the model."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    output_features = [text_feature()]
+    output_features = [text_feature(output_feature=True)]
 
-    with pytest.raises(ValueError, match="Model type GBM only supports numerical, categorical, or binary features"):
+    with pytest.raises(
+        ValueError, match="Model type GBM only supports numerical, categorical, or binary output " "features.*"
+    ):
         _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
 
 
@@ -199,35 +205,6 @@ def test_local_gbm_number(tmpdir, local_backend):
 @pytest.mark.distributed
 def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
     run_test_gbm_number(tmpdir, ray_backend)
-
-
-def run_test_gbm_schema(backend_config):
-    input_features = [number_feature()]
-    output_features = [binary_feature()]
-
-    # When I pass an invalid trainer configuration,
-    invalid_trainer = "trainer"
-    config = {
-        MODEL_TYPE: "gbm",
-        "input_features": input_features,
-        "output_features": output_features,
-        TRAINER: {
-            "num_boost_round": 2,
-            "type": invalid_trainer,
-        },
-    }
-    with pytest.raises(ValidationError):
-        # Then I should get a schema validation error
-        LudwigModel(config, backend=backend_config)
-
-
-def test_local_gbm_schema(local_backend):
-    run_test_gbm_schema(local_backend)
-
-
-@pytest.mark.distributed
-def test_ray_gbm_schema(ray_backend, ray_cluster_4cpu):
-    run_test_gbm_schema(ray_backend)
 
 
 def test_hummingbird_conversion_binary(tmpdir, local_backend):

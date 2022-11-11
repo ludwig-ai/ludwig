@@ -5,6 +5,8 @@ import torch
 
 from ludwig.constants import ENCODER, TYPE
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
+from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
+from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils.torch_utils import get_torch_device
 
 SEQ_SIZE = 2
@@ -35,6 +37,7 @@ def timeseries_config():
 def test_timeseries_input_feature(timeseries_config: Dict, encoder: str) -> None:
     timeseries_config[ENCODER][TYPE] = encoder
 
+    timeseries_config, _ = load_config_with_kwargs(TimeseriesInputFeatureConfig, timeseries_config)
     timeseries_input_feature = TimeseriesInputFeature(timeseries_config).to(DEVICE)
     timeseries_tensor = torch.randn([SEQ_SIZE, TIMESERIES_W_SIZE], dtype=torch.float32).to(DEVICE)
     encoder_output = timeseries_input_feature(timeseries_tensor)

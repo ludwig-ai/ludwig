@@ -1,0 +1,18 @@
+version: 1.0
+name: google_qa_question_type_reason_explanation
+download_urls:
+  - https://automl-mm-bench.s3.amazonaws.com/google_quest_qa/train.pq
+  - https://automl-mm-bench.s3.amazonaws.com/google_quest_qa/dev.pq
+sha256:
+  train.pq: 92274286ffb759c96bfca77001c10eb323b3531db3a0e178813db9b82e80a12a
+  dev.pq: 2e66450215b94dc404eadc7dde83a1eabad9640d946863c298aa2d42c998ed84
+train_filenames: train.pq
+test_filenames: dev.pq
+description: |
+  Google QUEST Q&A Labeling
+  Improving automated understanding of complex question answer content.
+  The data for this competition includes questions and answers from various StackExchange properties.
+  https://www.kaggle.com/c/google-quest-challenge/data
+  Note: this is the same dataset as `google_quest_qa`. It is duplicated here to have a one-to-one mapping
+  with the benchmarking datasets in https://arxiv.org/pdf/2111.02705.pdf
+  In this paper, the column `question_type_reason_explanation` is used as the output feature.

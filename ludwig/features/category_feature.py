@@ -23,9 +23,6 @@ from ludwig.constants import (
     ACCURACY,
     CATEGORY,
     COLUMN,
-    DECODER,
-    DEPENDENCIES,
-    ENCODER,
     HIDDEN,
     HITS_AT_K,
     LOGITS,
@@ -36,18 +33,13 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     PROJECTION_INPUT,
-    REDUCE_DEPENDENCIES,
-    REDUCE_INPUT,
-    TIED,
-    TOP_K,
-    TYPE,
 )
+from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -122,10 +114,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return CATEGORY
 
     @staticmethod
-    def preprocessing_defaults():
-        return CategoryInputFeatureConfig().preprocessing.to_dict()
-
-    @staticmethod
     def cast_column(column, backend):
         return column.astype(str)
 
@@ -136,8 +124,12 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             num_most_frequent=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
-
-        return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": len(str2idx)}
+        vocab_size = len(str2idx)
+        if vocab_size <= 1:
+            raise InputDataError(
+                column.name, CATEGORY, f"At least 2 distinct values are required, column only contains {str(idx2str)}"
+            )
+        return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 
     @staticmethod
     def feature_data(backend, column, metadata):
@@ -195,8 +187,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
 
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
-    def __init__(self, input_feature_config: Union[CategoryInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
 
         if encoder_obj:
@@ -236,14 +227,8 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return torch.Size(self.encoder_obj.output_shape)
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = CategoryInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
 
     @staticmethod
     def get_schema_cls():
@@ -256,7 +241,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
-    default_validation_metric = ACCURACY
 
     def __init__(
         self,
@@ -264,7 +248,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         self.num_classes = output_feature_config.num_classes
         self.top_k = output_feature_config.top_k
         super().__init__(output_feature_config, output_features, **kwargs)
@@ -315,47 +298,47 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return dict(top_k=self.top_k)
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature["num_classes"] = feature_metadata["vocab_size"]
-        output_feature["top_k"] = min(output_feature["num_classes"], output_feature["top_k"])
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.num_classes = feature_metadata["vocab_size"]
+        feature_config.top_k = min(feature_config.num_classes, feature_config.top_k)
 
-        if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
-            if len(output_feature[LOSS]["class_weights"]) != output_feature["num_classes"]:
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
+            if len(feature_config.loss.class_weights) != feature_config.num_classes:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({}) for feature {}. "
                     "Check the metadata JSON file to see the classes "
                     "and their order and consider there needs to be a weight "
                     "for the <UNK> class too.".format(
-                        len(output_feature[LOSS]["class_weights"]),
-                        output_feature["num_classes"],
-                        output_feature[COLUMN],
+                        len(feature_config.loss.class_weights),
+                        feature_config.num_classes,
+                        feature_config.column,
                     )
                 )
 
-        if isinstance(output_feature[LOSS]["class_weights"], dict):
-            if feature_metadata["str2idx"].keys() != output_feature[LOSS]["class_weights"].keys():
+        if isinstance(feature_config.loss.class_weights, dict):
+            if feature_metadata["str2idx"].keys() != feature_config.loss.class_weights.keys():
                 raise ValueError(
                     "The class_weights keys ({}) are not compatible with "
                     "the classes ({}) of feature {}. "
                     "Check the metadata JSON file to see the classes "
                     "and consider there needs to be a weight "
                     "for the <UNK> class too.".format(
-                        output_feature[LOSS]["class_weights"].keys(),
+                        feature_config.loss.class_weights.keys(),
                         feature_metadata["str2idx"].keys(),
-                        output_feature[COLUMN],
+                        feature_config.column,
                     )
                 )
             else:
-                class_weights = output_feature[LOSS]["class_weights"]
+                class_weights = feature_config.loss.class_weights
                 idx2str = feature_metadata["idx2str"]
                 class_weights_list = [class_weights[s] for s in idx2str]
-                output_feature[LOSS]["class_weights"] = class_weights_list
+                feature_config.loss.class_weights = class_weights_list
 
-        if output_feature[LOSS]["class_similarities_temperature"] > 0:
-            if "class_similarities" in output_feature[LOSS]:
-                similarities = output_feature[LOSS]["class_similarities"]
-                temperature = output_feature[LOSS]["class_similarities_temperature"]
+        if feature_config.loss.class_similarities_temperature > 0:
+            if "class_similarities" in feature_config.loss:
+                similarities = feature_config.loss.class_similarities
+                temperature = feature_config.loss.class_similarities_temperature
 
                 curr_row = 0
                 first_row_length = 0
@@ -373,7 +356,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                                 "of {} is {}, different from the length of "
                                 "the first row {}. All rows must have "
                                 "the same length.".format(
-                                    curr_row, output_feature[COLUMN], curr_row_length, first_row_length
+                                    curr_row, feature_config.column, curr_row_length, first_row_length
                                 )
                             )
                         else:
@@ -385,18 +368,18 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         "The class_similarities matrix of {} has "
                         "{} rows and {} columns, "
                         "their number must be identical.".format(
-                            output_feature[COLUMN], len(similarities), all_rows_length
+                            feature_config.column, len(similarities), all_rows_length
                         )
                     )
 
-                if all_rows_length != output_feature["num_classes"]:
+                if all_rows_length != feature_config.num_classes:
                     raise ValueError(
                         "The size of the class_similarities matrix of {} is "
                         "{}, different from the number of classes ({}). "
                         "Check the metadata JSON file to see the classes "
                         "and their order and "
                         "consider <UNK> class too.".format(
-                            output_feature[COLUMN], all_rows_length, output_feature["num_classes"]
+                            feature_config.column, all_rows_length, feature_config.num_classes
                         )
                     )
 
@@ -404,12 +387,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 for i in range(len(similarities)):
                     similarities[i, :] = softmax(similarities[i, :], temperature=temperature)
 
-                output_feature[LOSS]["class_similarities"] = similarities
+                feature_config.loss.class_similarities = similarities
             else:
                 raise ValueError(
                     "class_similarities_temperature > 0, "
                     "but no class_similarities are provided "
-                    "for feature {}".format(output_feature[COLUMN])
+                    "for feature {}".format(feature_config.column)
                 )
 
     @staticmethod
@@ -455,28 +438,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 )
 
         return predictions
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        defaults = CategoryOutputFeatureConfig()
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-        # Populate the default values for LOSS if they aren't defined already
-        set_default_values(output_feature[LOSS], defaults.loss.Schema().dump(defaults.loss))
-
-        set_default_values(
-            output_feature,
-            {
-                DECODER: {
-                    TYPE: defaults.decoder.type,
-                },
-                TOP_K: defaults.top_k,
-                DEPENDENCIES: defaults.dependencies,
-                REDUCE_INPUT: defaults.reduce_input,
-                REDUCE_DEPENDENCIES: defaults.reduce_dependencies,
-            },
-        )
 
     @staticmethod
     def get_schema_cls():

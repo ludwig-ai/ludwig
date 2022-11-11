@@ -21,9 +21,7 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    DECODER,
     EDIT_DISTANCE,
-    ENCODER,
     LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
@@ -35,11 +33,8 @@ from ludwig.constants import (
     PROBABILITY,
     PROC_COLUMN,
     TEXT,
-    TIED,
     TOKEN_ACCURACY,
-    TYPE,
 )
-from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
@@ -50,7 +45,6 @@ from ludwig.features.sequence_feature import (
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.utils.math_utils import softmax
-from ludwig.utils.misc_utils import set_default_value, set_default_values
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
 
@@ -61,10 +55,6 @@ class TextFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def type():
         return TEXT
-
-    @staticmethod
-    def preprocessing_defaults():
-        return TextInputFeatureConfig().preprocessing.to_dict()
 
     @staticmethod
     def cast_column(column, backend):
@@ -90,6 +80,7 @@ class TextFeatureMixin(BaseFeatureMixin):
             unknown_symbol=preprocessing_parameters["unknown_symbol"],
             padding_symbol=preprocessing_parameters["padding_symbol"],
             pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
+            ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
         return (
@@ -181,8 +172,7 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
-    def __init__(self, input_feature_config: Union[TextInputFeatureConfig, Dict], encoder_obj=None, **kwargs):
-        input_feature_config = self.load_config(input_feature_config)
+    def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):
@@ -213,23 +203,12 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
     @staticmethod
-    def update_config_with_metadata(input_feature, feature_metadata, *args, **kwargs):
-        input_feature[ENCODER]["vocab"] = feature_metadata["idx2str"]
-        input_feature[ENCODER]["vocab_size"] = len(feature_metadata["idx2str"])
-        input_feature[ENCODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        input_feature[ENCODER]["pad_idx"] = feature_metadata["pad_idx"]
-        input_feature[ENCODER]["num_tokens"] = len(feature_metadata["idx2str"])
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        defaults = TextInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_values(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
-
-        encoder_class = get_encoder_cls(input_feature[TYPE], input_feature[ENCODER][TYPE])
-
-        if hasattr(encoder_class, "default_params"):
-            set_default_values(input_feature, encoder_class.default_params)
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
+        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
+        feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
 
     @staticmethod
     def get_schema_cls():
@@ -246,7 +225,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
-    default_validation_metric = LOSS
 
     def __init__(
         self,
@@ -254,7 +232,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         output_features: Dict[str, OutputFeature],
         **kwargs,
     ):
-        output_feature_config = self.load_config(output_feature_config)
         super().__init__(output_feature_config, output_features, **kwargs)
 
     @classmethod
@@ -266,32 +243,32 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         return torch.Size([self.decoder_obj.config.max_sequence_length])
 
     @staticmethod
-    def update_config_with_metadata(output_feature, feature_metadata, *args, **kwargs):
-        output_feature[DECODER]["vocab_size"] = feature_metadata["vocab_size"]
-        output_feature[DECODER]["max_sequence_length"] = feature_metadata["max_sequence_length"]
-        if isinstance(output_feature[LOSS]["class_weights"], (list, tuple)):
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.decoder.vocab_size = feature_metadata["vocab_size"]
+        feature_config.decoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        if isinstance(feature_config.loss.class_weights, (list, tuple)):
             # [0, 0] for UNK and PAD
-            output_feature[LOSS]["class_weights"] = [0, 0] + output_feature[LOSS]["class_weights"]
-            if len(output_feature[LOSS]["class_weights"]) != output_feature[DECODER]["vocab_size"]:
+            feature_config.loss.class_weights = [0, 0] + feature_config.loss.class_weights
+            if len(feature_config.loss.class_weights) != feature_config.decoder.vocab_size:
                 raise ValueError(
                     "The length of class_weights ({}) is not compatible with "
                     "the number of classes ({})".format(
-                        len(output_feature[LOSS]["class_weights"]), output_feature[DECODER]["vocab_size"]
+                        len(feature_config.loss.class_weights), feature_config.decoder.vocab_size
                     )
                 )
 
-        if output_feature[LOSS]["class_similarities_temperature"] > 0:
-            if "class_similarities" in output_feature:
-                distances = output_feature["class_similarities"]
-                temperature = output_feature[LOSS]["class_similarities_temperature"]
+        if feature_config.loss.class_similarities_temperature > 0:
+            if feature_config.class_similarities:
+                distances = feature_config.class_similarities
+                temperature = feature_config.loss.class_similarities_temperature
                 for i in range(len(distances)):
                     distances[i, :] = softmax(distances[i, :], temperature=temperature)
-                output_feature[LOSS]["class_similarities"] = distances
+                feature_config.loss.class_similarities = distances
             else:
                 raise ValueError(
                     "class_similarities_temperature > 0,"
                     "but no class similarities are provided "
-                    "for feature {}".format(output_feature[COLUMN])
+                    "for feature {}".format(feature_config.column)
                 )
 
     @staticmethod
@@ -352,10 +329,6 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         return _SequencePostprocessing(metadata)
-
-    @staticmethod
-    def populate_defaults(output_feature):
-        SequenceOutputFeature.populate_defaults(output_feature)
 
     @staticmethod
     def get_schema_cls():

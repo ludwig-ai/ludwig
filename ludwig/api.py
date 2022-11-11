@@ -36,22 +36,19 @@ import torch
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
 from ludwig.callbacks import Callback
 from ludwig.constants import (
     AUTO,
     BATCH_SIZE,
-    DEFAULTS,
     EVAL_BATCH_SIZE,
     FULL,
     HYPEROPT,
     HYPEROPT_WARNING,
-    LEARNING_RATE,
     MIN_DATASET_SPLIT_ROWS,
-    MODEL_TYPE,
-    PREPROCESSING,
+    MODEL_ECD,
     TEST,
-    TRAINER,
     TRAINING,
     VALIDATION,
 )
@@ -75,11 +72,9 @@ from ludwig.models.predictor import (
     save_prediction_outputs,
 )
 from ludwig.models.registry import model_type_registry
-from ludwig.schema import validate_config
-from ludwig.schema.utils import load_trainer_with_kwargs
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import metric_utils
-from ludwig.utils.backward_compatibility import upgrade_to_latest_version
-from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
+from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
     figure_data_format,
     generate_kfold_splits,
@@ -89,7 +84,7 @@ from ludwig.utils.data_utils import (
     save_json,
 )
 from ludwig.utils.dataset_utils import generate_dataset_statistics
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
 from ludwig.utils.misc_utils import (
     get_commit_hash,
@@ -106,6 +101,7 @@ from ludwig.utils.types import TorchDevice
 logger = logging.getLogger(__name__)
 
 
+@PublicAPI
 @dataclass
 class EvaluationFrequency:
     """Represents the frequency of periodic evaluation of a metric during training. For example:
@@ -124,6 +120,7 @@ class EvaluationFrequency:
     STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
 
 
+@PublicAPI
 @dataclass
 class TrainingStats:
     """Training stats were previously represented as a tuple or a dict.
@@ -152,6 +149,7 @@ class TrainingStats:
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
+@PublicAPI
 @dataclass
 class PreprocessedDataset:
     training_set: Dataset
@@ -167,6 +165,7 @@ class PreprocessedDataset:
         return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
 
 
+@PublicAPI
 @dataclass
 class TrainingResults:
     train_stats: TrainingStats
@@ -188,6 +187,7 @@ class TrainingResults:
         return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
+@PublicAPI
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
@@ -200,8 +200,8 @@ class LudwigModel:
         of backend to use to execute preprocessing / training steps.
     :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
         to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-    :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
-        allocate per GPU device.
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+        [0, 1] allowed to allocate per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow Torch
         to use multithreading parallelism to improve performance at the
         cost of determinism.
@@ -263,7 +263,7 @@ class LudwigModel:
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
         gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
+        gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
     ) -> None:
@@ -278,8 +278,8 @@ class LudwigModel:
             of backend to use to execute preprocessing / training steps.
         :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
-            allocate per GPU device.
+        :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
         :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use multithreading parallelism to improve performance at the
             cost of determinism.
@@ -299,20 +299,16 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        self.base_config = config_dict
+        self._user_config = config_dict
 
-        # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        upgraded_config = upgrade_to_latest_version(config_dict)
-
-        # Merge upgraded config with defaults.
-        self.config = merge_with_defaults(upgraded_config)
-        validate_config(self.config)
+        # Initialize the config object
+        self.config_obj = ModelConfig.from_dict(self._user_config)
 
         # setup logging
         self.set_logging_level(logging_level)
 
         # setup Backend
-        self.backend = initialize_backend(backend or self.config.get("backend"))
+        self.backend = initialize_backend(backend or self._user_config.get("backend"))
         self.callbacks = callbacks if callbacks is not None else []
 
         # setup PyTorch env (GPU allocation, etc.)
@@ -438,7 +434,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`.
             `output_directory` filepath to where training results are stored.
         """
-        if HYPEROPT in self.config:
+        if HYPEROPT in self._user_config:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
 
@@ -495,7 +491,7 @@ class LudwigModel:
                 # save description
                 if self.backend.is_coordinator():
                     description = get_experiment_description(
-                        self.config,
+                        self.config_obj.to_dict(),
                         dataset=dataset,
                         training_set=training_set,
                         validation_set=validation_set,
@@ -524,10 +520,10 @@ class LudwigModel:
                         logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
                         print_boxed("LUDWIG CONFIG")
-                        logger.info(pformat(self.config, indent=4))
+                        logger.info(pformat(self.config_obj.to_dict(), indent=4))
 
                 for callback in self.callbacks:
-                    callback.on_preprocess_start(self.config)
+                    callback.on_preprocess_start(self.config_obj.to_dict())
 
                 try:
                     preprocessed_data = self.preprocess(
@@ -570,7 +566,7 @@ class LudwigModel:
 
             for callback in self.callbacks:
                 callback.on_train_init(
-                    base_config=self.base_config,
+                    base_config=self._user_config,
                     experiment_directory=output_directory,
                     experiment_name=experiment_name,
                     model_name=model_name,
@@ -583,18 +579,15 @@ class LudwigModel:
             if not self.model:
                 if self.backend.is_coordinator():
                     print_boxed("MODEL")
-                # update config with metadata properties
-                update_config_with_metadata(self.config, training_set_metadata)
+                # update model config with metadata properties derived from training set
+                update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
-                self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
-                set_saved_weights_in_checkpoint_flag(self.config)
-
-            # Convert config dictionary into an instance of BaseTrainerConfig.
-            trainer_config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
+                self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+                set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             with self.backend.create_trainer(
                 model=self.model,
-                config=trainer_config,
+                config=self.config_obj.trainer,
                 resume=model_resume_path is not None,
                 skip_save_model=skip_save_model,
                 skip_save_progress=skip_save_progress,
@@ -603,25 +596,32 @@ class LudwigModel:
                 random_seed=random_seed,
             ) as trainer:
                 # auto tune batch size
-                if self.config[TRAINER].get(BATCH_SIZE, None) == AUTO or self.config[TRAINER][EVAL_BATCH_SIZE] == AUTO:
+                if (
+                    self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
+                    or self.config_obj.trainer.to_dict().get(EVAL_BATCH_SIZE, None) == AUTO
+                ):
                     # TODO (ASN): add support for substitute_with_max parameter
                     # TODO(travis): detect train and eval batch sizes separately (enable / disable gradients)
-                    tuned_batch_size = trainer.tune_batch_size(self.config, training_set, random_seed=random_seed)
+                    tuned_batch_size = trainer.tune_batch_size(
+                        self.config_obj.to_dict(), training_set, random_seed=random_seed
+                    )
 
                     # TODO(travis): pass these in as args to trainer when we call train,
                     #  to avoid setting state on possibly remote trainer
-                    if self.config[TRAINER][BATCH_SIZE] == AUTO:
-                        self.config[TRAINER][BATCH_SIZE] = tuned_batch_size
+                    if self.config_obj.trainer.batch_size == AUTO:
+                        self.config_obj.trainer.batch_size = tuned_batch_size
                         trainer.batch_size = tuned_batch_size
 
-                    if self.config[TRAINER][EVAL_BATCH_SIZE] in {AUTO, None}:
-                        self.config[TRAINER][EVAL_BATCH_SIZE] = tuned_batch_size
+                    if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
+                        self.config_obj.trainer.eval_batch_size = tuned_batch_size
                         trainer.eval_batch_size = tuned_batch_size
 
                 # auto tune learning rate
-                if self.config[TRAINER][LEARNING_RATE] == AUTO:
-                    tuned_learning_rate = trainer.tune_learning_rate(self.config, training_set, random_seed=random_seed)
-                    self.config[TRAINER][LEARNING_RATE] = tuned_learning_rate
+                if self.config_obj.trainer.learning_rate == AUTO:
+                    tuned_learning_rate = trainer.tune_learning_rate(
+                        self.config_obj.to_dict(), training_set, random_seed=random_seed
+                    )
+                    self.config_obj.trainer.learning_rate = tuned_learning_rate
                     trainer.set_base_learning_rate(tuned_learning_rate)
 
                 # train model
@@ -633,7 +633,7 @@ class LudwigModel:
                 for callback in self.callbacks:
                     callback.on_train_start(
                         model=self.model,
-                        config=self.config,
+                        config=self.config_obj.to_dict(),
                         config_fp=self.config_fp,
                     )
 
@@ -674,13 +674,13 @@ class LudwigModel:
                             self.model.save(model_dir)
 
                     # Evaluation Frequency
-                    if self.config[TRAINER].get("steps_per_checkpoint", None):
+                    if self.config_obj.model_type == MODEL_ECD and self.config_obj.trainer.steps_per_checkpoint:
                         evaluation_frequency = EvaluationFrequency(
-                            self.config[TRAINER]["steps_per_checkpoint"], EvaluationFrequency.STEP
+                            self.config_obj.trainer.steps_per_checkpoint, EvaluationFrequency.STEP
                         )
-                    elif self.config[TRAINER].get("checkpoints_per_epoch", None):
+                    elif self.config_obj.model_type == MODEL_ECD and self.config_obj.trainer.checkpoints_per_epoch:
                         evaluation_frequency = EvaluationFrequency(
-                            1.0 / self.config[TRAINER]["checkpoints_per_epoch"], EvaluationFrequency.EPOCH
+                            1.0 / self.config_obj.trainer.checkpoints_per_epoch, EvaluationFrequency.EPOCH
                         )
                     else:
                         evaluation_frequency = EvaluationFrequency(1, EvaluationFrequency.EPOCH)
@@ -769,14 +769,12 @@ class LudwigModel:
         :return: (None) `None`
         """
         training_set_metadata = training_set_metadata or self.training_set_metadata
-
-        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-            self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
-        )
+        preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
+            # TODO (Connor): Refactor to use self.config_obj
             training_dataset, _, _, training_set_metadata = preprocess_for_training(
-                self.config,
+                self.config_obj.to_dict(),
                 training_set=dataset,
                 training_set_metadata=training_set_metadata,
                 data_format=data_format,
@@ -791,13 +789,14 @@ class LudwigModel:
             self.training_set_metadata = training_set_metadata
 
         if not self.model:
-            update_config_with_metadata(self.config, training_set_metadata)
-            self.model = LudwigModel.create_model(self.config, random_seed=random_seed)
-            set_saved_weights_in_checkpoint_flag(self.config)
+            update_config_with_metadata(self.config_obj, training_set_metadata)
+            self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+            set_saved_weights_in_checkpoint_flag(self.config_obj)
 
         if not self._online_trainer:
-            config, _ = load_trainer_with_kwargs(self.config[MODEL_TYPE], self.config[TRAINER])
-            self._online_trainer = self.backend.create_trainer(config=config, model=self.model, random_seed=random_seed)
+            self._online_trainer = self.backend.create_trainer(
+                config=self.config_obj.trainer, model=self.model, random_seed=random_seed
+            )
 
         self.model = self._online_trainer.train_online(training_dataset)
 
@@ -858,8 +857,8 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, _ = preprocess_for_prediction(
-            self.config,
+        dataset, _ = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+            self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -971,8 +970,8 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(
-            self.config,
+        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+            self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -984,7 +983,10 @@ class LudwigModel:
 
         # Fallback to use eval_batch_size or batch_size if not provided
         if batch_size is None:
-            batch_size = self.config[TRAINER][EVAL_BATCH_SIZE] or self.config[TRAINER][BATCH_SIZE]
+            # Requires dictionary getter since gbm config does not have a batch_size param
+            batch_size = self.config_obj.trainer.to_dict().get(
+                EVAL_BATCH_SIZE, None
+            ) or self.config_obj.trainer.to_dict().get(BATCH_SIZE, None)
 
         logger.debug("Predicting")
         with self.backend.create_predictor(self.model, batch_size=batch_size) as predictor:
@@ -1184,7 +1186,7 @@ class LudwigModel:
             `(training_set, validation_set, test_set)`, `output_directory`
             filepath string to where results are stored.
         """
-        if HYPEROPT in self.config:
+        if HYPEROPT in self._user_config:
             print_boxed("WARNING")
             logger.info(HYPEROPT_WARNING)
 
@@ -1223,10 +1225,8 @@ class LudwigModel:
             logger.warning(f"Eval split {eval_split} not supported. " f"Using validation set instead")
 
         if eval_set is not None:
-            if self.config[TRAINER]["eval_batch_size"]:
-                batch_size = self.config[TRAINER]["eval_batch_size"]
-            else:
-                batch_size = self.config[TRAINER]["batch_size"]
+            trainer_dict = self.config_obj.trainer.to_dict()
+            batch_size = trainer_dict.get(EVAL_BATCH_SIZE, trainer_dict.get(BATCH_SIZE, None))
 
             # predict
             try:
@@ -1307,8 +1307,8 @@ class LudwigModel:
 
         # preprocessing
         logger.debug("Preprocessing")
-        dataset, training_set_metadata = preprocess_for_prediction(
-            self.config,
+        dataset, training_set_metadata = preprocess_for_prediction(  # TODO (Connor): Refactor to use self.config_obj
+            self.config_obj.to_dict(),
             dataset=dataset,
             training_set_metadata=self.training_set_metadata,
             data_format=data_format,
@@ -1384,13 +1384,12 @@ class LudwigModel:
         """
         print_boxed("PREPROCESSING")
 
-        preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
-            self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
-        )
+        preprocessing_params = get_preprocessing_params(self.config_obj)
 
         with provision_preprocessing_workers(self.backend):
+            # TODO (Connor): Refactor to use self.config_obj
             preprocessed_data = preprocess_for_training(
-                self.config,
+                self.config_obj.to_dict(),
                 dataset=dataset,
                 training_set=training_set,
                 validation_set=validation_set,
@@ -1414,7 +1413,7 @@ class LudwigModel:
         logging_level: int = logging.ERROR,
         backend: Union[Backend, str] = None,
         gpus: Union[str, int, List[int]] = None,
-        gpu_memory_limit: int = None,
+        gpu_memory_limit: Optional[float] = None,
         allow_parallel_threads: bool = True,
         callbacks: List[Callback] = None,
     ) -> "LudwigModel":  # return is an instance of ludwig.api.LudwigModel class
@@ -1431,8 +1430,8 @@ class LudwigModel:
             of backend to use to execute preprocessing / training steps.
         :param gpus: (Union[str, int, List[int]], default: `None`) GPUs
             to use (it uses the same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to
-            allocate per GPU device.
+        :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
         :param allow_parallel_threads: (bool, default: `True`) allow Torch
             to use
             multithreading parallelism to improve performance at the cost of
@@ -1463,9 +1462,7 @@ class LudwigModel:
         config = backend.broadcast_return(lambda: load_json(os.path.join(model_dir, MODEL_HYPERPARAMETERS_FILE_NAME)))
 
         # Upgrades deprecated fields and adds new required fields in case the config loaded from disk is old.
-        config = upgrade_to_latest_version(config)
-        # Merge upgraded config with defaults.
-        config = merge_with_defaults(config)
+        config_obj = ModelConfig.from_dict(config)
 
         if backend_param is None and "backend" in config:
             # Reset backend from config
@@ -1473,7 +1470,7 @@ class LudwigModel:
 
         # initialize model
         ludwig_model = LudwigModel(
-            config,
+            config_obj.to_dict(),
             logging_level=logging_level,
             backend=backend,
             gpus=gpus,
@@ -1483,8 +1480,8 @@ class LudwigModel:
         )
 
         # generate model from config
-        set_saved_weights_in_checkpoint_flag(config)
-        ludwig_model.model = LudwigModel.create_model(config)
+        set_saved_weights_in_checkpoint_flag(config_obj)
+        ludwig_model.model = LudwigModel.create_model(config_obj)
 
         # load model weights
         ludwig_model.load_weights(model_dir)
@@ -1565,7 +1562,7 @@ class LudwigModel:
         """
         os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-        save_json(model_hyperparameters_path, self.config)
+        save_json(model_hyperparameters_path, self.config_obj.to_dict())
 
     def to_torchscript(
         self,
@@ -1590,7 +1587,7 @@ class LudwigModel:
             return self.model.to_torchscript(device)
         else:
             inference_module = InferenceModule.from_ludwig_model(
-                self.model, self.config, self.training_set_metadata, device=device
+                self.model, self.config_obj.to_dict(), self.training_set_metadata, device=device
             )
             return torch.jit.script(inference_module)
 
@@ -1613,22 +1610,22 @@ class LudwigModel:
         save_ludwig_model_for_inference(
             save_path,
             self.model,
-            self.config,
+            self.config_obj.to_dict(),
             self.training_set_metadata,
             model_only=model_only,
             device=device,
         )
 
     def _check_initialization(self):
-        if self.model is None or self.config is None or self.training_set_metadata is None:
+        if self.model is None or self._user_config is None or self.training_set_metadata is None:
             raise ValueError("Model has not been trained or loaded")
 
     @staticmethod
-    def create_model(config: dict, random_seed: int = default_random_seed) -> BaseModel:
+    def create_model(config_obj: ModelConfig, random_seed: int = default_random_seed) -> BaseModel:
         """Instantiates BaseModel object.
 
         # Inputs
-        :param config: (dict) Ludwig config
+        :param config_obj: (Config) Ludwig config object
         :param random_seed: (int, default: ludwig default random seed) Random
             seed used for weights initialization,
             splits and any other random function.
@@ -1636,8 +1633,8 @@ class LudwigModel:
         # Return
         :return: (ludwig.models.BaseModel) Instance of the Ludwig model object.
         """
-        model_type = get_from_registry(config[MODEL_TYPE], model_type_registry)
-        return model_type(**config, random_seed=random_seed)
+        model_type = get_from_registry(config_obj.model_type, model_type_registry)
+        return model_type(config_obj, random_seed=random_seed)
 
     @staticmethod
     def set_logging_level(logging_level: int) -> None:
@@ -1658,7 +1655,22 @@ class LudwigModel:
         else:
             set_disable_progressbar(False)
 
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Returns the fully-rendered config of this model including default values."""
+        return self.config_obj.to_dict()
 
+    @config.setter
+    def config(self, user_config: Dict[str, Any]):
+        """Updates the config of this model.
+
+        WARNING: this can have unexpected results on an already trained model.
+        """
+        self._user_config = user_config
+        self.config_obj = ModelConfig.from_dict(self._user_config)
+
+
+@PublicAPI
 def kfold_cross_validate(
     num_folds: int,
     config: Union[dict, str],
@@ -1677,7 +1689,7 @@ def kfold_cross_validate(
     output_directory: str = "results",
     random_seed: int = default_random_seed,
     gpus: Union[str, int, List[int]] = None,
-    gpu_memory_limit: int = None,
+    gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
     backend: Union[Backend, str] = None,
     logging_level: int = logging.INFO,
@@ -1747,8 +1759,8 @@ def kfold_cross_validate(
            splits and any other random function.
     :param gpus: (list, default: `None`) list of GPUs that are available
             for training.
-    :param gpu_memory_limit: (int, default: `None`) maximum memory in MB to
-            allocate per GPU device.
+    :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
+            [0, 1] allowed to allocate per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow Torch to
             use multithreading parallelism
            to improve performance at the cost of determinism.
@@ -1880,6 +1892,7 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+@PublicAPI
 def get_experiment_description(
     config,
     dataset=None,

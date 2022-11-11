@@ -36,10 +36,32 @@ from PIL import Image
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from ludwig.constants import COLUMN, DECODER, ENCODER, NAME, PROC_COLUMN, TRAINER, VECTOR
+from ludwig.constants import (
+    AUDIO,
+    BAG,
+    BINARY,
+    CATEGORY,
+    COLUMN,
+    DATE,
+    DECODER,
+    ENCODER,
+    H3,
+    IMAGE,
+    NAME,
+    NUMBER,
+    PROC_COLUMN,
+    SEQUENCE,
+    SET,
+    SPLIT,
+    TEXT,
+    TIMESERIES,
+    TRAINER,
+    VECTOR,
+)
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset, DATETIME_FORMATS
 from ludwig.experiment import experiment_cli
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.globals import PREDICTIONS_PARQUET_FILE_NAME
 from ludwig.trainers.trainer import Trainer
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import read_csv, replace_file_extension, use_credentials
@@ -170,16 +192,32 @@ def generate_data(
     :param nan_percent: percent of values in a feature to be NaN
     :return:
     """
+    df = generate_data_as_dataframe(input_features, output_features, num_examples, nan_percent)
+    df.to_csv(filename, index=False)
+    return filename
+
+
+def generate_data_as_dataframe(
+    input_features,
+    output_features,
+    num_examples=25,
+    nan_percent=0.0,
+) -> pd.DataFrame:
+    """Helper method to generate synthetic data based on input, output feature specs.
+
+    Args:
+        num_examples: number of examples to generate
+        input_features: schema
+        output_features: schema
+        nan_percent: percent of values in a feature to be NaN
+    Returns:
+        A pandas DataFrame
+    """
     features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples + 1)]
 
-    dataframe = pd.DataFrame(data[1:], columns=data[0])
-    if nan_percent > 0:
-        add_nans_to_df_in_place(dataframe, nan_percent)
-    dataframe.to_csv(filename, index=False)
-
-    return filename
+    return pd.DataFrame(data[1:], columns=data[0])
 
 
 def recursive_update(dictionary, values):
@@ -197,8 +235,8 @@ def random_string(length=5):
 
 def number_feature(normalization=None, **kwargs):
     feature = {
-        "name": "num_" + random_string(),
-        "type": "number",
+        "name": f"{NUMBER}_{random_string()}",
+        "type": NUMBER,
         "preprocessing": {"normalization": normalization},
     }
     recursive_update(feature, kwargs)
@@ -211,8 +249,8 @@ def category_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "category",
-        "name": "category_" + random_string(),
+        "name": f"{CATEGORY}_{random_string()}",
+        "type": CATEGORY,
     }
     if output_feature:
         feature.update(
@@ -236,8 +274,8 @@ def text_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "name": "text_" + random_string(),
-        "type": "text",
+        "name": f"{TEXT}_{random_string()}",
+        "type": TEXT,
     }
     if output_feature:
         feature.update(
@@ -268,8 +306,8 @@ def set_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "set",
-        "name": "set_" + random_string(),
+        "name": f"{SET}_{random_string()}",
+        "type": SET,
     }
     if output_feature:
         feature.update(
@@ -293,8 +331,8 @@ def sequence_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "type": "sequence",
-        "name": "sequence_" + random_string(),
+        "name": f"{SEQUENCE}_{random_string()}",
+        "type": SEQUENCE,
     }
     if output_feature:
         feature.update(
@@ -329,8 +367,8 @@ def sequence_feature(output_feature=False, **kwargs):
 
 def image_feature(folder, **kwargs):
     feature = {
-        "type": "image",
-        "name": "image_" + random_string(),
+        "name": f"{IMAGE}_{random_string()}",
+        "type": IMAGE,
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         ENCODER: {
             "type": "resnet",
@@ -348,8 +386,8 @@ def image_feature(folder, **kwargs):
 
 def audio_feature(folder, **kwargs):
     feature = {
-        "name": "audio_" + random_string(),
-        "type": "audio",
+        "name": f"{AUDIO}_{random_string()}",
+        "type": AUDIO,
         "preprocessing": {
             "type": "fbank",
             "window_length_in_s": 0.04,
@@ -376,8 +414,8 @@ def audio_feature(folder, **kwargs):
 
 def timeseries_feature(**kwargs):
     feature = {
-        "name": "timeseries_" + random_string(),
-        "type": "timeseries",
+        "name": f"{TIMESERIES}_{random_string()}",
+        "type": TIMESERIES,
         ENCODER: {"type": "parallel_cnn", "max_len": 7},
     }
     recursive_update(feature, kwargs)
@@ -388,8 +426,8 @@ def timeseries_feature(**kwargs):
 
 def binary_feature(**kwargs):
     feature = {
-        "name": "binary_" + random_string(),
-        "type": "binary",
+        "name": f"{BINARY}_{random_string()}",
+        "type": BINARY,
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -399,8 +437,8 @@ def binary_feature(**kwargs):
 
 def bag_feature(**kwargs):
     feature = {
-        "name": "bag_" + random_string(),
-        "type": "bag",
+        "name": f"{BAG}_{random_string()}",
+        "type": BAG,
         ENCODER: {"type": "embed", "max_len": 5, "vocab_size": 10, "embedding_size": 5},
     }
     recursive_update(feature, kwargs)
@@ -411,9 +449,11 @@ def bag_feature(**kwargs):
 
 def date_feature(**kwargs):
     feature = {
-        "name": "date_" + random_string(),
-        "type": "date",
-        "preprocessing": {"datetime_format": random.choice(list(DATETIME_FORMATS.keys()))},
+        "name": f"{DATE}_{random_string()}",
+        "type": DATE,
+        "preprocessing": {
+            "datetime_format": random.choice(list(DATETIME_FORMATS.keys())),
+        },
     }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
@@ -422,7 +462,10 @@ def date_feature(**kwargs):
 
 
 def h3_feature(**kwargs):
-    feature = {"name": "h3_" + random_string(), "type": "h3"}
+    feature = {
+        "name": f"{H3}_{random_string()}",
+        "type": H3,
+    }
     recursive_update(feature, kwargs)
     feature[COLUMN] = feature[NAME]
     feature[PROC_COLUMN] = compute_feature_hash(feature)
@@ -431,8 +474,8 @@ def h3_feature(**kwargs):
 
 def vector_feature(**kwargs):
     feature = {
+        "name": f"{VECTOR}_{random_string()}",
         "type": VECTOR,
-        "name": "vector_" + random_string(),
         "preprocessing": {
             "vector_size": 5,
         },
@@ -500,8 +543,8 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     """
 
     output_features = [
-        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum"),
-        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}),
+        category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum", output_feature=True),
+        sequence_feature(decoder={"type": "generator", "vocab_size": 10, "max_len": 5}, output_feature=True),
         number_feature(),
     ]
 
@@ -673,6 +716,8 @@ def add_nans_to_df_in_place(df: pd.DataFrame, nan_percent: float):
     num_rows = len(df)
     num_nans_per_col = int(round(nan_percent * num_rows))
     for col in df.columns:
+        if col == SPLIT:  # do not add NaNs to the split column
+            continue
         col_idx = df.columns.get_loc(col)
         for row_idx in random.sample(range(num_rows), num_nans_per_col):
             df.iloc[row_idx, col_idx] = np.nan
@@ -815,10 +860,8 @@ def train_with_backend(
     skip_save_predictions=True,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
-    output_dir = None
-
-    try:
-        _, _, output_dir = model.train(
+    with tempfile.TemporaryDirectory() as output_directory:
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=training_set,
             validation_set=validation_set,
@@ -827,14 +870,23 @@ def train_with_backend(
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             skip_save_log=True,
+            output_directory=output_directory,
         )
 
         if dataset is None:
             dataset = training_set
 
         if predict:
-            preds, _ = model.predict(dataset=dataset, skip_save_predictions=skip_save_predictions)
+            preds, _ = model.predict(
+                dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
+            )
             assert preds is not None
+
+            if not skip_save_predictions:
+                read_preds = model.backend.df_engine.read_predictions(
+                    os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+                )
+                assert read_preds is not None
 
         if evaluate:
             eval_stats, eval_preds, _ = model.evaluate(
@@ -871,9 +923,6 @@ def train_with_backend(
                         ), f"metric {name1}: {metric1} != {metric2}"
 
         return model
-    finally:
-        # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
 
 
 @contextlib.contextmanager
@@ -894,7 +943,7 @@ def remote_tmpdir(fs_protocol, bucket):
             with use_credentials(minio_test_creds()):
                 fs_utils.delete(tmpdir, recursive=True)
         except FileNotFoundError as e:
-            logging.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
+            logger.info(f"failed to delete remote tempdir, does not exist: {str(e)}")
             pass
 
 

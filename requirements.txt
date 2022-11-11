@@ -28,9 +28,10 @@ torchmetrics<0.9
 torchinfo
 filelock
 psutil
-protobuf==3.20.1 # https://github.com/databrickslabs/dbx/issues/257
+protobuf
 experiment_impact_tracker
 gpustat
+rich~=12.4.4
 packaging
 
 # new data format support
@@ -39,3 +40,5 @@ xlrd            # excel
 openpyxl        # excel
 pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
 lxml            # html
+
+whylogs>=1.1.9
