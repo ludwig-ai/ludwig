@@ -43,6 +43,9 @@ class BaseTrainer(ABC):
     def shutdown(self):
         pass
 
+    def barrier(self):
+        pass
+
     # Functions needed to treat Trainer as a context manager
     def __enter__(self):
         return self
