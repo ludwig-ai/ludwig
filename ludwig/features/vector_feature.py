@@ -160,7 +160,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    metric_functions = VectorOutputFeatureConfig.get_output_feature_metrics()
+    metric_functions = VectorOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

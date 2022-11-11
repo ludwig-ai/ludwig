@@ -289,7 +289,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    metric_functions = SequenceOutputFeatureConfig.get_output_feature_metrics()
+    metric_functions = SequenceOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

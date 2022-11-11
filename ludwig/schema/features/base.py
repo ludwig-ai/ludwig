@@ -139,5 +139,5 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 
     @staticmethod
     @abstractmethod
-    def get_output_feature_metrics():
+    def get_output_metric_functions():
         pass

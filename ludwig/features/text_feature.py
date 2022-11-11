@@ -219,7 +219,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    metric_functions = TextOutputFeatureConfig.get_output_feature_metrics()
+    metric_functions = TextOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,
