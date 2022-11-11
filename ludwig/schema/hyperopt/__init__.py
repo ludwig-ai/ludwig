@@ -17,7 +17,6 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
 
     def get_hyperopt_metric_options():
-        print(output_config_registry)
         all_metrics = []
         for oftype in output_config_registry:
             ofcls = output_config_registry[oftype]
