@@ -10,3 +10,4 @@ description: |
   that provided home phone and Internet services to customers. Each row represents a
   customer, each column contains customer’s attributes described on the column Metadata.
   https://www.kaggle.com/datasets/blastchar/telco-customer-churn
+task: Binary Classification

@@ -20,3 +20,4 @@ description: |
   The dataset consists of parameters such as the images of damaged cars,
   the price of the cars and their insurance claim, and the like.
   Predict the insurance claim for the cars that are provided in the dataset.
+task: Regression

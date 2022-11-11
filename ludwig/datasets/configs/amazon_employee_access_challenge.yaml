@@ -11,3 +11,4 @@ description: |
   they have access. Given the data related to current employees and their provisioned access, models can be built that
   automatically determine access privileges as employees enter and leave roles within a company.
   https://www.kaggle.com/c/amazon-employee-access-challenge
+task: Binary Classification

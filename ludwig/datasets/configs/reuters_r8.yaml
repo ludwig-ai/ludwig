@@ -9,3 +9,4 @@ validation_filenames: r8/r8-dev-stemmed.csv
 test_filenames: r8/r8-test-stemmed.csv
 description: |
   Reuters R8 subset of Reuters 21578 dataset from Kaggle.
+task: Multi-Class Classification

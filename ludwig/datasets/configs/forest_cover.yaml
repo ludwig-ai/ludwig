@@ -65,3 +65,4 @@ description: |
   The Forest Cover Type dataset.
   Predicting forest cover type from cartographic variables only.
   https://archive.ics.uci.edu/ml/datasets/covertype
+task: Classification

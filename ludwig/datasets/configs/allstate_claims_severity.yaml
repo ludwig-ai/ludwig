@@ -10,3 +10,4 @@ loader: allstate_claims_severity.AllstateClaimsSeverityLoader
 description: |
   Allstate Claims Severity.
   https://www.kaggle.com/c/allstate-claims-severity/overview
+task: Regression

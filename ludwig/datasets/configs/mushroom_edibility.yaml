@@ -34,3 +34,4 @@ description: |
   Each species is identified as definitely edible, definitely poisonous,
   or of unknown edibility and not recommended. This latter class was combined with
   the poisonous one.
+task: Multi-Class Classification

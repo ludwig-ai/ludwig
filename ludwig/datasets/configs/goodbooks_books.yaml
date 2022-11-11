@@ -13,3 +13,4 @@ description: |
     book metadata (author, year, etc.)
     tags/shelves/genres
   https://github.com/zygmuntz/goodbooks-10k
+task: Multi-Class Classification

@@ -15,3 +15,4 @@ column_types:
   evidence: str
 description: |
   FEVER: a Large-scale Dataset for Fact Extraction and VERification
+task: Multi-Class Classification

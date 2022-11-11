@@ -8,3 +8,4 @@ loader: creditcard_fraud.CreditCardFraudLoader
 description: |
   The Machine Learning Group ULB Dataset
   https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud.
+task: Binary Classification

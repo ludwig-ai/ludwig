@@ -28,3 +28,4 @@ loader: adult_census_income.AdultCensusIncomeLoader
 description: |
   Predict whether income exceeds $50K/yr based on census data
   https://archive.ics.uci.edu/ml/datasets/adult
+task: Binary Classification

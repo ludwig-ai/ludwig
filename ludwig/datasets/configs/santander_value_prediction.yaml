@@ -9,3 +9,4 @@ loader: santander_value_prediction.SantanderValuePredictionLoader
 description: |
   The Santander Value Prediction Challenge dataset.
   https://www.kaggle.com/c/santander-value-prediction-challenge
+task: Regression

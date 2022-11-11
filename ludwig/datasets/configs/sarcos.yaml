@@ -16,3 +16,4 @@ description: |
   (7 joint positions, 7 joint velocities, 7 joint accelerations)
   to the corresponding 7 joint torques.
   http://gaussianprocess.org/gpml/data/
+task: Regression

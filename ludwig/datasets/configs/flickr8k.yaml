@@ -16,3 +16,4 @@ description: |
   events. The images were chosen from six different Flickr groups, and tend
   not to contain any well-known people or locations, but were manually
   selected to depict a variety of scenes and situations.
+task: Multi-Class Classification

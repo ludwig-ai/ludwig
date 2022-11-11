@@ -11,3 +11,4 @@ description: |
   Ohsumed corpus is extracted from MEDLINE database. MEDLINE is designed for multi-label classification, we remove the
   text with two or more labels.
   https://www.kaggle.com/datasets/weipengfei/ohr8r52
+task: Multi-Class Classification

@@ -7,3 +7,4 @@ sha256:
 dataset_filenames: temperature.csv
 description: |
   Hourly temperature dataset from Kaggle
+task: Regression

@@ -9,3 +9,4 @@ description: |
   Each row represents the end results of a Connect-4 game.
   Columns 1-42 are the positions on the grid from left to right, top to bottom. Each element in these columns represent to player's piece : 1, and -1, 0 marks an empty cell.
   Column 43 marks the winner of the game : -1, 1, and 0 for tie games.
+task: Multi-Class Classification

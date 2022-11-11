@@ -12,3 +12,4 @@ description: |
   Innerwear Data from Victoria's Secret and Others
   600,000+ innerwear product data extracted from popular retail sites
   https://www.kaggle.com/PromptCloudHQ/innerwear-data-from-victorias-secret-and-others
+task: Regression, Classification

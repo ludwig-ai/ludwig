@@ -9,3 +9,4 @@ sha256:
 description: |
   The Ames Housing dataset.
   https://www.kaggle.com/c/house-prices-advanced-regression-techniques
+task: Regression

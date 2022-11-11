@@ -9,3 +9,4 @@ test_filenames: test.csv
 description: |
   Santander Customer Satisfaction Prediction.
   https://www.kaggle.com/c/santander-customer-satisfaction/overview
+task: Binary Classification

@@ -11,3 +11,4 @@ preserve_paths:
 description: |
   A dataset for Twitter Bot account detection.
   https://www.kaggle.com/datasets/davidmartngutirrez/twitter-bots-accounts
+task: Binary Classification

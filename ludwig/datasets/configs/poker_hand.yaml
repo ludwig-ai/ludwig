@@ -28,3 +28,4 @@ description: |
   order of cards is important, which is why there are 480 possible
   Royal Flush hands as compared to 4.
   https://archive.ics.uci.edu/ml/datasets/Poker+Hand
+task: Multi-Class Classification

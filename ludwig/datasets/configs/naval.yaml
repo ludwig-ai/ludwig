@@ -27,3 +27,4 @@ loader: naval.NavalLoader
 description: |
   Condition Based Maintenance of Naval Propulsion Plants Data Set
   http://archive.ics.uci.edu/ml/datasets/condition+based+maintenance+of+naval+propulsion+plants
+task: Regression

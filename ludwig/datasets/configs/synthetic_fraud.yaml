@@ -7,3 +7,4 @@ sha256:
 description: |
   The Synthetic Financial Datasets For Fraud Detection dataset.
   https://www.kaggle.com/ealaxi/paysim1
+task: Binary Classification

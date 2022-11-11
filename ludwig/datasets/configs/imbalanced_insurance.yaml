@@ -10,3 +10,4 @@ description: |
   Health Insurance Cross Sell Prediction
   Predict Health Insurance Owners' who will be interested in Vehicle Insurance
   https://www.kaggle.com/datasets/arashnic/imbalanced-data-practice
+task: Binary Classification
