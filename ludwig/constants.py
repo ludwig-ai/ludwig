@@ -121,6 +121,7 @@ APPEND = "append"
 SEQ_SUM = "seq_sum"
 AVG_EXP = "avg_exp"
 
+TRAIN = "train"
 TRAINING = "training"
 VALIDATION = "validation"
 TEST = "test"

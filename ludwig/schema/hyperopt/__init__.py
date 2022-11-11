@@ -1,9 +1,9 @@
 from abc import ABC
-from typing import Any
+from typing import Dict
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import LOSS
+from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
@@ -24,15 +24,53 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     output_feature: str = "combined"  # TODO: make more restrictive
 
-    goal: str = schema_utils.StringOptions(options=["minimize", "maximize"], default="minimize", allow_none=False)
+    goal: str = schema_utils.StringOptions(
+        options=["minimize", "maximize"],
+        default="minimize",
+        allow_none=False,
+        description=(
+            "Indicates if to minimize or maximize a metric or a loss of any of the output features on any of the "
+            "dataset splits. Available values are: minimize (default) or maximize."
+        ),
+    )
 
-    metric: str = schema_utils.StringOptions(options=get_hyperopt_metric_options(), default=LOSS, allow_none=False)
+    metric: str = schema_utils.StringOptions(
+        options=get_hyperopt_metric_options(),
+        default=LOSS,
+        allow_none=False,
+        description=(
+            "The metric that we want to optimize for. The default one is loss, but depending on the type of the "
+            "feature defined in output_feature, different metrics and losses are available. Check the metrics section "
+            "of the specific output feature type to figure out what metrics are available to use."
+        ),
+    )
 
-    search_alg: SearchAlgorithmConfig = SearchAlgorithmDataclassField(description="")
+    split: str = schema_utils.StringOptions(
+        options=[TRAIN, VALIDATION, TEST],
+        default=VALIDATION,
+        allow_none=False,
+        description=(
+            "The split of data that we want to compute our metric on. By default it is the validation split, but "
+            "you have the flexibility to specify also train or test splits."
+        ),
+    )
 
-    executor: ExecutorConfig = ExecutorDataclassField(description="")
+    search_alg: SearchAlgorithmConfig = SearchAlgorithmDataclassField(
+        description=(
+            "Specifies the algorithm to sample the defined parameters space. Candidate algorithms are those "
+            "found in Ray Tune's Search Algorithms."
+        )
+    )
 
-    parameters: Any = None
+    executor: ExecutorConfig = ExecutorDataclassField(
+        description=(
+            "specifies how to execute the hyperparameter optimization. The execution could happen locally in a serial "
+            "manner or in parallel across multiple workers and with GPUs as well if available. The executor section "
+            "includes specification for work scheduling and the number of samples to generate."
+        )
+    )
+
+    parameters: Dict = schema_utils.Dict()
 
 
 def get_hyperopt_jsonschema():
