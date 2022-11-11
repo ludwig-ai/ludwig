@@ -107,3 +107,14 @@ trainer:
   num_boost_round: 382
   num_leaves: 434
 model_type: gbm
+backend:
+  processor:
+    parallelism: 6
+    type: dask
+  trainer:
+    num_workers: 3
+    resources_per_worker:
+      CPU: 2
+      GPU: 0
+    use_gpu: false
+  type: ray
