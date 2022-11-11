@@ -426,6 +426,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
             # promote only if not in top-level, otherwise use current top-level
             if SEARCH_ALG not in hyperopt:
                 hyperopt[SEARCH_ALG] = hpexecutor[SEARCH_ALG]
+                if isinstance(hyperopt[SEARCH_ALG], str):
+                    hyperopt[SEARCH_ALG] = {TYPE: hyperopt[SEARCH_ALG]}
             del hpexecutor[SEARCH_ALG]
     else:
         warnings.warn(
@@ -443,6 +445,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
         if SEARCH_ALG in hyperopt[SAMPLER]:
             if SEARCH_ALG not in hyperopt:
                 hyperopt[SEARCH_ALG] = hyperopt[SAMPLER][SEARCH_ALG]
+                if isinstance(hyperopt[SEARCH_ALG], str):
+                    hyperopt[SEARCH_ALG] = {TYPE: hyperopt[SEARCH_ALG]}
                 warnings.warn('Moved "search_alg" to hyperopt config top-level', DeprecationWarning)
 
         # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
@@ -453,6 +457,9 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
         if SCHEDULER in hyperopt[SAMPLER] and SCHEDULER not in hyperopt[EXECUTOR]:
             hyperopt[EXECUTOR][SCHEDULER] = hyperopt[SAMPLER][SCHEDULER]
             warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
+
+        if len(hyperopt[EXECUTOR][SCHEDULER].keys()) == 0:
+            del hyperopt[EXECUTOR][SCHEDULER]
 
         # remove legacy section
         del hyperopt[SAMPLER]
