@@ -22,21 +22,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import (
-    COLUMN,
-    HIDDEN,
-    LOGITS,
-    LOSS,
-    MEAN_ABSOLUTE_ERROR,
-    MEAN_SQUARED_ERROR,
-    NAME,
-    NUMBER,
-    PREDICTIONS,
-    PROC_COLUMN,
-    R2,
-    ROOT_MEAN_SQUARED_ERROR,
-    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
-)
+from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, NUMBER, PREDICTIONS, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.utils import output_feature_utils
@@ -329,14 +315,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
 
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
-    metric_functions = {
-        LOSS: None,
-        MEAN_SQUARED_ERROR: None,
-        MEAN_ABSOLUTE_ERROR: None,
-        ROOT_MEAN_SQUARED_ERROR: None,
-        ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
-        R2: None,
-    }
+    metric_functions = NumberOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

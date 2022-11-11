@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import MEAN_SQUARED_ERROR, VECTOR
+from ludwig.constants import ERROR, LOSS, MEAN_ABSOLUTE_ERROR, MEAN_SQUARED_ERROR, R2, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -101,3 +101,6 @@ class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConf
         allow_none=True,
         description="The size of the vector. If None, the vector size will be inferred from the data.",
     )
+
+    def get_output_metric_functions():
+        return {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}

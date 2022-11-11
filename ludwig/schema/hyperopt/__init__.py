@@ -4,23 +4,25 @@ from typing import Dict
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
-from ludwig.features.feature_registries import output_type_registry
+
+# from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
-
-
-def get_hyperopt_metric_options():
-    all_metrics = []
-    for oftype in output_type_registry:
-        ofcls = output_type_registry[oftype]
-        all_metrics += ofcls.metric_functions.keys()
-    return all_metrics
 
 
 @dataclass
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
+
+    def get_hyperopt_metric_options():
+        print(output_config_registry)
+        all_metrics = []
+        for oftype in output_config_registry:
+            ofcls = output_config_registry[oftype]
+            all_metrics += ofcls.get_output_metric_functions().keys()
+        return all_metrics
 
     output_feature: str = "combined"  # TODO: make more restrictive
 

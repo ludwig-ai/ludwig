@@ -21,19 +21,14 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    EDIT_DISTANCE,
-    LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
-    LOSS,
     NAME,
-    PERPLEXITY,
     PREDICTIONS,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
     TEXT,
-    TOKEN_ACCURACY,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
@@ -224,7 +219,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
+    metric_functions = TextOutputFeatureConfig.get_output_feature_metrics()
 
     def __init__(
         self,
