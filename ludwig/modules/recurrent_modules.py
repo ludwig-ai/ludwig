@@ -64,9 +64,10 @@ class RecurrentStack(LudwigModule):
 
     @property
     def output_shape(self) -> torch.Size:
+        hidden_size = self.hidden_size * (2 if self.layers.bidirectional else 1)
         if self.max_sequence_length:
-            return torch.Size([self.max_sequence_length, self.hidden_size])
-        return torch.Size([self.hidden_size])
+            return torch.Size([self.max_sequence_length, hidden_size])
+        return torch.Size([hidden_size])
 
     def forward(self, inputs: torch.Tensor, mask=None):
         hidden, final_state = self.layers(inputs)

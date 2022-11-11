@@ -295,12 +295,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     bucketing_field: str = schema_utils.String(
         default=None,
-        description="When not null, when creating batches, instead of shuffling randomly, the length along the last "
-        "dimension of the matrix of the specified input feature is used for bucketing examples and then "
-        "randomly shuffled examples from the same bin are sampled. Padding is trimmed to the longest "
-        "example in the batch. The specified feature should be either a sequence or text feature and the "
-        "encoder encoding it has to be rnn. When used, bucketing improves speed of rnn encoding up to "
-        "1.5x, depending on the length distribution of the inputs.",
+        description="Feature to use for bucketing datapoints",
         parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
@@ -552,7 +547,9 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
-    verbose: int = schema_utils.IntegerRange(default=-1, min=-1, max=2, description="Verbosity level for GBM trainer.")
+    verbose: int = schema_utils.IntegerOptions(
+        options=list(range(-1, 3)), default=-1, description="Verbosity level for GBM trainer."
+    )
 
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
