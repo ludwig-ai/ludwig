@@ -391,5 +391,5 @@ def test_ludwig_schema_serialization(model_type):
         json.dumps(schema)
     except TypeError as e:
         raise TypeError(
-            f"Ludwig schema of model_type `{model_type}` cannot be represented by valid JSON. See further details: {e}"
+            f"Ludwig schema of type `{model_type}` cannot be represented by valid JSON. See further details: {e}"
         )
