@@ -724,7 +724,7 @@ class RayTuneExecutor:
         print("FUCK YOU " * 50)
         print("salgo ", self.search_algorithm)
         print("random_seed ", random_seed)
-        self.search_algorithm.check_for_random_seed(ludwig_random_seed=random_seed)
+        self.search_algorithm.check_for_random_seed(random_seed)
         if self.search_algorithm.search_alg_dict is not None:
             if TYPE not in self.search_algorithm.search_alg_dict:
                 candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]
