@@ -278,6 +278,7 @@ def StringOptions(
 
 def IntegerOptions(
     options: TList[int],
+    allow_none: bool = True,
     default: Union[None, str] = None,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
@@ -286,6 +287,18 @@ def IntegerOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
+    # If None should be allowed for an enum field, it also has to be defined as a valid
+    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
+    if len(options) <= 0:
+        raise ValidationError("Must provide non-empty list of options!")
+    if default is not None and not isinstance(default, int):
+        raise ValidationError(f"Provided default `{default}` should be an integer!")
+    if allow_none and None not in options:
+        options += [None]
+    if not allow_none and None in options:
+        options.remove(None)
+    if default not in options:
+        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
 
     class IntegerOptionsField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):
@@ -307,7 +320,7 @@ def IntegerOptions(
     return field(
         metadata={
             "marshmallow_field": IntegerOptionsField(
-                allow_none=False,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={
