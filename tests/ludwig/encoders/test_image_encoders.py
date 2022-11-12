@@ -47,7 +47,6 @@ from ludwig.encoders.image_encoders import (  # ViTEncoder,
 from ludwig.utils.image_utils import TVModelVariant
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-from tests.integration_tests.utils import slow
 
 RANDOM_SEED = 1919
 
