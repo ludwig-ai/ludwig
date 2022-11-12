@@ -71,24 +71,6 @@ def test_stacked2d_cnn(height: int, width: int, num_conv_layers: int, num_channe
     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
 
 
-# TODO: Remove at end of torchvision work, in favor of Torchvision implementation
-# @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 1), (224, 224, 3)])
-# def test_resnet_encoder(height: int, width: int, num_channels: int):
-#     # make repeatable
-#     set_random_seed(RANDOM_SEED)
-#
-#     resnet = ResNetEncoder(height=height, width=width, num_channels=num_channels)
-#     inputs = torch.rand(2, num_channels, height, width)
-#     outputs = resnet(inputs)
-#     assert outputs["encoder_output"].shape[1:] == resnet.output_shape
-#
-#     # check for parameter updating
-#     target = torch.randn(outputs["encoder_output"].shape)
-#     fpc, tpc, upc, not_updated = check_module_parameters_updated(resnet, (inputs,), target)
-#
-#     assert tpc == upc, f"Not all expected parameters updated.  Parameters not updated {not_updated}."
-
-
 @pytest.mark.parametrize("height,width,num_channels", [(224, 224, 3)])
 def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
     # make repeatable
@@ -143,7 +125,7 @@ def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in ALEXNET_VARIANTS])
 def test_tv_alexnet_encoder(
     model_variant: int,
@@ -172,7 +154,7 @@ def test_tv_alexnet_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in CONVNEXT_VARIANTS])
 def test_tv_convnext_encoder(
     model_variant: int,
@@ -201,7 +183,7 @@ def test_tv_convnext_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in DENSENET_VARIANTS])
 def test_tv_densenet_encoder(
     model_variant: int,
@@ -237,7 +219,7 @@ LOW_MEMORY_EFFICIENTNET_VARIANTS = set(EFFICIENTNET_VARIANTS) - HIGH_MEMORY_EFFI
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_EFFICIENTNET_VARIANTS])
 def test_tv_efficientnet_encoder(
     model_variant: int,
@@ -266,7 +248,7 @@ def test_tv_efficientnet_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in GOOGLENET_VARIANTS])
 def test_tv_googlenet_encoder(
     model_variant: int,
@@ -295,7 +277,7 @@ def test_tv_googlenet_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in INCEPTIONV3_VARIANTS])
 def test_tv_inceptionv3_encoder(
     model_variant: int,
@@ -324,7 +306,7 @@ def test_tv_inceptionv3_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in MNASNET_VARIANTS])
 def test_tv_mnasnet_encoder(
     model_variant: int,
@@ -353,7 +335,7 @@ def test_tv_mnasnet_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in MOBILENETV2_VARIANTS])
 def test_tv_mobilenetv2_encoder(
     model_variant: int,
@@ -382,7 +364,7 @@ def test_tv_mobilenetv2_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in MOBILENETV3_VARIANTS])
 def test_tv_mobilenetv3_encoder(
     model_variant: int,
@@ -412,7 +394,7 @@ def test_tv_mobilenetv3_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in REGNET_VARIANTS])
 def test_tv_regnet_encoder(
     model_variant: int,
@@ -441,7 +423,7 @@ def test_tv_regnet_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in RESNET_TORCH_VARIANTS])
 def test_resnet_torch_encoder(
     model_variant: int,
@@ -470,7 +452,7 @@ def test_resnet_torch_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in RESNEXT_VARIANTS])
 def test_tv_resnext_encoder(
     model_variant: int,
@@ -499,7 +481,7 @@ def test_tv_resnext_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in SHUFFLENET_V2_VARIANTS])
 def test_tv_shufflenet_v2_encoder(
     model_variant: str,
@@ -528,7 +510,7 @@ def test_tv_shufflenet_v2_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in SQUEEZENET_VARIANTS])
 def test_tv_squeezenet_encoder(
     model_variant: str,
@@ -557,7 +539,7 @@ def test_tv_squeezenet_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in SWIN_TRANSFORMER_VARIANTS])
 def test_tv_swin_transformer_encoder(
     model_variant: str,
@@ -586,7 +568,7 @@ def test_tv_swin_transformer_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in VGG_VARIANTS])
 def test_tv_vgg_encoder(
     model_variant: Union[int, str],
@@ -615,7 +597,7 @@ def test_tv_vgg_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in VIT_VARIANTS])
 def test_tv_vit_encoder(
     model_variant: str,
@@ -644,7 +626,7 @@ def test_tv_vit_encoder(
     [
         False,
     ],
-)  # TODO: do we need to check download, True])
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in WIDE_RESNET_VARIANTS])
 def test_tv_wide_resnet_encoder(
     model_variant: str,
