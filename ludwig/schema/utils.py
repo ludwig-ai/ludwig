@@ -921,7 +921,7 @@ def OneOfOptionsField(
                 "description": description,
                 "default": default,
                 "title": self.name,
-                "parameter_metadata": parameter_metadata,
+                "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
             }
 
             for idx, option in enumerate(field_options):
@@ -965,6 +965,9 @@ def OneOfOptionsField(
         default_kwarg["default"] = default
     else:
         default_kwarg["default_factory"] = lambda: default
+
+    print(parameter_metadata)
+    print(convert_metadata_to_json(parameter_metadata))
 
     return field(
         metadata={
