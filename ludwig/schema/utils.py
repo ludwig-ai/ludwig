@@ -279,6 +279,7 @@ def StringOptions(
 def IntegerOptions(
     options: TList[int],
     default: Union[None, str] = None,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -307,7 +308,7 @@ def IntegerOptions(
     return field(
         metadata={
             "marshmallow_field": IntegerOptionsField(
-                allow_none=False,
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={
