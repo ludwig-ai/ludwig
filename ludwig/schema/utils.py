@@ -278,8 +278,8 @@ def StringOptions(
 
 def IntegerOptions(
     options: TList[int],
+    default: Union[None, int] = None,
     allow_none: bool = True,
-    default: Union[None, str] = None,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -292,34 +292,17 @@ def IntegerOptions(
     if len(options) <= 0:
         raise ValidationError("Must provide non-empty list of options!")
     if default is not None and not isinstance(default, int):
-        raise ValidationError(f"Provided default `{default}` should be an integer!")
+        raise ValidationError(f"Provided default `{default}` should be an int!")
     if allow_none and None not in options:
         options += [None]
     if not allow_none and None in options:
         options.remove(None)
     if default not in options:
         raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
-
-    class IntegerOptionsField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if value not in options:
-                    raise ValidationError(f"Expected one of: {options}, found: {value}")
-                return value
-            raise ValidationError(f"Expected integer, found: {value}")
-
-        def _jsonschema_type_mapping(self):
-            return {
-                "type": "integer",
-                "enum": options,
-                "default": default,
-                "title": self.name,
-                "description": description,
-            }
-
     return field(
         metadata={
-            "marshmallow_field": IntegerOptionsField(
+            "marshmallow_field": fields.Integer(
+                validate=validate.OneOf(options),
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
