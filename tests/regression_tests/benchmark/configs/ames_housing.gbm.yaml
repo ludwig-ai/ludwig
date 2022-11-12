@@ -190,7 +190,7 @@ backend:
   trainer:
     num_workers: 1
     resources_per_worker:
-      CPU: 2
+      CPU: 1
       GPU: 0
     use_gpu: false
   type: ray
