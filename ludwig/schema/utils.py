@@ -966,9 +966,6 @@ def OneOfOptionsField(
     else:
         default_kwarg["default_factory"] = lambda: default
 
-    print(parameter_metadata)
-    print(convert_metadata_to_json(parameter_metadata))
-
     return field(
         metadata={
             "marshmallow_field": OneOfOptionsCombinatorialField(

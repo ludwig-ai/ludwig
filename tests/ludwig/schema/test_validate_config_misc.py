@@ -379,3 +379,15 @@ def test_schema_no_duplicates():
                 "allOf"
             ][0]["then"]["properties"]
         )
+
+
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+def test_ludwig_schema_serialization(model_type):
+    import json
+
+    schema = get_schema(model_type)
+
+    try:
+        json.dumps(schema)
+    except TypeError as e:
+        raise TypeError(f"Ludwig schema cannot be represented by valid JSON. See further details: {e}")
