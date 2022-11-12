@@ -721,9 +721,6 @@ class RayTuneExecutor:
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
         # if random seed not set, use Ludwig seed
-        print("FUCK YOU " * 50)
-        print("salgo ", self.search_algorithm)
-        print("random_seed ", random_seed)
         self.search_algorithm.check_for_random_seed(random_seed)
         if self.search_algorithm.search_alg_dict is not None:
             if TYPE not in self.search_algorithm.search_alg_dict:
