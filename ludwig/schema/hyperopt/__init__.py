@@ -4,8 +4,6 @@ from typing import Dict
 from marshmallow_dataclass import dataclass
 
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
-
-# from ludwig.features.feature_registries import output_type_registry
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
