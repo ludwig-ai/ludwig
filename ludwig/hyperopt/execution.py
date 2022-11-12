@@ -31,7 +31,7 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt.registry import get_search_algorithm_cls
+from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
@@ -135,7 +135,7 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: Optional[Dict] = None,
+        search_alg: Dict,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
@@ -154,7 +154,7 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = get_search_algorithm_cls(search_alg["type"])
+        self.search_algorithm = instantiate_search_algorithm(search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.output_feature = output_feature
         self.metric = metric
@@ -721,7 +721,10 @@ class RayTuneExecutor:
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
         # if random seed not set, use Ludwig seed
-        self.search_algorithm.check_for_random_seed(random_seed)
+        print("FUCK YOU " * 50)
+        print("salgo ", self.search_algorithm)
+        print("random_seed ", random_seed)
+        self.search_algorithm.check_for_random_seed(ludwig_random_seed=random_seed)
         if self.search_algorithm.search_alg_dict is not None:
             if TYPE not in self.search_algorithm.search_alg_dict:
                 candiate_search_algs = [search_alg for search_alg in SEARCH_ALG_IMPORT.keys()]

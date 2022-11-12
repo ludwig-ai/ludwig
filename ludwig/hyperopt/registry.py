@@ -1,3 +1,4 @@
+from ludwig.constants import TYPE
 from ludwig.utils.registry import Registry
 
 search_algorithm_registry = Registry()
@@ -13,3 +14,9 @@ def register_search_algorithm(name: str):
 
 def get_search_algorithm_cls(name: str):
     return search_algorithm_registry[name]
+
+
+def instantiate_search_algorithm(search_alg: dict):
+    search_alg_type = search_alg[TYPE]
+    cls = get_search_algorithm_cls(search_alg_type)
+    return cls(search_alg)
