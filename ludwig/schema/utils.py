@@ -276,6 +276,24 @@ def StringOptions(
     )
 
 
+def ProtectedString(
+    pstring: str,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+):
+    """Alias for a `StringOptions` field with only one option.
+
+    Useful primarily for `type` parameters.
+    """
+    return StringOptions(
+        options=[pstring],
+        default=pstring,
+        allow_none=False,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
 def IntegerOptions(
     options: TList[int],
     default: Union[None, str] = None,
