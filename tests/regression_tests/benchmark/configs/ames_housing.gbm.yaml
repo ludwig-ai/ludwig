@@ -188,9 +188,9 @@ backend:
     parallelism: 6
     type: dask
   trainer:
-    num_workers: 2
+    num_workers: 1
     resources_per_worker:
-      CPU: 1
+      CPU: 2
       GPU: 0
     use_gpu: false
   type: ray
