@@ -314,7 +314,7 @@ def StringOptions(
 #                 dump_default=default,
 #                 metadata={
 #                     "description": description,
-#                     "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+#                     "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,  # noqa: E501
 #                 },
 #             )
 #         },
