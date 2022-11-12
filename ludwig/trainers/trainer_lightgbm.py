@@ -954,6 +954,11 @@ class LightGBMRayTrainer(LightGBMTrainer):
         out_feat = [f.proc_column for f in self.model.output_features.values()]
         feat_cols = in_feat + out_feat
 
+        # TODO(shreya): Refactor preprocessing so that this can be moved upstream.
+        if training_set.ds.num_blocks() < self.ray_params.num_actors:
+            # Repartition to ensure that there is at least one block per actor
+            training_set = training_set.ds.repartition(num_blocks=self.ray_params.num_actors)
+
         lgb_train = RayDMatrix(
             # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
             # Need num_blocks to equal num_actors in order to feed all actors.
@@ -965,6 +970,10 @@ class LightGBMRayTrainer(LightGBMTrainer):
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
+            if validation_set.ds.num_blocks() < self.ray_params.num_actors:
+                # Repartition to ensure that there is at least one block per actor
+                validation_set = validation_set.ds.repartition(num_blocks=self.ray_params.num_actors)
+
             lgb_val = RayDMatrix(
                 validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
@@ -974,6 +983,10 @@ class LightGBMRayTrainer(LightGBMTrainer):
             eval_names.append(LightGBMTrainer.VALID_KEY)
 
         if test_set is not None:
+            if test_set.ds.num_blocks() < self.ray_params.num_actors:
+                # Repartition to ensure that there is at least one block per actor
+                test_set.ds = test_set.ds.repartition(num_blocks=self.ray_params.num_actors)
+
             lgb_test = RayDMatrix(
                 test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
                 label=label_col,
