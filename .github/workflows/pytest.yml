@@ -26,7 +26,7 @@ jobs:
         test-markers: ["not distributed", "distributed"]
         include:
           - python-version: 3.7
-            pytorch-version: 1.11.0
+            pytorch-version: 1.12.0
             torchscript-version: 1.10.2
             ray-version: 2.0.0
           - python-version: 3.8
