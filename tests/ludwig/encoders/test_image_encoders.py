@@ -590,6 +590,12 @@ def test_tv_vgg_encoder(
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
+HIGH_MEMORY_VIT_VARIANTS = {
+    TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),
+}
+LOW_MEMORY_VIT_VARIANTS = set(VIT_VARIANTS) - HIGH_MEMORY_VIT_VARIANTS
+
+
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
@@ -598,7 +604,7 @@ def test_tv_vgg_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [x.variant_id for x in VIT_VARIANTS])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_VIT_VARIANTS])
 def test_tv_vit_encoder(
     model_variant: str,
     use_pretrained: bool,

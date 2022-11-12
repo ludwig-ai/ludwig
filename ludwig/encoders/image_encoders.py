@@ -366,6 +366,10 @@ class TVBaseEncoder(Encoder):
         self.use_pretrained = use_pretrained
         self.model_cache_dir = model_cache_dir
 
+        # remove any Ludwig specific keyword parameters
+        kwargs.pop("encoder_config", None)
+        kwargs.pop("type", None)
+
         # cache pre-trained models if requested
         # based on https://github.com/pytorch/vision/issues/616#issuecomment-428637564
         if self.model_cache_dir is not None:
@@ -403,7 +407,7 @@ class TVBaseEncoder(Encoder):
 
         logger.debug(f"  {model_id}")
         # create pretrained model with pretrained weights or None for untrained model
-        self.model = self.create_model(weights=weights_specification)
+        self.model = self.create_model(weights=weights_specification, **kwargs)
 
         # remove final classification layer
         self._remove_last_layer()
@@ -932,7 +936,7 @@ VIT_VARIANTS = [
     TVModelVariant("b_32", tvm.vit_b_32, tvm.ViT_B_32_Weights),
     TVModelVariant("l_16", tvm.vit_l_16, tvm.ViT_L_16_Weights),
     TVModelVariant("l_32", tvm.vit_l_32, tvm.ViT_L_32_Weights),
-    # TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),  # TODO: resolve image size mismatch to re-enable
+    TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),
 ]
 
 
@@ -947,6 +951,16 @@ class TVViTEncoder(TVBaseEncoder):
         **kwargs,
     ):
         logger.debug(f" {self.name}")
+
+        # For model variant h_14 and pretrained weights are NOT downloaded then
+        # need to set ViT keyword parameter image_size to 518 to match the current
+        # image size expected by the DEFAULT h_14 transformation
+        # image_size is automatically set by ViT transformation if pretrained weights are
+        # downloaded.  This code may have to be revised as DEFAULT weights are updated for
+        # any of the model variants
+        if not kwargs["use_pretrained"] and kwargs["model_variant"] == "h_14":
+            kwargs["image_size"] = 518  # crop size for Weights IMAGENET1K_SWAG_E2E_V1 (DEFAULT)
+
         super().__init__(**kwargs)
 
     def _remove_last_layer(self):
