@@ -952,14 +952,15 @@ class TVViTEncoder(TVBaseEncoder):
     ):
         logger.debug(f" {self.name}")
 
-        # For model variant h_14 and pretrained weights are NOT downloaded then
-        # need to set ViT keyword parameter image_size to 518 to match the current
-        # image size expected by the DEFAULT h_14 transformation
-        # image_size is automatically set by ViT transformation if pretrained weights are
-        # downloaded.  This code may have to be revised as DEFAULT weights are updated for
-        # any of the model variants
-        if not kwargs["use_pretrained"] and kwargs["model_variant"] == "h_14":
-            kwargs["image_size"] = 518  # crop size for Weights IMAGENET1K_SWAG_E2E_V1 (DEFAULT)
+        # Depending on model variant and weight specification, the expected image size
+        # will vary.  This code determines at run time what the expected image size will be
+        # and adds to the kwargs dictionary the parameter that specifies the image size.
+        # this is needed only if not using pretrained weights.  If pre-trained weights are
+        # specified, then the correct image size is set.
+        if not kwargs["use_pretrained"]:
+            model_id = f"{self.torchvision_model_type}-{kwargs.get('model_variant')}"
+            weights_specification = torchvision_model_registry[model_id].weights_class.DEFAULT
+            kwargs["image_size"] = weights_specification.transforms.keywords["crop_size"]
 
         super().__init__(**kwargs)
 
