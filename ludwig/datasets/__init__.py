@@ -95,6 +95,7 @@ def model_configs_for_dataset(dataset_name: str) -> Dict[str, Dict]:
 
 def download_dataset(dataset_name: str, output_dir: str = "."):
     """Downloads the dataset to the specified directory."""
+    output_dir = os.path.expanduser(os.path.normpath(output_dir))
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
 
