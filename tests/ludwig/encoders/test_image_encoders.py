@@ -119,7 +119,12 @@ def test_mlp_mixer_encoder(height: int, width: int, num_channels: int):
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in ALEXNET_VARIANTS])
 def test_tv_alexnet_encoder(
     model_variant: int,
@@ -143,7 +148,12 @@ def test_tv_alexnet_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in CONVNEXT_VARIANTS])
 def test_tv_convnext_encoder(
     model_variant: int,
@@ -167,7 +177,12 @@ def test_tv_convnext_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in DENSENET_VARIANTS])
 def test_tv_densenet_encoder(
     model_variant: int,
@@ -198,7 +213,12 @@ LOW_MEMORY_EFFICIENTNET_VARIANTS = set(EFFICIENTNET_VARIANTS) - HIGH_MEMORY_EFFI
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_EFFICIENTNET_VARIANTS])
 def test_tv_efficientnet_encoder(
     model_variant: int,
@@ -222,7 +242,12 @@ def test_tv_efficientnet_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in GOOGLENET_VARIANTS])
 def test_tv_googlenet_encoder(
     model_variant: int,
@@ -246,7 +271,12 @@ def test_tv_googlenet_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in INCEPTIONV3_VARIANTS])
 def test_tv_inceptionv3_encoder(
     model_variant: int,
@@ -270,7 +300,12 @@ def test_tv_inceptionv3_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in MNASNET_VARIANTS])
 def test_tv_mnasnet_encoder(
     model_variant: int,
@@ -294,7 +329,12 @@ def test_tv_mnasnet_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in MOBILENETV2_VARIANTS])
 def test_tv_mobilenetv2_encoder(
     model_variant: int,
@@ -318,7 +358,12 @@ def test_tv_mobilenetv2_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in MOBILENETV3_VARIANTS])
 def test_tv_mobilenetv3_encoder(
     model_variant: int,
@@ -348,7 +393,12 @@ LOW_MEMORY_REGNET_VARIANTS = set(REGNET_VARIANTS) - HIGH_MEMORY_REGNET_VARIANTS
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_REGNET_VARIANTS])
 def test_tv_regnet_encoder(
     model_variant: int,
@@ -372,7 +422,12 @@ def test_tv_regnet_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in RESNET_TORCH_VARIANTS])
 def test_resnet_torch_encoder(
     model_variant: int,
@@ -396,7 +451,12 @@ def test_resnet_torch_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in RESNEXT_VARIANTS])
 def test_tv_resnext_encoder(
     model_variant: int,
@@ -420,7 +480,12 @@ def test_tv_resnext_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in SHUFFLENET_V2_VARIANTS])
 def test_tv_shufflenet_v2_encoder(
     model_variant: str,
@@ -444,7 +509,12 @@ def test_tv_shufflenet_v2_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in SQUEEZENET_VARIANTS])
 def test_tv_squeezenet_encoder(
     model_variant: str,
@@ -468,7 +538,12 @@ def test_tv_squeezenet_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in SWIN_TRANSFORMER_VARIANTS])
 def test_tv_swin_transformer_encoder(
     model_variant: str,
@@ -492,7 +567,12 @@ def test_tv_swin_transformer_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in VGG_VARIANTS])
 def test_tv_vgg_encoder(
     model_variant: Union[int, str],
@@ -522,7 +602,12 @@ LOW_MEMORY_VIT_VARIANTS = set(VIT_VARIANTS) - HIGH_MEMORY_VIT_VARIANTS
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_VIT_VARIANTS])
 def test_tv_vit_encoder(
     model_variant: str,
@@ -546,7 +631,12 @@ def test_tv_vit_encoder(
 
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
-@pytest.mark.parametrize("use_pretrained", [False, ])
+@pytest.mark.parametrize(
+    "use_pretrained",
+    [
+        False,
+    ],
+)
 @pytest.mark.parametrize("model_variant", [x.variant_id for x in WIDE_RESNET_VARIANTS])
 def test_tv_wide_resnet_encoder(
     model_variant: str,
