@@ -385,6 +385,12 @@ def test_tv_mobilenetv3_encoder(
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
 
 
+HIGH_MEMORY_REGNET_VARIANTS = {
+    TVModelVariant("y_128gf", tvm.regnet_y_128gf, tvm.RegNet_Y_128GF_Weights),
+}
+LOW_MEMORY_REGNET_VARIANTS = set(REGNET_VARIANTS) - HIGH_MEMORY_REGNET_VARIANTS
+
+
 @pytest.mark.parametrize("trainable", [True, False])
 @pytest.mark.parametrize("saved_weights_in_checkpoint", [True, False])
 @pytest.mark.parametrize(
@@ -393,7 +399,7 @@ def test_tv_mobilenetv3_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [x.variant_id for x in REGNET_VARIANTS])
+@pytest.mark.parametrize("model_variant", [x.variant_id for x in LOW_MEMORY_REGNET_VARIANTS])
 def test_tv_regnet_encoder(
     model_variant: int,
     use_pretrained: bool,
