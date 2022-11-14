@@ -4,15 +4,14 @@ import queue
 import threading
 from typing import Any, Dict
 
-from retry.api import retry
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils.data_utils import chunk_dict, flatten_dict, save_json, to_json_dict
-from ludwig.utils.error_handling_utils import retry_with_backoff
+from ludwig.utils.error_handling_utils import default_retry, default_retry_call
+
 from ludwig.utils.package_utils import LazyLoader
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
@@ -20,12 +19,12 @@ mlflow = LazyLoader("mlflow", globals(), "mlflow")
 logger = logging.getLogger(__name__)
 
 
-@retry(tries=5, delay=1, backoff=2, logger=logger)
+@default_retry()
 def _get_runs(experiment_id: str):
     return mlflow.tracking.client.MlflowClient().search_runs([experiment_id])
 
 
-@retry(tries=5, delay=1, backoff=2, logger=logger)
+@default_retry()
 def _get_or_create_experiment_id(experiment_name, artifact_uri: str = None):
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is not None:
@@ -94,19 +93,18 @@ class MlflowCallback(Callback):
                 if len(previous_runs) > 0:
                     run_id = previous_runs[0].info.run_id
             if run_id is not None:
-                with retry_with_backoff(f_name="mlflow.start_run", logger=logger):
-                    self.run = mlflow.start_run(run_id=run_id)
+                self.run = default_retry_call(mlflow.start_run, fkwargs={"run_id": run_id})
             else:
                 run_name = os.path.basename(output_directory)
-                with retry_with_backoff(f_name="mlflow.start_run", logger=logger):
-                    self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
+                self.run = default_retry_call(
+                    mlflow.start_run, fkwargs={"experiment_id": self.experiment_id, "run_name": run_name}
+                )
 
         self.log_config(base_config)
 
     def log_config(self, config):
         if self.log_artifacts:
-            with retry_with_backoff(f_name="mlflow.log_dict", logger=logger):
-                mlflow.log_dict(to_json_dict(config), "config.yaml")
+            default_retry_call(mlflow.log_dict, fargs=(to_json_dict(config), "config.yaml"))
 
     def on_train_start(self, config, **kwargs):
         self.config = config
@@ -158,8 +156,7 @@ class MlflowCallback(Callback):
     def prepare_ray_tune(self, train_fn, tune_config, tune_callbacks):
         from ray.tune.integration.mlflow import mlflow_mixin
 
-        with retry_with_backoff(f_name="mlflow.get_tracking_uri", logger=logger):
-            tracking_uri = mlflow.get_tracking_uri()
+        tracking_uri = default_retry_call(mlflow.get_tracking_uri)
 
         return mlflow_mixin(train_fn), {
             **tune_config,
@@ -173,10 +170,9 @@ class MlflowCallback(Callback):
     def _log_params(self, params):
         flat_params = flatten_dict(params)
         for chunk in chunk_dict(flat_params, chunk_size=100):
-            with retry_with_backoff(f_name="mlflow.log_params", logger=logger):
-                mlflow.log_params(chunk)
+            default_retry_call(mlflow.log_params, fargs=(chunk,))
 
-    @retry(tries=5, delay=1, backoff=2, logger=logger)
+    @default_retry()
     def __setstate__(self, d):
         self.__dict__ = d
         if self.tracking_uri:
@@ -191,9 +187,7 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
     while should_continue:
         elem = q.get()
         log_metrics, steps, save_path, should_continue = elem
-        with retry_with_backoff(f_name="mlflow.log_metrics", logger=logger):
-            mlflow.log_metrics(log_metrics, step=steps)
-
+        default_retry_call(mlflow.log_metrics, fargs=(log_metrics,), fkwargs={"step": steps})
         if not q.empty():
             # in other words, don't bother saving the model artifacts
             # if we're about to do it again
@@ -204,8 +198,7 @@ def _log_mlflow_loop(q: queue.Queue, log_artifacts: bool = True):
 
 
 def _log_mlflow(log_metrics, steps, save_path, should_continue, log_artifacts: bool = True):
-    with retry_with_backoff(f_name="mlflow.log_metrics", logger=logger):
-        mlflow.log_metrics(log_metrics, step=steps)
+    default_retry_call(mlflow.log_metrics, fargs=(log_metrics,), fkwargs={"step": steps})
     if log_artifacts:
         _log_model(save_path)
 
@@ -216,8 +209,7 @@ def _log_artifacts(output_directory):
         if fname == "model":
             _log_model(lpath)
         else:
-            with retry_with_backoff(f_name="mlflow.log_artifact", logger=logger):
-                mlflow.log_artifact(lpath)
+            default_retry_call(mlflow.log_artifact, fargs=(lpath,))
 
 
 def _log_model(lpath):

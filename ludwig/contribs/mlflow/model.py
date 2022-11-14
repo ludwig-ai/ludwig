@@ -17,7 +17,7 @@ from mlflow.utils.model_utils import _get_flavor_configuration
 
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.error_handling_utils import retry_with_backoff
+from ludwig.utils.error_handling_utils import default_retry_call
 
 FLAVOR_NAME = "ludwig"
 
@@ -105,8 +105,7 @@ def save_model(
     if signature is not None:
         mlflow_model.signature = signature
     if input_example is not None:
-        with retry_with_backoff(f_name="_save_example", logger=_logger):
-            _save_example(mlflow_model, input_example, path)
+        default_retry_call(_save_example, fargs=(mlflow_model, input_example, path))
 
     # Save the Ludwig model
     ludwig_model.save(model_data_path)
@@ -120,32 +119,30 @@ def save_model(
     with open(os.path.join(path, conda_env_subpath), "w") as f:
         yaml.safe_dump(conda_env, stream=f, default_flow_style=False)
 
-    with retry_with_backoff(f_name="pyfunc.add_to_model", logger=_logger):
-        pyfunc.add_to_model(
-            mlflow_model,
-            loader_module="ludwig.contribs.mlflow.model",
-            data=model_data_subpath,
-            env=conda_env_subpath,
-        )
+    default_retry_call(
+        pyfunc.add_to_model,
+        fargs=(mlflow_model,),
+        fkwargs={"loader_module": "ludwig.contribs.mlflow.model", "data": model_data_subpath, "env": conda_env_subpath},
+    )
 
     schema_keys = {"name", "column", "type"}
     config = ludwig_model.config
 
-    with retry_with_backoff(f_name="mlflow_model.add_flavor", logger=_logger):
-        mlflow_model.add_flavor(
-            FLAVOR_NAME,
-            ludwig_version=ludwig.__version__,
-            ludwig_schema={
-                "input_features": [
-                    {k: v for k, v in feature.items() if k in schema_keys} for feature in config["input_features"]
-                ],
-                "output_features": [
-                    {k: v for k, v in feature.items() if k in schema_keys} for feature in config["output_features"]
-                ],
-            },
-            data=model_data_subpath,
-        )
-        mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
+    mlflow_model.add_flavor(
+        FLAVOR_NAME,
+        ludwig_version=ludwig.__version__,
+        ludwig_schema={
+            "input_features": [
+                {k: v for k, v in feature.items() if k in schema_keys} for feature in config["input_features"]
+            ],
+            "output_features": [
+                {k: v for k, v in feature.items() if k in schema_keys} for feature in config["output_features"]
+            ],
+        },
+        data=model_data_subpath,
+    )
+
+    mlflow_model.save(os.path.join(path, MLMODEL_FILE_NAME))
 
 
 def log_model(
@@ -250,8 +247,7 @@ def load_model(model_uri):
 
     :return: A Ludwig model (an instance of `ludwig.api.LudwigModel`_).
     """
-    with retry_with_backoff(f_name="_download_artifact_from_uri", logger=_logger):
-        local_model_path = _download_artifact_from_uri(artifact_uri=model_uri)
+    local_model_path = default_retry_call(_download_artifact_from_uri, fkwargs={"artifact_uri": model_uri})
     flavor_conf = _get_flavor_configuration(model_path=local_model_path, flavor_name=FLAVOR_NAME)
     lgb_model_file_path = os.path.join(local_model_path, flavor_conf.get("data", "model.lgb"))
     return _load_model(path=lgb_model_file_path)
