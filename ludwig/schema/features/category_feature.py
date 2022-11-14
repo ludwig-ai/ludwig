@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import ACCURACY, CATEGORY, HITS_AT_K, LOSS, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -103,3 +103,7 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
         "measure. It computes accuracy but considering as a match if the true category appears in the "
         "first k predicted categories ranked by decoder's confidence.",
     )
+
+    @staticmethod
+    def get_output_metric_functions():
+        return {LOSS: None, ACCURACY: None, HITS_AT_K: None}
