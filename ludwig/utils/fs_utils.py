@@ -34,7 +34,7 @@ import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
 
-from .error_handling_utils import default_retry, default_retry_call
+from ludwig.utils.error_handling_utils import default_retry, default_retry_call
 
 logger = logging.getLogger(__name__)
 
