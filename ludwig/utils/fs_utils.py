@@ -34,6 +34,8 @@ import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
 
+from .error_handling_utils import default_retry, default_retry_call
+
 logger = logging.getLogger(__name__)
 
 
@@ -81,6 +83,7 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
             return None
 
 
+@default_retry()
 def stream_http_get_request(path: str) -> urllib3.response.HTTPResponse:
     if upgrade_http(path):
         http = urllib3.PoolManager()
@@ -108,6 +111,7 @@ def get_bytes_obj_from_http_path(path: str) -> bytes:
     return data
 
 
+@default_retry()
 def find_non_existing_dir_by_adding_suffix(directory_name):
     fs, _ = get_fs_and_path(directory_name)
     suffix = 0
@@ -126,11 +130,13 @@ def abspath(url):
     return os.path.abspath(url)
 
 
+@default_retry()
 def path_exists(url):
     fs, path = get_fs_and_path(url)
     return fs.exists(path)
 
 
+@default_retry()
 def listdir(url):
     fs, path = get_fs_and_path(url)
     return fs.listdir(path)
@@ -168,6 +174,7 @@ def safe_move_file(src, dst):
             raise
 
 
+@default_retry()
 def rename(src, tgt):
     protocol, _ = split_protocol(tgt)
     if protocol is not None:
@@ -177,38 +184,45 @@ def rename(src, tgt):
         safe_move_file(src, tgt)
 
 
+@default_retry()
 def upload_file(src, tgt):
     protocol, _ = split_protocol(tgt)
     fs = fsspec.filesystem(protocol)
     fs.put(src, tgt)
 
 
+@default_retry()
 def copy(src, tgt, recursive=False):
     protocol, _ = split_protocol(tgt)
     fs = fsspec.filesystem(protocol)
     fs.copy(src, tgt, recursive=recursive)
 
 
+@default_retry()
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
 
 
+@default_retry()
 def delete(url, recursive=False):
     fs, path = get_fs_and_path(url)
     return fs.delete(path, recursive=recursive)
 
 
+@default_retry()
 def upload(lpath, rpath):
     fs, path = get_fs_and_path(rpath)
     pyarrow.fs.copy_files(lpath, path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
 
 
+@default_retry()
 def download(rpath, lpath):
     fs, path = get_fs_and_path(rpath)
     pyarrow.fs.copy_files(path, lpath, source_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
 
 
+@default_retry()
 def checksum(url):
     fs, path = get_fs_and_path(url)
     return fs.checksum(path)
@@ -237,8 +251,9 @@ def upload_output_directory(url):
             # In cases where we are resuming from a previous run, we first need to download
             # the artifacts from the remote filesystem
             if path_exists(url):
-                fs.get(url, tmpdir + "/", recursive=True)
+                default_retry_call(fs.get, fargs=(url, tmpdir + "/"), fkwargs={"recursive": True})
 
+            @default_retry()
             def put_fn():
                 # Use pyarrow API here as fs.put() is inconsistent in where it uploads the file
                 # See: https://github.com/fsspec/filesystem_spec/issues/1062
@@ -257,6 +272,7 @@ def upload_output_directory(url):
         yield url, None
 
 
+# TODO(shreya): Add retry for open context.
 @contextlib.contextmanager
 def open_file(url, *args, **kwargs):
     fs, path = get_fs_and_path(url)
@@ -269,7 +285,7 @@ def download_h5(url):
     with tempfile.TemporaryDirectory() as tmpdir:
         local_path = os.path.join(tmpdir, os.path.basename(url))
         fs, path = get_fs_and_path(url)
-        fs.get(path, local_path)
+        default_retry_call(fs.get, fargs=(path, local_path))
         with h5py.File(local_path, "r") as f:
             yield f
 
@@ -294,7 +310,7 @@ def upload_output_file(url):
         with tempfile.TemporaryDirectory() as tmpdir:
             local_fname = os.path.join(tmpdir, "tmpfile")
             yield local_fname
-            fs.put(local_fname, url, recursive=True)
+            default_retry_call(fs.put, fargs=(local_fname, url), fkwargs={"recursive": True})
     else:
         yield url
 
