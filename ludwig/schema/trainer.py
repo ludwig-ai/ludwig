@@ -548,7 +548,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     verbose: int = schema_utils.IntegerOptions(
-        options=list(range(-1, 3)), default=-1, description="Verbosity level for GBM trainer."
+        options=list(range(-1, 3)), allow_none=False, default=-1, description="Verbosity level for GBM trainer."
     )
 
     # LightGBM IO params
