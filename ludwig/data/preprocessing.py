@@ -1107,6 +1107,8 @@ def build_dataset(
                 f"Resetting index to ensure globally unique indices."
             )
             dataset_df = df_engine.reset_index(dataset_df)
+    else:
+        dataset_df = df_engine.reset_index(dataset_df)
 
     dataset_df = df_engine.parallelize(dataset_df)
 
