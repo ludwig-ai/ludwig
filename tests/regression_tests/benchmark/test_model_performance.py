@@ -11,7 +11,7 @@ from ludwig.utils.data_utils import load_yaml
 def get_test_config_filenames() -> List[str]:
     """Return list of the config filenames used for benchmarking."""
     benchmark_directory = "/".join(__file__.split("/")[:-1] + ["configs"])
-    return [config_fp for config_fp in os.listdir(benchmark_directory)]
+    return [config_fp for config_fp in os.listdir(benchmark_directory) if "adult_census_income.gbm.yaml" in config_fp]
 
 
 def get_dataset_from_config_path(config_path: str) -> str:
