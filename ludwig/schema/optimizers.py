@@ -57,7 +57,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
     """Points to `torch.optim.SGD`."""
 
-    type: str = schema_utils.StringOptions(["sgd"], default="sgd", allow_none=False)
+    type: str = schema_utils.ProtectedString("sgd")
     """Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'sgd')"""
 
@@ -78,7 +78,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.LBFGS
     """Points to `torch.optim.LBFGS`."""
 
-    type: str = schema_utils.StringOptions(["lbfgs"], default="lbfgs", allow_none=False)
+    type: str = schema_utils.ProtectedString("lbfgs")
     """Must be 'lbfgs' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'lbfgs')"""
 
@@ -112,7 +112,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     """Points to `torch.optim.Adam`."""
 
-    type: str = schema_utils.StringOptions(["adam"], default="adam", allow_none=False)
+    type: str = schema_utils.ProtectedString("adam")
     """Must be 'adam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adam')"""
 
@@ -146,7 +146,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.AdamW
     """Points to `torch.optim.AdamW`."""
 
-    type: str = schema_utils.StringOptions(["adamw"], default="adamw", allow_none=False)
+    type: str = schema_utils.ProtectedString("adamw")
     """Must be 'adamw' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamw')"""
 
@@ -180,7 +180,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
     """Points to `torch.optim.Adadelta`."""
 
-    type: str = schema_utils.StringOptions(["adadelta"], default="adadelta", allow_none=False)
+    type: str = schema_utils.ProtectedString("adadelta")
     """Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adadelta')"""
 
@@ -213,7 +213,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
     """Points to `torch.optim.Adagrad`."""
 
-    type: str = schema_utils.StringOptions(["adagrad"], default="adagrad", allow_none=False)
+    type: str = schema_utils.ProtectedString("adagrad")
     """Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adagrad')"""
 
@@ -239,7 +239,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
     """Points to `torch.optim.Adamax`."""
 
-    type: str = schema_utils.StringOptions(["adamax"], default="adamax", allow_none=False)
+    type: str = schema_utils.ProtectedString("adamax")
     """Must be 'adamax' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamax')"""
 
@@ -263,7 +263,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 class FtrlOptimizerConfig(BaseOptimizerConfig):
 
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
-    type: str = schema_utils.StringOptions(["ftrl"], default="ftrl", allow_none=False)
+    type: str = schema_utils.ProtectedString("ftrl")
 
     learning_rate_power: float = schema_utils.FloatRange(default=-0.5, max=0.0)
 
@@ -281,7 +281,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
     """Points to `torch.optim.NAdam`."""
 
-    type: str = schema_utils.StringOptions(["nadam"], default="nadam", allow_none=False)
+    type: str = schema_utils.ProtectedString("nadam")
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
 
@@ -308,7 +308,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
     """Points to `torch.optim.RMSprop`."""
 
-    type: str = schema_utils.StringOptions(["rmsprop"], default="rmsprop", allow_none=False)
+    type: str = schema_utils.ProtectedString("rmsprop")
     """Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'rmsprop')"""
 
