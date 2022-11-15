@@ -126,7 +126,8 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         vocab_size = len(str2idx)
         if vocab_size <= 1:
             logger.warning(
-                f"Feature {column.name} of type {CATEGORY} only contains {vocab_size} distinct values: {str(idx2str)}."
+                f"Feature {column.name} of type {CATEGORY} only contains {vocab_size} distinct "
+                "values: {str(idx2str)}. Consider dropping the feature."
             )
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 
