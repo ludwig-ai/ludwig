@@ -124,6 +124,10 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
         vocab_size = len(str2idx)
+        if vocab_size <= 1:
+            logger.warning(
+                f"Feature {column.name} of type {CATEGORY} only contains {vocab_size} distinct values: {str(idx2str)}."
+            )
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 
     @staticmethod
