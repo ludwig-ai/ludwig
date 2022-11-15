@@ -21,7 +21,7 @@ import numpy as np
 
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
-from ludwig.utils.data_utils import load_json, save_json, split_by_slices
+from ludwig.utils.data_utils import get_pa_schema, load_json, save_json, split_by_slices
 from ludwig.utils.dataframe_utils import flatten_df, unflatten_df
 
 
@@ -67,7 +67,13 @@ class ModinEngine(DataFrameEngine):
         return df
 
     def to_parquet(self, df, path, index=False):
-        df.to_parquet(path, engine="pyarrow", index=index)
+        schema = get_pa_schema(df)
+        df.to_parquet(
+            path,
+            engine="pyarrow",
+            index=index,
+            schema=schema,
+        )
 
     def write_predictions(self, df: pd.DataFrame, path: str):
         df, column_shapes = flatten_df(df, self)

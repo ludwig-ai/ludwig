@@ -58,6 +58,7 @@ class Splitter(ABC):
 
     @property
     def required_columns(self) -> List[str]:
+        """Returns the list of columns that are required for splitting."""
         return []
 
 
@@ -159,7 +160,7 @@ def stratify_split_dataframe(
     frac_train, frac_val, frac_test = probabilities
 
     # Dataframe of just the column on which to stratify
-    y = df[[column]].astype(np.int8)
+    y = df[[column]]
     df_train, df_temp, _, y_temp = train_test_split(
         df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
     )

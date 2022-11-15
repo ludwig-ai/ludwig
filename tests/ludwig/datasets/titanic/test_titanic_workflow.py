@@ -77,16 +77,15 @@ def test_download_titanic_dataset(tmpdir):
         test_filenames="test.csv",
     )
 
-    def download_file(competition_name, filename, path):
+    def download_files(competition_name, path):
         assert competition_name == "titanic"
-        assert filename == "titanic.zip"
         copy(archive_filename, path)
 
     ludwig.datasets._get_dataset_configs.cache_clear()
     with mock.patch("ludwig.datasets._load_dataset_config", return_value=config):
         with mock.patch("ludwig.datasets.kaggle.create_kaggle_client") as mock_kaggle_cls:
             mock_kaggle_api = mock.MagicMock()
-            mock_kaggle_api.competition_download_file = download_file
+            mock_kaggle_api.competition_download_files = download_files
             mock_kaggle_cls.return_value = mock_kaggle_api
 
             dataset = ludwig.datasets.get_dataset("titanic", cache_dir=tmpdir)
