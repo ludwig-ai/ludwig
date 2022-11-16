@@ -228,15 +228,15 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
     """
     unique_values = source.df[field].unique()
     if len(unique_values) <= 3:
-        for unique_value in unique_values:
+        for entry in unique_values:
             try:
-                if np.isnan(unique_value):
+                if np.isnan(entry):
                     continue
             except TypeError:
                 # For some field types such as object arrays np.isnan throws a TypeError
                 # we catch it since we know in this case it is not a bool.
                 pass
-            if isinstance(unique_value, bool):
+            if isinstance(entry, bool):
                 continue
             return False
         return True
