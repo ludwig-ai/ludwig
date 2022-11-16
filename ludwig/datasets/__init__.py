@@ -1,9 +1,9 @@
 import argparse
 import importlib
 import os
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Dict, List
-from collections import OrderedDict
 
 import yaml
 
