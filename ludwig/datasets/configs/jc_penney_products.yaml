@@ -12,4 +12,10 @@ description: |
   JCPenney products
   20,000 product listings from JCPenney
   https://www.kaggle.com/PromptCloudHQ/all-jc-penny-products
-task: Regression, Classification
+output_features:
+  - name: sale_price
+    type: number
+  - name: list_price
+    type: number
+  - name: category
+    type: category

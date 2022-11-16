@@ -10,4 +10,6 @@ description: |
   Dataset from a Kaggle competition that is about predicting whether a customer will change
   telecommunications provider, something known as "churning".
   https://www.kaggle.com/c/customer-churn-prediction-2020
-task: Binary Classification
+output_features:
+  - name: churn
+    type: binary

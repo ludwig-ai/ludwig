@@ -43,4 +43,6 @@ description: |
   which produces Higgs bosons and a background process which does not.
 
   https://archive.ics.uci.edu/ml/datasets/HIGGS
-task: Binary Classification
+output_features:
+  - name: label
+    type: binary

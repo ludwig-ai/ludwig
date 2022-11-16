@@ -12,4 +12,6 @@ description: |
   Women's E-Commerce Clothing Reviews
   23,000 Customer Reviews and Ratings
   https://www.kaggle.com/nicapotato/womens-ecommerce-clothing-reviews
-task: Classification
+output_features:
+  - name: Rating
+    type: number

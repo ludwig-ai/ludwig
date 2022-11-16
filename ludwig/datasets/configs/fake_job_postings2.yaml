@@ -13,4 +13,6 @@ description: |
   The data consists of both textual information and meta-information about the jobs.
   This dataset is "fake_job_postings2" in the AutoGluon paper.
   https://www.kaggle.com/datasets/shivamb/real-or-fake-fake-jobposting-prediction
-task: Binary Classification
+output_features:
+  - name: fraudulent
+    type: binary

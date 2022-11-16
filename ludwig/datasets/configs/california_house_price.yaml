@@ -14,4 +14,6 @@ description: |
   of houses sold in California in 2020, with houses in the test dataset sold after
   the ones in the training dataset.
   https://www.kaggle.com/c/california-house-prices
-task: Regression
+output_features:
+  - name: Sold Price
+    type: number
