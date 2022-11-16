@@ -227,17 +227,19 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
     Columns with object dtype that have 3 distinct values of which one is Nan/None is a bool type column.
     """
     unique_values = source.df[field].unique()
-    num_unique_values = len(unique_values)
-    if num_unique_values <= 3:
-        if None in unique_values:
-            return True
+    if len(unique_values) <= 3:
         for unique_value in unique_values:
             try:
                 if np.isnan(unique_value):
-                    return True
+                    continue
             except TypeError:
+                # For some field types such as object arrays np.isnan throws a TypeError
+                # we catch it since we know in this case it is not a bool.
                 pass
-        return False
+            if isinstance(unique_value, bool):
+                continue
+            return False
+        return True
     return False
 
 

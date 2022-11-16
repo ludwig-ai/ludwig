@@ -30,14 +30,17 @@ def test_get_model_type(config, expected):
     assert actual == expected
 
 
-@pytest.mark.parametrize("missing_value", [(None), (np.nan)], ids=["none", "np.nan"])
-def test_bool_type_inference_from_object_dtype(missing_value):
-    df = pd.DataFrame({"col1": ["a", "b", "a", "a", "b", missing_value]})
+@pytest.mark.parametrize(
+    "col,expected_dtype",
+    [
+        (["a", "b", "c", "d", "e", "a", "b", "b"], "object"),
+        (["a", "b", "a", "b", np.nan], "object"),
+        (["a", "b", "a", "b", None], "object"),
+        ([True, False, True, True, ""], "object"),
+        ([True, False, True, False, np.nan], "bool"),
+    ],
+)
+def test_object_and_bool_type_inference(col, expected_dtype):
+    df = pd.DataFrame({"col1": col})
     info = get_dataset_info(df)
-    assert info.fields[0].dtype == "bool"
-
-
-def test_object_type_inference_from_object_dtype():
-    df = pd.DataFrame({"col1": ["a", "b", "c", "d", "e", "a", "b", "b"]})
-    info = get_dataset_info(df)
-    assert info.fields[0].dtype == "object"
+    assert info.fields[0].dtype == expected_dtype
