@@ -222,20 +222,24 @@ def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
 
 
 def is_field_boolean(source: DataSource, field: str) -> bool:
-    num_unique_values, unique_values, _ = source.get_distinct_values(field, max_values_to_return=4)
+    """
+    Returns a boolean indicating whether the object field should have a bool dtype.
+
+    Columns with object dtype that have 3 distinct values of which one is Nan/None is a bool type column.
+    """
+    unique_values = source.df[field].unique()
+    num_unique_values = len(unique_values)
     if num_unique_values <= 3:
-        for entry in unique_values:
+        if None in unique_values:
+            return True
+        for unique_value in unique_values:
             try:
-                if np.isnan(entry):
-                    continue
+                if np.isnan(unique_value):
+                    return True
             except TypeError:
-                # For some field types such as object arrays np.isnan throws a TypeError
-                # we catch it since we know in this case it is not a bool.
-                return False
-            if isinstance(entry, bool):
-                continue
-            return False
-    return True
+                pass
+        return False
+    return False
 
 
 @DeveloperAPI

@@ -2,10 +2,14 @@ import random
 
 import pytest
 
+from ludwig.automl.base_config import get_dataset_info
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.data.dataset_synthesizer import generate_string
 from ludwig.utils.automl.field_info import FieldInfo
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
+
+import numpy as np
+import pandas as pd
 
 ROW_COUNT = 100
 TARGET_NAME = "target"
@@ -91,3 +95,16 @@ def test_auto_type_inference_single_value_binary_feature():
     )
     assert infer_type(field=field, missing_value_percent=0, row_count=ROW_COUNT) == CATEGORY
     assert should_exclude(idx=3, field=field, dtype="object", row_count=ROW_COUNT, targets={TARGET_NAME})
+
+
+@pytest.mark.parametrize("missing_value", [(None), (np.nan)], ids=["none", "np.nan"])
+def test_bool_type_inference(missing_value):
+    df = pd.DataFrame({"col1": ["a", "b", "a", "a", "b", missing_value]})
+    info = get_dataset_info(df)
+    assert info.fields[0].dtype == "bool"
+
+
+def test_object_type_inference():
+    df = pd.DataFrame({"col1": ["a", "b", "c", "d", "e", "a", "b", "b"]})
+    info = get_dataset_info(df)
+    assert info.fields[0].dtype == "object"
