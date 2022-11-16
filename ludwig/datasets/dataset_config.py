@@ -29,9 +29,9 @@ class DatasetConfig:
     # The readable description of the dataset
     description: str = ""
 
-    # Optional.  The types of learning tasks this dataset is intended to test. Helps users discover new datasets and
+    # Optional.  The type of learning task(s) this dataset is intended to test. Helps users discover new datasets and
     # filter for relevance to a specific machine learning setting.
-    tasks: Union[str, List[str]] = field(default_factory=list)
+    task: Union[str, List[str]] = field(default_factory=list)
 
     # The kaggle competition this dataset belongs to, or None if this dataset is not hosted by a Kaggle competition.
     kaggle_competition: Optional[str] = None

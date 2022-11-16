@@ -103,3 +103,10 @@ def test_multifile_join_dataset(tmpdir, f_type):
 
         assert dataset.state == DatasetState.TRANSFORMED
     ludwig.datasets._get_dataset_configs.cache_clear()
+
+
+def test_get_datasets_info():
+    datasets_info = ludwig.datasets.get_datasets_info()
+    assert len(datasets_info) > 0
+    assert "name" in datasets_info[0]
+    assert "task" in datasets_info[0]

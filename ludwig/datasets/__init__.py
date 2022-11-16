@@ -3,6 +3,7 @@ import importlib
 import os
 from functools import lru_cache
 from typing import Any, Dict, List
+from collections import OrderedDict
 
 import yaml
 
@@ -83,9 +84,15 @@ def list_datasets() -> List[str]:
     return sorted(_get_dataset_configs().keys())
 
 
-def list_dataset_configs() -> Dict[str, DatasetConfig]:
-    """Returns a list of the names of all available datasets."""
-    return _get_dataset_configs()
+@PublicAPI
+def get_datasets_info() -> List[dict]:
+    """Returns an alphabetically organized list of information for each dataset."""
+    ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
+
+    datasets_info = []
+    for config in ordered_configs.values():
+        datasets_info.append({"name": config.name, "task": config.task})
+    return datasets_info
 
 
 @PublicAPI
