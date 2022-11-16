@@ -31,6 +31,18 @@ dataset_names = ludwig.datasets.list_datasets()
 
 ______________________________________________________________________
 
+### get_datasets_info
+
+Gets an alphabetically sorted list of datasets with their associated tasks.
+
+**Example:**
+
+```python
+get_datasets_info = ludwig.datasets.get_datasets_info()
+```
+
+______________________________________________________________________
+
 ### describe_dataset
 
 Gets a human-readable description string for a dataset
