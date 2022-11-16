@@ -15,4 +15,4 @@ columns:
 loader: agnews.AGNewsLoader
 description: |
   News articles categorized as "World", "Sports", "Business", and "Science".
-task: Muli-Class Classification
+task: Multi-Class Classification
