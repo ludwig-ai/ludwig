@@ -97,12 +97,14 @@ def test_auto_type_inference_single_value_binary_feature():
 
 
 @pytest.mark.parametrize("missing_value", [(None), (np.nan)], ids=["none", "np.nan"])
+@pytest.mark.distributed
 def test_bool_type_inference_from_object_dtype(missing_value):
     df = pd.DataFrame({"col1": ["a", "b", "a", "a", "b", missing_value]})
     info = get_dataset_info(df)
     assert info.fields[0].dtype == "bool"
 
 
+@pytest.mark.distributed
 def test_object_type_inference_from_object_dtype():
     df = pd.DataFrame({"col1": ["a", "b", "c", "d", "e", "a", "b", "b"]})
     info = get_dataset_info(df)
