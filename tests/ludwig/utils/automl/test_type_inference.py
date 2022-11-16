@@ -1,5 +1,7 @@
 import random
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from ludwig.automl.base_config import get_dataset_info
@@ -7,9 +9,6 @@ from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.data.dataset_synthesizer import generate_string
 from ludwig.utils.automl.field_info import FieldInfo
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
-
-import numpy as np
-import pandas as pd
 
 ROW_COUNT = 100
 TARGET_NAME = "target"

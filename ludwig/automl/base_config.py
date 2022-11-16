@@ -222,8 +222,7 @@ def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
 
 
 def is_field_boolean(source: DataSource, field: str) -> bool:
-    """
-    Returns a boolean indicating whether the object field should have a bool dtype.
+    """Returns a boolean indicating whether the object field should have a bool dtype.
 
     Columns with object dtype that have 3 distinct values of which one is Nan/None is a bool type column.
     """
