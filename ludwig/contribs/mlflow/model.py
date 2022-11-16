@@ -15,6 +15,7 @@ from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 from mlflow.utils.environment import _mlflow_conda_env
 from mlflow.utils.model_utils import _get_flavor_configuration
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils.data_utils import load_json
 
@@ -286,7 +287,12 @@ def export_model(model_path, output_path, registered_model_name=None):
         )
 
 
+@DeveloperAPI
 def log_saved_model(lpath):
+    """Log a saved Ludwig model as an MLflow artifact.
+
+    :param lpath: Path to saved Ludwig model.
+    """
     log_model(
         _CopyModel(lpath),
         artifact_path="model",

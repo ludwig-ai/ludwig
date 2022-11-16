@@ -6,8 +6,8 @@ import shutil
 
 import yaml
 
+from ludwig import datasets
 from ludwig.api import LudwigModel
-from ludwig.datasets import twitter_bots
 from ludwig.utils.fs_utils import rename
 from ludwig.visualize import confusion_matrix, learning_curves
 
@@ -17,12 +17,12 @@ if __name__ == "__main__":
     shutil.rmtree(".visualizations", ignore_errors=True)
 
     # Loads the dataset
-    dataset = twitter_bots.TwitterBots(cache_dir="./downloads")
-    training_set, val_set, test_set = dataset.load(split=True)
+    twitter_bots_dataset = datasets.get_dataset("twitter_bots", cache_dir="./downloads")
+    training_set, val_set, test_set = twitter_bots_dataset.load(split=True)
 
     # Moves profile images into local directory, so relative paths in the dataset will be resolved.
     if not os.path.exists("./profile_images"):
-        rename(os.path.join(dataset.processed_dataset_path, "profile_images"), "./profile_images")
+        rename(os.path.join(twitter_bots_dataset.processed_dataset_path, "profile_images"), "./profile_images")
 
     config = yaml.safe_load(
         """

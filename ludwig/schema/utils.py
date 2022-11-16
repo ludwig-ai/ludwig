@@ -276,9 +276,28 @@ def StringOptions(
     )
 
 
+def ProtectedString(
+    pstring: str,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+):
+    """Alias for a `StringOptions` field with only one option.
+
+    Useful primarily for `type` parameters.
+    """
+    return StringOptions(
+        options=[pstring],
+        default=pstring,
+        allow_none=False,
+        description=description,
+        parameter_metadata=parameter_metadata,
+    )
+
+
 def IntegerOptions(
     options: TList[int],
-    default: Union[None, str] = None,
+    default: Union[None, int] = None,
+    allow_none: bool = True,
     description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
@@ -286,28 +305,23 @@ def IntegerOptions(
 
     By default, None is allowed (and automatically appended) to the allowed list of options.
     """
-
-    class IntegerOptionsField(fields.Field):
-        def _deserialize(self, value, attr, data, **kwargs):
-            if isinstance(value, int):
-                if value not in options:
-                    raise ValidationError(f"Expected one of: {options}, found: {value}")
-                return value
-            raise ValidationError(f"Expected integer, found: {value}")
-
-        def _jsonschema_type_mapping(self):
-            return {
-                "type": "integer",
-                "enum": options,
-                "default": default,
-                "title": self.name,
-                "description": description,
-            }
-
+    # If None should be allowed for an enum field, it also has to be defined as a valid
+    # [option](https://github.com/json-schema-org/json-schema-spec/issues/258):
+    if len(options) <= 0:
+        raise ValidationError("Must provide non-empty list of options!")
+    if default is not None and not isinstance(default, int):
+        raise ValidationError(f"Provided default `{default}` should be an int!")
+    if allow_none and None not in options:
+        options += [None]
+    if not allow_none and None in options:
+        options.remove(None)
+    if default not in options:
+        raise ValidationError(f"Provided default `{default}` is not one of allowed options: {options} ")
     return field(
         metadata={
-            "marshmallow_field": IntegerOptionsField(
-                allow_none=False,
+            "marshmallow_field": fields.Integer(
+                validate=validate.OneOf(options),
+                allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
                 metadata={
@@ -925,7 +939,7 @@ def OneOfOptionsField(
                 "description": description,
                 "default": default,
                 "title": self.name,
-                "parameter_metadata": parameter_metadata,
+                "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
             }
 
             for idx, option in enumerate(field_options):
