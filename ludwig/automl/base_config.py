@@ -234,7 +234,7 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
                     continue
             except TypeError:
                 # For some field types such as object arrays, np.isnan throws a TypeError
-                # If this is the case, we can just proceed to checking if the entry is a bool object
+                # In this case, do nothing and proceed to checking if the entry is a bool object
                 pass
             if isinstance(entry, bool):
                 continue
