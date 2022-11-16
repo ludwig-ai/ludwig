@@ -30,7 +30,7 @@ class DatasetConfig:
     description: str = ""
 
     # The learning task(s) associated with this dataset.
-    task: str = ""
+    tasks: Union[str, List[str]] = field(default_factory=list)
 
     # The kaggle competition this dataset belongs to, or None if this dataset is not hosted by a Kaggle competition.
     kaggle_competition: Optional[str] = None
