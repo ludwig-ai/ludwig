@@ -31,14 +31,16 @@ dataset_names = ludwig.datasets.list_datasets()
 
 ______________________________________________________________________
 
-### get_datasets_info
+### get_datasets_output_features
 
-Gets an alphabetically sorted list of datasets with their associated tasks.
+If a specific dataset name is passed in, then returns the output features associated with that dataset. Otherwise, 
+returns an ordered dictionary with dataset names as keys and dictionaries containing the output features for each 
+dataset as values.
 
 **Example:**
 
 ```python
-get_datasets_info = ludwig.datasets.get_datasets_info()
+output_features = ludwig.datasets.get_datasets_output_features(dataset="titanic")
 ```
 
 ______________________________________________________________________
