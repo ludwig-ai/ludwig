@@ -86,9 +86,8 @@ def list_datasets() -> List[str]:
 
 @PublicAPI
 def get_datasets_output_features(dataset: str = None) -> dict:
-    """
-    Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name which will
-    then cause the function to return a dictionary with the output features for that dataset.
+    """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
+    which will then cause the function to return a dictionary with the output features for that dataset.
 
     :param dataset: (str) name of the dataset
     :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
