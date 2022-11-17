@@ -3,7 +3,7 @@ import importlib
 import os
 from collections import OrderedDict
 from functools import lru_cache
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import yaml
 
