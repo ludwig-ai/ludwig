@@ -1,11 +1,11 @@
 version: 1.0
 name: protein
-download_urls: http://archive.ics.uci.edu/ml/machine-learning-databases/00265/casp.csv
+download_urls: http://archive.ics.uci.edu/ml/machine-learning-databases/00265/CASP.csv
 sha256:
-  casp.csv: 4277cfcb4e91a181746cbc654f001b57951c9e6a80f4f795fdb5c807e0848f40
+  CASP.csv: 4277cfcb4e91a181746cbc654f001b57951c9e6a80f4f795fdb5c807e0848f40
 description: |
-  physicochemical properties of protein tertiary structure data set.
-  https://archive.ics.uci.edu/ml/datasets/physicochemical+properties+of+protein+tertiary+structure
+  Physicochemical Properties of Protein Tertiary Structure Data Set.
+  https://archive.ics.uci.edu/ml/datasets/Physicochemical+Properties+of+Protein+Tertiary+Structure
 output_features:
-  - name: rmsd
+  - name: RMSD
     type: number
