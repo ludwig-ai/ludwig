@@ -8,3 +8,6 @@ train_filenames: train.csv
 description: |
   TalkingData AdTracking Fraud Detection Challenge.
   https://www.kaggle.com/competitions/talkingdata-adtracking-fraud-detection/overview
+output_features:
+  - name: is_attributed
+    type: binary

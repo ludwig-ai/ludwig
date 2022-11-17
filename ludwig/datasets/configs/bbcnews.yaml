@@ -9,3 +9,6 @@ sha256:
 description: |
   BBC News Classification from Kaggle.
   https://www.kaggle.com/competitions/learn-ai-bbc/overview
+output_features:
+    - name: Category
+      type: category

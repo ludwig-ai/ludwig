@@ -17,3 +17,6 @@ loader: kdd_loader.KDDUpsellingLoader
 description: |
   The KDD Cup 2009 Upselling dataset.
   https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
+output_features:
+  - name: target
+    type: binary

@@ -9,3 +9,6 @@ test_filenames: test.csv
 description: |
   The Otto Group Product Classification Challenge
   https://www.kaggle.com/c/otto-group-product-classification-challenge/overview
+output_features:
+  - name: target
+    type: category
