@@ -18,4 +18,4 @@ description: |
   In this paper, the column `answer_type_reason_explanation` is used as the output feature.
 output_features:
   - name: answer_type_reason_explanation
-    type: category
+    type: number
