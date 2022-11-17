@@ -17,3 +17,6 @@ loader: kdd_loader.KDDAppetencyLoader
 description: |
   The KDD Cup 2009 Appetency dataset.
   https://www.kdd.org/kdd-cup/view/kdd-cup-2009/Data
+output_features:
+  - name: target
+    type: binary

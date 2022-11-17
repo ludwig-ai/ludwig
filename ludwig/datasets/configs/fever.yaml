@@ -15,3 +15,6 @@ column_types:
   evidence: str
 description: |
   FEVER: a Large-scale Dataset for Fact Extraction and VERification
+output_features:
+  - name: label
+    type: category
