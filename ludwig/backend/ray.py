@@ -367,9 +367,12 @@ class RayAirRunner:
         }
         if self._in_hyperopt_run():
             trainer = HorovodTrainerWrapper(**ray_trainer_kwargs)
-            # HACK(geoffrey, arnav): we prevent the trainer from calling `fit` and instead call the functions
-            # called by `fit` directly. This prevents an inner Tuner from being created. The outer Tuner does not
-            # account for the placement groups created by the inner Tuner when scheduling.
+            # HACK(geoffrey, arnav): we prevent the trainer from calling `fit`
+            # and instead call the functions called by `fit` directly. This
+            # prevents an inner Tuner from being created. The outer Tuner does
+            # not account for the placement groups created by the inner Tuner
+            # when scheduling.
+            #
             # Remove this after the hyperopt refactor.
             trainer.setup()
             trainer.preprocess_datasets()
@@ -383,8 +386,11 @@ class RayAirRunner:
 
 class HorovodTrainerWrapper(HorovodTrainer):
     def _report(self, training_iterator: TrainingIterator) -> None:
-        # HACK(geoffrey, arnav): we prevent the trainer from calling `tune.report` because doing so from within the
-        # session of the outer Tuner creates collisions with the `tune.report` calls made in the rest of the Trainable.
+        # HACK(geoffrey, arnav): we prevent the trainer from calling
+        # `tune.report` because doing so from within the session of the outer
+        # Tuner creates collisions with the `tune.report` calls made in the
+        # rest of the Trainable.
+        #
         # Remove this after the hyperopt refactor.
         self._last_checkpoint: Optional[TorchCheckpoint] = None
         self._report_artifacts: Optional[Dict[str, Any]] = None

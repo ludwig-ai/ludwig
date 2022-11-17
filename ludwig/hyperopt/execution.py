@@ -802,8 +802,11 @@ class RayTuneExecutor:
             else:
                 if tune_callbacks is None:
                     tune_callbacks = []
-                # HACK(geoffrey, arnav): This is needed because we override the `ray.train.BaseTrainer._report` method
-                # within the Trainable function. This prevents it from executing passed-in callbacks correctly.
+                # HACK(geoffrey, arnav): This is needed because we override
+                # the `ray.train.BaseTrainer._report` method within the
+                # Trainable function. This prevents it from executing
+                # passed-in callbacks correctly.
+                #
                 # Remove this after the hyperopt refactor.
                 tune_callbacks += [TqdmCallback()]
 
