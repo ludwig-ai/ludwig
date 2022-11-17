@@ -804,6 +804,25 @@ class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@register_encoder_config("maxvit_torch", IMAGE)
+@dataclass
+class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
+    type: str = schema_utils.StringOptions(
+        ["maxvit_torch"],
+        default="maxvit_torch",
+        allow_none=False,
+        description="Type of encoder.",
+    )
+
+    model_variant: Optional[str] = schema_utils.StringOptions(
+        ["t"],
+        default="t",
+        allow_none=False,
+        description="Pretrained model variant to use.",
+        parameter_metadata=ENCODER_METADATA["TVMNASNetEncoder"]["model_variant"],
+    )
+
+
 @register_encoder_config("mnasnet_torch", IMAGE)
 @dataclass
 class TVMNASNetEncoderConfig(TVBaseEncoderConfig):

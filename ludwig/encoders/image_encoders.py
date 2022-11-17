@@ -36,6 +36,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVEfficientNetEncoderConfig,
     TVGoogLeNetEncoderConfig,
     TVInceptionV3EncoderConfig,
+    TVMaxVitEncoderConfig,
     TVMNASNetEncoderConfig,
     TVMobileNetV2EncoderConfig,
     TVMobileNetV3EncoderConfig,
@@ -629,6 +630,32 @@ class TVInceptionV3Encoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVInceptionV3EncoderConfig
+
+
+MAXVIT_VARIANTS = [
+    TVModelVariant("t", tvm.maxvit_t, tvm.MaxVit_T_Weights),
+]
+
+
+@register_torchvision_variant(MAXVIT_VARIANTS)
+@register_encoder("maxvit_torch", IMAGE)
+class TVMaxVitEncoder(TVBaseEncoder):
+    # specify base torchvision model
+    torchvision_model_type: str = "maxvit_torch"
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        logger.debug(f" {self.name}")
+        super().__init__(**kwargs)
+
+    def _remove_last_layer(self):
+        self.model.classifier[-1] = torch.nn.Identity()
+
+    @staticmethod
+    def get_schema_cls():
+        return TVMaxVitEncoderConfig
 
 
 MNASNET_VARIANTS = [
