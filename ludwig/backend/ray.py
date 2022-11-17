@@ -32,8 +32,10 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
+from ray.train import TrainingIterator
 from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
+from ray import tune
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
@@ -191,24 +193,25 @@ def train_fn(
 
         if results is not None:
             # only return the model state dict back to the head node.
-            trained_model, *args = results
-            results = (trained_model.cpu().state_dict(), *args)
+            trained_model, *stats = results
+            results = trained_model.cpu().state_dict()
+        else:
+            stats = []
 
         torch.cuda.empty_cache()
 
         # Passing objects containg Torch tensors as metrics is not supported as it will throw an
         # exception on deserialization, so create a checkpoint and return via session.report() along
         # with the path of the checkpoint
-        ckpt = Checkpoint.from_dict({"state_dict": results})
-        torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
-
+        torch_ckpt = TorchCheckpoint.from_dict({"state_dict": results})
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the train_results object above.
         session.report(
             metrics={
                 "validation_field": trainer.validation_field,
                 "validation_metric": trainer.validation_metric,
-                "ckpt_directory": torch_ckpt.to_directory(),
+                "stats_tuple": stats,
+                "is_done": True,
             },
             checkpoint=torch_ckpt,
         )
@@ -325,6 +328,18 @@ class RayAirRunner:
             **trainer_kwargs,
         )
 
+    def _in_hyperopt_run(self):
+        """Determines if the runner is already within a hyperopt run.
+
+        Remove this after the hyperopt refactor.
+        """
+        try:
+            trial_name = ray.air.session.get_trial_name()
+            logger.info(f"in hyperopt run with trial name: {trial_name}")
+            return True
+        except Exception:
+            return False
+
     # TODO: Enable dynamic window size frm backend.loader.window_size_bytes
     def run(
         self,
@@ -334,12 +349,12 @@ class RayAirRunner:
         data_loader_kwargs: Dict[str, Any],
         callbacks: List[Any] = [],
     ) -> List[Any]:
-        trainer = HorovodTrainer(
-            train_loop_per_worker=train_loop_per_worker,
-            train_loop_config=config,
-            datasets=dataset,
-            scaling_config=self.scaling_config,
-            dataset_config={
+        ray_trainer_kwargs = {
+            "train_loop_per_worker": train_loop_per_worker,
+            "train_loop_config": config,
+            "datasets": dataset,
+            "scaling_config": self.scaling_config,
+            "dataset_config": {
                 "train": DatasetConfig(
                     split=True,
                     use_stream_api=True,
@@ -348,9 +363,52 @@ class RayAirRunner:
                 ),
                 "*": DatasetConfig(split=True, use_stream_api=True, stream_window_size=-1, global_shuffle=False),
             },
-            run_config=RunConfig(callbacks=callbacks),
-        )
-        return trainer.fit()
+            "run_config": RunConfig(callbacks=callbacks),
+        }
+        if self._in_hyperopt_run():
+            trainer = HorovodTrainerWrapper(**ray_trainer_kwargs)
+            # HACK(geoffrey, arnav): we prevent the trainer from calling `fit` and instead call the functions
+            # called by `fit` directly. This prevents an inner Tuner from being created. The outer Tuner does not
+            # account for the placement groups created by the inner Tuner when scheduling.
+            # Remove this after the hyperopt refactor.
+            trainer.setup()
+            trainer.preprocess_datasets()
+            trainer.training_loop()
+            return trainer._report_artifacts, trainer._last_checkpoint
+        else:
+            trainer = HorovodTrainer(**ray_trainer_kwargs)
+            result = trainer.fit()
+            return result.metrics, result.checkpoint
+
+
+class HorovodTrainerWrapper(HorovodTrainer):
+    def _report(self, training_iterator: TrainingIterator) -> None:
+        # HACK(geoffrey, arnav): we prevent the trainer from calling `tune.report` because doing so from within the
+        # session of the outer Tuner creates collisions with the `tune.report` calls made in the rest of the Trainable.
+        # Remove this after the hyperopt refactor.
+        self._last_checkpoint: Optional[TorchCheckpoint] = None
+        self._report_artifacts: Optional[Dict[str, Any]] = None
+
+        for results in training_iterator:
+            first_worker_results = results[0]
+            if first_worker_results.get("is_done", False):
+                self._report_artifacts = first_worker_results
+            else:
+                tune.report(**first_worker_results)
+
+            # NOTE(antoni): In Ray 2.1, this can only be a dict or None, but this behavior may change in the future,
+            # which is why the code here deals with multiple cases.
+            last_checkpoint: Optional[
+                Union[str, dict, Checkpoint]
+            ] = training_iterator._checkpoint_manager.latest_checkpoint
+            if isinstance(last_checkpoint, Checkpoint):
+                if not isinstance(last_checkpoint, TorchCheckpoint):
+                    last_checkpoint = TorchCheckpoint.from_checkpoint(last_checkpoint)
+                self._last_checkpoint = last_checkpoint
+            elif isinstance(last_checkpoint, dict):
+                self._last_checkpoint = TorchCheckpoint.from_dict(last_checkpoint)
+            elif last_checkpoint:
+                self._last_checkpoint = TorchCheckpoint.from_directory(last_checkpoint)
 
 
 @register_ray_trainer(MODEL_ECD, default=True)
@@ -396,7 +454,7 @@ class RayTrainerV2(BaseTrainer):
             dataset["test"] = test_set.ds
 
         with create_runner(**self.trainer_kwargs) as runner:
-            trainer_results = runner.run(
+            metrics, checkpoint = runner.run(
                 lambda config: train_fn(**config),
                 config={
                     "executable_kwargs": executable_kwargs,
@@ -409,18 +467,11 @@ class RayTrainerV2(BaseTrainer):
             )
 
         # Set validation field and metric used by trainer
-        self._validation_field = trainer_results.metrics["validation_field"]
-        self._validation_metric = trainer_results.metrics["validation_metric"]
+        self._validation_field = metrics["validation_field"]
+        self._validation_metric = metrics["validation_metric"]
 
-        # Load model from checkpoint
-        results = Checkpoint.from_directory(trainer_results.metrics["ckpt_directory"]).to_dict()["state_dict"]
-
-        # load state dict back into the model
-        state_dict, *args = results
-        self.model.load_state_dict(state_dict)
-        results = (self.model, *args)
-
-        return results
+        self.model.load_state_dict(checkpoint.to_dict()["state_dict"])
+        return (self.model, *metrics["stats_tuple"])
 
     def train_online(self, *args, **kwargs):
         # TODO: When this is implemented we also need to update the
@@ -537,7 +588,12 @@ def eval_fn(
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the eval_results object above.
-        session.report(metrics={"eval_results": results})
+        session.report(
+            metrics={
+                "eval_results": results,
+                "is_done": True,
+            }
+        )
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
@@ -624,7 +680,7 @@ class RayPredictor(BasePredictor):
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
             predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
-            eval_results = runner.run(
+            metrics, _ = runner.run(
                 lambda config: eval_fn(**config),
                 config={
                     "predictor_kwargs": predictor_kwargs,
@@ -637,7 +693,7 @@ class RayPredictor(BasePredictor):
                 data_loader_kwargs=self.data_loader_kwargs,
             )
 
-        eval_stats = eval_results.metrics["eval_results"][0]
+        eval_stats = metrics["eval_results"][0]
 
         predictions = None
         if collect_predictions:
