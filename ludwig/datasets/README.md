@@ -33,8 +33,8 @@ ______________________________________________________________________
 
 ### get_datasets_output_features
 
-If a specific dataset name is passed in, then returns the output features associated with that dataset. Otherwise, 
-returns an ordered dictionary with dataset names as keys and dictionaries containing the output features for each 
+If a specific dataset name is passed in, then returns the output features associated with that dataset. Otherwise,
+returns an ordered dictionary with dataset names as keys and dictionaries containing the output features for each
 dataset as values.
 
 **Example:**
