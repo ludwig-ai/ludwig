@@ -14,4 +14,3 @@ description: |
 output_features:
   - name: Sales
     type: number
-
