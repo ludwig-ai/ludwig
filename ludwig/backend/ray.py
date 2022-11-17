@@ -28,14 +28,13 @@ import torch
 import tqdm
 from fsspec.config import conf
 from pyarrow.fs import FSSpecHandler, PyFileSystem
-from ray import ObjectRef
+from ray import ObjectRef, tune
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
 from ray.train import TrainingIterator
 from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
-from ray import tune
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
