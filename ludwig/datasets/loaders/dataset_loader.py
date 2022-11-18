@@ -26,6 +26,7 @@ from urllib.parse import urlparse
 import pandas as pd
 from tqdm import tqdm
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.constants import SPLIT
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
@@ -90,6 +91,7 @@ def _sha256_digest(file_path) -> str:
     return hash.hexdigest()
 
 
+@PublicAPI
 class DatasetState(int, Enum):
     """The state of the dataset."""
 
@@ -99,6 +101,7 @@ class DatasetState(int, Enum):
     TRANSFORMED = 3
 
 
+@PublicAPI()
 class DatasetLoader:
     """Base class that defines the default pipeline for loading a ludwig dataset.
 

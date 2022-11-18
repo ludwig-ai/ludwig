@@ -16,3 +16,6 @@ description: |
   Improving automated understanding of complex question answer content.
   The data for this competition includes questions and answers from various StackExchange properties.
   https://www.kaggle.com/c/google-quest-challenge/data
+output_features:
+  - name: question_type_reason_explanation
+    type: category

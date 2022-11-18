@@ -19,3 +19,6 @@ loader: goemotions.GoEmotionsLoader
 description: |
   GoEmotions: A Dataset for Fine-Grained Emotion Classification.
   https://ai.googleblog.com/2021/10/goemotions-dataset-for-fine-grained.html
+output_features:
+  - name: emotion_ids
+    type: category
