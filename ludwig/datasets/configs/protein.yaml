@@ -8,4 +8,4 @@ description: |
   https://archive.ics.uci.edu/ml/datasets/Physicochemical+Properties+of+Protein+Tertiary+Structure
 output_features:
   - name: RMSD
-    type: regression
+    type: number
