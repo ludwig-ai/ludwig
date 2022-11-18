@@ -778,13 +778,17 @@ trainer:
   evaluate_training_set: false
 model_type: gbm
 backend:
+  loader:
+    fully_executed: true
+  preprocessor_kwargs:
+    num_cpu: null
   processor:
-    parallelism: 6
     type: dask
   trainer:
+    max_retries: 1
     num_workers: 1
     resources_per_worker:
-      CPU: 1
+      CPU: 2
       GPU: 0
     use_gpu: false
   type: ray
