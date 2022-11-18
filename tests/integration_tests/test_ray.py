@@ -23,7 +23,6 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.backend import create_ray_backend, initialize_backend, LOCAL_BACKEND
-from ludwig.backend.ray import create_runner
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -969,6 +968,8 @@ class TestDatasetWindowAutosizing:
 
     def training_simulation(self, ray_ds, train_fn, stream_window_size=None):
         """Stripped down simulation of RayTrainerV2.train()."""
+        from ludwig.backend.ray import create_runner
+
         dataset = {"train": ray_ds.ds}
         stream_window_size = {"train": ray_ds.get_window_size_bytes(stream_window_size)}
         with create_runner(**{"num_workers": 1, "resources_per_worker": {"CPU": 1, "GPU": 0}}) as runner:
