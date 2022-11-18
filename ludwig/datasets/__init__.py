@@ -126,8 +126,9 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
 
+
 def upload_datasets(datasets: List[str]):
-    """Provides Uploads the specified datasets to Minio"""
+    """Provides Uploads the specified datasets to Minio."""
     for dataset_name in datasets:
         try:
             dataset = get_dataset(dataset_name)
