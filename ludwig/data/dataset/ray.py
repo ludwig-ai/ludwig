@@ -38,6 +38,8 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
 
+logger = logging.getLogger(__name__)
+
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
@@ -86,7 +88,7 @@ class RayDataset(Dataset):
             cluster_memory_size = ray.cluster_resources()["object_store_memory"]
             if ds_memory_size > cluster_memory_size // 5:
                 # TODO: Add link to windowing docs.
-                logging.info(
+                logger.info(
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
                 )
