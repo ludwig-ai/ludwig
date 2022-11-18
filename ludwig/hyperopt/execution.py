@@ -785,19 +785,6 @@ class RayTuneExecutor:
             self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
 
-        resources_per_trial = {
-            "cpu": self._cpu_resources_per_trial_non_none,
-            "gpu": self._gpu_resources_per_trial_non_none,
-        }
-        if _is_ray_backend(backend):
-            # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
-            # but we do want to enable it when GPUs are specified
-            resources_per_trial = PlacementGroupFactory(
-                [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
-                if self._gpu_resources_per_trial_non_none
-                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}],
-            )
-
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
 
