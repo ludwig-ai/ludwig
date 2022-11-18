@@ -1,5 +1,6 @@
 import argparse
 import importlib
+import logging
 import os
 from collections import OrderedDict
 from functools import lru_cache
@@ -124,6 +125,15 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
     output_dir = os.path.expanduser(os.path.normpath(output_dir))
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
+
+def upload_datasets(datasets: List[str]):
+    """Provides Uploads the specified datasets to Minio"""
+    for dataset_name in datasets:
+        try:
+            dataset = get_dataset(dataset_name)
+            dataset.export()
+        except Exception as e:
+            logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
 
 
 def cli(sys_argv):
