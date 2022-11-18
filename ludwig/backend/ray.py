@@ -364,6 +364,7 @@ class RayAirRunner:
             },
             "run_config": RunConfig(callbacks=callbacks),
         }
+        breakpoint()
         if self._in_hyperopt_run():
             trainer = HorovodTrainerWrapper(**ray_trainer_kwargs)
             # HACK(geoffrey, arnav): we prevent the trainer from calling `fit`

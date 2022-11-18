@@ -793,7 +793,16 @@ class RayTuneExecutor:
 
         ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
+        old_environ = os.environ.copy()
         try:
+            # HACK (geoffrey, arnav): We need to disable strict metric checking
+            # in order to use the progress bar reporter. This is because the
+            # progress bar reports its own metrics, which are not part of the
+            # final `tune.report` call for `metric_score`.
+            #
+            # Remove this after the hyperopt refactor.
+            os.environ.update({"TUNE_DISABLE_STRICT_METRIC_CHECKING": "1"})
+
             if resume:
                 # Restore from experiment directory
                 tuner = Tuner.restore(
@@ -854,6 +863,8 @@ class RayTuneExecutor:
             # Explicitly raise a RuntimeError if an error is encountered during a Ray trial.
             # NOTE: Cascading the exception with "raise _ from e" still results in hanging.
             raise RuntimeError(f"Encountered Ray Tune error: {e}")
+        finally:
+            os.environ.update(old_environ)
 
         if "metric_score" in analysis.results_df.columns:
             ordered_trials = analysis.results_df.sort_values("metric_score", ascending=self.goal != MAXIMIZE)
