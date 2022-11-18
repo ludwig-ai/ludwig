@@ -25,7 +25,3 @@ def _features(*in_types, out):
 def test_get_model_type(config, expected):
     actual = get_model_type(config)
     assert actual == expected
-
-
-def dummy_test():
-    pass
