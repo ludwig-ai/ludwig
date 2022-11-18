@@ -345,7 +345,7 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         data_loader_kwargs: Dict[str, Any],
     ) -> Dict[str, DatasetConfig]:
-        """Generates DatasetConfigs for each dataset passed into the trainer"""
+        """Generates DatasetConfigs for each dataset passed into the trainer."""
         dataset_configs = {}
         for dataset_name, _ in datasets.items():
             dataset_conf = DatasetConfig(

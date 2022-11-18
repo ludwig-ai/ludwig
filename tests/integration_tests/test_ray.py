@@ -962,7 +962,7 @@ class TestDatasetWindowAutosizing:
         return ds
 
     def _train_fn(self):
-        """Common train function shared by some tests"""
+        """Common train function shared by some tests."""
         train_pipe = session.get_dataset_shard("train")
         rep = next(iter(train_pipe._base_iterable))()
         assert rep.num_blocks() == self.num_partitions
@@ -984,8 +984,8 @@ class TestDatasetWindowAutosizing:
     def test_small_dataset(self, ray_cluster_small_object_store):
         """A small dataset should not trigger automatic window sizing.
 
-        Without automatic window sizing, the number of blocks in the pipeline
-        should match the number of partitions in the Dask dataframe.
+        Without automatic window sizing, the number of blocks in the pipeline should match the number of partitions in
+        the Dask dataframe.
         """
 
         ds = self.create_dataset(self.object_store_size // 8)
