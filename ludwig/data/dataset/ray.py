@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import logging
 import math
 import queue
 import threading
@@ -22,6 +23,7 @@ from typing import Any, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
+import ray
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -31,6 +33,7 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
@@ -102,6 +105,46 @@ class RayDataset(Dataset):
 
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
+
+    def pipeline(
+        self,
+        shuffle: bool = True,
+        fully_executed: bool = True,
+        window_size_bytes: Optional[int] = None,
+        shuffle_seed: int = default_random_seed,
+    ) -> DatasetPipeline:
+        """
+        Args:
+            shuffle: If true, the entire dataset is shuffled in memory before batching.
+            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
+            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
+                    for the dataset. If None and the dataset is large, set to the window size determined at init.
+        """
+        # If the user does not supply a window size and the dataset is large,
+        # set the window size to `<available memory> // 5`.
+        if self.auto_window and window_size_bytes is None:
+            ds_memory_size = self.in_memory_size_bytes
+            cluster_memory_size = ray.cluster_resources()["object_store_memory"]
+            if ds_memory_size > cluster_memory_size // 5:
+                # TODO: Add link to windowing docs.
+                logging.info(
+                    "In-memory dataset size is greater than 20%% of object store memory. "
+                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
+                    # "Read more here:"
+                )
+                window_size_bytes = int(cluster_memory_size // 5)
+
+        if fully_executed:
+            # set instance state so calls to __len__ will also use the fully_executed version
+            self.ds = self.ds.fully_executed()
+
+        if window_size_bytes is None:
+            pipe = self.ds.repeat()
+        else:
+            pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
+        if shuffle:
+            pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
+        return pipe
 
 
 class RayDatasetManager(DatasetManager):
