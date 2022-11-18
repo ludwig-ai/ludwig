@@ -327,41 +327,56 @@ class RayAirRunner:
             **trainer_kwargs,
         )
 
-    def _in_hyperopt_run(self):
+    def _in_hyperopt_run(self) -> bool:
         """Determines if the runner is already within a hyperopt run.
 
         Remove this after the hyperopt refactor.
         """
         try:
             trial_name = ray.air.session.get_trial_name()
-            logger.info(f"in hyperopt run with trial name: {trial_name}")
+            logger.debug(f"In hyperopt run with trial name: {trial_name}")
             return True
         except Exception:
             return False
 
-    # TODO: Enable dynamic window size frm backend.loader.window_size_bytes
+    def _get_dataset_configs(
+        self,
+        datasets: Dict[str, Any],
+        stream_window_size: Dict[str, Union[None, float]],
+        data_loader_kwargs: Dict[str, Any],
+    ) -> Dict[str, DatasetConfig]:
+        """Generates DatasetConfigs for each dataset passed into the trainer"""
+        dataset_configs = {}
+        for dataset_name, _ in datasets.items():
+            dataset_conf = DatasetConfig(
+                split=True,
+                use_stream_api=True,
+                stream_window_size=stream_window_size.get(dataset_name),
+            )
+            if dataset_name == "train":
+                # Mark train dataset as always required
+                dataset_conf.required = True
+                # Check data loader kwargs to see if shuffle should be enabled for the
+                # train dataset. global_shuffle is False by default for all other datasets.
+                dataset_conf.global_shuffle = data_loader_kwargs.get("shuffle", True)
+            dataset_configs[dataset_name] = dataset_conf
+        return dataset_configs
+
     def run(
         self,
         train_loop_per_worker: Callable,
         config: Dict[str, Any],
         dataset: Dict[str, Any],
         data_loader_kwargs: Dict[str, Any],
+        stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
-    ) -> List[Any]:
+    ) -> Tuple[Dict, TorchCheckpoint]:
         ray_trainer_kwargs = {
             "train_loop_per_worker": train_loop_per_worker,
             "train_loop_config": config,
             "datasets": dataset,
             "scaling_config": self.scaling_config,
-            "dataset_config": {
-                "train": DatasetConfig(
-                    split=True,
-                    use_stream_api=True,
-                    stream_window_size=-1,
-                    global_shuffle=data_loader_kwargs.get("shuffle", True),
-                ),
-                "*": DatasetConfig(split=True, use_stream_api=True, stream_window_size=-1, global_shuffle=False),
-            },
+            "dataset_config": self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
             "run_config": RunConfig(callbacks=callbacks),
         }
         if self._in_hyperopt_run():
@@ -453,10 +468,19 @@ class RayTrainerV2(BaseTrainer):
         }
 
         dataset = {"train": training_set.ds}
+        stream_window_size = {
+            "train": training_set.get_window_size_bytes(self.data_loader_kwargs.get("window_size_bytes", None))
+        }
         if validation_set is not None:
             dataset["val"] = validation_set.ds
+            stream_window_size["val"] = validation_set.get_window_size_bytes(
+                self.data_loader_kwargs.get("window_size_bytes", None)
+            )
         if test_set is not None:
             dataset["test"] = test_set.ds
+            stream_window_size["test"] = test_set.get_window_size_bytes(
+                self.data_loader_kwargs.get("window_size_bytes", None)
+            )
 
         with create_runner(**self.trainer_kwargs) as runner:
             metrics, checkpoint = runner.run(
@@ -469,6 +493,7 @@ class RayTrainerV2(BaseTrainer):
                 callbacks=[TqdmCallback()],
                 data_loader_kwargs=self.data_loader_kwargs,
                 dataset=dataset,
+                stream_window_size=stream_window_size,
             )
 
         # Set validation field and metric used by trainer
@@ -684,6 +709,9 @@ class RayPredictor(BasePredictor):
         with create_runner(**self.trainer_kwargs) as runner:
             # Collect eval metrics by distributing work across nodes / gpus with Horovod
             datasets = {"eval": dataset.ds}
+            stream_window_size = {
+                "eval": dataset.get_window_size_bytes(self.data_loader_kwargs.get("window_size_bytes", None))
+            }
             predictor_kwargs = {**self.predictor_kwargs, "collect_predictions": False}
             metrics, _ = runner.run(
                 lambda config: eval_fn(**config),
@@ -696,6 +724,7 @@ class RayPredictor(BasePredictor):
                 },
                 dataset=datasets,
                 data_loader_kwargs=self.data_loader_kwargs,
+                stream_window_size=stream_window_size,
             )
 
         eval_stats = metrics["eval_results"][0]
