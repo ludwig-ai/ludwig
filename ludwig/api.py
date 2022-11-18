@@ -595,7 +595,6 @@ class LudwigModel:
                 callbacks=train_callbacks,
                 random_seed=random_seed,
             ) as trainer:
-                print("\n\n", self.backend, trainer, "\n\n")
                 # auto tune batch size
                 if (
                     self.config_obj.trainer.to_dict().get(BATCH_SIZE, None) == AUTO
