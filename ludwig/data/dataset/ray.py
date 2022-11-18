@@ -76,36 +76,6 @@ class RayDataset(Dataset):
         self._processed_data_fp = df if isinstance(df, str) else None
         self.auto_window = auto_window
 
-    @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
-        yield RayDatasetBatcher(
-            self.ds.repeat().iter_datasets(),
-            self.features,
-            self.training_set_metadata,
-            batch_size,
-            self.size,
-        )
-
-    def __len__(self):
-        return self.ds.count()
-
-    @property
-    def size(self):
-        return len(self)
-
-    @property
-    def processed_data_fp(self) -> Optional[str]:
-        return self._processed_data_fp
-
-    @property
-    def in_memory_size_bytes(self):
-        """Memory size may be unknown, so return 0 incase size_bytes() returns None
-        https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
-        return self.ds.size_bytes() if self.ds is not None else 0
-
-    def to_df(self):
-        return self.df_engine.from_ray_dataset(self.ds)
-
     def pipeline(
         self,
         shuffle: bool = True,
@@ -146,7 +116,37 @@ class RayDataset(Dataset):
             pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
         return pipe
 
+    @contextlib.contextmanager
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+        yield RayDatasetBatcher(
+            self.ds.repeat().iter_datasets(),
+            self.features,
+            self.training_set_metadata,
+            batch_size,
+            self.size,
+        )
 
+    def __len__(self):
+        return self.ds.count()
+
+    @property
+    def size(self):
+        return len(self)
+
+    @property
+    def processed_data_fp(self) -> Optional[str]:
+        return self._processed_data_fp
+
+    @property
+    def in_memory_size_bytes(self):
+        """Memory size may be unknown, so return 0 incase size_bytes() returns None
+        https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
+        return self.ds.size_bytes() if self.ds is not None else 0
+
+    def to_df(self):
+        return self.df_engine.from_ray_dataset(self.ds)
+
+g
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
