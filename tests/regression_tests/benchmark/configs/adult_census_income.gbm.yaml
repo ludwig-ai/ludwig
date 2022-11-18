@@ -53,14 +53,14 @@ trainer:
   eval_batch_size: 16384
   evaluate_training_set: false
 model_type: gbm
-backend:
-  processor:
-    parallelism: 6
-    type: dask
-  trainer:
-    num_workers: 1
-    resources_per_worker:
-      CPU: 1
-      GPU: 0
-    use_gpu: false
-  type: ray
+#backend:
+#  processor:
+#    parallelism: 6
+#    type: dask
+#  trainer:
+#    num_workers: 1
+#    resources_per_worker:
+#      CPU: 1
+#      GPU: 0
+#    use_gpu: false
+#  type: ray
