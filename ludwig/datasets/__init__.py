@@ -1,7 +1,7 @@
 import argparse
 import importlib
-import logging
 import os
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Dict, List
 
@@ -84,11 +84,26 @@ def list_datasets() -> List[str]:
     return sorted(_get_dataset_configs().keys())
 
 
-def list_dataset_configs() -> Dict[str, DatasetConfig]:
-    """Returns a list of the names of all available datasets."""
-    return _get_dataset_configs()
+@PublicAPI
+def get_datasets_output_features(dataset: str = None) -> dict:
+    """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
+    which will then cause the function to return a dictionary with the output features for that dataset.
+
+    :param dataset: (str) name of the dataset
+    :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
+                    the specified dataset
+    """
+    ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
+
+    for name, config in ordered_configs.items():
+        ordered_configs[name] = {"name": config.name, "output_features": config.output_features}
+
+    if dataset:
+        return ordered_configs[dataset]
+    return ordered_configs
 
 
+@PublicAPI
 def describe_dataset(dataset_name: str) -> str:
     """Returns the description of the dataset."""
     return _get_dataset_configs()[dataset_name].description
@@ -109,16 +124,6 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
     output_dir = os.path.expanduser(os.path.normpath(output_dir))
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
-
-
-def upload_datasets(datasets: List[str]):
-    """Provides Uploads the specified datasets to Minio."""
-    for dataset_name in datasets:
-        try:
-            dataset = get_dataset(dataset_name)
-            dataset.export()
-        except Exception as e:
-            logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
 
 
 def cli(sys_argv):

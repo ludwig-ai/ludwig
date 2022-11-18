@@ -1390,7 +1390,7 @@ class Trainer(BaseTrainer):
         return self.horovod.rank() == 0
 
     @property
-    def local_rank(self):
+    def local_rank(self) -> int:
         if not self.horovod:
             return 0
         return self.horovod.local_rank()

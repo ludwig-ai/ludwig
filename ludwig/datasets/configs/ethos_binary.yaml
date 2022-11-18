@@ -12,4 +12,6 @@ description: |
       ETHOS: an Online Hate Speech Detection Dataset
           Ioannis Mollas and Zoe Chrysopoulou and Stamatis Karlos and
           Grigorios Tsoumakas
-task: Binary Classification
+output_features:
+  - name: isHate
+    type: binary

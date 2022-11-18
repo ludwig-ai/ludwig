@@ -20,13 +20,10 @@ import numpy as np
 import torch
 
 from ludwig.constants import (
-    ACCURACY,
     CATEGORY,
     COLUMN,
     HIDDEN,
-    HITS_AT_K,
     LOGITS,
-    LOSS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -240,7 +237,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
+    metric_functions = CategoryOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

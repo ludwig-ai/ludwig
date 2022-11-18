@@ -1,6 +1,6 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
+from ludwig.constants import ACCURACY, BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, LOSS, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -102,3 +102,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
         description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
         "than or equal to threshold are mapped to True.",
     )
+
+    @staticmethod
+    def get_output_metric_functions():
+        return {LOSS: None, ACCURACY: None, ROC_AUC: None}

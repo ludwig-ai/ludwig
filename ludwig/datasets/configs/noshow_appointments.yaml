@@ -9,4 +9,6 @@ description: |
   110.527 medical appointments its 14 associated variables (characteristics).
   The most important one if the patient show-up or no-show to the appointment.
   https://www.kaggle.com/datasets/joniarroba/noshowappointments
-task: Binary Classification
+output_features:
+  - name: No-show
+    type: binary

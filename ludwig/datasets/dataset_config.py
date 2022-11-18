@@ -29,8 +29,9 @@ class DatasetConfig:
     # The readable description of the dataset
     description: str = ""
 
-    # The learning task(s) associated with this dataset.
-    task: str = ""
+    # Optional. The (suggested) output features for this dataset. Helps users discover new datasets and filter for
+    # relevance to a specific machine learning setting.
+    output_features: List[dict] = field(default_factory=list)
 
     # The kaggle competition this dataset belongs to, or None if this dataset is not hosted by a Kaggle competition.
     kaggle_competition: Optional[str] = None

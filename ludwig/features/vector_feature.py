@@ -19,20 +19,7 @@ from typing import Any, Dict, List, Union
 import numpy as np
 import torch
 
-from ludwig.constants import (
-    COLUMN,
-    ERROR,
-    HIDDEN,
-    LOGITS,
-    LOSS,
-    MEAN_ABSOLUTE_ERROR,
-    MEAN_SQUARED_ERROR,
-    NAME,
-    PREDICTIONS,
-    PROC_COLUMN,
-    R2,
-    VECTOR,
-)
+from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, VECTOR
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
 from ludwig.utils import output_feature_utils
@@ -173,7 +160,7 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None, MEAN_ABSOLUTE_ERROR: None, R2: None}
+    metric_functions = VectorOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

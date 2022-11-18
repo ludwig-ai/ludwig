@@ -23,20 +23,14 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    EDIT_DISTANCE,
-    LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
-    LOSS,
     NAME,
-    PERPLEXITY,
     PREDICTIONS,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
     SEQUENCE,
-    SEQUENCE_ACCURACY,
-    TOKEN_ACCURACY,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
@@ -295,14 +289,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    metric_functions = {
-        LOSS: None,
-        TOKEN_ACCURACY: None,
-        SEQUENCE_ACCURACY: None,
-        LAST_ACCURACY: None,
-        PERPLEXITY: None,
-        EDIT_DISTANCE: None,
-    }
+    metric_functions = SequenceOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

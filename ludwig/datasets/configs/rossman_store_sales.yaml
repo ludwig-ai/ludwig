@@ -11,4 +11,6 @@ description: |
   https://github.com/catboost/benchmarks/tree/master/kaggle/rossmann-store-sales
   that is used in the TabNet paper,
   because the test set does not contain sales ground truth.
-task: Regression
+output_features:
+  - name: Sales
+    type: number

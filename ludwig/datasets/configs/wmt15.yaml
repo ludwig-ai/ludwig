@@ -8,4 +8,6 @@ description: |
   French/English parallel texts for training translation models.
   Over 22.5 million sentences in French and English.
   https://www.kaggle.com/dhruvildave/en-fr-translation-dataset
-task: Translation
+output_features:
+  - name: en
+    type: text

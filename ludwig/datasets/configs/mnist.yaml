@@ -23,4 +23,6 @@ description: |
   pattern recognition methods on real-world data while spending minimal
   efforts on preprocessing and formatting.
   http://yann.lecun.com/exdb/mnist/
-task: Multi-Class Classification
+output_features:
+    - name: label
+      type: category
