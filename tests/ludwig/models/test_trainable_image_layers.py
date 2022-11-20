@@ -2,7 +2,6 @@ import logging
 import os
 
 import pytest
-
 import torch
 from torchvision.models import resnet18, ResNet18_Weights
 
@@ -24,10 +23,11 @@ def setup_data(tmp_path_factory):
     feature_list = [
         {"name": "binary_output_feature", "type": "binary"},
         {
-            "name": "image", "type": "image",
+            "name": "image",
+            "type": "image",
             "destination_folder": os.path.join(data_dir, "images"),
-            "preprocessing": {"height": 600, "width": 600, "num_channels": 3}
-        }
+            "preprocessing": {"height": 600, "width": 600, "num_channels": 3},
+        },
     ]
 
     # create synthetic data
@@ -44,7 +44,8 @@ def test_trainable_torchvision_layers(setup_data, trainable):
     config = {
         "input_features": [
             {
-                "name": "image", "type": "image",
+                "name": "image",
+                "type": "image",
                 "encoder": {
                     "type": "resnet_torch",
                     "model_variant": 18,
@@ -55,18 +56,18 @@ def test_trainable_torchvision_layers(setup_data, trainable):
         ],
         "output_features": [
             {
-                "name": "binary_output_feature", "type": "binary",
+                "name": "binary_output_feature",
+                "type": "binary",
             }
         ],
-        "trainer": {"epochs": 2, }
+        "trainer": {
+            "epochs": 2,
+        },
     }
 
     model = LudwigModel(config, logging_level=logging.INFO)
 
-    _, _, output_dir = model.train(
-        dataset=train_fp,
-        skip_save_processed_input=True
-    )
+    _, _, output_dir = model.train(dataset=train_fp, skip_save_processed_input=True)
 
     # instantiate native torchvision to get original parameter values
     os.environ["TORCH_HOME"] = tv_cache
