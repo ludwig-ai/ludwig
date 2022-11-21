@@ -17,6 +17,7 @@ import logging
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -26,6 +27,7 @@ from ludwig.schema.encoders.base import DenseEncoderConfig, PassthroughEncoderCo
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("passthrough", [NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
     def __init__(self, input_size=1, encoder_config=None, **kwargs):
@@ -55,6 +57,7 @@ class PassthroughEncoder(Encoder):
         return self.input_shape
 
 
+@DeveloperAPI
 @register_encoder("dense", [BINARY, NUMBER, VECTOR])
 class DenseEncoder(Encoder):
     def __init__(
