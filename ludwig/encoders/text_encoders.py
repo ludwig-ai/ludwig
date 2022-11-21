@@ -49,6 +49,13 @@ from ludwig.utils.pytorch_utils import freeze_parameters
 logger = logging.getLogger(__name__)
 
 
+def _cls_pooled_error_message(encoder: str):
+    # TODO(Arnav): Remove this once we have reduce_output options set for
+    # each encoder type in the schema
+    logger.error(f"reduce_output cannot be cls_pooled for {encoder}")
+    sys.exit(1)
+
+
 @DeveloperAPI
 @register_encoder("albert", TEXT)
 class ALBERTEncoder(Encoder):
@@ -91,7 +98,7 @@ class ALBERTEncoder(Encoder):
         eos_token_id: int = 3,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -204,7 +211,7 @@ class MT5Encoder(Encoder):
         pretrained_model_name_or_path: str = "google/mt5-base",
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        reduce_output: str = "cls_pooled",
+        reduce_output: str = "sum",
         vocab_size: int = 250112,
         d_model: int = 512,
         d_kv: int = 64,
@@ -226,7 +233,7 @@ class MT5Encoder(Encoder):
         decoder_start_token_id: int = 0,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -269,8 +276,9 @@ class MT5Encoder(Encoder):
             self.transformer = MT5EncoderModel(config)
 
         self.reduce_output = reduce_output
-        if not self.reduce_output == "cls_pooled":
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        if reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
         else:
@@ -285,12 +293,8 @@ class MT5Encoder(Encoder):
             input_ids=inputs,
             attention_mask=mask,
         )
-        if self.reduce_output == "cls_pooled":
-            hidden = transformer_outputs[1]
-        else:
-            hidden = transformer_outputs[0][:, 1:-1, :]
-            hidden = self.reduce_sequence(hidden, self.reduce_output)
-
+        hidden = transformer_outputs[0][:, 1:-1, :]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
     @staticmethod
@@ -345,7 +349,7 @@ class XLMRoBERTaEncoder(Encoder):
         add_pooling_layer: bool = True,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -462,7 +466,7 @@ class BERTEncoder(Encoder):
         classifier_dropout: float = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -574,7 +578,7 @@ class XLMEncoder(Encoder):
         pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
-        reduce_output: str = "cls_pooled",
+        reduce_output: str = "sum",
         vocab_size: int = 30145,
         emb_dim: int = 2048,
         n_layers: int = 12,
@@ -605,7 +609,7 @@ class XLMEncoder(Encoder):
         bos_token_id: int = 0,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -659,12 +663,13 @@ class XLMEncoder(Encoder):
             self.transformer = XLMModel(config)
 
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
-
         if mask is not None:
             mask = mask.to(torch.int32)
         transformer_outputs = self.transformer(
@@ -736,7 +741,7 @@ class GPTEncoder(Encoder):
         initializer_range: float = 0.02,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -772,6 +777,8 @@ class GPTEncoder(Encoder):
             self.transformer = OpenAIGPTModel(config)
 
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -846,7 +853,7 @@ class GPT2Encoder(Encoder):
         scale_attn_weights: bool = True,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -889,6 +896,8 @@ class GPT2Encoder(Encoder):
             freeze_parameters(self.transformer)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
 
@@ -949,7 +958,7 @@ class RoBERTaEncoder(Encoder):
         eos_token_id: int = 2,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1065,7 +1074,7 @@ class TransformerXLEncoder(Encoder):
         eos_token_id: int = 0,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1114,6 +1123,8 @@ class TransformerXLEncoder(Encoder):
             )
             self.transformer = TransfoXLModel(config)
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -1124,7 +1135,6 @@ class TransformerXLEncoder(Encoder):
     def forward(self, inputs: torch.Tensor, mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         transformer_outputs = self.transformer(inputs)
         hidden = transformer_outputs[0]
-
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
@@ -1197,7 +1207,7 @@ class XLNetEncoder(Encoder):
         eos_token_id: int = 2,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1248,6 +1258,8 @@ class XLNetEncoder(Encoder):
             self.transformer = XLNetModel(config)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -1322,7 +1334,7 @@ class DistilBERTEncoder(Encoder):
         seq_classif_dropout: float = 0.2,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1364,6 +1376,8 @@ class DistilBERTEncoder(Encoder):
             freeze_parameters(self.transformer)
 
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
@@ -1433,7 +1447,7 @@ class CTRLEncoder(Encoder):
         initializer_range: float = 0.02,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1475,6 +1489,8 @@ class CTRLEncoder(Encoder):
         else:
             freeze_parameters(self.transformer)
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(self.vocab_size)
 
@@ -1547,7 +1563,7 @@ class CamemBERTEncoder(Encoder):
         classifier_dropout: float = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1671,7 +1687,7 @@ class T5Encoder(Encoder):
         feed_forward_proj: str = "relu",
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1708,6 +1724,8 @@ class T5Encoder(Encoder):
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -1800,7 +1818,7 @@ class FlauBERTEncoder(Encoder):
         lang_id: int = 1,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1851,6 +1869,8 @@ class FlauBERTEncoder(Encoder):
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -1932,7 +1952,7 @@ class ELECTRAEncoder(Encoder):
         classifier_dropout: Optional[float] = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -1972,6 +1992,8 @@ class ELECTRAEncoder(Encoder):
 
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
+        if self.reduce_output == "cls_pooled":
+            _cls_pooled_error_message(self.__class__.__name__)
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if trainable:
             self.transformer.train()
@@ -2041,7 +2063,7 @@ class LongformerEncoder(Encoder):
         num_tokens: Optional[int] = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
@@ -2129,7 +2151,7 @@ class AutoTransformerEncoder(Encoder):
         vocab_size: int = None,
         pretrained_kwargs: Dict = None,
         encoder_config=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.config = encoder_config
