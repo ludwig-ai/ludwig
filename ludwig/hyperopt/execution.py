@@ -769,11 +769,12 @@ class RayTuneExecutor:
         if _is_ray_backend(backend):
             # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
             # but we do want to enable it when GPUs are specified
-            resources_per_trial = PlacementGroupFactory(
-                [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
-                if self._gpu_resources_per_trial_non_none
-                else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}]
-            )
+            # resources_per_trial = PlacementGroupFactory(
+            #     [{}] + ([{"CPU": 0, "GPU": 1}] * self._gpu_resources_per_trial_non_none)
+            #     if self._gpu_resources_per_trial_non_none
+            #     else [{}] + [{"CPU": self._cpu_resources_per_trial_non_none}]
+            # )
+            resources_per_trial = PlacementGroupFactory([{"hyperopt_resource": 0.1}])
 
         if has_remote_protocol(output_directory):
             self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)

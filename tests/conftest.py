@@ -168,7 +168,8 @@ def _ray_start(request, **kwargs):
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
-    res = ray.init(**init_kwargs)
+    # HACK(geoffrey): `hyperopt_resources` is for hyperopt as of Ray >= 2.1.0
+    res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})
     try:
         yield res
     finally:
