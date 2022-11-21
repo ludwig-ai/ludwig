@@ -19,6 +19,7 @@ from typing import Callable, Dict, List, Optional, Union
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -48,6 +49,7 @@ from ludwig.utils.pytorch_utils import freeze_parameters
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("albert", TEXT)
 class ALBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -183,6 +185,7 @@ class ALBERTEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("mt5", TEXT)
 class MT5Encoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -315,6 +318,7 @@ class MT5Encoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("xlmroberta", TEXT)
 class XLMRoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -419,6 +423,7 @@ class XLMRoBERTaEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("bert", TEXT)
 class BERTEncoder(Encoder):
     # TODO(justin): Use official class properties.
@@ -550,6 +555,7 @@ class BERTEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("xlm", TEXT)
 class XLMEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -696,6 +702,7 @@ class XLMEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("gpt", TEXT)
 class GPTEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -804,6 +811,7 @@ class GPTEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("gpt2", TEXT)
 class GPT2Encoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -915,6 +923,7 @@ class GPT2Encoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("roberta", TEXT)
 class RoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1008,6 +1017,7 @@ class RoBERTaEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("transformer_xl", TEXT)
 class TransformerXLEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1138,6 +1148,7 @@ class TransformerXLEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("xlnet", TEXT)
 class XLNetEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1276,6 +1287,7 @@ class XLNetEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("distilbert", TEXT)
 class DistilBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1387,6 +1399,7 @@ class DistilBERTEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("ctrl", TEXT)
 class CTRLEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1496,6 +1509,7 @@ class CTRLEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("camembert", TEXT)
 class CamemBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1623,6 +1637,7 @@ class CamemBERTEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("t5", TEXT)
 class T5Encoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1737,6 +1752,7 @@ class T5Encoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("flaubert", TEXT)
 class FlauBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1879,6 +1895,7 @@ class FlauBERTEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("electra", TEXT)
 class ELECTRAEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -1999,6 +2016,7 @@ class ELECTRAEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("longformer", TEXT)
 class LongformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
@@ -2094,6 +2112,7 @@ class LongformerEncoder(Encoder):
         return torch.int32
 
 
+@DeveloperAPI
 @register_encoder("auto_transformer", TEXT)
 class AutoTransformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
