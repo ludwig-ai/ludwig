@@ -50,6 +50,8 @@ logger = logging.getLogger(__name__)
 
 
 def _cls_pooled_error_message(encoder: str):
+    # TODO(Arnav): Remove this once we have reduce_output options set for
+    # each encoder type in the schema
     logger.error(f"reduce_output cannot be cls_pooled for {encoder}")
     sys.exit(1)
 
