@@ -442,34 +442,27 @@ class LudwigModel:
                         print_boxed("LUDWIG CONFIG")
                         logger.info(pformat(self.config, indent=4))
 
-                for callback in self.callbacks:
-                    callback.on_preprocess_start(self.config)
-
-                try:
-                    preprocessed_data = self.preprocess(
-                        dataset=dataset,
-                        training_set=training_set,
-                        validation_set=validation_set,
-                        test_set=test_set,
-                        training_set_metadata=training_set_metadata,
-                        data_format=data_format,
-                        experiment_name=experiment_name,
-                        model_name=model_name,
-                        model_resume_path=model_resume_path,
-                        skip_save_training_description=skip_save_training_description,
-                        skip_save_training_statistics=skip_save_training_statistics,
-                        skip_save_model=skip_save_model,
-                        skip_save_progress=skip_save_progress,
-                        skip_save_log=skip_save_log,
-                        skip_save_processed_input=skip_save_processed_input,
-                        output_directory=output_directory,
-                        random_seed=random_seed,
-                        **kwargs,
-                    )
-                    (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
-                finally:
-                    for callback in self.callbacks:
-                        callback.on_preprocess_end(training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = self.preprocess(
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    model_resume_path=model_resume_path,
+                    skip_save_training_description=skip_save_training_description,
+                    skip_save_training_statistics=skip_save_training_statistics,
+                    skip_save_model=skip_save_model,
+                    skip_save_progress=skip_save_progress,
+                    skip_save_log=skip_save_log,
+                    skip_save_processed_input=skip_save_processed_input,
+                    output_directory=output_directory,
+                    random_seed=random_seed,
+                    **kwargs,
+                )
+                (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
 
             self.training_set_metadata = training_set_metadata
 
@@ -1286,29 +1279,35 @@ class LudwigModel:
         """
         print_boxed("PREPROCESSING")
 
+        for callback in self.callbacks:
+            callback.on_preprocess_start(self.config_obj.to_dict())
+
         preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
             self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
         )
 
-        with provision_preprocessing_workers(self.backend):
-            preprocessed_data = preprocess_for_training(
-                self.config,
-                dataset=dataset,
-                training_set=training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                training_set_metadata=training_set_metadata,
-                data_format=data_format,
-                skip_save_processed_input=skip_save_processed_input,
-                preprocessing_params=preprocessing_params,
-                backend=self.backend,
-                random_seed=random_seed,
-                callbacks=self.callbacks,
-            )
+        try:
+            with provision_preprocessing_workers(self.backend):
+                preprocessed_data = preprocess_for_training(
+                    self.config,
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    backend=self.backend,
+                    random_seed=random_seed,
+                    callbacks=self.callbacks,
+                )
 
-        (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
-
-        return proc_training_set, proc_validation_set, proc_test_set, training_set_metadata
+            (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
+            return proc_training_set, proc_validation_set, proc_test_set, training_set_metadata
+        finally:
+            for callback in self.callbacks:
+                callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
 
     @staticmethod
     def load(
