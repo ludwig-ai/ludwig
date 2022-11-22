@@ -31,8 +31,8 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
+from ludwig.hyperopt.search_algos import instantiate_search_algorithm  # implicit import
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
