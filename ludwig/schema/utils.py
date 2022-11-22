@@ -1,4 +1,5 @@
 import copy
+from abc import ABC
 from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
@@ -108,7 +109,7 @@ def remove_duplicate_fields(properties: dict) -> None:
             del properties[key]
 
 
-class BaseMarshmallowConfig:
+class BaseMarshmallowConfig(ABC):
     """Base marshmallow class for common attributes and metadata."""
 
     class Meta:
