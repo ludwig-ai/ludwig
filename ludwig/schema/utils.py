@@ -793,12 +793,12 @@ def InitializerOrDict(
 
 
 def FloatRangeTupleDataclassField(
-    n=2,
+    n: int = 2,
     default: Union[Tuple, None] = (0.9, 0.999),
     allow_none: bool = True,
-    min=0,
-    max=1,
-    description="",
+    min: Union[int, None] = 0,
+    max: Union[int, None] = 1,
+    description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
