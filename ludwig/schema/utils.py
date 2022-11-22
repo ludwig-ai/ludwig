@@ -794,12 +794,12 @@ def InitializerOrDict(
 
 
 def FloatRangeTupleDataclassField(
-    n=2,
+    n: int = 2,
     default: Union[Tuple, None] = (0.9, 0.999),
     allow_none: bool = True,
-    min=0,
-    max=1,
-    description="",
+    min: Union[int, None] = 0,
+    max: Union[int, None] = 1,
+    description: str = "",
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
@@ -815,18 +815,16 @@ def FloatRangeTupleDataclassField(
         def _jsonschema_type_mapping(self):
             if default is not None:
                 validate_range(default)
+            items_schema = {"type": "number"}
+            if min is not None:
+                items_schema["minimum"] = min
+            if max is not None:
+                items_schema["maximum"] = max
             return {
                 "oneOf": [
                     {
                         "type": "array",
-                        "items": [
-                            {
-                                "type": "number",
-                                "minimum": min,
-                                "maximum": max,
-                            }
-                        ]
-                        * n,
+                        "items": [{**items_schema}] * n,
                         "default": default,
                         "description": description,
                     },
@@ -839,7 +837,12 @@ def FloatRangeTupleDataclassField(
 
     def validate_range(data: Tuple):
         if isinstance(data, tuple) and all([isinstance(x, float) or isinstance(x, int) for x in data]):
-            if all(list(map(lambda b: min <= b <= max, data))):
+            minmax_checks = []
+            if min is not None:
+                minmax_checks += list(map(lambda b: min <= b, data))
+            if max is not None:
+                minmax_checks += list(map(lambda b: b <= max, data))
+            if all(minmax_checks):
                 return data
             raise ValidationError(
                 f"Values in received tuple should be in range [{min},{max}], instead received: {data}"
