@@ -1791,9 +1791,6 @@ def _preprocess_file_for_training(
     else:
         raise ValueError("either data or data_train have to be not None")
 
-    # print("backend", backend)
-    # print("data", backend.df_engine.compute(data))
-
     logger.debug("split train-val-test")
     training_data, validation_data, test_data = split_dataset(data, preprocessing_params, backend, random_seed)
 
@@ -1801,7 +1798,13 @@ def _preprocess_file_for_training(
         logger.debug("writing split file")
         splits_df = concatenate_splits(training_data, validation_data, test_data, backend)
         split_fp = get_split_path(dataset or training_set)
-        backend.df_engine.to_parquet(splits_df, split_fp, index=True)
+        try:
+            backend.df_engine.to_parquet(splits_df, split_fp, index=True)
+        except Exception as e:
+            logger.warning(
+                f"Encountered error: '{e}' while writing data to parquet during saving processed input. "
+                "Skipping saving processed input."
+            )
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
