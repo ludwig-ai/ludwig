@@ -135,7 +135,7 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: Optional[Dict] = None,
+        search_alg: Dict,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
