@@ -52,7 +52,19 @@ class RandomAccessBatcher(Batcher):
         return sub_batch
 
     def last_batch(self):
-        return self.index >= self.total_size or (self.ignore_last and self.index + self.batch_size >= self.total_size)
+        # If our current index in the dataset exceeds the size of the dataset,
+        # we've finished the epoch and can indicate that this is the last batch
+        if self.index >= self.total_size:
+            return True
+        # This avoids the case where batch size > total size and no steps have been done.
+        # For e.g., batch size = 128 but the dataset only has 100 rows. In this case, only
+        # mark last_batch after this batch is done using the first condition above.
+        elif self.ignore_last and self.step:
+            # If current index in total dataset + batch size exceeds the total size of the dataset,
+            # this last batch is incomplete so we drop it
+            if self.index + self.batch_size >= self.total_size:
+                return True
+        return False
 
     def set_epoch(self, epoch, batch_size):
         self.batch_size = batch_size

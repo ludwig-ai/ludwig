@@ -144,13 +144,21 @@ class RayDataset(Dataset):
         return pipe
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        seed=0,
+        ignore_last=False,
+        horovod=None,
+    ):
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
             self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
+            ignore_last,
         )
 
     def __len__(self):
@@ -233,6 +241,7 @@ class RayDatasetShard(Dataset):
             self.training_set_metadata,
             batch_size,
             self.size,
+            ignore_last,
         )
 
     @lru_cache(1)
@@ -253,11 +262,13 @@ class RayDatasetBatcher(Batcher):
         training_set_metadata: Dict[str, Any],
         batch_size: int,
         samples_per_epoch: int,
+        ignore_last: bool = False,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
+        self.ignore_last = self._set_ignore_last(ignore_last)
 
         self.features = features
         self.columns = list(features.keys())
@@ -272,6 +283,14 @@ class RayDatasetBatcher(Batcher):
         self._last_batch = False
         self._step = 0
         self._fetch_next_epoch()
+
+    def _set_ignore_last(self, ignore_last: bool = False) -> bool:
+        if ignore_last and self.batch_size > self.samples_per_epoch:
+            # If the number of samples < batch size, then manually override
+            # ignore_last since Ray will drop all the rows during the iter_batches() call
+            logger.debug("Setting ignore_last to False to prevent infinite stall during training.")
+            return False
+        return True
 
     def next_batch(self):
         if self.last_batch():
@@ -362,7 +381,10 @@ class RayDatasetBatcher(Batcher):
 
         def sync_read():
             for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
+                prefetch_blocks=0,
+                batch_size=self.batch_size,
+                batch_format="pandas",
+                drop_last=self.ignore_last,
             ):
                 yield self._prepare_batch(batch)
 
@@ -370,14 +392,15 @@ class RayDatasetBatcher(Batcher):
 
     def _create_async_reader(self, pipeline: DatasetPipeline):
         q = queue.Queue(maxsize=100)
-
         batch_size = self.batch_size
-
         to_tensors = self._to_tensors_fn()
 
         def producer():
             for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
+                prefetch_blocks=0,
+                batch_size=batch_size,
+                batch_format="pandas",
+                drop_last=self.ignore_last,
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
@@ -407,7 +430,12 @@ class RayDatasetBatcher(Batcher):
             for batch in (
                 splits[i]
                 .map_batches(to_tensors, batch_format="pandas")
-                .iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas")
+                .iter_batches(
+                    prefetch_blocks=0,
+                    batch_size=batch_size,
+                    batch_format="pandas",
+                    drop_last=self.ignore_last,
+                )
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
