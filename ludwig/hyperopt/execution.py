@@ -145,9 +145,6 @@ class RayTuneExecutor:
         scheduler: Optional[Dict] = None,
         **kwargs,
     ) -> None:
-        # Force-populate the search algorithm registry
-        import ludwig.hyperopt.search_algos  # noqa
-
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
         self.output_feature = output_feature
