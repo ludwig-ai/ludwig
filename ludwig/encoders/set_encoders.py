@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SET
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -28,6 +29,7 @@ from ludwig.schema.encoders.set_encoders import SetSparseEncoderConfig
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("embed", SET)
 class SetSparseEncoder(Encoder):
     def __init__(

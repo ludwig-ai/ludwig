@@ -18,6 +18,7 @@ from typing import Dict, Tuple
 import torch
 import torch.nn as nn
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
@@ -29,6 +30,7 @@ from ludwig.utils import strings_utils
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 class RNNDecoder(nn.Module):
     """GRU or RNN-based decoder."""
 
@@ -70,6 +72,7 @@ class RNNDecoder(nn.Module):
         return output_logits, hidden
 
 
+@DeveloperAPI
 class LSTMDecoder(nn.Module):
     """LSTM-based decoder."""
 
@@ -112,6 +115,7 @@ class LSTMDecoder(nn.Module):
         return output_logits, hidden_state, cell_state
 
 
+@DeveloperAPI
 class SequenceRNNDecoder(nn.Module):
     """RNN-based decoder over multiple time steps."""
 
@@ -182,6 +186,7 @@ class SequenceRNNDecoder(nn.Module):
         return logits
 
 
+@DeveloperAPI
 class SequenceLSTMDecoder(nn.Module):
     """LSTM-based decoder over multiple time steps."""
 
@@ -251,6 +256,7 @@ class SequenceLSTMDecoder(nn.Module):
         return logits
 
 
+@DeveloperAPI
 @register_decoder("generator", [SEQUENCE, TEXT])
 class SequenceGeneratorDecoder(Decoder):
     """Dispatcher for different sequence generator decoders."""

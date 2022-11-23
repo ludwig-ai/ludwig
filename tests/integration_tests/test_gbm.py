@@ -11,6 +11,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
+from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
@@ -267,23 +268,19 @@ def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
 
 
 def test_loss_decreases(tmpdir, local_backend):
-    from ludwig.datasets import get_dataset, model_configs_for_dataset
+    input_features, output_features = synthetic_test_data.get_feature_configs()
 
-    default_config = model_configs_for_dataset("adult_census_income")["default"]
     config = {
         MODEL_TYPE: "gbm",
-        "input_features": default_config["input_features"][:3],  # only use first 3 features
-        "output_features": default_config["output_features"],
+        "input_features": input_features,
+        "output_features": output_features,
         TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1},
     }
 
-    df = get_dataset("adult_census_income").load(split=False)
-    # reduce dataset size to speed up test
-    df = df.loc[:10, [f["name"] for f in config["input_features"] + config["output_features"]]]
-
+    generated_data = synthetic_test_data.get_generated_data_for_optimizer()
     model = LudwigModel(config, backend=local_backend)
     train_stats, _, _ = model.train(
-        dataset=df,
+        dataset=generated_data.train_df,
         output_directory=tmpdir,
         skip_save_processed_input=True,
         skip_save_progress=True,
