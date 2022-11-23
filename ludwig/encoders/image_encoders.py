@@ -424,12 +424,10 @@ class TVBaseEncoder(Encoder):
 
     @abstractmethod
     def _remove_softmax_layer(self):
-        """
-        Model specific method that allows the final softmax layer to be implemented
-        in the Ludwig Decoder component.  The model specific implementation should
-        change the final softmax layer in the torchvision model architecture to
-        torch.nn.Identity().  This allows the output tensor from the preceding
-        layer to be passed to the Ludwig Combiner and then to the Decoder.
+        """Model specific method that allows the final softmax layer to be implemented in the Ludwig Decoder
+        component.  The model specific implementation should change the final softmax layer in the torchvision
+        model architecture to torch.nn.Identity().  This allows the output tensor from the preceding layer to be
+        passed to the Ludwig Combiner and then to the Decoder.
 
         Returns: None
         """
