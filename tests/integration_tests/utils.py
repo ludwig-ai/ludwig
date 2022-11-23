@@ -886,6 +886,9 @@ def train_with_backend(
                 read_preds = model.backend.df_engine.read_predictions(
                     os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
                 )
+                read_preds = read_preds.compute()  # call compute to ensure it materializes correctly
+                print("ASDFASDF read_preds.head(1).values", read_preds.head(1).values)
+                print("ASDFASDF read_preds.dtypes", read_preds.dtypes)
                 assert read_preds is not None
 
         if evaluate:
@@ -899,7 +902,7 @@ def train_with_backend(
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-                local_eval_stats, local_preds, _ = local_model.evaluate(
+                local_eval_stats, _, _ = local_model.evaluate(
                     dataset=dataset, collect_overall_stats=False, collect_predictions=True
                 )
 
@@ -927,7 +930,7 @@ def train_with_backend(
                         assert name1 == name2
                         assert np.isclose(
                             metric1, metric2, rtol=1e-03, atol=1e-04
-                        ), f"metric {name1}: {metric1} != {metric2}"
+                        ), f"metric {name1} for feature {k1}: {metric1} != {metric2}"
 
         return model
 
@@ -944,7 +947,7 @@ def all_required_stats_exist(
             metric_names = set(stats_dict.keys())
             assert required_metric_names.issubset(
                 metric_names
-            ), f"required metrics {required_metric_names} not in {metric_names} for feature {feature_name}"
+            ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
 
 
 @contextlib.contextmanager

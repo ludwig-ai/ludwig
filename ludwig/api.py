@@ -987,6 +987,8 @@ class LudwigModel:
                 dataset,
                 collect_predictions=collect_predictions or collect_overall_stats,
             )
+            print("ASDFASDF self.backend: ", self.backend)
+            print("ASDFASDF eval_stats: ", eval_stats)
 
             # calculate the overall metrics
             if collect_overall_stats:

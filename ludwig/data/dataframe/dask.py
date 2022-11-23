@@ -17,6 +17,7 @@
 import collections
 import logging
 import os
+from contextlib import contextmanager
 from typing import Any, Dict, Iterable, Tuple, Union
 
 import dask
@@ -166,18 +167,11 @@ class DaskEngine(DataFrameEngine):
                 extension, such as when the output consists of ragged tensors.
         """
         import ray.data
-        from ray.data.context import DatasetContext
 
-        ctx = DatasetContext.get_current()
-        prev_enable_tensor_extension_casting = ctx.enable_tensor_extension_casting
-
-        try:
-            ctx.enable_tensor_extension_casting = enable_tensor_extension_casting
+        with tensor_extension_casting(enable_tensor_extension_casting):
             ds = ray.data.from_dask(series)
             ds = ds.map_batches(map_fn, batch_format="pandas")
             return self._to_dask(ds)
-        finally:
-            ctx.enable_tensor_extension_casting = prev_enable_tensor_extension_casting
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
@@ -241,20 +235,9 @@ class DaskEngine(DataFrameEngine):
 
         ds = self.to_ray_dataset(df)
 
-        def to_tensors(batch: pd.DataFrame) -> pd.DataFrame:
-            data = {}
-            for c in batch.columns:
-                try:
-                    data[c] = TensorArray(batch[c])
-                except TypeError:
-                    # Not a tensor, likely a string which pyarrow can handle natively
-                    pass
-            return pd.DataFrame(data)
-
-        ds = ds.map_batches(to_tensors)
-
-        fs, path = get_fs_and_path(path)
-        ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+        with tensor_extension_casting(False):
+            fs, path = get_fs_and_path(path)
+            ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
     def read_predictions(self, path: str) -> dd.DataFrame:
         if not _ray200:
@@ -350,3 +333,16 @@ class DaskEngine(DataFrameEngine):
     @property
     def partitioned(self):
         return True
+
+
+@contextmanager
+def tensor_extension_casting(enforced: bool):
+    from ray.data.context import DatasetContext
+
+    ctx = DatasetContext.get_current()
+    prev_enable_tensor_extension_casting = ctx.enable_tensor_extension_casting
+    try:
+        ctx.enable_tensor_extension_casting = enforced
+        yield
+    finally:
+        ctx.enable_tensor_extension_casting = prev_enable_tensor_extension_casting
