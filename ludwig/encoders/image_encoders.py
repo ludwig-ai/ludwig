@@ -50,7 +50,7 @@ from ludwig.schema.encoders.image_encoders import (
     TVViTEncoderConfig,
     TVWideResNetEncoderConfig,
 )
-from ludwig.utils.image_utils import register_torchvision_variant, torchvision_model_registry, TVModelVariant
+from ludwig.utils.image_utils import register_torchvision_variants, torchvision_model_registry, TVModelVariant
 
 logger = logging.getLogger(__name__)
 
@@ -411,7 +411,7 @@ class TVBaseEncoder(Encoder):
         self.model = self.create_model(weights=weights_specification, **kwargs)
 
         # remove final classification layer
-        self._remove_last_layer()
+        self._remove_softmax_layer()
 
         # freeze parameters if requested
         for p in self.model.parameters():
@@ -421,7 +421,16 @@ class TVBaseEncoder(Encoder):
         return {"encoder_output": self.model(inputs)}
 
     @abstractmethod
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
+        """
+        Model specific method that allows the final softmax layer to be implemented
+        in the Ludwig Decoder component.  The model specific implementation should
+        change the final softmax layer in the torchvision model architecture to
+        torch.nn.Identity().  This allows the output tensor from the preceding
+        layer to be passed to the Ludwig Combiner and then to the Decoder.
+
+        Returns: None
+        """
         raise NotImplementedError()
 
     @property
@@ -450,7 +459,7 @@ ALEXNET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(ALEXNET_VARIANTS)
+@register_torchvision_variants(ALEXNET_VARIANTS)
 @register_encoder("alexnet_torch", IMAGE)
 class TVAlexNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -463,7 +472,7 @@ class TVAlexNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -479,7 +488,7 @@ CONVNEXT_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(CONVNEXT_VARIANTS)
+@register_torchvision_variants(CONVNEXT_VARIANTS)
 @register_encoder("convnext_torch", IMAGE)
 class TVConvNeXtEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -492,7 +501,7 @@ class TVConvNeXtEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -508,7 +517,7 @@ DENSENET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(DENSENET_VARIANTS)
+@register_torchvision_variants(DENSENET_VARIANTS)
 @register_encoder("densenet_torch", IMAGE)
 class TVDenseNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -521,7 +530,7 @@ class TVDenseNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier = torch.nn.Identity()
 
     @staticmethod
@@ -544,7 +553,7 @@ EFFICIENTNET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(EFFICIENTNET_VARIANTS)
+@register_torchvision_variants(EFFICIENTNET_VARIANTS)
 @register_encoder("efficientnet_torch", IMAGE)
 class TVEfficientNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -557,7 +566,7 @@ class TVEfficientNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -570,7 +579,7 @@ GOOGLENET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(GOOGLENET_VARIANTS)
+@register_torchvision_variants(GOOGLENET_VARIANTS)
 @register_encoder("googlenet_torch", IMAGE)
 class TVGoogLeNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -591,7 +600,7 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
             self.model.aux1 = None
             self.model.aux2 = None
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
@@ -604,7 +613,7 @@ INCEPTIONV3_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(INCEPTIONV3_VARIANTS)
+@register_torchvision_variants(INCEPTIONV3_VARIANTS)
 @register_encoder("inceptionv3_torch", IMAGE)
 class TVInceptionV3Encoder(TVBaseEncoder):
     # specify base torchvision model
@@ -624,7 +633,7 @@ class TVInceptionV3Encoder(TVBaseEncoder):
             self.model.aux_logits = False
             self.model.AuxLogits = None
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
@@ -637,7 +646,7 @@ MAXVIT_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(MAXVIT_VARIANTS)
+@register_torchvision_variants(MAXVIT_VARIANTS)
 @register_encoder("maxvit_torch", IMAGE)
 class TVMaxVitEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -650,7 +659,7 @@ class TVMaxVitEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -666,7 +675,7 @@ MNASNET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(MNASNET_VARIANTS)
+@register_torchvision_variants(MNASNET_VARIANTS)
 @register_encoder("mnasnet_torch", IMAGE)
 class TVMNASNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -679,7 +688,7 @@ class TVMNASNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -692,7 +701,7 @@ MOBILENETV2_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(MOBILENETV2_VARIANTS)
+@register_torchvision_variants(MOBILENETV2_VARIANTS)
 @register_encoder("mobilenetv2_torch", IMAGE)
 class TVMobileNetV2Encoder(TVBaseEncoder):
     # specify base torchvision model
@@ -705,7 +714,7 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -719,7 +728,7 @@ MOBILENETV3_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(MOBILENETV3_VARIANTS)
+@register_torchvision_variants(MOBILENETV3_VARIANTS)
 @register_encoder("mobilenetv3_torch", IMAGE)
 class TVMobileNetV3Encoder(TVBaseEncoder):
     # specify base torchvision model
@@ -732,7 +741,7 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -759,7 +768,7 @@ REGNET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(REGNET_VARIANTS)
+@register_torchvision_variants(REGNET_VARIANTS)
 @register_encoder("regnet_torch", IMAGE)
 class TVRegNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -772,7 +781,7 @@ class TVRegNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
@@ -789,7 +798,7 @@ RESNET_TORCH_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(RESNET_TORCH_VARIANTS)
+@register_torchvision_variants(RESNET_TORCH_VARIANTS)
 @register_encoder("resnet_torch", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -802,7 +811,7 @@ class TVResNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
@@ -817,7 +826,7 @@ RESNEXT_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(RESNEXT_VARIANTS)
+@register_torchvision_variants(RESNEXT_VARIANTS)
 @register_encoder("resnext_torch", IMAGE)
 class TVResNeXtEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -830,7 +839,7 @@ class TVResNeXtEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
@@ -846,7 +855,7 @@ SHUFFLENET_V2_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(SHUFFLENET_V2_VARIANTS)
+@register_torchvision_variants(SHUFFLENET_V2_VARIANTS)
 @register_encoder("shufflenet_v2_torch", IMAGE)
 class TVShuffleNetV2Encoder(TVBaseEncoder):
     # specify base torchvision model
@@ -859,7 +868,7 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod
@@ -873,7 +882,7 @@ SQUEEZENET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(SQUEEZENET_VARIANTS)
+@register_torchvision_variants(SQUEEZENET_VARIANTS)
 @register_encoder("squeezenet_torch", IMAGE)
 class TVSqueezeNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -886,7 +895,7 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         # SqueezeNet does not have a final nn.Linear() layer
         # Use flatten output from last AdaptiveAvgPool2d layer
         # as encoder output.
@@ -904,7 +913,7 @@ SWIN_TRANSFORMER_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(SWIN_TRANSFORMER_VARIANTS)
+@register_torchvision_variants(SWIN_TRANSFORMER_VARIANTS)
 @register_encoder("swin_transformer_torch", IMAGE)
 class TVSwinTransformerEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -917,7 +926,7 @@ class TVSwinTransformerEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.head = torch.nn.Identity()
 
     @staticmethod
@@ -937,7 +946,7 @@ VGG_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(VGG_VARIANTS)
+@register_torchvision_variants(VGG_VARIANTS)
 @register_encoder("vgg_torch", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
     # specify base torchvison model
@@ -950,7 +959,7 @@ class TVVGGEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -967,7 +976,7 @@ VIT_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(VIT_VARIANTS)
+@register_torchvision_variants(VIT_VARIANTS)
 @register_encoder("vit_torch", IMAGE)
 class TVViTEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -991,7 +1000,7 @@ class TVViTEncoder(TVBaseEncoder):
 
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.heads[-1] = torch.nn.Identity()
 
     @staticmethod
@@ -1005,7 +1014,7 @@ WIDE_RESNET_VARIANTS = [
 ]
 
 
-@register_torchvision_variant(WIDE_RESNET_VARIANTS)
+@register_torchvision_variants(WIDE_RESNET_VARIANTS)
 @register_encoder("wide_resnet_torch", IMAGE)
 class TVWideResNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -1018,7 +1027,7 @@ class TVWideResNetEncoder(TVBaseEncoder):
         logger.debug(f" {self.name}")
         super().__init__(**kwargs)
 
-    def _remove_last_layer(self):
+    def _remove_softmax_layer(self):
         self.model.fc = torch.nn.Identity()
 
     @staticmethod

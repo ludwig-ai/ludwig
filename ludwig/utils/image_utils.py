@@ -321,7 +321,7 @@ def get_img_output_shape(
 torchvision_model_registry = Registry()
 
 
-def register_torchvision_variant(variant: Optional[Union[list, tuple]] = None):
+def register_torchvision_variants(variant: Optional[Union[list, tuple]] = None):
     if isinstance(variant, tuple):
         variant = [variant]
 
