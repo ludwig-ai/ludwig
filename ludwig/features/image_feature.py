@@ -587,13 +587,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
 
     @staticmethod
-    def populate_defaults(input_feature):
-        defaults = ImageInputFeatureConfig()
-        set_default_value(input_feature, TIED, defaults.tied)
-        set_default_value(input_feature, PREPROCESSING, {})
-        set_default_value(input_feature, {ENCODER: {TYPE: defaults.encoder.type}})
-
-    @staticmethod
     def get_schema_cls():
         return ImageInputFeatureConfig
 
