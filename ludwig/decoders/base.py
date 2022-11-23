@@ -16,9 +16,11 @@
 
 from abc import ABC, abstractmethod
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.torch_utils import LudwigModule
 
 
+@DeveloperAPI
 class Decoder(LudwigModule, ABC):
     @abstractmethod
     def forward(self, inputs, mask=None):
