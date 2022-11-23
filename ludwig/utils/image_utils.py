@@ -23,6 +23,7 @@ from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from torchvision.models._api import WeightsEnum
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
 
@@ -31,25 +32,17 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.registry import Registry
 
-TVModelVariant = namedtuple("TVModelVariant", "variant_id create_model_function weights_class")
 
-
-# TVModelVariant(variant_id, create_model_function, model_weights)
-#   variant_id: model variant identifier
-#   create_model_function: TorchVision function to create model class
-#   model_weights: Torchvision class for model weights
 @dataclass
 class TVModelVariant:
     variant_id: Union[str, int]
     create_model_function: Callable
-    model_weights: "torchvision weights"
-
-
-# TODO: Clean up
-# TVVariantSpec = namedtuple("TVVariantSpec", "create_model_function weights_class")
-# # TVVariantSpec(create_model_function, model_weights)
-# #   create_model_function: TorchVision function to create model class
-# #   model_weights: Torchvision class for model weights
+    model_weights: Optional[WeightsEnum]
+    """
+    variant_id: model variant identifier
+    create_model_function: TorchVision function to create model class
+    model_weights: Torchvision class for model weights    
+    """
 
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,6 @@ from typing import Union
 
 import pytest
 import torch
-import torchvision.models as tvm
 
 from ludwig.encoders.image_encoders import (
     MLPMixerEncoder,
@@ -28,7 +27,7 @@ from ludwig.encoders.image_encoders import (
     TVViTEncoder,
     TVWideResNetEncoder,
 )
-from ludwig.utils.image_utils import torchvision_model_registry, TVModelVariant
+from ludwig.utils.image_utils import torchvision_model_registry
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
