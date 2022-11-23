@@ -211,9 +211,6 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             train_loss += of_obj.loss.weight * of_train_loss
             of_train_losses[of_name] = of_train_loss
 
-        for loss in self.losses():
-            train_loss += loss
-
         additional_losses = self.losses()
         if additional_losses:
             train_loss += torch.sum(torch.stack(additional_losses))  # other losses

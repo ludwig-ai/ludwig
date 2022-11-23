@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DATE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 DATE_INPUT_SIZE = 9
 
 
+@DeveloperAPI
 @register_encoder("embed", DATE)
 class DateEmbed(Encoder):
     def __init__(
@@ -275,6 +277,7 @@ class DateEmbed(Encoder):
         return self.fc_stack.output_shape
 
 
+@DeveloperAPI
 @register_encoder("wave", DATE)
 class DateWave(Encoder):
     def __init__(

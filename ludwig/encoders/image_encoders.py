@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torchvision.models as tvm
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -55,7 +56,7 @@ from ludwig.utils.image_utils import register_torchvision_variants, torchvision_
 logger = logging.getLogger(__name__)
 
 
-# TODO(shreya): Add type hints for missing args
+@DeveloperAPI
 @register_encoder("stacked_cnn", IMAGE)
 class Stacked2DCNN(Encoder):
     def __init__(
@@ -245,6 +246,7 @@ class MLPMixerEncoder(Encoder):
 
 
 # TODO: Temporarily comment out, may be re-enabled later date as HF encoder
+# @DeveloperAPI
 # @register_encoder("vit", IMAGE)
 # class ViTEncoder(Encoder):
 #     def __init__(
