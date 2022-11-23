@@ -312,31 +312,39 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         input_feature (Bool): Whether this feature is an input feature or not.
     """
     input_feature_keys = [
+        # Encoder-external parameters.
         "name",
         "type",
-        "column",
-        "proc_column",
         "encoder",
         "tied",
+        # Internal-only parameters.
+        "column",
+        "proc_column",
         "preprocessing",
         "vector_size",
+        "active",
     ]
 
     output_feature_keys = [
+        # Decoder-external parameters.
         "name",
         "type",
         "calibration",
-        "column",
-        "proc_column",
         "decoder",
-        "num_classes",
+        # Internal-only parameters.
         "preprocessing",
         "loss",
+        "column",
+        "proc_column",
+        "num_classes",
         "reduce_input",
         "dependencies",
         "reduce_dependencies",
         "top_k",
         "vector_size",
+        "active",
+        "default_validation_metric",
+        "input_size",
     ]
 
     fc_layer_keys = [
