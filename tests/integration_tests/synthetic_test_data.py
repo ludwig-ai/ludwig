@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 RANDOM_SEED = 42
-NUMBER_OBSERVATIONS = 500
+NUMBER_OBSERVATIONS = 100
 
 GeneratedData = namedtuple("GeneratedData", "train_df validation_df test_df")
 
@@ -22,7 +22,7 @@ def get_feature_configs():
             "type": "number",
             "loss": {"type": "mean_squared_error"},
             "decoder": {
-                "num_fc_layers": 5,
+                "num_fc_layers": 2,
                 "fc_output_size": 64,
             },
         }
