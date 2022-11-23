@@ -5,14 +5,13 @@ import os
 from collections import OrderedDict
 from functools import lru_cache
 from io import BytesIO
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import yaml
 
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.datasets import configs, model_configs
 from ludwig.datasets.dataset_config import DatasetConfig
-from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 
@@ -69,7 +68,7 @@ def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
 
 
 @PublicAPI
-def get_dataset(dataset_name, cache_dir=None) -> Union[DatasetLoader, Any]:
+def get_dataset(dataset_name, cache_dir=None) -> Any:
     """Gets an instance of the dataset loader for a dataset."""
     config = _get_dataset_config(dataset_name)
     class_name = config.loader.split(".")[-1]
