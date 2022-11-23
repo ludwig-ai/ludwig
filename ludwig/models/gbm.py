@@ -98,24 +98,24 @@ class GBM(BaseModel):
             raise ValueError("Model has not been trained yet.")
 
         if isinstance(inputs, tuple):
-            inputs, targets = inputs
+            inputs, _ = inputs
             # Convert targets to tensors.
-            for target_feature_name, target_value in targets.items():
-                if not isinstance(target_value, torch.Tensor):
-                    targets[target_feature_name] = torch.from_numpy(target_value)
-                else:
-                    targets[target_feature_name] = target_value
-        else:
-            targets = None
+            # for target_feature_name, target_value in targets.items():
+            #     if not isinstance(target_value, torch.Tensor):
+            #         targets[target_feature_name] = torch.from_numpy(target_value)
+            #     else:
+            #         targets[target_feature_name] = target_value
+        # else:
+        #     targets = None
 
         assert list(inputs.keys()) == self.input_features.keys()
 
         # Convert inputs to tensors of type float as expected by hummingbird GEMMTreeImpl.
-        for input_feature_name, input_values in inputs.items():
-            if not isinstance(input_values, torch.Tensor):
-                inputs[input_feature_name] = torch.from_numpy(input_values).float()
-            else:
-                inputs[input_feature_name] = input_values.view(-1, 1).float()
+        # for input_feature_name, input_values in inputs.items():
+        #     if not isinstance(input_values, torch.Tensor):
+        #         inputs[input_feature_name] = torch.from_numpy(input_values).float()
+        #     else:
+        #         inputs[input_feature_name] = input_values.view(-1, 1).float()
 
         # TODO(travis): include encoder and decoder steps during inference
         # encoder_outputs = {}
@@ -125,44 +125,55 @@ class GBM(BaseModel):
         #     encoder_outputs[input_feature_name] = encoder_output
 
         # concatenate inputs
-        inputs = torch.cat(list(inputs.values()), dim=1)
+        # inputs = torch.cat(list(inputs.values()), dim=1)
 
         # Invoke output features.
         output_logits = {}
         output_feature_name = self.output_features.keys()[0]
         output_feature = self.output_features[output_feature_name]
 
-        assert (
-            type(inputs) is torch.Tensor
-            and inputs.dtype == torch.float32
-            and inputs.ndim == 2
-            and inputs.shape[1] == len(self.input_features)
-        ), (
-            f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
-            f"but got {inputs.shape} of type {inputs.dtype}"
-        )
+        # assert (
+        #     type(inputs) is torch.Tensor
+        #     and inputs.dtype == torch.float32
+        #     and inputs.ndim == 2
+        #     and inputs.shape[1] == len(self.input_features)
+        # ), (
+        #     f"Expected inputs to be a 2D tensor of shape (batch_size, {len(self.input_features)}) of type float32, "
+        #     f"but got {inputs.shape} of type {inputs.dtype}"
+        # )
         # Predict using PyTorch module, so it is included when converting to TorchScript.
-        preds = self.compiled_model.model(inputs)
+        # preds = self.compiled_model.model(inputs)
+
+        in_array = np.stack(list(inputs.values()), axis=0).T
 
         if output_feature.type() == NUMBER:
-            # regression
+            preds = torch.from_numpy(self.lgbm_model.predict(in_array))
             logits = preds.view(-1)
         else:
-            # classification
-            _, probs = preds
-
+            probs = torch.from_numpy(self.lgbm_model.predict_proba(in_array))
             if output_feature.type() == BINARY:
-                # keep positive class only for binary feature
-                probs = probs[:, 1]  # shape (batch_size,)
-            elif output_feature.num_classes > 2:
-                probs = probs.view(-1, 2, output_feature.num_classes)  # shape (batch_size, 2, num_classes)
-                probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
+                probs = torch.logit(probs[:, 1])
+            logits = probs
 
-                # probabilities for belonging to each class
-                probs = probs[:, :, 1]  # shape (batch_size, num_classes)
+        # if output_feature.type() == NUMBER:
+        #     # regression
+        #     logits = preds.view(-1)
+        # else:
+        #     # classification
+        #     _, probs = preds
 
-            # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
-            logits = torch.logit(probs)
+        #     if output_feature.type() == BINARY:
+        #         # keep positive class only for binary feature
+        #         probs = probs[:, 1]  # shape (batch_size,)
+        #     elif output_feature.num_classes > 2:
+        #         probs = probs.view(-1, 2, output_feature.num_classes)  # shape (batch_size, 2, num_classes)
+        #         probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
+
+        #         # probabilities for belonging to each class
+        #         probs = probs[:, :, 1]  # shape (batch_size, num_classes)
+
+        #     # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
+        #     logits = torch.logit(probs)
 
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
