@@ -155,12 +155,29 @@ class DaskEngine(DataFrameEngine):
         meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
 
-    def map_batches(self, series, map_fn):
-        import ray.data
+    def map_batches(self, series, map_fn, enable_tensor_extension_casting=True):
+        """Map a function over batches of a Dask Series.
 
-        ds = ray.data.from_dask(series)
-        ds = ds.map_batches(map_fn, batch_format="pandas")
-        return self._to_dask(ds)
+        Args:
+            series: Dask Series
+            map_fn: Function to apply to each batch
+            enable_tensor_extension_casting: Whether to enable tensor extension casting at the end of the Ray Datasets
+                map_batches call. This is useful in cases where the output is not supported by the ray Tensor dtype
+                extension, such as when the output consists of ragged tensors.
+        """
+        import ray.data
+        from ray.data.context import DatasetContext
+
+        ctx = DatasetContext.get_current()
+        prev_enable_tensor_extension_casting = ctx.enable_tensor_extension_casting
+
+        try:
+            ctx.enable_tensor_extension_casting = enable_tensor_extension_casting
+            ds = ray.data.from_dask(series)
+            ds = ds.map_batches(map_fn, batch_format="pandas")
+            return self._to_dask(ds)
+        finally:
+            ctx.enable_tensor_extension_casting = prev_enable_tensor_extension_casting
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")

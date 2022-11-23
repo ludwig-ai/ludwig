@@ -54,7 +54,7 @@ def postprocess(
             )
         return df
 
-    predictions = backend.df_engine.map_batches(predictions, postprocess_batch)
+    predictions = backend.df_engine.map_batches(predictions, postprocess_batch, enable_tensor_extension_casting=False)
 
     # Save any new columns but do not save the original columns again
     if not skip_save_unprocessed_output:

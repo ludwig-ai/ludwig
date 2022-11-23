@@ -372,8 +372,8 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         binary_feature(),
         number_feature(),
         vector_feature(),
+        set_feature(decoder={"vocab_size": 3}),
         # TODO: feature type not yet supported
-        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
         # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]

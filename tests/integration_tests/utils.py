@@ -306,7 +306,7 @@ def set_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "name": f"{SET}_{random_string()}",
+        "name": f"{SET}_",
         "type": SET,
     }
     if output_feature:
@@ -426,7 +426,7 @@ def timeseries_feature(**kwargs):
 
 def binary_feature(**kwargs):
     feature = {
-        "name": f"{BINARY}_{random_string()}",
+        "name": f"{BINARY}_",
         "type": BINARY,
     }
     recursive_update(feature, kwargs)
@@ -859,48 +859,53 @@ def train_with_backend(
     skip_save_processed_input=True,
     skip_save_predictions=True,
 ):
-    model = LudwigModel(config, backend=backend, callbacks=callbacks)
+    tmpdir = "/Users/geoffreyangus/Downloads/model/"
+    model = LudwigModel.load(tmpdir, backend=backend)
+    # model = LudwigModel(config, backend=backend, callbacks=callbacks)
     with tempfile.TemporaryDirectory() as output_directory:
-        _, _, _ = model.train(
-            dataset=dataset,
-            training_set=training_set,
-            validation_set=validation_set,
-            test_set=test_set,
-            skip_save_processed_input=skip_save_processed_input,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
-            skip_save_log=True,
-            output_directory=output_directory,
-        )
+        # _, _, _ = model.train(
+        #     dataset=dataset,
+        #     training_set=training_set,
+        #     validation_set=validation_set,
+        #     test_set=test_set,
+        #     skip_save_processed_input=skip_save_processed_input,
+        #     skip_save_progress=True,
+        #     skip_save_unprocessed_output=True,
+        #     skip_save_log=True,
+        #     output_directory=output_directory,
+        # )
 
         if dataset is None:
             dataset = training_set
+        print("ASDFASDF len(dataset):", len(dataset))
+        # if predict:
+        #     preds, _ = model.predict(
+        #         dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
+        #     )
+        #     assert preds is not None
 
-        if predict:
-            preds, _ = model.predict(
-                dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
-            )
-            assert preds is not None
-
-            if not skip_save_predictions:
-                read_preds = model.backend.df_engine.read_predictions(
-                    os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
-                )
-                assert read_preds is not None
+        #     if not skip_save_predictions:
+        #         read_preds = model.backend.df_engine.read_predictions(
+        #             os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+        #         )
+        #         assert read_preds is not None
 
         if evaluate:
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
+            eval_preds.compute().to_csv(f"/Users/geoffreyangus/Downloads/preds_ray_backend.csv")
             assert eval_preds is not None
 
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
-                model.save(tmpdir)
+                tmpdir = "/Users/geoffreyangus/Downloads/model/"
+                # model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-                local_eval_stats, _, _ = local_model.evaluate(
-                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
+                local_eval_stats, local_preds, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=True
                 )
+                local_preds.to_csv(f"/Users/geoffreyangus/Downloads/preds_local_backend.csv")
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
