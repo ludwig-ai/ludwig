@@ -36,7 +36,7 @@ from ludwig.utils.registry import Registry
 class TVModelVariant:
     variant_id: Union[str, int]
     create_model_function: Callable
-    model_weights: Optional[WeightsEnum]
+    model_weights: WeightsEnum
     """
     variant_id: model variant identifier
     create_model_function: TorchVision function to create model class
