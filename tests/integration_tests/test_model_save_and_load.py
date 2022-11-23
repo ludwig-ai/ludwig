@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import ENCODER, LOSS, NAME, TRAINER, TRAINING, TYPE
+from ludwig.constants import ENCODER, LOSS, NAME, PREPROCESSING, TRAINER, TRAINING, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.modules.loss_modules import MSELoss
 from ludwig.utils.data_utils import read_csv
@@ -270,6 +270,8 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
         TYPE: torch_encoder,
         "model_variant": variant,
     }
+    input_features[0][PREPROCESSING]["height"] = 128
+    input_features[0][PREPROCESSING]["width"] = 128
 
     output_features = [
         category_feature(decoder={"vocab_size": 3}),
