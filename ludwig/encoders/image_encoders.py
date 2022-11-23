@@ -381,15 +381,15 @@ class TVBaseEncoder(Encoder):
         # model_id = f"{self.torchvision_model_type}-{self.model_variant}"
 
         # retrieve function to create requested model
-        self.create_model = (
-            torchvision_model_registry[self.torchvision_model_type][self.model_variant].create_model_function
-        )
+        self.create_model = torchvision_model_registry[self.torchvision_model_type][
+            self.model_variant
+        ].create_model_function
 
         # get weight specification
         if use_pretrained and not saved_weights_in_checkpoint:
-            weights_specification = (
-                torchvision_model_registry[self.torchvision_model_type][self.model_variant].model_weights.DEFAULT
-            )
+            weights_specification = torchvision_model_registry[self.torchvision_model_type][
+                self.model_variant
+            ].model_weights.DEFAULT
             logger.info(
                 f"Instantiating torchvision image encoder '{self.torchvision_model_type}' with pretrained weights: "
                 f"{weights_specification}."
@@ -408,10 +408,9 @@ class TVBaseEncoder(Encoder):
                 )
 
         # get torchvision transforms object
-        transforms_obj = (
-            torchvision_model_registry[self.torchvision_model_type][
-                self.model_variant].model_weights.DEFAULT.transforms()
-        )
+        transforms_obj = torchvision_model_registry[self.torchvision_model_type][
+            self.model_variant
+        ].model_weights.DEFAULT.transforms()
         self.num_channels = len(transforms_obj.mean)
         self.crop_size = transforms_obj.crop_size
 
@@ -466,9 +465,11 @@ ALEXNET_VARIANTS = [
 ]
 
 
-@register_torchvision_model_variants([
-    TVModelVariant(variant_id="base", create_model_function=tvm.alexnet, model_weights=tvm.AlexNet_Weights),
-])
+@register_torchvision_model_variants(
+    [
+        TVModelVariant(variant_id="base", create_model_function=tvm.alexnet, model_weights=tvm.AlexNet_Weights),
+    ]
+)
 @register_encoder("alexnet_torch", IMAGE)
 class TVAlexNetEncoder(TVBaseEncoder):
     # specify base model type
@@ -816,13 +817,15 @@ class TVAlexNetEncoder(TVBaseEncoder):
 
 #
 #
-@register_torchvision_model_variants([
-    TVModelVariant(18, tvm.resnet18, tvm.ResNet18_Weights),
-    TVModelVariant(34, tvm.resnet34, tvm.ResNet34_Weights),
-    TVModelVariant(50, tvm.resnet50, tvm.ResNet50_Weights),
-    TVModelVariant(101, tvm.resnet101, tvm.ResNet101_Weights),
-    TVModelVariant(152, tvm.resnet152, tvm.ResNet152_Weights),
-])
+@register_torchvision_model_variants(
+    [
+        TVModelVariant(18, tvm.resnet18, tvm.ResNet18_Weights),
+        TVModelVariant(34, tvm.resnet34, tvm.ResNet34_Weights),
+        TVModelVariant(50, tvm.resnet50, tvm.ResNet50_Weights),
+        TVModelVariant(101, tvm.resnet101, tvm.ResNet101_Weights),
+        TVModelVariant(152, tvm.resnet152, tvm.ResNet152_Weights),
+    ]
+)
 @register_encoder("resnet_torch", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
     # specify base torchvision model
@@ -841,6 +844,8 @@ class TVResNetEncoder(TVBaseEncoder):
     @staticmethod
     def get_schema_cls():
         return TVResNetEncoderConfig
+
+
 #
 #
 # RESNEXT_VARIANTS = [

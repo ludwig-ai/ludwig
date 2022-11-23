@@ -4,49 +4,14 @@ import pytest
 import torch
 import torchvision.models as tvm
 
-from ludwig.encoders.image_encoders import (  # ViTEncoder,
+from ludwig.encoders.image_encoders import (  # ViTEncoder,; CONVNEXT_VARIANTS,; DENSENET_VARIANTS,; EFFICIENTNET_VARIANTS,; GOOGLENET_VARIANTS,; INCEPTIONV3_VARIANTS,; MAXVIT_VARIANTS,; MNASNET_VARIANTS,; MOBILENETV2_VARIANTS,; MOBILENETV3_VARIANTS,; REGNET_VARIANTS,; RESNET_TORCH_VARIANTS,; RESNEXT_VARIANTS,; SHUFFLENET_V2_VARIANTS,; SQUEEZENET_VARIANTS,; SWIN_TRANSFORMER_VARIANTS,; TVConvNeXtEncoder,; TVDenseNetEncoder,; TVEfficientNetEncoder,; TVGoogLeNetEncoder,; TVInceptionV3Encoder,; TVMaxVitEncoder,; TVMNASNetEncoder,; TVMobileNetV2Encoder,; TVMobileNetV3Encoder,; TVRegNetEncoder,; TVResNeXtEncoder,; TVShuffleNetV2Encoder,; TVSqueezeNetEncoder,; TVSwinTransformerEncoder,; TVVGGEncoder,; TVViTEncoder,; TVWideResNetEncoder,; VGG_VARIANTS,; VIT_VARIANTS,; WIDE_RESNET_VARIANTS,
     ALEXNET_VARIANTS,
-    # CONVNEXT_VARIANTS,
-    # DENSENET_VARIANTS,
-    # EFFICIENTNET_VARIANTS,
-    # GOOGLENET_VARIANTS,
-    # INCEPTIONV3_VARIANTS,
-    # MAXVIT_VARIANTS,
     MLPMixerEncoder,
-    # MNASNET_VARIANTS,
-    # MOBILENETV2_VARIANTS,
-    # MOBILENETV3_VARIANTS,
-    # REGNET_VARIANTS,
-    # RESNET_TORCH_VARIANTS,
-    # RESNEXT_VARIANTS,
-    # SHUFFLENET_V2_VARIANTS,
-    # SQUEEZENET_VARIANTS,
     Stacked2DCNN,
-    # SWIN_TRANSFORMER_VARIANTS,
     TVAlexNetEncoder,
-    # TVConvNeXtEncoder,
-    # TVDenseNetEncoder,
-    # TVEfficientNetEncoder,
-    # TVGoogLeNetEncoder,
-    # TVInceptionV3Encoder,
-    # TVMaxVitEncoder,
-    # TVMNASNetEncoder,
-    # TVMobileNetV2Encoder,
-    # TVMobileNetV3Encoder,
-    # TVRegNetEncoder,
     TVResNetEncoder,
-    # TVResNeXtEncoder,
-    # TVShuffleNetV2Encoder,
-    # TVSqueezeNetEncoder,
-    # TVSwinTransformerEncoder,
-    # TVVGGEncoder,
-    # TVViTEncoder,
-    # TVWideResNetEncoder,
-    # VGG_VARIANTS,
-    # VIT_VARIANTS,
-    # WIDE_RESNET_VARIANTS,
 )
-from ludwig.utils.image_utils import TVModelVariant, torchvision_model_registry
+from ludwig.utils.image_utils import torchvision_model_registry, TVModelVariant
 from ludwig.utils.misc_utils import set_random_seed
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
@@ -478,6 +443,8 @@ def test_tv_resnet_torch_encoder(
     inputs = torch.rand(2, *pretrained_model.input_shape)
     outputs = pretrained_model(inputs)
     assert outputs["encoder_output"].shape[1:] == pretrained_model.output_shape
+
+
 #
 #
 # @pytest.mark.parametrize("trainable", [True, False])
