@@ -10,8 +10,6 @@ from ludwig.schema import utils as schema_utils
 
 @dataclass
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
-    import ludwig.hyperopt.search_algos
-
     """Basic search algorithm settings."""
 
     type: str = schema_utils.StringOptions(
