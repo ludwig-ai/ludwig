@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 import warnings
-from collections import namedtuple
 from collections.abc import Iterable
 from dataclasses import dataclass
 from io import BytesIO
