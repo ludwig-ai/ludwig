@@ -496,14 +496,18 @@ class TVAlexNetEncoder(TVBaseEncoder):
 @DeveloperAPI
 @register_torchvision_model_variants(
     [
-        TVModelVariant(variant_id="tiny", create_model_function=tvm.convnext_tiny,
-                       model_weights=tvm.ConvNeXt_Tiny_Weights),
-        TVModelVariant(variant_id="small", create_model_function=tvm.convnext_small,
-                       model_weights=tvm.ConvNeXt_Small_Weights),
-        TVModelVariant(variant_id="base", create_model_function=tvm.convnext_base,
-                       model_weights=tvm.ConvNeXt_Base_Weights),
-        TVModelVariant(variant_id="large", create_model_function=tvm.convnext_large,
-                       model_weights=tvm.ConvNeXt_Large_Weights),
+        TVModelVariant(
+            variant_id="tiny", create_model_function=tvm.convnext_tiny, model_weights=tvm.ConvNeXt_Tiny_Weights
+        ),
+        TVModelVariant(
+            variant_id="small", create_model_function=tvm.convnext_small, model_weights=tvm.ConvNeXt_Small_Weights
+        ),
+        TVModelVariant(
+            variant_id="base", create_model_function=tvm.convnext_base, model_weights=tvm.ConvNeXt_Base_Weights
+        ),
+        TVModelVariant(
+            variant_id="large", create_model_function=tvm.convnext_large, model_weights=tvm.ConvNeXt_Large_Weights
+        ),
     ]
 )
 @register_encoder("convnext_torch", IMAGE)

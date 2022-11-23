@@ -3,10 +3,9 @@ from typing import Union
 import pytest
 import torch
 
-from ludwig.encoders.image_encoders import (
+from ludwig.encoders.image_encoders import (  # ViTEncoder,
     MLPMixerEncoder,
     Stacked2DCNN,
-    # ViTEncoder,
     TVAlexNetEncoder,
     TVConvNeXtEncoder,
     TVDenseNetEncoder,
@@ -228,8 +227,9 @@ def test_tv_efficientnet_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["googlenet_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["googlenet_torch"].values()]
+)
 def test_tv_googlenet_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -258,8 +258,9 @@ def test_tv_googlenet_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["inceptionv3_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["inceptionv3_torch"].values()]
+)
 def test_tv_inceptionv3_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -346,8 +347,9 @@ def test_tv_mnasnet_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["mobilenetv2_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv2_torch"].values()]
+)
 def test_tv_mobilenetv2_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -376,8 +378,9 @@ def test_tv_mobilenetv2_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["mobilenetv3_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv3_torch"].values()]
+)
 def test_tv_mobilenetv3_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -497,8 +500,9 @@ def test_tv_resnext_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["shufflenet_v2_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["shufflenet_v2_torch"].values()]
+)
 def test_tv_shufflenet_v2_encoder(
     model_variant: str,
     use_pretrained: bool,
@@ -527,8 +531,9 @@ def test_tv_shufflenet_v2_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["squeezenet_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["squeezenet_torch"].values()]
+)
 def test_tv_squeezenet_encoder(
     model_variant: str,
     use_pretrained: bool,
@@ -557,8 +562,9 @@ def test_tv_squeezenet_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["swin_transformer_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["swin_transformer_torch"].values()]
+)
 def test_tv_swin_transformer_encoder(
     model_variant: str,
     use_pretrained: bool,
@@ -649,8 +655,9 @@ def test_tv_vit_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant",
-                         [v.variant_id for v in torchvision_model_registry["wide_resnet_torch"].values()])
+@pytest.mark.parametrize(
+    "model_variant", [v.variant_id for v in torchvision_model_registry["wide_resnet_torch"].values()]
+)
 def test_tv_wide_resnet_encoder(
     model_variant: str,
     use_pretrained: bool,
