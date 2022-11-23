@@ -2,14 +2,14 @@ import argparse
 import importlib
 import logging
 import os
-from io import BytesIO
 from collections import OrderedDict
 from functools import lru_cache
+from io import BytesIO
 from typing import Any, Dict, List
 
 import yaml
 
-from ludwig.api_annotations import PublicAPI, DeveloperAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.datasets import configs, model_configs
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.globals import LUDWIG_VERSION
