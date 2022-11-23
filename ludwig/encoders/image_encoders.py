@@ -351,6 +351,7 @@ class MLPMixerEncoder(Encoder):
 #         return torch.Size(self._output_shape)
 
 
+@DeveloperAPI
 class TVBaseEncoder(Encoder):
     def __init__(
         self,
@@ -461,6 +462,7 @@ class TVBaseEncoder(Encoder):
 #   model_weights: Torchvision class for model weights
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant(variant_id="base", create_model_function=tvm.alexnet, model_weights=tvm.AlexNet_Weights),
@@ -491,6 +493,7 @@ class TVAlexNetEncoder(TVBaseEncoder):
         return TVAlexNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant(variant_id="tiny", create_model_function=tvm.convnext_tiny,
@@ -523,6 +526,7 @@ class TVConvNeXtEncoder(TVBaseEncoder):
         return TVConvNeXtEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant(121, tvm.densenet121, tvm.DenseNet121_Weights),
@@ -551,6 +555,7 @@ class TVDenseNetEncoder(TVBaseEncoder):
         return TVDenseNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("b0", tvm.efficientnet_b0, tvm.EfficientNet_B0_Weights),
@@ -586,6 +591,7 @@ class TVEfficientNetEncoder(TVBaseEncoder):
         return TVEfficientNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("base", tvm.googlenet, tvm.GoogLeNet_Weights),
@@ -619,6 +625,7 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
         return TVGoogLeNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("base", tvm.inception_v3, tvm.Inception_V3_Weights),
@@ -651,6 +658,7 @@ class TVInceptionV3Encoder(TVBaseEncoder):
         return TVInceptionV3EncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("t", tvm.maxvit_t, tvm.MaxVit_T_Weights),
@@ -676,6 +684,7 @@ class TVMaxVitEncoder(TVBaseEncoder):
         return TVMaxVitEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("0_5", tvm.mnasnet0_5, tvm.mnasnet.MNASNet0_5_Weights),
@@ -704,6 +713,7 @@ class TVMNASNetEncoder(TVBaseEncoder):
         return TVMNASNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("base", tvm.mobilenet_v2, tvm.MobileNet_V2_Weights),
@@ -729,6 +739,7 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
         return TVMobileNetV2EncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("small", tvm.mobilenet_v3_small, tvm.MobileNet_V3_Small_Weights),
@@ -755,6 +766,7 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
         return TVMobileNetV3EncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("x_16gf", tvm.regnet_x_16gf, tvm.RegNet_X_16GF_Weights),
@@ -794,6 +806,7 @@ class TVRegNetEncoder(TVBaseEncoder):
         return TVRegNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant(18, tvm.resnet18, tvm.ResNet18_Weights),
@@ -823,6 +836,7 @@ class TVResNetEncoder(TVBaseEncoder):
         return TVResNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("50_32x4d", tvm.resnext50_32x4d, tvm.ResNeXt50_32X4D_Weights),
@@ -850,6 +864,7 @@ class TVResNeXtEncoder(TVBaseEncoder):
         return TVResNeXtEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("x0_5", tvm.shufflenet_v2_x0_5, tvm.ShuffleNet_V2_X0_5_Weights),
@@ -878,6 +893,7 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
         return TVShuffleNetV2EncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("1_0", tvm.squeezenet1_0, tvm.SqueezeNet1_0_Weights),
@@ -907,6 +923,7 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
         return TVSqueezeNetEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("t", tvm.swin_t, tvm.Swin_T_Weights),
@@ -934,6 +951,7 @@ class TVSwinTransformerEncoder(TVBaseEncoder):
         return TVSwinTransformerEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant(11, tvm.vgg11, tvm.VGG11_Weights),
@@ -966,6 +984,7 @@ class TVVGGEncoder(TVBaseEncoder):
         return TVVGGEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("b_16", tvm.vit_b_16, tvm.ViT_B_16_Weights),
@@ -1007,6 +1026,7 @@ class TVViTEncoder(TVBaseEncoder):
         return TVViTEncoderConfig
 
 
+@DeveloperAPI
 @register_torchvision_model_variants(
     [
         TVModelVariant("50_2", tvm.wide_resnet50_2, tvm.Wide_ResNet50_2_Weights),
