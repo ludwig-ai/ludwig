@@ -1245,7 +1245,6 @@ class Trainer(BaseTrainer):
         training_progress_tracker_path: str,
         training_checkpoint_path: str,
     ) -> bool:
-        """"""
         missing_files = []
         # training_progress.json
         if not path_exists(training_progress_tracker_path):
