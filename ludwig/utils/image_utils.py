@@ -23,9 +23,9 @@ from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from torchvision.models._api import WeightsEnum
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
+from torchvision.models._api import WeightsEnum
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
@@ -41,7 +41,7 @@ class TVModelVariant:
     """
     variant_id: model variant identifier
     create_model_function: TorchVision function to create model class
-    model_weights: Torchvision class for model weights    
+    model_weights: Torchvision class for model weights
     """
 
 
