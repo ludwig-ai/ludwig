@@ -39,7 +39,6 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     SRC,
-    TIED,
     TRAINING,
     TYPE,
     WIDTH,
