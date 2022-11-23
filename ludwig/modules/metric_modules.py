@@ -503,7 +503,6 @@ class JaccardMetric(MeanMetric):
     def __init__(self, threshold: float = 0.5, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
         self.threshold = threshold
-        # self.add_state(name="loss", default=[], dist_reduce_fx="mean")
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         # notation: b is batch size and nc is number of unique elements in the set

@@ -348,8 +348,6 @@ def create_vocabulary_single_token(
     """
     processed_counts = data.str.strip().value_counts(sort=True)
     processed_counts = processor.compute(processed_counts)
-    print("ASDFASDF processor: ", processor)
-    print("ASDFASDF processed_counts: ", processed_counts)
     full_vocab = processed_counts.index.tolist()
     # Only add unknown symbol if num most frequent tokens is less than total number of unique tokens
     if num_most_frequent < len(full_vocab):

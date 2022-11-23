@@ -306,7 +306,7 @@ def set_feature(output_feature=False, **kwargs):
     if DECODER in kwargs:
         output_feature = True
     feature = {
-        "name": f"{SET}_",
+        "name": f"{SET}_{random_string()}",
         "type": SET,
     }
     if output_feature:
@@ -426,7 +426,7 @@ def timeseries_feature(**kwargs):
 
 def binary_feature(**kwargs):
     feature = {
-        "name": f"{BINARY}_",
+        "name": f"{BINARY}_{random_string()}",
         "type": BINARY,
     }
     recursive_update(feature, kwargs)
@@ -887,8 +887,6 @@ def train_with_backend(
                     os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
                 )
                 read_preds = read_preds.compute()  # call compute to ensure it materializes correctly
-                print("ASDFASDF read_preds.head(1).values", read_preds.head(1).values)
-                print("ASDFASDF read_preds.dtypes", read_preds.dtypes)
                 assert read_preds is not None
 
         if evaluate:
@@ -903,7 +901,7 @@ def train_with_backend(
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
                 local_eval_stats, _, _ = local_model.evaluate(
-                    dataset=dataset, collect_overall_stats=False, collect_predictions=True
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
                 )
 
                 # Filter out metrics that are not being aggregated correctly for now
@@ -916,7 +914,6 @@ def train_with_backend(
                             if metric_name
                             not in {
                                 "loss",
-                                "root_mean_squared_error",
                                 "root_mean_squared_percentage_error",
                                 "jaccard",
                             }
