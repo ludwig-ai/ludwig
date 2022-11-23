@@ -2,15 +2,17 @@ import argparse
 import importlib
 import logging
 import os
+from io import BytesIO
 from collections import OrderedDict
 from functools import lru_cache
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import yaml
 
-from ludwig.api_annotations import PublicAPI
+from ludwig.api_annotations import PublicAPI, DeveloperAPI
 from ludwig.datasets import configs, model_configs
 from ludwig.datasets.dataset_config import DatasetConfig
+from ludwig.datasets.loaders.dataset_loader import DatasetLoader
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import print_ludwig
 
@@ -67,7 +69,7 @@ def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
 
 
 @PublicAPI
-def get_dataset(dataset_name, cache_dir=None) -> Any:
+def get_dataset(dataset_name, cache_dir=None) -> Union[DatasetLoader, Any]:
     """Gets an instance of the dataset loader for a dataset."""
     config = _get_dataset_config(dataset_name)
     class_name = config.loader.split(".")[-1]
@@ -126,14 +128,16 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
 
-def upload_datasets(datasets: List[str]):
-    """Provides Uploads the specified datasets to Minio"""
-    for dataset_name in datasets:
-        try:
-            dataset = get_dataset(dataset_name)
-            dataset.export()
-        except Exception as e:
-            logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
+
+@DeveloperAPI
+def get_buffer(dataset_name: str):
+    """Returns a byte buffer for the specified dataset."""
+    try:
+        dataset = get_dataset(dataset_name).load()
+        buffer = BytesIO(dataset.to_parquet())
+        return buffer
+    except Exception as e:
+        logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
 
 
 def cli(sys_argv):
