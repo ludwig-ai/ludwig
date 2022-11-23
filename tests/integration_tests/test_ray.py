@@ -105,7 +105,13 @@ except ImportError:
 
 
 def run_api_experiment(
-    config, dataset, backend_config, predict=False, skip_save_processed_input=True, skip_save_predictions=True
+    config,
+    dataset,
+    backend_config,
+    predict=False,
+    skip_save_processed_input=True,
+    skip_save_predictions=True,
+    required_stats=None,
 ):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
@@ -125,6 +131,7 @@ def run_api_experiment(
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
+        required_stats=required_stats,
     )
 
     assert isinstance(model.backend, RayBackend)
@@ -281,6 +288,7 @@ def run_test_with_features(
     first_row_none=False,
     last_row_none=False,
     nan_cols=[],
+    required_stats=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -311,6 +319,7 @@ def run_test_with_features(
                     predict=predict,
                     skip_save_processed_input=skip_save_processed_input,
                     skip_save_predictions=skip_save_predictions,
+                    required_stats=required_stats,
                 )
         else:
             run_fn(
@@ -320,6 +329,7 @@ def run_test_with_features(
                 predict=predict,
                 skip_save_processed_input=skip_save_processed_input,
                 skip_save_predictions=skip_save_predictions,
+                required_stats=required_stats,
             )
 
 
@@ -368,11 +378,12 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
+    set_feature_config = set_feature(decoder={"vocab_size": 3})
     output_features = [
         binary_feature(),
         number_feature(),
         vector_feature(),
-        set_feature(decoder={"vocab_size": 3}),
+        set_feature_config,
         # TODO: feature type not yet supported
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
         # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
@@ -386,6 +397,7 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
+        required_stats={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 

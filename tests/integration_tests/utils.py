@@ -25,7 +25,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import cloudpickle
 import numpy as np
@@ -858,54 +858,50 @@ def train_with_backend(
     callbacks=None,
     skip_save_processed_input=True,
     skip_save_predictions=True,
+    required_stats=None,
 ):
-    tmpdir = "/Users/geoffreyangus/Downloads/model/"
-    model = LudwigModel.load(tmpdir, backend=backend)
-    # model = LudwigModel(config, backend=backend, callbacks=callbacks)
+    model = LudwigModel(config, backend=backend, callbacks=callbacks)
     with tempfile.TemporaryDirectory() as output_directory:
-        # _, _, _ = model.train(
-        #     dataset=dataset,
-        #     training_set=training_set,
-        #     validation_set=validation_set,
-        #     test_set=test_set,
-        #     skip_save_processed_input=skip_save_processed_input,
-        #     skip_save_progress=True,
-        #     skip_save_unprocessed_output=True,
-        #     skip_save_log=True,
-        #     output_directory=output_directory,
-        # )
+        _, _, _ = model.train(
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            skip_save_processed_input=skip_save_processed_input,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True,
+            skip_save_log=True,
+            output_directory=output_directory,
+        )
 
         if dataset is None:
             dataset = training_set
-        print("ASDFASDF len(dataset):", len(dataset))
-        # if predict:
-        #     preds, _ = model.predict(
-        #         dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
-        #     )
-        #     assert preds is not None
+        if predict:
+            preds, _ = model.predict(
+                dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
+            )
+            assert preds is not None
 
-        #     if not skip_save_predictions:
-        #         read_preds = model.backend.df_engine.read_predictions(
-        #             os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
-        #         )
-        #         assert read_preds is not None
+            if not skip_save_predictions:
+                read_preds = model.backend.df_engine.read_predictions(
+                    os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
+                )
+                assert read_preds is not None
 
         if evaluate:
             eval_stats, eval_preds, _ = model.evaluate(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
-            eval_preds.compute().to_csv(f"/Users/geoffreyangus/Downloads/preds_ray_backend.csv")
             assert eval_preds is not None
+            all_required_stats_exist(eval_stats, required_stats)
 
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
-                tmpdir = "/Users/geoffreyangus/Downloads/model/"
-                # model.save(tmpdir)
+                model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
                 local_eval_stats, local_preds, _ = local_model.evaluate(
                     dataset=dataset, collect_overall_stats=False, collect_predictions=True
                 )
-                local_preds.to_csv(f"/Users/geoffreyangus/Downloads/preds_local_backend.csv")
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
@@ -914,7 +910,13 @@ def train_with_backend(
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name not in {"loss", "root_mean_squared_percentage_error"}
+                            if metric_name
+                            not in {
+                                "loss",
+                                "root_mean_squared_error",
+                                "root_mean_squared_percentage_error",
+                                "jaccard",
+                            }
                         }
                         for k, v in stats.items()
                     }
@@ -928,6 +930,21 @@ def train_with_backend(
                         ), f"metric {name1}: {metric1} != {metric2}"
 
         return model
+
+
+def all_required_stats_exist(
+    feature_to_stats: Dict[str, Dict[str, Any]], required_stats: Optional[Dict[str, Set]] = None
+):
+    if required_stats is None:
+        return True
+
+    for feature_name, stats_dict in feature_to_stats.items():
+        if feature_name in required_stats:
+            required_metric_names = set(required_stats[feature_name])
+            metric_names = set(stats_dict.keys())
+            assert required_metric_names.issubset(
+                metric_names
+            ), f"required metrics {required_metric_names} not in {metric_names} for feature {feature_name}"
 
 
 @contextlib.contextmanager
