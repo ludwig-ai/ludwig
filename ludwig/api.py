@@ -444,7 +444,9 @@ class LudwigModel:
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
-                    logger.info("Model resume path does not exists, " "starting training from scratch")
+                    logger.info(
+                        f"Model resume path '{model_resume_path}' does not exist, starting training from scratch"
+                    )
                 model_resume_path = None
 
         if model_resume_path is None:
