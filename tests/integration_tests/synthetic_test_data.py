@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 RANDOM_SEED = 42
-NUMBER_OBSERVATIONS = 100
+NUMBER_OBSERVATIONS = 200
 
 GeneratedData = namedtuple("GeneratedData", "train_df validation_df test_df")
 
