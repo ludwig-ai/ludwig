@@ -163,6 +163,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         :param resize_method: type of resizing method
         :param num_channels: expected number of channels in the first image
         :param user_specified_num_channels: did the user specify num channels?
+        :param standardize_image: specifies whether to standarize image with imagenet1k specifications
         :return: image object as a numpy array
 
         Helper method to read and resize an image according to model definition.
