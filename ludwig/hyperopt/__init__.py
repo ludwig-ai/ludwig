@@ -1,1 +1,1 @@
-import search_algos  # noqa
+import ludwig.hyperopt.search_algos  # noqa
