@@ -261,7 +261,6 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             LOSS: get_scalar_from_ludwig_metric(self.eval_loss_metric)
             + get_scalar_from_ludwig_metric(self.eval_additional_losses_metrics)
         }
-        print("ASDFASDF all_of_metrics:", all_of_metrics)
         return all_of_metrics
 
     def reset_metrics(self):
