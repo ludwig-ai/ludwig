@@ -250,3 +250,10 @@ CACHE = "cache"
 # (LudwigProfiler(tag="...", ..)). This edited tag is passed in to `torch.profiler.record_function` so we can
 # retrieve torch ops for the tagged code blocks/functions.
 LUDWIG_TAG = "[ludwig]"
+
+
+# Retry constants
+TRIES = 5
+DELAY = 1
+BACKOFF = 2
+JITTER = (0, 1)
