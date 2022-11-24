@@ -378,7 +378,10 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
-    set_feature_config = set_feature(decoder={"vocab_size": 3})
+    set_feature_config = set_feature(
+        decoder={"vocab_size": 3},
+        preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
+    )
     output_features = [
         binary_feature(),
         number_feature(),
