@@ -858,7 +858,7 @@ def train_with_backend(
     callbacks=None,
     skip_save_processed_input=True,
     skip_save_predictions=True,
-    required_stats=None,
+    required_metrics=None,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     with tempfile.TemporaryDirectory() as output_directory:
@@ -886,7 +886,8 @@ def train_with_backend(
                 read_preds = model.backend.df_engine.read_predictions(
                     os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
                 )
-                read_preds = read_preds.compute()  # call compute to ensure it materializes correctly
+                # call compute to ensure preds materialize correctly
+                read_preds = read_preds.compute()
                 assert read_preds is not None
 
         if evaluate:
@@ -894,14 +895,14 @@ def train_with_backend(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
             assert eval_preds is not None
-            all_required_stats_exist(eval_stats, required_stats)
+            all_required_metrics_exist(eval_stats, required_metrics)
 
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-                local_eval_stats, local_preds, _ = local_model.evaluate(
-                    dataset=dataset, collect_overall_stats=False, collect_predictions=True
+                local_eval_stats, _, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
                 )
 
                 # Filter out metrics that are not being aggregated correctly for now
@@ -911,12 +912,7 @@ def train_with_backend(
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name
-                            not in {
-                                "loss",
-                                "root_mean_squared_percentage_error",
-                                "jaccard",
-                            }
+                            if metric_name not in {"loss", "root_mean_squared_percentage_error", "jaccard"}
                         }
                         for k, v in stats.items()
                     }
@@ -932,16 +928,16 @@ def train_with_backend(
         return model
 
 
-def all_required_stats_exist(
-    feature_to_stats: Dict[str, Dict[str, Any]], required_stats: Optional[Dict[str, Set]] = None
+def all_required_metrics_exist(
+    feature_to_metrics_dict: Dict[str, Dict[str, Any]], required_metrics: Optional[Dict[str, Set]] = None
 ):
-    if required_stats is None:
+    if required_metrics is None:
         return True
 
-    for feature_name, stats_dict in feature_to_stats.items():
-        if feature_name in required_stats:
-            required_metric_names = set(required_stats[feature_name])
-            metric_names = set(stats_dict.keys())
+    for feature_name, metrics_dict in feature_to_metrics_dict.items():
+        if feature_name in required_metrics:
+            required_metric_names = set(required_metrics[feature_name])
+            metric_names = set(metrics_dict.keys())
             assert required_metric_names.issubset(
                 metric_names
             ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"

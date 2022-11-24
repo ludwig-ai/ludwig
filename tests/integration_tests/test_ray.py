@@ -111,7 +111,7 @@ def run_api_experiment(
     predict=False,
     skip_save_processed_input=True,
     skip_save_predictions=True,
-    required_stats=None,
+    required_metrics=None,
 ):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
@@ -131,7 +131,7 @@ def run_api_experiment(
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
-        required_stats=required_stats,
+        required_metrics=required_metrics,
     )
 
     assert isinstance(model.backend, RayBackend)
@@ -288,7 +288,7 @@ def run_test_with_features(
     first_row_none=False,
     last_row_none=False,
     nan_cols=[],
-    required_stats=None,
+    required_metrics=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -319,7 +319,7 @@ def run_test_with_features(
                     predict=predict,
                     skip_save_processed_input=skip_save_processed_input,
                     skip_save_predictions=skip_save_predictions,
-                    required_stats=required_stats,
+                    required_metrics=required_metrics,
                 )
         else:
             run_fn(
@@ -329,7 +329,7 @@ def run_test_with_features(
                 predict=predict,
                 skip_save_processed_input=skip_save_processed_input,
                 skip_save_predictions=skip_save_predictions,
-                required_stats=required_stats,
+                required_metrics=required_metrics,
             )
 
 
@@ -400,7 +400,7 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
-        required_stats={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
+        required_metrics={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 
