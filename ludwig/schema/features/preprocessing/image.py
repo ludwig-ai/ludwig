@@ -112,7 +112,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
     )
 
     standardize_image: Union[str, None] = schema_utils.StringOptions(
-        [None, "imagenet1k"],
+        ["imagenet1k"],
         default=None,
         allow_none=True,
         description="Standardize image by per channel mean centering and standard deviation scaling .",
