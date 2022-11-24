@@ -284,180 +284,6 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     )
 
 
-# TODO: Remove at end of torchvision work, in favor of Torchvision implementation
-# @register_encoder_config("resnet", IMAGE)
-# @dataclass(repr=False)
-# class ResNetEncoderConfig(BaseEncoderConfig):
-#
-#     #type: str = schema_utils.StringOptions(
-#         ["resnet"],
-#         default="resnet",
-#         allow_none=False,
-#         description="Type of encoder.",
-#     )
-#
-#     dropout: Optional[float] = schema_utils.FloatRange(
-#         default=0.0,
-#         min=0,
-#         max=1,
-#         description="Dropout rate",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["dropout"],
-#     )
-#
-#     activation: Optional[str] = schema_utils.ActivationOptions(
-#         description="if an activation is not already specified in fc_layers this is the default activation that will "
-#         "be used for each layer. It indicates the activation function applied to the output.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["activation"],
-#     )
-#
-#     height: int = schema_utils.NonNegativeInteger(
-#         default=None,
-#         description="Height of the input image.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["height"],
-#     )
-#
-#     width: int = schema_utils.NonNegativeInteger(
-#         default=None,
-#         description="Width of the input image.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["width"],
-#     )
-#
-#     resnet_size: Optional[int] = schema_utils.PositiveInteger(
-#         default=50,
-#         description="The size of the ResNet model to use.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["resnet_size"],
-#     )
-#
-#     num_channels: Optional[int] = schema_utils.NonNegativeInteger(
-#         default=None,
-#         description="Number of channels to use in the encoder. ",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["num_channels"],
-#     )
-#
-#     out_channels: Optional[int] = schema_utils.NonNegativeInteger(
-#         default=32,
-#         description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
-#         "If out_channels is not already specified in conv_layers this is the default out_channels that "
-#         "will be used for each layer. ",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["out_channels"],
-#     )
-#
-#     kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
-#         default=3,
-#         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
-#         "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
-#         "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
-#         "each layer.",
-#         field_options=[
-#             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-#             schema_utils.List(list_type=int, allow_none=False),
-#         ],
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["kernel_size"],
-#     )
-#
-#     conv_stride: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
-#         default=1,
-#         description="An integer or pair of integers specifying the stride of the initial convolutional layer.",
-#         field_options=[
-#             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-#             schema_utils.List(list_type=int, allow_none=False),
-#         ],
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["conv_stride"],
-#     )
-#
-#     first_pool_kernel_size: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
-#         default=None,
-#         description="Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.",
-#         field_options=[
-#             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-#             schema_utils.List(list_type=int, allow_none=False),
-#         ],
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["first_pool_kernel_size"],
-#     )
-#
-#     first_pool_stride: Union[int, Tuple[int]] = schema_utils.OneOfOptionsField(
-#         default=None,
-#         description="Stride for first pooling layer. If null, defaults to first_pool_kernel_size.",
-#         field_options=[
-#             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
-#             schema_utils.List(list_type=int, allow_none=False),
-#         ],
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["first_pool_stride"],
-#     )
-#
-#     batch_norm_momentum: float = schema_utils.NonNegativeFloat(
-#         default=0.9,
-#         description="Momentum of the batch norm running statistics.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["batch_norm_momentum"],
-#     )
-#
-#     batch_norm_epsilon: float = schema_utils.NonNegativeFloat(
-#         default=0.001,
-#         description="Epsilon of the batch norm.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["batch_norm_epsilon"],
-#     )
-#
-#     use_bias: Optional[bool] = schema_utils.Boolean(
-#         default=True,
-#         description="Whether the layer uses a bias vector.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["use_bias"],
-#     )
-#
-#     bias_initializer: Optional[str] = schema_utils.StringOptions(
-#         sorted(list(initializer_registry.keys())),
-#         default="zeros",
-#         description="initializer for the bias vector.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["bias_initializer"],
-#     )
-#
-#     weights_initializer: Optional[str] = schema_utils.StringOptions(
-#         sorted(list(initializer_registry.keys())),
-#         default="xavier_uniform",
-#         description="Initializer for the weights matrix.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["weights_initializer"],
-#     )
-#
-#     output_size: Optional[int] = schema_utils.PositiveInteger(
-#         default=128,
-#         description="if output_size is not already specified in fc_layers this is the default output_size that will "
-#         "be used for each layer. It indicates the size of the output of a fully connected layer. ",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["output_size"],
-#     )
-#
-#     norm: Optional[str] = schema_utils.StringOptions(
-#         ["batch", "layer"],
-#         default=None,
-#         description="if a norm is not already specified in fc_layers this is the default norm that will be used for "
-#         "each layer. It indicates the norm of the output and can be null, batch or layer.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["norm"],
-#     )
-#
-#     norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
-#         default=None,
-#         description="parameters used if norm is either batch or layer. For information on parameters used with batch "
-#         "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
-#         "normalization.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["norm_params"],
-#     )
-#
-#     num_fc_layers: Optional[Optional[int]] = schema_utils.PositiveInteger(
-#         default=1,
-#         description="The number of stacked fully connected layers.",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["num_fc_layers"],
-#     )
-#
-#     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
-#         default=None,
-#         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-#         "of the list determines the number of stacked fully connected layers and the content of each "
-#         "dictionary determines the parameters for a specific layer. The available parameters for each "
-#         "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-#         "weights_initializer. If any of those values is missing from the dictionary, the default one "
-#         "specified as a parameter of the encoder will be used instead. ",
-#         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["fc_layers"],
-#     )
-
-
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
 class MLPMixerEncoderConfig(BaseEncoderConfig):
@@ -654,7 +480,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 
 @dataclass
 class TVBaseEncoderConfig(BaseEncoderConfig):
-    use_pretrained: Optional[bool] = schema_utils.Boolean(
+    use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Download model weights from pre-trained model.",
         parameter_metadata=ENCODER_METADATA["TVBaseEncoder"]["use_pretrained"],
@@ -681,12 +507,7 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("alexnet_torch", IMAGE)
 @dataclass
 class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["alexnet_torch"],
-        default="alexnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("alexnet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
@@ -700,12 +521,7 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("convnext_torch", IMAGE)
 @dataclass
 class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["convnext_torch"],
-        default="convnext_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("convnext_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["tiny", "small", "base", "large"],
@@ -719,12 +535,7 @@ class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("densenet_torch", IMAGE)
 @dataclass
 class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["densenet_torch"],
-        default="densenet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("densenet_torch")
 
     model_variant: Optional[int] = schema_utils.IntegerOptions(
         [121, 161, 169, 201],
@@ -738,12 +549,7 @@ class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("efficientnet_torch", IMAGE)
 @dataclass
 class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["efficientnet_torch"],
-        default="efficientnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("efficientnet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -769,12 +575,7 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("googlenet_torch", IMAGE)
 @dataclass
 class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["googlenet_torch"],
-        default="googlenet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("googlenet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
@@ -788,12 +589,7 @@ class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("inceptionv3_torch", IMAGE)
 @dataclass
 class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["inceptionv3_torch"],
-        default="inceptionv3_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("inceptionv3_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
@@ -807,12 +603,7 @@ class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("maxvit_torch", IMAGE)
 @dataclass
 class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["maxvit_torch"],
-        default="maxvit_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("maxvit_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["t"],
@@ -826,12 +617,7 @@ class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("mnasnet_torch", IMAGE)
 @dataclass
 class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["mnasnet_torch"],
-        default="mnasnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("mnasnet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["0_5", "0_75", "1_0", "1_3"],
@@ -845,12 +631,7 @@ class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("mobilenetv2_torch", IMAGE)
 @dataclass
 class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["mobilenetv2_torch"],
-        default="mobilenetv2_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("mobilenetv2_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["base"],
@@ -864,12 +645,7 @@ class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("mobilenetv3_torch", IMAGE)
 @dataclass
 class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["mobilenetv3_torch"],
-        default="mobilenetv3_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("mobilenetv3_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -886,12 +662,7 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("regnet_torch", IMAGE)
 @dataclass
 class TVRegNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["regnet_torch"],
-        default="regnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("regnet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -921,12 +692,7 @@ class TVRegNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["resnet_torch"],
-        default="resnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("resnet_torch")
 
     model_variant: Optional[int] = schema_utils.IntegerOptions(
         [18, 34, 50, 101, 152],
@@ -940,12 +706,7 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("resnext_torch", IMAGE)
 @dataclass
 class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["resnext_torch"],
-        default="resnext_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("resnext_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         ["50_32x4d", "101_32x8d", "101_64x4d"],
@@ -959,12 +720,7 @@ class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("shufflenet_v2_torch", IMAGE)
 @dataclass
 class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["shufflenet_v2_torch"],
-        default="shufflenet_v2_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("shufflenet_v2_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -983,12 +739,7 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("squeezenet_torch", IMAGE)
 @dataclass
 class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["squeezenet_torch"],
-        default="squeezenet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("squeezenet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -1005,12 +756,7 @@ class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("swin_transformer_torch", IMAGE)
 @dataclass
 class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["swin_transformer_torch"],
-        default="swin_transformer_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("swin_transformer_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -1028,12 +774,7 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("vit_torch", IMAGE)
 @dataclass
 class TVViTEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["vit_torch"],
-        default="vit_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("vit_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
@@ -1053,12 +794,7 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("vgg_torch", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["vgg_torch"],
-        default="vgg_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("vgg_torch")
 
     model_variant: Union[int, str] = schema_utils.OneOfOptionsField(
         default=11,
@@ -1092,12 +828,7 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
 @register_encoder_config("wide_resnet_torch", IMAGE)
 @dataclass
 class TVWideResNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["wide_resnet_torch"],
-        default="wide_resnet_torch",
-        allow_none=False,
-        description="Type of encoder.",
-    )
+    type: str = schema_utils.ProtectedString("wide_resnet_torch")
 
     model_variant: Optional[str] = schema_utils.StringOptions(
         [
