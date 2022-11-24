@@ -896,13 +896,16 @@ def train_with_backend(
             assert eval_preds is not None
             all_required_stats_exist(eval_stats, required_stats)
 
+            eval_preds.compute().to_csv("~/Downloads/eval_preds.csv")
+
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
                 model.save(tmpdir)
                 local_model = LudwigModel.load(tmpdir, backend=LocalTestBackend())
-                local_eval_stats, _, _ = local_model.evaluate(
-                    dataset=dataset, collect_overall_stats=False, collect_predictions=False
+                local_eval_stats, local_preds, _ = local_model.evaluate(
+                    dataset=dataset, collect_overall_stats=False, collect_predictions=True
                 )
+                local_preds.to_csv("~/Downloads/local_preds.csv")
 
                 # Filter out metrics that are not being aggregated correctly for now
                 # TODO(travis): https://github.com/ludwig-ai/ludwig/issues/1956
