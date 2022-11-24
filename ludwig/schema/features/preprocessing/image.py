@@ -111,7 +111,7 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_sample_size"],
     )
 
-    standardize_image: Optional[Union[str, None]] = schema_utils.StringOptions(
+    standardize_image: Union[str, None] = schema_utils.StringOptions(
         [None, "imagenet1k"],
         default=None,
         allow_none=True,
