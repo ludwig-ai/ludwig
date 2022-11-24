@@ -821,6 +821,7 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
                 allow_none=False,
             ),
         ],
+        allow_none=False,
         parameter_metadata=ENCODER_METADATA["TVVGGEncoder"]["model_variant"],
     )
 
