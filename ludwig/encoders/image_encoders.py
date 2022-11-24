@@ -25,10 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import (
-    MLPMixerEncoderConfig,
-    Stacked2DCNNEncoderConfig,
-)
+from ludwig.schema.encoders.image_encoders import MLPMixerEncoderConfig, Stacked2DCNNEncoderConfig
 
 logger = logging.getLogger(__name__)
 
@@ -326,5 +323,3 @@ class MLPMixerEncoder(Encoder):
 #     @property
 #     def output_shape(self) -> torch.Size:
 #         return torch.Size(self._output_shape)
-
-
