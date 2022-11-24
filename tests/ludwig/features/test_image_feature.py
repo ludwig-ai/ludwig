@@ -66,7 +66,6 @@ def image_config():
         ("stacked_cnn", 28, 28, 3),
         ("stacked_cnn", 28, 28, 1),
         ("mlp_mixer", 32, 32, 3),
-        # ("vit", 224, 224, 3),
     ],
 )
 def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels: int) -> None:
