@@ -3,10 +3,7 @@ from typing import Union
 import pytest
 import torch
 
-from ludwig.encoders.image_encoders import (  # ViTEncoder,
-    MLPMixerEncoder,
-    Stacked2DCNN,
-)
+from ludwig.encoders.image_encoders import MLPMixerEncoder, Stacked2DCNN  # ViTEncoder,
 from ludwig.encoders.image_torchvision_encoders import (
     TVAlexNetEncoder,
     TVConvNeXtEncoder,
