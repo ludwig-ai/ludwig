@@ -6,6 +6,8 @@ import torch
 from ludwig.encoders.image_encoders import (  # ViTEncoder,
     MLPMixerEncoder,
     Stacked2DCNN,
+)
+from ludwig.encoders.image_torchvision_encoders import (
     TVAlexNetEncoder,
     TVConvNeXtEncoder,
     TVDenseNetEncoder,
