@@ -17,8 +17,6 @@ def test_config_input_output_features():
     validate_config(config)
 
 
-# TODO: remove skip
-@pytest.mark.skip("temporary skip til schema validation requirements confirmed")
 def test_incorrect_input_features_config():
     config = {
         "input_features": [
@@ -56,8 +54,6 @@ def test_incorrect_input_features_config():
         validate_config(config)
 
 
-# TODO: remove skip
-@pytest.mark.skip("temporary skip til schema validation requirements confirmed")
 def test_incorrect_output_features_config():
     config = {
         "input_features": [
