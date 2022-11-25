@@ -42,6 +42,7 @@ def get_input_feature_jsonschema():
             "required": ["name", "type"],
             "title": "input_features",
         },
+        "uniqueItemProperties": ["name"],
     }
 
 
