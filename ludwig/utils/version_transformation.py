@@ -47,9 +47,10 @@ class VersionTransformation:
         """Transforms the sepcified config, returns the transformed config."""
         prefixes = self.prefixes if self.prefixes else [""]
         for prefix in prefixes:
-            # Skip undefined or empty config prefixes.
-            if prefix and prefix in config and config[prefix]:
-                config = self.transform_config_with_prefix(config, prefix)
+            if prefix and prefix not in config:
+                # Skip non-empty absent config prefixes.
+                continue
+            config = self.transform_config_with_prefix(config, prefix)
         return config
 
     def transform_config_with_prefix(self, config: Dict, prefix: Optional[str] = None) -> Dict:
