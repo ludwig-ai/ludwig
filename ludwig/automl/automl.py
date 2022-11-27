@@ -13,10 +13,10 @@ import logging
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Union
+import yaml
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
@@ -41,7 +41,6 @@ from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import (
     _add_transfer_config,
     get_model_type,
-    has_imbalanced_output,
     set_output_feature_metric,
 )
 from ludwig.utils.data_utils import load_dataset, use_credentials
@@ -49,6 +48,20 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.profiling import dataset_profile_pb2
+from ludwig.types import DataFrame
+from ludwig.profiling.type_inference import (
+    get_ludwig_type_map_from_column_profile_summaries,
+    get_column_profile_summaries_from_proto,
+    get_dataset_profile_view,
+    get_dataset_profile_proto,
+)
+from ludwig.automl.base_config import (
+    allocate_experiment_resources,
+    get_resource_aware_hyperopt_config,
+    get_default_automl_hyperopt,
+)
+from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 
 try:
     import dask.dataframe as dd
@@ -142,6 +155,65 @@ def auto_train(
         use_reference_config=use_reference_config,
     )
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
+
+
+def create_auto_config_with_dataset_profile(
+    target: Union[str, List[str]],
+    dataset: Optional[Union[str, DataFrame]] = None,
+    dataset_profile: dataset_profile_pb2.DatasetProfile = None,
+    random_seed: int = default_random_seed,
+    include_hyperopt: bool = False,
+    time_limit_s: Union[int, float] = None,
+    backend: Union[Backend, str] = None,
+) -> dict:
+    """Returns the best single-shot Ludwig config given a Ludwig dataset or dataset profile.
+
+    If only the dataset is provided, then a new profile is computed.
+    It is invalid to specify neither nor both the dataset and dataset_profile.
+
+    This function is intended to eventually replace create_auto_config().
+    """
+    if dataset is None and dataset_profile is None:
+        raise ValueError("Please specify either a dataset or a dataset_profile.")
+    if dataset is not None and dataset_profile is not None:
+        raise ValueError("Please specify either a dataset or a dataset_profile. It is an error to specify both.")
+
+    # Get the dataset profile.
+    if dataset_profile is None:
+        dataset_profile = get_dataset_profile_proto(get_dataset_profile_view(dataset))
+
+    # Use the dataset profile to get Ludwig types.
+    ludwig_type_map = get_ludwig_type_map_from_column_profile_summaries(
+        get_column_profile_summaries_from_proto(dataset_profile)
+    )
+
+    # Add features along with their profiled types.
+    automl_config = {}
+    automl_config[INPUT_FEATURES] = []
+    automl_config[OUTPUT_FEATURES] = []
+    for feature_name, ludwig_type in ludwig_type_map.items():
+        if feature_name == target:
+            automl_config[OUTPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
+        else:
+            automl_config[INPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
+
+    # Set the combiner to tabnet, by default.
+    automl_config["combiner"][TYPE] = "tabnet"
+
+    # Add hyperopt, if desired.
+    if include_hyperopt:
+        automl_config[HYPEROPT] = get_default_automl_hyperopt()
+
+        # Merge resource-sensitive settings.
+        backend = initialize_backend(backend)
+        resources = backend.get_available_resources()
+        experiment_resources = allocate_experiment_resources(resources)
+        automl_config = merge_dict(
+            automl_config, get_resource_aware_hyperopt_config(experiment_resources, time_limit_s, random_seed)
+        )
+
+    # TODO: Adjust preprocessing parameters according to output feature imbalance.
+    return automl_config
 
 
 @PublicAPI
@@ -324,10 +396,6 @@ def _model_select(
             if config_section in user_config.keys():
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
-
-    # check if any binary or category output feature has highly imbalanced minority vs majority values
-    # note: check is done after any relevant user_config has been applied
-    has_imbalanced_output(base_config, features_metadata)
 
     # if single output feature, set relevant metric and goal if not already set
     base_config = set_output_feature_metric(base_config)

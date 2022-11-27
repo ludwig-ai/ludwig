@@ -14,6 +14,7 @@
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Union
+import yaml
 
 import dask.dataframe as dd
 import numpy as np
@@ -93,7 +94,13 @@ def allocate_experiment_resources(resources: Resources) -> dict:
     return experiment_resources
 
 
-def _get_hyperopt_config(experiment_resources: Dict[str, Any], time_limit_s: Union[int, float], random_seed: int):
+def get_resource_aware_hyperopt_config(
+    experiment_resources: Dict[str, Any], time_limit_s: Union[int, float], random_seed: int
+) -> Dict[str, Any]:
+    """Returns a Ludwig config with the hyperopt section populated with appropriate parameters.
+
+    Hyperopt parameters are intended to be appropriate for the given resources and time limit.
+    """
     executor = experiment_resources
     executor.update({"time_budget_s": time_limit_s})
     if time_limit_s is not None:
@@ -116,6 +123,33 @@ def _get_stratify_split_config(field_meta: FieldMetadata) -> dict:
             }
         }
     }
+
+
+def get_default_automl_hyperopt() -> Dict[str, Any]:
+    """Returns general, default settings for hyperopt.
+
+    For example:
+    - We set a random_state_seed for sample sequence repeatability
+    - We use an increased reduction_factor to get more pruning/exploration.
+
+    TODO: If settings seem reasonable, consider building this into the hyperopt schema, directly.
+    """
+    return yaml.safe_load(
+        """
+  search_alg:
+    type: hyperopt
+  executor:
+    type: ray
+    num_samples: 10
+    time_budget_s: 7200
+    scheduler:
+      type: async_hyperband
+      time_attr: time_total_s
+      max_t: 7200
+      grace_period: 72
+      reduction_factor: 5
+"""
+    )
 
 
 def _create_default_config(
@@ -170,7 +204,7 @@ def _create_default_config(
     # update hyperopt config
     experiment_resources = allocate_experiment_resources(resources)
     base_automl_config = merge_dict(
-        base_automl_config, _get_hyperopt_config(experiment_resources, time_limit_s, random_seed)
+        base_automl_config, get_resource_aware_hyperopt_config(experiment_resources, time_limit_s, random_seed)
     )
 
     # add preprocessing section if single output feature is imbalanced
