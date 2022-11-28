@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
@@ -1465,6 +1466,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
     return None
 
 
+@DeveloperAPI
 def handle_missing_values(dataset_cols, feature, preprocessing_parameters, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
 
