@@ -19,6 +19,7 @@ import logging
 
 import yaml
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.globals import LUDWIG_VERSION
@@ -43,6 +44,7 @@ default_preprocessing_parameters = copy.deepcopy(default_feature_specific_prepro
 default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 
+@DeveloperAPI
 def render_config(config=None, output=None, **kwargs):
     upgraded_config = upgrade_config_dict_to_latest_version(config)
     output_config = ModelConfig.from_dict(upgraded_config).to_dict()
@@ -55,6 +57,7 @@ def render_config(config=None, output=None, **kwargs):
             yaml.safe_dump(output_config, f, sort_keys=False)
 
 
+@DeveloperAPI
 def cli_render_config(sys_argv):
     parser = argparse.ArgumentParser(
         description="This script renders the full config from a user config.",

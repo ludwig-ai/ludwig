@@ -10,6 +10,7 @@ import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -184,6 +185,7 @@ def to_triton_type(content: Union[List[str], List[torch.Tensor], List[TorchAudio
         return _get_type_map(str(content.dtype))
 
 
+@DeveloperAPI
 @dataclass
 class TritonArtifact:
     """Dataclass for exported Triton artifacts."""
@@ -207,6 +209,7 @@ class TritonArtifact:
     content_length: int
 
 
+@DeveloperAPI
 @dataclass
 class TritonConfigFeature:
     """Represents an input/output feature in a Triton config."""
@@ -268,6 +271,7 @@ class TritonConfigFeature:
         return "torch.Tensor"
 
 
+@DeveloperAPI
 @dataclass
 class TritonMaster:
     """Provides access to the Triton Config and the scripted module."""
@@ -408,6 +412,7 @@ class TritonMaster:
         return config_artifact
 
 
+@DeveloperAPI
 @dataclass
 class TritonEnsembleConfig:
     """Dataclass for creating and saving the Triton ensemble config."""
@@ -523,6 +528,7 @@ class TritonEnsembleConfig:
         return model_artifact
 
 
+@DeveloperAPI
 @dataclass
 class TritonConfig:
     """Enables the creation and export of a Triton config."""
@@ -599,6 +605,7 @@ class TritonConfig:
         return config
 
 
+@DeveloperAPI
 @dataclass
 class TritonModel:
     """Enables the scripting and export of a model."""
@@ -713,6 +720,7 @@ def clean_up_synthetic_data():
     shutil.rmtree("image_files", ignore_errors=True)
 
 
+@DeveloperAPI
 def export_triton(
     model: LudwigModel,
     data_example: Optional[pd.DataFrame] = None,

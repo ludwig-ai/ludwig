@@ -34,9 +34,12 @@ import urllib3
 from filelock import FileLock
 from fsspec.core import split_protocol
 
+from ludwig.api_annotations import DeveloperAPI
+
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 def get_fs_and_path(url):
     protocol, path = split_protocol(url)
     # Parse the url to get only the escaped url path
@@ -47,16 +50,19 @@ def get_fs_and_path(url):
     return fs, path
 
 
+@DeveloperAPI
 def has_remote_protocol(url):
     protocol, _ = split_protocol(url)
     return protocol and protocol != "file"
 
 
+@DeveloperAPI
 def is_http(urlpath):
     protocol, _ = split_protocol(urlpath)
     return protocol == "http" or protocol == "https"
 
 
+@DeveloperAPI
 def upgrade_http(urlpath):
     protocol, url = split_protocol(urlpath)
     if protocol == "http":
@@ -64,6 +70,7 @@ def upgrade_http(urlpath):
     return None
 
 
+@DeveloperAPI
 @functools.lru_cache(maxsize=32)
 def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
     if is_http(path):
@@ -81,6 +88,7 @@ def get_bytes_obj_from_path(path: str) -> Optional[bytes]:
             return None
 
 
+@DeveloperAPI
 def stream_http_get_request(path: str) -> urllib3.response.HTTPResponse:
     if upgrade_http(path):
         http = urllib3.PoolManager()
@@ -90,6 +98,7 @@ def stream_http_get_request(path: str) -> urllib3.response.HTTPResponse:
     return resp
 
 
+@DeveloperAPI
 @functools.lru_cache(maxsize=32)
 def get_bytes_obj_from_http_path(path: str) -> bytes:
     resp = stream_http_get_request(path)
@@ -108,6 +117,7 @@ def get_bytes_obj_from_http_path(path: str) -> bytes:
     return data
 
 
+@DeveloperAPI
 def find_non_existing_dir_by_adding_suffix(directory_name):
     fs, _ = get_fs_and_path(directory_name)
     suffix = 0
@@ -118,6 +128,7 @@ def find_non_existing_dir_by_adding_suffix(directory_name):
     return curr_directory_name
 
 
+@DeveloperAPI
 def abspath(url):
     protocol, _ = split_protocol(url)
     if protocol is not None:
@@ -126,16 +137,19 @@ def abspath(url):
     return os.path.abspath(url)
 
 
+@DeveloperAPI
 def path_exists(url):
     fs, path = get_fs_and_path(url)
     return fs.exists(path)
 
 
+@DeveloperAPI
 def listdir(url):
     fs, path = get_fs_and_path(url)
     return fs.listdir(path)
 
 
+@DeveloperAPI
 def safe_move_file(src, dst):
     """Rename a file from `src` to `dst`. Inspired by: https://alexwlchan.net/2019/03/atomic-cross-filesystem-
     moves-in-python/
@@ -168,6 +182,7 @@ def safe_move_file(src, dst):
             raise
 
 
+@DeveloperAPI
 def rename(src, tgt):
     protocol, _ = split_protocol(tgt)
     if protocol is not None:
@@ -177,43 +192,51 @@ def rename(src, tgt):
         safe_move_file(src, tgt)
 
 
+@DeveloperAPI
 def upload_file(src, tgt):
     protocol, _ = split_protocol(tgt)
     fs = fsspec.filesystem(protocol)
     fs.put(src, tgt)
 
 
+@DeveloperAPI
 def copy(src, tgt, recursive=False):
     protocol, _ = split_protocol(tgt)
     fs = fsspec.filesystem(protocol)
     fs.copy(src, tgt, recursive=recursive)
 
 
+@DeveloperAPI
 def makedirs(url, exist_ok=False):
     fs, path = get_fs_and_path(url)
     fs.makedirs(path, exist_ok=exist_ok)
 
 
+@DeveloperAPI
 def delete(url, recursive=False):
     fs, path = get_fs_and_path(url)
     return fs.delete(path, recursive=recursive)
 
 
+@DeveloperAPI
 def upload(lpath, rpath):
     fs, path = get_fs_and_path(rpath)
     pyarrow.fs.copy_files(lpath, path, destination_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
 
 
+@DeveloperAPI
 def download(rpath, lpath):
     fs, path = get_fs_and_path(rpath)
     pyarrow.fs.copy_files(path, lpath, source_filesystem=pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(fs)))
 
 
+@DeveloperAPI
 def checksum(url):
     fs, path = get_fs_and_path(url)
     return fs.checksum(path)
 
 
+@DeveloperAPI
 def to_url(path):
     protocol, _ = split_protocol(path)
     if protocol is not None:
@@ -221,6 +244,7 @@ def to_url(path):
     return pathlib.Path(os.path.abspath(path)).as_uri()
 
 
+@DeveloperAPI
 @contextlib.contextmanager
 def upload_output_directory(url):
     if url is None:
@@ -257,6 +281,7 @@ def upload_output_directory(url):
         yield url, None
 
 
+@DeveloperAPI
 @contextlib.contextmanager
 def open_file(url, *args, **kwargs):
     fs, path = get_fs_and_path(url)
@@ -264,6 +289,7 @@ def open_file(url, *args, **kwargs):
         yield f
 
 
+@DeveloperAPI
 @contextlib.contextmanager
 def download_h5(url):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -274,6 +300,7 @@ def download_h5(url):
             yield f
 
 
+@DeveloperAPI
 @contextlib.contextmanager
 def upload_h5(url):
     with upload_output_file(url) as local_fname:
@@ -285,6 +312,7 @@ def upload_h5(url):
             yield f
 
 
+@DeveloperAPI
 @contextlib.contextmanager
 def upload_output_file(url):
     """Takes a remote URL as input, returns a temp filename, then uploads it when done."""
@@ -299,6 +327,7 @@ def upload_output_file(url):
         yield url
 
 
+@DeveloperAPI
 class file_lock(contextlib.AbstractContextManager):
     """File lock based on filelock package."""
 

@@ -35,6 +35,7 @@ from ray.data.block import Block, BlockAccessor
 from ray.data.extensions import ArrowTensorType, TensorDtype
 from ray.util.client.common import ClientObjectRef
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
 from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, load_json, save_json, split_by_slices
@@ -51,10 +52,12 @@ PandasBlockSchema = collections.namedtuple("PandasBlockSchema", ["names", "types
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 def set_scheduler(scheduler):
     dask.config.set(scheduler=scheduler)
 
 
+@DeveloperAPI
 def reset_index_across_all_partitions(df):
     """Compute a monotonically increasing index across all partitions.
 
@@ -73,6 +76,7 @@ def reset_index_across_all_partitions(df):
     return df
 
 
+@DeveloperAPI
 class DaskEngine(DataFrameEngine):
     def __init__(self, parallelism=None, persist=True, _use_ray=True, **kwargs):
         from ray.util.dask import ray_dask_get
