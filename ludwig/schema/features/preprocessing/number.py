@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, NUMBER, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -7,6 +8,7 @@ from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
+@DeveloperAPI
 @register_preprocessor(NUMBER)
 @dataclass(repr=False)
 class NumberPreprocessingConfig(BasePreprocessingConfig):
@@ -44,6 +46,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@DeveloperAPI
 @register_preprocessor("number_output")
 @dataclass(repr=False)
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
