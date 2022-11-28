@@ -303,6 +303,12 @@ def read_hdf5(data_fp, **kwargs):
 @DeveloperAPI
 @spread
 def read_buffer(buf, fname):
+    """
+    Reads data in from a binary buffer by first writing the data to a temporary file,
+    and then processes it based on its format (hdf5, csv, tsv etc).
+
+    Useful if object is a binary buffer coming from streaming data.
+    """
     data_format = figure_data_format_dataset(fname)
     reader_fn = data_reader_registry[data_format]
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -315,6 +321,11 @@ def read_buffer(buf, fname):
 @DeveloperAPI
 @spread
 def read_fname(fname, data_format=None, df_lib=pd, **kwargs):
+    """
+    This function reads data from fname using the df_lib data processing library (defaults to pandas).
+
+    Useful if you don't know the file type extension in advance.
+    """
     data_format = data_format or figure_data_format_dataset(fname)
     reader_fn = data_reader_registry[data_format]
     return reader_fn(fname, df_lib, **kwargs)
