@@ -32,7 +32,7 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset, read_parquet
 from ray.data.block import Block, BlockAccessor
-from ray.data.extensions import ArrowTensorType, TensorArray, TensorDtype
+from ray.data.extensions import ArrowTensorType, TensorDtype
 from ray.util.client.common import ClientObjectRef
 
 from ludwig.data.dataframe.base import DataFrameEngine
