@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -9,6 +10,7 @@ from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
+@DeveloperAPI
 @register_preprocessor(TEXT)
 @dataclass(repr=False)
 class TextPreprocessingConfig(BasePreprocessingConfig):
@@ -114,6 +116,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@DeveloperAPI
 @register_preprocessor("text_output")
 @dataclass(repr=False)
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):

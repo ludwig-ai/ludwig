@@ -3,6 +3,7 @@ from typing import Dict
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import output_config_registry
@@ -10,6 +11,7 @@ from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassFie
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
 
 
+@DeveloperAPI
 @dataclass
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
@@ -72,6 +74,7 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     parameters: Dict = schema_utils.Dict()
 
 
+@DeveloperAPI
 def get_hyperopt_jsonschema():
     props = schema_utils.unload_jsonschema_from_marshmallow_class(HyperoptConfig)["properties"]
 

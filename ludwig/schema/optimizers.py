@@ -7,6 +7,7 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 import ludwig.schema.utils as schema_utils
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, INTERNAL_ONLY
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.utils.registry import Registry
@@ -14,6 +15,7 @@ from ludwig.utils.registry import Registry
 optimizer_registry = Registry()
 
 
+@DeveloperAPI
 def register_optimizer(name: str):
     def wrap(optimizer_config: BaseOptimizerConfig):
         optimizer_registry[name] = (optimizer_config.optimizer_class, optimizer_config)
@@ -22,11 +24,13 @@ def register_optimizer(name: str):
     return wrap
 
 
+@DeveloperAPI
 def get_optimizer_cls(name: str):
     """Get the optimizer schema class from the optimizer schema class registry."""
     return optimizer_registry[name][1]
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
@@ -49,6 +53,7 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="sgd")
 @dataclass(repr=False)
 class SGDOptimizerConfig(BaseOptimizerConfig):
@@ -70,6 +75,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     nesterov: bool = schema_utils.Boolean(default=False, description="Enables Nesterov momentum.")
 
 
+@DeveloperAPI
 @register_optimizer(name="lbfgs")
 @dataclass(repr=False)
 class LBFGSOptimizerConfig(BaseOptimizerConfig):
@@ -104,6 +110,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adam")
 @dataclass(repr=False)
 class AdamOptimizerConfig(BaseOptimizerConfig):
@@ -138,6 +145,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adamw")
 @dataclass(repr=False)
 class AdamWOptimizerConfig(BaseOptimizerConfig):
@@ -172,6 +180,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adadelta")
 @dataclass(repr=False)
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
@@ -204,6 +213,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
+@DeveloperAPI
 @register_optimizer(name="adagrad")
 @dataclass(repr=False)
 class AdagradOptimizerConfig(BaseOptimizerConfig):
@@ -231,6 +241,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adamax")
 @dataclass(repr=False)
 class AdamaxOptimizerConfig(BaseOptimizerConfig):
@@ -259,6 +270,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 
 # NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
+@DeveloperAPI
 @dataclass(repr=False)
 class FtrlOptimizerConfig(BaseOptimizerConfig):
 
@@ -274,6 +286,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
     l2_regularization_strength: float = schema_utils.NonNegativeFloat(default=0.0)
 
 
+@DeveloperAPI
 @register_optimizer(name="nadam")
 @dataclass(repr=False)
 class NadamOptimizerConfig(BaseOptimizerConfig):
@@ -300,6 +313,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     momentum_decay: float = schema_utils.NonNegativeFloat(default=4e-3, description="Momentum decay.")
 
 
+@DeveloperAPI
 @register_optimizer(name="rmsprop")
 @dataclass(repr=False)
 class RMSPropOptimizerConfig(BaseOptimizerConfig):
@@ -333,6 +347,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
+@DeveloperAPI
 def get_optimizer_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
     `ludwig.modules.optimization_modules.optimizer_registry`."""
@@ -349,6 +364,7 @@ def get_optimizer_conds():
     return conds
 
 
+@DeveloperAPI
 def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
@@ -424,6 +440,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
@@ -435,6 +452,7 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     clipvalue: Optional[float] = schema_utils.FloatRange(default=None, allow_none=True, description="")
 
 
+@DeveloperAPI
 def GradientClippingDataclassField(description: str, default: Dict = {}):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.

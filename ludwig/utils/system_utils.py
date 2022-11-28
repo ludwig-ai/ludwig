@@ -16,7 +16,10 @@
 
 from dataclasses import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 
+
+@DeveloperAPI
 @dataclass
 class Resources:
     cpus: int

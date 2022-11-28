@@ -4,10 +4,12 @@ from typing import Dict
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.hyperopt.registry import search_algorithm_registry  # Double-check this implicit import.
 from ludwig.schema import utils as schema_utils
 
 
+@DeveloperAPI
 @dataclass
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
@@ -17,6 +19,7 @@ class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 def SearchAlgorithmDataclassField(description: str = "", default: Dict = {"type": "variant_generator"}):
     class SearchAlgorithmMarshmallowField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):

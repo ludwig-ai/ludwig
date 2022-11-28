@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     EDIT_DISTANCE,
     LAST_ACCURACY,
@@ -30,6 +31,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(SEQUENCE)
 @dataclass
 class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -44,6 +46,7 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(SEQUENCE)
 @dataclass(repr=False)
 class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
@@ -53,6 +56,7 @@ class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureCon
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(SEQUENCE)
 @dataclass
 class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -70,6 +74,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(SEQUENCE)
 @dataclass(repr=False)
 class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):

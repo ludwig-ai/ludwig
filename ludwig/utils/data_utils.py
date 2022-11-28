@@ -40,6 +40,7 @@ from fsspec.config import conf, set_conf_files
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.cache.types import CacheableDataset
 from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
@@ -320,6 +321,34 @@ def read_hdf5(data_fp, **kwargs):
 
 
 @DeveloperAPI
+@spread
+def read_buffer(buf, fname):
+    """Reads data in from a binary buffer by first writing the data to a temporary file, and then processes it
+    based on its format (hdf5, csv, tsv etc).
+
+    Useful if object is a binary buffer coming from streaming data.
+    """
+    data_format = figure_data_format_dataset(fname)
+    reader_fn = data_reader_registry[data_format]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        temp_name = os.path.join(tmpdir, "dataset")
+        with open(temp_name, "wb") as f:
+            f.write(buf.read())
+        return reader_fn(temp_name, pd)
+
+
+@DeveloperAPI
+@spread
+def read_fname(fname, data_format=None, df_lib=pd, **kwargs):
+    """This function reads data from fname using the df_lib data processing library (defaults to pandas).
+
+    Useful if you don't know the file type extension in advance.
+    """
+    data_format = data_format or figure_data_format_dataset(fname)
+    reader_fn = data_reader_registry[data_format]
+    return reader_fn(fname, df_lib, **kwargs)
+
+
 def save_csv(data_fp, data):
     with open_file(data_fp, "w", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
@@ -940,7 +969,7 @@ def get_pa_schema(df: DataFrame):
     return pa.schema(list(schema.items()))
 
 
-external_data_reader_registry = {
+data_reader_registry = {
     **{fmt: read_csv for fmt in CSV_FORMATS},
     **{fmt: read_tsv for fmt in TSV_FORMATS},
     **{fmt: read_json for fmt in JSON_FORMATS},
@@ -970,7 +999,7 @@ def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
     elif data_format in DICT_FORMATS:
         return pd.DataFrame(dataset)
     elif data_format in CACHEABLE_FORMATS:
-        data_reader = get_from_registry(data_format, external_data_reader_registry)
+        data_reader = get_from_registry(data_format, data_reader_registry)
         return data_reader(dataset, df_lib)
     else:
         ValueError(f"{data_format} format is not supported")

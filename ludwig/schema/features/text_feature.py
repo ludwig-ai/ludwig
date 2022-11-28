@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     EDIT_DISTANCE,
     LAST_ACCURACY,
@@ -29,6 +30,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(TEXT)
 @dataclass
 class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -43,6 +45,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(TEXT)
 @dataclass(repr=False)
 class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
@@ -51,6 +54,7 @@ class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(TEXT)
 @dataclass
 class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -68,6 +72,7 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(TEXT)
 @dataclass(repr=False)
 class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
