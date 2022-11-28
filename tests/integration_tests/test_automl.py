@@ -26,7 +26,7 @@ ray = pytest.importorskip("ray")
 
 import dask.dataframe as dd  # noqa
 
-from ludwig.automl.automl import create_auto_config, train_with_config, create_auto_config_with_dataset_profile  # noqa
+from ludwig.automl.automl import create_auto_config, create_auto_config_with_dataset_profile, train_with_config  # noqa
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
 
 _ray200 = version.parse(ray.__version__) >= version.parse("2.0")

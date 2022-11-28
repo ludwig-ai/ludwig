@@ -14,11 +14,11 @@
 import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Set, Union
-import yaml
 
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+import yaml
 from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.api_annotations import DeveloperAPI
@@ -35,14 +35,14 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
+from ludwig.profiling import dataset_profile_pb2
+from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.system_utils import Resources
-from ludwig.profiling.dataset_profile import get_dataset_profile_view, get_dataset_profile_proto
-from ludwig.profiling import dataset_profile_pb2
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 CONFIG_DIR = os.path.join(PATH_HERE, "defaults")
