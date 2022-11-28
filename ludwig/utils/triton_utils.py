@@ -9,8 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import pandas as pd
 import torch
 
-from ludwig.api_annotations import DeveloperAPI
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BAG,
