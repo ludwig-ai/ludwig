@@ -40,7 +40,10 @@ from fsspec.config import conf, set_conf_files
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
+from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import PREPROCESSING, SPLIT
 from ludwig.data.cache.types import CacheableDataset
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.utils.dataframe_utils import from_numpy_dataset, is_dask_lib, to_numpy_dataset
 from ludwig.utils.fs_utils import download_h5, has_remote_protocol, open_file, upload_h5
 from ludwig.utils.math_utils import cumsum
@@ -55,9 +58,6 @@ try:
 except ImportError:
     DASK_DF_FORMATS = set()
     dd = None
-
-from ludwig.constants import PREPROCESSING, SPLIT
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +115,7 @@ PANDAS_DF = pd
 GLOBAL_CRED_LOCK = threading.Lock()
 
 
+@DeveloperAPI
 def get_parquet_filename(n: int):
     """Left pads the partition number with zeros to preserve order in downstream reads.
 
@@ -123,10 +124,12 @@ def get_parquet_filename(n: int):
     return f"part.{str(n).zfill(8)}.parquet"
 
 
+@DeveloperAPI
 def get_split_path(dataset_fp):
     return os.path.splitext(dataset_fp)[0] + ".split.parquet"
 
 
+@DeveloperAPI
 def get_abs_path(src_path, file_path):
     if has_remote_protocol(file_path):
         return file_path
@@ -136,6 +139,7 @@ def get_abs_path(src_path, file_path):
         return file_path
 
 
+@DeveloperAPI
 def load_csv(data_fp):
     with open_file(data_fp, "rb") as f:
         data = list(csv.reader(f))
@@ -143,6 +147,7 @@ def load_csv(data_fp):
 
 
 # Decorator used to encourage Dask on Ray to spread out data loading across workers
+@DeveloperAPI
 def spread(fn):
     def wrapped_fn(*args, **kwargs):
         if dd is None or not hasattr(dask, "annotate"):
@@ -154,6 +159,7 @@ def spread(fn):
     return wrapped_fn
 
 
+@DeveloperAPI
 @spread
 def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, skiprows=None, dtype=object, **kwargs):
     """Helper method to read a csv file. Wraps around pd.read_csv to handle some exceptions. Can extend to cover
@@ -197,6 +203,7 @@ read_csv = functools.partial(read_xsv, separator=",")
 read_tsv = functools.partial(read_xsv, separator="\t")
 
 
+@DeveloperAPI
 @spread
 def read_json(data_fp, df_lib, normalize=False):
     if normalize:
@@ -205,11 +212,13 @@ def read_json(data_fp, df_lib, normalize=False):
         return df_lib.read_json(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_jsonl(data_fp, df_lib):
     return df_lib.read_json(data_fp, lines=True)
 
 
+@DeveloperAPI
 @spread
 def read_excel(data_fp, df_lib):
     fp_split = os.path.splitext(data_fp)
@@ -225,11 +234,13 @@ def read_excel(data_fp, df_lib):
     return df_lib.read_excel(data_fp, engine=excel_engine)
 
 
+@DeveloperAPI
 @spread
 def read_parquet(data_fp, df_lib):
     return df_lib.read_parquet(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_pickle(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
@@ -239,11 +250,13 @@ def read_pickle(data_fp, df_lib):
     return df_lib.read_pickle(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_fwf(data_fp, df_lib):
     return df_lib.read_fwf(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_feather(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
@@ -253,6 +266,7 @@ def read_feather(data_fp, df_lib):
     return df_lib.read_feather(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_html(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
@@ -262,11 +276,13 @@ def read_html(data_fp, df_lib):
     return df_lib.read_html(data_fp)[0]
 
 
+@DeveloperAPI
 @spread
 def read_orc(data_fp, df_lib):
     return df_lib.read_orc(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_sas(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
@@ -276,6 +292,7 @@ def read_sas(data_fp, df_lib):
     return df_lib.read_sas(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_spss(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
@@ -285,6 +302,7 @@ def read_spss(data_fp, df_lib):
     return df_lib.read_spss(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_stata(data_fp, df_lib):
     # https://github.com/dask/dask/issues/9055
@@ -294,11 +312,42 @@ def read_stata(data_fp, df_lib):
     return df_lib.read_stata(data_fp)
 
 
+@DeveloperAPI
 @spread
 def read_hdf5(data_fp, **kwargs):
     return load_hdf5(data_fp, clean_cols=True)
 
 
+@DeveloperAPI
+@spread
+def read_buffer(buf, fname):
+    """Reads data in from a binary buffer by first writing the data to a temporary file, and then processes it
+    based on its format (hdf5, csv, tsv etc).
+
+    Useful if object is a binary buffer coming from streaming data.
+    """
+    data_format = figure_data_format_dataset(fname)
+    reader_fn = data_reader_registry[data_format]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        temp_name = os.path.join(tmpdir, "dataset")
+        with open(temp_name, "wb") as f:
+            f.write(buf.read())
+        return reader_fn(temp_name, pd)
+
+
+@DeveloperAPI
+@spread
+def read_fname(fname, data_format=None, df_lib=pd, **kwargs):
+    """This function reads data from fname using the df_lib data processing library (defaults to pandas).
+
+    Useful if you don't know the file type extension in advance.
+    """
+    data_format = data_format or figure_data_format_dataset(fname)
+    reader_fn = data_reader_registry[data_format]
+    return reader_fn(fname, df_lib, **kwargs)
+
+
+@DeveloperAPI
 def save_csv(data_fp, data):
     with open_file(data_fp, "w", encoding="utf-8") as csv_file:
         writer = csv.writer(csv_file)
@@ -308,15 +357,18 @@ def save_csv(data_fp, data):
             writer.writerow(row)
 
 
+@DeveloperAPI
 def csv_contains_column(data_fp, column_name):
     return column_name in read_csv(data_fp, nrows=0)  # only loads header
 
 
+@DeveloperAPI
 def load_yaml(yaml_fp):
     with open_file(yaml_fp, "r") as f:
         return yaml.safe_load(f)
 
 
+@DeveloperAPI
 def load_config_from_str(config):
     """Load the config as either a serialized string or a path to a YAML file."""
     config = yaml.safe_load(config)
@@ -327,17 +379,20 @@ def load_config_from_str(config):
     return config
 
 
+@DeveloperAPI
 def load_json(data_fp):
     with open_file(data_fp, "r") as input_file:
         data = json.load(input_file)
     return data
 
 
+@DeveloperAPI
 def save_json(data_fp, data, sort_keys=True, indent=4):
     with open_file(data_fp, "w") as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys, indent=indent)
 
 
+@DeveloperAPI
 def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     s = json.dumps(d, cls=NumpyEncoder, sort_keys=True, ensure_ascii=True)
     h = hashlib.md5(s.encode())
@@ -346,11 +401,13 @@ def hash_dict(d: dict, max_length: Union[int, None] = 6) -> bytes:
     return b[:max_length]
 
 
+@DeveloperAPI
 def to_json_dict(d):
     """Converts Python dict to pure JSON ready format."""
     return json.loads(json.dumps(d, cls=NumpyEncoder))
 
 
+@DeveloperAPI
 def chunk_dict(data, chunk_size=100):
     """Split large dictionary into chunks.
 
@@ -361,6 +418,7 @@ def chunk_dict(data, chunk_size=100):
         yield {k: data[k] for k in islice(it, chunk_size)}
 
 
+@DeveloperAPI
 def flatten_dict(d, parent_key="", sep="."):
     """Based on https://www.geeksforgeeks.org/python-convert-nested-dictionary-into-flattened-dictionary/"""
     items = []
@@ -377,6 +435,7 @@ def flatten_dict(d, parent_key="", sep="."):
     return dict(items)
 
 
+@DeveloperAPI
 def save_hdf5(data_fp, data):
     numpy_dataset = to_numpy_dataset(data)
     with upload_h5(data_fp) as h5_file:
@@ -385,6 +444,7 @@ def save_hdf5(data_fp, data):
             h5_file.create_dataset(column, data=numpy_dataset[column])
 
 
+@DeveloperAPI
 def load_hdf5(data_fp, clean_cols: bool = False):
     with download_h5(data_fp) as hdf5_data:
         columns = [s.decode("utf-8") for s in hdf5_data[HDF5_COLUMNS_KEY][()].tolist()]
@@ -398,16 +458,19 @@ def load_hdf5(data_fp, clean_cols: bool = False):
     return from_numpy_dataset(numpy_dataset)
 
 
+@DeveloperAPI
 def load_object(object_fp):
     with open_file(object_fp, "rb") as f:
         return pickle.load(f)
 
 
+@DeveloperAPI
 def save_object(object_fp, obj):
     with open_file(object_fp, "wb") as f:
         pickle.dump(obj, f)
 
 
+@DeveloperAPI
 def load_array(data_fp, dtype=float):
     list_num = []
     with open_file(data_fp, "r") as input_file:
@@ -416,6 +479,7 @@ def load_array(data_fp, dtype=float):
     return np.array(list_num)
 
 
+@DeveloperAPI
 def load_matrix(data_fp, dtype=float):
     list_num = []
     with open_file(data_fp, "r") as input_file:
@@ -424,6 +488,7 @@ def load_matrix(data_fp, dtype=float):
     return np.squeeze(np.array(list_num))
 
 
+@DeveloperAPI
 def save_array(data_fp, array):
     with open_file(data_fp, "w") as output_file:
         for x in np.nditer(array):
@@ -431,6 +496,7 @@ def save_array(data_fp, array):
 
 
 # TODO(shreya): Confirm types of args
+@DeveloperAPI
 def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.ndarray:
     """Create an embedding matrix of all words in vocab."""
     embeddings, embeddings_size = load_glove(embeddings_path, return_embedding_size=True)
@@ -454,6 +520,7 @@ def load_pretrained_embeddings(embeddings_path: str, vocab: List[str]) -> np.nda
     return embeddings_matrix
 
 
+@DeveloperAPI
 @functools.lru_cache(1)
 def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str, np.ndarray]:
     """Loads Glove embeddings for each word.
@@ -500,12 +567,14 @@ def load_glove(file_path: str, return_embedding_size: bool = False) -> Dict[str,
     return embeddings
 
 
+@DeveloperAPI
 def split_data(split: float, data: List) -> Tuple[List, List]:
     split_length = int(round(split * len(data)))
     random.shuffle(data)
     return data[:split_length], data[split_length:]
 
 
+@DeveloperAPI
 def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> List[Any]:
     splits = []
     indices = cumsum([int(x * n) for x in probabilities])
@@ -516,6 +585,7 @@ def split_by_slices(slices: List[Any], n: int, probabilities: List[float]) -> Li
     return splits
 
 
+@DeveloperAPI
 def shuffle_unison_inplace(list_of_lists, random_state=None):
     if list_of_lists:
         assert all(len(single_list) == len(list_of_lists[0]) for single_list in list_of_lists)
@@ -527,6 +597,7 @@ def shuffle_unison_inplace(list_of_lists, random_state=None):
     return None
 
 
+@DeveloperAPI
 def shuffle_dict_unison_inplace(np_dict, random_state=None):
     keys = list(np_dict.keys())
     list_of_lists = list(np_dict.values())
@@ -543,6 +614,7 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
     return recon
 
 
+@DeveloperAPI
 def split_dataset_ttv(dataset, split):
     # Obtain distinct splits from the split column. If
     # a split is not present in this set, then we can skip generating
@@ -561,21 +633,25 @@ def split_dataset_ttv(dataset, split):
     return training_set, test_set, validation_set
 
 
+@DeveloperAPI
 def split_dataset(dataset, split, value_to_split=0):
     split_df = dataset[dataset[split] == value_to_split]
     return split_df
 
 
+@DeveloperAPI
 def collapse_rare_labels(labels, labels_limit):
     if labels_limit > 0:
         labels[labels >= labels_limit] = labels_limit
     return labels
 
 
+@DeveloperAPI
 def class_counts(dataset, labels_field):
     return np.bincount(dataset[labels_field].flatten()).tolist()
 
 
+@DeveloperAPI
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """Load experiment data from supported file formats.
 
@@ -602,6 +678,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     return array
 
 
+@DeveloperAPI
 def replace_file_extension(file_path, extension):
     """Return a file path for a file with same name but different format. a.csv, json -> a.json a.csv, hdf5 ->
     a.hdf5.
@@ -620,10 +697,12 @@ def replace_file_extension(file_path, extension):
     return os.path.splitext(file_path)[0] + "." + extension
 
 
+@DeveloperAPI
 def file_exists_with_diff_extension(file_path, extension):
     return file_path is None or os.path.isfile(replace_file_extension(file_path, extension))
 
 
+@DeveloperAPI
 def add_sequence_feature_column(df, col_name, seq_length):
     """Adds a new column to the dataframe computed from an existing column. Values in the new column are space-
     delimited strings composed of preceding values of the same column up to seq_length. For example values of the
@@ -651,6 +730,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
     df[new_col_name] = df[new_col_name].fillna(method="bfill")
 
 
+@DeveloperAPI
 def override_in_memory_flag(input_features, override_value):
     num_overrides = 0
     for feature in input_features:
@@ -661,6 +741,7 @@ def override_in_memory_flag(input_features, override_value):
     return num_overrides
 
 
+@DeveloperAPI
 def normalize_numpy(obj):
     if isinstance(obj, np.integer):
         return int(obj)
@@ -674,6 +755,7 @@ def normalize_numpy(obj):
         return obj
 
 
+@DeveloperAPI
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (set, tuple)):
@@ -690,6 +772,7 @@ class NumpyEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
+@DeveloperAPI
 def generate_kfold_splits(data_df, num_folds, random_state):
     kf = KFold(n_splits=num_folds, shuffle=True, random_state=random_state)
     fold_num = 0
@@ -698,6 +781,7 @@ def generate_kfold_splits(data_df, num_folds, random_state):
         yield train_indices, test_indices, fold_num
 
 
+@DeveloperAPI
 def get_path_size(start_path, regex_accept=None, regex_reject=None):
     total_size = 0
     pattern_accept = re.compile(regex_accept) if regex_accept else None
@@ -718,11 +802,13 @@ def get_path_size(start_path, regex_accept=None, regex_reject=None):
     return total_size
 
 
+@DeveloperAPI
 def clear_data_cache():
     """Clears any cached data objects (e.g., embeddings)"""
     load_glove.cache_clear()
 
 
+@DeveloperAPI
 def figure_data_format_dataset(dataset):
     if isinstance(dataset, CacheableDataset):
         return figure_data_format_dataset(dataset.unwrap())
@@ -778,6 +864,7 @@ def figure_data_format_dataset(dataset):
         raise ValueError(f"Cannot figure out the format of dataset {dataset}")
 
 
+@DeveloperAPI
 def figure_data_format(dataset=None, training_set=None, validation_set=None, test_set=None):
     if dataset is not None:
         data_format = figure_data_format_dataset(dataset)
@@ -805,6 +892,7 @@ def figure_data_format(dataset=None, training_set=None, validation_set=None, tes
     return data_format
 
 
+@DeveloperAPI
 def is_model_dir(path: str) -> bool:
     hyperparameters_fn = os.path.join(path, MODEL_HYPERPARAMETERS_FILE_NAME)
     ts_metadata_fn = os.path.join(path, TRAIN_SET_METADATA_FILE_NAME)
@@ -819,6 +907,7 @@ def is_model_dir(path: str) -> bool:
     return is_model_dir
 
 
+@DeveloperAPI
 def ndarray2string(parm_array):
     # convert numpy.ndarray to ludwig custom string format
     if isinstance(parm_array, np.ndarray):
@@ -827,6 +916,7 @@ def ndarray2string(parm_array):
         raise ValueError("Argument must be numpy.ndarray.  Instead argument found to be " "{}".format(type(parm_array)))
 
 
+@DeveloperAPI
 def string2ndarray(parm_string):
     # convert ludwig custom ndarray string to numpy.ndarray
     if isinstance(parm_string, str) and parm_string[:11] == "__ndarray__":
@@ -835,11 +925,13 @@ def string2ndarray(parm_string):
         raise ValueError("Argument must be Ludwig custom string format for numpy.ndarray")
 
 
+@DeveloperAPI
 def is_ludwig_ndarray_string(parm_string):
     # tests if parameter is a Ludwig custom ndarray string
     return isinstance(parm_string, str) and parm_string[:11] == "__ndarray__"
 
 
+@DeveloperAPI
 def get_pa_dtype(obj: Any):
     if np.isscalar(obj):
         return pa.from_numpy_dtype(np.array(obj).dtype)
@@ -849,6 +941,7 @@ def get_pa_dtype(obj: Any):
         raise ValueError(f"Unsupported type for pyarrow dtype: {type(obj)}")
 
 
+@DeveloperAPI
 def get_pa_schema(df: DataFrame):
     """Gets the pyarrow schema associated with a given DataFrame.
 
@@ -875,7 +968,7 @@ def get_pa_schema(df: DataFrame):
     return pa.schema(list(schema.items()))
 
 
-external_data_reader_registry = {
+data_reader_registry = {
     **{fmt: read_csv for fmt in CSV_FORMATS},
     **{fmt: read_tsv for fmt in TSV_FORMATS},
     **{fmt: read_json for fmt in JSON_FORMATS},
@@ -894,6 +987,7 @@ external_data_reader_registry = {
 }
 
 
+@DeveloperAPI
 def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
     if not data_format or data_format == "auto":
         data_format = figure_data_format(dataset)
@@ -904,12 +998,13 @@ def load_dataset(dataset, data_format=None, df_lib=PANDAS_DF):
     elif data_format in DICT_FORMATS:
         return pd.DataFrame(dataset)
     elif data_format in CACHEABLE_FORMATS:
-        data_reader = get_from_registry(data_format, external_data_reader_registry)
+        data_reader = get_from_registry(data_format, data_reader_registry)
         return data_reader(dataset, df_lib)
     else:
         ValueError(f"{data_format} format is not supported")
 
 
+@DeveloperAPI
 @contextlib.contextmanager
 def use_credentials(creds):
     if creds is None:

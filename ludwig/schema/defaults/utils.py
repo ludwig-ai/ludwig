@@ -4,9 +4,11 @@ from dataclasses import field
 from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.features.utils import input_mixin_registry, output_mixin_registry
 
 
+@DeveloperAPI
 def DefaultsDataclassField(feature_type: str):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested default
     config for a specific feature type.

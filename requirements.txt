@@ -9,6 +9,7 @@ tqdm
 torch>=1.10.0
 torchaudio
 torchtext
+sentencepiece
 torchvision>=0.10.1
 transformers>=4.10.1,<4.22
 spacy>=2.3

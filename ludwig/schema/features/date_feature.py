@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DATE
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
@@ -10,6 +11,7 @@ from ludwig.schema.features.utils import input_config_registry, input_mixin_regi
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(DATE)
 @dataclass
 class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -24,6 +26,7 @@ class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(DATE)
 @dataclass(repr=False)
 class DateInputFeatureConfig(BaseInputFeatureConfig, DateInputFeatureConfigMixin):
