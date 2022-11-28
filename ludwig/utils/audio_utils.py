@@ -78,7 +78,6 @@ def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
         return None
 
 
-@DeveloperAPI
 def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
     # Increase precision in order to achieve parity with scipy.signal.lfilter implementation
     filter_window = torch.tensor([1.0, -emphasize_value], dtype=torch.float64, device=data.device)
@@ -200,7 +199,6 @@ def get_fbank(
     return torch.transpose(log_mel_fbank_feature, 0, 1)
 
 
-@DeveloperAPI
 def _get_mel_fbank_matrix(
     list_mel_points: torch.Tensor, num_filter_bands: int, num_fft_points: int, sampling_rate_in_hz: int
 ) -> torch.Tensor:
@@ -220,7 +218,6 @@ def _get_mel_fbank_matrix(
     return mel_scaled_fbank
 
 
-@DeveloperAPI
 def _create_triangular_filter(
     start_bin_freq: torch.Tensor, middle_bin_freq: torch.Tensor, end_bin_freq: torch.Tensor, num_ess_fft_points: int
 ):
@@ -234,17 +231,14 @@ def _create_triangular_filter(
     return filter_window
 
 
-@DeveloperAPI
 def _convert_hz_to_mel(hz: int) -> float:
     return float(2595.0 * torch.log10(torch.tensor(1 + hz / 700.0)))
 
 
-@DeveloperAPI
 def _convert_mel_to_hz(mel):
     return 700.0 * (10 ** (mel / 2595.0) - 1)
 
 
-@DeveloperAPI
 def _get_stft(
     raw_data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -270,7 +264,6 @@ def _get_stft(
     return non_symmetric_stft
 
 
-@DeveloperAPI
 def _short_time_fourier_transform(
     data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -293,7 +286,6 @@ def _short_time_fourier_transform(
     return fft
 
 
-@DeveloperAPI
 def _preprocess_to_padded_matrix(
     data: torch.Tensor, window_length_in_samp: int, window_shift_in_samp: int, zero_mean_offset: bool = False
 ) -> torch.Tensor:
@@ -347,7 +339,6 @@ def is_audio_score(src_path):
     return int(isinstance(src_path, str) and src_path.lower().endswith(AUDIO_EXTENSIONS))
 
 
-@DeveloperAPI
 def _weight_data_matrix(
     data_matrix: torch.Tensor, window_type: str, data_transformation: Optional[str] = None
 ) -> torch.Tensor:
