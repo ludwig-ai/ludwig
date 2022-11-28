@@ -61,6 +61,7 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
 @DeveloperAPI
 def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
     """Reads audio from path.
+
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
     """
     bytes_obj = get_bytes_obj_from_path(path)
