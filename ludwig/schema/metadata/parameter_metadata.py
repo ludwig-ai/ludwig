@@ -5,7 +5,10 @@ from typing import Any, List, Union
 
 from dataclasses_json import dataclass_json
 
+from ludwig.api_annotations import DeveloperAPI
 
+
+@DeveloperAPI
 class ExpectedImpact(int, Enum):
     """The expected impact of determining a "good" value for a specific parameter.
 
@@ -20,6 +23,7 @@ class ExpectedImpact(int, Enum):
     HIGH = 3
 
 
+@DeveloperAPI
 @dataclass_json()
 @dataclass
 class ParameterMetadata:
@@ -66,6 +70,7 @@ class ParameterMetadata:
     internal_only: bool = False
 
 
+@DeveloperAPI
 def convert_metadata_to_json(pm: ParameterMetadata):
     """Converts a ParameterMetadata dict to a normal JSON dict.
 

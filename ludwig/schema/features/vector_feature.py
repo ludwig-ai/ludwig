@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ERROR, LOSS, MEAN_ABSOLUTE_ERROR, MEAN_SQUARED_ERROR, R2, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -21,6 +22,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(VECTOR)
 @dataclass
 class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -35,6 +37,7 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(VECTOR)
 @dataclass(repr=False)
 class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
@@ -43,6 +46,7 @@ class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigM
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(VECTOR)
 @dataclass
 class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -60,6 +64,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(VECTOR)
 @dataclass(repr=False)
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
