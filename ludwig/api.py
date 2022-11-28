@@ -1280,7 +1280,7 @@ class LudwigModel:
         print_boxed("PREPROCESSING")
 
         for callback in self.callbacks:
-            callback.on_preprocess_start(self.config_obj.to_dict())
+            callback.on_preprocess_start(self.config)
 
         preprocessing_params = merge_config_preprocessing_with_feature_specific_defaults(
             self.config.get(PREPROCESSING, {}), self.config.get(DEFAULTS, {})
