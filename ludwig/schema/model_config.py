@@ -194,6 +194,8 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Validate Config =====
         self._validate_config(self.to_dict())
 
+        # Set up default validation metric.
+
     def __repr__(self):
         config_repr = self.to_dict()
         config_repr[INPUT_FEATURES] = self.input_features.filter_features()

@@ -118,9 +118,6 @@ class BaseFeature:
 
     def __init__(self, feature: BaseFeatureConfig):
         super().__init__()
-
-        if not feature.name:
-            raise ValueError("Missing feature name")
         self.feature_name = feature.name
 
         if not feature.column:
