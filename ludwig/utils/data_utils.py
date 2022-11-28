@@ -194,8 +194,8 @@ def read_xsv(data_fp, df_lib=PANDAS_DF, separator=",", header=0, nrows=None, ski
     return df
 
 
-read_csv = functools.partial(read_xsv, dtype=None, separator=",")
-read_tsv = functools.partial(read_xsv, dtype=None, separator="\t")
+read_csv = functools.partial(read_xsv, separator=",")
+read_tsv = functools.partial(read_xsv, separator="\t")
 
 
 @spread
