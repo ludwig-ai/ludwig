@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import H3
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 H3_INPUT_SIZE = 19
 
 
+@DeveloperAPI
 @register_encoder("embed", H3)
 class H3Embed(Encoder):
     def __init__(
@@ -214,6 +216,7 @@ class H3Embed(Encoder):
         return self.fc_stack.output_shape
 
 
+@DeveloperAPI
 @register_encoder("weighted_sum", H3)
 class H3WeightedSum(Encoder):
     def __init__(
@@ -327,6 +330,7 @@ class H3WeightedSum(Encoder):
         return self.fc_stack.output_shape
 
 
+@DeveloperAPI
 @register_encoder("rnn", H3)
 class H3RNN(Encoder):
     def __init__(

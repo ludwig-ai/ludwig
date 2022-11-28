@@ -3,6 +3,7 @@ from typing import List, Union
 
 from marshmallow import fields, ValidationError
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
@@ -10,6 +11,7 @@ from ludwig.utils.registry import Registry
 decoder_config_registry = Registry()
 
 
+@DeveloperAPI
 def register_decoder_config(name: str, features: Union[str, List[str]]):
     if isinstance(features, str):
         features = [features]
@@ -24,14 +26,17 @@ def register_decoder_config(name: str, features: Union[str, List[str]]):
     return wrap
 
 
+@DeveloperAPI
 def get_decoder_cls(feature: str, name: str):
     return decoder_config_registry[feature][name]
 
 
+@DeveloperAPI
 def get_decoder_classes(feature: str):
     return decoder_config_registry[feature]
 
 
+@DeveloperAPI
 def get_decoder_conds(feature_type: str):
     """Returns a JSON schema of conditionals to validate against decoder types for specific feature types."""
     conds = []
@@ -47,6 +52,7 @@ def get_decoder_conds(feature_type: str):
     return conds
 
 
+@DeveloperAPI
 def DecoderDataclassField(feature_type: str, default: str):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify a decoder config.
 

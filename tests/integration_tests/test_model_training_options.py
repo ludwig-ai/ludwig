@@ -2,13 +2,11 @@ import json
 import logging
 import os.path
 import re
-from collections import namedtuple
 
 import numpy as np
 import pandas as pd
 import pytest
 import torch
-from sklearn.model_selection import train_test_split
 
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
@@ -31,80 +29,17 @@ from ludwig.schema.optimizers import optimizer_registry
 from ludwig.utils.data_utils import load_json, replace_file_extension
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.package_utils import LazyLoader
+from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend
 
 mlflow = LazyLoader("mlflow", globals(), "mlflow")
 
 RANDOM_SEED = 42
-NUMBER_OBSERVATIONS = 500
-
-GeneratedData = namedtuple("GeneratedData", "train_df validation_df test_df")
-
-
-def get_feature_configs():
-    input_features = [
-        {"name": "x", "type": "number"},
-    ]
-    output_features = [
-        {
-            "name": "y",
-            "type": "number",
-            "loss": {"type": "mean_squared_error"},
-            "decoder": {
-                "num_fc_layers": 5,
-                "fc_output_size": 64,
-            },
-        }
-    ]
-
-    return input_features, output_features
-
-
-@pytest.fixture(scope="module")
-def generated_data():
-    # function generates simple training data that guarantee convergence
-    # within 30 epochs for suitable config
-
-    # generate data
-    np.random.seed(RANDOM_SEED)
-    x = np.array(range(NUMBER_OBSERVATIONS)).reshape(-1, 1)
-    y = 2 * x + 1 + np.random.normal(size=x.shape[0]).reshape(-1, 1)
-    raw_df = pd.DataFrame(np.concatenate((x, y), axis=1), columns=["x", "y"])
-
-    # create training data
-    train, valid_test = train_test_split(raw_df, train_size=0.7)
-
-    # create validation and test data
-    validation, test = train_test_split(valid_test, train_size=0.5)
-
-    return GeneratedData(train, validation, test)
-
-
-@pytest.fixture(scope="module")
-def generated_data_for_optimizer():
-    # function generates simple training data that guarantee convergence
-    # within 30 epochs for suitable config
-
-    # generate data
-    np.random.seed(RANDOM_SEED)
-    x = np.array(range(NUMBER_OBSERVATIONS)).reshape(-1, 1)
-    y = 2 * x + 1 + np.random.normal(size=x.shape[0]).reshape(-1, 1)
-    raw_df = pd.DataFrame(np.concatenate((x, y), axis=1), columns=["x", "y"])
-    raw_df["x"] = (raw_df["x"] - raw_df["x"].min()) / (raw_df["x"].max() - raw_df["x"].min())
-    raw_df["y"] = (raw_df["y"] - raw_df["y"].min()) / (raw_df["y"].max() - raw_df["y"].min())
-
-    # create training data
-    train, valid_test = train_test_split(raw_df, train_size=0.7)
-
-    # create validation and test data
-    validation, test = train_test_split(valid_test, train_size=0.5)
-
-    return GeneratedData(train, validation, test)
 
 
 @pytest.mark.parametrize("early_stop", [3, 5])
-def test_early_stopping(early_stop, generated_data, tmp_path):
-    input_features, output_features = get_feature_configs()
+def test_early_stopping(early_stop, tmp_path):
+    input_features, output_features = synthetic_test_data.get_feature_configs()
 
     config = {
         "input_features": input_features,
@@ -118,6 +53,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
+    generated_data = synthetic_test_data.get_generated_data()
     _, _, _, _, output_dir = experiment_cli(
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -157,8 +93,8 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
 
 @pytest.mark.parametrize("skip_save_progress", [False])
 @pytest.mark.parametrize("skip_save_model", [False, True])
-def test_model_progress_save(skip_save_progress, skip_save_model, generated_data, tmp_path):
-    input_features, output_features = get_feature_configs()
+def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
+    input_features, output_features = synthetic_test_data.get_feature_configs()
 
     config = {
         "input_features": input_features,
@@ -172,6 +108,7 @@ def test_model_progress_save(skip_save_progress, skip_save_model, generated_data
     results_dir.mkdir()
 
     # run experiment
+    generated_data = synthetic_test_data.get_generated_data()
     _, _, _, _, output_dir = experiment_cli(
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -202,8 +139,8 @@ def test_model_progress_save(skip_save_progress, skip_save_model, generated_data
 
 
 @pytest.mark.parametrize("optimizer", ["sgd", "adam"])
-def test_resume_training(optimizer, generated_data, tmp_path):
-    input_features, output_features = get_feature_configs()
+def test_resume_training(optimizer, tmp_path):
+    input_features, output_features = synthetic_test_data.get_feature_configs()
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -215,6 +152,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir = tmp_path / "results"
     results_dir.mkdir()
 
+    generated_data = synthetic_test_data.get_generated_data()
     _, _, _, _, output_dir1 = experiment_cli(
         config,
         training_set=generated_data.train_df,
@@ -255,8 +193,8 @@ def test_resume_training(optimizer, generated_data, tmp_path):
 
 
 @pytest.mark.parametrize("optimizer", ["sgd", "adam"])
-def test_resume_training_mlflow(optimizer, generated_data, tmp_path):
-    input_features, output_features = get_feature_configs()
+def test_resume_training_mlflow(optimizer, tmp_path):
+    input_features, output_features = synthetic_test_data.get_feature_configs()
     config = {
         "input_features": input_features,
         "output_features": output_features,
@@ -270,6 +208,7 @@ def test_resume_training_mlflow(optimizer, generated_data, tmp_path):
     mlflow_uri = f"file://{tmp_path}/mlruns"
     experiment_name = optimizer + "_experiment"
 
+    generated_data = synthetic_test_data.get_generated_data()
     _, _, _, _, output_dir1 = experiment_cli(
         config,
         training_set=generated_data.train_df,
@@ -297,8 +236,8 @@ def test_resume_training_mlflow(optimizer, generated_data, tmp_path):
 
 
 @pytest.mark.parametrize("optimizer_type", optimizer_registry)
-def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
-    input_features, output_features = get_feature_configs()
+def test_optimizers(optimizer_type, tmp_path):
+    input_features, output_features = synthetic_test_data.get_feature_configs()
 
     config = {
         "input_features": input_features,
@@ -318,8 +257,9 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     results_dir.mkdir()
 
     # run experiment
+    generated_data = synthetic_test_data.get_generated_data_for_optimizer()
     train_stats, preprocessed_data, output_directory = model.train(
-        training_set=generated_data_for_optimizer.train_df,
+        training_set=generated_data.train_df,
         output_directory=str(results_dir),
         config=config,
         skip_save_processed_input=True,
@@ -337,8 +277,8 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     assert train_losses[last_entry - 1] <= train_losses[0]
 
 
-def test_regularization(generated_data, tmp_path):
-    input_features, output_features = get_feature_configs()
+def test_regularization(tmp_path):
+    input_features, output_features = synthetic_test_data.get_feature_configs()
 
     config = {
         "input_features": input_features,
@@ -356,6 +296,7 @@ def test_regularization(generated_data, tmp_path):
     results_dir.mkdir()
 
     regularization_losses = []
+    generated_data = synthetic_test_data.get_generated_data()
     for regularizer in [None, "l1", "l2", "l1_l2"]:
         np.random.seed(RANDOM_SEED)
         torch.manual_seed(RANDOM_SEED)

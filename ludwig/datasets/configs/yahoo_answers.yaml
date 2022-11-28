@@ -20,3 +20,7 @@ description: |
   Dataset source:
       Character-level Convolutional Networks for Text Classification
       Xiang Zhang et al., 2015
+        https://arxiv.org/abs/1509.01626
+output_features:
+  - name: label
+    type: category

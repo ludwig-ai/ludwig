@@ -10,3 +10,6 @@ description: |
   Source textbook:
   Forecasting: Principles and Practice
       Rob J Hyndman and George Athanasopoulos
+output_features:
+  - name: Demand
+    type: number

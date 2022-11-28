@@ -9,3 +9,6 @@ test_filenames: test.csv
 description: |
   Santander Customer Satisfaction Prediction.
   https://www.kaggle.com/c/santander-customer-satisfaction/overview
+output_features:
+  - name: TARGET
+    type: binary

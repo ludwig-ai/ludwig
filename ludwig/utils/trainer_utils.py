@@ -7,6 +7,7 @@ try:
 except ImportError:
     from typing_extensions import Literal
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, LOSS
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.base import BaseModel
@@ -17,6 +18,7 @@ from ludwig.utils.metric_utils import TrainerMetric
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
     metrics = OrderedDict()
@@ -30,6 +32,7 @@ def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[
     return metrics
 
 
+@DeveloperAPI
 def get_new_progress_tracker(
     batch_size: int,
     best_eval_metric: float,
@@ -64,6 +67,7 @@ def get_new_progress_tracker(
     )
 
 
+@DeveloperAPI
 class ProgressTracker:
     def __init__(
         self,
@@ -162,6 +166,7 @@ class ProgressTracker:
         return log_metrics
 
 
+@DeveloperAPI
 def append_metrics(
     model: BaseModel,
     dataset_name: Literal["train", "validation", "test"],
@@ -194,6 +199,7 @@ def append_metrics(
     return metrics_log, tables
 
 
+@DeveloperAPI
 def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
     """Returns train_steps if non-negative.
 
@@ -204,6 +210,7 @@ def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
     return epochs * steps_per_epoch
 
 
+@DeveloperAPI
 def get_final_steps_per_checkpoint(
     steps_per_epoch: int, steps_per_checkpoint: int = 0, checkpoints_per_epoch: float = 0, should_log: bool = False
 ):
@@ -234,6 +241,7 @@ def get_final_steps_per_checkpoint(
     return steps_per_checkpoint
 
 
+@DeveloperAPI
 def get_training_report(
     validation_field: str,
     validation_metric: str,

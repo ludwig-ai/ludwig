@@ -43,6 +43,10 @@ class BaseTrainer(ABC):
     def shutdown(self):
         pass
 
+    @property
+    def local_rank(self) -> int:
+        return 0
+
     def barrier(self):
         pass
 

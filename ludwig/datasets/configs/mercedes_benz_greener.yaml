@@ -9,3 +9,6 @@ test_filenames: test.csv
 description: |
   The Mercedes-Benz Greener Manufacturing dataset.
   https://www.kaggle.com/c/mercedes-benz-greener-manufacturing
+output_features:
+  - name: y
+    type: number

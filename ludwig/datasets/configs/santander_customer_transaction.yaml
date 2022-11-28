@@ -9,3 +9,6 @@ test_filenames: test.csv
 description: |
   Santander Customer Transaction Prediction.
   https://www.kaggle.com/c/santander-customer-transaction-prediction/overview
+output_features:
+  - name: target
+    type: binary

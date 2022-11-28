@@ -2,6 +2,7 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -9,6 +10,7 @@ from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
+@DeveloperAPI
 @register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class SequencePassthroughConfig(BaseEncoderConfig):
@@ -40,6 +42,7 @@ class SequencePassthroughConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("embed", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceEmbedConfig(BaseEncoderConfig):
@@ -117,6 +120,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class ParallelCNNConfig(BaseEncoderConfig):
@@ -283,6 +287,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedCNNConfig(BaseEncoderConfig):
@@ -481,6 +486,7 @@ class StackedCNNConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedParallelCNNConfig(BaseEncoderConfig):
@@ -665,6 +671,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedRNNConfig(BaseEncoderConfig):
@@ -878,6 +885,7 @@ class StackedRNNConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedCNNRNNConfig(BaseEncoderConfig):
@@ -1172,6 +1180,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedTransformerConfig(BaseEncoderConfig):
