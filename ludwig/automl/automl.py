@@ -49,12 +49,14 @@ from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.profiling import dataset_profile_pb2
-from ludwig.types import DataFrame
-from ludwig.profiling.type_inference import (
-    get_ludwig_type_map_from_column_profile_summaries,
+from ludwig.utils.types import DataFrame
+from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries_from_proto,
     get_dataset_profile_view,
     get_dataset_profile_proto,
+)
+from ludwig.profiling.type_inference import (
+    get_ludwig_type_map_from_column_profile_summaries,
 )
 from ludwig.automl.base_config import (
     allocate_experiment_resources,
@@ -169,7 +171,7 @@ def create_auto_config_with_dataset_profile(
     """Returns the best single-shot Ludwig config given a Ludwig dataset or dataset profile.
 
     If only the dataset is provided, then a new profile is computed.
-    It is invalid to specify neither nor both the dataset and dataset_profile.
+    Only one of the dataset or dataset_profile should be specified, not both.
 
     This function is intended to eventually replace create_auto_config().
     """
@@ -198,7 +200,7 @@ def create_auto_config_with_dataset_profile(
             automl_config[INPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
 
     # Set the combiner to tabnet, by default.
-    automl_config["combiner"][TYPE] = "tabnet"
+    automl_config.get("combiner", {})[TYPE] = "tabnet"
 
     # Add hyperopt, if desired.
     if include_hyperopt:

@@ -41,7 +41,7 @@ from ludwig.utils.automl.type_inference import infer_type, should_exclude
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.system_utils import Resources
-from ludwig.profiling import get_dataset_profile_view, get_dataset_profile_proto
+from ludwig.profiling.dataset_profile import get_dataset_profile_view, get_dataset_profile_proto
 from ludwig.profiling import dataset_profile_pb2
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
