@@ -17,6 +17,7 @@ import copy
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BIAS,
@@ -67,6 +68,7 @@ from ludwig.utils.version_transformation import VersionTransformation, VersionTr
 config_transformation_registry = VersionTransformationRegistry()
 
 
+@DeveloperAPI
 def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []) -> Callable:
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
@@ -89,6 +91,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
+@DeveloperAPI
 def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
@@ -104,6 +107,7 @@ def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
     )
 
 
+@DeveloperAPI
 def upgrade_model_progress(model_progress: Dict) -> Dict:
     """Updates model progress info to be compatible with latest ProgressTracker implementation.
 
@@ -161,6 +165,7 @@ def _traverse_dicts(config: Any, f: Callable[[Dict], None]):
             _traverse_dicts(v, f)
 
 
+@DeveloperAPI
 @register_config_transformation("0.6", "backend")
 def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]:
     if "cache_credentials" in backend:
@@ -176,6 +181,7 @@ def _update_backend_cache_credentials(backend: Dict[str, Any]) -> Dict[str, Any]
     return backend
 
 
+@DeveloperAPI
 @register_config_transformation("0.6", ["output_features"])
 def update_class_weights_in_features(feature: Dict[str, Any]) -> Dict[str, Any]:
     if LOSS in feature:
@@ -236,6 +242,7 @@ def _update_level_metadata(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
+@DeveloperAPI
 @register_config_transformation("0.5")
 def rename_training_to_trainer(config: Dict[str, Any]) -> Dict[str, Any]:
     if TRAINING in config:
@@ -286,6 +293,7 @@ def _upgrade_feature(feature: Dict[str, Any]) -> Dict[str, Any]:
     return feature
 
 
+@DeveloperAPI
 def upgrade_audio_preprocessing(preproc_dict: Dict[str, Any]) -> Dict[str, Any]:
     if "audio_feature" in preproc_dict:
         for k, v in preproc_dict["audio_feature"].items():
@@ -594,6 +602,7 @@ def _upgrade_preprocessing_split(preprocessing: Dict[str, Any]) -> Dict[str, Any
     return preprocessing
 
 
+@DeveloperAPI
 @register_config_transformation("0.5")
 def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
     if TRAINING in config:
@@ -603,6 +612,7 @@ def update_training(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
+@DeveloperAPI
 @register_config_transformation("0.6")
 def upgrade_missing_value_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
     for input_feature in config.get(INPUT_FEATURES, []):
@@ -640,6 +650,7 @@ def _upgrade_max_batch_size(trainer: Dict[str, Any]) -> Dict[str, Any]:
     return trainer
 
 
+@DeveloperAPI
 @register_config_transformation("0.6", ["trainer"])
 def remove_trainer_type(trainer: Dict[str, Any]) -> Dict[str, Any]:
     if TYPE in trainer:
@@ -653,6 +664,7 @@ def remove_trainer_type(trainer: Dict[str, Any]) -> Dict[str, Any]:
     return trainer
 
 
+@DeveloperAPI
 def upgrade_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     # TODO(travis): stopgap solution, we should make it so we don't need to do this
     # by decoupling config and metadata

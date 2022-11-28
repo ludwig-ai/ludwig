@@ -22,6 +22,7 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DEFAULT_AUDIO_TENSOR_LENGTH
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.types import TorchAudioTuple
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 AUDIO_EXTENSIONS = (".wav", ".amb", ".mp3", ".ogg", ".vorbis", ".flac", ".opus", ".sphere")
 
 
+@DeveloperAPI
 def is_torch_audio_tuple(audio: Any) -> bool:
     if isinstance(audio, tuple):
         if len(audio) == 2 and isinstance(audio[0], torch.Tensor) and isinstance(audio[1], int):
@@ -39,6 +41,7 @@ def is_torch_audio_tuple(audio: Any) -> bool:
     return False
 
 
+@DeveloperAPI
 def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     sampling_rates = [audio[1] for audio in audio_lst]
     tensor_list = [audio[0] for audio in audio_lst]
@@ -55,15 +58,16 @@ def get_default_audio(audio_lst: List[TorchAudioTuple]) -> TorchAudioTuple:
     return default_audio_tensor, default_sampling_rate
 
 
+@DeveloperAPI
 def read_audio_from_path(path: str) -> Optional[TorchAudioTuple]:
     """Reads audio from path.
-
     Useful for reading from a small number of paths. For more intensive reads, use backend.read_binary_files instead.
     """
     bytes_obj = get_bytes_obj_from_path(path)
     return read_audio_from_bytes_obj(bytes_obj)
 
 
+@DeveloperAPI
 @functools.lru_cache(maxsize=32)
 def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
     try:
@@ -74,6 +78,7 @@ def read_audio_from_bytes_obj(bytes_obj: bytes) -> Optional[TorchAudioTuple]:
         return None
 
 
+@DeveloperAPI
 def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
     # Increase precision in order to achieve parity with scipy.signal.lfilter implementation
     filter_window = torch.tensor([1.0, -emphasize_value], dtype=torch.float64, device=data.device)
@@ -87,10 +92,12 @@ def _pre_emphasize_data(data: torch.Tensor, emphasize_value: float = 0.97):
     return pre_emphasized_data
 
 
+@DeveloperAPI
 def get_length_in_samp(sampling_rate_in_hz: Union[float, int], length_in_s: Union[float, int]) -> int:
     return int(sampling_rate_in_hz * length_in_s)
 
 
+@DeveloperAPI
 def get_group_delay(
     raw_data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -124,6 +131,7 @@ def get_group_delay(
     return torch.transpose(group_delay, 0, 1)
 
 
+@DeveloperAPI
 def get_phase_stft_magnitude(
     raw_data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -141,6 +149,7 @@ def get_phase_stft_magnitude(
     return torch.transpose(stft_phase, 0, 1)
 
 
+@DeveloperAPI
 def get_stft_magnitude(
     raw_data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -161,6 +170,7 @@ def get_stft_magnitude(
 # MIT licensed implementation
 # https://github.com/jameslyons/python_speech_features/blob/40c590269b57c64a8c1f1ddaaff2162008d1850c/python_speech_features/base.py#L84################################################################################
 ################################################################################
+@DeveloperAPI
 def get_fbank(
     raw_data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -190,6 +200,7 @@ def get_fbank(
     return torch.transpose(log_mel_fbank_feature, 0, 1)
 
 
+@DeveloperAPI
 def _get_mel_fbank_matrix(
     list_mel_points: torch.Tensor, num_filter_bands: int, num_fft_points: int, sampling_rate_in_hz: int
 ) -> torch.Tensor:
@@ -209,6 +220,7 @@ def _get_mel_fbank_matrix(
     return mel_scaled_fbank
 
 
+@DeveloperAPI
 def _create_triangular_filter(
     start_bin_freq: torch.Tensor, middle_bin_freq: torch.Tensor, end_bin_freq: torch.Tensor, num_ess_fft_points: int
 ):
@@ -222,14 +234,17 @@ def _create_triangular_filter(
     return filter_window
 
 
+@DeveloperAPI
 def _convert_hz_to_mel(hz: int) -> float:
     return float(2595.0 * torch.log10(torch.tensor(1 + hz / 700.0)))
 
 
+@DeveloperAPI
 def _convert_mel_to_hz(mel):
     return 700.0 * (10 ** (mel / 2595.0) - 1)
 
 
+@DeveloperAPI
 def _get_stft(
     raw_data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -255,6 +270,7 @@ def _get_stft(
     return non_symmetric_stft
 
 
+@DeveloperAPI
 def _short_time_fourier_transform(
     data: torch.Tensor,
     sampling_rate_in_hz: int,
@@ -277,6 +293,7 @@ def _short_time_fourier_transform(
     return fft
 
 
+@DeveloperAPI
 def _preprocess_to_padded_matrix(
     data: torch.Tensor, window_length_in_samp: int, window_shift_in_samp: int, zero_mean_offset: bool = False
 ) -> torch.Tensor:
@@ -295,11 +312,13 @@ def _preprocess_to_padded_matrix(
     return zero_padded_matrix
 
 
+@DeveloperAPI
 def get_num_output_padded_to_fit_input(num_input: int, window_length_in_samp: int, window_shift_in_samp: int) -> int:
     num_output_valid = torch.tensor((num_input - window_length_in_samp) / window_shift_in_samp + 1)
     return int(torch.ceil(num_output_valid))
 
 
+@DeveloperAPI
 def get_window(window_type: str, window_length_in_samp: int, device: Optional[torch.device] = None) -> torch.Tensor:
     # Increase precision in order to achieve parity with scipy.signal.windows.get_window implementation
     if window_type == "bartlett":
@@ -322,11 +341,13 @@ def get_window(window_type: str, window_length_in_samp: int, device: Optional[to
         raise ValueError(f"Unknown window type: {window_type}")
 
 
+@DeveloperAPI
 def is_audio_score(src_path):
     # Used for AutoML
     return int(isinstance(src_path, str) and src_path.lower().endswith(AUDIO_EXTENSIONS))
 
 
+@DeveloperAPI
 def _weight_data_matrix(
     data_matrix: torch.Tensor, window_type: str, data_transformation: Optional[str] = None
 ) -> torch.Tensor:
@@ -337,33 +358,40 @@ def _weight_data_matrix(
     return data_matrix * window
 
 
+@DeveloperAPI
 def get_non_symmetric_length(symmetric_length: int) -> int:
     return int(symmetric_length / 2) + 1
 
 
+@DeveloperAPI
 def get_non_symmetric_data(data: torch.Tensor) -> torch.Tensor:
     num_fft_points = data.shape[-1]
     num_ess_fft_points = get_non_symmetric_length(num_fft_points)
     return data[:, :num_ess_fft_points]
 
 
+@DeveloperAPI
 def get_max_length_stft_based(length_in_samp, window_length_in_s, window_shift_in_s, sampling_rate_in_hz):
     window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
     window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
     return get_num_output_padded_to_fit_input(length_in_samp, window_length_in_samp, window_shift_in_samp)
 
 
+@DeveloperAPI
 def calculate_incr_var(var_prev, mean_prev, mean, length):
     return var_prev + (length - mean_prev) * (length - mean)
 
 
+@DeveloperAPI
 def calculate_incr_mean(count, mean, length):
     return mean + (length - mean) / float(count)
 
 
+@DeveloperAPI
 def calculate_var(sum1, sum2, count):
     return (sum2 - ((sum1 * sum1) / float(count))) / float(count - 1) if count > 1 else 0.0
 
 
+@DeveloperAPI
 def calculate_mean(sum1, count):
     return sum1 / float(count)
