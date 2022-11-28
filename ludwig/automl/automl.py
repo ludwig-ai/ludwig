@@ -160,7 +160,7 @@ def auto_train(
 
 
 def create_auto_config_with_dataset_profile(
-    target: Union[str, List[str]],
+    target: str = None,
     dataset: Optional[Union[str, DataFrame]] = None,
     dataset_profile: dataset_profile_pb2.DatasetProfile = None,
     random_seed: int = default_random_seed,
