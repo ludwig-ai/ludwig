@@ -39,6 +39,7 @@ from ludwig.constants import (
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
+from ludwig.schema.hyperopt import get_hyperopt_jsonschema
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
 
@@ -56,7 +57,7 @@ def get_schema(model_type: str = MODEL_ECD):
             COMBINER: get_combiner_jsonschema(),
             TRAINER: get_trainer_jsonschema(model_type),
             PREPROCESSING: get_preprocessing_jsonschema(),
-            HYPEROPT: {},
+            HYPEROPT: get_hyperopt_jsonschema(),
             DEFAULTS: get_defaults_jsonschema(),
         },
         "definitions": {},
