@@ -1802,8 +1802,8 @@ def _preprocess_file_for_training(
             backend.df_engine.to_parquet(splits_df, split_fp, index=True)
         except Exception as e:
             logger.warning(
-                f"Encountered error: '{e}' while writing data to parquet during saving processed input. "
-                "Skipping saving processed input."
+                f"Encountered error: '{e}' while writing data to parquet during saving preprocessed data. "
+                "Skipping saving processed data."
             )
 
     logger.info("Building dataset: DONE")
