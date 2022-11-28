@@ -97,11 +97,11 @@ HF_ENCODERS = [
 RAY_BACKEND_CONFIG = {
     "type": "ray",
     "processor": {
-        "parallelism": 2,
+        "parallelism": 1,
     },
     "trainer": {
         "use_gpu": False,
-        "num_workers": 2,
+        "num_workers": 1,
         "resources_per_worker": {
             "CPU": 0.1,
             "GPU": 0,
@@ -931,8 +931,37 @@ def train_with_backend(
 def all_required_metrics_exist(
     feature_to_metrics_dict: Dict[str, Dict[str, Any]], required_metrics: Optional[Dict[str, Set]] = None
 ):
+    """Checks that all `required_metrics` exist in the dictionary returned during Ludwig model evaluation.
+
+    `feature_to_metrics_dict` is a dict where the feature name is a key and the value is a dictionary of metrics:
+
+        {
+            "binary_1234": {
+                "accuracy": 0.5,
+                "loss": 0.5,
+            },
+            "numerical_1234": {
+                "mean_squared_error": 0.5,
+                "loss": 0.5,
+            }
+        }
+
+    `required_metrics` is a dict where the feature name is a key and the value is a set of metric names:
+
+        {
+            "binary_1234": {"accuracy"},
+            "numerical_1234": {"mean_squared_error"},
+        }
+
+    Args:
+        feature_to_metrics_dict: dictionary of output feature to a dictionary of metrics
+        required_metrics: optional dictionary of output feature to a set of metrics names. If None, then function
+            returns True immediately.
+    Returns:
+        None. Raises an AssertionError if any required metrics are missing.
+    """
     if required_metrics is None:
-        return True
+        return
 
     for feature_name, metrics_dict in feature_to_metrics_dict.items():
         if feature_name in required_metrics:

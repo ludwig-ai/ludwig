@@ -378,6 +378,10 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
+    # The synthetic set feature generator inserts between 0 and `vocab_size` entities per entry. 0 entities creates a
+    # null (NaN) entry. The default behavior for such entries in output features is to DROP_ROWS. This leads to poorly
+    # handled non-determinism when comparing the metrics between the local and Ray backends. We work around this by
+    # setting the `missing_value_strategy` to `fill_with_const` and setting the `fill_value` to the empty string.
     set_feature_config = set_feature(
         decoder={"vocab_size": 3},
         preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
