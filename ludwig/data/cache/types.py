@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.fs_utils import checksum
 from ludwig.utils.types import DataFrame
 
@@ -31,6 +32,7 @@ def alphanum(v):
     return re.sub(r"\W+", "", v)
 
 
+@DeveloperAPI
 class CacheableDataset(ABC):
     name: str
     checksum: str
@@ -48,6 +50,7 @@ class CacheableDataset(ABC):
         raise NotImplementedError()
 
 
+@DeveloperAPI
 @dataclass
 class CacheableDataframe(CacheableDataset):
     df: DataFrame
@@ -64,6 +67,7 @@ class CacheableDataframe(CacheableDataset):
         return self.df
 
 
+@DeveloperAPI
 @dataclass
 class CacheablePath(CacheableDataset):
     path: str
