@@ -4,10 +4,12 @@ from typing import Dict, Optional, Union
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
 
 
+@DeveloperAPI
 @dataclass
 class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     """Basic executor settings."""
@@ -62,6 +64,7 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     scheduler: BaseSchedulerConfig = SchedulerDataclassField(description="")
 
 
+@DeveloperAPI
 def ExecutorDataclassField(description: str, default: Dict = {}):
     class ExecutorMarshmallowField(fields.Field):
         def _deserialize(self, value, attr, data, **kwargs):

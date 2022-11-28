@@ -5,6 +5,7 @@ from typing import Callable, Dict, Optional, Tuple, Union
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -30,6 +31,7 @@ RAY_TUNE_DESULT_DEFAULT_METRIC = "_metric"
 scheduler_config_registry = Registry()
 
 
+@DeveloperAPI
 def register_scheduler_config(name: str):
     def wrap(scheduler_config: BaseSchedulerConfig):
         scheduler_config_registry[name] = scheduler_config
@@ -38,6 +40,7 @@ def register_scheduler_config(name: str):
     return wrap
 
 
+@DeveloperAPI
 @dataclass
 class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for schedulers.
@@ -52,6 +55,7 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 # Field aliases to cut down on code reuse:
+@DeveloperAPI
 def metric_alias(default=None):
     return schema_utils.StringOptions(
         options=list(DEFAULT_RESULT_KEYS) + [RAY_TUNE_DESULT_DEFAULT_METRIC],
@@ -63,6 +67,7 @@ def metric_alias(default=None):
     )
 
 
+@DeveloperAPI
 def time_attr_alias(default=TRAINING_ITERATION):
     return schema_utils.StringOptions(
         options=list(DEFAULT_RESULT_KEYS),
@@ -76,6 +81,7 @@ def time_attr_alias(default=TRAINING_ITERATION):
     )
 
 
+@DeveloperAPI
 def max_t_alias(default=100):
     return schema_utils.PositiveInteger(
         default=default,
@@ -86,6 +92,7 @@ def max_t_alias(default=100):
     )
 
 
+@DeveloperAPI
 @dataclass
 class CommonSchedulerOptions:
     time_attr: str = time_attr_alias()
@@ -101,6 +108,7 @@ class CommonSchedulerOptions:
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("async_hyperband")
 @register_scheduler_config("asynchyperband")
 @dataclass
@@ -123,6 +131,7 @@ class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions)
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("hyperband")
 @dataclass
 class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
@@ -141,6 +150,7 @@ class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("median_stopping_rule")
 @register_scheduler_config("medianstoppingrule")
 @dataclass
@@ -183,6 +193,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOpti
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("pbt")
 @dataclass
 class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
@@ -287,6 +298,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedule
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("pbt_replay")
 @dataclass
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
@@ -303,6 +315,7 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("pb2")
 @dataclass
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
@@ -367,6 +380,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonScheduler
     )
 
 
+@DeveloperAPI
 @register_scheduler_config("hb_bohb")
 @dataclass
 class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
@@ -386,6 +400,7 @@ class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 
 
 # TODO: Double-check support for this
+@DeveloperAPI
 @register_scheduler_config("fifo")
 @dataclass
 class FIFOSchedulerConfig(BaseSchedulerConfig):
@@ -395,6 +410,7 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 
 
 # TODO: Double-check support for this as well as whether Callable args work properly
+@DeveloperAPI
 @register_scheduler_config("resource_changing")
 @dataclass
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
@@ -419,6 +435,7 @@ class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     )
 
 
+@DeveloperAPI
 def get_scheduler_conds():
     """Returns a JSON schema of conditionals to validate against scheduler types defined in
     `ludwig.schema.hyperopt.scheduler_registry`."""
@@ -435,6 +452,7 @@ def get_scheduler_conds():
     return conds
 
 
+@DeveloperAPI
 def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt scheduler settings."):
     """Custom dataclass field that when used inside of a dataclass will allow any scheduler in
     `ludwig.schema.hyperopt.scheduler.scheduler_registry`. Sets default scheduler to 'fifo'.
