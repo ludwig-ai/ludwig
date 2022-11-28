@@ -313,13 +313,11 @@ def initialize_pytorch(
     _set_torch_init_params(param_tuple)
 
 
-@DeveloperAPI
 def _set_torch_init_params(params: Optional[Tuple]):
     global _TORCH_INIT_PARAMS
     _TORCH_INIT_PARAMS = params
 
 
-@DeveloperAPI
 def _get_torch_init_params() -> Optional[Tuple]:
     return _TORCH_INIT_PARAMS
 
