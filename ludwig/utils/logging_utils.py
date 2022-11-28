@@ -12,8 +12,8 @@ def log_once(key):
     Various logging settings can adjust the definition of "first".
 
     Example:
-        >>> if log_once("some_key"):
-        ...     logger.info("Some verbose logging statement")
+        if log_once("some_key"):
+            logger.info("Some verbose logging statement") # noqa
     """
 
     global _last_logged
