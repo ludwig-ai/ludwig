@@ -55,6 +55,7 @@ from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
+from ludwig.data.utils import set_fixed_split
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
@@ -1764,20 +1765,8 @@ def _preprocess_file_for_training(
         concatenated_df = concatenate_files(training_set, validation_set, test_set, read_fn, backend)
         training_set_metadata[SRC] = training_set
 
-        # Data is pre-split, so we override whatever split policy the user specified
-        if preprocessing_params["split"]:
-            warnings.warn(
-                'Preprocessing "split" section provided, but pre-split dataset given as input. '
-                "Ignoring split configuration."
-            )
-
-        preprocessing_params = {
-            **preprocessing_params,
-            "split": {
-                "type": "fixed",
-                "column": SPLIT,
-            },
-        }
+        # Data is pre-split.
+        preprocessing_params = set_fixed_split(preprocessing_params)
 
         data, training_set_metadata = build_dataset(
             concatenated_df,
@@ -1841,20 +1830,8 @@ def _preprocess_df_for_training(
         logger.info("Using training dataframe")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
 
-        # Data is pre-split, so we override whatever split policy the user specified
-        if preprocessing_params["split"]:
-            warnings.warn(
-                'Preprocessing "split" section provided, but pre-split dataset given as input. '
-                "Ignoring split configuration."
-            )
-
-        preprocessing_params = {
-            **preprocessing_params,
-            "split": {
-                "type": "fixed",
-                "column": SPLIT,
-            },
-        }
+        # Data is pre-split.
+        preprocessing_params = set_fixed_split(preprocessing_params)
 
     logger.info("Building dataset (it may take a while)")
 
