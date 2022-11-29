@@ -203,53 +203,38 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     def create_dataset(model: LudwigModel, size: int) -> RayDataset:
         df = pd.DataFrame(
             {
-                "in_column": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
-                "out_column": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "in_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "out_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
             }
         )
         df = dask.dataframe.from_pandas(df, npartitions=1)
         return model.backend.dataset_manager.create(df, config=model.config, training_set_metadata={})
 
     # Create synthetic train, val, and test datasets with one block
-    train_ds = create_dataset(model, int(1e6))
+    train_ds = create_dataset(model, int(1e4))
     val_ds = create_dataset(model, int(1e4))
     test_ds = create_dataset(model, int(1e4))
 
     # Test with no repartition. This occurs when the number of dataset blocks
     # is equal to the number of ray actors.
     trainer.ray_params.num_actors = 1
-    train_repart, val_repart, test_repart = trainer._construct_lgb_datasets(
-        train_ds, validation_set=val_ds, test_set=test_ds
-    )
-    assert isinstance(train_repart, RayDataset)
-    assert train_repart.ds.num_blocks() == 1
-    assert isinstance(val_repart, RayDataset)
-    assert val_repart.ds.num_blocks() == 1
-    assert isinstance(test_repart, RayDataset)
-    assert test_repart.ds.num_blocks() == 1
+    trainer._construct_lgb_datasets(train_ds, validation_set=val_ds, test_set=test_ds)
+    assert train_ds.ds.num_blocks() == 1
+    assert val_ds.ds.num_blocks() == 1
+    assert test_ds.ds.num_blocks() == 1
 
     # Test with repartition. This occurs when the number of dataset blocks
     # is less than the number of ray actors.
     trainer.ray_params.num_actors = 2
-    train_repart, val_repart, test_repart = trainer._construct_lgb_datasets(
-        train_ds, validation_set=val_ds, test_set=test_ds
-    )
-    assert isinstance(train_repart, RayDataset)
-    assert train_repart.ds.num_blocks() == 2
-    assert isinstance(val_repart, RayDataset)
-    assert train_repart.ds.num_blocks() == 2
-    assert isinstance(train_repart, RayDataset)
-    assert train_repart.ds.num_blocks() == 2
+    trainer._construct_lgb_datasets(train_ds, validation_set=val_ds, test_set=test_ds)
+    assert train_ds.ds.num_blocks() == 2
+    assert val_ds.ds.num_blocks() == 2
+    assert test_ds.ds.num_blocks() == 2
 
     # Test again with no repartition. This also occurs when the number of dataset blocks
     # is greater than the number of ray actors.
     trainer.ray_params.num_actors = 1
-    train_repart, val_repart, test_repart = trainer._construct_lgb_datasets(
-        train_ds, validation_set=val_ds, test_set=test_ds
-    )
-    assert isinstance(train_repart, RayDataset)
-    assert train_repart.ds.num_blocks() == 2
-    assert isinstance(val_repart, RayDataset)
-    assert val_repart.ds.num_blocks() == 2
-    assert isinstance(test_repart, RayDataset)
-    assert test_repart.ds.num_blocks() == 2
+    trainer._construct_lgb_datasets(train_ds, validation_set=val_ds, test_set=test_ds)
+    assert train_ds.ds.num_blocks() == 2
+    assert val_ds.ds.num_blocks() == 2
+    assert test_ds.ds.num_blocks() == 2
