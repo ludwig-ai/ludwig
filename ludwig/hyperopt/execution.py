@@ -35,7 +35,6 @@ from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
 from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
-from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
@@ -562,7 +561,6 @@ class RayTuneExecutor:
 
         # set tune resources
         if is_using_ray_backend:
-            resources = tune.get_trial_resources()
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
