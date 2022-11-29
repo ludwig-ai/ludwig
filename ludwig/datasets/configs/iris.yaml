@@ -12,3 +12,6 @@ columns:
 description: |
   Iris Dataset
   https://archive.ics.uci.edu/ml/datasets/Iris
+output_features:
+  - name: class
+    type: category

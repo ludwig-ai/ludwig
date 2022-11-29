@@ -2,7 +2,16 @@ from typing import List, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
+from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import (
+    LOSS,
+    MEAN_ABSOLUTE_ERROR,
+    MEAN_SQUARED_ERROR,
+    NUMBER,
+    R2,
+    ROOT_MEAN_SQUARED_ERROR,
+    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
+)
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -23,6 +32,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(NUMBER)
 @dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -37,6 +47,7 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(NUMBER)
 @dataclass(repr=False)
 class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
@@ -45,6 +56,7 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigM
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(NUMBER)
 @dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -62,6 +74,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(NUMBER)
 @dataclass(repr=False)
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):
@@ -101,3 +114,14 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
+
+    @staticmethod
+    def get_output_metric_functions():
+        return {
+            LOSS: None,
+            MEAN_SQUARED_ERROR: None,
+            MEAN_ABSOLUTE_ERROR: None,
+            ROOT_MEAN_SQUARED_ERROR: None,
+            ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
+            R2: None,
+        }

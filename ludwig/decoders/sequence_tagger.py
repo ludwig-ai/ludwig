@@ -3,6 +3,7 @@ from typing import Dict
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import HIDDEN, LOGITS, SEQUENCE, TEXT
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
@@ -13,6 +14,7 @@ from ludwig.utils.torch_utils import Dense
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_decoder("tagger", [SEQUENCE, TEXT])
 class SequenceTaggerDecoder(Decoder):
     def __init__(

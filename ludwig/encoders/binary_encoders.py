@@ -17,6 +17,7 @@ import logging
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -25,6 +26,7 @@ from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfi
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("passthrough", BINARY)
 class BinaryPassthroughEncoder(Encoder):
     def __init__(self, encoder_config=None, **kwargs):

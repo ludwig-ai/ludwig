@@ -244,6 +244,6 @@ def test_merge_with_defaults():
     assert LOSS in merged_config[DEFAULTS][CATEGORY]
     assert COMBINER in merged_config
     assert merged_config[TRAINER][EARLY_STOP] == 5
-    assert SCHEDULER in merged_config[HYPEROPT][EXECUTOR]
+    assert SCHEDULER not in merged_config[HYPEROPT][EXECUTOR]
     assert TYPE in merged_config[INPUT_FEATURES][1][ENCODER]
     assert TYPE in merged_config[OUTPUT_FEATURES][0][DECODER]

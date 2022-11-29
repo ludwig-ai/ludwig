@@ -1,6 +1,7 @@
 import argparse
 import importlib
 import os
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Dict, List
 
@@ -81,6 +82,25 @@ def get_dataset(dataset_name, cache_dir=None) -> Any:
 def list_datasets() -> List[str]:
     """Returns a list of the names of all available datasets."""
     return sorted(_get_dataset_configs().keys())
+
+
+@PublicAPI
+def get_datasets_output_features(dataset: str = None) -> dict:
+    """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
+    which will then cause the function to return a dictionary with the output features for that dataset.
+
+    :param dataset: (str) name of the dataset
+    :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
+                    the specified dataset
+    """
+    ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
+
+    for name, config in ordered_configs.items():
+        ordered_configs[name] = {"name": config.name, "output_features": config.output_features}
+
+    if dataset:
+        return ordered_configs[dataset]
+    return ordered_configs
 
 
 @PublicAPI

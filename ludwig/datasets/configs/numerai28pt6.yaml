@@ -6,3 +6,6 @@ sha256:
   encrypted-stock-market-data-from-numerai.zip: cc0714c5f4c8ac6b212f7569641c5110bd2296547af434cba77184ebb03f304b
 description: |
   Encrypted Stock Market Data from Numerai dataset from Kaggle.
+output_features:
+  - name: target
+    type: binary
