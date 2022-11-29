@@ -562,15 +562,15 @@ class RayTuneExecutor:
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
-            num_gpus = resources.required_resources.get("GPU", 0)
-            num_cpus = resources.required_resources.get("CPU", 1) if num_gpus == 0 else 0
+            num_gpus = 1 if use_gpu else 0
+            num_cpus = 0.01 if use_gpu else 1  # HACK: trainer Tuner needs CPUs...
 
             hvd_kwargs = {
                 "num_workers": int(num_gpus) if use_gpu else 1,
                 "use_gpu": use_gpu,
                 "resources_per_worker": {
                     "CPU": num_cpus,
-                    "GPU": 1 if use_gpu else 0,
+                    "GPU": num_gpus,
                 },
             }
             hyperopt_dict["backend"].set_distributed_kwargs(**hvd_kwargs)
