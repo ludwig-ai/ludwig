@@ -761,6 +761,11 @@ class RayTuneExecutor:
                 tune_callbacks,
             )
 
+        if _is_ray_backend(backend):
+            # for now, we do not do distributed training on cpu (until spread scheduling is implemented for Ray Train)
+            # but we do want to enable it when GPUs are specified
+            resources_per_trial = PlacementGroupFactory([{"hyperopt_resources": 1}])
+
         if has_remote_protocol(output_directory):
             self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
             self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
@@ -772,6 +777,7 @@ class RayTuneExecutor:
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
+        run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
 
         @ray.remote(num_cpus=0)
         def _register(name, trainable):
@@ -779,6 +785,7 @@ class RayTuneExecutor:
 
         ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
+        print("ASDFASDF BEFORE TUNER FIT CALL")
         try:
             if resume:
                 # Restore from experiment directory
