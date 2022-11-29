@@ -1,0 +1,12 @@
+version: 1.0
+name: sarcastic_headlines
+train_filenames: Sarcasm_Headlines_Dataset.json
+archive_filenames: news-headlines-dataset-for-sarcasm-detection.zip
+sha256:
+  news-headlines-dataset-for-sarcasm-detection.zip: 3728f0fbce563536c3c67ab92e343e3ebcdc5cf1feaf4980c3abd4e54109eb51
+kaggle_dataset_id: rmisra/news-headlines-dataset-for-sarcasm-detection
+description: A dataset to determine if a news headline is sarcastic or serious.
+loader: sarcastic_headlines.SarcasticHeadlinesLoader
+output_features:
+  - name: is_sarcastic
+    type: binary

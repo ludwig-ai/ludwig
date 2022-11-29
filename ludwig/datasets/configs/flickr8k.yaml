@@ -16,3 +16,14 @@ description: |
   events. The images were chosen from six different Flickr groups, and tend
   not to contain any well-known people or locations, but were manually
   selected to depict a variety of scenes and situations.
+output_features:
+  - name: caption0
+    type: text
+  - name: caption1
+    type: text
+  - name: caption2
+    type: text
+  - name: caption3
+    type: text
+  - name: caption4
+    type: text

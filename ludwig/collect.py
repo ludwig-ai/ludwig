@@ -77,7 +77,7 @@ def collect_activations(
         for training.
     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
         [0, 1] allowed to allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
         to use multithreading parallelism to improve performance at
         the cost of determinism.
     :param callbacks: (list, default: `None`) a list of
@@ -172,15 +172,15 @@ def print_model_summary(model_path: str, **kwargs) -> None:
     """
     model = LudwigModel.load(model_path)
     # Model's dict inputs are wrapped in a list, required by torchinfo.
-    torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()])
+    logger.info(torchinfo.summary(model.model, input_data=[model.model.get_model_inputs()], depth=20))
 
-    print("\nModules:\n")
+    logger.info("\nModules:\n")
     for name, _ in model.model.named_children():
-        print(name)
+        logger.info(name)
 
-    print("\nParameters:\n")
+    logger.info("\nParameters:\n")
     for name, _ in model.model.named_parameters():
-        print(name)
+        logger.info(name)
 
 
 def cli_collect_activations(sys_argv):
@@ -278,7 +278,7 @@ def cli_collect_activations(sys_argv):
         "--disable_parallel_threads",
         action="store_false",
         dest="allow_parallel_threads",
-        help="disable TensorFlow from using multithreading for reproducibility",
+        help="disable PyTorch from using multithreading for reproducibility",
     )
     parser.add_argument(
         "-b",

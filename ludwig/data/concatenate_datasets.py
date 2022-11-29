@@ -71,7 +71,6 @@ def concatenate_df(train_df, vali_df, test_df, backend):
         return 2
 
     concatenated_df[SPLIT] = concatenated_df.index.to_series().map(get_split).astype(np.int8)
-
     return concatenated_df
 
 

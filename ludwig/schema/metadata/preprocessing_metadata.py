@@ -54,7 +54,7 @@ PREPROCESSING_METADATA = {
         suggested_values="Depends on data size",
         suggested_values_reasoning=None,
         commonly_used=False,
-        expected_impact=ExpectedImpact.LOW,
+        expected_impact=ExpectedImpact.MEDIUM,
         literature_references=None,
         internal_only=False,
     ),

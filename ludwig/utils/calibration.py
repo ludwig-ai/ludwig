@@ -23,6 +23,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY
 from ludwig.utils.registry import DEFAULT_KEYS, Registry
 
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 calibration_registry = Registry()
 
 
+@DeveloperAPI
 def register_calibration(name: str, features: Union[str, List[str]], default=False):
     """Registers a calibration implementation for a list of features."""
     if isinstance(features, str):
@@ -49,6 +51,7 @@ def register_calibration(name: str, features: Union[str, List[str]], default=Fal
     return wrap
 
 
+@DeveloperAPI
 def get_calibration_cls(feature: str, calibration_method: str) -> Type["CalibrationModule"]:
     """Get calibration class for specified feature type and calibration method."""
     if not calibration_method:
@@ -63,6 +66,7 @@ def get_calibration_cls(feature: str, calibration_method: str) -> Type["Calibrat
     return None
 
 
+@DeveloperAPI
 class ECELoss(nn.Module):
     """Calculates the Expected Calibration Error of a model.
 
@@ -106,6 +110,7 @@ class ECELoss(nn.Module):
         return ece
 
 
+@DeveloperAPI
 @dataclass
 class CalibrationResult:
     """Tracks results of probability calibration."""
@@ -116,6 +121,7 @@ class CalibrationResult:
     after_calibration_ece: float
 
 
+@DeveloperAPI
 class CalibrationModule(nn.Module, ABC):
     @abstractmethod
     def train_calibration(
@@ -125,6 +131,7 @@ class CalibrationModule(nn.Module, ABC):
         return NotImplementedError()
 
 
+@DeveloperAPI
 @register_calibration("temperature_scaling", [BINARY, CATEGORY], default=True)
 class TemperatureScaling(CalibrationModule):
     """Implements temperature scaling of logits. Based on results from "On Calibration of Modern Neural Networks":
@@ -216,6 +223,7 @@ class TemperatureScaling(CalibrationModule):
             return torch.softmax(scaled_logits, -1)
 
 
+@DeveloperAPI
 @register_calibration("matrix_scaling", CATEGORY, default=False)
 class MatrixScaling(CalibrationModule):
     """Implements matrix scaling of logits, as described in Beyond temperature scaling: Obtaining well-calibrated

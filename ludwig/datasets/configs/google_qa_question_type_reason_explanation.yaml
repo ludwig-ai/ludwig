@@ -16,3 +16,6 @@ description: |
   Note: this is the same dataset as `google_quest_qa`. It is duplicated here to have a one-to-one mapping
   with the benchmarking datasets in https://arxiv.org/pdf/2111.02705.pdf
   In this paper, the column `question_type_reason_explanation` is used as the output feature.
+output_features:
+  - name: question_type_reason_explanation
+    type: category

@@ -1,0 +1,15 @@
+version: 1.0
+name: telco_customer_churn
+kaggle_dataset_id: blastchar/telco-customer-churn
+archive_filenames: telco-customer-churn.zip
+dataset_filenames: WA_Fn-UseC_-Telco-Customer-Churn.csv
+sha256:
+  telco-customer-churn.zip: cf7e6dcd8a238ecaa841a7d133142525453992d8d5e3ef6d1e5f0d359e7bf444
+description: |
+  The Telco customer churn data contains information about a fictional telco company
+  that provided home phone and Internet services to customers. Each row represents a
+  customer, each column contains customer’s attributes described on the column Metadata.
+  https://www.kaggle.com/datasets/blastchar/telco-customer-churn
+output_features:
+    - name: Churn
+      type: binary

@@ -88,7 +88,7 @@ def benchmark_one(experiment: Dict[str, Union[str, Dict[str, str]]]) -> None:
         )
         delete_hyperopt_outputs(experiment["experiment_name"])
     else:
-        backend = "ray"
+        backend = None
         ludwig_profiler_callbacks = None
         if experiment["profiler"]["enable"]:
             ludwig_profiler_callbacks = [LudwigProfilerCallback(experiment)]

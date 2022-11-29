@@ -14,3 +14,6 @@ loader: ieee_fraud.IEEEFraudLoader
 description: |
   The IEEE-CIS Fraud Detection Dataset
   https://www.kaggle.com/c/ieee-fraud-detection/overview.
+output_features:
+  - name: isFraud
+    type: category
