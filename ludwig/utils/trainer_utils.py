@@ -127,13 +127,10 @@ class ProgressTracker:
         save_json(filepath, self.__dict__)
 
     @staticmethod
-    def load(filepath):
-        loaded = load_json(filepath)
-
+    def load(progress_tracking_dict: Dict):
         from ludwig.utils.backward_compatibility import upgrade_model_progress
 
-        loaded = upgrade_model_progress(loaded)
-
+        loaded = upgrade_model_progress(progress_tracking_dict)
         return ProgressTracker(**loaded)
 
     def log_metrics(self):

@@ -32,6 +32,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
+from ludwig.backend import Backend
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -50,6 +51,7 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
@@ -88,6 +90,7 @@ class Trainer(BaseTrainer):
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
+        backend: Optional[Backend] = None,
         **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
@@ -178,6 +181,8 @@ class Trainer(BaseTrainer):
 
         self.model = model
         self.model = self.model.to(self.device)
+
+        self.backend = backend
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
@@ -1238,8 +1243,9 @@ class Trainer(BaseTrainer):
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
         if self.is_coordinator():
-            logger.info(f"Resuming training of model: {training_progress_tracker_path}")
-        progress_tracker = ProgressTracker.load(training_progress_tracker_path)
+            logger.info(f"Loading progress tracker for model: {training_progress_tracker_path}")
+        progress_tracker_dict = self.backend.broadcast_return(lambda: load_json(training_progress_tracker_path))
+        progress_tracker = ProgressTracker.load(progress_tracker_dict)
         return progress_tracker
 
     def resume_weights_and_optimizer(

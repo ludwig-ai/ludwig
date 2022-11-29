@@ -587,6 +587,7 @@ class LudwigModel:
                 skip_save_log=skip_save_log,
                 callbacks=train_callbacks,
                 random_seed=random_seed,
+                backend=self.backend,
             ) as trainer:
                 # auto tune batch size
                 if (
@@ -788,7 +789,7 @@ class LudwigModel:
 
         if not self._online_trainer:
             self._online_trainer = self.backend.create_trainer(
-                config=self.config_obj.trainer, model=self.model, random_seed=random_seed
+                config=self.config_obj.trainer, model=self.model, random_seed=random_seed, backend=self.backend
             )
 
         self.model = self._online_trainer.train_online(training_dataset)
