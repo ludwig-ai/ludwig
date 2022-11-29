@@ -108,7 +108,10 @@ class InterQuartileTransformer(nn.Module):
         self.q1 = float(q1) if q1 is not None else q1
         self.q2 = float(q2) if q2 is not None else q2
         self.q3 = float(q3) if q3 is not None else q3
-        self.interquartile_range = self.q3 - self.q1
+        if self.q1 is None or self.q3 is None:
+            self.interquartile_range = None
+        else:
+            self.interquartile_range = self.q3 - self.q1
         self.feature_name = kwargs.get(NAME, "")
         if self.interquartile_range == 0:
             raise RuntimeError(
@@ -133,7 +136,7 @@ class InterQuartileTransformer(nn.Module):
         compute = backend.df_engine.compute
         return {
             "q1": compute(np.percentile(column.astype(np.float32), 25)),
-            "q2": compute(column.astype(np.float32).median()),
+            "q2": compute(np.percentile(column.astype(np.float32), 50)),
             "q3": compute(np.percentile(column.astype(np.float32), 75)),
         }
 
