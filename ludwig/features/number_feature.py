@@ -133,7 +133,7 @@ class InterQuartileTransformer(nn.Module):
         compute = backend.df_engine.compute
         return {
             "q1": compute(np.percentile(column.astype(np.float32), 25)),
-            "q2": compute(np.percentile(column.astype(np.float32), 50)),
+            "q2": compute(column.astype(np.float32).median()),
             "q3": compute(np.percentile(column.astype(np.float32), 75)),
         }
 
