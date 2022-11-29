@@ -57,7 +57,8 @@ class LightGBMTrainer(BaseTrainer):
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
-        device: Optional[str] = None**kwargs,
+        device: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__()
 
