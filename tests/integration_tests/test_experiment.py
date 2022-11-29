@@ -658,6 +658,30 @@ def test_experiment_model_resume(tmpdir):
     shutil.rmtree(output_dir, ignore_errors=True)
 
 
+@pytest.mark.distributed
+def test_experiment_model_resume_distributed(tmpdir, ray_cluster_4cpu):
+    # Single sequence input, single category output
+    # Tests saving a model file, loading it to rerun training and predict
+    input_features = [number_feature()]
+    output_features = [category_feature(output_feature=True)]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 8},
+        TRAINER: {"epochs": 1},
+        "backend": {"type": "ray", "trainer": {"num_workers": 2}},
+    }
+
+    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
+
+    experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
+
+    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
+
+
 @pytest.mark.parametrize(
     "missing_file",
     ["training_progress.json", "training_checkpoints"],
@@ -668,6 +692,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
     # Tests saving a model file, loading it to rerun training and predict
     input_features = [sequence_feature(encoder={"type": "rnn", "reduce_output": "sum"})]
     output_features = [category_feature(decoder={"reduce_input": "sum", "vocab_size": 2})]
+
     # Generate test data
     rel_path = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
 
