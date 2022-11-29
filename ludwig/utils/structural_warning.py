@@ -3,7 +3,7 @@ import warnings
 from ludwig.utils.logging_utils import log_once
 
 
-def warn_structure_refactor(old_module: str, new_module: str, direct: bool = True):
+def warn_structure_refactor(old_module: str, new_module: str, direct: bool = True) -> None:
     """Create structure refactor warning to indicate modules new location post.
 
     Only creates a warning once per module.
