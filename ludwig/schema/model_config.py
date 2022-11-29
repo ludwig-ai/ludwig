@@ -36,7 +36,9 @@ from ludwig.constants import (
     TIED,
     TRAINER,
     TYPE,
+    COMBINED,
 )
+from ludwig.schema.features.utils import output_config_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
@@ -191,10 +193,11 @@ class ModelConfig(BaseMarshmallowConfig):
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
         self._set_hyperopt_defaults()
 
+        # Set up default validation metric, which is used for plateau metrics and early stopping.
+        self._set_validation_parameters()
+
         # ===== Validate Config =====
         self._validate_config(self.to_dict())
-
-        # Set up default validation metric.
 
     def __repr__(self):
         config_repr = self.to_dict()
@@ -439,6 +442,15 @@ class ModelConfig(BaseMarshmallowConfig):
                 feature_cls.encoder = PassthroughEncoderConfig()
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
+
+    def _set_validation_parameters(self):
+        """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
+        output_features = list(self.output_features.to_dict().values())
+        if len(output_features) > 1:
+            self.trainer.validation_field = COMBINED
+            self.trainer.validation_metric = LOSS
+        self.trainer.validation_field = output_features[0]["name"]
+        self.trainer.validation_metric = output_config_registry[output_features[0]["type"]].default_validation_metric
 
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while

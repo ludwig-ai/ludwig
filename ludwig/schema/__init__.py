@@ -20,6 +20,7 @@
 
 from functools import lru_cache
 from threading import Lock
+from typing import Any, Dict
 
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
@@ -42,6 +43,24 @@ from ludwig.schema.features.utils import get_input_feature_jsonschema, get_outpu
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
+from ludwig.schema.auxiliary_validations import (
+    check_validation_metrics_are_valid,
+    check_feature_names_unique,
+    check_tied_features_are_valid,
+    check_dependent_features,
+    check_training_runway,
+    check_gbm_horovod_incompatibility,
+    check_gbm_feature_types,
+    check_ray_backend_in_memory_preprocessing,
+    check_sequence_concat_combiner_requirements,
+    check_tabtransformer_combiner_requirements,
+    check_comparator_combiner_requirements,
+    check_class_balance_preprocessing,
+    check_sampling_exclusivity,
+    check_hyperopt_search_space,
+    check_hyperopt_metric_targets,
+    check_gbm_single_output_feature,
+)
 
 VALIDATION_LOCK = Lock()
 
@@ -78,7 +97,7 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
-def validate_config(config):
+def validate_config(config: Dict[str, Any]):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
     from ludwig.data.split import get_splitter
@@ -96,94 +115,20 @@ def validate_config(config):
         # be missing during validation if more than one thread is trying to validate at once.
         validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
 
-    # Validate parameter interdependencies.
-    # It may be possible that all of the following dynamic inter-parameter validations can be built into marshmallow
-    # schemas. As these are built out, the following auxiliary validations can be gradually removed.
-    # Check that all feature names are unique.
-
-    # Check that all 'tied' parameters map to existing input feature names.
-
-    # Check that 'dependent' features map to existing output features, and no circular dependencies.
-
-    # Check that checkpoints_per_epoch and steps_per_checkpoint are both defined.
-
-    # Check that validation_metric is actually a valid metric for one of the output features.
-
-    # GBM model types don't work with the horovod backend.
-
-    # If it's a ray backend feature[preprocessing][in_memory] must be true
-    # def check_lazy_load_supported(self, feature):
-    #     if not feature[PREPROCESSING]["in_memory"]:
-    #         raise ValueError(
-    #             f"RayBackend does not support lazy loading of data files at train time. "
-    #             f"Set preprocessing config `in_memory: True` for feature {feature[NAME]}"
-    #         )
-
-    # If SequenceConcatCombiner, at least one of the input features should be a sequence feature.
-    # if not seq_size:
-    # raise ValueError("At least one of the input features for SequenceConcatCombiner should be a sequence.")
-
-    # If TabTransformer, reduce_output is required.
-    #  if config.reduce_output is None:
-    # raise ValueError("TabTransformer requires the `reduce_output` " "parameter")
-
-    # All of the feature names 'embed' for ComparatorCombiner are valid features.
-
-    # Class balancing is only available for datasets with a single output feature.
-    # if len(output_features) != 1:
-    #     raise ValueError("Class balancing is only available for datasets with a single output feature")
-    # if output_features[0][TYPE] != BINARY:
-    #     raise ValueError("Class balancing is only supported for binary output types")
-
-    # oversample minority and undersample majority are mutually exclusive.
-    # if preprocessing_parameters["oversample_minority"] and preprocessing_parameters["undersample_majority"]:
-    # raise ValueError(
-    #     "Cannot balance data if both oversampling an undersampling are specified in the config. "
-    #     "Must specify only one method"
-    # )
-
-    # raise ValueError(
-    #     f"Filling missing values with mean is supported "
-    #     f"only for number types, not for type {feature[TYPE]}.",
-    # )
-
-    # Audio input features, some must not be None.
-    # if not getattr(self.encoder_obj.config, "embedding_size", None):
-    #         raise ValueError("embedding_size has to be defined - " 'check "update_config_with_metadata()"')
-    #     if not getattr(self.encoder_obj.config, "max_sequence_length", None):
-    #         raise ValueError("max_sequence_length has to be defined - " 'check "update_config_with_metadata()"')
-
-    # Check that all hyperopt feature names are real.
-
-    # Check hyperopt output feature?
-    # if output_feature == COMBINED:
-    #     if metric != LOSS:
-    #         raise ValueError('The only valid metric for "combined" output feature is "loss"')
-    # else:
-    #     output_feature_names = {of[NAME] for of in full_config[OUTPUT_FEATURES]}
-    #     if output_feature not in output_feature_names:
-    #         raise ValueError(
-    #             'The output feature specified for hyperopt "{}" '
-    #             "cannot be found in the config. "
-    #             'Available ones are: {} and "combined"'.format(output_feature, output_feature_names)
-    #         )
-
-    # Check hyperopt metrics?
-    # if metric not in feature_class.metric_functions:
-    #         # todo v0.4: allow users to specify also metrics from the overall
-    #         #  and per class metrics from the training stats and in general
-    #         #  and post-processed metric
-    #         raise ValueError(
-    #             'The specified metric for hyperopt "{}" is not a valid metric '
-    #             'for the specified output feature "{}" of type "{}". '
-    #             "Available metrics are: {}".format(
-    #                 metric, output_feature, output_feature_type, feature_class.metric_functions.keys()
-    #             )
-    #         )
-
-    # GBMs only support 1 output feature
-    # TODO: only single task currently
-    # if len(output_feature_configs.to_dict()) > 1:
-    #     raise ValueError("Only single task currently supported")
-
-    # GBMs can't have non-tabular features.
+    # Additional checks.
+    check_validation_metrics_are_valid(updated_config)
+    check_feature_names_unique(updated_config)
+    check_tied_features_are_valid(updated_config)
+    check_dependent_features(updated_config)
+    check_training_runway(updated_config)
+    check_gbm_horovod_incompatibility(updated_config)
+    check_gbm_feature_types(updated_config)
+    check_ray_backend_in_memory_preprocessing(updated_config)
+    check_sequence_concat_combiner_requirements(updated_config)
+    check_tabtransformer_combiner_requirements(updated_config)
+    check_comparator_combiner_requirements(updated_config)
+    check_class_balance_preprocessing(updated_config)
+    check_sampling_exclusivity(updated_config)
+    check_hyperopt_search_space(updated_config)
+    check_hyperopt_metric_targets(updated_config)
+    check_gbm_single_output_feature(updated_config)

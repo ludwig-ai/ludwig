@@ -353,18 +353,20 @@ class GBMTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
-    # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
+        default=None,
+        description="The field for which the `validation_metric` is used for validation-related mechanics like early "
+        "stopping, parameter change plateaus, and what hyperparameter optimization uses to determine the best trial. "
+        "By default, the output feature name is used if there is only one output feature. If there are multiple output "
+        "features, then combined loss is used.",
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric used on `validation_field`, set by default to the "
-            "output feature type's `default_validation_metric`."
+            "Metric from `validation_field` that is used, set by default to the output feature type's "
+            "`default_validation_metric`."
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )

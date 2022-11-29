@@ -258,6 +258,25 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
+def test_update_config_object_validation_fields():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_object = ModelConfig.from_dict(config)
+
+    assert config_object.trainer.validation_field == "number_output_feature"
+    assert config_object.trainer.validation_metric == "mean_squared_error"
+
+
 def test_constructors_yaml():
     config = {
         "input_features": [
