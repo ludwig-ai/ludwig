@@ -41,6 +41,7 @@ def test_norm():
     assert feature_2_meta["min"] == 2
     assert feature_2_meta["max"] == 10
     assert feature_3_meta["q1"] == 4
+    assert feature_3_meta["q2"] == 6
     assert feature_3_meta["q3"] == 8
 
     # value checks after normalization
@@ -79,4 +80,4 @@ def test_norm():
         backend=LOCAL_BACKEND,
         skip_save_processed_input=False,
     )
-    assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-0.5, 0, 0.5, 1, 1.5]))
+    assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-1, -0.5, 0, 0.5, 1]))

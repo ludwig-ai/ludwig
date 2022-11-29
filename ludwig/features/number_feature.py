@@ -103,35 +103,37 @@ class MinMaxTransformer(nn.Module):
 
 
 class InterQuartileTransformer(nn.Module):
-    def __init__(self, q1: float = None, q3: float = None, **kwargs: dict):
+    def __init__(self, q1: float = None, q2: float = None, q3: float = None, **kwargs: dict):
         super().__init__()
         self.q1 = float(q1) if q1 is not None else q1
+        self.q2 = float(q2) if q2 is not None else q2
         self.q3 = float(q3) if q3 is not None else q3
         self.interquartile_range = self.q3 - self.q1
         self.feature_name = kwargs.get(NAME, "")
         if self.interquartile_range == 0:
             raise RuntimeError(
-                f"Cannot apply InterQuartile (RobustScaler) normalization to `{self.feature_name}` since"
-                "interquartile range is 0, which will result in a ZeroDivisionError."
+                f"Cannot apply InterQuartileNormalization to `{self.feature_name}` since"
+                "the interquartile range is 0, which will result in a ZeroDivisionError."
             )
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.q1) / self.interquartile_range
+        return (x - self.q2) / self.interquartile_range
 
     def inverse_transform(self, x: np.ndarray) -> np.ndarray:
-        return x * self.interquartile_range + self.q1
+        return x * self.interquartile_range + self.q2
 
     def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        return (x - self.q1) / self.interquartile_range
+        return (x - self.q2) / self.interquartile_range
 
     def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
-        return x * self.interquartile_range + self.q1
+        return x * self.interquartile_range + self.q2
 
     @staticmethod
     def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
         compute = backend.df_engine.compute
         return {
             "q1": compute(np.percentile(column.astype(np.float32), 25)),
+            "q2": compute(np.percentile(column.astype(np.float32), 50)),
             "q3": compute(np.percentile(column.astype(np.float32), 75)),
         }
 
