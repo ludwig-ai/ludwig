@@ -670,8 +670,8 @@ def test_experiment_model_resume_distributed(tmpdir, ray_cluster_4cpu):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        "combiner": {"type": "concat", "output_size": 8},
+        TRAINER: {"epochs": 1},
         "backend": {"type": "ray", "trainer": {"num_workers": 2}},
     }
 

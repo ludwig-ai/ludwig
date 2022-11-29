@@ -32,7 +32,6 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.backend import Backend
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
@@ -90,7 +89,6 @@ class Trainer(BaseTrainer):
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
         device: Optional[str] = None,
-        backend: Optional[Backend] = None,
         **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
@@ -181,8 +179,6 @@ class Trainer(BaseTrainer):
 
         self.model = model
         self.model = self.model.to(self.device)
-
-        self.backend = backend
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
@@ -1242,9 +1238,15 @@ class Trainer(BaseTrainer):
             sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
+        progress_tracker_dict = None
         if self.is_coordinator():
             logger.info(f"Loading progress tracker for model: {training_progress_tracker_path}")
-        progress_tracker_dict = self.backend.broadcast_return(lambda: load_json(training_progress_tracker_path))
+            progress_tracker_dict = load_json(training_progress_tracker_path)
+        if self.horovod:
+            logger.debug("Broadcasting model progress tracker dict to all workers")
+            progress_tracker_dict = self.horovod.broadcast_object(
+                progress_tracker_dict, name="broadcast_progress_tracker"
+            )
         progress_tracker = ProgressTracker.load(progress_tracker_dict)
         return progress_tracker
 

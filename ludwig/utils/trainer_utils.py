@@ -12,7 +12,7 @@ from ludwig.constants import COMBINED, LOSS
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.base import BaseModel
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import load_json, save_json
+from ludwig.utils.data_utils import save_json
 from ludwig.utils.metric_utils import TrainerMetric
 
 logger = logging.getLogger(__name__)

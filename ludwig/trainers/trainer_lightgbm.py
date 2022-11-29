@@ -12,7 +12,6 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.backend import Backend
 from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
@@ -58,9 +57,7 @@ class LightGBMTrainer(BaseTrainer):
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
         horovod: Optional[Dict] = None,
-        device: Optional[str] = None,
-        backend: Optional[Backend] = None,
-        **kwargs,
+        device: Optional[str] = None**kwargs,
     ):
         super().__init__()
 
@@ -131,8 +128,6 @@ class LightGBMTrainer(BaseTrainer):
         self.device = device
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        self.backend = backend
 
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
@@ -875,7 +870,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
         trainer_kwargs: Optional[Dict] = {},
         data_loader_kwargs: Optional[Dict] = None,
         executable_kwargs: Optional[Dict] = None,
-        backend: Optional[Backend] = None,
         **kwargs,
     ):
         super().__init__(
@@ -889,7 +883,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             random_seed=random_seed,
             horovod=horovod,
             device=device,
-            backend=backend,
             **kwargs,
         )
 
