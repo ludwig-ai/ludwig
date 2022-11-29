@@ -3,11 +3,13 @@ from typing import List, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for encoders."""
@@ -15,6 +17,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
 
+@DeveloperAPI
 @register_encoder_config("passthrough", [NUMBER, VECTOR])
 @dataclass(order=True)
 class PassthroughEncoderConfig(BaseEncoderConfig):
@@ -28,6 +31,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
 @dataclass(repr=False, order=True)
 class DenseEncoderConfig(BaseEncoderConfig):
@@ -77,7 +81,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Initializer for the weight matrix.",
     )
 
-    norm: Union[str] = schema_utils.StringOptions(
+    norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         allow_none=True,
         default=None,

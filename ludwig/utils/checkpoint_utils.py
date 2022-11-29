@@ -13,18 +13,21 @@ from typing import Any, Dict, Optional
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.fs_utils import safe_move_file
 
 logger = logging.getLogger(__name__)
 LATEST_FNAME = "latest.ckpt"
 
 
+@DeveloperAPI
 def mkdir(s):
     """Create a directory if it doesn't already exist."""
     if not os.path.exists(s):
         os.makedirs(s)
 
 
+@DeveloperAPI
 def get_files(d, pattern, sort=True):
     """Return a list of files in a given directory.
 
@@ -44,6 +47,7 @@ def get_files(d, pattern, sort=True):
     return files
 
 
+@DeveloperAPI
 def get_latest_checkpoint_path(directory: str) -> str:
     latest_path = os.path.join(directory, LATEST_FNAME)
     if os.path.exists(latest_path):
@@ -57,6 +61,7 @@ def get_latest_checkpoint_path(directory: str) -> str:
     return None
 
 
+@DeveloperAPI
 class Checkpoint:
     """Save and restore model and optimizer states."""
 
@@ -150,6 +155,7 @@ class Checkpoint:
         return global_step
 
 
+@DeveloperAPI
 class CheckpointManager:
     """A model and optimizer checkpoint manager."""
 

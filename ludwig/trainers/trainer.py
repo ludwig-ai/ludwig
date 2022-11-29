@@ -50,6 +50,7 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
@@ -1202,9 +1203,16 @@ class Trainer(BaseTrainer):
             sys.exit(1)
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
+        progress_tracker_dict = None
         if self.is_coordinator():
-            logger.info(f"Resuming training of model: {training_progress_tracker_path}")
-        progress_tracker = ProgressTracker.load(training_progress_tracker_path)
+            logger.info(f"Loading progress tracker for model: {training_progress_tracker_path}")
+            progress_tracker_dict = load_json(training_progress_tracker_path)
+        if self.horovod:
+            logger.debug("Broadcasting model progress tracker dict to all workers")
+            progress_tracker_dict = self.horovod.broadcast_object(
+                progress_tracker_dict, name="broadcast_progress_tracker"
+            )
+        progress_tracker = ProgressTracker.load(progress_tracker_dict)
         return progress_tracker
 
     def resume_weights_and_optimizer(

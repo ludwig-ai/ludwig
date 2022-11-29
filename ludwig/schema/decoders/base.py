@@ -3,12 +3,14 @@ from typing import Any, Dict, List, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for decoders."""
@@ -54,6 +56,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 @dataclass(repr=False)
 class PassthroughDecoderConfig(BaseDecoderConfig):
@@ -67,6 +70,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("regressor", [BINARY, NUMBER])
 @dataclass(repr=False)
 class RegressorConfig(BaseDecoderConfig):
@@ -103,6 +107,7 @@ class RegressorConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("projector", [VECTOR])
 @dataclass(repr=False)
 class ProjectorConfig(BaseDecoderConfig):
@@ -161,6 +166,7 @@ class ProjectorConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):

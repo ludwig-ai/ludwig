@@ -25,6 +25,7 @@ from typing import Any, Dict
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     COMBINER,
     DEFAULTS,
@@ -65,6 +66,7 @@ from ludwig.schema.auxiliary_validations import (
 VALIDATION_LOCK = Lock()
 
 
+@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
     schema = {
@@ -85,6 +87,7 @@ def get_schema(model_type: str = MODEL_ECD):
     return schema
 
 
+@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
@@ -97,6 +100,7 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
+@DeveloperAPI
 def validate_config(config: Dict[str, Any]):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import

@@ -18,6 +18,8 @@ from collections import OrderedDict
 from pprint import pformat
 from typing import Union
 
+from ludwig.api_annotations import DeveloperAPI
+
 logging_level_registry = {
     "critical": logging.CRITICAL,
     "error": logging.ERROR,
@@ -30,6 +32,7 @@ logging_level_registry = {
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 def get_logo(message, ludwig_version):
     return "\n".join(
         [
@@ -46,10 +49,12 @@ def get_logo(message, ludwig_version):
     )
 
 
+@DeveloperAPI
 def print_ludwig(message, ludwig_version):
     logger.info(get_logo(message, ludwig_version))
 
 
+@DeveloperAPI
 def print_boxed(text, print_fun=logger.info):
     box_width = len(text) + 2
     print_fun("")
@@ -59,10 +64,12 @@ def print_boxed(text, print_fun=logger.info):
     print_fun("")
 
 
+@DeveloperAPI
 def repr_ordered_dict(d: OrderedDict):
     return "{" + ",\n  ".join(f"{x}: {pformat(y, indent=4)}" for x, y in d.items()) + "}"
 
 
+@DeveloperAPI
 def query_yes_no(question: str, default: Union[str, None] = "yes"):
     """Ask a yes/no question via raw_input() and return their answer.
 
