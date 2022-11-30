@@ -285,6 +285,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
     )
 
+
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
@@ -506,6 +507,7 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("alexnet_torch", IMAGE)
 @dataclass
 class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
@@ -520,6 +522,7 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("convnext_torch", IMAGE)
 @dataclass
 class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
@@ -534,6 +537,7 @@ class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("densenet_torch", IMAGE)
 @dataclass
 class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
@@ -548,6 +552,7 @@ class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("efficientnet_torch", IMAGE)
 @dataclass
 class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
@@ -574,6 +579,7 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("googlenet_torch", IMAGE)
 @dataclass
 class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
@@ -588,6 +594,7 @@ class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("inceptionv3_torch", IMAGE)
 @dataclass
 class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
@@ -602,6 +609,7 @@ class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("maxvit_torch", IMAGE)
 @dataclass
 class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
@@ -616,6 +624,7 @@ class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("mnasnet_torch", IMAGE)
 @dataclass
 class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
@@ -630,6 +639,7 @@ class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("mobilenetv2_torch", IMAGE)
 @dataclass
 class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
@@ -644,6 +654,7 @@ class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("mobilenetv3_torch", IMAGE)
 @dataclass
 class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
@@ -661,6 +672,7 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("regnet_torch", IMAGE)
 @dataclass
 class TVRegNetEncoderConfig(TVBaseEncoderConfig):
@@ -691,6 +703,7 @@ class TVRegNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("resnet_torch", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
@@ -705,6 +718,7 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("resnext_torch", IMAGE)
 @dataclass
 class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
@@ -719,6 +733,7 @@ class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("shufflenet_v2_torch", IMAGE)
 @dataclass
 class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
@@ -738,6 +753,7 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("squeezenet_torch", IMAGE)
 @dataclass
 class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
@@ -755,6 +771,7 @@ class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("swin_transformer_torch", IMAGE)
 @dataclass
 class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
@@ -773,6 +790,7 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("vit_torch", IMAGE)
 @dataclass
 class TVViTEncoderConfig(TVBaseEncoderConfig):
@@ -793,6 +811,7 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("vgg_torch", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
@@ -828,6 +847,7 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("wide_resnet_torch", IMAGE)
 @dataclass
 class TVWideResNetEncoderConfig(TVBaseEncoderConfig):
