@@ -2,6 +2,7 @@ from typing import Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BFILL, IMAGE, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -9,6 +10,7 @@ from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
+@DeveloperAPI
 @register_preprocessor(IMAGE)
 @dataclass(repr=False)
 class ImagePreprocessingConfig(BasePreprocessingConfig):

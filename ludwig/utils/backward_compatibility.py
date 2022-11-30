@@ -17,6 +17,7 @@ import copy
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BIAS,
@@ -67,6 +68,7 @@ from ludwig.utils.version_transformation import VersionTransformation, VersionTr
 config_transformation_registry = VersionTransformationRegistry()
 
 
+@DeveloperAPI
 def register_config_transformation(version: str, prefixes: Union[str, List[str]] = []) -> Callable:
     """This decorator registers a transformation function for a config version. Version is the first version which
     requires the transform. For example, since "training" is renamed to "trainer" in 0.5, this change should be
@@ -89,6 +91,7 @@ def register_config_transformation(version: str, prefixes: Union[str, List[str]]
     return wrap
 
 
+@DeveloperAPI
 def upgrade_config_dict_to_latest_version(config: Dict) -> Dict:
     """Updates config from an older version of Ludwig to the current version. If config does not have a
     "ludwig_version" key, all updates are applied.
@@ -312,31 +315,39 @@ def _upgrade_encoder_decoder_params(feature: Dict[str, Any], input_feature: bool
         input_feature (Bool): Whether this feature is an input feature or not.
     """
     input_feature_keys = [
+        # Encoder-external parameters.
         "name",
         "type",
-        "column",
-        "proc_column",
         "encoder",
         "tied",
+        # Internal-only parameters.
+        "column",
+        "proc_column",
         "preprocessing",
         "vector_size",
+        "active",
     ]
 
     output_feature_keys = [
+        # Decoder-external parameters.
         "name",
         "type",
         "calibration",
-        "column",
-        "proc_column",
         "decoder",
-        "num_classes",
+        # Internal-only parameters.
         "preprocessing",
         "loss",
+        "column",
+        "proc_column",
+        "num_classes",
         "reduce_input",
         "dependencies",
         "reduce_dependencies",
         "top_k",
         "vector_size",
+        "active",
+        "default_validation_metric",
+        "input_size",
     ]
 
     fc_layer_keys = [
@@ -426,6 +437,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
             # promote only if not in top-level, otherwise use current top-level
             if SEARCH_ALG not in hyperopt:
                 hyperopt[SEARCH_ALG] = hpexecutor[SEARCH_ALG]
+                if isinstance(hyperopt[SEARCH_ALG], str):
+                    hyperopt[SEARCH_ALG] = {TYPE: hyperopt[SEARCH_ALG]}
             del hpexecutor[SEARCH_ALG]
     else:
         warnings.warn(
@@ -443,6 +456,8 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
         if SEARCH_ALG in hyperopt[SAMPLER]:
             if SEARCH_ALG not in hyperopt:
                 hyperopt[SEARCH_ALG] = hyperopt[SAMPLER][SEARCH_ALG]
+                if isinstance(hyperopt[SEARCH_ALG], str):
+                    hyperopt[SEARCH_ALG] = {TYPE: hyperopt[SEARCH_ALG]}
                 warnings.warn('Moved "search_alg" to hyperopt config top-level', DeprecationWarning)
 
         # if num_samples or scheduler exist in SAMPLER move to EXECUTOR Section
@@ -453,6 +468,9 @@ def _upgrade_hyperopt(hyperopt: Dict[str, Any]) -> Dict[str, Any]:
         if SCHEDULER in hyperopt[SAMPLER] and SCHEDULER not in hyperopt[EXECUTOR]:
             hyperopt[EXECUTOR][SCHEDULER] = hyperopt[SAMPLER][SCHEDULER]
             warnings.warn('Moved "scheduler" from "sampler" to "executor"', DeprecationWarning)
+
+        if SCHEDULER in hyperopt[EXECUTOR] and len(hyperopt[EXECUTOR][SCHEDULER].keys()) == 0:
+            del hyperopt[EXECUTOR][SCHEDULER]
 
         # remove legacy section
         del hyperopt[SAMPLER]

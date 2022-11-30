@@ -28,6 +28,7 @@ import torch
 import torchaudio
 import yaml
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -160,6 +161,7 @@ parameters_builders_registry = {
 }
 
 
+@DeveloperAPI
 def build_synthetic_dataset_df(dataset_size: int, config: Dict[str, Any]) -> pd.DataFrame:
     features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
     df = build_synthetic_dataset(dataset_size, features)
@@ -167,6 +169,7 @@ def build_synthetic_dataset_df(dataset_size: int, config: Dict[str, Any]) -> pd.
     return pd.DataFrame(data[1:], columns=data[0])
 
 
+@DeveloperAPI
 def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
 

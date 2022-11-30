@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -7,6 +8,7 @@ from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
+@DeveloperAPI
 @register_preprocessor(VECTOR)
 @dataclass(repr=False)
 class VectorPreprocessingConfig(BasePreprocessingConfig):
@@ -44,6 +46,7 @@ class VectorPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@DeveloperAPI
 @register_preprocessor("vector_output")
 @dataclass(repr=False)
 class VectorOutputPreprocessingConfig(VectorPreprocessingConfig):

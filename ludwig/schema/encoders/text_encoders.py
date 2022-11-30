@@ -2,6 +2,7 @@ from typing import Callable, List, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -10,6 +11,7 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
+@DeveloperAPI
 @register_encoder_config("albert", TEXT)
 @dataclass(repr=False)
 class ALBERTConfig(BaseEncoderConfig):
@@ -203,6 +205,7 @@ class ALBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("mt5", TEXT)
 @dataclass(repr=False)
 class MT5Config(BaseEncoderConfig):
@@ -387,6 +390,7 @@ class MT5Config(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
 @dataclass(repr=False)
 class XLMRoBERTaConfig(BaseEncoderConfig):
@@ -479,6 +483,7 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("bert", TEXT)
 @dataclass(repr=False)
 class BERTConfig(BaseEncoderConfig):
@@ -647,6 +652,7 @@ class BERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("xlm", TEXT)
 @dataclass(repr=False)
 class XLMConfig(BaseEncoderConfig):
@@ -891,6 +897,7 @@ class XLMConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("gpt", TEXT)
 @dataclass(repr=False)
 class GPTConfig(BaseEncoderConfig):
@@ -1028,6 +1035,7 @@ class GPTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
 @dataclass(repr=False)
 class GPT2Config(BaseEncoderConfig):
@@ -1176,6 +1184,7 @@ class GPT2Config(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("roberta", TEXT)
 @dataclass(repr=False)
 class RoBERTaConfig(BaseEncoderConfig):
@@ -1256,6 +1265,7 @@ class RoBERTaConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
 @dataclass(repr=False)
 class TransformerXLConfig(BaseEncoderConfig):
@@ -1480,6 +1490,7 @@ class TransformerXLConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
 @dataclass(repr=False)
 class XLNetConfig(BaseEncoderConfig):
@@ -1714,6 +1725,7 @@ class XLNetConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
 @dataclass(repr=False)
 class DistilBERTConfig(BaseEncoderConfig):
@@ -1865,6 +1877,7 @@ class DistilBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("ctrl", TEXT)
 @dataclass(repr=False)
 class CTRLConfig(BaseEncoderConfig):
@@ -2003,6 +2016,7 @@ class CTRLConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("camembert", TEXT)
 @dataclass(repr=False)
 class CamemBERTConfig(BaseEncoderConfig):
@@ -2170,6 +2184,7 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("t5", TEXT)
 @dataclass(repr=False)
 class T5Config(BaseEncoderConfig):
@@ -2312,6 +2327,7 @@ class T5Config(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
 @dataclass(repr=False)
 class FlauBERTConfig(BaseEncoderConfig):
@@ -2548,6 +2564,7 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("electra", TEXT)
 @dataclass(repr=False)
 class ELECTRAConfig(BaseEncoderConfig):
@@ -2710,6 +2727,7 @@ class ELECTRAConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("longformer", TEXT)
 @dataclass(repr=False)
 class LongformerConfig(BaseEncoderConfig):
@@ -2802,6 +2820,7 @@ class LongformerConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
 @dataclass(repr=False)
 class AutoTransformerConfig(BaseEncoderConfig):
