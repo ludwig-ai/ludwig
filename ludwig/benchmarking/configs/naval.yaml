@@ -1,58 +1,40 @@
 input_features:
-  - column: lp
-    name: lp
+  - name: lp
     type: number
-  - column: v
-    name: v
+  - name: v
     type: number
-  - column: gtt
-    name: gtt
+  - name: gtt
     type: number
-  - column: gtn
-    name: gtn
+  - name: gtn
     type: number
-  - column: ggn
-    name: ggn
+  - name: ggn
     type: number
-  - column: ts
-    name: ts
+  - name: ts
     type: number
-  - column: tp
-    name: tp
+  - name: tp
     type: number
-  - column: t48
-    name: t48
+  - name: t48
     type: number
-  - column: t1
-    name: t1
+  - name: t1
     type: category
-  - column: t2
-    name: t2
+  - name: t2
     type: number
-  - column: p48
-    name: p48
+  - name: p48
     type: number
-  - column: p1
-    name: p1
+  - name: p1
     type: number
-  - column: p2
-    name: p2
+  - name: p2
     type: number
-  - column: pexh
-    name: pexh
+  - name: pexh
     type: number
-  - column: tic
-    name: tic
+  - name: tic
     type: number
-  - column: mf
-    name: mf
+  - name: mf
     type: number
-  - column: gttdsc
-    name: gttdsc
+  - name: gttdsc
     type: number
 output_features:
-  - column: gtcdsc
-    name: gtcdsc
+  - name: gtcdsc
     type: number
 preprocessing:
   split:
