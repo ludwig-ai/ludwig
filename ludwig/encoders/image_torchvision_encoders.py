@@ -141,12 +141,6 @@ class TVBaseEncoder(Encoder):
         return torch.Size([self.num_channels, *(2 * self.crop_size)])
 
 
-# TVModelVariant(variant_id, create_model_function, model_weights)
-#   variant_id: model variant identifier
-#   create_model_function: TorchVision function to create model class
-#   model_weights: Torchvision class for model weights
-
-
 @DeveloperAPI
 @register_torchvision_model_variants(
     [
