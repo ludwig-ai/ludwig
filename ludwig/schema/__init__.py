@@ -24,6 +24,7 @@ from threading import Lock
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     COMBINER,
     DEFAULTS,
@@ -39,12 +40,14 @@ from ludwig.constants import (
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
+from ludwig.schema.hyperopt import get_hyperopt_jsonschema
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
 
 VALIDATION_LOCK = Lock()
 
 
+@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
     schema = {
@@ -56,7 +59,7 @@ def get_schema(model_type: str = MODEL_ECD):
             COMBINER: get_combiner_jsonschema(),
             TRAINER: get_trainer_jsonschema(model_type),
             PREPROCESSING: get_preprocessing_jsonschema(),
-            HYPEROPT: {},
+            HYPEROPT: get_hyperopt_jsonschema(),
             DEFAULTS: get_defaults_jsonschema(),
         },
         "definitions": {},
@@ -65,6 +68,7 @@ def get_schema(model_type: str = MODEL_ECD):
     return schema
 
 
+@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
@@ -77,6 +81,7 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
+@DeveloperAPI
 def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import

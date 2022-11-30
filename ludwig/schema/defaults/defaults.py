@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -20,6 +21,7 @@ from ludwig.schema.defaults.utils import DefaultsDataclassField
 from ludwig.schema.features.base import BaseFeatureConfig
 
 
+@DeveloperAPI
 @dataclass
 class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
 
@@ -50,6 +52,7 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
     vector: BaseFeatureConfig = DefaultsDataclassField(feature_type=VECTOR)
 
 
+@DeveloperAPI
 def get_defaults_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""

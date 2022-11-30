@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import JACCARD, LOSS, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -21,6 +22,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(SET)
 @dataclass
 class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -35,6 +37,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(SET)
 @dataclass(repr=False)
 class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
@@ -43,6 +46,7 @@ class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(SET)
 @dataclass
 class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -60,6 +64,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(SET)
 @dataclass(repr=False)
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
