@@ -129,10 +129,10 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
 
 
 @DeveloperAPI
-def get_buffer(dataset_name: str):
+def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str = None) -> BytesIO:
     """Returns a byte buffer for the specified dataset."""
     try:
-        dataset = get_dataset(dataset_name).load()
+        dataset = get_dataset(dataset_name).load(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         buffer = BytesIO(dataset.to_parquet())
         return buffer
     except Exception as e:
