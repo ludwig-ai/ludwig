@@ -349,7 +349,7 @@ def register_torchvision_model_variants(variants: List[TVModelVariant]):
 
         # register each variant
         for variant in variants:
-            torchvision_model_registry[cls.torchvision_model_type][variant.variant_id] = variant  # kest buy
+            torchvision_model_registry[cls.torchvision_model_type][variant.variant_id] = variant
         return cls
 
     return wrap
