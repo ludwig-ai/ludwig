@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TIMESERIES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -8,6 +9,7 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
+@DeveloperAPI
 @register_preprocessor(TIMESERIES)
 @dataclass(repr=False)
 class TimeseriesPreprocessingConfig(BasePreprocessingConfig):

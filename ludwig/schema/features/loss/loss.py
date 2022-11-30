@@ -2,6 +2,7 @@ from typing import List, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     BINARY_WEIGHTED_CROSS_ENTROPY,
     MEAN_ABSOLUTE_ERROR,
@@ -15,6 +16,7 @@ from ludwig.constants import (
 from ludwig.schema import utils as schema_utils
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
@@ -24,6 +26,7 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     weight: float = 1.0
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class MSELossConfig(BaseLossConfig):
 
@@ -38,6 +41,7 @@ class MSELossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class MAELossConfig(BaseLossConfig):
 
@@ -52,6 +56,7 @@ class MAELossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class RMSELossConfig(BaseLossConfig):
 
@@ -66,6 +71,7 @@ class RMSELossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class RMSPELossConfig(BaseLossConfig):
 
@@ -80,6 +86,7 @@ class RMSPELossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BWCEWLossConfig(BaseLossConfig):
 
@@ -103,6 +110,7 @@ class BWCEWLossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
@@ -136,6 +144,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
@@ -174,6 +183,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
 

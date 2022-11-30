@@ -1,3 +1,4 @@
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
@@ -7,6 +8,7 @@ from ludwig.utils.registry import Registry
 combiner_registry = Registry()
 
 
+@DeveloperAPI
 def register_combiner(name: str):
     def wrap(cls):
         combiner_registry[name] = cls
@@ -15,6 +17,7 @@ def register_combiner(name: str):
     return wrap
 
 
+@DeveloperAPI
 def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
@@ -37,6 +40,7 @@ def get_combiner_jsonschema():
     }
 
 
+@DeveloperAPI
 def get_combiner_conds():
     """Returns a list of if-then JSON clauses for each combiner type in `combiner_registry` and its properties'
     constraints."""
