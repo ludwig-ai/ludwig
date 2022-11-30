@@ -17,17 +17,5 @@ description: |
   to the corresponding 7 joint torques.
   http://gaussianprocess.org/gpml/data/
 output_features:
-    - name: torque_1
-      type: number
-    - name: torque_2
-      type: number
-    - name: torque_3
-      type: number
-    - name: torque_4
-      type: number
-    - name: torque_5
-      type: number
-    - name: torque_6
-      type: number
-    - name: torque_7
-      type: number
+- name: torque_1
+  type: number

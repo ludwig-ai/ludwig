@@ -14,5 +14,5 @@ description: |
   based on the raw text review provided by the user.
   https://www.machinehack.com/hackathons/product_sentiment_classification_weekend_hackathon_19/overview
 output_features:
-  - name: Sentiment
-    type: category
+- name: Sentiment
+  type: category

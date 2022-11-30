@@ -15,7 +15,3 @@ description: |
 output_features:
   - name: price_label
     type: category
-  - name: price
-    type: number
-  - name: review_scores_rating
-    type: number
