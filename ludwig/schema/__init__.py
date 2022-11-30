@@ -25,7 +25,7 @@ from typing import Any, Dict
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
-from ludwig.api_annotations import DeveloperAPI
+from ludwig.api_annotations import DeveloperAPI, Deprecated
 from ludwig.constants import (
     COMBINER,
     DEFAULTS,
@@ -44,24 +44,7 @@ from ludwig.schema.features.utils import get_input_feature_jsonschema, get_outpu
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
-from ludwig.schema.auxiliary_validations import (
-    check_validation_metrics_are_valid,
-    check_feature_names_unique,
-    check_tied_features_are_valid,
-    check_dependent_features,
-    check_training_runway,
-    check_gbm_horovod_incompatibility,
-    check_gbm_feature_types,
-    check_ray_backend_in_memory_preprocessing,
-    check_sequence_concat_combiner_requirements,
-    check_tabtransformer_combiner_requirements,
-    check_comparator_combiner_requirements,
-    check_class_balance_preprocessing,
-    check_sampling_exclusivity,
-    check_hyperopt_search_space,
-    check_hyperopt_metric_targets,
-    check_gbm_single_output_feature,
-)
+
 
 VALIDATION_LOCK = Lock()
 
@@ -87,7 +70,6 @@ def get_schema(model_type: str = MODEL_ECD):
     return schema
 
 
-@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
@@ -100,7 +82,7 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
-@DeveloperAPI
+@Deprecated(message="Use 'from ludwig.config_validation import validate_config' instead.")
 def validate_config(config: Dict[str, Any]):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
@@ -118,21 +100,3 @@ def validate_config(config: Dict[str, Any]):
         # There is a race condition during schema validation that can cause the marshmallow schema class to
         # be missing during validation if more than one thread is trying to validate at once.
         validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
-
-    # Additional checks.
-    check_validation_metrics_are_valid(updated_config)
-    check_feature_names_unique(updated_config)
-    check_tied_features_are_valid(updated_config)
-    check_dependent_features(updated_config)
-    check_training_runway(updated_config)
-    check_gbm_horovod_incompatibility(updated_config)
-    check_gbm_feature_types(updated_config)
-    check_ray_backend_in_memory_preprocessing(updated_config)
-    check_sequence_concat_combiner_requirements(updated_config)
-    check_tabtransformer_combiner_requirements(updated_config)
-    check_comparator_combiner_requirements(updated_config)
-    check_class_balance_preprocessing(updated_config)
-    check_sampling_exclusivity(updated_config)
-    check_hyperopt_search_space(updated_config)
-    check_hyperopt_metric_targets(updated_config)
-    check_gbm_single_output_feature(updated_config)

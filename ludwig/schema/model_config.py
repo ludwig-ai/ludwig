@@ -42,7 +42,7 @@ from ludwig.constants import (
 from ludwig.schema.features.utils import output_config_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.schema import validate_config
+from ludwig.config_validation import validate_config
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
@@ -127,7 +127,7 @@ class ModelConfig(BaseMarshmallowConfig):
     def __init__(self, config_dict: dict):
 
         # ===== Backwards Compatibility =====
-        upgraded_config_dict = self._upgrade_config(config_dict)
+        upgraded_config_dict = upgrade_config_dict_to_latest_version(config_dict)
 
         # ===== Initialize Top Level Config Sections =====
 
@@ -202,7 +202,7 @@ class ModelConfig(BaseMarshmallowConfig):
         self._set_validation_parameters()
 
         # ===== Validate Config =====
-        self._validate_config(self.to_dict())
+        validate_config(self.to_dict())
 
     def __repr__(self):
         config_repr = self.to_dict()
@@ -235,24 +235,6 @@ class ModelConfig(BaseMarshmallowConfig):
         for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
             if PROC_COLUMN not in feature:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
-
-    @staticmethod
-    def _upgrade_config(config_dict: dict) -> dict:
-        """Helper function used to run backwards compatibility check on the config and return an upgraded version.
-
-        Args:
-            config_dict: Config Dictionary
-        """
-        return upgrade_config_dict_to_latest_version(config_dict)
-
-    @staticmethod
-    def _validate_config(config_dict: dict) -> None:
-        """Helper function used to validate the config using the Ludwig Schema.
-
-        Args:
-            config_dict: Config Dictionary
-        """
-        validate_config(config_dict)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:

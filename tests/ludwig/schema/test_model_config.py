@@ -32,6 +32,7 @@ from ludwig.constants import (
 )
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 
 config_sections = {INPUT_FEATURES, OUTPUT_FEATURES, PREPROCESSING, TRAINER, COMBINER, DEFAULTS, HYPEROPT}
 
@@ -258,7 +259,7 @@ def test_update_config_object():
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
 
-def test_update_config_object_validation_fields():
+def test_config_object_validation_parameters_defaults():
     config = {
         "input_features": [
             {"name": "text_feature", "type": "text"},
@@ -274,7 +275,7 @@ def test_update_config_object_validation_fields():
     config_object = ModelConfig.from_dict(config)
 
     assert config_object.trainer.validation_field == "number_output_feature"
-    assert config_object.trainer.validation_metric == "mean_squared_error"
+    assert config_object.trainer.validation_metric == NumberOutputFeatureConfig.default_validation_metric
 
 
 def test_constructors_yaml():
