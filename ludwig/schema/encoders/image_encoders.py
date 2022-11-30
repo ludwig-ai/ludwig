@@ -285,6 +285,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
     )
 
+
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
