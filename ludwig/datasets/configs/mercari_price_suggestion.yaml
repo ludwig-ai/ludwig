@@ -16,5 +16,5 @@ description: |
   We have converted price to log price by log(1 + price).
   https://www.kaggle.com/c/mercari-price-suggestion-challenge
 output_features:
-  - name: price
+  - name: log_price
     type: number
