@@ -35,14 +35,14 @@ from ludwig.utils.registry import Registry
 
 @dataclass
 class TVModelVariant:
+    # Model variant identifier
     variant_id: Union[str, int]
+    
+    # TorchVision function to create model class
     create_model_function: Callable
+    
+    # Torchvision class for model weights
     model_weights: WeightsEnum
-    """
-    variant_id: model variant identifier
-    create_model_function: TorchVision function to create model class
-    model_weights: Torchvision class for model weights
-    """
 
 
 logger = logging.getLogger(__name__)
