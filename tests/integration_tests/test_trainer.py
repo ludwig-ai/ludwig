@@ -8,7 +8,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import DEFAULT_BATCH_SIZE, LIGHTGBM_TRAINER, TRAINER
+from ludwig.constants import DEFAULT_BATCH_SIZE, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -192,7 +192,6 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
         "input_features": [{"name": "in_column", "type": "binary"}],
         "output_features": [{"name": "out_column", "type": "binary"}],
         "model_type": "gbm",
-        LIGHTGBM_TRAINER: {"epochs": 1, "batch_size": 128},
     }
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
