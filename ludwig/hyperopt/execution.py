@@ -631,6 +631,15 @@ class RayTuneExecutor:
             trial_dir=tune.get_trial_dir(),
         )
 
+    def _get_num_cpus_gpus(self, use_gpu: bool):
+        # check if we are using at least 1 gpu per trial
+        # get the resources assigned to the current trial
+        num_gpus = 1 if use_gpu else 0
+        # HACK: trainer Tuner needs CPUs in Ray 2.1 to prevent div by 0 error
+        # https://github.com/ray-project/ray/blob/ray-2.1.0/python/ray/tune/impl/tuner_internal.py#L137
+        num_cpus = 0.0001 if use_gpu else 1
+        return num_cpus, num_gpus
+
     def execute(
         self,
         config,
@@ -775,7 +784,15 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        resources_per_trial = PlacementGroupFactory([{"hyperopt_resources": 1}])
+        if _is_ray_backend(backend):
+            # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
+            resources_per_trial = PlacementGroupFactory([{"worker_resources": 1}])
+        else:
+            # If not Ray backend, request all resources at the trial level
+            use_gpu = bool(self._gpu_resources_per_trial_non_none)
+            num_cpus, num_gpus = self._get_num_cpus_gpus(use_gpu)
+            resources_per_trial = PlacementGroupFactory([{"CPU": num_cpus, "GPU": num_gpus, "worker_resources": 1}])
+
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
 
         @ray.remote(num_cpus=0)
@@ -784,7 +801,6 @@ class RayTuneExecutor:
 
         ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
-        print("ASDFASDF BEFORE TUNER FIT CALL")
         try:
             if resume:
                 # Restore from experiment directory

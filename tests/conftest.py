@@ -168,7 +168,7 @@ def _ray_start(request, **kwargs):
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
-    res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})
+    res = ray.init(**init_kwargs, resources={"worker_resources": 1000})
     try:
         yield res
     finally:
