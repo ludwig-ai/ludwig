@@ -2,28 +2,10 @@
 
 As these are built out, these auxiliary validations can be gradually removed.
 """
-from threading import Lock
 from typing import Any, Dict, List
 
-from jsonschema import validate
-
-from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    COMBINED,
-    LOSS,
-    MODEL_ECD,
-    MODEL_TYPE,
-    NAME,
-    OUTPUT_FEATURES,
-    PREPROCESSING,
-    SPLIT,
-    TRAINER,
-    TYPE,
-)
+from ludwig.constants import COMBINED, LOSS, NAME, OUTPUT_FEATURES, TRAINER, TYPE
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.schema import get_schema, get_validator
-
-VALIDATION_LOCK = Lock()
 
 
 def check_feature_names_unique(config: Dict[str, Any]) -> None:
@@ -143,42 +125,3 @@ def check_validation_metrics_are_valid(config: Dict[str, Any]) -> None:
             f"trainer.validation_field '{validation_field}'. "
             f"Available (validation_field, validation_metric) pairs are {feature_to_metric_names_map}"
         )
-
-
-@DeveloperAPI
-def validate_config(config: Dict[str, Any], include_auxiliary_validations=True):
-    # Update config from previous versions to check that backwards compatibility will enable a valid config
-    # NOTE: import here to prevent circular import
-    from ludwig.data.split import get_splitter
-    from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-
-    # Update config from previous versions to check that backwards compatibility will enable a valid config
-    updated_config = upgrade_config_dict_to_latest_version(config)
-    model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
-
-    with VALIDATION_LOCK:
-        # There is a race condition during schema validation that can cause the marshmallow schema class to
-        # be missing during validation if more than one thread is trying to validate at once.
-        validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
-
-    # Additional checks.
-    if include_auxiliary_validations:
-        splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
-        splitter.validate(updated_config)
-
-        check_validation_metrics_are_valid(updated_config)
-        check_feature_names_unique(updated_config)
-        check_tied_features_are_valid(updated_config)
-        check_dependent_features(updated_config)
-        check_training_runway(updated_config)
-        check_gbm_horovod_incompatibility(updated_config)
-        check_gbm_feature_types(updated_config)
-        check_ray_backend_in_memory_preprocessing(updated_config)
-        check_sequence_concat_combiner_requirements(updated_config)
-        check_tabtransformer_combiner_requirements(updated_config)
-        check_comparator_combiner_requirements(updated_config)
-        check_class_balance_preprocessing(updated_config)
-        check_sampling_exclusivity(updated_config)
-        check_hyperopt_search_space(updated_config)
-        check_hyperopt_metric_targets(updated_config)
-        check_gbm_single_output_feature(updated_config)

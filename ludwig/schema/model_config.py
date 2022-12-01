@@ -2,13 +2,15 @@ import copy
 import sys
 import warnings
 from dataclasses import dataclass
-from typing import Dict, List
+from threading import Lock
+from typing import Any, Dict, List
 
 import yaml
+from jsonschema import validate
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation import validate_config
+from ludwig.config_validation import validations
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -42,6 +44,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
+from ludwig.schema import get_schema, get_validator
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
@@ -65,6 +68,8 @@ from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_ve
 from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
+
+VALIDATION_LOCK = Lock()
 
 
 @DeveloperAPI
@@ -118,6 +123,12 @@ class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
     pass
+
+
+@DeveloperAPI
+def validate_config(config: Dict[str, Any]):
+    """Validates a user config."""
+    ModelConfig(config)
 
 
 @DeveloperAPI
@@ -206,7 +217,7 @@ class ModelConfig(BaseMarshmallowConfig):
         self._set_validation_parameters()
 
         # ===== Validate Config =====
-        validate_config(self.to_dict())
+        self._validate_config(self.to_dict())
 
     def __repr__(self):
         config_repr = self.to_dict()
@@ -239,6 +250,41 @@ class ModelConfig(BaseMarshmallowConfig):
         for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
             if PROC_COLUMN not in feature:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
+
+    @staticmethod
+    def _validate_config(config_dict: dict) -> None:
+        """Validates a model config dictionary using marshmallow JSON schemas and auxiliary validations."""
+        model_type = config_dict.get(MODEL_TYPE, MODEL_ECD)
+
+        with VALIDATION_LOCK:
+            # There is a race condition during schema validation that can cause the marshmallow schema class to
+            # be missing during validation if more than one thread is trying to validate at once.
+            # AJV.
+            validate(instance=config_dict, schema=get_schema(model_type=model_type), cls=get_validator())
+
+        # Check preprocessing.split.
+        # NOTE: import here to prevent circular import
+        from ludwig.data.split import get_splitter
+
+        splitter = get_splitter(**config_dict.get(PREPROCESSING, {}).get(SPLIT, {}))
+        splitter.validate(config_dict)
+
+        validations.check_validation_metrics_are_valid(config_dict)
+        validations.check_feature_names_unique(config_dict)
+        validations.check_tied_features_are_valid(config_dict)
+        validations.check_dependent_features(config_dict)
+        validations.check_training_runway(config_dict)
+        validations.check_gbm_horovod_incompatibility(config_dict)
+        validations.check_gbm_feature_types(config_dict)
+        validations.check_ray_backend_in_memory_preprocessing(config_dict)
+        validations.check_sequence_concat_combiner_requirements(config_dict)
+        validations.check_tabtransformer_combiner_requirements(config_dict)
+        validations.check_comparator_combiner_requirements(config_dict)
+        validations.check_class_balance_preprocessing(config_dict)
+        validations.check_sampling_exclusivity(config_dict)
+        validations.check_hyperopt_search_space(config_dict)
+        validations.check_hyperopt_metric_targets(config_dict)
+        validations.check_gbm_single_output_feature(config_dict)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
@@ -385,7 +431,6 @@ class ModelConfig(BaseMarshmallowConfig):
             None -> Updates config object.
         """
         for key, val in config_dict_lvl.items():
-
             # Persist feature type for getting schemas from registries
             if key in input_config_registry.keys():
                 feature_type = key
@@ -408,6 +453,12 @@ class ModelConfig(BaseMarshmallowConfig):
 
             # Base case for setting values on leaves
             else:
+                print("Set BASE VALUE!")
+                print(f"key: {key}")
+                print(f"val: {val}")
+                print(f"feature_type: {feature_type}")
+                print(f"config_obj_lvl: {config_obj_lvl}")
+                print(f"type(config_obj_lvl): {type(config_obj_lvl)}")
                 setattr(config_obj_lvl, key, val)
 
     def _set_gbm_attributes(self, config_dict: dict) -> None:

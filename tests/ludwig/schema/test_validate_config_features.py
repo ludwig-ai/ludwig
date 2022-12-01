@@ -1,7 +1,6 @@
 import pytest
-from jsonschema.exceptions import ValidationError
 
-from ludwig.config_validation import validate_config
+from ludwig.schema.model_config import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
 
@@ -14,7 +13,7 @@ def test_config_input_output_features():
         "output_features": [binary_feature(decoder={"type": "regressor"})],
     }
 
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
 
 def test_incorrect_input_features_config():
@@ -28,7 +27,7 @@ def test_incorrect_input_features_config():
     # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
     # # Not a preprocessing param for category feature
     # with pytest.raises(ValidationError):
-    #     validate_config(config, include_auxiliary_validations=False)
+    #     validate_config(config)
 
     config = {
         "input_features": [
@@ -38,8 +37,8 @@ def test_incorrect_input_features_config():
     }
 
     # Incorrect type for padding_symbol preprocessing param
-    with pytest.raises(ValidationError):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
     config = {
         "input_features": [
@@ -50,8 +49,8 @@ def test_incorrect_input_features_config():
     del config["input_features"][0]["type"]
 
     # Incorrect type for padding_symbol preprocessing param
-    with pytest.raises(ValidationError):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
 
 def test_incorrect_output_features_config():
@@ -63,5 +62,5 @@ def test_incorrect_output_features_config():
     }
 
     # Invalid decoder for binary output feature
-    with pytest.raises(ValidationError):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)

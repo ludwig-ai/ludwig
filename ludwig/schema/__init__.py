@@ -81,7 +81,7 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
-@Deprecated(message="Use 'from ludwig.config_validation import validate_config' instead.")
+@Deprecated(message="Use 'from ludwig.schema.model_config import validate_config' instead.")
 def validate_config(config: Dict[str, Any]):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import

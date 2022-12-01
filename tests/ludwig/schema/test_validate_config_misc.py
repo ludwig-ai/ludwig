@@ -1,7 +1,5 @@
 import pytest
-from jsonschema.exceptions import ValidationError
 
-from ludwig.config_validation import validate_config
 from ludwig.constants import (
     ACTIVE,
     CATEGORY,
@@ -35,7 +33,7 @@ from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
-from ludwig.schema.model_config import ModelConfig
+from ludwig.schema.model_config import ModelConfig, validate_config
 from tests.integration_tests.utils import (
     audio_feature,
     bag_feature,
@@ -85,12 +83,12 @@ def test_config_features():
         "input_features": all_input_features,
         "output_features": all_output_features,
     }
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
     # make sure all defaults provided also registers as valid
 
     config = ModelConfig.from_dict(config).to_dict()
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
     # test various invalid output features
     input_only_features = [
@@ -102,9 +100,8 @@ def test_config_features():
             "output_features": all_output_features + [input_feature],
         }
 
-        dtype = input_feature["type"]
-        with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
-            validate_config(config, include_auxiliary_validations=False)
+        with pytest.raises(Exception):
+            validate_config(config)
 
 
 def test_config_encoders():
@@ -117,7 +114,7 @@ def test_config_encoders():
             "output_features": [category_feature(decoder={"type": "classifier", "vocab_size": 2}, reduce_input="sum")],
             "combiner": {"type": "concat", "output_size": 14},
         }
-        validate_config(config, include_auxiliary_validations=False)
+        validate_config(config)
 
 
 def test_config_tabnet():
@@ -154,7 +151,7 @@ def test_config_tabnet():
             "validation_field": "label",
         },
     }
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
 
 def test_config_bad_feature_type():
@@ -164,8 +161,8 @@ def test_config_bad_feature_type():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
 
 def test_config_bad_encoder_name():
@@ -175,8 +172,8 @@ def test_config_bad_encoder_name():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
 
 # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
@@ -200,7 +197,7 @@ def test_config_bad_encoder_name():
 #     }
 
 #     with pytest.raises(ValidationError, match=r"^Additional properties are not allowed .*"):
-#         validate_config(config, include_auxiliary_validations=False)
+#         validate_config(config)
 
 
 def test_config_fill_values():
@@ -213,7 +210,7 @@ def test_config_fill_values():
             ],
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
-        validate_config(config, include_auxiliary_validations=False)
+        validate_config(config)
 
     bad_vector_fill_values = ["one two three", "1,2,3", 0]
     bad_binary_fill_values = ["one", 2, "maybe"]
@@ -224,8 +221,8 @@ def test_config_fill_values():
             ],
             "output_features": [binary_feature(preprocessing={"fill_value": binary_fill_value})],
         }
-        with pytest.raises(ValidationError):
-            validate_config(config, include_auxiliary_validations=False)
+        with pytest.raises(Exception):
+            validate_config(config)
 
 
 def test_validate_with_preprocessing_defaults():
@@ -264,9 +261,9 @@ def test_validate_with_preprocessing_defaults():
         },
     }
 
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
     config = ModelConfig.from_dict(config).to_dict()
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
 
 def test_defaults_schema():
@@ -286,7 +283,7 @@ def test_validate_defaults_schema():
             category_feature(),
             number_feature(),
         ],
-        "output_features": [category_feature()],
+        "output_features": [category_feature(output_feature=True)],
         "defaults": {
             "category": {
                 "preprocessing": {
@@ -316,12 +313,12 @@ def test_validate_defaults_schema():
         },
     }
 
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
     config[DEFAULTS][CATEGORY][NAME] = "TEST"
 
-    with pytest.raises(ValidationError):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
 
 def test_validate_no_trainer_type():
@@ -336,23 +333,23 @@ def test_validate_no_trainer_type():
     }
 
     # Ensure validation succeeds with ECD trainer params and ECD model type
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
     # Ensure validation fails with ECD trainer params and GBM model type
     config[MODEL_TYPE] = MODEL_GBM
-    with pytest.raises(ValidationError):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
     # Switch to trainer with valid GBM params
     config[TRAINER] = {"tree_learner": "serial"}
 
     # Ensure validation succeeds with GBM trainer params and GBM model type
-    validate_config(config, include_auxiliary_validations=False)
+    validate_config(config)
 
     # Ensure validation fails with GBM trainer params and ECD model type
     config[MODEL_TYPE] = MODEL_ECD
-    with pytest.raises(ValidationError):
-        validate_config(config, include_auxiliary_validations=False)
+    with pytest.raises(Exception):
+        validate_config(config)
 
 
 def test_schema_no_duplicates():
