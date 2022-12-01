@@ -8,11 +8,13 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation import validate_config
 from ludwig.constants import (
     ACTIVE,
     BINARY,
     CATEGORY,
     COLUMN,
+    COMBINED,
     COMBINER,
     DECODER,
     DEFAULT_VALIDATION_METRIC,
@@ -37,12 +39,9 @@ from ludwig.constants import (
     TIED,
     TRAINER,
     TYPE,
-    COMBINED,
 )
-from ludwig.schema.features.utils import output_config_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.config_validation import validate_config
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
@@ -51,7 +50,12 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import get_input_feature_cls, get_output_feature_cls, input_config_registry
+from ludwig.schema.features.utils import (
+    get_input_feature_cls,
+    get_output_feature_cls,
+    input_config_registry,
+    output_config_registry,
+)
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls

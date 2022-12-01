@@ -25,7 +25,7 @@ from typing import Any, Dict
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
-from ludwig.api_annotations import DeveloperAPI, Deprecated
+from ludwig.api_annotations import Deprecated, DeveloperAPI
 from ludwig.constants import (
     COMBINER,
     DEFAULTS,
@@ -44,7 +44,6 @@ from ludwig.schema.features.utils import get_input_feature_jsonschema, get_outpu
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
-
 
 VALIDATION_LOCK = Lock()
 
