@@ -3855,6 +3855,7 @@ def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric)
     return df
 
 
+@DeveloperAPI
 def get_visualizations_registry() -> Dict[str, Callable]:
     return {
         "compare_performance": compare_performance_cli,
