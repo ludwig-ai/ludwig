@@ -36,7 +36,7 @@ def load_config(cls: Type["BaseMarshmallowConfig"], **kwargs) -> "BaseMarshmallo
 
 @DeveloperAPI
 def load_trainer_with_kwargs(
-        model_type: str, kwargs: dict
+    model_type: str, kwargs: dict
 ) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa: F821
     """Special case of `load_config_with_kwargs` for the trainer schemas.
 
@@ -53,7 +53,7 @@ def load_trainer_with_kwargs(
 
 @DeveloperAPI
 def load_config_with_kwargs(
-        cls: Type["BaseMarshmallowConfig"], kwargs_overrides
+    cls: Type["BaseMarshmallowConfig"], kwargs_overrides
 ) -> Tuple["BaseMarshmallowConfig", TDict[str, Any]]:  # noqa 0821
     """Instatiates an instance of the marshmallow class and kwargs overrides instantiantes the schema.
 
@@ -209,10 +209,10 @@ def ReductionOptions(default: Union[None, str] = None, description="", parameter
 
 @DeveloperAPI
 def RegularizerOptions(
-        default: Union[None, str] = None,
-        allow_none: bool = True,
-        description="",
-        parameter_metadata: ParameterMetadata = None,
+    default: Union[None, str] = None,
+    allow_none: bool = True,
+    description="",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Utility wrapper that returns a `StringOptions` field with prefilled regularizer options."""
     return StringOptions(
@@ -226,11 +226,11 @@ def RegularizerOptions(
 
 @DeveloperAPI
 def String(
-        description: str,
-        default: Union[None, str] = None,
-        allow_none: bool = True,
-        pattern: str = None,
-        parameter_metadata: ParameterMetadata = None,
+    description: str,
+    default: Union[None, str] = None,
+    allow_none: bool = True,
+    pattern: str = None,
+    parameter_metadata: ParameterMetadata = None,
 ):
     if not allow_none and not isinstance(default, str):
         raise ValidationError(f"Provided default `{default}` should be a string!")
@@ -257,11 +257,11 @@ def String(
 
 @DeveloperAPI
 def StringOptions(
-        options: TList[str],
-        default: Union[None, str] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    options: TList[str],
+    default: Union[None, str] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata that enforces string inputs must be one of `options`.
 
@@ -298,9 +298,9 @@ def StringOptions(
 
 @DeveloperAPI
 def ProtectedString(
-        pstring: str,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    pstring: str,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Alias for a `StringOptions` field with only one option.
 
@@ -317,11 +317,11 @@ def ProtectedString(
 
 @DeveloperAPI
 def IntegerOptions(
-        options: TList[int],
-        default: Union[None, int] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    options: TList[int],
+    default: Union[None, int] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata that enforces integer inputs must be one of `options`.
 
@@ -383,7 +383,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
 
 @DeveloperAPI
 def Integer(
-        default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
+    default: Union[None, int] = None, allow_none=False, description="", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs."""
     allow_none = allow_none or default is None
@@ -412,8 +412,7 @@ def Integer(
 
 @DeveloperAPI
 def PositiveInteger(
-        description: str, default: Union[None, int], allow_none: bool = True,
-        parameter_metadata: ParameterMetadata = None
+    description: str, default: Union[None, int], allow_none: bool = True, parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     positive."""
@@ -446,10 +445,10 @@ def PositiveInteger(
 
 @DeveloperAPI
 def NonNegativeInteger(
-        description: str,
-        default: Union[None, int] = None,
-        allow_none: bool = True,
-        parameter_metadata: ParameterMetadata = None,
+    description: str,
+    default: Union[None, int] = None,
+    allow_none: bool = True,
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be
     nonnegative."""
@@ -482,14 +481,14 @@ def NonNegativeInteger(
 
 @DeveloperAPI
 def IntegerRange(
-        description: str,
-        default: Union[None, int] = None,
-        allow_none=False,
-        parameter_metadata: ParameterMetadata = None,
-        min: int = None,
-        max: int = None,
-        min_inclusive: bool = True,
-        max_inclusive: bool = True,
+    description: str,
+    default: Union[None, int] = None,
+    allow_none=False,
+    parameter_metadata: ParameterMetadata = None,
+    min: int = None,
+    max: int = None,
+    min_inclusive: bool = True,
+    max_inclusive: bool = True,
 ):
     """Returns a dataclass field with marshmallow metadata strictly enforcing (non-float) inputs must be in range
     set by relevant keyword args."""
@@ -522,10 +521,10 @@ def IntegerRange(
 
 @DeveloperAPI
 def NonNegativeFloat(
-        default: Union[None, float] = None,
-        allow_none=False,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    default: Union[None, float] = None,
+    allow_none=False,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
     val = validate.Range(min=0.0)
@@ -556,14 +555,14 @@ def NonNegativeFloat(
 
 @DeveloperAPI
 def FloatRange(
-        default: Union[None, float] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
-        min: int = None,
-        max: int = None,
-        min_inclusive: bool = True,
-        max_inclusive: bool = True,
+    default: Union[None, float] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
+    min: int = None,
+    max: int = None,
+    min_inclusive: bool = True,
+    max_inclusive: bool = True,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be in range set by
     relevant keyword args."""
@@ -595,10 +594,10 @@ def FloatRange(
 
 @DeveloperAPI
 def Dict(
-        default: Union[None, TDict] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    default: Union[None, TDict] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a dict."""
     allow_none = allow_none or default is None
@@ -628,11 +627,11 @@ def Dict(
 
 @DeveloperAPI
 def List(
-        list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
-        default: Union[None, TList[Any]] = None,
-        allow_none: bool = True,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    list_type: Union[Type[str], Type[int], Type[float], Type[list]] = str,
+    default: Union[None, TList[Any]] = None,
+    allow_none: bool = True,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list."""
     if default is not None:
@@ -672,7 +671,7 @@ def List(
 
 @DeveloperAPI
 def DictList(
-        default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
+    default: Union[None, TList[TDict]] = None, description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata enforcing input must be a list of dicts."""
     if default is not None:
@@ -761,7 +760,7 @@ def Embed(description: str = "", parameter_metadata: ParameterMetadata = None):
 
 @DeveloperAPI
 def InitializerOrDict(
-        default: str = "xavier_uniform", description: str = "", parameter_metadata: ParameterMetadata = None
+    default: str = "xavier_uniform", description: str = "", parameter_metadata: ParameterMetadata = None
 ):
     """Returns a dataclass field with marshmallow metadata allowing customizable initializers.
 
@@ -829,13 +828,13 @@ def InitializerOrDict(
 
 @DeveloperAPI
 def FloatRangeTupleDataclassField(
-        n: int = 2,
-        default: Union[Tuple, None] = (0.9, 0.999),
-        allow_none: bool = True,
-        min: Union[int, None] = 0,
-        max: Union[int, None] = 1,
-        description: str = "",
-        parameter_metadata: ParameterMetadata = None,
+    n: int = 2,
+    default: Union[Tuple, None] = (0.9, 0.999),
+    allow_none: bool = True,
+    min: Union[int, None] = 0,
+    max: Union[int, None] = 1,
+    description: str = "",
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing a `N`-dim.
 
@@ -912,11 +911,11 @@ def FloatRangeTupleDataclassField(
 
 @DeveloperAPI
 def OneOfOptionsField(
-        default: Any,
-        description: str,
-        field_options: TList,
-        allow_none: bool = True,
-        parameter_metadata: ParameterMetadata = None,
+    default: Any,
+    description: str,
+    field_options: TList,
+    allow_none: bool = True,
+    parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field that is a combination of the other fields defined in `ludwig.schema.utils`.
 
