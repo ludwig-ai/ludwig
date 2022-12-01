@@ -1,5 +1,6 @@
 from typing import Set
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, BINARY, CATEGORY, DATE, IMAGE, NUMBER, TEXT
 from ludwig.utils import strings_utils
 from ludwig.utils.automl.field_info import FieldInfo
@@ -9,6 +10,7 @@ from ludwig.utils.automl.field_info import FieldInfo
 CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF = 0.5
 
 
+@DeveloperAPI
 def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -> str:
     """Perform type inference on field.
 
@@ -59,6 +61,7 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
     return TEXT
 
 
+@DeveloperAPI
 def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targets: Set[str]) -> bool:
     if field.key == "PRI":
         return True
