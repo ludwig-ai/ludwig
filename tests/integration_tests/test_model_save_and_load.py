@@ -358,6 +358,7 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     check_model_equal(ludwig_model_exp)
 
 
+@pytest.mark.skip(reason="Resolve how to test for downloading of weights")
 def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
