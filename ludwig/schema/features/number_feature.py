@@ -2,6 +2,7 @@ from typing import List, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     LOSS,
     MEAN_ABSOLUTE_ERROR,
@@ -31,6 +32,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(NUMBER)
 @dataclass
 class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -45,6 +47,7 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(NUMBER)
 @dataclass(repr=False)
 class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
@@ -53,6 +56,7 @@ class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigM
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(NUMBER)
 @dataclass
 class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -70,6 +74,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(NUMBER)
 @dataclass(repr=False)
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):

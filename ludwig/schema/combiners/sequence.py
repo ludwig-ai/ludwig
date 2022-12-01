@@ -2,6 +2,7 @@ from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
@@ -10,14 +11,13 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["sequence"],
-        default="sequence",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "sequence",
         description="Type of combiner.",
     )
 

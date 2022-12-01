@@ -15,7 +15,10 @@
 # ==============================================================================
 from datetime import date
 
+from ludwig.api_annotations import DeveloperAPI
 
+
+@DeveloperAPI
 def create_vector_from_datetime_obj(datetime_obj):
     yearday = datetime_obj.toordinal() - date(datetime_obj.year, 1, 1).toordinal() + 1
 

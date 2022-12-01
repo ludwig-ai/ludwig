@@ -37,7 +37,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
-    external_data_reader_registry,
+    data_reader_registry,
     figure_data_format_dataset,
     load_array,
     load_from_file,
@@ -228,7 +228,7 @@ def _get_ground_truth_df(ground_truth: str) -> DataFrame:
         raise ValueError(
             "{} is not supported for ground truth file, " "valid types are {}".format(data_format, CACHEABLE_FORMATS)
         )
-    reader = get_from_registry(data_format, external_data_reader_registry)
+    reader = get_from_registry(data_format, data_reader_registry)
 
     # retrieve ground truth from source data set
     if data_format in {"csv", "tsv"}:

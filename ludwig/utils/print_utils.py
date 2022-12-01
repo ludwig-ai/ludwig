@@ -20,6 +20,8 @@ from typing import Dict, Union
 
 from ludwig.api_annotations import DeveloperAPI
 
+logger = logging.getLogger(__name__)
+
 
 @DeveloperAPI
 def get_logging_level_registry() -> Dict[str, int]:
@@ -31,9 +33,6 @@ def get_logging_level_registry() -> Dict[str, int]:
         "debug": logging.DEBUG,
         "notset": logging.NOTSET,
     }
-
-
-logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
