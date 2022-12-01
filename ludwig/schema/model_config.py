@@ -256,6 +256,7 @@ class ModelConfig(BaseMarshmallowConfig):
         """Validates a model config dictionary using marshmallow JSON schemas and auxiliary validations."""
         model_type = config_dict.get(MODEL_TYPE, MODEL_ECD)
 
+        # JSON schema check.
         with VALIDATION_LOCK:
             # There is a race condition during schema validation that can cause the marshmallow schema class to
             # be missing during validation if more than one thread is trying to validate at once.
@@ -266,9 +267,11 @@ class ModelConfig(BaseMarshmallowConfig):
         # NOTE: import here to prevent circular import
         from ludwig.data.split import get_splitter
 
+        # Check splitter.
         splitter = get_splitter(**config_dict.get(PREPROCESSING, {}).get(SPLIT, {}))
         splitter.validate(config_dict)
 
+        # Auxiliary checks.
         validations.check_validation_metrics_are_valid(config_dict)
         validations.check_feature_names_unique(config_dict)
         validations.check_tied_features_are_valid(config_dict)

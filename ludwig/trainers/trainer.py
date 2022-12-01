@@ -973,15 +973,11 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
-            print(f"progress_tracker.steps: {progress_tracker.steps}")
-            print(f"final_steps_per_checkpoint: {final_steps_per_checkpoint}")
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator() and not self.skip_save_progress:
                     checkpoint_manager.save(progress_tracker.steps)
                     progress_tracker.save(os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME))
-
-                print("Calling self.run_evaluation.")
 
                 should_break = self.run_evaluation(
                     training_set,
@@ -1174,7 +1170,6 @@ class Trainer(BaseTrainer):
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
-        print("About to call callback.should_early_stop")
         early_stop_bool = 0 < early_stopping_steps <= progress_tracker.last_improvement
         if not early_stop_bool:
             for callback in self.callbacks:
