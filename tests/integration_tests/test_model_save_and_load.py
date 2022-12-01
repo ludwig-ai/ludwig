@@ -393,7 +393,8 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    hf_cache_dir = os.path.join(os.environ["HOME"], ".cache", "huggingface")
+    hf_cache_dir = os.path.join(os.environ["HOME"], ".cache", "huggingface", "transformers")
+    os.makedirs(hf_cache_dir, exist_ok=True)
     os.environ["HF_HOME"] = hf_cache_dir
     backend = LocalTestBackend()
     ludwig_model1 = LudwigModel(config, backend=backend)
@@ -406,7 +407,7 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
 
     # confirm that pretrained model weight was downloaded
     # file count represents the vocab.txt for tokenizer and pretrained weights
-    assert len(os.listdir(os.path.join(hf_cache_dir, "transformers"))) == 9
+    assert len(os.listdir(hf_cache_dir)) == 9
 
     preds_1, _ = ludwig_model1.predict(dataset=validation_set)
 
@@ -440,6 +441,7 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
 
     # remove hugging face model cache for reloading of Ludwig model
     shutil.rmtree(hf_cache_dir, ignore_errors=True)
+    os.makedirs(hf_cache_dir, exist_ok=True)
 
     ludwig_model1.save(tmpdir)
     ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
@@ -449,7 +451,7 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
 
     # confirm that hugging face model was not downloaded again
     # file count represents the vocab.txt for tokenizer only
-    assert len(os.listdir(os.path.join(hf_cache_dir, "transformers"))) == 3
+    assert len(os.listdir(hf_cache_dir)) == 3
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
@@ -459,4 +461,4 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
 
     # confirm that hugging face model was not downloaded again
     # file count represents the vocab.txt for tokenizer only
-    assert len(os.listdir(os.path.join(hf_cache_dir, "transformers"))) == 3
+    assert len(os.listdir(hf_cache_dir)) == 3
