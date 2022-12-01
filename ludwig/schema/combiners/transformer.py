@@ -14,10 +14,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["transformer"],
-        default="transformer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "transformer",
         description="Type of combiner.",
     )
 
