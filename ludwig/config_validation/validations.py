@@ -3,25 +3,25 @@
 As these are built out, these auxiliary validations can be gradually removed.
 """
 from threading import Lock
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from jsonschema import validate
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    COMBINED,
+    LOSS,
     MODEL_ECD,
     MODEL_TYPE,
+    NAME,
     OUTPUT_FEATURES,
     PREPROCESSING,
     SPLIT,
     TRAINER,
-    COMBINED,
-    NAME,
     TYPE,
-    LOSS,
 )
-from ludwig.schema import get_schema, get_validator
 from ludwig.features.feature_registries import output_type_registry
+from ludwig.schema import get_schema, get_validator
 
 VALIDATION_LOCK = Lock()
 
