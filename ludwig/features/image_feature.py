@@ -30,6 +30,7 @@ from ludwig.constants import (
     ENCODER,
     HEIGHT,
     IMAGE,
+    IMAGENET1K,
     INFER_IMAGE_DIMENSIONS,
     INFER_IMAGE_MAX_HEIGHT,
     INFER_IMAGE_MAX_WIDTH,
@@ -73,7 +74,6 @@ class _ImagePreprocessing(torch.nn.Module):
         self.width = metadata["preprocessing"]["width"]
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
-        self.torchvision_model_id = metadata["preprocessing"].get("torchvision_model_id")
         self.tv_transforms = tv_transforms
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
@@ -86,7 +86,7 @@ class _ImagePreprocessing(torch.nn.Module):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
-        if self.torchvision_model_id is not None:
+        if self.tv_transforms is not None:
             # perform pre-processing for torchvision pretrained model encoders
             if torch.jit.isinstance(v, List[torch.Tensor]):
                 imgs = [self.tv_transforms(img) for img in v]
@@ -238,7 +238,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         # casting and rescaling
         img = img.type(torch.float32) / 255
 
-        if standardize_image == "imagenet1k":
+        if standardize_image == IMAGENET1K:
             img = normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         return img.numpy()
