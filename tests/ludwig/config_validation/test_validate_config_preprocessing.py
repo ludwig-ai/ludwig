@@ -1,6 +1,6 @@
 # import pytest
 
-from ludwig.schema import validate_config
+from ludwig.config_validation import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature
 
 
@@ -20,10 +20,10 @@ def test_config_preprocessing():
         },
     }
 
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
 
     # TODO(ksbrar): Circle back after discussing whether additional properties should be allowed long-term.
     # config["preprocessing"]["fake_parameter"] = True
 
     # with pytest.raises(Exception):
-    #     validate_config(config)
+    #     validate_config(config, include_auxiliary_validations=False)

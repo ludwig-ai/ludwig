@@ -2,7 +2,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
-from ludwig.schema import validate_config
+from ludwig.config_validation import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 
@@ -42,7 +42,7 @@ def test_config_tabnet(eval_batch_size):
             "validation_field": "label",
         },
     }
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
 
 
 def test_config_bad_combiner():
@@ -58,22 +58,22 @@ def test_config_bad_combiner():
     }
 
     # config is valid at this point
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
 
     # combiner without type
     del config["combiner"]["type"]
     with pytest.raises(ValidationError, match=r"^'type' is a required .*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
     # bad combiner type
     config["combiner"]["type"] = "fake"
     with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
     # bad combiner format (list instead of dict)
     config["combiner"] = [{"type": "tabnet"}]
     with pytest.raises(ValidationError, match=r"^\[\{'type': 'tabnet'\}\] is not of .*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
     # bad combiner parameter types
     config["combiner"] = {
@@ -82,7 +82,7 @@ def test_config_bad_combiner():
         "dropout": False,
     }
     with pytest.raises(ValidationError, match=r"^False is not of type.*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
     # bad combiner parameter range
     config["combiner"] = {
@@ -90,7 +90,7 @@ def test_config_bad_combiner():
         "dropout": -1,
     }
     with pytest.raises(ValidationError, match=r"less than the minimum.*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
 
 def test_config_bad_combiner_types_enums():
@@ -104,66 +104,66 @@ def test_config_bad_combiner_types_enums():
     }
 
     # config is valid at this point
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
 
     # Test weights initializer:
     config["combiner"]["weights_initializer"] = {"test": "fail"}
     with pytest.raises(ValidationError, match=r"'type' is a required property"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["weights_initializer"] = "fail"
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["weights_initializer"] = {}
     with pytest.raises(ValidationError, match=r"'type' is a required property"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["weights_initializer"] = {"type": "fail"}
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["weights_initializer"] = {"type": "normal", "stddev": 0}
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
 
     # Test bias initializer:
     del config["combiner"]["weights_initializer"]
     config["combiner"]["bias_initializer"] = "kaiming_uniform"
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["bias_initializer"] = "fail"
     with pytest.raises(ValidationError, match=r"'fail' is not of*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["bias_initializer"] = {}
     with pytest.raises(ValidationError, match=r"'type' is a required property"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["bias_initializer"] = {"type": "fail"}
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["bias_initializer"] = {"type": "zeros", "stddev": 0}
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
 
     # Test norm:
     del config["combiner"]["bias_initializer"]
     config["combiner"]["norm"] = "batch"
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["norm"] = "fail"
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
     # Test activation:
     del config["combiner"]["norm"]
     config["combiner"]["activation"] = "relu"
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
     config["combiner"]["activation"] = 123
     with pytest.raises(ValidationError, match=r"123 is not of type*"):
-        validate_config(config)
+        validate_config(config, include_auxiliary_validations=False)
 
     # Test reduce_output:
     del config["combiner"]["activation"]
     config2 = {**config}
     config2["combiner"]["type"] = "tabtransformer"
     config2["combiner"]["reduce_output"] = "sum"
-    validate_config(config)
+    validate_config(config, include_auxiliary_validations=False)
     config2["combiner"]["reduce_output"] = "fail"
     with pytest.raises(ValidationError, match=r"'fail' is not one of*"):
-        validate_config(config2)
+        validate_config(config2, include_auxiliary_validations=False)
 
     # Test reduce_output = None:
     config2["combiner"]["reduce_output"] = None
-    validate_config(config2)
+    validate_config(config2, include_auxiliary_validations=False)

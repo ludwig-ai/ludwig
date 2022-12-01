@@ -121,7 +121,7 @@ def get_feature_to_metric_names_map(output_features: List[Dict]) -> Dict[str, Li
 
 
 def check_validation_metrics_are_valid(config: Dict[str, Any]) -> None:
-    """Checks that validation fields in cofnig.trainer are valid."""
+    """Checks that validation fields in config.trainer are valid."""
     output_features = config[OUTPUT_FEATURES]
     feature_to_metric_names_map = get_feature_to_metric_names_map(output_features)
 
@@ -146,7 +146,7 @@ def check_validation_metrics_are_valid(config: Dict[str, Any]) -> None:
 
 
 @DeveloperAPI
-def validate_config(config: Dict[str, Any]):
+def validate_config(config: Dict[str, Any], include_auxiliary_validations=True):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
     from ludwig.data.split import get_splitter
@@ -156,28 +156,29 @@ def validate_config(config: Dict[str, Any]):
     updated_config = upgrade_config_dict_to_latest_version(config)
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
 
-    splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
-    splitter.validate(updated_config)
-
     with VALIDATION_LOCK:
         # There is a race condition during schema validation that can cause the marshmallow schema class to
         # be missing during validation if more than one thread is trying to validate at once.
         validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
 
     # Additional checks.
-    check_validation_metrics_are_valid(updated_config)
-    check_feature_names_unique(updated_config)
-    check_tied_features_are_valid(updated_config)
-    check_dependent_features(updated_config)
-    check_training_runway(updated_config)
-    check_gbm_horovod_incompatibility(updated_config)
-    check_gbm_feature_types(updated_config)
-    check_ray_backend_in_memory_preprocessing(updated_config)
-    check_sequence_concat_combiner_requirements(updated_config)
-    check_tabtransformer_combiner_requirements(updated_config)
-    check_comparator_combiner_requirements(updated_config)
-    check_class_balance_preprocessing(updated_config)
-    check_sampling_exclusivity(updated_config)
-    check_hyperopt_search_space(updated_config)
-    check_hyperopt_metric_targets(updated_config)
-    check_gbm_single_output_feature(updated_config)
+    if include_auxiliary_validations:
+        splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
+        splitter.validate(updated_config)
+
+        check_validation_metrics_are_valid(updated_config)
+        check_feature_names_unique(updated_config)
+        check_tied_features_are_valid(updated_config)
+        check_dependent_features(updated_config)
+        check_training_runway(updated_config)
+        check_gbm_horovod_incompatibility(updated_config)
+        check_gbm_feature_types(updated_config)
+        check_ray_backend_in_memory_preprocessing(updated_config)
+        check_sequence_concat_combiner_requirements(updated_config)
+        check_tabtransformer_combiner_requirements(updated_config)
+        check_comparator_combiner_requirements(updated_config)
+        check_class_balance_preprocessing(updated_config)
+        check_sampling_exclusivity(updated_config)
+        check_hyperopt_search_space(updated_config)
+        check_hyperopt_metric_targets(updated_config)
+        check_gbm_single_output_feature(updated_config)
