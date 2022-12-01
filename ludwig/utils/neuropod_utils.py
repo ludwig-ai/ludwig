@@ -9,7 +9,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import NAME
-from ludwig.typing import ModelConfigDict
+from ludwig.types import ModelConfigDict
 from ludwig.utils.fs_utils import open_file
 
 logger = logging.getLogger(__name__)

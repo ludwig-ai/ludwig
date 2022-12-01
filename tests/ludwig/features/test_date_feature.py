@@ -8,7 +8,7 @@ from ludwig.features import date_feature
 from ludwig.features.date_feature import DateInputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
-from ludwig.typing import FeatureConfigDict
+from ludwig.types import FeatureConfigDict
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
 

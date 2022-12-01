@@ -32,7 +32,7 @@ from ludwig.data.dataset.base import DatasetManager
 from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
-from ludwig.typing import HyperoptConfigDict
+from ludwig.types import HyperoptConfigDict
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources

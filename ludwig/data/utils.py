@@ -3,7 +3,7 @@ from typing import Dict, Optional
 import numpy as np
 
 from ludwig.constants import SPLIT
-from ludwig.typing import FeatureConfigDict, PreprocessingConfigDict
+from ludwig.types import FeatureConfigDict, PreprocessingConfigDict
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.types import DataFrame
 

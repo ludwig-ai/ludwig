@@ -4,7 +4,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.model_config import ModelConfig
-from ludwig.typing import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
+from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
 from ludwig.utils.misc_utils import get_from_registry
 
 

@@ -23,7 +23,7 @@ from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABIL
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
-from ludwig.typing import (
+from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
     PreprocessingConfigDict,

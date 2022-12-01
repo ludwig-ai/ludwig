@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from ludwig.data.dataset.base import Dataset
 from ludwig.schema.trainer import BaseTrainerConfig
-from ludwig.typing import ModelConfigDict
+from ludwig.types import ModelConfigDict
 from ludwig.utils.defaults import default_random_seed
 
 

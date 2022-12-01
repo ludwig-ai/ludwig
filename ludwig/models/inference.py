@@ -12,7 +12,7 @@ from ludwig.data.preprocessing import load_metadata
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
-from ludwig.typing import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils import output_feature_utils
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.inference_utils import get_filename_from_stage, to_inference_module_input_from_dataframe

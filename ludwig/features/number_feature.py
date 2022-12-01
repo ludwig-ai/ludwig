@@ -25,7 +25,7 @@ from torch import nn
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, NUMBER, PREDICTIONS, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
-from ludwig.typing import (
+from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
     PreprocessingConfigDict,

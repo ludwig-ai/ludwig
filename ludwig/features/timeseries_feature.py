@@ -23,7 +23,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
-from ludwig.typing import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 

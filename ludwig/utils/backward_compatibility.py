@@ -61,7 +61,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.typing import (
+from ludwig.types import (
     FeatureConfigDict,
     HyperoptConfigDict,
     ModelConfigDict,

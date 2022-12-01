@@ -11,7 +11,7 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
-from ludwig.typing import FeatureConfigDict
+from ludwig.types import FeatureConfigDict
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,

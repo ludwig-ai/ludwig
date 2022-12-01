@@ -31,7 +31,7 @@ from ludwig.constants import (
 )
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
-from ludwig.typing import HyperoptConfigDict, ModelConfigDict
+from ludwig.types import HyperoptConfigDict, ModelConfigDict
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc_utils import (
     get_class_attributes,

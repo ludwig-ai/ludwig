@@ -26,7 +26,7 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
-from ludwig.typing import HyperoptConfigDict
+from ludwig.types import HyperoptConfigDict
 from ludwig.utils.horovod_utils import initialize_horovod
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch

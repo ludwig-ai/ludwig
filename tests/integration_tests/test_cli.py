@@ -25,7 +25,7 @@ import pytest
 import yaml
 
 from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
-from ludwig.typing import FeatureConfigDict
+from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
 

@@ -22,7 +22,7 @@ import torch
 from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROC_COLUMN, VECTOR
 from ludwig.features.base_feature import InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.vector_feature import VectorInputFeatureConfig, VectorOutputFeatureConfig
-from ludwig.typing import (
+from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
     PreprocessingConfigDict,

@@ -35,7 +35,7 @@ from ludwig.constants import (
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.schema.features.sequence_feature import SequenceInputFeatureConfig, SequenceOutputFeatureConfig
-from ludwig.typing import (
+from ludwig.types import (
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,
     PreprocessingConfigDict,

@@ -25,7 +25,7 @@ from ludwig.constants import AUDIO, AUDIO_FEATURE_KEYS, COLUMN, NAME, PREPROCESS
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.audio_feature import AudioInputFeatureConfig
-from ludwig.typing import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.audio_utils import (
     calculate_mean,
     calculate_var,

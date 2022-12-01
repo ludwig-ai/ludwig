@@ -31,7 +31,7 @@ from ludwig.schema.split import (
     RandomSplitConfig,
     StratifySplitConfig,
 )
-from ludwig.typing import ModelConfigDict, PreprocessingConfigDict
+from ludwig.types import ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.data_utils import hash_dict, split_dataset_ttv
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import DataFrame

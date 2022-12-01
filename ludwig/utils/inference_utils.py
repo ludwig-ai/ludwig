@@ -23,7 +23,7 @@ from ludwig.constants import (
     TYPE,
     VECTOR,
 )
-from ludwig.typing import FeatureConfigDict, ModelConfigDict
+from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.audio_utils import read_audio_from_path
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.image_utils import read_image_from_path

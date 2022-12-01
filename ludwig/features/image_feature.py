@@ -44,7 +44,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.typing import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5

@@ -23,7 +23,7 @@ from ludwig.constants import BINARY, COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, 
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
-from ludwig.typing import (
+from ludwig.types import (
     FeatureConfigDict,
     FeatureMetadataDict,
     FeaturePostProcessingOutputDict,

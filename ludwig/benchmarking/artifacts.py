@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from ludwig.typing import ModelConfigDict, TrainingSetMetadataDict
+from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import load_json, load_yaml
 
 
