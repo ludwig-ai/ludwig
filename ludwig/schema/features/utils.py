@@ -1,4 +1,7 @@
+from typing import Dict
+
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import MODEL_ECD, MODEL_GBM
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -18,15 +21,25 @@ def get_output_feature_cls(name: str):
     return output_config_registry[name]
 
 
+def prune_gbm_features(schema: Dict):
+    gbm_feature_types = ["binary", "category", "number"]
+    pruned_all_of = []
+    for cond in schema["items"]["allOf"]:
+        if_type = cond["if"]["properties"]["type"]["const"]
+        if if_type in gbm_feature_types:
+            pruned_all_of += [cond]
+    schema["items"]["allOf"] = pruned_all_of
+
+
 @DeveloperAPI
-def get_input_feature_jsonschema():
+def get_input_feature_jsonschema(model_type: str = MODEL_ECD):
     """This function returns a JSON schema structured to only requires a `type` key and then conditionally applies
     a corresponding input feature's field constraints.
 
     Returns: JSON Schema
     """
     input_feature_types = sorted(list(input_config_registry.keys()))
-    return {
+    schema = {
         "type": "array",
         "minItems": 1,
         "items": {
@@ -49,6 +62,11 @@ def get_input_feature_jsonschema():
         "uniqueItemProperties": ["name"],
     }
 
+    if model_type == MODEL_GBM:
+        prune_gbm_features(schema)
+
+    return schema
+
 
 @DeveloperAPI
 def get_input_feature_conds():
@@ -70,14 +88,14 @@ def get_input_feature_conds():
 
 
 @DeveloperAPI
-def get_output_feature_jsonschema():
+def get_output_feature_jsonschema(model_type: str = MODEL_ECD):
     """This function returns a JSON schema structured to only requires a `type` key and then conditionally applies
     a corresponding output feature's field constraints.
 
     Returns: JSON Schema
     """
     output_feature_types = sorted(list(output_config_registry.keys()))
-    return {
+    schema = {
         "type": "array",
         "minItems": 1,
         "items": {
@@ -98,6 +116,12 @@ def get_output_feature_jsonschema():
             "title": "output_features",
         },
     }
+
+    if model_type == MODEL_GBM:
+        prune_gbm_features(schema)
+        schema["maxItems"] = 1
+
+    return schema
 
 
 @DeveloperAPI
