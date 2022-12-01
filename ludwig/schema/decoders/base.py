@@ -77,9 +77,7 @@ class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
     type: str = schema_utils.ProtectedString(
-        ["regressor"],
-        default="regressor",
-        allow_none=False,
+        "regressor",
         description="Type of decoder.",
     )
 

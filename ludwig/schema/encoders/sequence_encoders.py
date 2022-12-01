@@ -47,8 +47,6 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "embed",
-        default="embed",
-        allow_none=False,
         description="Type of encoder.",
     )
 
