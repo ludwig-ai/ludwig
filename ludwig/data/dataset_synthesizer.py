@@ -601,7 +601,7 @@ def cli(sys_argv):
         callback.on_cmdline("synthesize_dataset", *sys_argv)
 
     # No log level parameter this is placeholder if we add at later date
-    # args.logging_level = logging_level_registry[args.logging_level]
+    # args.logging_level = get_logging_level_registry[args.logging_level]
     # logging.getLogger('ludwig').setLevel(
     #     args.logging_level
     # )

@@ -28,7 +28,7 @@ from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
@@ -267,7 +267,7 @@ def cli(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("preprocess", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.preprocess")

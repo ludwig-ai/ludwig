@@ -16,18 +16,22 @@
 import logging
 from collections import OrderedDict
 from pprint import pformat
-from typing import Union
+from typing import Dict, Union
 
 from ludwig.api_annotations import DeveloperAPI
 
-logging_level_registry = {
-    "critical": logging.CRITICAL,
-    "error": logging.ERROR,
-    "warning": logging.WARNING,
-    "info": logging.INFO,
-    "debug": logging.DEBUG,
-    "notset": logging.NOTSET,
-}
+
+@DeveloperAPI
+def get_logging_level_registry() -> Dict[str, int]:
+    return {
+        "critical": logging.CRITICAL,
+        "error": logging.ERROR,
+        "warning": logging.WARNING,
+        "info": logging.INFO,
+        "debug": logging.DEBUG,
+        "notset": logging.NOTSET,
+    }
+
 
 logger = logging.getLogger(__name__)
 
