@@ -13,9 +13,5 @@ description: |
   Title, Genre, Description, Director, Actors, Year, Runtime, Rating, Votes, Revenue, Metascrore
   https://www.kaggle.com/PromptCloudHQ/imdb-data
 output_features:
-  - name: genre
-    type: category
-  - name: metascore
-    type: number
-  - name: rating
-    type: number
+- name: Genre_is_Drama
+  type: binary

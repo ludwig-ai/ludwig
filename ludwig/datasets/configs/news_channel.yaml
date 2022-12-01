@@ -15,5 +15,5 @@ description: |
   the number of shares in social networks (popularity).
   https://archive.ics.uci.edu/ml/datasets/online+news+popularity
 output_features:
-  - name: shares
-    type: number
+- name: channel
+  type: category

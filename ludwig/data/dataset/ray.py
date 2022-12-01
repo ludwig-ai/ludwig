@@ -175,6 +175,17 @@ class RayDataset(Dataset):
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
 
+    def repartition(self, num_blocks: int):
+        """Repartition the dataset into the specified number of blocks.
+
+        This operation occurs in place and overwrites `self.ds` with a
+        new repartitioned dataset.
+
+        Args:
+            num_blocks: Number of blocks in the repartitioned data.
+        """
+        self.ds = self.ds.repartition(num_blocks=num_blocks)
+
 
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
