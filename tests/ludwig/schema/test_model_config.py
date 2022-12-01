@@ -421,35 +421,33 @@ def test_defaults_mixins():
 
 def test_initializer_recursion():
     config = {
-        'input_features': [
-            {'name': 'category_B9834',
-             'type': 'category',
-             'encoder': {
-                 'type': 'dense',
-                 'vocab_size': 2,
-                 'embedding_size': 5
-             },
-             'reduce_input': 'sum',
-             'column': 'category_B9834',
-             'proc_column': 'category_B9834_mZFLky'
-             },
-            {'name': 'number_0F633',
-             'type': 'number',
-             'preprocessing': {'normalization': None},
-             'column': 'number_0F633',
-             'proc_column':
-                 'number_0F633_Dt2niI'
-             }],
-        'output_features': [{
-            'name': 'binary_52912',
-            'type': 'binary',
-            'weight_regularization': None,
-            'column': 'binary_52912',
-            'proc_column': 'binary_52912_mZFLky'}],
-        'combiner': {
-            'type': 'concat',
-            'weights_initializer': {'type': 'normal', 'stddev': 0}
-        }
+        "input_features": [
+            {
+                "name": "category_B9834",
+                "type": "category",
+                "encoder": {"type": "dense", "vocab_size": 2, "embedding_size": 5},
+                "reduce_input": "sum",
+                "column": "category_B9834",
+                "proc_column": "category_B9834_mZFLky",
+            },
+            {
+                "name": "number_0F633",
+                "type": "number",
+                "preprocessing": {"normalization": None},
+                "column": "number_0F633",
+                "proc_column": "number_0F633_Dt2niI",
+            },
+        ],
+        "output_features": [
+            {
+                "name": "binary_52912",
+                "type": "binary",
+                "weight_regularization": None,
+                "column": "binary_52912",
+                "proc_column": "binary_52912_mZFLky",
+            }
+        ],
+        "combiner": {"type": "concat", "weights_initializer": {"type": "normal", "stddev": 0}},
     }
 
     config_obj = ModelConfig(config)
