@@ -9,3 +9,7 @@ test_filenames: test.csv
 description: |
   The Titanic dataset: use machine learning to create a model
   that predicts which passengers survived the Titanic shipwreck.
+    https://www.kaggle.com/c/titanic
+output_features:
+    - name: Survived
+      type: binary

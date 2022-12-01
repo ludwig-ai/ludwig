@@ -208,6 +208,7 @@ def create_vocabulary(
     start_symbol: str = START_SYMBOL,
     stop_symbol: str = STOP_SYMBOL,
     pretrained_model_name_or_path: str = None,
+    ngram_size: Optional[int] = None,
     processor: DataFrameEngine = PANDAS,
 ):
     """Computes a vocabulary over the provided data frame.
@@ -236,6 +237,7 @@ def create_vocabulary(
         start_symbol: String representation for the START symbol.
         stop_symbol: String representation for the STOP symbol.
         pretrained_model_name_or_path: Name/path to huggingface model.
+        ngram_size: Size of the n-gram when using `ngram` tokenizer.
         processor: Which processor to use to process data.
 
     Returns:
@@ -256,6 +258,7 @@ def create_vocabulary(
     tokenizer = get_tokenizer_from_registry(tokenizer_type)(
         vocab_file=vocab_file,
         pretrained_model_name_or_path=pretrained_model_name_or_path,
+        ngram_size=ngram_size,
     )
 
     # Pre-trained huggingface tokenizer. Use the pre-existing vocabulary and special symbols.

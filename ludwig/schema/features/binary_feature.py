@@ -1,6 +1,7 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
+from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import ACCURACY, BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, LOSS, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -21,6 +22,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(BINARY)
 @dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -35,6 +37,7 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(BINARY)
 @dataclass(repr=False)
 class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
@@ -43,6 +46,7 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigM
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(BINARY)
 @dataclass
 class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -60,6 +64,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(BINARY)
 @dataclass(repr=False)
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConfigMixin):
@@ -102,3 +107,7 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
         description="The threshold used to convert output probabilities to predictions. Predicted probabilities greater"
         "than or equal to threshold are mapped to True.",
     )
+
+    @staticmethod
+    def get_output_metric_functions():
+        return {LOSS: None, ACCURACY: None, ROC_AUC: None}

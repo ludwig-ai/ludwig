@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
@@ -17,6 +18,7 @@ from ludwig.utils.registry import Registry
 trainer_schema_registry = Registry()
 
 
+@DeveloperAPI
 def register_trainer_schema(model_type: str):
     def wrap(trainer_config: BaseTrainerConfig):
         trainer_schema_registry[model_type] = trainer_config
@@ -25,6 +27,7 @@ def register_trainer_schema(model_type: str):
     return wrap
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
@@ -32,6 +35,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     pass
 
 
+@DeveloperAPI
 @register_trainer_schema("ecd_ray_legacy")
 @register_trainer_schema(MODEL_ECD)
 @dataclass(order=True)
@@ -295,16 +299,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     bucketing_field: str = schema_utils.String(
         default=None,
-        description="When not null, when creating batches, instead of shuffling randomly, the length along the last "
-        "dimension of the matrix of the specified input feature is used for bucketing examples and then "
-        "randomly shuffled examples from the same bin are sampled. Padding is trimmed to the longest "
-        "example in the batch. The specified feature should be either a sequence or text feature and the "
-        "encoder encoding it has to be rnn. When used, bucketing improves speed of rnn encoding up to "
-        "1.5x, depending on the length distribution of the inputs.",
+        description="Feature to use for bucketing datapoints",
         parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
 
+@DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
 @dataclass(repr=False, order=True)
 class GBMTrainerConfig(BaseTrainerConfig):
@@ -552,7 +552,9 @@ class GBMTrainerConfig(BaseTrainerConfig):
         description="Smoothing factor applied to tree nodes in the GBM trainer.",
     )
 
-    verbose: int = schema_utils.IntegerRange(default=-1, min=-1, max=2, description="Verbosity level for GBM trainer.")
+    verbose: int = schema_utils.IntegerOptions(
+        options=list(range(-1, 3)), allow_none=False, default=-1, description="Verbosity level for GBM trainer."
+    )
 
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
@@ -560,6 +562,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
 
+@DeveloperAPI
 def get_model_type_jsonschema():
     return {
         "type": "string",
@@ -570,6 +573,7 @@ def get_model_type_jsonschema():
     }
 
 
+@DeveloperAPI
 def get_trainer_jsonschema(model_type: str):
     trainer_cls = trainer_schema_registry[model_type]
     props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]

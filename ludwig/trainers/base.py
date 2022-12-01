@@ -43,6 +43,13 @@ class BaseTrainer(ABC):
     def shutdown(self):
         pass
 
+    @property
+    def local_rank(self) -> int:
+        return 0
+
+    def barrier(self):
+        pass
+
     # Functions needed to treat Trainer as a context manager
     def __enter__(self):
         return self

@@ -1,3 +1,4 @@
+import io
 import os
 from unittest import mock
 
@@ -103,3 +104,24 @@ def test_multifile_join_dataset(tmpdir, f_type):
 
         assert dataset.state == DatasetState.TRANSFORMED
     ludwig.datasets._get_dataset_configs.cache_clear()
+
+
+def test_get_datasets_info():
+    dataset_output_features = ludwig.datasets.get_datasets_output_features()
+    assert len(dataset_output_features) > 1
+    assert isinstance(dataset_output_features, dict)
+    assert dataset_output_features["titanic"].get("name", None)
+    assert dataset_output_features["titanic"].get("output_features", None)
+    assert isinstance(dataset_output_features["titanic"]["output_features"], list)
+    assert dataset_output_features["titanic"]["output_features"][0].get("name", None)
+    assert dataset_output_features["titanic"]["output_features"][0].get("type", None)
+
+    dataset_output_features = ludwig.datasets.get_datasets_output_features(dataset="titanic")
+    assert len(dataset_output_features["output_features"]) == 1
+    assert dataset_output_features["name"] == "titanic"
+
+
+def test_get_dataset_buffer():
+    buffer = ludwig.datasets.get_buffer("iris")
+
+    assert isinstance(buffer, io.BytesIO)

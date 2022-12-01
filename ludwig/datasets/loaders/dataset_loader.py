@@ -26,6 +26,7 @@ from urllib.parse import urlparse
 import pandas as pd
 from tqdm import tqdm
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.constants import SPLIT
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
@@ -90,6 +91,7 @@ def _sha256_digest(file_path) -> str:
     return hash.hexdigest()
 
 
+@PublicAPI
 class DatasetState(int, Enum):
     """The state of the dataset."""
 
@@ -99,6 +101,7 @@ class DatasetState(int, Enum):
     TRANSFORMED = 3
 
 
+@PublicAPI()
 class DatasetLoader:
     """Base class that defines the default pipeline for loading a ludwig dataset.
 
@@ -278,6 +281,8 @@ class DatasetLoader:
 
         :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
         0: train, 1: validation, 2: test.
+        :param kaggle_username: (str) Kaggle username for downloading datasets from Kaggle.
+        :param kaggle_key: (str) Kaggle key for downloading datasets from Kaggle.
         """
         self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         if self.state == DatasetState.TRANSFORMED:
@@ -297,7 +302,6 @@ class DatasetLoader:
                 kaggle_competition=self.config.kaggle_competition,
                 kaggle_username=kaggle_username,
                 kaggle_key=kaggle_key,
-                filenames=self.download_filenames,
             )
         else:
             for url, filename in zip(self.download_urls, self.download_filenames):

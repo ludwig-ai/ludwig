@@ -1,5 +1,6 @@
 from typing import Set
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.model_config import ModelConfig
@@ -7,6 +8,7 @@ from ludwig.typing import FeatureConfigDict, FeatureTypeDefaultsDict, Preprocess
 from ludwig.utils.misc_utils import get_from_registry
 
 
+@DeveloperAPI
 def get_feature_type_parameter_values_from_section(
     config: ModelConfig, features_section: str, feature_type: str, parameter_name: str
 ) -> Set:
@@ -24,6 +26,7 @@ def get_feature_type_parameter_values_from_section(
     return parameter_values
 
 
+@DeveloperAPI
 def get_defaults_section_for_feature_type(
     feature_type: str,
     config_defaults: FeatureTypeDefaultsDict,
@@ -51,6 +54,7 @@ def get_preprocessing_params(config_obj: ModelConfig) -> PreprocessingConfigDict
     return preprocessing_params
 
 
+@DeveloperAPI
 def merge_config_preprocessing_with_feature_specific_defaults(
     config_preprocessing: PreprocessingConfigDict, config_defaults: FeatureTypeDefaultsDict
 ) -> PreprocessingConfigDict:
@@ -63,6 +67,7 @@ def merge_config_preprocessing_with_feature_specific_defaults(
     return preprocessing_params
 
 
+@DeveloperAPI
 def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_group: str) -> str:
     """Returns the default encoder or decoder for a feature."""
     if config_feature_group == INPUT_FEATURES:

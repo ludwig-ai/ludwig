@@ -28,7 +28,7 @@ from ludwig.callbacks import Callback
 from ludwig.constants import FULL, TEST, TRAINING, VALIDATION
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import logging_level_registry, print_boxed, print_ludwig
+from ludwig.utils.print_utils import get_logging_level_registry, print_boxed, print_ludwig
 from ludwig.utils.strings_utils import make_safe_filename
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def collect_activations(
         for training.
     :param gpu_memory_limit: (float: default: `None`) maximum memory fraction
         [0, 1] allowed to allocate per GPU device.
-    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow
+    :param allow_parallel_threads: (bool, default: `True`) allow PyTorch
         to use multithreading parallelism to improve performance at
         the cost of determinism.
     :param callbacks: (list, default: `None`) a list of
@@ -278,7 +278,7 @@ def cli_collect_activations(sys_argv):
         "--disable_parallel_threads",
         action="store_false",
         dest="allow_parallel_threads",
-        help="disable TensorFlow from using multithreading for reproducibility",
+        help="disable PyTorch from using multithreading for reproducibility",
     )
     parser.add_argument(
         "-b",
@@ -302,7 +302,7 @@ def cli_collect_activations(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("collect_activations", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.collect")
@@ -358,7 +358,7 @@ def cli_collect_weights(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("collect_weights", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.collect")
@@ -406,7 +406,7 @@ def cli_collect_summary(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("collect_summary", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.collect")

@@ -2,7 +2,8 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from ludwig.typing import FeatureConfigDict
+from ludwig.constants import SPLIT
+from ludwig.typing import FeatureConfigDict, PreprocessingConfigDict
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.types import DataFrame
 
@@ -31,3 +32,18 @@ def convert_to_dict(
             feature_dict[subgroup] = values
         output[of_name] = feature_dict
     return output
+
+
+def set_fixed_split(preprocessing_params: PreprocessingConfigDict) -> PreprocessingConfigDict:
+    """Sets the split policy explicitly to a fixed split.
+
+    This potentially overrides the split configuration that the user set or what came from schema defaults.
+    """
+
+    return {
+        **preprocessing_params,
+        "split": {
+            "type": "fixed",
+            "column": SPLIT,
+        },
+    }

@@ -1,3 +1,4 @@
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -7,14 +8,17 @@ output_config_registry = Registry()
 output_mixin_registry = Registry()
 
 
+@DeveloperAPI
 def get_input_feature_cls(name: str):
     return input_config_registry[name]
 
 
+@DeveloperAPI
 def get_output_feature_cls(name: str):
     return output_config_registry[name]
 
 
+@DeveloperAPI
 def get_input_feature_jsonschema():
     """This function returns a JSON schema structured to only requires a `type` key and then conditionally applies
     a corresponding input feature's field constraints.
@@ -42,9 +46,11 @@ def get_input_feature_jsonschema():
             "required": ["name", "type"],
             "title": "input_features",
         },
+        "uniqueItemProperties": ["name"],
     }
 
 
+@DeveloperAPI
 def get_input_feature_conds():
     """This function returns a list of if-then JSON clauses for each input feature type along with their properties
     and constraints.
@@ -63,6 +69,7 @@ def get_input_feature_conds():
     return conds
 
 
+@DeveloperAPI
 def get_output_feature_jsonschema():
     """This function returns a JSON schema structured to only requires a `type` key and then conditionally applies
     a corresponding output feature's field constraints.
@@ -93,6 +100,7 @@ def get_output_feature_jsonschema():
     }
 
 
+@DeveloperAPI
 def get_output_feature_conds():
     """This function returns a list of if-then JSON clauses for each output feature type along with their
     properties and constraints.

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import logging
 import math
 import queue
 import threading
@@ -36,9 +37,12 @@ from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.typing import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
+
+logger = logging.getLogger(__name__)
 
 _ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
 _ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
@@ -59,13 +63,19 @@ else:
         return series.astype(TensorDtype())
 
 
+@default_retry()
 def read_remote_parquet(path: str):
     fs, path = get_fs_and_path(path)
     return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
 
 class RayDataset(Dataset):
-    """Wrapper around ray.data.Dataset."""
+    """Wrapper around ray.data.Dataset.
+
+    Attributes:
+        auto_window: If True and the dataset is larger than available memory,
+            automatically set window size to `<available memory> // 5`.
+    """
 
     def __init__(
         self,
@@ -73,6 +83,7 @@ class RayDataset(Dataset):
         features: Dict[str, FeatureConfigDict],
         training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
+        auto_window: bool = False,
     ):
         self.df_engine = backend.df_engine
         self.ds = self.df_engine.to_ray_dataset(df) if not isinstance(df, str) else read_remote_parquet(df)
@@ -80,6 +91,8 @@ class RayDataset(Dataset):
         self.training_set_metadata = training_set_metadata
         self.data_hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
+        self._processed_data_fp = df if isinstance(df, str) else None
+        self.auto_window = auto_window
 
         # TODO ray 1.8: convert to Tensors before shuffle
         # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
@@ -100,8 +113,22 @@ class RayDataset(Dataset):
             shuffle: If true, the entire dataset is shuffled in memory before batching.
             fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
             window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
-                    for the dataset.
+                    for the dataset. If None and the dataset is large, set to the window size determined at init.
         """
+        # If the user does not supply a window size and the dataset is large,
+        # set the window size to `<available memory> // 5`.
+        if self.auto_window and window_size_bytes is None:
+            ds_memory_size = self.in_memory_size_bytes
+            cluster_memory_size = ray.cluster_resources()["object_store_memory"]
+            if ds_memory_size > cluster_memory_size // 5:
+                # TODO: Add link to windowing docs.
+                logger.info(
+                    "In-memory dataset size is greater than 20%% of object store memory. "
+                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
+                    # "Read more here:"
+                )
+                window_size_bytes = int(cluster_memory_size // 5)
+
         if fully_executed:
             if _ray113:
                 # Workaround for: https://github.com/ray-project/ray/issues/25643
@@ -137,6 +164,10 @@ class RayDataset(Dataset):
         return len(self)
 
     @property
+    def processed_data_fp(self) -> Optional[str]:
+        return self._processed_data_fp
+
+    @property
     def in_memory_size_bytes(self):
         """Memory size may be unknown, so return 0 incase size_bytes() returns None
         https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
@@ -145,15 +176,37 @@ class RayDataset(Dataset):
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
 
+    def repartition(self, num_blocks: int):
+        """Repartition the dataset into the specified number of blocks.
+
+        This operation occurs in place and overwrites `self.ds` with a
+        new repartitioned dataset.
+
+        Args:
+            num_blocks: Number of blocks in the repartitioned data.
+        """
+        self.ds = self.ds.repartition(num_blocks=num_blocks)
+
 
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
 
     def create(
-        self, dataset: Union[str, DataFrame], config: ModelConfigDict, training_set_metadata: TrainingSetMetadataDict
-    ):
-        return RayDataset(dataset, get_proc_features(config), training_set_metadata, self.backend)
+        self,
+        dataset: Union[str, DataFrame],
+        config: ModelConfigDict,
+        training_set_metadata: TrainingSetMetadataDict,
+        auto_window: bool = False,
+    ) -> "RayDataset":
+        """Create a new Ray dataset with config.
+
+        Args:
+            auto_window: If True, enable autosizing of data windows for large datasets.
+        """
+        return RayDataset(
+            dataset, get_proc_features(config), training_set_metadata, self.backend, auto_window=auto_window
+        )
 
     def save(
         self,

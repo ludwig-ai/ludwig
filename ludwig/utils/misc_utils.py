@@ -25,12 +25,14 @@ from collections.abc import Mapping
 import numpy
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ENCODER, NAME, PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
 
 
+@DeveloperAPI
 def set_random_seed(random_seed):
     os.environ["PYTHONHASHSEED"] = str(random_seed)
     random.seed(random_seed)
@@ -40,6 +42,7 @@ def set_random_seed(random_seed):
         torch.cuda.manual_seed(random_seed)
 
 
+@DeveloperAPI
 def merge_dict(dct, merge_dct):
     """Recursive dict merge. Inspired by :meth:``dict.update()``, instead of updating only top-level keys,
     dict_merge recurses down into dicts nested to an arbitrary depth, updating keys. The ``merge_dct`` is merged
@@ -58,6 +61,7 @@ def merge_dict(dct, merge_dct):
     return dct
 
 
+@DeveloperAPI
 def sum_dicts(dicts, dict_type=dict):
     summed_dict = dict_type()
     for d in dicts:
@@ -75,6 +79,7 @@ def sum_dicts(dicts, dict_type=dict):
     return summed_dict
 
 
+@DeveloperAPI
 def resolve_pointers(dict1, dict2, dict2_name):
     resolved_dict = copy.deepcopy(dict1)
     for key in dict1:
@@ -91,6 +96,7 @@ def resolve_pointers(dict1, dict2, dict2_name):
     return resolved_dict
 
 
+@DeveloperAPI
 def get_from_registry(key, registry):
     if hasattr(key, "lower"):
         key = key.lower()
@@ -100,11 +106,13 @@ def get_from_registry(key, registry):
         raise ValueError(f"Key {key} not supported, available options: {registry.keys()}")
 
 
+@DeveloperAPI
 def set_default_value(dictionary, key, value):
     if key not in dictionary:
         dictionary[key] = value
 
 
+@DeveloperAPI
 def set_default_values(dictionary: dict, default_value_dictionary: dict):
     """This function sets multiple default values recursively for various areas of the config. By using the helper
     function set_default_value, It parses input values that contain nested dictionaries, only setting values for
@@ -125,15 +133,18 @@ def set_default_values(dictionary: dict, default_value_dictionary: dict):
             set_default_value(dictionary, key, value)
 
 
+@DeveloperAPI
 def get_class_attributes(c):
     return {i for i in dir(c) if not callable(getattr(c, i)) and not i.startswith("_")}
 
 
+@DeveloperAPI
 def get_output_directory(output_directory, experiment_name, model_name="run"):
     base_dir_name = os.path.join(output_directory, experiment_name + ("_" if model_name else "") + (model_name or ""))
     return fs_utils.abspath(find_non_existing_dir_by_adding_suffix(base_dir_name))
 
 
+@DeveloperAPI
 def get_file_names(output_directory):
     description_fn = os.path.join(output_directory, DESCRIPTION_FILE_NAME)
     training_stats_fn = os.path.join(output_directory, "training_statistics.json")
@@ -143,18 +154,22 @@ def get_file_names(output_directory):
     return description_fn, training_stats_fn, model_dir
 
 
+@DeveloperAPI
 def get_combined_features(config):
     return config["input_features"] + config["output_features"]
 
 
+@DeveloperAPI
 def get_proc_features(config):
     return get_proc_features_from_lists(config["input_features"], config["output_features"])
 
 
+@DeveloperAPI
 def get_proc_features_from_lists(*args):
     return {feature[PROC_COLUMN]: feature for features in args for feature in features}
 
 
+@DeveloperAPI
 def set_saved_weights_in_checkpoint_flag(config_obj):
     """Adds a flag to all input feature encoder configs indicating that the weights are saved in the checkpoint.
 
@@ -167,12 +182,14 @@ def set_saved_weights_in_checkpoint_flag(config_obj):
         encoder_obj.saved_weights_in_checkpoint = True
 
 
+@DeveloperAPI
 def remove_empty_lines(str):
     return "\n".join([line.rstrip() for line in str.split("\n") if line.rstrip()])
 
 
 # TODO(travis): move to cached_property when we drop Python 3.7.
 # https://stackoverflow.com/a/33672499
+@DeveloperAPI
 def memoized_method(*lru_args, **lru_kwargs):
     def decorator(func):
         @functools.wraps(func)
@@ -194,6 +211,7 @@ def memoized_method(*lru_args, **lru_kwargs):
     return decorator
 
 
+@DeveloperAPI
 def get_commit_hash():
     """If Ludwig is run from a git repository, get the commit hash of the current HEAD.
 

@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend, LOCAL_BACKEND
 from ludwig.constants import (
     BFILL,
@@ -54,6 +55,7 @@ from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
+from ludwig.data.utils import set_fixed_split
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
@@ -1191,12 +1193,22 @@ def build_dataset(
         )
 
     splitter = get_splitter(**split_params)
-    for col in splitter.required_columns:
-        proc_cols[col] = dataset_df[col]
+    for column in splitter.required_columns:
+        if column not in dataset_df:
+            warnings.warn(
+                f"column: '{column}' is required by the dataset splitter with params: {split_params}, but '{column}' "
+                f"is not present in the `dataset_df` with columns: {dataset_df.columns}. This is acceptable in a "
+                "serving setting where dataset splitting is irrelevant. You may see this warning if, for example, the "
+                "model was trained with a configuration that used a stratified split on the target column, but for "
+                "live predictions, a value for the target column is not to be provided."
+            )
+            continue
+        proc_cols[column] = dataset_df[column]
 
-    # TODO ray: this is needed because ray 1.7 doesn't support Dask to RayDataset
-    #  conversion with Tensor columns. Can remove for 1.8.
-    if backend.df_engine.partitioned:
+    # TODO pyarrow: this is needed for caching to work with pyarrow. if removed, the following error is raised:
+    # "pyarrow.lib.ArrowInvalid: Can only convert 1-dimensional array values". The data is reshaped when loaded
+    # by the batcher in the RayDataset class (see _prepare_batch).
+    if not skip_save_processed_input and backend.cache.data_format == "parquet":
         for feature in features:
             name = feature[NAME]
             proc_column = feature[PROC_COLUMN]
@@ -1456,6 +1468,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: Prepr
     return None
 
 
+@DeveloperAPI
 def handle_missing_values(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
 
@@ -1753,20 +1766,8 @@ def _preprocess_file_for_training(
         concatenated_df = concatenate_files(training_set, validation_set, test_set, read_fn, backend)
         training_set_metadata[SRC] = training_set
 
-        # Data is pre-split, so we override whatever split policy the user specified
-        if preprocessing_params["split"]:
-            warnings.warn(
-                'Preprocessing "split" section provided, but pre-split dataset given as input. '
-                "Ignoring split configuration."
-            )
-
-        preprocessing_params = {
-            **preprocessing_params,
-            "split": {
-                "type": "fixed",
-                "column": SPLIT,
-            },
-        }
+        # Data is pre-split.
+        preprocessing_params = set_fixed_split(preprocessing_params)
 
         data, training_set_metadata = build_dataset(
             concatenated_df,
@@ -1789,7 +1790,13 @@ def _preprocess_file_for_training(
         logger.debug("writing split file")
         splits_df = concatenate_splits(training_data, validation_data, test_data, backend)
         split_fp = get_split_path(dataset or training_set)
-        backend.df_engine.to_parquet(splits_df, split_fp, index=True)
+        try:
+            backend.df_engine.to_parquet(splits_df, split_fp, index=True)
+        except Exception as e:
+            logger.warning(
+                f"Encountered error: '{e}' while writing data to parquet during saving preprocessed data. "
+                "Skipping saving processed data."
+            )
 
     logger.info("Building dataset: DONE")
     if preprocessing_params["oversample_minority"] or preprocessing_params["undersample_majority"]:
@@ -1824,20 +1831,8 @@ def _preprocess_df_for_training(
         logger.info("Using training dataframe")
         dataset = concatenate_df(training_set, validation_set, test_set, backend)
 
-        # Data is pre-split, so we override whatever split policy the user specified
-        if preprocessing_params["split"]:
-            warnings.warn(
-                'Preprocessing "split" section provided, but pre-split dataset given as input. '
-                "Ignoring split configuration."
-            )
-
-        preprocessing_params = {
-            **preprocessing_params,
-            "split": {
-                "type": "fixed",
-                "column": SPLIT,
-            },
-        }
+        # Data is pre-split.
+        preprocessing_params = set_fixed_split(preprocessing_params)
 
     logger.info("Building dataset (it may take a while)")
 

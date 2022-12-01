@@ -19,20 +19,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import torch
 
-from ludwig.constants import (
-    ACCURACY,
-    BINARY,
-    COLUMN,
-    HIDDEN,
-    LOGITS,
-    LOSS,
-    NAME,
-    PREDICTIONS,
-    PROBABILITIES,
-    PROBABILITY,
-    PROC_COLUMN,
-    ROC_AUC,
-)
+from ludwig.constants import BINARY, COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, PROC_COLUMN
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.binary_feature import BinaryInputFeatureConfig, BinaryOutputFeatureConfig
@@ -261,7 +248,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    metric_functions = {LOSS: None, ACCURACY: None, ROC_AUC: None}
+    metric_functions = BinaryOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

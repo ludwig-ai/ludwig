@@ -5,4 +5,7 @@ sha256:
   yosemite_temps.csv: c0ec9f2cb4bbf0bc53f7bfd2e39f88ae21e43b7b8912b2d1eb8185055f9510e2
 description: |
     Yosemite temperatures dataset.
-    As found in https://github.com/ourownstory/neural_prophet.
+    As found in https://github.com/ourownstory/neural_prophet
+output_features:
+  - name: y
+    type: number

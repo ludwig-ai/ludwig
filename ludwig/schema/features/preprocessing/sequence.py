@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -8,6 +9,7 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 from ludwig.utils import strings_utils
 
 
+@DeveloperAPI
 @register_preprocessor(SEQUENCE)
 @dataclass(repr=False)
 class SequencePreprocessingConfig(BasePreprocessingConfig):
@@ -96,7 +98,15 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["computed_fill_value"],
     )
 
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["ngram_size"],
+    )
 
+
+@DeveloperAPI
 @register_preprocessor("sequence_output")
 @dataclass(repr=False)
 class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):

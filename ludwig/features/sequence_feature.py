@@ -23,20 +23,14 @@ import torch
 
 from ludwig.constants import (
     COLUMN,
-    EDIT_DISTANCE,
-    LAST_ACCURACY,
     LAST_PREDICTIONS,
     LENGTHS,
-    LOSS,
     NAME,
-    PERPLEXITY,
     PREDICTIONS,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
     SEQUENCE,
-    SEQUENCE_ACCURACY,
-    TOKEN_ACCURACY,
 )
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
@@ -211,6 +205,7 @@ class SequenceFeatureMixin(BaseFeatureMixin):
             vocab_file=preprocessing_parameters["vocab_file"],
             unknown_symbol=preprocessing_parameters["unknown_symbol"],
             padding_symbol=preprocessing_parameters["padding_symbol"],
+            ngram_size=preprocessing_parameters["ngram_size"],
             processor=backend.df_engine,
         )
         max_length = min(preprocessing_parameters["max_sequence_length"], max_length)
@@ -306,14 +301,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    metric_functions = {
-        LOSS: None,
-        TOKEN_ACCURACY: None,
-        SEQUENCE_ACCURACY: None,
-        LAST_ACCURACY: None,
-        PERPLEXITY: None,
-        EDIT_DISTANCE: None,
-    }
+    metric_functions = SequenceOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

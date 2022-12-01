@@ -9,6 +9,7 @@ tqdm
 torch>=1.10.0
 torchaudio
 torchtext
+sentencepiece
 torchvision>=0.10.1
 transformers>=4.10.1,<4.22
 spacy>=2.3
@@ -33,10 +34,12 @@ experiment_impact_tracker
 gpustat
 rich~=12.4.4
 packaging
-
+retry
 # new data format support
 xlwt            # excel
 xlrd            # excel
 openpyxl        # excel
 pyarrow==6.0.1  # parquet https://github.com/ray-project/ray/issues/22310
 lxml            # html
+
+whylogs>=1.1.9

@@ -29,7 +29,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import AUDIO, COLUMN
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 from ludwig.utils.server_utils import NumpyJSONResponse
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,14 @@ def server(model, allowed_origins=None):
 
         try:
             if (entry.keys() & input_features) != input_features:
-                return NumpyJSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
+                missing_features = set(input_features) - set(entry.keys())
+                return NumpyJSONResponse(
+                    {
+                        "error": "Data received does not contain all input features. "
+                        f"Missing features: {missing_features}."
+                    },
+                    status_code=400,
+                )
             try:
                 resp, _ = model.predict(dataset=[entry], data_format=dict)
                 resp = resp.to_dict("records")[0]
@@ -101,7 +108,14 @@ def server(model, allowed_origins=None):
             return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
         if (set(data_df.columns) & input_features) != input_features:
-            return NumpyJSONResponse(ALL_FEATURES_PRESENT_ERROR, status_code=400)
+            missing_features = set(input_features) - set(data_df.columns)
+            return NumpyJSONResponse(
+                {
+                    "error": "Data received does not contain all input features. "
+                    f"Missing features: {missing_features}."
+                },
+                status_code=400,
+            )
         try:
             resp, _ = model.predict(dataset=data_df)
             resp = resp.to_dict("split")
@@ -240,7 +254,7 @@ def cli(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("serve", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.serve")

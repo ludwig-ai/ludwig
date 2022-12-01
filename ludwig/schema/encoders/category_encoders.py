@@ -2,6 +2,7 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -9,28 +10,26 @@ from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
+@DeveloperAPI
 @register_encoder_config("passthrough", CATEGORY)
 @dataclass(order=True)
 class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
     """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
     passthrough encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["passthrough"],
-        default="passthrough",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "passthrough",
         description="Type of encoder.",
     )
 
 
+@DeveloperAPI
 @register_encoder_config("dense", CATEGORY)
 @dataclass(repr=False, order=True)
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["dense"],
-        default="dense",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "dense",
         description="Type of encoder.",
     )
 
@@ -112,14 +111,13 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("sparse", CATEGORY)
 @dataclass(repr=False, order=True)
 class CategoricalSparseConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["sparse"],
-        default="sparse",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "sparse",
         description="Type of encoder.",
     )
 

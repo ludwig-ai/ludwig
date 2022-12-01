@@ -23,7 +23,7 @@ from ludwig.api import LudwigModel
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.neuropod_utils import export_neuropod as utils_export_neuropod
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 from ludwig.utils.triton_utils import export_triton as utils_export_triton
 
 logger = logging.getLogger(__name__)
@@ -197,7 +197,7 @@ def cli_export_torchscript(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("export_torchscript", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.export")
@@ -244,7 +244,7 @@ def cli_export_triton(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("export_triton", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.export")
@@ -290,7 +290,7 @@ def cli_export_neuropod(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("export_neuropod", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.export")
@@ -342,7 +342,7 @@ def cli_export_mlflow(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("export_mlflow", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.export")

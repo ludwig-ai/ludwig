@@ -20,13 +20,10 @@ import numpy as np
 import torch
 
 from ludwig.constants import (
-    ACCURACY,
     CATEGORY,
     COLUMN,
     HIDDEN,
-    HITS_AT_K,
     LOGITS,
-    LOSS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -138,7 +135,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 
     @staticmethod
-    def feature_data(column, metadata):
+    def feature_data(backend, column, metadata):
         def __replace_token_with_idx(value: Any, metadata: TrainingSetMetadataDict, fallback_symbol_idx: int) -> int:
             stripped_value = value.strip()
             if stripped_value in metadata["str2idx"]:
@@ -163,16 +160,20 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             # If no unknown is defined, just use the most popular token's index as the fallback index
             most_popular_token = max(metadata["str2freq"], key=metadata["str2freq"].get)
             most_popular_token_idx = metadata["str2idx"].get(most_popular_token)
-            return column.map(lambda x: __replace_token_with_idx(x, metadata, most_popular_token_idx)).astype(
-                int_type(metadata["vocab_size"])
-            )
+            return backend.df_engine.map_objects(
+                column,
+                lambda x: __replace_token_with_idx(x, metadata, most_popular_token_idx),
+                meta=(column.name, int),
+            ).astype(int_type(metadata["vocab_size"]))
         else:
-            return column.map(
+            return backend.df_engine.map_objects(
+                column,
                 lambda x: (
                     metadata["str2idx"][x.strip()]
                     if x.strip() in metadata["str2idx"]
                     else metadata["str2idx"][UNKNOWN_SYMBOL]
-                )
+                ),
+                meta=(column.name, int),
             ).astype(int_type(metadata["vocab_size"]))
 
     @staticmethod
@@ -186,6 +187,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
+            backend,
             input_df[feature_config[COLUMN]],
             metadata[feature_config[NAME]],
         )
@@ -247,7 +249,7 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
+    metric_functions = CategoryOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

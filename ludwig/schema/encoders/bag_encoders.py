@@ -2,6 +2,7 @@ from typing import List
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -9,14 +10,13 @@ from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 
 
+@DeveloperAPI
 @register_encoder_config("embed", BAG)
 @dataclass(repr=False, order=True)
 class BagEmbedWeightedConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["embed"],
-        default="embed",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "embed",
         description="Type of encoder.",
     )
 

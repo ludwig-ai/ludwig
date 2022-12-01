@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import NAME
 from ludwig.typing import ModelConfigDict
 from ludwig.utils.fs_utils import open_file
@@ -55,6 +56,7 @@ def _get_output_dicts(config: ModelConfigDict) -> str:
     return "{" + ", ".join(results) + "}"
 
 
+@DeveloperAPI
 def generate_neuropod_torchscript(model: LudwigModel):
     config = model.config
     inference_module = model.to_torchscript()
@@ -102,6 +104,7 @@ def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
     return spec
 
 
+@DeveloperAPI
 def export_neuropod(model: LudwigModel, neuropod_path: str, neuropod_model_name="ludwig_model"):
     try:
         from neuropod.backends.torchscript.packager import create_torchscript_neuropod
