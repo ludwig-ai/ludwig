@@ -287,12 +287,12 @@ class RayDatasetBatcher(Batcher):
         self._fetch_next_epoch()
 
     def _set_ignore_last(self, ignore_last: bool = False) -> bool:
-        if ignore_last and self.batch_size > self.samples_per_epoch:
-            # If the number of samples < batch size, then manually override
-            # ignore_last since Ray will drop all the rows during the iter_batches() call
-            logger.debug("Setting ignore_last to False to prevent infinite stall during training.")
-            return False
-        return True
+        """Set ignore_last based on batch_size and samples_per_epoch."""
+        # Only drop the last batch if it has 1 row, otherwise keep the incomplete last batch
+        if ignore_last and self.samples_per_epoch % self.batch_size == 1:
+            logger.info("Last batch in epoch only has 1 sample and will be dropped.")
+            return True
+        return False
 
     def next_batch(self):
         if self.last_batch():
