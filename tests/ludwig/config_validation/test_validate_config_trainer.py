@@ -1,8 +1,8 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import TRAINER
 from ludwig.config_validation import validate_config
+from ludwig.constants import TRAINER
 from ludwig.schema.optimizers import optimizer_registry
 from ludwig.schema.trainer import ECDTrainerConfig
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
