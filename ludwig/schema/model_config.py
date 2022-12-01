@@ -453,12 +453,6 @@ class ModelConfig(BaseMarshmallowConfig):
 
             # Base case for setting values on leaves
             else:
-                print("Set BASE VALUE!")
-                print(f"key: {key}")
-                print(f"val: {val}")
-                print(f"feature_type: {feature_type}")
-                print(f"config_obj_lvl: {config_obj_lvl}")
-                print(f"type(config_obj_lvl): {type(config_obj_lvl)}")
                 setattr(config_obj_lvl, key, val)
 
     def _set_gbm_attributes(self, config_dict: dict) -> None:
