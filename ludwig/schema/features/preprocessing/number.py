@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, NUMBER, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -7,6 +8,7 @@ from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
+@DeveloperAPI
 @register_preprocessor(NUMBER)
 @dataclass(repr=False)
 class NumberPreprocessingConfig(BasePreprocessingConfig):
@@ -20,14 +22,14 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["missing_value_strategy"],
     )
 
-    fill_value: float = schema_utils.NonNegativeFloat(
+    fill_value: float = schema_utils.FloatRange(
         default=0.0,
         allow_none=False,
         description="The value to replace missing values with in case the missing_value_strategy is fill_with_const",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["fill_value"],
     )
 
-    computed_fill_value: float = schema_utils.NonNegativeFloat(
+    computed_fill_value: float = schema_utils.FloatRange(
         default=0.0,
         allow_none=False,
         description="The internally computed fill value to replace missing values with in case the "
@@ -36,7 +38,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
     )
 
     normalization: str = schema_utils.StringOptions(
-        ["zscore", "minmax", "log1p"],
+        ["zscore", "minmax", "log1p", "iq"],
         default=None,
         allow_none=True,
         description="Normalization strategy to use for this number feature.",
@@ -44,6 +46,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
     )
 
 
+@DeveloperAPI
 @register_preprocessor("number_output")
 @dataclass(repr=False)
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):

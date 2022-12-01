@@ -31,8 +31,8 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
+from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
-from ludwig.hyperopt.search_algos import get_search_algorithm
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
@@ -135,7 +135,7 @@ class RayTuneExecutor:
         metric: str,
         goal: str,
         split: str,
-        search_alg: Optional[Dict] = None,
+        search_alg: Dict,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
@@ -145,6 +145,9 @@ class RayTuneExecutor:
         scheduler: Optional[Dict] = None,
         **kwargs,
     ) -> None:
+        # Force-populate the search algorithm registry
+        import ludwig.hyperopt.search_algos  # noqa
+
         if ray is None:
             raise ImportError("ray module is not installed. To install it, try running pip install ray")
         self.output_feature = output_feature
@@ -154,7 +157,7 @@ class RayTuneExecutor:
         self.search_space, self.decode_ctx = self._get_search_space(parameters)
         self.num_samples = num_samples
         self.goal = goal
-        self.search_algorithm = get_search_algorithm(search_alg)
+        self.search_algorithm = instantiate_search_algorithm(search_alg)
         self.scheduler = None if scheduler is None else tune.create_scheduler(scheduler[TYPE], **scheduler)
         self.output_feature = output_feature
         self.metric = metric
@@ -802,7 +805,7 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        @ray.remote
+        @ray.remote(num_cpus=0)
         def _register(name, trainable):
             register_trainable(name, trainable)
 

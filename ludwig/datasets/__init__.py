@@ -1,11 +1,13 @@
 import argparse
 import importlib
 import os
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Dict, List
 
 import yaml
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.datasets import configs, model_configs
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.globals import LUDWIG_VERSION
@@ -63,6 +65,7 @@ def _get_model_configs(dataset_name: str) -> Dict[str, Dict]:
     return configs
 
 
+@PublicAPI
 def get_dataset(dataset_name, cache_dir=None) -> Any:
     """Gets an instance of the dataset loader for a dataset."""
     config = _get_dataset_config(dataset_name)
@@ -75,16 +78,38 @@ def get_dataset(dataset_name, cache_dir=None) -> Any:
     return loader_cls(config)
 
 
+@PublicAPI
 def list_datasets() -> List[str]:
     """Returns a list of the names of all available datasets."""
     return sorted(_get_dataset_configs().keys())
 
 
+@PublicAPI
+def get_datasets_output_features(dataset: str = None) -> dict:
+    """Returns a dictionary with the output features for each dataset. Optionally, you can pass a dataset name
+    which will then cause the function to return a dictionary with the output features for that dataset.
+
+    :param dataset: (str) name of the dataset
+    :return: (dict) dictionary with the output features for each dataset or a dictionary with the output features for
+                    the specified dataset
+    """
+    ordered_configs = OrderedDict(sorted(_get_dataset_configs().items()))
+
+    for name, config in ordered_configs.items():
+        ordered_configs[name] = {"name": config.name, "output_features": config.output_features}
+
+    if dataset:
+        return ordered_configs[dataset]
+    return ordered_configs
+
+
+@PublicAPI
 def describe_dataset(dataset_name: str) -> str:
     """Returns the description of the dataset."""
     return _get_dataset_configs()[dataset_name].description
 
 
+@PublicAPI
 def model_configs_for_dataset(dataset_name: str) -> Dict[str, Dict]:
     """Returns a dictionary of built-in model configs for the specified dataset.
 
@@ -93,8 +118,10 @@ def model_configs_for_dataset(dataset_name: str) -> Dict[str, Dict]:
     return _get_model_configs(dataset_name)
 
 
+@PublicAPI
 def download_dataset(dataset_name: str, output_dir: str = "."):
     """Downloads the dataset to the specified directory."""
+    output_dir = os.path.expanduser(os.path.normpath(output_dir))
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
 

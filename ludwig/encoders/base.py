@@ -16,9 +16,11 @@
 
 from abc import ABC, abstractmethod
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.torch_utils import LudwigModule
 
 
+@DeveloperAPI
 class Encoder(LudwigModule, ABC):
     @abstractmethod
     def forward(self, inputs, training=None, mask=None):

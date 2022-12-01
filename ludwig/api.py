@@ -36,6 +36,7 @@ import torch
 from marshmallow_dataclass import dataclass
 from tabulate import tabulate
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.backend import Backend, initialize_backend, provision_preprocessing_workers
 from ludwig.callbacks import Callback
 from ludwig.constants import (
@@ -100,6 +101,7 @@ from ludwig.utils.types import TorchDevice
 logger = logging.getLogger(__name__)
 
 
+@PublicAPI
 @dataclass
 class EvaluationFrequency:
     """Represents the frequency of periodic evaluation of a metric during training. For example:
@@ -118,6 +120,7 @@ class EvaluationFrequency:
     STEP: ClassVar[str] = "step"  # One step is training on one mini-batch.
 
 
+@PublicAPI
 @dataclass
 class TrainingStats:
     """Training stats were previously represented as a tuple or a dict.
@@ -146,6 +149,7 @@ class TrainingStats:
         return {TRAINING: self.training, VALIDATION: self.validation, TEST: self.test}[key]
 
 
+@PublicAPI
 @dataclass
 class PreprocessedDataset:
     training_set: Dataset
@@ -161,6 +165,7 @@ class PreprocessedDataset:
         return (self.training_set, self.validation_set, self.test_set, self.training_set_metadata)[index]
 
 
+@PublicAPI
 @dataclass
 class TrainingResults:
     train_stats: TrainingStats
@@ -182,6 +187,7 @@ class TrainingResults:
         return (self.train_stats, self.preprocessed_data, self.output_directory)[index]
 
 
+@PublicAPI
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
@@ -438,7 +444,9 @@ class LudwigModel:
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
-                    logger.info("Model resume path does not exists, " "starting training from scratch")
+                    logger.info(
+                        f"Model resume path '{model_resume_path}' does not exist, starting training from scratch"
+                    )
                 model_resume_path = None
 
         if model_resume_path is None:
@@ -516,34 +524,27 @@ class LudwigModel:
                         print_boxed("LUDWIG CONFIG")
                         logger.info(pformat(self.config_obj.to_dict(), indent=4))
 
-                for callback in self.callbacks:
-                    callback.on_preprocess_start(self.config_obj.to_dict())
-
-                try:
-                    preprocessed_data = self.preprocess(
-                        dataset=dataset,
-                        training_set=training_set,
-                        validation_set=validation_set,
-                        test_set=test_set,
-                        training_set_metadata=training_set_metadata,
-                        data_format=data_format,
-                        experiment_name=experiment_name,
-                        model_name=model_name,
-                        model_resume_path=model_resume_path,
-                        skip_save_training_description=skip_save_training_description,
-                        skip_save_training_statistics=skip_save_training_statistics,
-                        skip_save_model=skip_save_model,
-                        skip_save_progress=skip_save_progress,
-                        skip_save_log=skip_save_log,
-                        skip_save_processed_input=skip_save_processed_input,
-                        output_directory=output_directory,
-                        random_seed=random_seed,
-                        **kwargs,
-                    )
-                    (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
-                finally:
-                    for callback in self.callbacks:
-                        callback.on_preprocess_end(training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = self.preprocess(
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    model_resume_path=model_resume_path,
+                    skip_save_training_description=skip_save_training_description,
+                    skip_save_training_statistics=skip_save_training_statistics,
+                    skip_save_model=skip_save_model,
+                    skip_save_progress=skip_save_progress,
+                    skip_save_log=skip_save_log,
+                    skip_save_processed_input=skip_save_processed_input,
+                    output_directory=output_directory,
+                    random_seed=random_seed,
+                    **kwargs,
+                )
+                (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
 
             self.training_set_metadata = training_set_metadata
 
@@ -1378,28 +1379,35 @@ class LudwigModel:
         """
         print_boxed("PREPROCESSING")
 
+        for callback in self.callbacks:
+            callback.on_preprocess_start(self.config_obj.to_dict())
+
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
-        with provision_preprocessing_workers(self.backend):
-            # TODO (Connor): Refactor to use self.config_obj
-            preprocessed_data = preprocess_for_training(
-                self.config_obj.to_dict(),
-                dataset=dataset,
-                training_set=training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                training_set_metadata=training_set_metadata,
-                data_format=data_format,
-                skip_save_processed_input=skip_save_processed_input,
-                preprocessing_params=preprocessing_params,
-                backend=self.backend,
-                random_seed=random_seed,
-                callbacks=self.callbacks,
-            )
+        try:
+            with provision_preprocessing_workers(self.backend):
+                # TODO (Connor): Refactor to use self.config_obj
+                preprocessed_data = preprocess_for_training(
+                    self.config_obj.to_dict(),
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    backend=self.backend,
+                    random_seed=random_seed,
+                    callbacks=self.callbacks,
+                )
 
-        (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
+            (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 
-        return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
+            return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
+        finally:
+            for callback in self.callbacks:
+                callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
 
     @staticmethod
     def load(
@@ -1664,6 +1672,7 @@ class LudwigModel:
         self.config_obj = ModelConfig.from_dict(self._user_config)
 
 
+@PublicAPI
 def kfold_cross_validate(
     num_folds: int,
     config: Union[dict, str],
@@ -1885,6 +1894,7 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+@PublicAPI
 def get_experiment_description(
     config,
     dataset=None,

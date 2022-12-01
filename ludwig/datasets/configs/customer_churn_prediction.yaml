@@ -1,0 +1,15 @@
+version: 1.0
+name: customer_churn_prediction
+kaggle_competition: customer-churn-prediction-2020
+archive_filenames: customer-churn-prediction-2020.zip
+train_filenames: train.csv
+test_filenames: test.csv
+sha256:
+  customer-churn-prediction-2020.zip: fb5cbc787081a6a559592230c657a0520a181447da6eb2adc34a3aebbe8ed9ca
+description: |
+  Dataset from a Kaggle competition that is about predicting whether a customer will change
+  telecommunications provider, something known as "churning".
+  https://www.kaggle.com/c/customer-churn-prediction-2020
+output_features:
+  - name: churn
+    type: binary

@@ -9,11 +9,13 @@ import torch
 from torch import nn
 from torch.nn import Module, ModuleDict
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.strings_utils import SpecialSymbol
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
 
 
+@DeveloperAPI
 def get_torch_device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -21,6 +23,7 @@ def get_torch_device():
 DEVICE = get_torch_device()
 
 
+@DeveloperAPI
 def place_on_device(x, device):
     """Recursively places the input on the specified device."""
     if isinstance(x, list):
@@ -37,6 +40,7 @@ def place_on_device(x, device):
         return x
 
 
+@DeveloperAPI
 def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-padding elements per sequence in batch.
 
@@ -50,6 +54,7 @@ def sequence_length_2D(sequence: torch.Tensor) -> torch.Tensor:
     return length
 
 
+@DeveloperAPI
 def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     """Returns the number of non-zero elements per sequence in batch.
 
@@ -64,6 +69,7 @@ def sequence_length_3D(sequence: torch.Tensor) -> torch.Tensor:
     return length
 
 
+@DeveloperAPI
 def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: torch.dtype = torch.bool):
     """Returns a mask of shape (batch_size x maxlen), where mask[i] is True for each element up to lengths[i],
     otherwise False i.e. if maxlen=5 and lengths[i] = 3, mask[i] = [True, True True, False False].
@@ -84,6 +90,7 @@ def sequence_mask(lengths: torch.Tensor, maxlen: Optional[int] = None, dtype: to
     return mask
 
 
+@DeveloperAPI
 def periodic(inputs: torch.Tensor, period: int) -> torch.Tensor:
     """Returns periodic representation assuming 0 is start of period."""
     return torch.cos(inputs * 2 * math.pi / period)
@@ -118,10 +125,12 @@ activations = {
 }
 
 
+@DeveloperAPI
 def get_activation(activation):
     return activations[activation]()
 
 
+@DeveloperAPI
 def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0.01):
     """Computes the regularization loss for a given model.
 
@@ -147,6 +156,7 @@ def reg_loss(model: nn.Module, regularizer: str, l1: float = 0.01, l2: float = 0
         return l1_reg + l2_reg
 
 
+@DeveloperAPI
 class LudwigModule(Module):
     def __init__(self):
         super().__init__()
@@ -194,10 +204,10 @@ class LudwigModule(Module):
     @property
     def output_shape(self) -> torch.Size:
         """Returns size of the output tensor without the batch dimension."""
-        return self._compute_output_shape()
+        return self._computed_output_shape()
 
     @lru_cache(maxsize=1)
-    def _compute_output_shape(self) -> torch.Size:
+    def _computed_output_shape(self) -> torch.Size:
         dummy_input = torch.rand(2, *self.input_shape, device=self.device)
         output_tensor = self.forward(dummy_input.type(self.input_dtype))
 
@@ -209,6 +219,7 @@ class LudwigModule(Module):
             raise ValueError("Unknown output tensor type.")
 
 
+@DeveloperAPI
 class Dense(LudwigModule):
     def __init__(
         self,
@@ -236,6 +247,7 @@ class Dense(LudwigModule):
         return output
 
 
+@DeveloperAPI
 def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
@@ -310,6 +322,7 @@ def _get_torch_init_params() -> Optional[Tuple]:
     return _TORCH_INIT_PARAMS
 
 
+@DeveloperAPI
 def model_size(model: nn.Module):
     """Computes PyTorch model size in bytes."""
     size = 0

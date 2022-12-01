@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 from dataclasses_json import dataclass_json, LetterCase
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend import Backend
 from ludwig.constants import (
     COLUMN,
@@ -58,6 +59,7 @@ encoder_defaults = {"text": {"bert": os.path.join(CONFIG_DIR, "text/bert_config.
 MAX_DISTINCT_VALUES_TO_RETURN = 10
 
 
+@DeveloperAPI
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class DatasetInfo:
@@ -210,33 +212,48 @@ def get_dataset_info(df: Union[pd.DataFrame, dd.core.DataFrame]) -> DatasetInfo:
     inference.
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param df: (Union[pd.DataFrame, dd.core.DataFrame]) Pandas or Dask dataframe.
 
     # Return
-    :return: (List[FieldInfo]) list of FieldInfo objects
+    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
     """
     source = wrap_data_source(df)
     return get_dataset_info_from_source(source)
 
 
 def is_field_boolean(source: DataSource, field: str) -> bool:
-    num_unique_values, unique_values, _ = source.get_distinct_values(field, max_values_to_return=4)
-    if num_unique_values <= 3:
+    """Returns a boolean indicating whether the object field should have a bool dtype.
+
+    Columns with object dtype that have 3 distinct values of which one is Nan/None is a bool type column.
+    """
+    unique_values = source.df[field].unique()
+    if len(unique_values) <= 3:
         for entry in unique_values:
             try:
                 if np.isnan(entry):
                     continue
             except TypeError:
-                # For some field types such as object arrays np.isnan throws a TypeError
-                # we catch it since we know in this case it is not a bool.
-                return False
+                # For some field types such as object arrays, np.isnan throws a TypeError
+                # In this case, do nothing and proceed to checking if the entry is a bool object
+                pass
             if isinstance(entry, bool):
                 continue
             return False
-    return True
+        return True
+    return False
 
 
+@DeveloperAPI
 def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
+    """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
+    inference.
+
+    # Inputs
+    :param source: (DataSource) A wrapper around a data source, which may represent a pandas or Dask dataframe.
+
+    # Return
+    :return: (DatasetInfo) Structure containing list of FieldInfo objects.
+    """
     row_count = len(source)
     fields = []
     for field in source.columns:
@@ -324,6 +341,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
     return config
 
 
+@DeveloperAPI
 def get_field_metadata(
     fields: List[FieldInfo], row_count: int, resources: Resources, targets: Set[str] = None
 ) -> List[FieldMetadata]:

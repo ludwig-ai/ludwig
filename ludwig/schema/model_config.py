@@ -7,6 +7,7 @@ from typing import Dict, List
 import yaml
 from marshmallow import ValidationError
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -60,6 +61,7 @@ from ludwig.utils.misc_utils import set_default_value
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
 
+@DeveloperAPI
 class BaseFeatureContainer:
     """Base Feature container for input and output features."""
 
@@ -98,18 +100,21 @@ class BaseFeatureContainer:
         return yaml.dump(filtered_repr, sort_keys=True)
 
 
+@DeveloperAPI
 class InputFeaturesContainer(BaseFeatureContainer):
     """InputFeatures is a container for all input features."""
 
     pass
 
 
+@DeveloperAPI
 class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
     pass
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class ModelConfig(BaseMarshmallowConfig):
     """Configures the end-to-end LudwigModel machine learning pipeline.

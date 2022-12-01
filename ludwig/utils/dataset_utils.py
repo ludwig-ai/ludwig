@@ -3,11 +3,13 @@ from typing import List, Tuple, Union
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from ludwig.api_annotations import PublicAPI
 from ludwig.constants import TEST_SPLIT, TRAIN_SPLIT, VALIDATION_SPLIT
 from ludwig.data.dataset.base import Dataset
 from ludwig.utils.defaults import default_random_seed
 
 
+@PublicAPI
 def get_repeatable_train_val_test_split(
     df_input, stratify_colname="", random_seed=default_random_seed, frac_train=0.7, frac_val=0.1, frac_test=0.2
 ):

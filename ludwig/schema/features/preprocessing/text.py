@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
@@ -9,6 +10,7 @@ from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
+@DeveloperAPI
 @register_preprocessor(TEXT)
 @dataclass(repr=False)
 class TextPreprocessingConfig(BasePreprocessingConfig):
@@ -106,7 +108,15 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["computed_fill_value"],
     )
 
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
+    )
 
+
+@DeveloperAPI
 @register_preprocessor("text_output")
 @dataclass(repr=False)
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):

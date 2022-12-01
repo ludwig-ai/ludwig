@@ -34,7 +34,7 @@ try:
         try:
             mpl.use("TkAgg")
         except ModuleNotFoundError:
-            logging.warning("Unable to set TkAgg backend for matplotlib. Your Python may not be configured for Tk")
+            logger.warning("Unable to set TkAgg backend for matplotlib. Your Python may not be configured for Tk")
     import matplotlib.patches as patches
     import matplotlib.path as path
     import matplotlib.patheffects as PathEffects

@@ -50,7 +50,9 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
@@ -324,32 +326,21 @@ class Trainer(BaseTrainer):
 
     def train_for_tuning(
         self,
-        dataset,
         batch_size: int,
         total_steps: int = 3,
     ):
         """Function to be used by tune_batch_size."""
         self.model.train()  # Sets model training mode.
-        with dataset.initialize_batcher(batch_size=batch_size, should_shuffle=False, horovod=None) as batcher:
-
-            step_count = 0
-            while not batcher.last_batch() and step_count < total_steps:
-                batch = batcher.next_batch()
-                inputs = {
-                    i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                        self.device
-                    )
-                    for i_feat in self.model.input_features.values()
-                }
-                targets = {
-                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                        self.device
-                    )
-                    for o_feat in self.model.output_features.values()
-                }
-
-                self.train_step(inputs, targets)
-                step_count += 1
+        for _ in range(total_steps):
+            inputs = {
+                input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
+                for input_feature_name, input_feature in self.model.input_features.items()
+            }
+            targets = {
+                output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(self.device)
+                for output_feature_name, output_feature in self.model.output_features.items()
+            }
+            self.train_step(inputs, targets)
         return self.model
 
     def tune_learning_rate(
@@ -459,6 +450,9 @@ class Trainer(BaseTrainer):
         logger.info(f"Selected learning_rate={learning_rate}")
         return learning_rate
 
+    def is_cpu_training(self):
+        return torch.device(self.device) == torch.device("cpu")
+
     def tune_batch_size(
         self,
         config: Dict[str, Any],
@@ -469,7 +463,7 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
-        if torch.device(self.device) == torch.device("cpu"):
+        if self.is_cpu_training():
             # TODO(geoffrey): add support for batch size tuning on CPU
             logger.warn("Batch size tuning is not supported on CPU")
             # batch size will default to max_batch_size if it is set
@@ -513,16 +507,20 @@ class Trainer(BaseTrainer):
                     gc.collect()
 
                     try:
-                        self.train_for_tuning(training_set, batch_size, total_steps=3)
+                        self.train_for_tuning(batch_size, total_steps=3)
                         best_batch_size = batch_size
                         count += 1
 
                         # double batch size
                         batch_size *= 2
-                    except RuntimeError:
+                    except RuntimeError as e:
                         # PyTorch only generates Runtime errors for CUDA OOM.
                         gc.collect()
-                        logger.info(f"OOM at batch_size={batch_size}")
+                        if "CUDA out of memory" in str(e):
+                            logger.info(f"OOM at batch_size={batch_size}")
+                        else:
+                            # Not a CUDA error
+                            raise
                         break
             finally:
                 # Restore original parameters to defaults
@@ -756,6 +754,7 @@ class Trainer(BaseTrainer):
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
+        # ====== Setup Tensorboard writers =======
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
@@ -767,11 +766,13 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
-        if self.resume:
+        if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
+            logger.info("Resuming training from previous run.")
             progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
             if self.is_coordinator():
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
         else:
+            logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
@@ -1243,10 +1244,36 @@ class Trainer(BaseTrainer):
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
 
-    def resume_training_progress_tracker(self, training_progress_tracker_path):
+    def resume_files_exist(
+        self,
+        training_progress_tracker_path: str,
+        training_checkpoint_path: str,
+    ) -> bool:
+        missing_files = []
         if self.is_coordinator():
-            logger.info(f"Resuming training of model: {training_progress_tracker_path}")
-        progress_tracker = ProgressTracker.load(training_progress_tracker_path)
+            # training_progress.json
+            if not path_exists(training_progress_tracker_path):
+                missing_files.append(training_progress_tracker_path)
+            # latest.ckpt in training_checkpoints/
+            latest_ckpt = os.path.join(training_checkpoint_path, "latest.ckpt")
+            if not path_exists(latest_ckpt):
+                missing_files.append(latest_ckpt)
+        if missing_files:
+            logger.warning(f"Could not find {missing_files} while trying to resume model training.")
+            return False
+        return True
+
+    def resume_training_progress_tracker(self, training_progress_tracker_path):
+        progress_tracker_dict = None
+        if self.is_coordinator():
+            logger.info(f"Loading progress tracker for model: {training_progress_tracker_path}")
+            progress_tracker_dict = load_json(training_progress_tracker_path)
+        if self.horovod:
+            logger.debug("Broadcasting model progress tracker dict to all workers")
+            progress_tracker_dict = self.horovod.broadcast_object(
+                progress_tracker_dict, name="broadcast_progress_tracker"
+            )
+        progress_tracker = ProgressTracker.load(progress_tracker_dict)
         return progress_tracker
 
     def resume_weights_and_optimizer(
@@ -1397,7 +1424,7 @@ class Trainer(BaseTrainer):
         return self.horovod.rank() == 0
 
     @property
-    def local_rank(self):
+    def local_rank(self) -> int:
         if not self.horovod:
             return 0
         return self.horovod.local_rank()

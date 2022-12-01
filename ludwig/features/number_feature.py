@@ -15,7 +15,6 @@
 # ==============================================================================
 import copy
 import logging
-import random
 from typing import Any, Dict, Union
 
 import numpy as np
@@ -23,21 +22,7 @@ import pandas as pd
 import torch
 from torch import nn
 
-from ludwig.constants import (
-    COLUMN,
-    HIDDEN,
-    LOGITS,
-    LOSS,
-    MEAN_ABSOLUTE_ERROR,
-    MEAN_SQUARED_ERROR,
-    NAME,
-    NUMBER,
-    PREDICTIONS,
-    PROC_COLUMN,
-    R2,
-    ROOT_MEAN_SQUARED_ERROR,
-    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
-)
+from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, NUMBER, PREDICTIONS, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.utils import output_feature_utils
@@ -117,6 +102,45 @@ class MinMaxTransformer(nn.Module):
         }
 
 
+class InterQuartileTransformer(nn.Module):
+    def __init__(self, q1: float = None, q2: float = None, q3: float = None, **kwargs: dict):
+        super().__init__()
+        self.q1 = float(q1) if q1 is not None else q1
+        self.q2 = float(q2) if q2 is not None else q2
+        self.q3 = float(q3) if q3 is not None else q3
+        if self.q1 is None or self.q3 is None:
+            self.interquartile_range = None
+        else:
+            self.interquartile_range = self.q3 - self.q1
+        self.feature_name = kwargs.get(NAME, "")
+        if self.interquartile_range == 0:
+            raise RuntimeError(
+                f"Cannot apply InterQuartileNormalization to `{self.feature_name}` since"
+                "the interquartile range is 0, which will result in a ZeroDivisionError."
+            )
+
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        return (x - self.q2) / self.interquartile_range
+
+    def inverse_transform(self, x: np.ndarray) -> np.ndarray:
+        return x * self.interquartile_range + self.q2
+
+    def transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.q2) / self.interquartile_range
+
+    def inverse_transform_inference(self, x: torch.Tensor) -> torch.Tensor:
+        return x * self.interquartile_range + self.q2
+
+    @staticmethod
+    def fit_transform_params(column: np.ndarray, backend: "Backend") -> dict:  # noqa
+        compute = backend.df_engine.compute
+        return {
+            "q1": compute(np.percentile(column.astype(np.float32), 25)),
+            "q2": compute(np.percentile(column.astype(np.float32), 50)),
+            "q3": compute(np.percentile(column.astype(np.float32), 75)),
+        }
+
+
 class Log1pTransformer(nn.Module):
     def __init__(self, **kwargs: dict):
         super().__init__()
@@ -167,6 +191,7 @@ numeric_transformation_registry = {
     "minmax": MinMaxTransformer,
     "zscore": ZScoreTransformer,
     "log1p": Log1pTransformer,
+    "iq": InterQuartileTransformer,
     None: IdentityTransformer,
 }
 
@@ -301,10 +326,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
         return inputs_encoded
 
-    def create_sample_input(self):
-        # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
-        return torch.Tensor([random.randint(1, 100), random.randint(1, 100)])
-
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
@@ -321,6 +342,9 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
     def get_schema_cls():
         return NumberInputFeatureConfig
 
+    def create_sample_input(self, batch_size: int = 2):
+        return torch.rand([batch_size])
+
     @classmethod
     def get_preproc_input_dtype(cls, metadata: Dict[str, Any]) -> str:
         return "float32"
@@ -331,14 +355,7 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
 
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
-    metric_functions = {
-        LOSS: None,
-        MEAN_SQUARED_ERROR: None,
-        MEAN_ABSOLUTE_ERROR: None,
-        ROOT_MEAN_SQUARED_ERROR: None,
-        ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
-        R2: None,
-    }
+    metric_functions = NumberOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,

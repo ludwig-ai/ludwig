@@ -21,6 +21,7 @@ from zlib import crc32
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, COLUMN, DATE, MIN_DATASET_SPLIT_ROWS, SPLIT, TYPE
 from ludwig.schema.split import (
@@ -58,6 +59,7 @@ class Splitter(ABC):
 
     @property
     def required_columns(self) -> List[str]:
+        """Returns the list of columns that are required for splitting."""
         return []
 
 
@@ -159,7 +161,7 @@ def stratify_split_dataframe(
     frac_train, frac_val, frac_test = probabilities
 
     # Dataframe of just the column on which to stratify
-    y = df[[column]].astype(np.int8)
+    y = df[[column]]
     df_train, df_temp, _, y_temp = train_test_split(
         df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
     )
@@ -338,6 +340,7 @@ class HashSplitter(Splitter):
         return HashSplitConfig
 
 
+@DeveloperAPI
 def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
     splitter_cls = split_registry.get(type)
     if splitter_cls is None:
@@ -345,6 +348,7 @@ def get_splitter(type: Optional[str] = None, **kwargs) -> Splitter:
     return splitter_cls(**kwargs)
 
 
+@DeveloperAPI
 def split_dataset(
     df: DataFrame,
     global_preprocessing_parameters: Dict[str, Any],

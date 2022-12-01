@@ -18,6 +18,7 @@ from functools import partial
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, LOSS, NUMBER, SEQUENCE, SET, TEXT, TYPE, VECTOR
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
@@ -27,6 +28,7 @@ from ludwig.utils.torch_utils import Dense, get_activation
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_decoder("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 class PassthroughDecoder(Decoder):
     def __init__(self, input_size: int = 1, num_classes: int = None, decoder_config=None, **kwargs):
@@ -53,6 +55,7 @@ class PassthroughDecoder(Decoder):
         return self.input_shape
 
 
+@DeveloperAPI
 @register_decoder("regressor", [BINARY, NUMBER])
 class Regressor(Decoder):
     def __init__(
@@ -91,6 +94,7 @@ class Regressor(Decoder):
         return self.dense(inputs)
 
 
+@DeveloperAPI
 @register_decoder("projector", [VECTOR])
 class Projector(Decoder):
     def __init__(
@@ -147,6 +151,7 @@ class Projector(Decoder):
         return values
 
 
+@DeveloperAPI
 @register_decoder("classifier", [CATEGORY, SET])
 class Classifier(Decoder):
     def __init__(
@@ -177,11 +182,6 @@ class Classifier(Decoder):
         self.sampled_loss = False
         if LOSS in kwargs and TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
             self.sampled_loss = kwargs[LOSS][TYPE].startswith("sampled")
-
-        # this is needed because TF2 initializes the weights at the first call
-        # so the first time we need to compute the full dense,
-        # otherwise the weights of the Dense layer would not be initialized
-        self.first_call = True
 
     @staticmethod
     def get_schema_cls():

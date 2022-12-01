@@ -7,6 +7,7 @@ from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 import ludwig.schema.utils as schema_utils
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, INTERNAL_ONLY
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
 from ludwig.utils.registry import Registry
@@ -14,6 +15,7 @@ from ludwig.utils.registry import Registry
 optimizer_registry = Registry()
 
 
+@DeveloperAPI
 def register_optimizer(name: str):
     def wrap(optimizer_config: BaseOptimizerConfig):
         optimizer_registry[name] = (optimizer_config.optimizer_class, optimizer_config)
@@ -22,11 +24,13 @@ def register_optimizer(name: str):
     return wrap
 
 
+@DeveloperAPI
 def get_optimizer_cls(name: str):
     """Get the optimizer schema class from the optimizer schema class registry."""
     return optimizer_registry[name][1]
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
@@ -49,6 +53,7 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="sgd")
 @dataclass(repr=False)
 class SGDOptimizerConfig(BaseOptimizerConfig):
@@ -57,7 +62,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.SGD
     """Points to `torch.optim.SGD`."""
 
-    type: str = schema_utils.StringOptions(["sgd"], default="sgd", allow_none=False)
+    type: str = schema_utils.ProtectedString("sgd")
     """Must be 'sgd' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'sgd')"""
 
@@ -70,6 +75,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
     nesterov: bool = schema_utils.Boolean(default=False, description="Enables Nesterov momentum.")
 
 
+@DeveloperAPI
 @register_optimizer(name="lbfgs")
 @dataclass(repr=False)
 class LBFGSOptimizerConfig(BaseOptimizerConfig):
@@ -78,7 +84,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.LBFGS
     """Points to `torch.optim.LBFGS`."""
 
-    type: str = schema_utils.StringOptions(["lbfgs"], default="lbfgs", allow_none=False)
+    type: str = schema_utils.ProtectedString("lbfgs")
     """Must be 'lbfgs' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry` (default:
        'lbfgs')"""
 
@@ -104,6 +110,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adam")
 @dataclass(repr=False)
 class AdamOptimizerConfig(BaseOptimizerConfig):
@@ -112,7 +119,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adam
     """Points to `torch.optim.Adam`."""
 
-    type: str = schema_utils.StringOptions(["adam"], default="adam", allow_none=False)
+    type: str = schema_utils.ProtectedString("adam")
     """Must be 'adam' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adam')"""
 
@@ -138,6 +145,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adamw")
 @dataclass(repr=False)
 class AdamWOptimizerConfig(BaseOptimizerConfig):
@@ -146,7 +154,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.AdamW
     """Points to `torch.optim.AdamW`."""
 
-    type: str = schema_utils.StringOptions(["adamw"], default="adamw", allow_none=False)
+    type: str = schema_utils.ProtectedString("adamw")
     """Must be 'adamw' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamw')"""
 
@@ -172,6 +180,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adadelta")
 @dataclass(repr=False)
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
@@ -180,7 +189,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adadelta
     """Points to `torch.optim.Adadelta`."""
 
-    type: str = schema_utils.StringOptions(["adadelta"], default="adadelta", allow_none=False)
+    type: str = schema_utils.ProtectedString("adadelta")
     """Must be 'adadelta' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adadelta')"""
 
@@ -204,6 +213,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
+@DeveloperAPI
 @register_optimizer(name="adagrad")
 @dataclass(repr=False)
 class AdagradOptimizerConfig(BaseOptimizerConfig):
@@ -213,7 +223,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adagrad
     """Points to `torch.optim.Adagrad`."""
 
-    type: str = schema_utils.StringOptions(["adagrad"], default="adagrad", allow_none=False)
+    type: str = schema_utils.ProtectedString("adagrad")
     """Must be 'adagrad' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adagrad')"""
 
@@ -231,6 +241,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
     )
 
 
+@DeveloperAPI
 @register_optimizer(name="adamax")
 @dataclass(repr=False)
 class AdamaxOptimizerConfig(BaseOptimizerConfig):
@@ -239,7 +250,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Adamax
     """Points to `torch.optim.Adamax`."""
 
-    type: str = schema_utils.StringOptions(["adamax"], default="adamax", allow_none=False)
+    type: str = schema_utils.ProtectedString("adamax")
     """Must be 'adamax' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'adamax')"""
 
@@ -259,11 +270,12 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 
 # NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
+@DeveloperAPI
 @dataclass(repr=False)
 class FtrlOptimizerConfig(BaseOptimizerConfig):
 
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
-    type: str = schema_utils.StringOptions(["ftrl"], default="ftrl", allow_none=False)
+    type: str = schema_utils.ProtectedString("ftrl")
 
     learning_rate_power: float = schema_utils.FloatRange(default=-0.5, max=0.0)
 
@@ -274,6 +286,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
     l2_regularization_strength: float = schema_utils.NonNegativeFloat(default=0.0)
 
 
+@DeveloperAPI
 @register_optimizer(name="nadam")
 @dataclass(repr=False)
 class NadamOptimizerConfig(BaseOptimizerConfig):
@@ -281,7 +294,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
     """Points to `torch.optim.NAdam`."""
 
-    type: str = schema_utils.StringOptions(["nadam"], default="nadam", allow_none=False)
+    type: str = schema_utils.ProtectedString("nadam")
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.NAdam.html#torch.optim.NAdam :
 
@@ -300,6 +313,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     momentum_decay: float = schema_utils.NonNegativeFloat(default=4e-3, description="Momentum decay.")
 
 
+@DeveloperAPI
 @register_optimizer(name="rmsprop")
 @dataclass(repr=False)
 class RMSPropOptimizerConfig(BaseOptimizerConfig):
@@ -308,7 +322,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.RMSprop
     """Points to `torch.optim.RMSprop`."""
 
-    type: str = schema_utils.StringOptions(["rmsprop"], default="rmsprop", allow_none=False)
+    type: str = schema_utils.ProtectedString("rmsprop")
     """Must be 'rmsprop' - corresponds to name in `ludwig.modules.optimization_modules.optimizer_registry`
        (default: 'rmsprop')"""
 
@@ -333,6 +347,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     weight_decay: float = schema_utils.NonNegativeFloat(default=0.0, description="Weight decay ($L2$ penalty).")
 
 
+@DeveloperAPI
 def get_optimizer_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
     `ludwig.modules.optimization_modules.optimizer_registry`."""
@@ -349,6 +364,7 @@ def get_optimizer_conds():
     return conds
 
 
+@DeveloperAPI
 def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
     """Custom dataclass field that when used inside of a dataclass will allow any optimizer in
     `ludwig.modules.optimization_modules.optimizer_registry`.
@@ -424,6 +440,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
@@ -435,6 +452,7 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     clipvalue: Optional[float] = schema_utils.FloatRange(default=None, allow_none=True, description="")
 
 
+@DeveloperAPI
 def GradientClippingDataclassField(description: str, default: Dict = {}):
     """Returns custom dataclass field for `ludwig.modules.optimization_modules.GradientClippingConfig`. Allows
     `None` by default.

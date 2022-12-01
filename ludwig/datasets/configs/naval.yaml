@@ -27,3 +27,6 @@ loader: naval.NavalLoader
 description: |
   Condition Based Maintenance of Naval Propulsion Plants Data Set
   http://archive.ics.uci.edu/ml/datasets/condition+based+maintenance+of+naval+propulsion+plants
+output_features:
+- name: gtcdsc
+  type: number

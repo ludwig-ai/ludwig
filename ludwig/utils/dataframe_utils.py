@@ -3,21 +3,25 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DASK_MODULE_NAME
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.utils.types import DataFrame
 
 
+@DeveloperAPI
 def is_dask_lib(df_lib) -> bool:
     """Returns whether the dataframe library is dask."""
     return df_lib.__name__ == DASK_MODULE_NAME
 
 
+@DeveloperAPI
 def is_dask_backend(backend: Optional["Backend"]) -> bool:  # noqa: F821
     """Returns whether the backend's dataframe is dask."""
     return backend is not None and is_dask_lib(backend.df_engine.df_lib)
 
 
+@DeveloperAPI
 def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  # noqa: F821
     if is_dask_backend(backend):
         import dask.dataframe as dd
@@ -26,6 +30,7 @@ def is_dask_series_or_df(df: DataFrame, backend: Optional["Backend"]) -> bool:  
     return False
 
 
+@DeveloperAPI
 def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> Tuple[DataFrame, Dict[str, Tuple]]:  # noqa: F821
     """Returns a flattened dataframe with a dictionary of the original shapes, keyed by dataframe columns."""
     # Workaround for: https://issues.apache.org/jira/browse/ARROW-5645
@@ -45,6 +50,7 @@ def flatten_df(df: DataFrame, df_engine: DataFrameEngine) -> Tuple[DataFrame, Di
     return df, column_shapes
 
 
+@DeveloperAPI
 def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], df_engine: DataFrameEngine) -> DataFrame:  # noqa: F821
     """Returns an unflattened dataframe, the reverse of flatten_df."""
     for c in df.columns:
@@ -54,6 +60,7 @@ def unflatten_df(df: DataFrame, column_shapes: Dict[str, Tuple], df_engine: Data
     return df
 
 
+@DeveloperAPI
 def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict[str, np.ndarray]:  # noqa: F821
     """Returns a dictionary of numpy arrays, keyed by the columns of the given dataframe."""
     dataset = {}
@@ -70,6 +77,7 @@ def to_numpy_dataset(df: DataFrame, backend: Optional["Backend"] = None) -> Dict
     return dataset
 
 
+@DeveloperAPI
 def from_numpy_dataset(dataset) -> pd.DataFrame:
     """Returns a pandas dataframe from the dataset."""
     col_mapping = {}
@@ -86,6 +94,7 @@ def from_numpy_dataset(dataset) -> pd.DataFrame:
     return pd.DataFrame.from_dict(col_mapping)
 
 
+@DeveloperAPI
 def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
     pd_df.index.name = name
     return pd_df
