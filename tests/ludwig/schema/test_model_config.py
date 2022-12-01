@@ -427,7 +427,7 @@ def test_initializer_recursion():
              'encoder': {
                  'type': 'dense',
                  'vocab_size': 2,
-                 'embedding_size': 5
+                 'embedding_size': 5,
              },
              'reduce_input': 'sum',
              'column': 'category_B9834',
@@ -435,10 +435,11 @@ def test_initializer_recursion():
              },
             {'name': 'number_0F633',
              'type': 'number',
-             'preprocessing': {'normalization': None},
-             'column': 'number_0F633',
-             'proc_column':
-                 'number_0F633_Dt2niI'
+             'encoder': {
+                 'type': 'dense',
+                 'norm': 'batch',
+                 'norm_params': {'momentum': 0.2},
+             }
              }],
         'output_features': [{
             'name': 'binary_52912',
