@@ -57,11 +57,10 @@ class RandomAccessBatcher(Batcher):
         if self.index >= self.total_size:
             return True
         # This avoids the case where batch size > total size and no steps have been done.
-        # For e.g., batch size = 128 but the dataset only has 100 rows. In this case, only
-        # mark last_batch after this batch is done using the first condition above.
+        # For e.g., batch size = 128 but the dataset only has 100 rows.
         elif self.ignore_last and self.step:
-            # If our current index in total dataset + batch size exceeds the total size of the dataset,
-            # this last batch is incomplete. Drop it iff it has 1 row
+            # index += batch_size after each epoch. So, if our current index in total dataset is 1 less than the total
+            # dataset size, then the last batch will only have 1 row. Drop it if this happens.
             if self.index - self.total_size == -1:
                 return True
         return False
