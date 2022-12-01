@@ -23,10 +23,8 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["passthrough"],
-        default="passthrough",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "passthrough",
         description="Type of encoder.",
     )
 
@@ -37,10 +35,8 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["dense"],
-        default="dense",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "dense",
         description="Type of encoder.",
     )
 
