@@ -1,4 +1,5 @@
 import os
+import io
 from unittest import mock
 
 import pandas as pd
@@ -121,6 +122,6 @@ def test_get_datasets_info():
 
 
 def test_get_dataset_buffer():
-    buffer = ludwig.datasets.get_buffer("titanic")
+    buffer = ludwig.datasets.get_buffer("iris")
 
-    assert buffer is not None
+    assert isinstance(buffer, io.BytesIO)
