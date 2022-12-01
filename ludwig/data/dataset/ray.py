@@ -30,6 +30,7 @@ from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorDtype
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
@@ -62,12 +63,14 @@ else:
         return series.astype(TensorDtype())
 
 
+@DeveloperAPI
 @default_retry()
 def read_remote_parquet(path: str):
     fs, path = get_fs_and_path(path)
     return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
 
+@DeveloperAPI
 class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset.
 
@@ -184,6 +187,7 @@ class RayDataset(Dataset):
         return self.df_engine.from_ray_dataset(self.ds)
 
 
+@DeveloperAPI
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
@@ -223,6 +227,7 @@ class RayDatasetManager(DatasetManager):
         return "parquet"
 
 
+@DeveloperAPI
 class RayDatasetShard(Dataset):
     def __init__(
         self,
@@ -256,6 +261,7 @@ class RayDatasetShard(Dataset):
         return len(self)
 
 
+@DeveloperAPI
 class RayDatasetBatcher(Batcher):
     def __init__(
         self,

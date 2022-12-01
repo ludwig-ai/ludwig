@@ -15,9 +15,11 @@
 # ==============================================================================
 import math
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.batcher.base import Batcher
 
 
+@DeveloperAPI
 class RandomAccessBatcher(Batcher):
     def __init__(self, dataset, sampler, batch_size=128, ignore_last=False):
         # store our dataset as well
