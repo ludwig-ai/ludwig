@@ -31,7 +31,6 @@ from ludwig.constants import (
     HYPEROPT,
     INPUT_FEATURES,
     MODEL_ECD,
-    MODEL_GBM,
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
@@ -66,7 +65,7 @@ def get_schema(model_type: str = MODEL_ECD):
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
     }
 
-    if model_type == MODEL_GBM:
+    if model_type == MODEL_ECD:
         schema["properties"][COMBINER] = get_combiner_jsonschema()
 
     return schema
