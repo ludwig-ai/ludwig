@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 import math
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.batcher.base import Batcher
+
+logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
@@ -64,6 +67,7 @@ class RandomAccessBatcher(Batcher):
             # index += batch_size after each epoch. So, if our current index in total dataset is 1 less than the total
             # dataset size, then the last batch will only have 1 row. Drop it if this happens.
             if self.index - self.total_size == -1:
+                logger.info("Last batch in epoch only has 1 sample and will be dropped.")
                 return True
         return False
 
