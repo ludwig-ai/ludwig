@@ -48,7 +48,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.print_utils import get_logging_level_registry
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -3979,7 +3979,7 @@ def cli(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("visualize", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.visualize")
