@@ -54,7 +54,7 @@ from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import set_default_value
 
@@ -412,7 +412,7 @@ class ModelConfig(BaseMarshmallowConfig):
                 self._set_attributes(section, val, feature_type=feature_type)
 
             # If val is a nested section (i.e. preprocessing) recurse into function to set values.
-            elif isinstance(val, dict):
+            elif key not in RECURSION_STOP_ENUM and isinstance(val, dict):
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             # Base case for setting values on leaves
