@@ -115,7 +115,7 @@ class CommonSchedulerOptions:
 class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Asynchronous hyperband (ASHA) scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["async_hyperband"], default="async_hyperband", allow_none=False)
+    type: str = schema_utils.ProtectedString("async_hyperband")
 
     max_t: int = max_t_alias()
 
@@ -137,7 +137,7 @@ class AsyncHyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions)
 class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Standard hyperband scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["hyperband"], default="hyperband", allow_none=False)
+    type: str = schema_utils.ProtectedString("hyperband")
 
     max_t: int = max_t_alias(default=81)
 
@@ -157,9 +157,7 @@ class HyperbandSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Median Stopping Rule scheduler settings."""
 
-    type: str = schema_utils.StringOptions(
-        options=["median_stopping_rule"], default="median_stopping_rule", allow_none=False
-    )
+    type: str = schema_utils.ProtectedString("median_stopping_rule")
 
     time_attr: str = time_attr_alias(TIME_TOTAL_S)
 
@@ -199,7 +197,7 @@ class MedianStoppingRuleSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOpti
 class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Population Based Training scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["pbt"], default="pbt", allow_none=False)
+    type: str = schema_utils.ProtectedString("pbt")
 
     time_attr: str = time_attr_alias(TIME_TOTAL_S)
 
@@ -304,7 +302,7 @@ class PopulationBasedTrainingSchedulerConfig(BaseSchedulerConfig, CommonSchedule
 class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
     """Population Based Training Replay scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["pbt_replay"], default="pbt_replay", allow_none=False)
+    type: str = schema_utils.ProtectedString("pbt_replay")
 
     # TODO: This should technically be a required paremeter. Do we need to add support for required params?
     policy_file: str = schema_utils.String(
@@ -321,7 +319,7 @@ class PopulationBasedTrainingReplaySchedulerConfig(BaseSchedulerConfig):
 class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Population Based Bandits (PB2) scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["pb2"], default="pb2", allow_none=False)
+    type: str = schema_utils.ProtectedString("pb2")
 
     time_attr: str = time_attr_alias(TIME_TOTAL_S)
 
@@ -386,7 +384,7 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonScheduler
 class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
     """Hyperband for BOHB scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["bohb"], default="bohb", allow_none=False)
+    type: str = schema_utils.ProtectedString("bohb")
 
     max_t: int = max_t_alias(default=81)
 
@@ -406,7 +404,7 @@ class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
 class FIFOSchedulerConfig(BaseSchedulerConfig):
     """FIFO trial scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["fifo"], default="fifo", allow_none=False)
+    type: str = schema_utils.ProtectedString("fifo")
 
 
 # TODO: Double-check support for this as well as whether Callable args work properly
@@ -416,7 +414,7 @@ class FIFOSchedulerConfig(BaseSchedulerConfig):
 class ResourceChangingSchedulerConfig(BaseSchedulerConfig):
     """Resource changing scheduler settings."""
 
-    type: str = schema_utils.StringOptions(options=["resource_changing"], default="resource_changing", allow_none=False)
+    type: str = schema_utils.ProtectedString("resource_changing")
 
     base_scheduler: Union[str, None, Callable] = schema_utils.String(
         description=("The scheduler to provide decisions about trials. If None, a default FIFOScheduler will be used.")

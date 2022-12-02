@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List
+from typing import List
 
 import numpy as np
 import torch
@@ -21,6 +21,7 @@ import torch
 from ludwig.constants import COLUMN, H3, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.h3_feature import H3InputFeatureConfig
+from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -32,7 +33,7 @@ H3_PADDING_VALUE = 7
 
 
 class _H3Preprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.max_h3_resolution = MAX_H3_RESOLUTION
         self.h3_padding_value = H3_PADDING_VALUE
@@ -78,7 +79,7 @@ class H3FeatureMixin(BaseFeatureMixin):
             return column.astype(float).astype(int)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
         return {}
 
     @staticmethod
@@ -90,7 +91,13 @@ class H3FeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         column = input_df[feature_config[COLUMN]]
         if column.dtype == object:
@@ -138,7 +145,7 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
         pass
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _H3Preprocessing(metadata)
 
     @staticmethod

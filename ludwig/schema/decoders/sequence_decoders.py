@@ -13,10 +13,8 @@ from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 @dataclass(repr=False)
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["generator"],
-        default="generator",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "generator",
         description="Type of decoder.",
     )
 
@@ -65,10 +63,8 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 @dataclass(repr=False)
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["tagger"],
-        default="tagger",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "tagger",
         description="Type of decoder.",
     )
 

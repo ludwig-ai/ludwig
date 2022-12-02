@@ -35,10 +35,14 @@ proc_df = pd.DataFrame(columns=["x"])
 def test_norm():
     feature_1_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "zscore"}, LOCAL_BACKEND)
     feature_2_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "minmax"}, LOCAL_BACKEND)
+    feature_3_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "iq"}, LOCAL_BACKEND)
 
     assert feature_1_meta["mean"] == 6
     assert feature_2_meta["min"] == 2
     assert feature_2_meta["max"] == 10
+    assert feature_3_meta["q1"] == 4
+    assert feature_3_meta["q2"] == 6
+    assert feature_3_meta["q3"] == 8
 
     # value checks after normalization
     num_feature = number_feature()
@@ -66,3 +70,14 @@ def test_norm():
         skip_save_processed_input=False,
     )
     assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([0, 0.25, 0.5, 0.75, 1]))
+
+    NumberFeatureMixin.add_feature_data(
+        feature_config=num_feature,
+        input_df=data_df,
+        proc_df=proc_df,
+        metadata={num_feature[NAME]: feature_3_meta},
+        preprocessing_parameters={"normalization": "iq"},
+        backend=LOCAL_BACKEND,
+        skip_save_processed_input=False,
+    )
+    assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-1, -0.5, 0, 0.5, 1]))

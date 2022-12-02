@@ -1,13 +1,15 @@
 import argparse
 import importlib
+import logging
 import os
 from collections import OrderedDict
 from functools import lru_cache
+from io import BytesIO
 from typing import Any, Dict, List
 
 import yaml
 
-from ludwig.api_annotations import PublicAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.datasets import configs, model_configs
 from ludwig.datasets.dataset_config import DatasetConfig
 from ludwig.globals import LUDWIG_VERSION
@@ -124,6 +126,17 @@ def download_dataset(dataset_name: str, output_dir: str = "."):
     output_dir = os.path.expanduser(os.path.normpath(output_dir))
     dataset = get_dataset(dataset_name)
     dataset.export(output_dir)
+
+
+@DeveloperAPI
+def get_buffer(dataset_name: str, kaggle_username: str = None, kaggle_key: str = None) -> BytesIO:
+    """Returns a byte buffer for the specified dataset."""
+    try:
+        dataset = get_dataset(dataset_name).load(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
+        buffer = BytesIO(dataset.to_parquet())
+        return buffer
+    except Exception as e:
+        logging.error(logging.ERROR, f"Failed to upload dataset {dataset_name}: {e}")
 
 
 def cli(sys_argv):

@@ -13,10 +13,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["concat"],
-        default="concat",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "concat",
         description="Type of combiner.",
     )
 
