@@ -53,7 +53,6 @@ from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
 from ludwig.types import (
-    FeatureConfigDict,
     HyperoptConfigDict,
     ModelConfigDict,
     TrainerConfigDict,
