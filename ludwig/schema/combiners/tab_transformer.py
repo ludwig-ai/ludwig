@@ -14,10 +14,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["tabtransformer"],
-        default="tabtransformer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "tabtransformer",
         description="Type of combiner.",
     )
 

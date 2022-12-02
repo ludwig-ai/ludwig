@@ -15,10 +15,8 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 @dataclass(repr=False)
 class SetSparseEncoderConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["embed"],
-        default="embed",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "embed",
         description="Type of encoder.",
     )
 

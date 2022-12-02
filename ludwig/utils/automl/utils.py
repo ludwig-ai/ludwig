@@ -5,6 +5,7 @@ from typing import Dict
 from numpy import nan_to_num
 from pandas import Series
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     BINARY,
     CATEGORY,
@@ -26,6 +27,7 @@ from ludwig.schema.combiners.utils import get_combiner_jsonschema
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 def avg_num_tokens(field: Series) -> int:
     # sample a subset if dataframe is large
     if len(field) > 5000:
@@ -35,6 +37,7 @@ def avg_num_tokens(field: Series) -> int:
     return avg_words
 
 
+@DeveloperAPI
 def get_model_type(config: dict) -> str:
     if (
         "input_features" in config
@@ -106,6 +109,7 @@ def _add_option_to_evaluate(
     return point_to_evaluate
 
 
+@DeveloperAPI
 def set_output_feature_metric(base_config):
     """If single output feature, set trainer and hyperopt metric and goal for that feature if not set."""
     if len(base_config["output_features"]) != 1:
@@ -130,6 +134,7 @@ def set_output_feature_metric(base_config):
     return base_config
 
 
+@DeveloperAPI
 def has_imbalanced_output(base_config, features_metadata) -> bool:
     """Check binary and category output feature(s) for imbalance, i.e., low minority/majority instance count
     ratio."""

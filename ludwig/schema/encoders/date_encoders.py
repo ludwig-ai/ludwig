@@ -15,10 +15,8 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 @dataclass(repr=False)
 class DateEmbedConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["embed"],
-        default="embed",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "embed",
         description="Type of encoder.",
     )
 
@@ -104,10 +102,8 @@ class DateEmbedConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class DateWaveConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["wave"],
-        default="wave",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "wave",
         description="Type of encoder.",
     )
 

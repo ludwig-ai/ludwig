@@ -16,10 +16,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["sequence"],
-        default="sequence",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "sequence",
         description="Type of combiner.",
     )
 
