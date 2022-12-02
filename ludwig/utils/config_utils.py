@@ -2,7 +2,7 @@ from typing import Any, Dict, Set, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -49,7 +49,7 @@ def get_preprocessing_params(config_obj: ModelConfig) -> Dict[str, Any]:
     parameters from config defaults."""
     preprocessing_params = {}
     preprocessing_params.update(config_obj.preprocessing.to_dict())
-    for feat_type in input_type_registry.keys():
+    for feat_type in get_input_type_registry().keys():
         preprocessing_params[feat_type] = getattr(config_obj.defaults, feat_type).preprocessing.to_dict()
     return preprocessing_params
 
@@ -71,7 +71,7 @@ def merge_config_preprocessing_with_feature_specific_defaults(
 def get_default_encoder_or_decoder(feature: Dict[str, Any], config_feature_group: str) -> str:
     """Returns the default encoder or decoder for a feature."""
     if config_feature_group == INPUT_FEATURES:
-        feature_schema = get_from_registry(feature.get(TYPE), input_type_registry).get_schema_cls()
+        feature_schema = get_from_registry(feature.get(TYPE), get_input_type_registry()).get_schema_cls()
         return feature_schema().encoder.type
-    feature_schema = get_from_registry(feature.get(TYPE), output_type_registry).get_schema_cls()
+    feature_schema = get_from_registry(feature.get(TYPE), get_output_type_registry()).get_schema_cls()
     return feature_schema().decoder.type

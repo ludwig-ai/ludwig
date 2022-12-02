@@ -59,7 +59,7 @@ from ludwig.constants import (
     TYPE,
     USE_BIAS,
 )
-from ludwig.features.feature_registries import base_type_registry
+from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.misc_utils import merge_dict
@@ -505,7 +505,7 @@ def _upgrade_preprocessing_defaults(config: Dict[str, Any]) -> Dict[str, Any]:
     # If preprocessing section specified and it contains feature specific preprocessing parameters,
     # make a copy and delete it from the preprocessing section
     for parameter in list(config.get(PREPROCESSING, {})):
-        if parameter in base_type_registry:
+        if parameter in get_base_type_registry():
             warnings.warn(
                 f"Moving preprocessing configuration for `{parameter}` feature type from `preprocessing` section"
                 " to `defaults` section in Ludwig config. This will be unsupported in v0.8.",
