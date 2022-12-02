@@ -13,10 +13,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["tabnet"],
-        default="tabnet",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "tabnet",
         description="Type of combiner.",
     )
 

@@ -33,10 +33,8 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["random"],
-        default="random",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "random",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -54,10 +52,8 @@ class RandomSplitConfig(BaseSplitConfig):
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["fixed"],
-        default="fixed",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "fixed",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -73,10 +69,8 @@ class FixedSplitConfig(BaseSplitConfig):
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["stratify"],
-        default="stratify",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "stratify",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -98,10 +92,8 @@ class StratifySplitConfig(BaseSplitConfig):
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["datetime"],
-        default="datetime",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "datetime",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -132,10 +124,8 @@ class HashSplitConfig(BaseSplitConfig):
     This approach can be used on a column with duplicates, but it will further skew the assignments of rows to splits.
     """
 
-    type: str = schema_utils.StringOptions(
-        ["hash"],
-        default="hash",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "hash",
         description="Type of splitting to use during preprocessing.",
     )
 

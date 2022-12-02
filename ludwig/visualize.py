@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -30,6 +30,7 @@ from sklearn.metrics import brier_score_loss
 from yaml import warnings
 
 from ludwig.api import TrainingStats
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.backend import LOCAL_BACKEND
 from ludwig.callbacks import Callback
 from ludwig.constants import ACCURACY, EDIT_DISTANCE, HITS_AT_K, LOSS, PREDICTIONS, SPACE, SPLIT
@@ -47,7 +48,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataframe_utils import to_numpy_dataset, unflatten_df
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.print_utils import get_logging_level_registry
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,7 @@ def _vectorize_ground_truth(
         return np.vectorize(lambda x, y: x)(ground_truth, str2idx)
 
 
+@DeveloperAPI
 def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_output_feature_names):
     """Ensure probabilities and threshold output_feature_names arrays have two members each.
 
@@ -115,6 +117,7 @@ def validate_conf_thresholds_and_probabilities_2d_3d(probabilities, threshold_ou
             raise RuntimeError(exception_message)
 
 
+@DeveloperAPI
 def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> Dict[str, Any]:
     """Load JSON files (training stats, evaluation stats...) for a list of models.
 
@@ -137,6 +140,7 @@ def load_data_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_
     return stats_per_model
 
 
+@DeveloperAPI
 def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, ground_truth_split=2) -> TrainingStats:
     """Load model file data (specifically training stats) for a list of models.
 
@@ -156,6 +160,7 @@ def load_training_stats_for_viz(load_type, model_file_statistics, dtype=int, gro
     return stats_per_model
 
 
+@DeveloperAPI
 def convert_to_list(item):
     """If item is not list class instance or None put inside a list.
 
@@ -315,6 +320,7 @@ def _get_cols_from_predictions(predictions_paths, cols, metadata):
     return results_per_model
 
 
+@DeveloperAPI
 def generate_filename_template_path(output_dir, filename_template):
     """Ensure path to template file can be constructed given an output dir.
 
@@ -331,6 +337,7 @@ def generate_filename_template_path(output_dir, filename_template):
     return None
 
 
+@DeveloperAPI
 def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by compare_performance.
 
@@ -348,6 +355,7 @@ def compare_performance_cli(test_statistics: Union[str, List[str]], **kwargs: di
     compare_performance(test_stats_per_model, **kwargs)
 
 
+@DeveloperAPI
 def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by learning_curves.
 
@@ -365,6 +373,7 @@ def learning_curves_cli(training_statistics: Union[str, List[str]], **kwargs: di
     learning_curves(train_stats_per_model, **kwargs)
 
 
+@DeveloperAPI
 def compare_classifiers_performance_from_prob_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -419,6 +428,7 @@ def compare_classifiers_performance_from_prob_cli(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_from_pred_cli(
     predictions: List[str],
     ground_truth: str,
@@ -466,6 +476,7 @@ def compare_classifiers_performance_from_pred_cli(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_subset_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -517,6 +528,7 @@ def compare_classifiers_performance_subset_cli(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_changing_k_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -568,6 +580,7 @@ def compare_classifiers_performance_changing_k_cli(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_multiclass_multimetric_cli(
     test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict
 ) -> None:
@@ -589,6 +602,7 @@ def compare_classifiers_multiclass_multimetric_cli(
     compare_classifiers_multiclass_multimetric(test_stats_per_model, metadata=metadata, **kwargs)
 
 
+@DeveloperAPI
 def compare_classifiers_predictions_cli(
     predictions: List[str],
     ground_truth: str,
@@ -635,6 +649,7 @@ def compare_classifiers_predictions_cli(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_predictions_distribution_cli(
     predictions: List[str],
     ground_truth: str,
@@ -680,6 +695,7 @@ def compare_classifiers_predictions_distribution_cli(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -730,6 +746,7 @@ def confidence_thresholding_cli(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_data_vs_acc_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -780,6 +797,7 @@ def confidence_thresholding_data_vs_acc_cli(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -830,6 +848,7 @@ def confidence_thresholding_data_vs_acc_subset_cli(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_per_class_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -879,6 +898,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_2thresholds_2d_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -937,6 +957,7 @@ def confidence_thresholding_2thresholds_2d_cli(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_2thresholds_3d_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -994,6 +1015,7 @@ def confidence_thresholding_2thresholds_3d_cli(
     )
 
 
+@DeveloperAPI
 def binary_threshold_vs_metric_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -1045,6 +1067,7 @@ def binary_threshold_vs_metric_cli(
     )
 
 
+@DeveloperAPI
 def roc_curves_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -1096,6 +1119,7 @@ def roc_curves_cli(
     )
 
 
+@DeveloperAPI
 def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], **kwargs: dict) -> None:
     """Load model data from files to be shown by roc_curves_from_test_statistics_cli.
 
@@ -1112,6 +1136,7 @@ def roc_curves_from_test_statistics_cli(test_statistics: Union[str, List[str]], 
     roc_curves_from_test_statistics(test_stats_per_model, **kwargs)
 
 
+@DeveloperAPI
 def calibration_1_vs_all_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -1173,6 +1198,7 @@ def calibration_1_vs_all_cli(
     )
 
 
+@DeveloperAPI
 def calibration_multiclass_cli(
     probabilities: Union[str, List[str]],
     ground_truth: str,
@@ -1224,6 +1250,7 @@ def calibration_multiclass_cli(
     )
 
 
+@DeveloperAPI
 def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by confusion_matrix.
 
@@ -1243,6 +1270,7 @@ def confusion_matrix_cli(test_statistics: Union[str, List[str]], ground_truth_me
     confusion_matrix(test_stats_per_model, metadata, **kwargs)
 
 
+@DeveloperAPI
 def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_metadata: str, **kwargs: dict) -> None:
     """Load model data from files to be shown by frequency_vs_f1.
 
@@ -1262,6 +1290,7 @@ def frequency_vs_f1_cli(test_statistics: Union[str, List[str]], ground_truth_met
     frequency_vs_f1(test_stats_per_model, metadata, **kwargs)
 
 
+@DeveloperAPI
 def learning_curves(
     train_stats_per_model: List[dict],
     output_feature_name: Union[str, None] = None,
@@ -1339,6 +1368,7 @@ def learning_curves(
                 )
 
 
+@DeveloperAPI
 def compare_performance(
     test_stats_per_model: List[dict],
     output_feature_name: Union[str, None] = None,
@@ -1438,6 +1468,7 @@ def compare_performance(
             )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_from_prob(
     probabilities_per_model: List[np.ndarray],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -1534,6 +1565,7 @@ def compare_classifiers_performance_from_prob(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_from_pred(
     predictions_per_model: List[np.ndarray],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -1620,6 +1652,7 @@ def compare_classifiers_performance_from_pred(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_subset(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -1742,6 +1775,7 @@ def compare_classifiers_performance_subset(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_performance_changing_k(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -1828,6 +1862,7 @@ def compare_classifiers_performance_changing_k(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_multiclass_multimetric(
     test_stats_per_model: List[dict],
     metadata: dict,
@@ -1977,6 +2012,7 @@ def compare_classifiers_multiclass_multimetric(
                 logger.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
+@DeveloperAPI
 def compare_classifiers_predictions(
     predictions_per_model: List[list],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -2117,6 +2153,7 @@ def compare_classifiers_predictions(
     )
 
 
+@DeveloperAPI
 def compare_classifiers_predictions_distribution(
     predictions_per_model: List[list],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -2190,6 +2227,7 @@ def compare_classifiers_predictions_distribution(
     visualization_utils.radar_chart(prob_gt, prob_predictions, model_names_list, filename=filename)
 
 
+@DeveloperAPI
 def confidence_thresholding(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -2281,6 +2319,7 @@ def confidence_thresholding(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_data_vs_acc(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -2378,6 +2417,7 @@ def confidence_thresholding_data_vs_acc(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -2514,6 +2554,7 @@ def confidence_thresholding_data_vs_acc_subset(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_data_vs_acc_subset_per_class(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -2666,6 +2707,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         )
 
 
+@DeveloperAPI
 def confidence_thresholding_2thresholds_2d(
     probabilities_per_model: List[np.array],
     ground_truths: Union[List[np.array], List[pd.Series]],
@@ -2856,6 +2898,7 @@ def confidence_thresholding_2thresholds_2d(
     )
 
 
+@DeveloperAPI
 def confidence_thresholding_2thresholds_3d(
     probabilities_per_model: List[np.array],
     ground_truths: Union[List[np.array], List[pd.Series]],
@@ -2978,6 +3021,7 @@ def confidence_thresholding_2thresholds_3d(
     )
 
 
+@DeveloperAPI
 def binary_threshold_vs_metric(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -3093,6 +3137,7 @@ def binary_threshold_vs_metric(
         )
 
 
+@DeveloperAPI
 def roc_curves(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -3162,6 +3207,7 @@ def roc_curves(
     visualization_utils.roc_curves(fpr_tprs, model_names_list, title="ROC curves", filename=filename)
 
 
+@DeveloperAPI
 def roc_curves_from_test_statistics(
     test_stats_per_model: List[dict],
     output_feature_name: str,
@@ -3206,6 +3252,7 @@ def roc_curves_from_test_statistics(
     visualization_utils.roc_curves(fpr_tprs, model_names_list, title="ROC curves", filename=filename_template_path)
 
 
+@DeveloperAPI
 def calibration_1_vs_all(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -3350,6 +3397,7 @@ def calibration_1_vs_all(
     )
 
 
+@DeveloperAPI
 def calibration_multiclass(
     probabilities_per_model: List[np.array],
     ground_truth: Union[pd.Series, np.ndarray],
@@ -3448,6 +3496,7 @@ def calibration_multiclass(
         logger.info(tokenizer_name.format(brier_score))
 
 
+@DeveloperAPI
 def confusion_matrix(
     test_stats_per_model: List[dict],
     metadata: dict,
@@ -3561,6 +3610,7 @@ def confusion_matrix(
         raise FileNotFoundError("Cannot find confusion_matrix in evaluation " "data")
 
 
+@DeveloperAPI
 def frequency_vs_f1(
     test_stats_per_model: List[dict],
     metadata: dict,
@@ -3696,6 +3746,7 @@ def frequency_vs_f1(
             )
 
 
+@DeveloperAPI
 def hyperopt_report_cli(hyperopt_stats_path, output_directory=None, file_format="pdf", **kwargs) -> None:
     """Produces a report about hyperparameter optimization creating one graph per hyperparameter to show the
     distribution of results and one additional graph of pairwise hyperparameters interactions.
@@ -3709,6 +3760,7 @@ def hyperopt_report_cli(hyperopt_stats_path, output_directory=None, file_format=
     hyperopt_report(hyperopt_stats_path, output_directory=output_directory, file_format=file_format)
 
 
+@DeveloperAPI
 def hyperopt_report(hyperopt_stats_path: str, output_directory: str = None, file_format: str = "pdf", **kwargs) -> None:
     """Produces a report about hyperparameter optimization creating one graph per hyperparameter to show the
     distribution of results and one additional graph of pairwise hyperparameters interactions.
@@ -3742,6 +3794,7 @@ def hyperopt_report(hyperopt_stats_path: str, output_directory: str = None, file
     )
 
 
+@DeveloperAPI
 def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
     """Produces a parallel coordinate plot about hyperparameter optimization creating one HTML file and optionally
     a CSV file to be read by hiplot.
@@ -3754,6 +3807,7 @@ def hyperopt_hiplot_cli(hyperopt_stats_path, output_directory=None, **kwargs):
     hyperopt_hiplot(hyperopt_stats_path, output_directory=output_directory)
 
 
+@DeveloperAPI
 def hyperopt_hiplot(hyperopt_stats_path, output_directory=None, **kwargs):
     """Produces a parallel coordinate plot about hyperparameter optimization creating one HTML file and optionally
     a CSV file to be read by hiplot.
@@ -3792,6 +3846,7 @@ def _convert_space_to_dtype(space: str) -> str:
         return "object"
 
 
+@DeveloperAPI
 def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric):
     df = pd.DataFrame([{metric: res["metric_score"], **res["parameters"]} for res in hyperopt_results])
     df = df.astype(
@@ -3800,34 +3855,37 @@ def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters, metric)
     return df
 
 
-visualizations_registry = {
-    "compare_performance": compare_performance_cli,
-    "compare_classifiers_performance_from_prob": compare_classifiers_performance_from_prob_cli,
-    "compare_classifiers_performance_from_pred": compare_classifiers_performance_from_pred_cli,
-    "compare_classifiers_performance_subset": compare_classifiers_performance_subset_cli,
-    "compare_classifiers_performance_changing_k": compare_classifiers_performance_changing_k_cli,
-    "compare_classifiers_multiclass_multimetric": compare_classifiers_multiclass_multimetric_cli,
-    "compare_classifiers_predictions": compare_classifiers_predictions_cli,
-    "compare_classifiers_predictions_distribution": compare_classifiers_predictions_distribution_cli,
-    "confidence_thresholding": confidence_thresholding_cli,
-    "confidence_thresholding_data_vs_acc": confidence_thresholding_data_vs_acc_cli,
-    "confidence_thresholding_data_vs_acc_subset": confidence_thresholding_data_vs_acc_subset_cli,
-    "confidence_thresholding_data_vs_acc_subset_per_class": confidence_thresholding_data_vs_acc_subset_per_class_cli,
-    "confidence_thresholding_2thresholds_2d": confidence_thresholding_2thresholds_2d_cli,
-    "confidence_thresholding_2thresholds_3d": confidence_thresholding_2thresholds_3d_cli,
-    "binary_threshold_vs_metric": binary_threshold_vs_metric_cli,
-    "roc_curves": roc_curves_cli,
-    "roc_curves_from_test_statistics": roc_curves_from_test_statistics_cli,
-    "calibration_1_vs_all": calibration_1_vs_all_cli,
-    "calibration_multiclass": calibration_multiclass_cli,
-    "confusion_matrix": confusion_matrix_cli,
-    "frequency_vs_f1": frequency_vs_f1_cli,
-    "learning_curves": learning_curves_cli,
-    "hyperopt_report": hyperopt_report_cli,
-    "hyperopt_hiplot": hyperopt_hiplot_cli,
-}
+@DeveloperAPI
+def get_visualizations_registry() -> Dict[str, Callable]:
+    return {
+        "compare_performance": compare_performance_cli,
+        "compare_classifiers_performance_from_prob": compare_classifiers_performance_from_prob_cli,
+        "compare_classifiers_performance_from_pred": compare_classifiers_performance_from_pred_cli,
+        "compare_classifiers_performance_subset": compare_classifiers_performance_subset_cli,
+        "compare_classifiers_performance_changing_k": compare_classifiers_performance_changing_k_cli,
+        "compare_classifiers_multiclass_multimetric": compare_classifiers_multiclass_multimetric_cli,
+        "compare_classifiers_predictions": compare_classifiers_predictions_cli,
+        "compare_classifiers_predictions_distribution": compare_classifiers_predictions_distribution_cli,
+        "confidence_thresholding": confidence_thresholding_cli,
+        "confidence_thresholding_data_vs_acc": confidence_thresholding_data_vs_acc_cli,
+        "confidence_thresholding_data_vs_acc_subset": confidence_thresholding_data_vs_acc_subset_cli,
+        "confidence_thresholding_data_vs_acc_subset_per_class": confidence_thresholding_data_vs_acc_subset_per_class_cli,  # noqa: E501
+        "confidence_thresholding_2thresholds_2d": confidence_thresholding_2thresholds_2d_cli,
+        "confidence_thresholding_2thresholds_3d": confidence_thresholding_2thresholds_3d_cli,
+        "binary_threshold_vs_metric": binary_threshold_vs_metric_cli,
+        "roc_curves": roc_curves_cli,
+        "roc_curves_from_test_statistics": roc_curves_from_test_statistics_cli,
+        "calibration_1_vs_all": calibration_1_vs_all_cli,
+        "calibration_multiclass": calibration_multiclass_cli,
+        "confusion_matrix": confusion_matrix_cli,
+        "frequency_vs_f1": frequency_vs_f1_cli,
+        "learning_curves": learning_curves_cli,
+        "hyperopt_report": hyperopt_report_cli,
+        "hyperopt_hiplot": hyperopt_hiplot_cli,
+    }
 
 
+@PublicAPI
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description="This script analyzes results and shows some nice plots.",
@@ -3856,7 +3914,7 @@ def cli(sys_argv):
     parser.add_argument(
         "-v",
         "--visualization",
-        choices=sorted(list(visualizations_registry.keys())),
+        choices=sorted(list(get_visualizations_registry().keys())),
         help="type of visualization to generate",
         required=True,
     )
@@ -3921,13 +3979,13 @@ def cli(sys_argv):
     for callback in args.callbacks:
         callback.on_cmdline("visualize", *sys_argv)
 
-    args.logging_level = logging_level_registry[args.logging_level]
+    args.logging_level = get_logging_level_registry()[args.logging_level]
     logging.getLogger("ludwig").setLevel(args.logging_level)
     global logger
     logger = logging.getLogger("ludwig.visualize")
 
     try:
-        vis_func = visualizations_registry[args.visualization]
+        vis_func = get_visualizations_registry()[args.visualization]
     except KeyError:
         logger.info("Visualization argument not recognized")
         raise

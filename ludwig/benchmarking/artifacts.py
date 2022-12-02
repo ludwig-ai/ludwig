@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Dict
 
+from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import load_json, load_yaml
 
 
@@ -14,7 +15,7 @@ class BenchmarkingResult:
     experiment_config: Dict[str, Any]
 
     # The Ludwig config used to run the experiment.
-    ludwig_config: Dict[str, Any]
+    ludwig_config: ModelConfigDict
 
     # The python script that is used to process the config before being used.
     process_config_file: str
@@ -35,7 +36,7 @@ class BenchmarkingResult:
     training_progress: Dict[str, Any]
 
     # Loaded `training_set_metadata.json` file.
-    training_set_metadata: Dict[str, Any]
+    training_set_metadata: TrainingSetMetadataDict
 
 
 def build_benchmarking_result(benchmarking_config: dict, experiment_idx: int):

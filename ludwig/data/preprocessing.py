@@ -17,7 +17,7 @@ import contextlib
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -59,6 +59,7 @@ from ludwig.data.utils import set_fixed_split
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
 from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
@@ -1258,8 +1259,8 @@ def cast_columns(dataset_cols, features, backend) -> None:
 
 
 def merge_preprocessing(
-    feature_config: Dict[str, Any], global_preprocessing_parameters: Dict[str, Any]
-) -> Dict[str, Any]:
+    feature_config: FeatureConfigDict, global_preprocessing_parameters: PreprocessingConfigDict
+) -> FeatureConfigDict:
     if PREPROCESSING not in feature_config:
         return global_preprocessing_parameters[feature_config[TYPE]]
 
@@ -1268,11 +1269,11 @@ def merge_preprocessing(
 
 def build_preprocessing_parameters(
     dataset_cols: Dict[str, Series],
-    feature_configs: List[Dict[str, Any]],
-    global_preprocessing_parameters: Dict[str, Any],
+    feature_configs: List[FeatureConfigDict],
+    global_preprocessing_parameters: PreprocessingConfigDict,
     backend: Backend,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    metadata: Optional[TrainingSetMetadataDict] = None,
+) -> PreprocessingConfigDict:
     if metadata is None:
         metadata = {}
 
@@ -1309,12 +1310,12 @@ def build_preprocessing_parameters(
 
 
 def build_metadata(
-    metadata: Dict[str, Any],
-    feature_name_to_preprocessing_parameters: Dict[str, Any],
+    metadata: TrainingSetMetadataDict,
+    feature_name_to_preprocessing_parameters: Dict[str, PreprocessingConfigDict],
     dataset_cols: Dict[str, Series],
-    feature_configs: List[Dict[str, Any]],
+    feature_configs: List[FeatureConfigDict],
     backend: Backend,
-) -> Dict[str, Any]:
+) -> TrainingSetMetadataDict:
     for feature_config in feature_configs:
         feature_name = feature_config[NAME]
         if feature_name in metadata:
@@ -1419,7 +1420,7 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
     return balanced_df
 
 
-def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backend):
+def precompute_fill_value(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
     """Precomputes the fill value for a feature.
 
     NOTE: this is called before NaNs are removed from the dataset. Modifications here must handle NaNs gracefully.
@@ -1468,7 +1469,7 @@ def precompute_fill_value(dataset_cols, feature, preprocessing_parameters, backe
 
 
 @DeveloperAPI
-def handle_missing_values(dataset_cols, feature, preprocessing_parameters, backend):
+def handle_missing_values(dataset_cols, feature, preprocessing_parameters: PreprocessingConfigDict, backend):
     missing_value_strategy = preprocessing_parameters["missing_value_strategy"]
 
     # Check for the precomputed fill value in the metadata
@@ -1524,7 +1525,7 @@ def load_hdf5(hdf5_file_path, preprocessing_params, backend, split_data=True, sh
     return training_set, test_set, validation_set
 
 
-def load_metadata(metadata_file_path: str) -> Dict[str, Any]:
+def load_metadata(metadata_file_path: str) -> TrainingSetMetadataDict:
     logger.info(f"Loading metadata from: {metadata_file_path}")
     training_set_metadata = data_utils.load_json(metadata_file_path)
     # TODO(travis): decouple config from training_set_metadata so we don't need to
@@ -1546,7 +1547,7 @@ def preprocess_for_training(
     backend=LOCAL_BACKEND,
     random_seed=default_random_seed,
     callbacks=None,
-) -> Tuple[Dataset, Dataset, Dataset, Dict[str, Any]]:
+) -> Tuple[Dataset, Dataset, Dataset, TrainingSetMetadataDict]:
     """Returns training, val and test datasets with training set metadata."""
 
     # sanity check to make sure some data source is provided

@@ -53,6 +53,13 @@ from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
+from ludwig.types import (
+    FeatureConfigDict,
+    HyperoptConfigDict,
+    ModelConfigDict,
+    TrainerConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -81,7 +88,7 @@ def initialize_horovod():
     return _initialize_horovod()
 
 
-def get_trainer_kwargs(**kwargs) -> Dict[str, Any]:
+def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     # Horovod an optional import, so avoid importing at the top.
     from ray.train.horovod import HorovodConfig
 
@@ -156,7 +163,7 @@ def _get_df_engine(processor):
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
+    training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
@@ -224,8 +231,8 @@ def tune_batch_size_fn(
     data_loader_kwargs: Dict[str, Any] = None,
     executable_kwargs: Dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
-    ludwig_config: Dict[str, Any] = None,
-    training_set_metadata: Dict[str, Any] = None,
+    ludwig_config: ModelConfigDict = None,
+    training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
 ) -> int:
@@ -249,11 +256,11 @@ def tune_batch_size_fn(
 @ray.remote(max_calls=1)
 def tune_learning_rate_fn(
     dataset: RayDataset,
-    config: Dict[str, Any],
+    config: ModelConfigDict,
     data_loader_kwargs: Dict[str, Any] = None,
     executable_kwargs: Dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
+    training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
 ) -> float:
@@ -510,7 +517,7 @@ class RayTrainerV2(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: ModelConfigDict,
         training_set: RayDataset,
         **kwargs,
     ) -> int:
@@ -598,7 +605,7 @@ class HorovodRemoteTrainer(RemoteTrainer):
 def eval_fn(
     predictor_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
-    training_set_metadata: Dict[str, Any] = None,
+    training_set_metadata: TrainingSetMetadataDict = None,
     features: Dict[str, Dict] = None,
     **kwargs,
 ):
@@ -754,7 +761,7 @@ class RayPredictor(BasePredictor):
         predictor_kwargs: Dict[str, Any],
         output_columns: List[str],
         features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        training_set_metadata: TrainingSetMetadataDict,
         *args,
         **kwargs,
     ):
@@ -987,7 +994,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         resources = ray.cluster_resources()
         return Resources(cpus=resources.get("CPU", 0), gpus=resources.get("GPU", 0))
 
-    def max_concurrent_trials(self, hyperopt_config: Dict[str, Any]) -> Union[int, None]:
+    def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         cpus_per_trial = hyperopt_config[EXECUTOR].get(CPU_RESOURCES_PER_TRIAL, 1)
         num_cpus_available = self.get_available_resources().cpus
 
