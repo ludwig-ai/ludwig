@@ -565,7 +565,7 @@ class RayTuneExecutor:
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             # get the resources assigned to the current trial
             num_gpus = 1 if use_gpu else 0
-            num_cpus = 0.01 if use_gpu else 1  # HACK: trainer Tuner needs CPUs...
+            num_cpus = 0 if use_gpu else 1
 
             hvd_kwargs = {
                 "num_workers": int(num_gpus) if use_gpu else 1,
@@ -637,7 +637,7 @@ class RayTuneExecutor:
         num_gpus = 1 if use_gpu else 0
         # HACK: trainer Tuner needs CPUs in Ray 2.1 to prevent div by 0 error
         # https://github.com/ray-project/ray/blob/ray-2.1.0/python/ray/tune/impl/tuner_internal.py#L137
-        num_cpus = 0.0001 if use_gpu else 1
+        num_cpus = 0 if use_gpu else 1
         return num_cpus, num_gpus
 
     def execute(
@@ -786,12 +786,12 @@ class RayTuneExecutor:
 
         if _is_ray_backend(backend):
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
-            resources_per_trial = PlacementGroupFactory([{"worker_resources": 1}])
+            resources_per_trial = PlacementGroupFactory([{"hyperopt_resources": 1}])
         else:
             # If not Ray backend, request all resources at the trial level
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             num_cpus, num_gpus = self._get_num_cpus_gpus(use_gpu)
-            resources_per_trial = PlacementGroupFactory([{"CPU": num_cpus, "GPU": num_gpus, "worker_resources": 1}])
+            resources_per_trial = PlacementGroupFactory([{"CPU": num_cpus, "GPU": num_gpus, "hyperopt_resources": 1}])
 
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
 
