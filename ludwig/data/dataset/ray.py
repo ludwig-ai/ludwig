@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import contextlib
+import logging
 import math
 import queue
 import threading
@@ -22,6 +23,7 @@ from typing import Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
+import ray
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
@@ -37,6 +39,8 @@ from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
 from ludwig.utils.types import DataFrame, Series
+
+logger = logging.getLogger(__name__)
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
@@ -75,6 +79,27 @@ class RayDataset(Dataset):
         self.data_parquet_fp = training_set_metadata.get(DATA_TRAIN_PARQUET_FP)
         self._processed_data_fp = df if isinstance(df, str) else None
         self.auto_window = auto_window
+
+    def get_window_size_bytes(self, window_size_bytes: Optional[int] = None):
+        # If user has specified a window size, use it as is
+        if window_size_bytes:
+            return window_size_bytes
+        # If the user does not supply a window size and the dataset is large,
+        # set the window size to `<available memory> // 5`.
+        elif self.auto_window and window_size_bytes is None:
+            ds_memory_size = self.in_memory_size_bytes
+            cluster_memory_size = ray.cluster_resources()["object_store_memory"]
+            if ds_memory_size > cluster_memory_size // 5:
+                # TODO: Add link to windowing docs.
+                logger.info(
+                    "In-memory dataset size is greater than 20%% of object store memory. "
+                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
+                )
+                window_size_bytes = int(cluster_memory_size // 5)
+                return window_size_bytes
+        # By default, set to -1 so that an infinite window size
+        # will be used which effectively results in bulk data ingestion
+        return -1
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):

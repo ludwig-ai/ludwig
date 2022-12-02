@@ -73,6 +73,7 @@ try:
     import dask
     import modin
     import ray
+    from ray.air import session
 
     from ludwig.backend.ray import get_trainer_kwargs, RayBackend
     from ludwig.data.dataframe.dask import DaskEngine
@@ -99,6 +100,7 @@ except ImportError:
     dask = None
     modin = None
     ray = None
+    session = None
 
     _ray_nightly = False
     _modin_ray_incompatible = False
@@ -958,47 +960,70 @@ class TestDatasetWindowAutosizing:
         )
         return ds
 
-    def test_small_dataset(self, ray_cluster_small_object_store):
-        """A small dataset should not trigger automatic window sizing."""
-        ds = self.create_dataset(self.object_store_size // 8)
-        pipe = ds.pipeline()
-        rep = next(iter(pipe._base_iterable))()
-
-        # Without automatic window sizing, the number of blocks in the pipeline
-        # should match the number of partitions in the Dask dataframe.
+    def _train_fn(self):
+        """Common train function shared by some tests."""
+        train_pipe = session.get_dataset_shard("train")
+        rep = next(iter(train_pipe._base_iterable))()
         assert rep.num_blocks() == self.num_partitions
+
+    def training_simulation(self, ray_ds, train_fn, stream_window_size=None):
+        """Stripped down simulation of RayTrainerV2.train()."""
+        from ludwig.backend.ray import create_runner
+
+        dataset = {"train": ray_ds.ds}
+        stream_window_size = {"train": ray_ds.get_window_size_bytes(stream_window_size)}
+        with create_runner(**{"num_workers": 1, "resources_per_worker": {"CPU": 1, "GPU": 0}}) as runner:
+            runner.run(
+                lambda config: train_fn(**config),
+                config={},
+                data_loader_kwargs={},
+                dataset=dataset,
+                stream_window_size=stream_window_size,
+                callbacks=[],
+            )
+
+    def test_small_dataset(self, ray_cluster_small_object_store):
+        """A small dataset should not trigger automatic window sizing.
+
+        Without automatic window sizing, the number of blocks in the pipeline should match the number of partitions in
+        the Dask dataframe.
+        """
+
+        ds = self.create_dataset(self.object_store_size // 8)
+        self.training_simulation(ds, self._train_fn)
 
     def test_large_dataset(self, ray_cluster_small_object_store):
         """A large dataset should trigger windowing."""
-        ds = self.create_dataset(self.object_store_size * 8)
-        pipe = ds.pipeline()
 
-        # In the windowed case, each window corresponds to a dataset that has
-        # at least one and fewer than `self.num_partitions` blocks.
-        # Because the pipeline is infinitely repeated, check the first 100
-        # windows to ensure coverage of the whole dataset.
-        for i, wds in enumerate(pipe._base_iterable):
-            assert wds().num_blocks() < self.num_partitions
-            if i > 99:
-                break
+        def train_fn():
+            train_pipe = session.get_dataset_shard("train")
+
+            # In the windowed case, each window corresponds to a dataset that has
+            # at least one and fewer than `self.num_partitions` blocks.
+            # Because the pipeline is infinitely repeated, check the first 100
+            # windows to ensure coverage of the whole dataset.
+            for i, wds in enumerate(train_pipe._base_iterable):
+                assert wds().num_blocks() < self.num_partitions
+                if i > 99:
+                    break
+
+        ray_ds = self.create_dataset(self.object_store_size * 8)
+        self.training_simulation(ray_ds, train_fn)
 
     def test_window_autosizing_disabled(self, ray_cluster_small_object_store):
         """If window autosizing is disabled, no datasets should be windowed."""
         ds = self.create_dataset(self.object_store_size * 8, auto_window=False)
-        pipe = ds.pipeline()
-        rep = next(iter(pipe._base_iterable))()
-        assert rep.num_blocks() == self.num_partitions
+        self.training_simulation(ds, self._train_fn)
 
     def test_user_window_size(self, ray_cluster_small_object_store):
         """If the user supplies a window size, do not autosize."""
-        # This pipeline should use the heuristic window size.
-        ds = self.create_dataset(self.object_store_size * 8)
-        pipe = ds.pipeline()
-        rep = next(iter(pipe._base_iterable))()
-        auto_num_blocks = rep.num_blocks()
 
-        # This pipeline should have fewer windows but more blocks per window
-        # than the autosized pipeline.
-        pipe = ds.pipeline(window_size_bytes=self.auto_window_size * 2)
-        rep = next(iter(pipe._base_iterable))()
-        assert auto_num_blocks < rep.num_blocks()
+        def train_fn():
+            train_pipe = session.get_dataset_shard("train")
+            rep = next(iter(train_pipe._base_iterable))()
+            # This should be lesser than the default 100 blocks that are created
+            # since we're setting an explicit window size instead of bulk ingesting the data
+            assert rep.num_blocks() == 4
+
+        ds = self.create_dataset(self.object_store_size * 8)
+        self.training_simulation(ds, train_fn, stream_window_size=self.auto_window_size * 2)

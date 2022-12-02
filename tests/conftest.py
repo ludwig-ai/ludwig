@@ -149,7 +149,7 @@ def ray_cluster_7cpu(request):
 @pytest.fixture(scope="module")
 def ray_cluster_small_object_store(request):
     # Create a Ray cluster with the smallest possible object store.
-    with _ray_start(request, num_cpus=2, object_store_memory=78643200):
+    with _ray_start(request, num_cpus=4, object_store_memory=78643200):
         yield
 
 
@@ -168,6 +168,7 @@ def _ray_start(request, **kwargs):
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
+    # HACK(geoffrey): `hyperopt_resources` is for hyperopt as of Ray >= 2.1.0
     res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})
     try:
         yield res
