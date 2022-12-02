@@ -30,8 +30,8 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
 @dataclass(repr=False)
 class MSELossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[MEAN_SQUARED_ERROR],
+    type: str = schema_utils.ProtectedString(
+        MEAN_SQUARED_ERROR,
         description="Type of loss.",
     )
 
@@ -45,8 +45,8 @@ class MSELossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class MAELossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[MEAN_ABSOLUTE_ERROR],
+    type: str = schema_utils.ProtectedString(
+        MEAN_ABSOLUTE_ERROR,
         description="Type of loss.",
     )
 
@@ -60,8 +60,8 @@ class MAELossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class RMSELossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[ROOT_MEAN_SQUARED_ERROR],
+    type: str = schema_utils.ProtectedString(
+        ROOT_MEAN_SQUARED_ERROR,
         description="Type of loss.",
     )
 
@@ -75,8 +75,8 @@ class RMSELossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class RMSPELossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[ROOT_MEAN_SQUARED_PERCENTAGE_ERROR],
+    type: str = schema_utils.ProtectedString(
+        ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
         description="Type of loss.",
     )
 
@@ -90,8 +90,8 @@ class RMSPELossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class BWCEWLossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[BINARY_WEIGHTED_CROSS_ENTROPY],
+    type: str = schema_utils.ProtectedString(
+        BINARY_WEIGHTED_CROSS_ENTROPY,
         description="Type of loss.",
     )
 
@@ -114,8 +114,8 @@ class BWCEWLossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[SOFTMAX_CROSS_ENTROPY],
+    type: str = schema_utils.ProtectedString(
+        SOFTMAX_CROSS_ENTROPY,
         description="Type of loss.",
     )
 
@@ -148,8 +148,8 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[SEQUENCE_SOFTMAX_CROSS_ENTROPY],
+    type: str = schema_utils.ProtectedString(
+        SEQUENCE_SOFTMAX_CROSS_ENTROPY,
         description="Type of loss.",
     )
 
@@ -187,8 +187,8 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
 
-    type: str = schema_utils.StringOptions(
-        options=[SIGMOID_CROSS_ENTROPY],
+    type: str = schema_utils.ProtectedString(
+        SIGMOID_CROSS_ENTROPY,
         description="Type of loss.",
     )
 
