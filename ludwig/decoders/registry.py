@@ -4,12 +4,12 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.decoders.base import Decoder
 from ludwig.utils.registry import Registry
 
-decoder_registry = Registry()
+_decoder_registry = Registry()
 
 
 @DeveloperAPI
 def get_decoder_registry() -> Registry:
-    return decoder_registry
+    return _decoder_registry
 
 
 @DeveloperAPI

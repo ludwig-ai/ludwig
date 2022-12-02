@@ -4,19 +4,19 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry
 
-encoder_registry = Registry()
+_encoder_registry = Registry()
 
-sequence_encoder_registry = Registry()
+_sequence_encoder_registry = Registry()
 
 
 @DeveloperAPI
 def get_encoder_registry() -> Registry:
-    return encoder_registry
+    return _encoder_registry
 
 
 @DeveloperAPI
 def get_sequence_encoder_registry() -> Registry:
-    return sequence_encoder_registry
+    return _sequence_encoder_registry
 
 
 def register_sequence_encoder(name: str):
