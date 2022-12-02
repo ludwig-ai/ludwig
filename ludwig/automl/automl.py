@@ -19,7 +19,7 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.api_annotations import PublicAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import (
     _create_default_config,
@@ -157,6 +157,7 @@ def auto_train(
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
 
+@DeveloperAPI
 def create_auto_config_with_dataset_profile(
     target: str,
     dataset: Optional[Union[str, DataFrame]] = None,

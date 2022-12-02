@@ -20,7 +20,7 @@ Jim,m,FALSE
 """
 
 
-def get_test_df() -> dd.DataFrame:
+def get_test_df():
     temp = tempfile.NamedTemporaryFile(mode="w+")
     temp.write(CSV_CONTENT)
     temp.seek(0)
