@@ -564,9 +564,7 @@ class RayTuneExecutor:
         if is_using_ray_backend:
             # check if we are using at least 1 gpu per trial
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
-            # get the resources assigned to the current trial
-            num_gpus = 1 if use_gpu else 0
-            num_cpus = 0 if use_gpu else 1
+            num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
 
             hvd_kwargs = {
                 "num_workers": int(num_gpus) if use_gpu else 1,
@@ -631,15 +629,6 @@ class RayTuneExecutor:
             trial_id=tune.get_trial_id(),
             trial_dir=tune.get_trial_dir(),
         )
-
-    def _get_num_cpus_gpus(self, use_gpu: bool):
-        # check if we are using at least 1 gpu per trial
-        # get the resources assigned to the current trial
-        num_gpus = 1 if use_gpu else 0
-        # HACK: trainer Tuner needs CPUs in Ray 2.1 to prevent div by 0 error
-        # https://github.com/ray-project/ray/blob/ray-2.1.0/python/ray/tune/impl/tuner_internal.py#L137
-        num_cpus = 0 if use_gpu else 1
-        return num_cpus, num_gpus
 
     def execute(
         self,
@@ -789,9 +778,9 @@ class RayTuneExecutor:
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
             resources_per_trial = PlacementGroupFactory([{"hyperopt_resources": 1}])
         else:
-            # If not Ray backend, request all resources at the trial level
+            # If not Ray backend, request all of the resources required at the trial level
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
-            num_cpus, num_gpus = self._get_num_cpus_gpus(use_gpu)
+            num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
             resources_per_trial = PlacementGroupFactory([{"CPU": num_cpus, "GPU": num_gpus, "hyperopt_resources": 1}])
 
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
@@ -1022,3 +1011,11 @@ def run_experiment(
 def _run_experiment_unary(kwargs):
     """Unary function is needed by Fiber to map a list of args."""
     return run_experiment(**kwargs)
+
+
+def _get_num_cpus_gpus(self, use_gpu: bool):
+    # if use_gpu is True, then we need to set the number of gpus to 1
+    # and the number of cpus to 0
+    num_gpus = 1 if use_gpu else 0
+    num_cpus = 0 if use_gpu else 1
+    return num_cpus, num_gpus
