@@ -30,6 +30,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.schema.features.number_feature import NumberOutputFeatureConfig
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
 
@@ -256,6 +257,25 @@ def test_update_config_object():
     config_object.update_with_dict(temp_config)
 
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
+
+
+def test_config_object_validation_parameters_defaults():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+        ],
+        "output_features": [
+            {
+                "name": "number_output_feature",
+                "type": "number",
+            },
+        ],
+    }
+
+    config_object = ModelConfig.from_dict(config)
+
+    assert config_object.trainer.validation_field == "number_output_feature"
+    assert config_object.trainer.validation_metric == NumberOutputFeatureConfig.default_validation_metric
 
 
 def test_constructors_yaml():

@@ -13,6 +13,7 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
+    COMBINED,
     COMBINER,
     DECODER,
     DEFAULT_VALIDATION_METRIC,
@@ -49,7 +50,12 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import get_input_feature_cls, get_output_feature_cls, input_config_registry
+from ludwig.schema.features.utils import (
+    get_input_feature_cls,
+    get_output_feature_cls,
+    input_config_registry,
+    output_config_registry,
+)
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -196,6 +202,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Hyperopt =====
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
         self._set_hyperopt_defaults()
+
+        # Set up default validation metric, which is used for plateau metrics and early stopping.
+        self._set_validation_parameters()
 
         # ===== Validate Config =====
         self._validate_config(self.to_dict())
@@ -443,6 +452,15 @@ class ModelConfig(BaseMarshmallowConfig):
                 feature_cls.encoder = PassthroughEncoderConfig()
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
+
+    def _set_validation_parameters(self):
+        """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
+        output_features = list(self.output_features.to_dict().values())
+        if len(output_features) > 1:
+            self.trainer.validation_field = COMBINED
+            self.trainer.validation_metric = LOSS
+        self.trainer.validation_field = output_features[0]["name"]
+        self.trainer.validation_metric = output_config_registry[output_features[0]["type"]].default_validation_metric
 
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
