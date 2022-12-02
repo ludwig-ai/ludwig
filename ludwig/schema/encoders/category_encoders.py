@@ -17,10 +17,8 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
     """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
     passthrough encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["passthrough"],
-        default="passthrough",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "passthrough",
         description="Type of encoder.",
     )
 
@@ -30,10 +28,8 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 @dataclass(repr=False, order=True)
 class CategoricalEmbedConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["dense"],
-        default="dense",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "dense",
         description="Type of encoder.",
     )
 
@@ -120,10 +116,8 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 @dataclass(repr=False, order=True)
 class CategoricalSparseConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["sparse"],
-        default="sparse",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "sparse",
         description="Type of encoder.",
     )
 

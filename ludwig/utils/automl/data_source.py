@@ -4,6 +4,7 @@ from typing import List, Tuple
 import dask.dataframe as dd
 import pandas as pd
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.audio_utils import is_audio_score
 from ludwig.utils.automl.utils import avg_num_tokens
 from ludwig.utils.image_utils import is_image_score
@@ -11,6 +12,7 @@ from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.types import DataFrame
 
 
+@DeveloperAPI
 class DataSource(ABC):
     @property
     @abstractmethod
@@ -46,6 +48,7 @@ class DataSource(ABC):
         raise NotImplementedError()
 
 
+@DeveloperAPI
 class DataframeSourceMixin:
     df: DataFrame
 
@@ -90,11 +93,13 @@ class DataframeSourceMixin:
         return len(self.df)
 
 
+@DeveloperAPI
 class DataframeSource(DataframeSourceMixin, DataSource):
     def __init__(self, df):
         self.df = df
 
 
+@DeveloperAPI
 class DaskDataSource(DataframeSource):
     @memoized_method(maxsize=1)
     def get_sample(self) -> pd.DataFrame:
@@ -126,6 +131,7 @@ class DaskDataSource(DataframeSource):
         return avg_num_tokens(self.sample[column])
 
 
+@DeveloperAPI
 def wrap_data_source(df: DataFrame) -> DataSource:
     if isinstance(df, dd.core.DataFrame):
         return DaskDataSource(df)

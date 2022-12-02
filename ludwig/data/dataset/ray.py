@@ -18,7 +18,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Optional, Union
+from typing import Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -31,6 +31,7 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
+from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -61,8 +62,8 @@ class RayDataset(Dataset):
     def __init__(
         self,
         df: Union[str, DataFrame],
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: Dict[str, FeatureConfigDict],
+        training_set_metadata: TrainingSetMetadataDict,
         backend: Backend,
         auto_window: bool = False,
     ):
@@ -105,6 +106,17 @@ class RayDataset(Dataset):
     def to_df(self):
         return self.df_engine.from_ray_dataset(self.ds)
 
+    def repartition(self, num_blocks: int):
+        """Repartition the dataset into the specified number of blocks.
+
+        This operation occurs in place and overwrites `self.ds` with a
+        new repartitioned dataset.
+
+        Args:
+            num_blocks: Number of blocks in the repartitioned data.
+        """
+        self.ds = self.ds.repartition(num_blocks=num_blocks)
+
 
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
@@ -113,8 +125,8 @@ class RayDatasetManager(DatasetManager):
     def create(
         self,
         dataset: Union[str, DataFrame],
-        config: Dict[str, Any],
-        training_set_metadata: Dict[str, Any],
+        config: ModelConfigDict,
+        training_set_metadata: TrainingSetMetadataDict,
         auto_window: bool = False,
     ) -> "RayDataset":
         """Create a new Ray dataset with config.
@@ -130,8 +142,8 @@ class RayDatasetManager(DatasetManager):
         self,
         cache_path: str,
         dataset: DataFrame,
-        config: Dict[str, Any],
-        training_set_metadata: Dict[str, Any],
+        config: ModelConfigDict,
+        training_set_metadata: TrainingSetMetadataDict,
         tag: str,
     ):
         self.backend.df_engine.to_parquet(dataset, cache_path)
@@ -149,8 +161,8 @@ class RayDatasetShard(Dataset):
     def __init__(
         self,
         dataset_shard: DatasetPipeline,
-        features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        features: Dict[str, FeatureConfigDict],
+        training_set_metadata: TrainingSetMetadataDict,
     ):
         self.dataset_shard = dataset_shard
         self.features = features
@@ -190,7 +202,7 @@ class RayDatasetBatcher(Batcher):
         self,
         dataset_epoch_iterator: Iterator[DatasetPipeline],
         features: Dict[str, Dict],
-        training_set_metadata: Dict[str, Any],
+        training_set_metadata: TrainingSetMetadataDict,
         batch_size: int,
         samples_per_epoch: int,
     ):

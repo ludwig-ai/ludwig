@@ -17,7 +17,6 @@ repos:
       - id: check-ast
       - id: check-byte-order-marker
       - id: check-case-conflict
-      - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-json
       - id: check-toml

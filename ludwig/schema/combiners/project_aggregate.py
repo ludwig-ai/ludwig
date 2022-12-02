@@ -12,10 +12,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 @dataclass(order=True, repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["project_aggregate"],
-        default="project_aggregate",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "project_aggregate",
         description="Type of combiner.",
     )
 

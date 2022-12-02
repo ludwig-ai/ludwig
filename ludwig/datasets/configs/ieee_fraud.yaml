@@ -16,4 +16,4 @@ description: |
   https://www.kaggle.com/c/ieee-fraud-detection/overview.
 output_features:
   - name: isFraud
-    type: category
+    type: binary
