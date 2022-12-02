@@ -515,46 +515,6 @@ class RayTrainerV2(BaseTrainer):
         pass
 
 
-def legacy_train_fn(
-    trainer: RemoteTrainer = None,
-    remote_model: "LudwigModel" = None,  # noqa: F821
-    training_set_metadata: TrainingSetMetadataDict = None,
-    features: Dict[str, FeatureConfigDict] = None,
-    train_shards: List[DatasetPipeline] = None,
-    val_shards: List[DatasetPipeline] = None,
-    test_shards: List[DatasetPipeline] = None,
-    **kwargs,
-):
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    initialize_pytorch(horovod=hvd)
-
-    train_shard = RayDatasetShard(
-        train_shards[hvd.rank()],
-        features,
-        training_set_metadata,
-    )
-
-    val_shard = val_shards[hvd.rank()] if val_shards else None
-    if val_shard is not None:
-        val_shard = RayDatasetShard(
-            val_shard,
-            features,
-            training_set_metadata,
-        )
-
-    test_shard = test_shards[hvd.rank()] if test_shards else None
-    if test_shard is not None:
-        test_shard = RayDatasetShard(
-            test_shard,
-            features,
-            training_set_metadata,
-        )
-
-    results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
-    return results
-
-
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
         horovod = initialize_horovod()
