@@ -143,11 +143,11 @@ def get_default_automl_hyperopt() -> Dict[str, Any]:
   executor:
     type: ray
     num_samples: 10
-    time_budget_s: 7200
+    time_budget_s: 3600
     scheduler:
       type: async_hyperband
       time_attr: time_total_s
-      max_t: 7200
+      max_t: 3600
       grace_period: 72
       reduction_factor: 5
 """

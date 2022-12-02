@@ -20,14 +20,19 @@ Jim,m,FALSE
 """
 
 
-@pytest.mark.distributed
-def test_mixed_csv_data_source(ray_cluster_2cpu):
+def get_test_df() -> dd.DataFrame:
     temp = tempfile.NamedTemporaryFile(mode="w+")
     temp.write(CSV_CONTENT)
     temp.seek(0)
     ds = read_csv(temp.name, dtype=None)
     df = dd.from_pandas(ds, npartitions=1)
-    config = create_auto_config(dataset=df, target=[], time_limit_s=3600, tune_for_memory=False)
+    return df
+
+
+@pytest.mark.distributed
+def test_mixed_csv_data_source(ray_cluster_2cpu):
+    config = create_auto_config(dataset=get_test_df(), target=[], time_limit_s=3600, tune_for_memory=False)
+
     assert len(config["input_features"]) == 2
     assert config["input_features"][0]["type"] == TEXT
     assert config["input_features"][1]["type"] == TEXT
@@ -35,10 +40,7 @@ def test_mixed_csv_data_source(ray_cluster_2cpu):
 
 @pytest.mark.distributed
 def test_mixed_csv_data_source_with_profile(ray_cluster_2cpu):
-    temp = tempfile.NamedTemporaryFile(mode="w+")
-    temp.write(CSV_CONTENT)
-    temp.seek(0)
-    ds = read_csv(temp.name, dtype=None)
-    df = dd.from_pandas(ds, npartitions=1)
-    config = create_auto_config_with_dataset_profile(dataset=df)
-    assert len(config["input_features"]) == 3
+    config = create_auto_config_with_dataset_profile(dataset=get_test_df(), target="lives_in_sf")
+
+    assert len(config["input_features"]) == 2
+    assert len(config["output_features"]) == 1
