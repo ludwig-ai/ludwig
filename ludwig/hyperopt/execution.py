@@ -1013,7 +1013,7 @@ def _run_experiment_unary(kwargs):
     return run_experiment(**kwargs)
 
 
-def _get_num_cpus_gpus(self, use_gpu: bool):
+def _get_num_cpus_gpus(use_gpu: bool):
     # if use_gpu is True, then we need to set the number of gpus to 1
     # and the number of cpus to 0
     num_gpus = 1 if use_gpu else 0
