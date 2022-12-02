@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import numpy as np
 import torch
@@ -24,6 +24,7 @@ from dateutil.parser import parse
 from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
+from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -33,7 +34,7 @@ DATE_VECTOR_LENGTH = 9
 
 
 class _DatePreprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
@@ -56,7 +57,7 @@ class DateFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
@@ -88,11 +89,11 @@ class DateFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config: Dict[str, Any],
+        feature_config: FeatureConfigDict,
         input_df: DataFrame,
         proc_df: Dict[str, DataFrame],
-        metadata: Dict[str, Any],
-        preprocessing_parameters: Dict[str, Any],
+        metadata: TrainingSetMetadataDict,
+        preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
     ) -> None:
@@ -146,5 +147,5 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
         return DateInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _DatePreprocessing(metadata)

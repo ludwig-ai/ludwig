@@ -18,6 +18,7 @@ from abc import ABC
 from typing import Any, Callable, Dict, List, Union
 
 from ludwig.api_annotations import PublicAPI
+from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainingSetMetadataDict
 
 
 @PublicAPI
@@ -30,14 +31,14 @@ class Callback(ABC):
         """
         pass
 
-    def on_preprocess_start(self, config: Dict[str, Any]):
+    def on_preprocess_start(self, config: ModelConfigDict):
         """Called before preprocessing starts.
 
         :param config: The config dictionary.
         """
         pass
 
-    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: Dict[str, Any]):
+    def on_preprocess_end(self, training_set, validation_set, test_set, training_set_metadata: TrainingSetMetadataDict):
         """Called after preprocessing ends.
 
         :param training_set: The training set.
@@ -95,14 +96,14 @@ class Callback(ABC):
         # TODO(travis): remove in favor of on_hyperopt_end for naming consistency
         pass
 
-    def on_hyperopt_trial_start(self, parameters: Dict[str, Any]):
+    def on_hyperopt_trial_start(self, parameters: HyperoptConfigDict):
         """Called before the start of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
         """
         pass
 
-    def on_hyperopt_trial_end(self, parameters: Dict[str, Any]):
+    def on_hyperopt_trial_end(self, parameters: HyperoptConfigDict):
         """Called after the end of each hyperparameter optimization trial.
 
         :param parameters: The complete dictionary of parameters for this hyperparameter optimization experiment.
@@ -118,7 +119,7 @@ class Callback(ABC):
 
     def on_train_init(
         self,
-        base_config: Dict[str, Any],
+        base_config: ModelConfigDict,
         experiment_directory: str,
         experiment_name: str,
         model_name: str,
@@ -139,7 +140,7 @@ class Callback(ABC):
     def on_train_start(
         self,
         model,
-        config: Dict[str, Any],
+        config: ModelConfigDict,
         config_fp: Union[str, None],
     ):
         """Called after creation of trainer, before the start of training.
