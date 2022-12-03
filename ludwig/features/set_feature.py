@@ -23,6 +23,12 @@ from ludwig.constants import COLUMN, HIDDEN, LOGITS, NAME, PREDICTIONS, PROBABIL
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.schema.features.set_feature import SetInputFeatureConfig, SetOutputFeatureConfig
+from ludwig.types import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import output_feature_utils
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
@@ -38,7 +44,7 @@ class _SetPreprocessing(torch.nn.Module):
     multi-hot vector for each sample indicating presence of each token.
     """
 
-    def __init__(self, metadata: Dict[str, Any], is_bag: bool = False):
+    def __init__(self, metadata: TrainingSetMetadataDict, is_bag: bool = False):
         super().__init__()
         if metadata["preprocessing"]["tokenizer"] not in TORCHSCRIPT_COMPATIBLE_TOKENIZERS:
             raise ValueError(
@@ -88,14 +94,14 @@ class _SetPreprocessing(torch.nn.Module):
 class _SetPostprocessing(torch.nn.Module):
     """Torchscript-enabled version of postprocessing done by SetFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
         self.unk = UNKNOWN_SYMBOL
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
@@ -144,7 +150,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
@@ -162,7 +168,7 @@ class SetFeatureMixin(BaseFeatureMixin):
         }
 
     @staticmethod
-    def feature_data(column, metadata, preprocessing_parameters, backend):
+    def feature_data(column, metadata, preprocessing_parameters: PreprocessingConfigDict, backend):
         def to_dense(x):
             feature_vector = set_str_to_idx(x, metadata["str2idx"], preprocessing_parameters["tokenizer"])
 
@@ -174,7 +180,13 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = SetFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]],
@@ -223,7 +235,7 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
         return self.encoder_obj.output_shape
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SetPreprocessing(metadata)
 
 
@@ -336,7 +348,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         return result
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SetPostprocessing(metadata)
 
     @staticmethod

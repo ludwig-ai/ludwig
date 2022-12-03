@@ -281,8 +281,10 @@ class DatasetLoader:
 
         :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
         0: train, 1: validation, 2: test.
+        :param kaggle_username: (str) Kaggle username for downloading datasets from Kaggle.
+        :param kaggle_key: (str) Kaggle key for downloading datasets from Kaggle.
         """
-        self._download_and_process()
+        self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         if self.state == DatasetState.TRANSFORMED:
             dataset_df = self.load_transformed_dataset()
             if split:

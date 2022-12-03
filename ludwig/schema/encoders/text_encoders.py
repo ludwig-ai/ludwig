@@ -17,10 +17,8 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 class ALBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["albert"],
-        default="albert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "albert",
         description="Type of encoder.",
     )
 
@@ -211,10 +209,8 @@ class ALBERTConfig(BaseEncoderConfig):
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["mt5"],
-        default="mt5",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "mt5",
         description="Type of encoder.",
     )
 
@@ -396,10 +392,8 @@ class MT5Config(BaseEncoderConfig):
 class XLMRoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["xlmroberta"],
-        default="xlmroberta",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "xlmroberta",
         description="Type of encoder.",
     )
 
@@ -489,10 +483,8 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 class BERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["bert"],
-        default="bert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "bert",
         description="Type of encoder.",
     )
 
@@ -658,10 +650,8 @@ class BERTConfig(BaseEncoderConfig):
 class XLMConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["xlm"],
-        default="xlm",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "xlm",
         description="Type of encoder.",
     )
 
@@ -903,10 +893,8 @@ class XLMConfig(BaseEncoderConfig):
 class GPTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["gpt"],
-        default="gpt",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "gpt",
         description="Type of encoder.",
     )
 
@@ -1041,10 +1029,8 @@ class GPTConfig(BaseEncoderConfig):
 class GPT2Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["gpt2"],
-        default="gpt2",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "gpt2",
         description="Type of encoder.",
     )
 
@@ -1190,10 +1176,8 @@ class GPT2Config(BaseEncoderConfig):
 class RoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["roberta"],
-        default="roberta",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "roberta",
         description="Type of encoder.",
     )
 
@@ -1271,10 +1255,8 @@ class RoBERTaConfig(BaseEncoderConfig):
 class TransformerXLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["transformer_xl"],
-        default="transformer_xl",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "transformer_xl",
         description="Type of encoder.",
     )
 
@@ -1496,10 +1478,8 @@ class TransformerXLConfig(BaseEncoderConfig):
 class XLNetConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["xlnet"],
-        default="xlnet",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "xlnet",
         description="Type of encoder.",
     )
 
@@ -1731,10 +1711,8 @@ class XLNetConfig(BaseEncoderConfig):
 class DistilBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["distilbert"],
-        default="distilbert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "distilbert",
         description="Type of encoder.",
     )
 
@@ -1883,10 +1861,8 @@ class DistilBERTConfig(BaseEncoderConfig):
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["ctrl"],
-        default="ctrl",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "ctrl",
         description="Type of encoder.",
     )
 
@@ -2022,10 +1998,8 @@ class CTRLConfig(BaseEncoderConfig):
 class CamemBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["camembert"],
-        default="camembert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "camembert",
         description="Type of encoder.",
     )
 
@@ -2190,10 +2164,8 @@ class CamemBERTConfig(BaseEncoderConfig):
 class T5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["t5"],
-        default="t5",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "t5",
         description="Type of encoder.",
     )
 
@@ -2333,10 +2305,8 @@ class T5Config(BaseEncoderConfig):
 class FlauBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["flaubert"],
-        default="flaubert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "flaubert",
         description="Type of encoder.",
     )
 
@@ -2570,10 +2540,8 @@ class FlauBERTConfig(BaseEncoderConfig):
 class ELECTRAConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["electra"],
-        default="electra",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "electra",
         description="Type of encoder.",
     )
 
@@ -2733,10 +2701,8 @@ class ELECTRAConfig(BaseEncoderConfig):
 class LongformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an Longformer encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["longformer"],
-        default="longformer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "longformer",
         description="Type of encoder.",
     )
 
@@ -2826,10 +2792,8 @@ class LongformerConfig(BaseEncoderConfig):
 class AutoTransformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["auto_transformer"],
-        default="auto_transformer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "auto_transformer",
         description="Type of encoder.",
     )
 

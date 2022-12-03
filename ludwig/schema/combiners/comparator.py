@@ -13,10 +13,8 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
-    type: str = schema_utils.StringOptions(
-        ["comparator"],
-        default="comparator",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "comparator",
         description="Type of combiner.",
     )
 

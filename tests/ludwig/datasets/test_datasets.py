@@ -1,3 +1,4 @@
+import io
 import os
 from unittest import mock
 
@@ -118,3 +119,9 @@ def test_get_datasets_info():
     dataset_output_features = ludwig.datasets.get_datasets_output_features(dataset="titanic")
     assert len(dataset_output_features["output_features"]) == 1
     assert dataset_output_features["name"] == "titanic"
+
+
+def test_get_dataset_buffer():
+    buffer = ludwig.datasets.get_buffer("iris")
+
+    assert isinstance(buffer, io.BytesIO)
