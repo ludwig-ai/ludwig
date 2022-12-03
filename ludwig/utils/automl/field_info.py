@@ -3,7 +3,10 @@ from typing import List
 
 from dataclasses_json import dataclass_json, LetterCase
 
+from ludwig.api_annotations import DeveloperAPI
 
+
+@DeveloperAPI
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class FieldInfo:
@@ -19,6 +22,7 @@ class FieldInfo:
     avg_words: int = None
 
 
+@DeveloperAPI
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class FieldConfig:
@@ -27,6 +31,7 @@ class FieldConfig:
     type: str
 
 
+@DeveloperAPI
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class FieldMetadata:

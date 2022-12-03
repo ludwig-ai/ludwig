@@ -16,10 +16,8 @@ from ludwig.utils.torch_utils import initializer_registry
 @dataclass(repr=False)
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["stacked_cnn"],
-        default="stacked_cnn",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "stacked_cnn",
         description="Type of encoder.",
     )
 
@@ -290,10 +288,9 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
 class MLPMixerEncoderConfig(BaseEncoderConfig):
-    type: str = schema_utils.StringOptions(
-        ["mlp_mixer"],
-        default="mlp_mixer",
-        allow_none=False,
+
+    type: str = schema_utils.ProtectedString(
+        "mlp_mixer",
         description="Type of encoder.",
     )
 

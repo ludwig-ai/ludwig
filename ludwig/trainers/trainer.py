@@ -24,7 +24,7 @@ import sys
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
@@ -48,10 +48,12 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
+from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
@@ -454,7 +456,7 @@ class Trainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,
@@ -750,6 +752,7 @@ class Trainer(BaseTrainer):
             checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
+        # ====== Setup Tensorboard writers =======
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
@@ -761,11 +764,13 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
-        if self.resume:
+        if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
+            logger.info("Resuming training from previous run.")
             progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
             if self.is_coordinator():
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
         else:
+            logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
@@ -1236,6 +1241,25 @@ class Trainer(BaseTrainer):
             if self.original_sigint_handler:
                 signal.signal(signal.SIGINT, self.original_sigint_handler)
             sys.exit(1)
+
+    def resume_files_exist(
+        self,
+        training_progress_tracker_path: str,
+        training_checkpoint_path: str,
+    ) -> bool:
+        missing_files = []
+        if self.is_coordinator():
+            # training_progress.json
+            if not path_exists(training_progress_tracker_path):
+                missing_files.append(training_progress_tracker_path)
+            # latest.ckpt in training_checkpoints/
+            latest_ckpt = os.path.join(training_checkpoint_path, "latest.ckpt")
+            if not path_exists(latest_ckpt):
+                missing_files.append(latest_ckpt)
+        if missing_files:
+            logger.warning(f"Could not find {missing_files} while trying to resume model training.")
+            return False
+        return True
 
     def resume_training_progress_tracker(self, training_progress_tracker_path):
         progress_tracker_dict = None
