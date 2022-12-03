@@ -10,7 +10,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
-from ludwig.schema.encoders.image_encoders import (
+from ludwig.schema.encoders.image_torchvision_encoders import (
     TVAlexNetEncoderConfig,
     TVConvNeXtEncoderConfig,
     TVDenseNetEncoderConfig,
