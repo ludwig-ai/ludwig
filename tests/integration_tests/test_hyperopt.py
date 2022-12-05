@@ -120,30 +120,9 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
     return config, rel_path
 
 
-@contextlib.contextmanager
-def ray_start(num_cpus: Optional[int] = None, num_gpus: Optional[int] = None):
-    res = ray.init(
-        num_cpus=num_cpus,
-        num_gpus=num_gpus,
-        include_dashboard=False,
-        object_store_memory=150 * 1024 * 1024,
-    )
-    try:
-        yield res
-    finally:
-        ray.shutdown()
-
-
-@pytest.fixture(scope="module")
-def ray_cluster():
-    gpus = [i for i in range(torch.cuda.device_count())]
-    with ray_start(num_gpus=len(gpus)):
-        yield
-
-
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS_FOR_TESTING)
 def test_hyperopt_search_alg(
-    search_alg, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
+    search_alg, csv_filename, tmpdir, ray_cluster_2cpu, validate_output_feature=False, validation_metric=None
 ):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
@@ -195,12 +174,12 @@ def test_hyperopt_search_alg(
         assert isinstance(path, str)
 
 
-def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
+def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster_2cpu):
     test_hyperopt_search_alg(
         "variant_generator",
         csv_filename,
         tmpdir,
-        ray_cluster,
+        ray_cluster_2cpu,
         validate_output_feature=True,
         validation_metric=ACCURACY,
     )
@@ -208,7 +187,7 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster):
 
 @pytest.mark.parametrize("scheduler", SCHEDULERS_FOR_TESTING)
 def test_hyperopt_scheduler(
-    scheduler, csv_filename, tmpdir, ray_cluster, validate_output_feature=False, validation_metric=None
+    scheduler, csv_filename, tmpdir, ray_cluster_2cpu, validate_output_feature=False, validation_metric=None
 ):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
@@ -263,7 +242,7 @@ def test_hyperopt_scheduler(
         assert isinstance(raytune_results, HyperoptResults)
 
 
-def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_cluster):
+def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_cluster_2cpu):
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
@@ -345,12 +324,12 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
 
 
 @pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster):
-    _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster)
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_2cpu):
+    _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_2cpu)
 
 
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
-def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
+def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_2cpu):
     backend = {
         "type": "local",
         "credentials": {
@@ -364,11 +343,11 @@ def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster):
             "random",
             tmpdir,
             backend,
-            ray_cluster,
+            ray_cluster_2cpu,
         )
 
 
-def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster):
+def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster_2cpu):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
         category_feature(vocab_size=3),
@@ -419,7 +398,7 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
             assert input_feature["encoder"]["embedding_size"] in embedding_size_search_space
 
 
-def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
+def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_2cpu):
     old_config = {
         "ludwig_version": "0.4",
         INPUT_FEATURES: [
@@ -472,7 +451,7 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster):
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
 
-def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
+def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_2cpu):
     config = {
         INPUT_FEATURES: [
             {"name": "cat1", TYPE: "category", "encoder": {"vocab_size": 2}},
