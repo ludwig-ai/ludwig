@@ -208,6 +208,11 @@ def run_hyperopt_executor(
     )
     hyperopt_executor.mock_path = os.path.join(ray_mock_dir, "bucket")
 
+    print("ASDFASDF backend ", backend)
+    print("ASDFASDF backend_kwargs ", RAY_BACKEND_KWARGS)
+    print("ASDFASDF hyperopt_config", hyperopt_config)
+    print("ASDFASDF hyperopt_executor.__dict__", hyperopt_executor.__dict__)
+
     hyperopt_executor.execute(
         config,
         training_set=training_set,
@@ -221,9 +226,12 @@ def run_hyperopt_executor(
     )
 
 
-@pytest.mark.distributed
+@pytest.mark.distributeddebug
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=["variant_generator", "bohb"])
 def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):
+    print("ASDFASDF ray.available_resources(): ", ray.available_resources())
+    print("ASDFASDF ray.cluster_resources(): ", ray.cluster_resources())
+    print("ASDFASDF scenario: ", scenario)
     search_alg = scenario["search_alg"]
     executor = scenario["executor"]
     run_hyperopt_executor(search_alg, executor, csv_filename, ray_mock_dir)
