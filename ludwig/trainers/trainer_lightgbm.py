@@ -17,7 +17,7 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
-from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
+from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -365,7 +365,7 @@ class LightGBMTrainer(BaseTrainer):
 
         progress_bar.update(self.boosting_rounds_per_checkpoint)
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
-        progress_tracker.last_improvement_steps = self.model.lgbm_model.best_iteration_
+        progress_tracker.best_eval_metric_steps = self.model.lgbm_model.best_iteration_
 
         # convert to pytorch for inference
         self.model.compile()
@@ -417,14 +417,14 @@ class LightGBMTrainer(BaseTrainer):
         """
         should_break = False
         # record how long its been since an improvement
-        improved = get_improved_fun(validation_metric)
+        improved = get_improved_fn(validation_metric)
         validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
         last_validation_metric = validation_metrics[validation_metric][-1]
         last_validation_metric_value = last_validation_metric[-1]
 
-        if improved(last_validation_metric_value, progress_tracker.best_eval_metric):
-            progress_tracker.last_improvement_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric = last_validation_metric_value
+        if improved(last_validation_metric_value, progress_tracker.best_eval_metric_value):
+            progress_tracker.best_eval_metric_steps = progress_tracker.steps
+            progress_tracker.best_eval_metric_value = last_validation_metric_value
 
             if self.is_coordinator() and not skip_save_model:
                 self.model.save(save_path)
@@ -432,7 +432,7 @@ class LightGBMTrainer(BaseTrainer):
                     f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
                 )
 
-        progress_tracker.last_improvement = progress_tracker.steps - progress_tracker.last_improvement_steps
+        progress_tracker.last_improvement = progress_tracker.steps - progress_tracker.best_eval_metric_steps
         if progress_tracker.last_improvement != 0 and self.is_coordinator():
             logger.info(
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
@@ -456,7 +456,7 @@ class LightGBMTrainer(BaseTrainer):
             if self.is_coordinator():
                 logger.info(
                     "\nEARLY STOPPING due to lack of validation improvement. "
-                    f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
+                    f"It has been {progress_tracker.steps - progress_tracker.best_eval_metric_steps} step(s) since "
                     f"last validation improvement.\n"
                 )
             should_break = True
@@ -590,7 +590,7 @@ class LightGBMTrainer(BaseTrainer):
         progress_tracker = get_new_progress_tracker(
             batch_size=-1,
             learning_rate=self.base_learning_rate,
-            best_eval_metric=get_initial_validation_value(self.validation_metric),
+            best_eval_metric_value=get_initial_validation_value(self.validation_metric),
             best_reduce_learning_rate_eval_metric=float("inf"),
             best_increase_batch_size_eval_metric=float("inf"),
             output_features=output_features,

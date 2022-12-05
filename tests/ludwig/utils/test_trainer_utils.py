@@ -26,7 +26,7 @@ def test_progress_tracker_empty():
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
-        best_eval_metric=0,
+        best_eval_metric_value=0,
         best_reduce_learning_rate_eval_metric=0,
         best_increase_batch_size_eval_metric=0,
         learning_rate=0.01,
@@ -37,7 +37,7 @@ def test_progress_tracker_empty():
         "batch_size": 5,
         "best_valid_metric": 0,
         "epoch": 0,
-        "last_improvement_steps": 0,
+        "best_eval_metric_steps": 0,
         "learning_rate": 0.01,
         "num_increases_bs": 0,
         "num_reductions_lr": 0,
@@ -63,7 +63,7 @@ def test_progress_tracker():
 
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
-        best_eval_metric=0,
+        best_eval_metric_value=0,
         best_reduce_learning_rate_eval_metric=0,
         best_increase_batch_size_eval_metric=0,
         learning_rate=0.01,
@@ -77,7 +77,7 @@ def test_progress_tracker():
         "batch_size": 5,
         "best_valid_metric": 0,
         "epoch": 0,
-        "last_improvement_steps": 0,
+        "best_eval_metric_steps": 0,
         "learning_rate": 0.01,
         "num_increases_bs": 0,
         "num_reductions_lr": 0,

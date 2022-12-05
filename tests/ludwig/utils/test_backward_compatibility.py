@@ -569,12 +569,12 @@ def test_old_class_weights_default():
 def test_upgrade_model_progress():
     old_model_progress = {
         "batch_size": 64,
-        "best_eval_metric": 0.5,
+        "best_eval_metric_value": 0.5,
         "best_increase_batch_size_eval_metric": math.inf,
         "best_reduce_learning_rate_eval_metric": math.inf,
         "epoch": 2,
         "last_improvement": 1,
-        "last_improvement_epoch": 1,
+        "best_eval_metric_epoch": 1,
         "last_increase_batch_size": 0,
         "last_increase_batch_size_epoch": 0,
         "last_increase_batch_size_eval_metric_improvement": 0,
@@ -625,12 +625,12 @@ def test_upgrade_model_progress_already_valid():
     # Verify that we don't make changes to already-valid model progress dicts.
     valid_model_progress = {
         "batch_size": 128,
-        "best_eval_metric": 5.541325569152832,
+        "best_eval_metric_value": 5.541325569152832,
         "best_increase_batch_size_eval_metric": math.inf,
         "best_reduce_learning_rate_eval_metric": math.inf,
         "epoch": 5,
         "last_improvement": 0,
-        "last_improvement_steps": 25,
+        "best_eval_metric_steps": 25,
         "last_increase_batch_size": 0,
         "last_increase_batch_size_eval_metric_improvement": 0,
         "last_increase_batch_size_steps": 0,

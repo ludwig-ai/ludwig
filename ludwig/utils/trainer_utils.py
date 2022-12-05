@@ -1,5 +1,5 @@
 import logging
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from typing import Dict, List, Tuple
 
 try:
@@ -32,10 +32,21 @@ def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[
     return metrics
 
 
+def get_latest_metrics_dict(
+    progress_tracker_metrics: Dict[str, Dict[str, List[TrainerMetric]]]
+) -> Dict[str, Dict[str, float]]:
+    """Returns a dict of field name -> metric name -> latest metric value."""
+    latest_metrics_dict = defaultdict(dict)
+    for feature_name, metrics_dict in progress_tracker_metrics.items():
+        for metric_name, metrics in metrics_dict.items():
+            latest_metrics_dict[feature_name][metric_name] = metrics[-1][-1]
+    return latest_metrics_dict
+
+
 @DeveloperAPI
 def get_new_progress_tracker(
     batch_size: int,
-    best_eval_metric: float,
+    best_eval_metric_value: float,
     best_reduce_learning_rate_eval_metric: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
@@ -47,10 +58,13 @@ def get_new_progress_tracker(
         batch_size=batch_size,
         steps=0,
         tune_checkpoint_num=0,
-        last_improvement_steps=0,
+        checkpoint_number=0,
+        best_eval_metric_steps=0,
+        best_eval_metric_epoch=0,
+        best_eval_metric_checkpoint_number=0,
         last_learning_rate_reduction_steps=0,
         last_increase_batch_size_steps=0,
-        best_eval_metric=best_eval_metric,
+        best_eval_metric_value=best_eval_metric_value,
         best_reduce_learning_rate_eval_metric=best_reduce_learning_rate_eval_metric,
         last_reduce_learning_rate_eval_metric_improvement=0,
         best_increase_batch_size_eval_metric=best_increase_batch_size_eval_metric,
@@ -61,9 +75,11 @@ def get_new_progress_tracker(
         train_metrics=initialize_trainer_metric_dict(output_features),
         validation_metrics=initialize_trainer_metric_dict(output_features),
         test_metrics=initialize_trainer_metric_dict(output_features),
-        last_improvement=0,
         last_learning_rate_reduction=0,
         last_increase_batch_size=0,
+        best_eval_train_metrics={},
+        best_eval_validation_metrics={},
+        best_eval_test_metrics={},
     )
 
 
@@ -75,10 +91,13 @@ class ProgressTracker:
         batch_size: int,
         steps: int,
         tune_checkpoint_num: int,
-        last_improvement_steps: int,
+        checkpoint_number: int,
+        best_eval_metric_steps: int,
+        best_eval_metric_epoch: int,
+        best_eval_metric_checkpoint_number: int,
         last_learning_rate_reduction_steps: int,
         last_increase_batch_size_steps: int,
-        best_eval_metric: float,
+        best_eval_metric_value: float,
         best_reduce_learning_rate_eval_metric: float,
         last_reduce_learning_rate_eval_metric_improvement: int,
         best_increase_batch_size_eval_metric: float,
@@ -89,9 +108,14 @@ class ProgressTracker:
         train_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
         validation_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
         test_metrics: Dict[str, Dict[str, List[TrainerMetric]]],
-        last_improvement: int,
         last_learning_rate_reduction: int,
         last_increase_batch_size: int,
+        best_eval_train_metrics: Dict[str, Dict[str, float]],
+        best_eval_validation_metrics: Dict[str, Dict[str, float]],
+        best_eval_test_metrics: Dict[str, Dict[str, float]],
+        # best_validation_metrics_step: int,
+        # best_validation_metrics_epoch: int,
+        # best_validation_metrics_checkpoint_number: int,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 
@@ -105,14 +129,16 @@ class ProgressTracker:
         self.epoch = epoch
         self.steps = steps
         self.tune_checkpoint_num = tune_checkpoint_num
-        self.last_improvement_steps = last_improvement_steps
-        self.last_improvement = last_improvement
+        self.checkpoint_number = checkpoint_number
+        self.best_eval_metric_steps = best_eval_metric_steps
+        self.best_eval_metric_epoch = best_eval_metric_epoch
+        self.best_eval_metric_checkpoint_number = best_eval_metric_checkpoint_number
         self.last_learning_rate_reduction_steps = last_learning_rate_reduction_steps
         self.last_learning_rate_reduction = last_learning_rate_reduction
         self.last_increase_batch_size_steps = last_increase_batch_size_steps
         self.last_increase_batch_size = last_increase_batch_size
         self.learning_rate = learning_rate
-        self.best_eval_metric = best_eval_metric
+        self.best_eval_metric_value = best_eval_metric_value
         self.best_reduce_learning_rate_eval_metric = best_reduce_learning_rate_eval_metric
         self.last_reduce_learning_rate_eval_metric_improvement = last_reduce_learning_rate_eval_metric_improvement
         self.best_increase_batch_size_eval_metric = best_increase_batch_size_eval_metric
@@ -123,6 +149,11 @@ class ProgressTracker:
         self.validation_metrics = validation_metrics
         self.test_metrics = test_metrics
 
+        # Best metrics.
+        self.best_eval_train_metrics = best_eval_train_metrics
+        self.best_eval_validation_metrics = best_eval_validation_metrics
+        self.best_eval_test_metrics = best_eval_test_metrics
+
     def save(self, filepath):
         save_json(filepath, self.__dict__)
 
@@ -132,6 +163,7 @@ class ProgressTracker:
 
         loaded = upgrade_model_progress(progress_tracking_dict)
         return ProgressTracker(**loaded)
+        # return ProgressTracker(**progress_tracking_dict) # Works.
 
     def log_metrics(self):
         log_metrics = {
@@ -139,9 +171,12 @@ class ProgressTracker:
             "epoch": self.epoch,
             "steps": self.steps,
             "tune_checkpoint_num": self.tune_checkpoint_num,
-            "last_improvement_steps": self.last_improvement_steps,
+            "checkpoint_number": self.checkpoint_number,
+            "best_eval_metric_steps": self.best_eval_metric_steps,
+            "best_eval_metric_epoch": self.best_eval_metric_epoch,
+            "best_eval_metric_checkpoint_number": self.best_eval_metric_checkpoint_number,
             "learning_rate": self.learning_rate,
-            "best_valid_metric": self.best_eval_metric,
+            "best_valid_metric": self.best_eval_metric_value,
             "num_reductions_lr": self.num_reductions_learning_rate,
             "num_increases_bs": self.num_increases_batch_size,
         }
