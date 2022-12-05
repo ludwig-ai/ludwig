@@ -465,12 +465,15 @@ class Trainer(BaseTrainer):
         logger.info("Tuning batch size...")
 
         if self.is_cpu_training():
-            logger.warn(
-                f'Batch size tuning is not supported on CPU, setting batch size from "auto" to default value '
-                f"{DEFAULT_BATCH_SIZE}"
-            )
-            # TODO(geoffrey): Add support for batch size tuning on CPU
-            best_batch_size = DEFAULT_BATCH_SIZE
+            # TODO(geoffrey): add support for batch size tuning on CPU
+            logger.warn("Batch size tuning is not supported on CPU")
+            # batch size will default to max_batch_size if it is set
+            if self.max_batch_size < DEFAULT_BATCH_SIZE:
+                logger.warn(f"Falling back to max_batch_size config param: {self.max_batch_size}")
+                best_batch_size = self.max_batch_size
+            else:
+                logger.warn(f"Falling back to default batch size: {DEFAULT_BATCH_SIZE}")
+                best_batch_size = DEFAULT_BATCH_SIZE
         else:
 
             def _is_valid_batch_size(batch_size):
