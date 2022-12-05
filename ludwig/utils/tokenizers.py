@@ -24,7 +24,6 @@ from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
-
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
 UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
