@@ -226,7 +226,7 @@ def run_hyperopt_executor(
     )
 
 
-@pytest.mark.distributeddebug
+@pytest.mark.distributed
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=["variant_generator", "bohb"])
 def test_hyperopt_executor(scenario, csv_filename, ray_mock_dir, ray_cluster_7cpu):
     print("ASDFASDF ray.available_resources(): ", ray.available_resources())

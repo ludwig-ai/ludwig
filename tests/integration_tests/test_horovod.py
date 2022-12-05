@@ -83,7 +83,7 @@ def _prepare_data(csv_filename):
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Horovod is not supported on Windows")
-@pytest.mark.distributeddebug
+@pytest.mark.distributed
 def test_horovod_implicit(csv_filename):
     """Test Horovod running without `backend='horovod'`."""
     ludwig_kwargs = dict(gpus=-1)  # disable gpus for this test
