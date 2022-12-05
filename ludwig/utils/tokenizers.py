@@ -24,8 +24,6 @@ from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
-logger = logging.getLogger(__name__)
-
 
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
@@ -34,6 +32,8 @@ UNDERSCORE_REGEX = re.compile(r"\s*_\s*")
 TORCHSCRIPT_COMPATIBLE_TOKENIZERS = {"space", "space_punct"}
 TORCHTEXT_0_12_0_TOKENIZERS = {"sentencepiece", "clip", "gpt2bpe"}
 TORCHTEXT_0_13_0_TOKENIZERS = {"bert"}
+
+HF_TOKENIZER_SAMPLE_INPUTS = ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHeLLo!how  \n Are yoU? [UNK]"]
 
 
 class BaseTokenizer:
@@ -1023,7 +1023,7 @@ try:
         )
         TORCHSCRIPT_COMPATIBLE_TOKENIZERS.update(TORCHTEXT_0_12_0_TOKENIZERS)
     else:
-        raise ImportError
+        raise ImportError(f"torchtext>=0.12.0 is required to use these tokenizers: {TORCHTEXT_0_12_0_TOKENIZERS}.")
 
 except ImportError:
     pass
@@ -1037,7 +1037,7 @@ try:
     if torchtext_version >= (0, 13, 0):
         pass
     else:
-        raise ImportError
+        raise ImportError(f"torchtext>=0.13.0 is required to use these tokenizers: {TORCHTEXT_0_13_0_TOKENIZERS}.")
 
     class BERTTokenizer(torch.nn.Module):
         def __init__(
@@ -1202,7 +1202,7 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
         # if the tokenizer does not pass (lightweight) validation, then we will fall back to the vanilla HF tokenizer.
         # TODO(geoffrey): can we better validate tokenizer parity before swapping in the TorchText tokenizer?
         # Samples from https://github.com/huggingface/transformers/blob/main/tests/models/bert/test_tokenization_bert.py
-        for sample_input in ["UNwant\u00E9d,running", "ah\u535A\u63A8zz", " \tHeLLo!how  \n Are yoU? [UNK]"]:
+        for sample_input in HF_TOKENIZER_SAMPLE_INPUTS:
             hf_output = hf_tokenizer.encode(sample_input)
             tt_output = torchtext_tokenizer(sample_input)
             if hf_output != tt_output:
