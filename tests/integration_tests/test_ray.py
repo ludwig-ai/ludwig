@@ -966,6 +966,8 @@ class TestDatasetWindowAutosizing:
         rep = next(iter(train_pipe._base_iterable))()
         assert rep.num_blocks() == self.num_partitions
 
+        session.report(metrics={"loss": 0.1})
+
     def training_simulation(self, ray_ds, train_fn, stream_window_size=None):
         """Stripped down simulation of RayTrainerV2.train()."""
         from ludwig.backend.ray import create_runner
@@ -1007,6 +1009,8 @@ class TestDatasetWindowAutosizing:
                 if i > 99:
                     break
 
+            session.report(metrics={"loss": 0.1})
+
         ray_ds = self.create_dataset(self.object_store_size * 8)
         self.training_simulation(ray_ds, train_fn)
 
@@ -1024,6 +1028,8 @@ class TestDatasetWindowAutosizing:
             # This should be lesser than the default 100 blocks that are created
             # since we're setting an explicit window size instead of bulk ingesting the data
             assert rep.num_blocks() == 4
+
+            session.report(metrics={"loss": 0.1})
 
         ds = self.create_dataset(self.object_store_size * 8)
         self.training_simulation(ds, train_fn, stream_window_size=self.auto_window_size * 2)

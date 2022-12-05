@@ -776,13 +776,19 @@ class RayTuneExecutor:
 
         if _is_ray_backend(backend):
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
-            resources_per_trial = PlacementGroupFactory([{"hyperopt_resources": 1}])
+            resources = {}
         else:
             # If not Ray backend, request all of the resources required at the trial level
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
-            resources_per_trial = PlacementGroupFactory([{"CPU": num_cpus, "GPU": num_gpus, "hyperopt_resources": 1}])
+            resources = {"CPU": num_cpus, "GPU": num_gpus}
 
+        # HACK(geoffrey): `hyperopt_resources` is for hyperopt as of Ray >= 2.0.0
+        # Required because we are now using a Ray Trainer for Hyperopt (which itself uses a Ray Tuner).
+        # Remove after refactor.
+        resources["hyperopt_resources"] = 1
+
+        resources_per_trial = PlacementGroupFactory([resources])
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
 
         @ray.remote(num_cpus=0)
