@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import contextlib
 import json
 import os.path
 import uuid
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 import pytest
-import torch
 
 from ludwig.backend import initialize_backend
 from ludwig.constants import (
