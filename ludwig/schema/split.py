@@ -3,6 +3,7 @@ from dataclasses import field
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
@@ -12,10 +13,12 @@ split_config_registry = Registry()
 DEFAULT_PROBABILITIES = [0.7, 0.1, 0.2]
 
 
+@DeveloperAPI
 def get_split_cls(name: str):
     return split_config_registry[name]
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     """This Dataclass is a base schema for the nested split config under preprocessing."""
@@ -24,15 +27,14 @@ class BaseSplitConfig(schema_utils.BaseMarshmallowConfig):
     "Name corresponding to the splitting type."
 
 
+@DeveloperAPI
 @split_config_registry.register("random")
 @dataclass(repr=False, order=True)
 class RandomSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the random splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["random"],
-        default="random",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "random",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -44,15 +46,14 @@ class RandomSplitConfig(BaseSplitConfig):
     )
 
 
+@DeveloperAPI
 @split_config_registry.register("fixed")
 @dataclass(repr=False, order=True)
 class FixedSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["fixed"],
-        default="fixed",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "fixed",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -62,15 +63,14 @@ class FixedSplitConfig(BaseSplitConfig):
     )
 
 
+@DeveloperAPI
 @split_config_registry.register("stratify")
 @dataclass(repr=False, order=True)
 class StratifySplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["stratify"],
-        default="stratify",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "stratify",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -86,15 +86,14 @@ class StratifySplitConfig(BaseSplitConfig):
     )
 
 
+@DeveloperAPI
 @split_config_registry.register("datetime")
 @dataclass(repr=False, order=True)
 class DateTimeSplitConfig(BaseSplitConfig):
     """This Dataclass generates a schema for the fixed splitting config."""
 
-    type: str = schema_utils.StringOptions(
-        ["datetime"],
-        default="datetime",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "datetime",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -110,6 +109,7 @@ class DateTimeSplitConfig(BaseSplitConfig):
     )
 
 
+@DeveloperAPI
 @split_config_registry.register("hash")
 @dataclass(order=True)
 class HashSplitConfig(BaseSplitConfig):
@@ -124,10 +124,8 @@ class HashSplitConfig(BaseSplitConfig):
     This approach can be used on a column with duplicates, but it will further skew the assignments of rows to splits.
     """
 
-    type: str = schema_utils.StringOptions(
-        ["hash"],
-        default="hash",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "hash",
         description="Type of splitting to use during preprocessing.",
     )
 
@@ -143,6 +141,7 @@ class HashSplitConfig(BaseSplitConfig):
     )
 
 
+@DeveloperAPI
 def get_split_conds():
     """Returns a JSON schema of conditionals to validate against optimizer types defined in
     `ludwig.modules.optimization_modules.optimizer_registry`."""
@@ -159,6 +158,7 @@ def get_split_conds():
     return conds
 
 
+@DeveloperAPI
 def SplitDataclassField(default: str):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested split
     config.

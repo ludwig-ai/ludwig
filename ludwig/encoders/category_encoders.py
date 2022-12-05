@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Union
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -31,6 +32,7 @@ from ludwig.schema.encoders.category_encoders import (
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("passthrough", [CATEGORY])
 class CategoricalPassthroughEncoder(Encoder):
     def __init__(self, input_size=1, encoder_config=None, **kwargs):
@@ -60,6 +62,7 @@ class CategoricalPassthroughEncoder(Encoder):
         return self.input_shape
 
 
+@DeveloperAPI
 @register_encoder("dense", CATEGORY)
 class CategoricalEmbedEncoder(Encoder):
     def __init__(
@@ -115,6 +118,7 @@ class CategoricalEmbedEncoder(Encoder):
         return torch.Size([1])
 
 
+@DeveloperAPI
 @register_encoder("sparse", CATEGORY)
 class CategoricalSparseEncoder(Encoder):
     def __init__(

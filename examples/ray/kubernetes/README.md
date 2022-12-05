@@ -27,7 +27,7 @@ export CLUSTER_NAME=ludwig-ray-cpu-cluster
 ### Submit a script for execution
 
 ```
-./utils/submit.sh $CLUSTER_NAME scripts/train_umber.py
+./utils/submit.sh $CLUSTER_NAME scripts/train.py
 ```
 
 ### SSH into the head node

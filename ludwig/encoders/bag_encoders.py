@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -28,6 +29,7 @@ from ludwig.schema.encoders.bag_encoders import BagEmbedWeightedConfig
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("embed", BAG)
 class BagEmbedWeightedEncoder(Encoder):
     def __init__(

@@ -1,9 +1,11 @@
 import logging
+from abc import abstractmethod
 from typing import List
 
 from marshmallow_dataclass import dataclass
 from rich.console import Console
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -27,6 +29,7 @@ _error_console = Console(stderr=True, style="bold red")
 _info_console = Console(stderr=True, style="bold green")
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
@@ -86,6 +89,7 @@ class BaseFeatureConfig(schema_utils.BaseMarshmallowConfig):
             logger.info(self.__repr__())
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseInputFeatureConfig(BaseFeatureConfig):
     """Base input feature config class."""
@@ -98,6 +102,7 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
     )
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
@@ -135,3 +140,8 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
+
+    @staticmethod
+    @abstractmethod
+    def get_output_metric_functions():
+        pass

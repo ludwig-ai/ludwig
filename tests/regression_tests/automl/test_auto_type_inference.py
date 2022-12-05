@@ -6,7 +6,7 @@ from tests.integration_tests.utils import slow
 from tests.regression_tests.automl.utils import get_dataset_golden_types_path, get_dataset_object, TEST_DATASET_REGISTRY
 
 try:
-    from ludwig.automl.automl import create_auto_config
+    from ludwig.automl import create_auto_config
 except ImportError:
     pass
 

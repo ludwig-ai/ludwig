@@ -7,3 +7,7 @@ sha256:
 dataset_filenames: temperature.csv
 description: |
   Hourly temperature dataset from Kaggle
+    https://www.kaggle.com/selfishgene/historical-hourly-weather-data
+output_features:
+  - name: San Francisco
+    type: number

@@ -22,6 +22,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
+from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -142,7 +143,7 @@ class LightGBMTrainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: ModelConfigDict,
         training_set: "Dataset",  # noqa: F821
         random_seed: int,
         max_trials: int = 10,
@@ -957,7 +958,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         # TODO(shreya): Refactor preprocessing so that this can be moved upstream.
         if training_set.ds.num_blocks() < self.ray_params.num_actors:
             # Repartition to ensure that there is at least one block per actor
-            training_set = training_set.ds.repartition(num_blocks=self.ray_params.num_actors)
+            training_set.repartition(self.ray_params.num_actors)
 
         lgb_train = RayDMatrix(
             # NOTE: batch_size=None to make sure map_batches doesn't change num_blocks.
@@ -972,7 +973,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         if validation_set is not None:
             if validation_set.ds.num_blocks() < self.ray_params.num_actors:
                 # Repartition to ensure that there is at least one block per actor
-                validation_set = validation_set.ds.repartition(num_blocks=self.ray_params.num_actors)
+                validation_set.repartition(self.ray_params.num_actors)
 
             lgb_val = RayDMatrix(
                 validation_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),
@@ -985,7 +986,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         if test_set is not None:
             if test_set.ds.num_blocks() < self.ray_params.num_actors:
                 # Repartition to ensure that there is at least one block per actor
-                test_set.ds = test_set.ds.repartition(num_blocks=self.ray_params.num_actors)
+                test_set.repartition(self.ray_params.num_actors)
 
             lgb_test = RayDMatrix(
                 test_set.ds.map_batches(lambda df: df[feat_cols], batch_size=None),

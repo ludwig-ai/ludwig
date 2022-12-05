@@ -9,3 +9,6 @@ test_filenames: test.csv
 description: |
   Predict the probability that an auto insurance policy holder files a claim.
   https://www.kaggle.com/competitions/porto-seguro-safe-driver-prediction
+output_features:
+  - name: target
+    type: binary

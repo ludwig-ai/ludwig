@@ -12,3 +12,6 @@ description: |
   JCPenney products
   20,000 product listings from JCPenney
   https://www.kaggle.com/PromptCloudHQ/all-jc-penny-products
+output_features:
+- name: sale_price
+  type: number

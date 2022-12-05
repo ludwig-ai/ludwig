@@ -20,13 +20,10 @@ import numpy as np
 import torch
 
 from ludwig.constants import (
-    ACCURACY,
     CATEGORY,
     COLUMN,
     HIDDEN,
-    HITS_AT_K,
     LOGITS,
-    LOSS,
     NAME,
     PREDICTIONS,
     PROBABILITIES,
@@ -37,6 +34,12 @@ from ludwig.constants import (
 from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
+from ludwig.types import (
+    FeatureMetadataDict,
+    FeaturePostProcessingOutputDict,
+    PreprocessingConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
@@ -47,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 
 class _CategoryPreprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.str2idx = metadata["str2idx"]
         if UNKNOWN_SYMBOL in self.str2idx:
@@ -66,14 +69,14 @@ class _CategoryPreprocessing(torch.nn.Module):
 
 
 class _CategoryPostprocessing(torch.nn.Module):
-    def __init__(self, metadata: Dict[str, Any]):
+    def __init__(self, metadata: TrainingSetMetadataDict):
         super().__init__()
         self.idx2str = {i: v for i, v in enumerate(metadata["idx2str"])}
         self.unk = UNKNOWN_SYMBOL
         self.predictions_key = PREDICTIONS
         self.probabilities_key = PROBABILITIES
 
-    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> Dict[str, Any]:
+    def forward(self, preds: Dict[str, torch.Tensor], feature_name: str) -> FeaturePostProcessingOutputDict:
         predictions = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.predictions_key)
         probabilities = output_feature_utils.get_output_feature_tensor(preds, feature_name, self.probabilities_key)
 
@@ -118,7 +121,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters, backend):
+    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
             num_most_frequent=preprocessing_parameters["most_common"],
@@ -133,7 +136,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def feature_data(backend, column, metadata):
-        def __replace_token_with_idx(value: Any, metadata: Dict[str, Any], fallback_symbol_idx: int) -> int:
+        def __replace_token_with_idx(value: Any, metadata: TrainingSetMetadataDict, fallback_symbol_idx: int) -> int:
             stripped_value = value.strip()
             if stripped_value in metadata["str2idx"]:
                 return metadata["str2idx"][stripped_value]
@@ -175,7 +178,13 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def add_feature_data(
-        feature_config, input_df, proc_df, metadata, preprocessing_parameters, backend, skip_save_processed_input
+        feature_config,
+        input_df,
+        proc_df,
+        metadata,
+        preprocessing_parameters: PreprocessingConfigDict,
+        backend,
+        skip_save_processed_input,
     ):
         proc_df[feature_config[PROC_COLUMN]] = CategoryFeatureMixin.feature_data(
             backend,
@@ -235,12 +244,12 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
         return CategoryInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPreprocessing(metadata)
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
+    metric_functions = CategoryOutputFeatureConfig.get_output_metric_functions()
 
     def __init__(
         self,
@@ -444,5 +453,5 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return CategoryOutputFeatureConfig
 
     @staticmethod
-    def create_postproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+    def create_postproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _CategoryPostprocessing(metadata)

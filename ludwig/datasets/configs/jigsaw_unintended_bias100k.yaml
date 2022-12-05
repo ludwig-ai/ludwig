@@ -12,3 +12,6 @@ description: |
   A dataset labeled for identity mentions and optimizing a metric designed to measure unintended bias.
   Disclaimer: The dataset for this competition contains text that may be considered profane, vulgar, or offensive.
   https://www.kaggle.com/c/jigsaw-unintended-bias-in-toxicity-classification
+output_features:
+- name: target
+  type: binary

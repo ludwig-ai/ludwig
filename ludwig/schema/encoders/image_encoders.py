@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -10,14 +11,13 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 from ludwig.utils.torch_utils import initializer_registry
 
 
+@DeveloperAPI
 @register_encoder_config("stacked_cnn", IMAGE)
 @dataclass(repr=False)
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["stacked_cnn"],
-        default="stacked_cnn",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "stacked_cnn",
         description="Type of encoder.",
     )
 
@@ -284,14 +284,13 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("resnet", IMAGE)
 @dataclass(repr=False)
 class ResNetEncoderConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["resnet"],
-        default="resnet",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "resnet",
         description="Type of encoder.",
     )
 
@@ -457,14 +456,13 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
 class MLPMixerEncoderConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["mlp_mixer"],
-        default="mlp_mixer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "mlp_mixer",
         description="Type of encoder.",
     )
 
@@ -534,14 +532,13 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("vit", IMAGE)
 @dataclass(repr=False)
 class ViTEncoderConfig(BaseEncoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["vit"],
-        default="vit",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "vit",
         description="Type of encoder.",
     )
 

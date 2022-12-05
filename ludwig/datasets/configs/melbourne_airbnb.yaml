@@ -12,3 +12,6 @@ description: |
   Melbourne Airbnb Open Data
   Detailed and summarized data of Airbnb activity in Melbourne, VIC, Australia
   https://www.kaggle.com/tylerx/melbourne-airbnb-open-data
+output_features:
+  - name: price_label
+    type: category

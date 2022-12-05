@@ -7,7 +7,9 @@ from typing import Any, Dict, List
 import torch
 
 from ludwig.api import LudwigModel
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import NAME
+from ludwig.types import ModelConfigDict
 from ludwig.utils.fs_utils import open_file
 
 logger = logging.getLogger(__name__)
@@ -30,7 +32,7 @@ class GeneratedInferenceModule(torch.nn.Module):
 """
 
 
-def _get_input_signature(config: Dict[str, Any]) -> str:
+def _get_input_signature(config: ModelConfigDict) -> str:
     args = []
     for feature in config["input_features"]:
         name = feature[NAME]
@@ -38,7 +40,7 @@ def _get_input_signature(config: Dict[str, Any]) -> str:
     return ", ".join(args)
 
 
-def _get_input_dict(config: Dict[str, Any]) -> str:
+def _get_input_dict(config: ModelConfigDict) -> str:
     elems = []
     for feature in config["input_features"]:
         name = feature[NAME]
@@ -46,7 +48,7 @@ def _get_input_dict(config: Dict[str, Any]) -> str:
     return "{" + ", ".join(elems) + "}"
 
 
-def _get_output_dicts(config: Dict[str, Any]) -> str:
+def _get_output_dicts(config: ModelConfigDict) -> str:
     results = []
     for feature in config["output_features"]:
         name = feature[NAME]
@@ -54,6 +56,7 @@ def _get_output_dicts(config: Dict[str, Any]) -> str:
     return "{" + ", ".join(results) + "}"
 
 
+@DeveloperAPI
 def generate_neuropod_torchscript(model: LudwigModel):
     config = model.config
     inference_module = model.to_torchscript()
@@ -101,6 +104,7 @@ def _get_output_spec(model: LudwigModel) -> List[Dict[str, Any]]:
     return spec
 
 
+@DeveloperAPI
 def export_neuropod(model: LudwigModel, neuropod_path: str, neuropod_model_name="ludwig_model"):
     try:
         from neuropod.backends.torchscript.packager import create_torchscript_neuropod

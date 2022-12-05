@@ -2,6 +2,7 @@ from typing import Callable, List, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -10,15 +11,14 @@ from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
+@DeveloperAPI
 @register_encoder_config("albert", TEXT)
 @dataclass(repr=False)
 class ALBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["albert"],
-        default="albert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "albert",
         description="Type of encoder.",
     )
 
@@ -203,15 +203,14 @@ class ALBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("mt5", TEXT)
 @dataclass(repr=False)
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["mt5"],
-        default="mt5",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "mt5",
         description="Type of encoder.",
     )
 
@@ -387,15 +386,14 @@ class MT5Config(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
 @dataclass(repr=False)
 class XLMRoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["xlmroberta"],
-        default="xlmroberta",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "xlmroberta",
         description="Type of encoder.",
     )
 
@@ -479,15 +477,14 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("bert", TEXT)
 @dataclass(repr=False)
 class BERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["bert"],
-        default="bert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "bert",
         description="Type of encoder.",
     )
 
@@ -647,15 +644,14 @@ class BERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("xlm", TEXT)
 @dataclass(repr=False)
 class XLMConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["xlm"],
-        default="xlm",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "xlm",
         description="Type of encoder.",
     )
 
@@ -891,15 +887,14 @@ class XLMConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("gpt", TEXT)
 @dataclass(repr=False)
 class GPTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["gpt"],
-        default="gpt",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "gpt",
         description="Type of encoder.",
     )
 
@@ -1028,15 +1023,14 @@ class GPTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
 @dataclass(repr=False)
 class GPT2Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["gpt2"],
-        default="gpt2",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "gpt2",
         description="Type of encoder.",
     )
 
@@ -1176,15 +1170,14 @@ class GPT2Config(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("roberta", TEXT)
 @dataclass(repr=False)
 class RoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["roberta"],
-        default="roberta",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "roberta",
         description="Type of encoder.",
     )
 
@@ -1256,15 +1249,14 @@ class RoBERTaConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
 @dataclass(repr=False)
 class TransformerXLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["transformer_xl"],
-        default="transformer_xl",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "transformer_xl",
         description="Type of encoder.",
     )
 
@@ -1480,15 +1472,14 @@ class TransformerXLConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
 @dataclass(repr=False)
 class XLNetConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["xlnet"],
-        default="xlnet",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "xlnet",
         description="Type of encoder.",
     )
 
@@ -1714,15 +1705,14 @@ class XLNetConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
 @dataclass(repr=False)
 class DistilBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["distilbert"],
-        default="distilbert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "distilbert",
         description="Type of encoder.",
     )
 
@@ -1865,15 +1855,14 @@ class DistilBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("ctrl", TEXT)
 @dataclass(repr=False)
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["ctrl"],
-        default="ctrl",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "ctrl",
         description="Type of encoder.",
     )
 
@@ -2003,15 +1992,14 @@ class CTRLConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("camembert", TEXT)
 @dataclass(repr=False)
 class CamemBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["camembert"],
-        default="camembert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "camembert",
         description="Type of encoder.",
     )
 
@@ -2170,15 +2158,14 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("t5", TEXT)
 @dataclass(repr=False)
 class T5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["t5"],
-        default="t5",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "t5",
         description="Type of encoder.",
     )
 
@@ -2312,15 +2299,14 @@ class T5Config(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
 @dataclass(repr=False)
 class FlauBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["flaubert"],
-        default="flaubert",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "flaubert",
         description="Type of encoder.",
     )
 
@@ -2548,15 +2534,14 @@ class FlauBERTConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("electra", TEXT)
 @dataclass(repr=False)
 class ELECTRAConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["electra"],
-        default="electra",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "electra",
         description="Type of encoder.",
     )
 
@@ -2710,15 +2695,14 @@ class ELECTRAConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("longformer", TEXT)
 @dataclass(repr=False)
 class LongformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an Longformer encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["longformer"],
-        default="longformer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "longformer",
         description="Type of encoder.",
     )
 
@@ -2802,15 +2786,14 @@ class LongformerConfig(BaseEncoderConfig):
     )
 
 
+@DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
 @dataclass(repr=False)
 class AutoTransformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["auto_transformer"],
-        default="auto_transformer",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "auto_transformer",
         description="Type of encoder.",
     )
 

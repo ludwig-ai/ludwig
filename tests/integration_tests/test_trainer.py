@@ -2,6 +2,8 @@ import os
 import shutil
 from unittest import mock
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
@@ -13,14 +15,21 @@ from tests.integration_tests.utils import (
     generate_data,
     LocalTestBackend,
     number_feature,
+    RAY_BACKEND_CONFIG,
     sequence_feature,
     vector_feature,
 )
 
 try:
+    import dask
     import ray
 
     from ludwig.backend.horovod import HorovodBackend
+    from ludwig.data.dataset.ray import RayDataset
+    from ludwig.models.gbm import GBM
+    from ludwig.schema.model_config import ModelConfig
+    from ludwig.schema.trainer import GBMTrainerConfig
+    from ludwig.trainers.trainer_lightgbm import LightGBMRayTrainer
 
     @ray.remote
     def run_scale_lr(config, data_csv, num_workers, outdir):
@@ -47,6 +56,7 @@ try:
         return callback.lr
 
 except ImportError:
+    dask = None
     ray = None
 
 
@@ -173,3 +183,57 @@ def test_changing_parameters_on_plateau(tmpdir):
     model = LudwigModel(config, backend=LocalTestBackend())
 
     model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+
+@pytest.mark.distributed
+def test_lightgbm_dataset_partition(ray_cluster_2cpu):
+    # Create a LightGBM model with a Ray backend
+    config = {
+        "input_features": [{"name": "in_column", "type": "binary"}],
+        "output_features": [{"name": "out_column", "type": "binary"}],
+        "model_type": "gbm",
+    }
+    backend_config = {**RAY_BACKEND_CONFIG}
+    backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
+    model = LudwigModel(config, backend=backend_config)
+    lgbm_model = GBM(ModelConfig(config))
+    trainer = LightGBMRayTrainer(GBMTrainerConfig(), lgbm_model)
+
+    def create_dataset(model: LudwigModel, size: int) -> RayDataset:
+        df = pd.DataFrame(
+            {
+                "in_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+                "out_column_mZFLky": np.random.randint(0, 1, size=(size,), dtype=np.uint8),
+            }
+        )
+        df = dask.dataframe.from_pandas(df, npartitions=1)
+        return model.backend.dataset_manager.create(df, config=model.config, training_set_metadata={})
+
+    # Create synthetic train, val, and test datasets with one block
+    train_ds = create_dataset(model, int(1e4))
+    val_ds = create_dataset(model, int(1e4))
+    test_ds = create_dataset(model, int(1e4))
+
+    # Test with no repartition. This occurs when the number of dataset blocks
+    # is equal to the number of ray actors.
+    trainer.ray_params.num_actors = 1
+    trainer._construct_lgb_datasets(train_ds, validation_set=val_ds, test_set=test_ds)
+    assert train_ds.ds.num_blocks() == 1
+    assert val_ds.ds.num_blocks() == 1
+    assert test_ds.ds.num_blocks() == 1
+
+    # Test with repartition. This occurs when the number of dataset blocks
+    # is less than the number of ray actors.
+    trainer.ray_params.num_actors = 2
+    trainer._construct_lgb_datasets(train_ds, validation_set=val_ds, test_set=test_ds)
+    assert train_ds.ds.num_blocks() == 2
+    assert val_ds.ds.num_blocks() == 2
+    assert test_ds.ds.num_blocks() == 2
+
+    # Test again with no repartition. This also occurs when the number of dataset blocks
+    # is greater than the number of ray actors.
+    trainer.ray_params.num_actors = 1
+    trainer._construct_lgb_datasets(train_ds, validation_set=val_ds, test_set=test_ds)
+    assert train_ds.ds.num_blocks() == 2
+    assert val_ds.ds.num_blocks() == 2
+    assert test_ds.ds.num_blocks() == 2

@@ -31,6 +31,20 @@ dataset_names = ludwig.datasets.list_datasets()
 
 ______________________________________________________________________
 
+### get_datasets_output_features
+
+If a specific dataset name is passed in, then returns the output features associated with that dataset. Otherwise,
+returns an ordered dictionary with dataset names as keys and dictionaries containing the output features for each
+dataset as values.
+
+**Example:**
+
+```python
+output_features = ludwig.datasets.get_datasets_output_features(dataset="titanic")
+```
+
+______________________________________________________________________
+
 ### describe_dataset
 
 Gets a human-readable description string for a dataset

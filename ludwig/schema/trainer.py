@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
@@ -17,6 +18,7 @@ from ludwig.utils.registry import Registry
 trainer_schema_registry = Registry()
 
 
+@DeveloperAPI
 def register_trainer_schema(model_type: str):
     def wrap(trainer_config: BaseTrainerConfig):
         trainer_schema_registry[model_type] = trainer_config
@@ -25,6 +27,7 @@ def register_trainer_schema(model_type: str):
     return wrap
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
@@ -32,6 +35,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     pass
 
 
+@DeveloperAPI
 @register_trainer_schema("ecd_ray_legacy")
 @register_trainer_schema(MODEL_ECD)
 @dataclass(order=True)
@@ -300,6 +304,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
 
+@DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
 @dataclass(repr=False, order=True)
 class GBMTrainerConfig(BaseTrainerConfig):
@@ -557,6 +562,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
 
+@DeveloperAPI
 def get_model_type_jsonschema():
     return {
         "type": "string",
@@ -567,6 +573,7 @@ def get_model_type_jsonschema():
     }
 
 
+@DeveloperAPI
 def get_trainer_jsonschema(model_type: str):
     trainer_cls = trainer_schema_registry[model_type]
     props = schema_utils.unload_jsonschema_from_marshmallow_class(trainer_cls)["properties"]
