@@ -382,7 +382,7 @@ def _model_select(
                     input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
 
         # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
-        base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+        base_config = merge_dict(base_config, default_configs.get(TEXT, {}).get(AUTOML_DEFAULT_TEXT_ENCODER, {}))
         base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
