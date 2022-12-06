@@ -1,7 +1,6 @@
 import os
 import os.path
 import random
-import shutil
 
 import numpy as np
 import pandas as pd
@@ -265,7 +264,6 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     input_features = [
         image_feature(image_dest_folder),
     ]
-    tv_cache_dir = os.path.join(os.environ["HOME"], ".cache", "torch")
     input_features[0][ENCODER] = {
         TYPE: torch_encoder,
         "model_variant": variant,
@@ -303,9 +301,6 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
         output_directory="results",  # results_dir
     )
 
-    # confirm that pretrained model weight was downloaded
-    assert len([f for f in os.listdir(os.path.join(tv_cache_dir, "hub", "checkpoints"))]) == 1
-
     preds_1, _ = ludwig_model1.predict(dataset=validation_set)
 
     def check_model_equal(ludwig_model2):
@@ -336,14 +331,8 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
-    # remove tv model cache for reloading of Ludwig model
-    shutil.rmtree(tv_cache_dir, ignore_errors=True)
-
     ludwig_model1.save(tmpdir)
     ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
-
-    # confirm that torchvision model was not downloaded again
-    assert not os.path.isdir(tv_cache_dir)
 
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_loaded)
@@ -351,14 +340,10 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
 
-    # confirm that torchvision model was not downloaded again
-    assert not os.path.isdir(tv_cache_dir)
-
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_exp)
 
 
-@pytest.mark.skip(reason="Resolve how to test for downloading of weights")
 def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
@@ -394,9 +379,6 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    hf_cache_dir = os.path.join(os.environ["HOME"], ".cache", "huggingface", "transformers")
-    os.makedirs(hf_cache_dir, exist_ok=True)
-    os.environ["HF_HOME"] = hf_cache_dir
     backend = LocalTestBackend()
     ludwig_model1 = LudwigModel(config, backend=backend)
     _, _, output_dir = ludwig_model1.train(
@@ -405,10 +387,6 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
         test_set=test_set,
         output_directory="results",  # results_dir
     )
-
-    # confirm that pretrained model weight was downloaded
-    # file count represents the vocab.txt for tokenizer and pretrained weights
-    assert len(os.listdir(hf_cache_dir)) == 9
 
     preds_1, _ = ludwig_model1.predict(dataset=validation_set)
 
@@ -440,26 +418,14 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
             for of1_w, of2_w in zip(of1.decoder_obj.parameters(), of2.decoder_obj.parameters()):
                 assert torch.allclose(of1_w, of2_w)
 
-    # remove hugging face model cache for reloading of Ludwig model
-    shutil.rmtree(hf_cache_dir, ignore_errors=True)
-    os.makedirs(hf_cache_dir, exist_ok=True)
-
     ludwig_model1.save(tmpdir)
     ludwig_model_loaded = LudwigModel.load(tmpdir, backend=backend)
 
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_loaded)
 
-    # confirm that hugging face model was not downloaded again
-    # file count represents the vocab.txt for tokenizer only
-    assert len(os.listdir(hf_cache_dir)) == 3
-
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(os.path.join(output_dir, "model"), backend=backend)
 
     # confirm model structure and weights are the same
     check_model_equal(ludwig_model_exp)
-
-    # confirm that hugging face model was not downloaded again
-    # file count represents the vocab.txt for tokenizer only
-    assert len(os.listdir(hf_cache_dir)) == 3
