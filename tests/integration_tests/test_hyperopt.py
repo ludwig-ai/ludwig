@@ -120,7 +120,7 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
 
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS_FOR_TESTING)
 def test_hyperopt_search_alg(
-    search_alg, csv_filename, tmpdir, ray_cluster_2cpu, validate_output_feature=False, validation_metric=None
+    search_alg, csv_filename, tmpdir, ray_cluster_7cpu, validate_output_feature=False, validation_metric=None
 ):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
@@ -172,12 +172,12 @@ def test_hyperopt_search_alg(
         assert isinstance(path, str)
 
 
-def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster_2cpu):
+def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster_7cpu):
     test_hyperopt_search_alg(
         "variant_generator",
         csv_filename,
         tmpdir,
-        ray_cluster_2cpu,
+        ray_cluster_7cpu,
         validate_output_feature=True,
         validation_metric=ACCURACY,
     )
@@ -185,7 +185,7 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster_2cpu):
 
 @pytest.mark.parametrize("scheduler", SCHEDULERS_FOR_TESTING)
 def test_hyperopt_scheduler(
-    scheduler, csv_filename, tmpdir, ray_cluster_2cpu, validate_output_feature=False, validation_metric=None
+    scheduler, csv_filename, tmpdir, ray_cluster_7cpu, validate_output_feature=False, validation_metric=None
 ):
     config, rel_path = _setup_ludwig_config(csv_filename)
 
@@ -240,7 +240,7 @@ def test_hyperopt_scheduler(
         assert isinstance(raytune_results, HyperoptResults)
 
 
-def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_cluster_2cpu):
+def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_cluster_7cpu):
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
@@ -322,12 +322,12 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
 
 
 @pytest.mark.parametrize("search_space", ["random", "grid"])
-def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_2cpu):
-    _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_2cpu)
+def test_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, ray_cluster_7cpu):
+    _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, "local", ray_cluster_7cpu)
 
 
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
-def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_2cpu):
+def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_7cpu):
     backend = {
         "type": "local",
         "credentials": {
@@ -341,11 +341,11 @@ def test_hyperopt_sync_remote(fs_protocol, bucket, csv_filename, ray_cluster_2cp
             "random",
             tmpdir,
             backend,
-            ray_cluster_2cpu,
+            ray_cluster_7cpu,
         )
 
 
-def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster_2cpu):
+def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
     input_features = [
         text_feature(name="utterance", reduce_output="sum"),
         category_feature(vocab_size=3),
@@ -396,7 +396,7 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
             assert input_feature["encoder"]["embedding_size"] in embedding_size_search_space
 
 
-def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_2cpu):
+def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_7cpu):
     old_config = {
         "ludwig_version": "0.4",
         INPUT_FEATURES: [
@@ -449,7 +449,7 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_2cpu):
     hyperopt(old_config, dataset=rel_path, output_directory=tmpdir, experiment_name="test_hyperopt")
 
 
-def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_2cpu):
+def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
     config = {
         INPUT_FEATURES: [
             {"name": "cat1", TYPE: "category", "encoder": {"vocab_size": 2}},
