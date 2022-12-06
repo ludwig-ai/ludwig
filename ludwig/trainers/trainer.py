@@ -24,7 +24,7 @@ import sys
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
@@ -48,6 +48,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
+from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
@@ -455,7 +456,7 @@ class Trainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,
@@ -464,12 +465,15 @@ class Trainer(BaseTrainer):
         logger.info("Tuning batch size...")
 
         if self.is_cpu_training():
-            logger.warn(
-                f'Batch size tuning is not supported on CPU, setting batch size from "auto" to default value '
-                f"{DEFAULT_BATCH_SIZE}"
-            )
-            # TODO(geoffrey): Add support for batch size tuning on CPU
-            best_batch_size = DEFAULT_BATCH_SIZE
+            # TODO(geoffrey): add support for batch size tuning on CPU
+            logger.warn("Batch size tuning is not supported on CPU")
+            # batch size will default to max_batch_size if it is set
+            if self.max_batch_size < DEFAULT_BATCH_SIZE:
+                logger.warn(f"Falling back to max_batch_size config param: {self.max_batch_size}")
+                best_batch_size = self.max_batch_size
+            else:
+                logger.warn(f"Falling back to default batch size: {DEFAULT_BATCH_SIZE}")
+                best_batch_size = DEFAULT_BATCH_SIZE
         else:
 
             def _is_valid_batch_size(batch_size):

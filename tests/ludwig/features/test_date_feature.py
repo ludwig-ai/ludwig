@@ -1,6 +1,5 @@
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict
 
 import pytest
 import torch
@@ -9,6 +8,7 @@ from ludwig.features import date_feature
 from ludwig.features.date_feature import DateInputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
+from ludwig.types import FeatureConfigDict
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.torch_utils import get_torch_device
 
@@ -22,7 +22,7 @@ def date_config():
     return {"name": "date_column_name", "type": "date"}
 
 
-def test_date_input_feature(date_config: Dict[str, Any]):
+def test_date_input_feature(date_config: FeatureConfigDict):
     # setup image input feature definition
     feature_def = deepcopy(date_config)
 

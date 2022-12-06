@@ -1,7 +1,7 @@
 import contextlib
 import os
 import tempfile
-from typing import Any, Dict, List, Set
+from typing import List, Set
 from unittest import mock
 
 import numpy as np
@@ -11,6 +11,7 @@ from packaging import version
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
+from ludwig.types import FeatureConfigDict
 from tests.integration_tests.utils import (
     category_feature,
     generate_data,
@@ -26,12 +27,17 @@ ray = pytest.importorskip("ray")
 
 import dask.dataframe as dd  # noqa
 
-from ludwig.automl.automl import create_auto_config, train_with_config  # noqa
+from ludwig.automl import create_auto_config, create_auto_config_with_dataset_profile, train_with_config  # noqa
 from ludwig.hyperopt.execution import RayTuneExecutor  # noqa
 
 _ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
 pytestmark = pytest.mark.distributed
+
+
+def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
+    """Returns the list of feature names."""
+    return {feature[NAME] for feature in features}
 
 
 @pytest.fixture(scope="module")
@@ -58,11 +64,19 @@ def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
     df = dd.read_csv(dataset_csv)
     config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=tune_for_memory, backend="ray")
 
-    def to_name_set(features: List[Dict[str, Any]]) -> Set[str]:
-        return {feature[NAME] for feature in features}
-
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+@pytest.mark.distributed
+def test_create_auto_config_with_dataset_profile(test_data, ray_cluster_2cpu):
+    input_features, output_features, dataset_csv = test_data
+    targets = [feature[NAME] for feature in output_features]
+    df = dd.read_csv(dataset_csv)
+    config = create_auto_config_with_dataset_profile(dataset=df, target=targets[0], backend="ray")
+
+    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
+    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set([output_features[0]])
 
 
 def _get_sample_df(class_probs):

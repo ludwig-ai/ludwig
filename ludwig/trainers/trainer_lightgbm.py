@@ -22,6 +22,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_ray_trainer, register_trainer
+from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
@@ -142,7 +143,7 @@ class LightGBMTrainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: Dict[str, Any],
+        config: ModelConfigDict,
         training_set: "Dataset",  # noqa: F821
         random_seed: int,
         max_trials: int = 10,
