@@ -1,8 +1,8 @@
 # Ludwig Docker Images
 
-These images provide Ludwig, a toolbox that allows to train and evaluate deep
-learning models without the need to write code. Ludwig Docker image with full
-set of pre-requiste packages to support these capabilities
+These images provide Ludwig, a toolbox to train and evaluate deep learning models
+without the need to write code. Ludwig Docker images contain the full set of pre-requisite
+packages to support these capabilities
 
 - text features
 - image features
@@ -17,11 +17,11 @@ set of pre-requiste packages to support these capabilities
 These three repositories contain a version of Ludwig with full features built
 from the project's `master` branch.
 
-- `ludwigai/ludwig` Ludwig packaged with TF 2.x
-- `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of TF 2.x
-- `ludwigai/ludwig-ray` Ludwig packaged with TF2.x
+- `ludwigai/ludwig` Ludwig packaged with PyTorch
+- `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of PyTorch
+- `ludwigai/ludwig-ray` Ludwig packaged with PyTorch
   and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
-- `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of TF2.x
+- `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of PyTorch
   and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
 
 ## Image Tags

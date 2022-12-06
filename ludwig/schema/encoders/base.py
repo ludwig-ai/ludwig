@@ -3,11 +3,13 @@ from typing import List, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for encoders."""
@@ -15,28 +17,26 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str
 
 
+@DeveloperAPI
 @register_encoder_config("passthrough", [NUMBER, VECTOR])
 @dataclass(order=True)
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["passthrough"],
-        default="passthrough",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "passthrough",
         description="Type of encoder.",
     )
 
 
+@DeveloperAPI
 @register_encoder_config("dense", [BINARY, NUMBER, VECTOR])
 @dataclass(repr=False, order=True)
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["dense"],
-        default="dense",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "dense",
         description="Type of encoder.",
     )
 
@@ -77,7 +77,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
         description="Initializer for the weight matrix.",
     )
 
-    norm: Union[str] = schema_utils.StringOptions(
+    norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         allow_none=True,
         default=None,

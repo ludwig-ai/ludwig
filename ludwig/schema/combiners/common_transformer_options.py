@@ -2,10 +2,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 
 
+@DeveloperAPI
 @dataclass(repr=False, order=True)
 class CommonTransformerConfig:
     """Common transformer parameter values."""

@@ -9,3 +9,6 @@ sha256:
 description: |
   The BNP Paribas Cardif Claims Management dataset.
   https://www.kaggle.com/c/bnp-paribas-cardif-claims-management
+output_features:
+    - name: target
+      type: binary

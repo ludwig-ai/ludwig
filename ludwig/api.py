@@ -73,6 +73,7 @@ from ludwig.models.predictor import (
 )
 from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
+from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils import metric_utils
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
@@ -155,7 +156,7 @@ class PreprocessedDataset:
     training_set: Dataset
     validation_set: Dataset
     test_set: Dataset
-    training_set_metadata: Dict[str, Any]
+    training_set_metadata: TrainingSetMetadataDict
 
     # TODO(daniel): deprecate multiple return value unpacking and indexed access
     def __iter__(self):
@@ -444,7 +445,9 @@ class LudwigModel:
                 output_directory = model_resume_path
             else:
                 if self.backend.is_coordinator():
-                    logger.info("Model resume path does not exists, " "starting training from scratch")
+                    logger.info(
+                        f"Model resume path '{model_resume_path}' does not exist, starting training from scratch"
+                    )
                 model_resume_path = None
 
         if model_resume_path is None:
@@ -522,34 +525,27 @@ class LudwigModel:
                         print_boxed("LUDWIG CONFIG")
                         logger.info(pformat(self.config_obj.to_dict(), indent=4))
 
-                for callback in self.callbacks:
-                    callback.on_preprocess_start(self.config_obj.to_dict())
-
-                try:
-                    preprocessed_data = self.preprocess(
-                        dataset=dataset,
-                        training_set=training_set,
-                        validation_set=validation_set,
-                        test_set=test_set,
-                        training_set_metadata=training_set_metadata,
-                        data_format=data_format,
-                        experiment_name=experiment_name,
-                        model_name=model_name,
-                        model_resume_path=model_resume_path,
-                        skip_save_training_description=skip_save_training_description,
-                        skip_save_training_statistics=skip_save_training_statistics,
-                        skip_save_model=skip_save_model,
-                        skip_save_progress=skip_save_progress,
-                        skip_save_log=skip_save_log,
-                        skip_save_processed_input=skip_save_processed_input,
-                        output_directory=output_directory,
-                        random_seed=random_seed,
-                        **kwargs,
-                    )
-                    (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
-                finally:
-                    for callback in self.callbacks:
-                        callback.on_preprocess_end(training_set, validation_set, test_set, training_set_metadata)
+                preprocessed_data = self.preprocess(
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    model_resume_path=model_resume_path,
+                    skip_save_training_description=skip_save_training_description,
+                    skip_save_training_statistics=skip_save_training_statistics,
+                    skip_save_model=skip_save_model,
+                    skip_save_progress=skip_save_progress,
+                    skip_save_log=skip_save_log,
+                    skip_save_processed_input=skip_save_processed_input,
+                    output_directory=output_directory,
+                    random_seed=random_seed,
+                    **kwargs,
+                )
+                (training_set, validation_set, test_set, training_set_metadata) = preprocessed_data
 
             self.training_set_metadata = training_set_metadata
 
@@ -1384,28 +1380,35 @@ class LudwigModel:
         """
         print_boxed("PREPROCESSING")
 
+        for callback in self.callbacks:
+            callback.on_preprocess_start(self.config_obj.to_dict())
+
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
-        with provision_preprocessing_workers(self.backend):
-            # TODO (Connor): Refactor to use self.config_obj
-            preprocessed_data = preprocess_for_training(
-                self.config_obj.to_dict(),
-                dataset=dataset,
-                training_set=training_set,
-                validation_set=validation_set,
-                test_set=test_set,
-                training_set_metadata=training_set_metadata,
-                data_format=data_format,
-                skip_save_processed_input=skip_save_processed_input,
-                preprocessing_params=preprocessing_params,
-                backend=self.backend,
-                random_seed=random_seed,
-                callbacks=self.callbacks,
-            )
+        try:
+            with provision_preprocessing_workers(self.backend):
+                # TODO (Connor): Refactor to use self.config_obj
+                preprocessed_data = preprocess_for_training(
+                    self.config_obj.to_dict(),
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    backend=self.backend,
+                    random_seed=random_seed,
+                    callbacks=self.callbacks,
+                )
 
-        (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
+            (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 
-        return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
+            return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
+        finally:
+            for callback in self.callbacks:
+                callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
 
     @staticmethod
     def load(
@@ -1656,12 +1659,12 @@ class LudwigModel:
             set_disable_progressbar(False)
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> ModelConfigDict:
         """Returns the fully-rendered config of this model including default values."""
         return self.config_obj.to_dict()
 
     @config.setter
-    def config(self, user_config: Dict[str, Any]):
+    def config(self, user_config: ModelConfigDict):
         """Updates the config of this model.
 
         WARNING: this can have unexpected results on an already trained model.

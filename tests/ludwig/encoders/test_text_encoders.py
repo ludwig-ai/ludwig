@@ -5,7 +5,6 @@ from ludwig.encoders import text_encoders
 from tests.integration_tests.utils import slow
 
 
-@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -16,12 +15,10 @@ def test_albert_encoder(use_pretrained: bool, reduce_output: str, max_sequence_l
         max_sequence_length=max_sequence_length,
     )
     inputs = torch.rand((2, max_sequence_length)).type(albert_encoder.input_dtype)
-    inputs = torch.rand((2, max_sequence_length)).type(albert_encoder.input_dtype)
     outputs = albert_encoder(inputs)
     assert outputs["encoder_output"].shape[1:] == albert_encoder.output_shape
 
 
-@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "cls_pooled", "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -66,7 +63,6 @@ def test_gpt_encoder(use_pretrained: bool, reduce_output: str, max_sequence_leng
     assert outputs["encoder_output"].shape[1:] == gpt_encoder.output_shape
 
 
-@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", ["cls_pooled", "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -155,7 +151,6 @@ def test_camembert_encoder(use_pretrained: bool, reduce_output: str, max_sequenc
     assert outputs["encoder_output"].shape[1:] == encoder.output_shape
 
 
-@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -247,3 +242,16 @@ def test_t5_encoder(use_pretrained: bool, reduce_output: str, max_sequence_lengt
     inputs = torch.rand((2, max_sequence_length)).type(encoder.input_dtype)
     outputs = encoder(inputs)
     assert outputs["encoder_output"].shape[1:] == encoder.output_shape
+
+
+@slow
+@pytest.mark.parametrize("use_pretrained", [False])
+@pytest.mark.parametrize("reduce_output", [None, "sum"])
+@pytest.mark.parametrize("max_sequence_length", [20])
+def test_xlnet_encoder(use_pretrained: bool, reduce_output: str, max_sequence_length: int):
+    xlnet_encoder = text_encoders.XLNetEncoder(
+        use_pretrained=use_pretrained, reduce_output=reduce_output, max_sequence_length=max_sequence_length
+    )
+    inputs = torch.rand((2, max_sequence_length)).type(xlnet_encoder.input_dtype)
+    outputs = xlnet_encoder(inputs)
+    assert outputs["encoder_output"].shape[1:] == xlnet_encoder.output_shape

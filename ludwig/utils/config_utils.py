@@ -1,13 +1,16 @@
-from typing import Any, Dict, Set, Union
+from typing import Set
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.schema.model_config import ModelConfig
+from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
 from ludwig.utils.misc_utils import get_from_registry
 
 
+@DeveloperAPI
 def get_feature_type_parameter_values_from_section(
-    config: Dict[str, Any], features_section: str, feature_type: str, parameter_name: str
+    config: ModelConfig, features_section: str, feature_type: str, parameter_name: str
 ) -> Set:
     """Returns the set of all parameter values used for the given features_section, feature_type, and
     parameter_name."""
@@ -23,11 +26,12 @@ def get_feature_type_parameter_values_from_section(
     return parameter_values
 
 
+@DeveloperAPI
 def get_defaults_section_for_feature_type(
     feature_type: str,
-    config_defaults: Dict[str, Dict[str, Any]],
+    config_defaults: FeatureTypeDefaultsDict,
     config_defaults_section: str,
-) -> Union[Dict[str, Any], Dict]:
+) -> FeatureConfigDict:
     """Returns a dictionary of all default parameter values specified in the global defaults section for the
     config_defaults_section of the feature_type."""
 
@@ -40,7 +44,7 @@ def get_defaults_section_for_feature_type(
     return config_defaults[feature_type][config_defaults_section]
 
 
-def get_preprocessing_params(config_obj: ModelConfig) -> Dict[str, Any]:
+def get_preprocessing_params(config_obj: ModelConfig) -> PreprocessingConfigDict:
     """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
     parameters from config defaults."""
     preprocessing_params = {}
@@ -50,9 +54,10 @@ def get_preprocessing_params(config_obj: ModelConfig) -> Dict[str, Any]:
     return preprocessing_params
 
 
+@DeveloperAPI
 def merge_config_preprocessing_with_feature_specific_defaults(
-    config_preprocessing: Dict[str, Any], config_defaults: Dict[str, Dict[str, Any]]
-) -> Dict[str, Any]:
+    config_preprocessing: PreprocessingConfigDict, config_defaults: FeatureTypeDefaultsDict
+) -> PreprocessingConfigDict:
     """Returns a new dictionary that merges preprocessing section of config with type-specific preprocessing
     parameters from config defaults."""
     preprocessing_params = {}
@@ -62,7 +67,8 @@ def merge_config_preprocessing_with_feature_specific_defaults(
     return preprocessing_params
 
 
-def get_default_encoder_or_decoder(feature: Dict[str, Any], config_feature_group: str) -> str:
+@DeveloperAPI
+def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_group: str) -> str:
     """Returns the default encoder or decoder for a feature."""
     if config_feature_group == INPUT_FEATURES:
         feature_schema = get_from_registry(feature.get(TYPE), input_type_registry).get_schema_cls()

@@ -19,6 +19,7 @@ from typing import Optional
 import torch
 from torch import nn
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder, register_sequence_encoder
@@ -42,6 +43,7 @@ from ludwig.schema.encoders.sequence_encoders import (
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 @register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 class SequencePassthroughEncoder(Encoder):
     def __init__(
@@ -97,6 +99,7 @@ class SequencePassthroughEncoder(Encoder):
         return SequencePassthroughConfig
 
 
+@DeveloperAPI
 @register_encoder("embed", [SEQUENCE, TEXT])
 class SequenceEmbedEncoder(Encoder):
     def __init__(
@@ -234,6 +237,7 @@ class SequenceEmbedEncoder(Encoder):
         return self.reduce_sequence.output_shape
 
 
+@DeveloperAPI
 @register_sequence_encoder("parallel_cnn")
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class ParallelCNN(Encoder):
@@ -534,6 +538,7 @@ class ParallelCNN(Encoder):
         return self.parallel_conv1d.output_shape
 
 
+@DeveloperAPI
 @register_sequence_encoder("stacked_cnn")
 @register_encoder("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedCNN(Encoder):
@@ -871,6 +876,7 @@ class StackedCNN(Encoder):
         return {"encoder_output": hidden}
 
 
+@DeveloperAPI
 @register_sequence_encoder("stacked_parallel_cnn")
 @register_encoder("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedParallelCNN(Encoder):
@@ -1183,6 +1189,7 @@ class StackedParallelCNN(Encoder):
         return {"encoder_output": hidden}
 
 
+@DeveloperAPI
 @register_sequence_encoder("rnn")
 @register_encoder("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedRNN(Encoder):
@@ -1456,6 +1463,7 @@ class StackedRNN(Encoder):
         return {"encoder_output": hidden, "encoder_output_state": final_state}
 
 
+@DeveloperAPI
 @register_sequence_encoder("cnnrnn")
 @register_encoder("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 class StackedCNNRNN(Encoder):
@@ -1745,6 +1753,7 @@ class StackedCNNRNN(Encoder):
         return {"encoder_output": hidden, "encoder_output_state": final_state}
 
 
+@DeveloperAPI
 @register_encoder("transformer", [SEQUENCE, TEXT, TIMESERIES])
 class StackedTransformer(Encoder):
     def __init__(

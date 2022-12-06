@@ -24,6 +24,7 @@ import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
@@ -33,14 +34,17 @@ logger = logging.getLogger(__name__)
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 
+@DeveloperAPI
 def get_gray_default_image(num_channels: int, height: int, width: int) -> np.ndarray:
     return np.full((num_channels, height, width), 128, dtype=np.uint8)
 
 
+@DeveloperAPI
 def get_average_image(image_lst: List[np.ndarray]) -> np.array:
     return np.mean([x for x in image_lst if x is not None], axis=(0))
 
 
+@DeveloperAPI
 def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
     if not isinstance(img_entry, str):
         return False
@@ -57,6 +61,7 @@ def is_image(src_path: str, img_entry: Union[bytes, str], column: str) -> bool:
         return False
 
 
+@DeveloperAPI
 def is_image_score(src_path, img_entry, column: str):
     """Used for AutoML For image inference, want to bias towards both readable images, but also account for
     unreadable (i.e. expired) urls with image extensions."""
@@ -67,6 +72,7 @@ def is_image_score(src_path, img_entry, column: str):
     return 0
 
 
+@DeveloperAPI
 def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
     """Returns the torchvision.io.ImageReadMode corresponding to the number of channels.
 
@@ -84,6 +90,7 @@ def get_image_read_mode_from_num_channels(num_channels: int) -> ImageReadMode:
     return mode
 
 
+@DeveloperAPI
 def read_image_from_path(
     path: str, num_channels: Optional[int] = None, return_num_bytes=False
 ) -> Union[Optional[torch.Tensor], Tuple[Optional[torch.Tensor], int]]:
@@ -104,6 +111,7 @@ def read_image_from_path(
         return image
 
 
+@DeveloperAPI
 def read_image_from_bytes_obj(
     bytes_obj: Optional[bytes] = None, num_channels: Optional[int] = None
 ) -> Optional[torch.Tensor]:
@@ -121,6 +129,7 @@ def read_image_from_bytes_obj(
     return image
 
 
+@DeveloperAPI
 def read_image_as_png(
     bytes_obj: Optional[bytes] = None, mode: ImageReadMode = ImageReadMode.UNCHANGED
 ) -> Optional[torch.Tensor]:
@@ -139,6 +148,7 @@ def read_image_as_png(
         return None
 
 
+@DeveloperAPI
 def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Tensor]:
     """Reads image from bytes object from a numpy file."""
     try:
@@ -150,6 +160,7 @@ def read_image_as_numpy(bytes_obj: Optional[bytes] = None) -> Optional[torch.Ten
         return None
 
 
+@DeveloperAPI
 def pad(
     img: torch.Tensor,
     new_size: Union[int, Tuple[int, int]],
@@ -172,6 +183,7 @@ def pad(
     return F.pad(img, padding=padding, padding_mode="edge")
 
 
+@DeveloperAPI
 def crop(
     img: torch.Tensor,
     new_size: Union[int, Tuple[int, int]],
@@ -189,6 +201,7 @@ def crop(
     return F.center_crop(img, output_size=new_size)
 
 
+@DeveloperAPI
 def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
     """torchscript-compatible implementation of resize using constants.CROP_OR_PAD.
 
@@ -207,6 +220,7 @@ def crop_or_pad(img: torch.Tensor, new_size: Union[int, Tuple[int, int]]):
     return img
 
 
+@DeveloperAPI
 def resize_image(
     img: torch.Tensor,
     new_size: Union[int, Tuple[int, int]],
@@ -234,11 +248,13 @@ def resize_image(
     return img
 
 
+@DeveloperAPI
 def grayscale(img: torch.Tensor) -> torch.Tensor:
     """Grayscales RGB image."""
     return F.rgb_to_grayscale(img)
 
 
+@DeveloperAPI
 def num_channels_in_image(img: torch.Tensor):
     """Returns number of channels in image."""
     if img is None or img.ndim < 2:
@@ -250,6 +266,7 @@ def num_channels_in_image(img: torch.Tensor):
         return img.shape[0]
 
 
+@DeveloperAPI
 def to_tuple(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
     """Converts int or tuple to tuple of ints."""
     if torch.jit.isinstance(v, int):
@@ -258,6 +275,7 @@ def to_tuple(v: Union[int, Tuple[int, int]]) -> Tuple[int, int]:
         return v
 
 
+@DeveloperAPI
 def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
     """Creates a np array of length 2 from a Conv2D property.
 
@@ -275,6 +293,7 @@ def to_np_tuple(prop: Union[int, Iterable]) -> np.ndarray:
         raise TypeError(f"prop must be int or iterable of length 2, but is {prop}.")
 
 
+@DeveloperAPI
 def get_img_output_shape(
     img_height: int,
     img_width: int,

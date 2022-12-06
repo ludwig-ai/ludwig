@@ -1,5 +1,6 @@
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SEQUENCE, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -7,14 +8,13 @@ from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
+@DeveloperAPI
 @register_decoder_config("generator", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["generator"],
-        default="generator",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "generator",
         description="Type of decoder.",
     )
 
@@ -58,14 +58,13 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("tagger", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["tagger"],
-        default="tagger",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "tagger",
         description="Type of decoder.",
     )
 

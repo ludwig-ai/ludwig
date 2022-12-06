@@ -1,6 +1,7 @@
 from marshmallow_dataclass import dataclass
 
-from ludwig.constants import JACCARD, SET, SIGMOID_CROSS_ENTROPY
+from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import JACCARD, LOSS, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -21,6 +22,7 @@ from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
+@DeveloperAPI
 @input_mixin_registry.register(SET)
 @dataclass
 class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -35,6 +37,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @input_config_registry.register(SET)
 @dataclass(repr=False)
 class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
@@ -43,6 +46,7 @@ class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
     pass
 
 
+@DeveloperAPI
 @output_mixin_registry.register(SET)
 @dataclass
 class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
@@ -60,6 +64,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
 
+@DeveloperAPI
 @output_config_registry.register(SET)
 @dataclass(repr=False)
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
@@ -97,3 +102,7 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
         description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
         "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
     )
+
+    @staticmethod
+    def get_output_metric_functions():
+        return {LOSS: None, JACCARD: None}

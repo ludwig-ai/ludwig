@@ -20,7 +20,7 @@ import random
 import string
 import sys
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -28,6 +28,7 @@ import torch
 import torchaudio
 import yaml
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUDIO,
     BAG,
@@ -52,6 +53,7 @@ from ludwig.constants import (
 )
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.types import ModelConfigDict
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc_utils import get_from_registry
@@ -160,13 +162,15 @@ parameters_builders_registry = {
 }
 
 
-def build_synthetic_dataset_df(dataset_size: int, config: Dict[str, Any]) -> pd.DataFrame:
+@DeveloperAPI
+def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd.DataFrame:
     features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
     df = build_synthetic_dataset(dataset_size, features)
     data = [next(df) for _ in range(dataset_size + 1)]
     return pd.DataFrame(data[1:], columns=data[0])
 
 
+@DeveloperAPI
 def build_synthetic_dataset(dataset_size: int, features: List[dict], outdir: str = "."):
     """Synthesizes a dataset for testing purposes.
 
@@ -601,7 +605,7 @@ def cli(sys_argv):
         callback.on_cmdline("synthesize_dataset", *sys_argv)
 
     # No log level parameter this is placeholder if we add at later date
-    # args.logging_level = logging_level_registry[args.logging_level]
+    # args.logging_level = get_logging_level_registry[args.logging_level]
     # logging.getLogger('ludwig').setLevel(
     #     args.logging_level
     # )

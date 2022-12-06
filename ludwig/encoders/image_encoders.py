@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
@@ -35,7 +36,7 @@ from ludwig.utils.pytorch_utils import freeze_parameters
 logger = logging.getLogger(__name__)
 
 
-# TODO(shreya): Add type hints for missing args
+@DeveloperAPI
 @register_encoder("stacked_cnn", IMAGE)
 class Stacked2DCNN(Encoder):
     def __init__(
@@ -160,6 +161,7 @@ class Stacked2DCNN(Encoder):
         return torch.Size(self._input_shape)
 
 
+@DeveloperAPI
 @register_encoder("resnet", IMAGE)
 class ResNetEncoder(Encoder):
     def __init__(
@@ -251,6 +253,7 @@ class ResNetEncoder(Encoder):
         return torch.Size(self._input_shape)
 
 
+@DeveloperAPI
 @register_encoder("mlp_mixer", IMAGE)
 class MLPMixerEncoder(Encoder):
     def __init__(
@@ -315,6 +318,7 @@ class MLPMixerEncoder(Encoder):
         return self._output_shape
 
 
+@DeveloperAPI
 @register_encoder("vit", IMAGE)
 class ViTEncoder(Encoder):
     def __init__(

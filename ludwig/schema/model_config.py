@@ -7,6 +7,7 @@ from typing import Dict, List
 import yaml
 from marshmallow import ValidationError
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -53,13 +54,15 @@ from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules
+from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
+from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
 
+@DeveloperAPI
 class BaseFeatureContainer:
     """Base Feature container for input and output features."""
 
@@ -98,18 +101,21 @@ class BaseFeatureContainer:
         return yaml.dump(filtered_repr, sort_keys=True)
 
 
+@DeveloperAPI
 class InputFeaturesContainer(BaseFeatureContainer):
     """InputFeatures is a container for all input features."""
 
     pass
 
 
+@DeveloperAPI
 class OutputFeaturesContainer(BaseFeatureContainer):
     """OutputFeatures is a container for all output features."""
 
     pass
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class ModelConfig(BaseMarshmallowConfig):
     """Configures the end-to-end LudwigModel machine learning pipeline.
@@ -117,7 +123,7 @@ class ModelConfig(BaseMarshmallowConfig):
     Refer to https://ludwig.ai/latest/configuration/ for full documentation.
     """
 
-    def __init__(self, config_dict: dict):
+    def __init__(self, config_dict: ModelConfigDict):
 
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
@@ -215,19 +221,19 @@ class ModelConfig(BaseMarshmallowConfig):
         return cls(yaml_config)
 
     @staticmethod
-    def _set_feature_column(config: dict) -> None:
+    def _set_feature_column(config: ModelConfigDict) -> None:
         for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
             if COLUMN not in feature:
                 feature[COLUMN] = feature[NAME]
 
     @staticmethod
-    def _set_proc_column(config: dict) -> None:
+    def _set_proc_column(config: ModelConfigDict) -> None:
         for feature in config[INPUT_FEATURES] + config[OUTPUT_FEATURES]:
             if PROC_COLUMN not in feature:
                 feature[PROC_COLUMN] = compute_feature_hash(feature)
 
     @staticmethod
-    def _upgrade_config(config_dict: dict) -> dict:
+    def _upgrade_config(config_dict: ModelConfigDict) -> ModelConfigDict:
         """Helper function used to run backwards compatibility check on the config and return an upgraded version.
 
         Args:
@@ -236,7 +242,7 @@ class ModelConfig(BaseMarshmallowConfig):
         return upgrade_config_dict_to_latest_version(config_dict)
 
     @staticmethod
-    def _validate_config(config_dict: dict) -> None:
+    def _validate_config(config_dict: ModelConfigDict) -> None:
         """Helper function used to validate the config using the Ludwig Schema.
 
         Args:
@@ -271,7 +277,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         return copy.deepcopy(cls())
 
-    def _initialize_input_features(self, feature_dicts: List[dict]) -> None:
+    def _initialize_input_features(self, feature_dicts: List[FeatureConfigDict]) -> None:
         """This function initializes the input features on the ModelConfig that are specified in the user defined
         config dictionary. It does this by getting the corresponding feature config class, initializing it, then
         setting the encoder and preprocessing sections to the value of the corresponding global defaults section.
@@ -302,7 +308,7 @@ class ModelConfig(BaseMarshmallowConfig):
             # Assign feature on output features container
             setattr(self.input_features, feature_dict[NAME], feature_config)
 
-    def _set_input_features(self, feature_dicts: List[dict]) -> None:
+    def _set_input_features(self, feature_dicts: List[FeatureConfigDict]) -> None:
         """This function sets the values on the ModelConfig that are specified on the input features themselves.
         This will override any global defaults that have been set in the previous function call
         _initialize_input_features().
@@ -319,7 +325,7 @@ class ModelConfig(BaseMarshmallowConfig):
                 getattr(self.input_features, feature_dict[NAME]), feature_dict, feature_type=feature_dict[TYPE]
             )
 
-    def _initialize_output_features(self, feature_dicts: List[dict]) -> None:
+    def _initialize_output_features(self, feature_dicts: List[FeatureConfigDict]) -> None:
         """This function initializes the output features on the ModelConfig that are specified in the user defined
         config dictionary. It does this by getting the corresponding feature config class, initializing it, then
         setting the decoder and loss sections to the value of the corresponding global defaults section. By doing
@@ -353,7 +359,7 @@ class ModelConfig(BaseMarshmallowConfig):
             # Assign feature on output features container
             setattr(self.output_features, feature_dict[NAME], feature_config)
 
-    def _set_output_features(self, feature_dicts: List[dict]) -> None:
+    def _set_output_features(self, feature_dicts: List[FeatureConfigDict]) -> None:
         """This function sets the values on the ModelConfig that are specified on the output features themselves.
         This will override any global defaults that have been set in the previous function call
         _initialize_output_features().
@@ -407,14 +413,14 @@ class ModelConfig(BaseMarshmallowConfig):
                 self._set_attributes(section, val, feature_type=feature_type)
 
             # If val is a nested section (i.e. preprocessing) recurse into function to set values.
-            elif isinstance(val, dict):
+            elif key not in RECURSION_STOP_ENUM and isinstance(val, dict):
                 self._set_attributes(getattr(config_obj_lvl, key), val, feature_type=feature_type)
 
             # Base case for setting values on leaves
             else:
                 setattr(config_obj_lvl, key, val)
 
-    def _set_gbm_attributes(self, config_dict: dict) -> None:
+    def _set_gbm_attributes(self, config_dict: ModelConfigDict) -> None:
         """This function sets the appropriate attributes on the config object when the model type is 'gbm'. These
         are things such as the correct model trainer config class and passthrough encoders for the features.
 
@@ -480,7 +486,7 @@ class ModelConfig(BaseMarshmallowConfig):
         elif epochs is not None:
             scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
-    def update_with_dict(self, config_dict: dict):
+    def update_with_dict(self, config_dict: ModelConfigDict):
         """This function enables the functionality to update the config object with the config dict in case it has
         been altered by a particular section of the Ludwig pipeline. For example, preprocessing/auto_tune_config
         make changes to the config dict that need to be reconciled with the config obj. This function will ideally

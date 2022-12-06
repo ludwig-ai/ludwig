@@ -12,12 +12,11 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v4.4.0
     hooks:
       - id: check-ast
       - id: check-byte-order-marker
       - id: check-case-conflict
-      - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-json
       - id: check-toml
@@ -29,7 +28,7 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.0
+    rev: v3.2.2
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
@@ -46,7 +45,7 @@ repos:
         name: Format imports
         exclude: "./proto/"
   - repo: https://github.com/pycqa/flake8
-    rev: "5.0.4"
+    rev: "6.0.0"
     hooks:
       - id: flake8
         exclude: "./proto/"
@@ -71,6 +70,6 @@ repos:
           - mdformat_frontmatter
         exclude: CHANGELOG.md
   - repo: https://github.com/yoheimuta/protolint
-    rev: v0.42.0
+    rev: v0.42.2
     hooks:
       - id: protolint

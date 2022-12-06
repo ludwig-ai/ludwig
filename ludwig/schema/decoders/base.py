@@ -3,12 +3,14 @@ from typing import Any, Dict, List, Tuple, Union
 
 from marshmallow_dataclass import dataclass
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 
 
+@DeveloperAPI
 @dataclass(repr=False)
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for decoders."""
@@ -54,12 +56,13 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
 @dataclass(repr=False)
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
-    type: str = "passthrough"
+    type: str = schema_utils.ProtectedString("passthrough", description="Type of decoder.")
 
     input_size: int = schema_utils.PositiveInteger(
         default=1,
@@ -67,15 +70,14 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("regressor", [BINARY, NUMBER])
 @dataclass(repr=False)
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["regressor"],
-        default="regressor",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "regressor",
         description="Type of decoder.",
     )
 
@@ -103,15 +105,14 @@ class RegressorConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("projector", [VECTOR])
 @dataclass(repr=False)
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
-    type: str = schema_utils.StringOptions(
-        ["projector"],
-        default="projector",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "projector",
         description="Type of decoder.",
     )
 
@@ -161,14 +162,13 @@ class ProjectorConfig(BaseDecoderConfig):
     )
 
 
+@DeveloperAPI
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
 
-    type: str = schema_utils.StringOptions(
-        ["classifier"],
-        default="classifier",
-        allow_none=False,
+    type: str = schema_utils.ProtectedString(
+        "classifier",
         description="Type of decoder.",
     )
 
