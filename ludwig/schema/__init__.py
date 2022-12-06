@@ -53,10 +53,9 @@ def get_schema(model_type: str = MODEL_ECD):
     schema = {
         "type": "object",
         "properties": {
-            MODEL_TYPE: get_model_type_jsonschema(),
-            INPUT_FEATURES: get_input_feature_jsonschema(),
-            OUTPUT_FEATURES: get_output_feature_jsonschema(),
-            COMBINER: get_combiner_jsonschema(),
+            MODEL_TYPE: get_model_type_jsonschema(model_type),
+            INPUT_FEATURES: get_input_feature_jsonschema(model_type),
+            OUTPUT_FEATURES: get_output_feature_jsonschema(model_type),
             TRAINER: get_trainer_jsonschema(model_type),
             PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: get_hyperopt_jsonschema(),
@@ -65,6 +64,10 @@ def get_schema(model_type: str = MODEL_ECD):
         "definitions": {},
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
     }
+
+    if model_type == MODEL_ECD:
+        schema["properties"][COMBINER] = get_combiner_jsonschema()
+
     return schema
 
 
