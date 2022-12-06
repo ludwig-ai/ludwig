@@ -67,7 +67,6 @@ from ludwig.types import (
     TrainerConfigDict,
     TrainingSetMetadataDict,
 )
-from ludwig.utils.data_utils import use_credentials
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
