@@ -12,6 +12,7 @@ import traceback
 import uuid
 from functools import lru_cache
 from inspect import signature
+from packaging import version
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -37,6 +38,7 @@ from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
 from ludwig.hyperopt.utils import load_json_values, substitute_parameters
+from ludwig.hyperopt._ray210_compat import TunerRay210
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
@@ -47,6 +49,9 @@ from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
+
+_ray220 = version.parse(ray.__version__) < version.parse("2.2.0")
+
 
 try:
     from ludwig.backend.ray import RayBackend
@@ -798,13 +803,15 @@ class RayTuneExecutor:
         ray.get(_register.remote(f"trainable_func_f{hash_dict(config).decode('ascii')}", run_experiment_trial_params))
 
         try:
+            tuner_cls = TunerRay210 if not _ray220 else Tuner
+
             if resume:
                 # Restore from experiment directory
-                tuner = Tuner.restore(
+                tuner = tuner_cls.restore(
                     path=os.path.join(output_directory, experiment_name), resume_unfinished=True, restart_errored=True
                 )
             else:
-                tuner = Tuner(
+                tuner = tuner_cls(
                     f"trainable_func_f{hash_dict(config).decode('ascii')}",
                     param_space={
                         **self.search_space,

@@ -312,7 +312,7 @@ def create_runner(**kwargs):
 class RayAirRunner:
     def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
         trainer_kwargs = copy.copy(trainer_kwargs)
-        trainer_kwargs.pop("backend", None)
+        self.backend_config = trainer_kwargs.pop("backend", None)
 
         # When training on GPU, you want to pack workers together to limit network latency during
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
@@ -361,6 +361,7 @@ class RayAirRunner:
         trainer = HorovodTrainer(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
+            horovod_config=self.backend_config,
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
