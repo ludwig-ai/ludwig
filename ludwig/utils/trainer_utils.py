@@ -113,9 +113,6 @@ class ProgressTracker:
         best_eval_train_metrics: Dict[str, Dict[str, float]],
         best_eval_validation_metrics: Dict[str, Dict[str, float]],
         best_eval_test_metrics: Dict[str, Dict[str, float]],
-        # best_validation_metrics_step: int,
-        # best_validation_metrics_epoch: int,
-        # best_validation_metrics_checkpoint_number: int,
     ):
         """JSON-serializable holder object that stores information related to training progress.
 

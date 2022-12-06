@@ -1128,14 +1128,14 @@ class Trainer(BaseTrainer):
         Saves the model if scores have improved.
         """
         should_break = False
-        improved = get_improved_fn(validation_metric)
+        improved_fn = get_improved_fn(validation_metric)
 
         all_validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
         # The most recent validation_metric metric.
         eval_metric: TrainerMetric = all_validation_metrics[validation_metric][-1]
         eval_metric_value = eval_metric[-1]
 
-        if improved(eval_metric_value, progress_tracker.best_eval_metric_value):
+        if improved_fn(eval_metric_value, progress_tracker.best_eval_metric_value):
             previous_best_eval_metric_value = progress_tracker.best_eval_metric_value
 
             # Save the value, steps, epoch, and checkpoint number.
@@ -1334,8 +1334,8 @@ class Trainer(BaseTrainer):
             last_metric: TrainerMetric = split_metrics[validation_output_feature_name][validation_metric][-1]
             last_metric_value = last_metric[-1]
 
-            improved = get_improved_fn(validation_metric)
-            is_improved = improved(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
+            improved_fn = get_improved_fn(validation_metric)
+            is_improved = improved_fn(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
             if is_improved:
                 # we update the best metric value and set it to the current one
                 # and reset last improvement step count
@@ -1398,8 +1398,8 @@ class Trainer(BaseTrainer):
             last_metric = split_metrics[validation_output_feature_name][validation_metric][-1]
             last_metric_value = last_metric[-1]
 
-            improved = get_improved_fn(validation_metric)
-            is_improved = improved(last_metric_value, progress_tracker.best_increase_batch_size_eval_metric)
+            improved_fn = get_improved_fn(validation_metric)
+            is_improved = improved_fn(last_metric_value, progress_tracker.best_increase_batch_size_eval_metric)
             if is_improved:
                 # We update the best metric value and set it to the current one, and reset last
                 # improvement step count
