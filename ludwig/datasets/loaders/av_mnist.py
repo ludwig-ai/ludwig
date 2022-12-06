@@ -33,7 +33,12 @@ NUM_LABELS = 10
 
 
 class AV_MNISTLoader(DatasetLoader):
-    def __init__(self, config: DatasetConfig, cache_dir: Optional[str] = None, transform = None, modal_separate = None, modal = None):
+    def __init__(self,
+                 config: DatasetConfig,
+                 cache_dir: Optional[str] = None,
+                 transform=None,
+                 modal_separate=None,
+                 modal=None):
         try:
             from torchvision.io import write_png
 
@@ -45,6 +50,11 @@ class AV_MNISTLoader(DatasetLoader):
             self.mnist_data = None
             self.labels = None
             self.data = None
+            self.file_names = {'train_data': 'train-images-idx3-ubyte.gz', 'train_labels': 'train-labels-idx1-ubyte.gz',
+                          'test_data': 't10k-images-idx3-ubyte.gz', 'test_labels': 't10k-labels-idx1-ubyte.gz'}
+            self.transform = transform
+            self.modal_separate = modal_separate
+            self.modal = modal
         except ImportError:
             logger.error(
                 "torchvision is not installed. "
@@ -54,58 +64,45 @@ class AV_MNISTLoader(DatasetLoader):
             raise
         super().__init__(config, cache_dir)
 
-    def transform_files(self,
-                        root_dir,
-                        file_paths: List[str],
-                        modal_separate=True,
-                        transform=None,
-                        modal='image') -> List[str]:
+    def transform_files(self, file_paths: List[str]) -> List[str]:
         """
         Args:
-            root_dir (str): The root directory where the processing is to be done
             file_paths (List[string]): The directory where all the .npy files are located for the training and test data.
-            modal_separate (bool): define whether we're dealing with a modal or note
-            transform
         Returns:
             The array of directory paths
         """
         self.process_source_dataset(self.raw_dataset_dir)
         for dataset in ["training", "testing"]:
-            self.transform = transform
-            self.modal_separate = modal_separate
-            self.modal = modal
-            if not modal_separate:
-                if dataset == 'train':
-                    self.audio_data = np.load(os.path.join(root_dir, 'audio', 'train_data.npy'))
-                    self.mnist_data = np.load(os.path.join(root_dir, 'image', 'train_data.npy'))
-                    self.labels = np.load(os.path.join(root_dir, 'train_labels.npy'))
+            if not self.modal_separate:
+                if dataset == 'training':
+                    self.audio_data = np.load(os.path.join(self.raw_dataset_dir, 'audio', 'train_data.npy'))
+                    self.mnist_data = np.load(os.path.join(self.raw_dataset_dir, 'image', 'train_data.npy'))
+                    self.labels = np.load(os.path.join(self.raw_dataset_dir, 'train_labels.npy'))
                 else:
-                    self.audio_data = np.load(os.path.join(root_dir, 'audio', 'test_data.npy'))
-                    self.mnist_data = np.load(os.path.join(root_dir, 'image', 'test_data.npy'))
-                    self.labels = np.load(os.path.join(root_dir, 'test_labels.npy'))
+                    self.audio_data = np.load(os.path.join(self.raw_dataset_dir, 'audio', 'test_data.npy'))
+                    self.mnist_data = np.load(os.path.join(self.raw_dataset_dir, 'image', 'test_data.npy'))
+                    self.labels = np.load(os.path.join(self.raw_dataset_dir, 'test_labels.npy'))
 
                 self.audio_data = self.audio_data[:, np.newaxis, :, :]
                 self.mnist_data = self.mnist_data.reshape(self.mnist_data.shape[0], 1, 28, 28)
                 self.write_output_dataset(self.labels, self.audio_data, os.path.join(self.raw_dataset_dir, dataset))
                 self.write_output_dataset(self.labels, self.mnist_data, os.path.join(self.raw_dataset_dir, dataset))
             else:
-                if modal:
-                    if modal not in ['audio', 'image']:
+                if self.modal:
+                    if self.modal not in ['audio', 'image']:
                         raise ValueError('the value of modal is allowed')
-
                     if dataset == 'train':
-                        self.data = np.load(os.path.join(root_dir, modal, 'train_data.npy'))
-                        self.labels = np.load(os.path.join(root_dir, 'train_labels.npy'))
+                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, 'train_data.npy'))
+                        self.labels = np.load(os.path.join(self.raw_dataset_dir, 'train_labels.npy'))
                     else:
-                        self.data = np.load(os.path.join(root_dir, modal, 'test_data.npy'))
-                        self.labels = np.load(os.path.join(root_dir, 'test_labels.npy'))
+                        self.data = np.load(os.path.join(self.raw_dataset_dir, self.modal, 'test_data.npy'))
+                        self.labels = np.load(os.path.join(self.raw_dataset_dir, 'test_labels.npy'))
 
-                    if modal == 'audio':
+                    if self.modal == 'audio':
                         self.data = self.data[:, np.newaxis, :, :]
-                    elif modal == 'image':
+                    elif self.modal == 'image':
                         self.data = self.data.reshape(self.data.shape[0], 1, 28, 28)
                     self.write_output_dataset(self.labels, self.data, os.path.join(self.raw_dataset_dir, dataset))
-
                 else:
                     raise ValueError('the value of modal should be given')
 
@@ -114,35 +111,6 @@ class AV_MNISTLoader(DatasetLoader):
     def load_unprocessed_dataframe(self, file_paths: List[str]) -> pd.DataFrame:
         """Load dataset files into a dataframe."""
         return self.output_training_and_test_data()
-
-    def read_source_dataset(self, dataset="training", path="."):
-        """Create a directory for training and test and extract all the images and labels to this destination.
-
-        :args:
-            dataset (str) : the label for the dataset
-            path (str): the raw dataset path
-        :returns:
-            A tuple of the label for the image, the file array, the size and rows and columns for the image
-        """
-        if dataset == "training":
-            fname_img = os.path.join(path, "train-images-idx3-ubyte")
-            fname_lbl = os.path.join(path, "train-labels-idx1-ubyte")
-        elif dataset == "testing":
-            fname_img = os.path.join(path, "t10k-images-idx3-ubyte")
-            fname_lbl = os.path.join(path, "t10k-labels-idx1-ubyte")
-        else:
-            raise ValueError("dataset must be 'testing' or 'training'")
-
-        with open(fname_lbl, "rb") as flbl:
-            struct.unpack(">II", flbl.read(8))
-            lbl = np.frombuffer(flbl.read(), dtype=np.uint8)
-
-        with open(fname_img, "rb") as fimg:
-            magic_nr, size, rows, cols = struct.unpack(">IIII", fimg.read(16))
-            img = np.frombuffer(fimg.read(), dtype=np.uint8)
-            img = img.reshape((size, rows, cols))
-
-        return lbl, img
 
     def process_source_dataset(self, raw_dataset_dir="."):
         """An intermediate method to write .npy files for the training and the test image and label data to the raw dataset directory
@@ -154,7 +122,7 @@ class AV_MNISTLoader(DatasetLoader):
                       'test_data': 't10k-images-idx3-ubyte.gz', 'test_labels': 't10k-labels-idx1-ubyte.gz'}
         print("Raw dataset working directory: %s" % raw_dataset_dir)
 
-        for key, file_name in file_names.items():
+        for key, file_name in self.file_names.items():
             file_path = os.path.join(raw_dataset_dir, file_name)
             print('file: %s' % key)
             f = open(file_path, "r")
@@ -191,35 +159,6 @@ class AV_MNISTLoader(DatasetLoader):
                     os.makedirs(saved_path)
                 saved_name = key + '.npy'
                 np.save(os.path.join(saved_path, saved_name), data)
-
-    def read_source_dataset(self, dataset="training", path="."):
-        """Create a directory for training and test and extract all the images and labels to this destination.
-
-        :args:
-            dataset (str) : the label for the dataset
-            path (str): the raw dataset path
-        :returns:
-            A tuple of the label for the image, the file array, the size and rows and columns for the image
-        """
-        if dataset == "training":
-            fname_img = os.path.join(path, "train-images-idx3-ubyte")
-            fname_lbl = os.path.join(path, "train-labels-idx1-ubyte")
-        elif dataset == "testing":
-            fname_img = os.path.join(path, "t10k-images-idx3-ubyte")
-            fname_lbl = os.path.join(path, "t10k-labels-idx1-ubyte")
-        else:
-            raise ValueError("dataset must be 'testing' or 'training'")
-
-        with open(fname_lbl, "rb") as flbl:
-            struct.unpack(">II", flbl.read(8))
-            lbl = np.frombuffer(flbl.read(), dtype=np.uint8)
-
-        with open(fname_img, "rb") as fimg:
-            magic_nr, size, rows, cols = struct.unpack(">IIII", fimg.read(16))
-            img = np.frombuffer(fimg.read(), dtype=np.uint8)
-            img = img.reshape((size, rows, cols))
-
-        return lbl, img
 
     def write_output_dataset(self, labels, images, output_dir):
         """Create output directories where we write out the images.
