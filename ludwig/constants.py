@@ -238,6 +238,7 @@ MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
 DASK_MODULE_NAME = "dask.dataframe"
+LUDWIG_VERSION = "ludwig_version"
 
 PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"

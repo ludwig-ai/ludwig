@@ -30,6 +30,7 @@ from ludwig.constants import (
     DEFAULTS,
     HYPEROPT,
     INPUT_FEATURES,
+    LUDWIG_VERSION,
     MODEL_ECD,
     MODEL_TYPE,
     OUTPUT_FEATURES,
@@ -47,6 +48,14 @@ from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonsch
 VALIDATION_LOCK = Lock()
 
 
+def get_ludwig_version_jsonschema():
+    return {
+        "type": "string",
+        "title": "ludwig_version",
+        "description": "Current Ludwig model schema version.",
+    }
+
+
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
@@ -60,6 +69,7 @@ def get_schema(model_type: str = MODEL_ECD):
             PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: get_hyperopt_jsonschema(),
             DEFAULTS: get_defaults_jsonschema(),
+            LUDWIG_VERSION: get_ludwig_version_jsonschema(),
         },
         "definitions": {},
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
