@@ -459,3 +459,16 @@ def test_initializer_recursion():
     config_obj = ModelConfig(config)
 
     assert isinstance(config_obj.combiner.weights_initializer, dict)
+
+
+def test_top_level_key_validation():
+    config = {
+        "input_features": [
+            {"name": "text_feature", "type": "text"},
+        ],
+        "output_features": [{"name": "number_output_feature", "type": "number"}],
+        "random_key": "random_value",
+    }
+
+    with pytest.raises(ValueError):
+        ModelConfig.from_dict(config)
