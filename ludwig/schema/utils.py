@@ -12,12 +12,38 @@ from marshmallow_dataclass import dataclass as m_dataclass
 from marshmallow_jsonschema import JSONSchema as js
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
+from ludwig.constants import (
+    ACTIVE,
+    COLUMN,
+    COMBINER,
+    DEFAULTS,
+    HYPEROPT,
+    INPUT_FEATURES,
+    MODEL_TYPE,
+    NAME,
+    OUTPUT_FEATURES,
+    PREPROCESSING,
+    PROC_COLUMN,
+    TRAINER,
+    TYPE,
+)
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.types import ModelConfigDict
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
+MODEL_CONFIG_TOP_LEVEL_SECTIONS = {
+    MODEL_TYPE,
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
+    COMBINER,
+    TRAINER,
+    PREPROCESSING,
+    DEFAULTS,
+    HYPEROPT,
+    "ludwig_version",
+}
 
 
 @DeveloperAPI
@@ -1032,3 +1058,14 @@ def OneOfOptionsField(
         },
         **default_kwarg,
     )
+
+
+def validate_top_level_config_keys(model_config: ModelConfigDict):
+    """Checks that all top-level config keys are valid.
+
+    params:
+        model_config: ModelConfigDict object.
+    """
+    invalid_top_level_keys = model_config.keys() - MODEL_CONFIG_TOP_LEVEL_SECTIONS
+    if invalid_top_level_keys:
+        raise ValueError(f"The following keys in the config are invalid: {str(invalid_top_level_keys)}")

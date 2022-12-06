@@ -54,7 +54,12 @@ from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
-from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
+from ludwig.schema.utils import (
+    BaseMarshmallowConfig,
+    convert_submodules,
+    RECURSION_STOP_ENUM,
+    validate_top_level_config_keys,
+)
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import set_default_value
@@ -127,6 +132,9 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
+
+        # ===== Validate Top Level Config Sections =====
+        validate_top_level_config_keys(upgraded_config_dict)
 
         # ===== Initialize Top Level Config Sections =====
 
