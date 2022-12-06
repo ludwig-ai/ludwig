@@ -24,6 +24,7 @@ from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
+logger = logging.getLogger(__name__)
 
 SPACE_PUNCTUATION_REGEX = re.compile(r"\w+|[^\w\s]")
 COMMA_REGEX = re.compile(r"\s*,\s*")
@@ -1207,17 +1208,17 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
             tt_output = torchtext_tokenizer(sample_input)
             if hf_output != tt_output:
                 use_torchtext = False
-                logging.warning("Falling back to HuggingFace tokenizer because TorchText tokenizer failed validation.")
-                logging.warning(f"Sample input: {sample_input}\nHF output: {hf_output}\nTT output: {tt_output}")
+                logger.warning("Falling back to HuggingFace tokenizer because TorchText tokenizer failed validation.")
+                logger.warning(f"Sample input: {sample_input}\nHF output: {hf_output}\nTT output: {tt_output}")
                 break
 
     if use_torchtext:
-        logging.info(f"Loaded TorchText implementation of {hf_name} tokenizer")
+        logger.info(f"Loaded TorchText implementation of {hf_name} tokenizer")
         return torchtext_tokenizer
     else:
         # If hf_name does not have a torchtext equivalent implementation, load the
         # HuggingFace implementation.
-        logging.info(f"Loaded HuggingFace implementation of {hf_name} tokenizer")
+        logger.info(f"Loaded HuggingFace implementation of {hf_name} tokenizer")
         return HFTokenizer(hf_name)
 
 
