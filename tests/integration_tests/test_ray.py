@@ -761,7 +761,10 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
-def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
+@pytest.mark.parametrize(
+    ("max_batch_size", "expected_final_batch_size"), [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE), (64, 64)]
+)
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -770,7 +773,12 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
         ],
         "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
+        TRAINER: {
+            "epochs": 2,
+            "batch_size": "auto",
+            "learning_rate": "auto",
+            "max_batch_size": max_batch_size,
+        },
     }
 
     backend_config = {**RAY_BACKEND_CONFIG}
@@ -779,10 +787,8 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
     dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-    assert (
-        model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
-    )  # On CPU, batch size tuning is disabled, so assert it is equal to default
-    assert model.config_obj.trainer.learning_rate != "auto"
+    assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
+    assert model.config[TRAINER]["learning_rate"] != "auto"
 
 
 @pytest.mark.distributed
