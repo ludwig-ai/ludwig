@@ -1,16 +1,15 @@
 # Implements https://github.com/ray-project/ray/pull/30598 ahead of Ray 2.2 release.
 
 import math
-from typing import Any, Callable, Dict, Optional, Type, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, Optional, Type, TYPE_CHECKING, Union
 
 import ray
-
 from ray.air.config import RunConfig
 from ray.tune.execution.trial_runner import _ResumeConfig
-from ray.tune.trainable import Trainable
-from ray.tune.tuner import Tuner, _SELF, _TUNER_INTERNAL
 from ray.tune.impl.tuner_internal import TunerInternal
+from ray.tune.trainable import Trainable
 from ray.tune.tune_config import TuneConfig
+from ray.tune.tuner import _SELF, _TUNER_INTERNAL, Tuner
 from ray.tune.utils.node import _force_on_current_node
 
 if TYPE_CHECKING:
@@ -95,7 +94,6 @@ class TunerRay210(Tuner):
                 restore from their latest checkpoints.
             restart_errored: If True, will re-schedule errored trials but force
                 restarting them from scratch (no checkpoint will be loaded).
-
         """
         # TODO(xwjiang): Add some comments to clarify the config behavior across
         #  retored runs.
