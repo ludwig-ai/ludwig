@@ -63,6 +63,7 @@ def get_schema(model_type: str = MODEL_ECD):
         },
         "definitions": {},
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
+        "additionalProperties": False,
     }
 
     if model_type == MODEL_ECD:
