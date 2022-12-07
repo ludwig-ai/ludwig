@@ -39,7 +39,10 @@ def get_latest_metrics_dict(
     latest_metrics_dict = defaultdict(dict)
     for feature_name, metrics_dict in progress_tracker_metrics.items():
         for metric_name, metrics in metrics_dict.items():
-            latest_metrics_dict[feature_name][metric_name] = metrics[-1][-1]
+            if metrics:
+                # Metrics may be missing if computing metrics was excepted, or if the metrics are entirely empty
+                # due to a missing subset.
+                latest_metrics_dict[feature_name][metric_name] = metrics[-1][-1]
     return latest_metrics_dict
 
 

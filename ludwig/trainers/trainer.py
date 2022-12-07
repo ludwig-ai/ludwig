@@ -1093,7 +1093,7 @@ class Trainer(BaseTrainer):
         predictor = Predictor(
             self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
-        metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
+        metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
 

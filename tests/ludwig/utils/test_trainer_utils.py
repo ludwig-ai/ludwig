@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import pytest
 
 from ludwig.constants import COMBINED, LOSS
@@ -7,6 +9,60 @@ from ludwig.schema.features.category_feature import CategoryOutputFeatureConfig
 from ludwig.schema.utils import load_config_with_kwargs
 from ludwig.utils import trainer_utils
 from ludwig.utils.metric_utils import TrainerMetric
+
+
+def test_get_latest_metrics_dict():
+    progress_tracker_metrics = OrderedDict(
+        [
+            (
+                "category_92E9E",
+                OrderedDict(
+                    [
+                        (
+                            "loss",
+                            [
+                                TrainerMetric(epoch=0, step=1, value=0.7929425835609436),
+                                TrainerMetric(epoch=1, step=2, value=0.7906522750854492),
+                            ],
+                        ),
+                        (
+                            "accuracy",
+                            [
+                                TrainerMetric(epoch=0, step=1, value=0.4117647111415863),
+                                TrainerMetric(epoch=1, step=2, value=0.4117647111415863),
+                            ],
+                        ),
+                    ]
+                ),
+            ),
+            (
+                "combined",
+                {
+                    "loss": [
+                        TrainerMetric(epoch=0, step=1, value=0.7929425835609436),
+                        TrainerMetric(epoch=1, step=2, value=0.7906522750854492),
+                    ]
+                },
+            ),
+        ]
+    )
+
+    latest_metrics_dict = trainer_utils.get_latest_metrics_dict(progress_tracker_metrics)
+
+    assert latest_metrics_dict == {
+        "category_92E9E": {"accuracy": 0.4117647111415863, "loss": 0.7906522750854492},
+        "combined": {"loss": 0.7906522750854492},
+    }
+
+
+def test_get_latest_metrics_dict_empty():
+    progress_tracker_metrics = OrderedDict(
+        [("category_F18D1", OrderedDict([("loss", []), ("accuracy", [])])), ("combined", {"loss": []})]
+    )
+
+    latest_metrics_dict = trainer_utils.get_latest_metrics_dict(progress_tracker_metrics)
+
+    assert latest_metrics_dict == {}
 
 
 def test_progress_tracker_empty():
@@ -43,6 +99,9 @@ def test_progress_tracker_empty():
         "num_reductions_lr": 0,
         "steps": 0,
         "tune_checkpoint_num": 0,
+        "best_eval_metric_checkpoint_number": 0,
+        "best_eval_metric_epoch": 0,
+        "checkpoint_number": 0,
     }
 
 
@@ -75,7 +134,10 @@ def test_progress_tracker():
 
     assert progress_tracker.log_metrics() == {
         "batch_size": 5,
+        "best_eval_metric_checkpoint_number": 0,
+        "best_eval_metric_epoch": 0,
         "best_valid_metric": 0,
+        "checkpoint_number": 0,
         "epoch": 0,
         "best_eval_metric_steps": 0,
         "learning_rate": 0.01,
