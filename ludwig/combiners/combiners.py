@@ -23,7 +23,7 @@ from torch.nn import Linear, ModuleList
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER
-from ludwig.encoders.registry import sequence_encoder_registry
+from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.features.base_feature import InputFeature
 from ludwig.modules.attention_modules import TransformerStack
 from ludwig.modules.embedding_modules import Embed
@@ -331,7 +331,7 @@ class SequenceCombiner(Combiner):
             f"combiner input shape {self.combiner.concatenated_shape}, " f"output shape {self.combiner.output_shape}"
         )
 
-        self.encoder_obj = get_from_registry(config.encoder.type, sequence_encoder_registry)(
+        self.encoder_obj = get_from_registry(config.encoder.type, get_sequence_encoder_registry())(
             should_embed=False,
             reduce_output=config.reduce_output,
             embedding_size=self.combiner.output_shape[1],
