@@ -16,7 +16,7 @@ from ludwig.combiners.combiners import (
     TransformerCombiner,
 )
 from ludwig.constants import CATEGORY, TYPE
-from ludwig.encoders.registry import sequence_encoder_registry
+from ludwig.encoders.registry import get_sequence_encoder_registry
 from ludwig.schema.combiners.comparator import ComparatorCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.sequence import SequenceCombinerConfig
@@ -277,7 +277,7 @@ def test_sequence_concat_combiner(
 
 # test for sequence combiner
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
-@pytest.mark.parametrize("encoder", sequence_encoder_registry)
+@pytest.mark.parametrize("encoder", get_sequence_encoder_registry())
 @pytest.mark.parametrize("main_sequence_feature", [None, "feature_3"])
 def test_sequence_combiner(
     encoder_outputs: Tuple, main_sequence_feature: Optional[str], encoder: str, reduce_output: Optional[str]

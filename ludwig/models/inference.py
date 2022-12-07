@@ -9,7 +9,7 @@ from torch import nn
 from ludwig.constants import NAME, POSTPROCESSOR, PREDICTOR, PREPROCESSOR, TYPE
 from ludwig.data.postprocessing import convert_dict_to_df
 from ludwig.data.preprocessing import load_metadata
-from ludwig.features.feature_registries import input_type_registry
+from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import get_module_dict_key_from_name, get_name_from_module_dict_key
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, TRAIN_SET_METADATA_FILE_NAME
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
@@ -156,7 +156,7 @@ class _InferencePreprocessor(nn.Module):
         self.preproc_modules = nn.ModuleDict()
         for feature_config in config["input_features"]:
             feature_name = feature_config[NAME]
-            feature = get_from_registry(feature_config[TYPE], input_type_registry)
+            feature = get_from_registry(feature_config[TYPE], get_input_type_registry())
             # prevents collisions with reserved keywords
             module_dict_key = get_module_dict_key_from_name(feature_name)
             self.preproc_modules[module_dict_key] = feature.create_preproc_module(training_set_metadata[feature_name])
