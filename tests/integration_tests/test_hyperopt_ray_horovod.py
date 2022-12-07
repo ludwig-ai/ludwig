@@ -106,7 +106,7 @@ SCENARIOS = [
 
 
 # TODO ray: replace legacy mode when Ray Train supports placement groups
-RAY_BACKEND_KWARGS = {"processor": {"parallelism": 4}}
+RAY_BACKEND_KWARGS = {"processor": {"parallelism": 1}}
 
 
 def _get_config(search_alg, executor):
