@@ -124,12 +124,9 @@ class ModelConfig(BaseMarshmallowConfig):
     """
 
     def __init__(self, config_dict: ModelConfigDict):
-        print("dog")
-        print(config_dict.keys())
 
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
-        print(config_dict.keys())
 
         # ===== Initialize Top Level Config Sections =====
 
@@ -201,7 +198,6 @@ class ModelConfig(BaseMarshmallowConfig):
         self._set_hyperopt_defaults()
 
         # ===== Validate Config =====
-        print(self.to_dict().keys())
         if self.model_type == MODEL_GBM:
             self.combiner = None
 
