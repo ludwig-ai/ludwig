@@ -393,3 +393,19 @@ def test_ludwig_schema_serialization(model_type):
         raise TypeError(
             f"Ludwig schema of type `{model_type}` cannot be represented by valid JSON. See further details: {e}"
         )
+
+
+def test_top_level_schema_keys():
+    config = {
+        "model_type": "gbm",  # Typo
+        "input_features": [
+            category_feature(),
+            number_feature(),
+        ],
+        "output_features": [category_feature(output_feature=True)],
+        "trainer": {"learning_rate": "auto", "batch_size": "auto"},
+        "combiner": "test",
+    }
+
+    # Ensure validation succeeds with ECD trainer params and ECD model type
+    validate_config(config)

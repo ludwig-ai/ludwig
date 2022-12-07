@@ -124,9 +124,12 @@ class ModelConfig(BaseMarshmallowConfig):
     """
 
     def __init__(self, config_dict: ModelConfigDict):
+        print("dog")
+        print(config_dict.keys())
 
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
+        print(config_dict.keys())
 
         # ===== Initialize Top Level Config Sections =====
 
@@ -198,6 +201,10 @@ class ModelConfig(BaseMarshmallowConfig):
         self._set_hyperopt_defaults()
 
         # ===== Validate Config =====
+        print(self.to_dict().keys())
+        if self.model_type == MODEL_GBM:
+            self.combiner = None
+
         self._validate_config(self.to_dict())
 
     def __repr__(self):
@@ -533,10 +540,12 @@ class ModelConfig(BaseMarshmallowConfig):
             "model_type": self.model_type,
             "input_features": input_features,
             "output_features": output_features,
-            "combiner": self.combiner.to_dict(),
             "trainer": self.trainer.to_dict(),
             "preprocessing": self.preprocessing.to_dict(),
             "hyperopt": self.hyperopt,
             "defaults": self.defaults.to_dict(),
         }
+
+        if self.combiner is not None:
+            config_dict["combiner"] = self.combiner.to_dict()
         return convert_submodules(config_dict)
