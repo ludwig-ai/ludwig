@@ -18,6 +18,7 @@ import contextlib
 import copy
 import logging
 from functools import partial
+from packaging import version
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import dask
@@ -43,6 +44,7 @@ if TYPE_CHECKING:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
+from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
@@ -60,6 +62,8 @@ from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
 from ludwig.utils.types import Series
+
+_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
 logger = logging.getLogger(__name__)
 
@@ -358,7 +362,8 @@ class RayAirRunner:
         stream_window_size: Dict[str, Union[None, float]],
         callbacks: List[Any] = [],
     ) -> Tuple[Dict, TorchCheckpoint]:
-        trainer = HorovodTrainer(
+        trainer_cls = HorovodTrainerRay210 if not _ray220 else HorovodTrainer
+        trainer = trainer_cls(
             train_loop_per_worker=train_loop_per_worker,
             train_loop_config=config,
             horovod_config=self.backend_config,

@@ -5,6 +5,9 @@ from typing import Any, Callable, Dict, Optional, Type, TYPE_CHECKING, Union
 
 import ray
 from ray.air.config import RunConfig
+from ray.air.result import Result
+from ray.train.base_trainer import TrainingFailedError
+from ray.train.horovod import HorovodTrainer
 from ray.tune.execution.trial_runner import _ResumeConfig
 from ray.tune.impl.tuner_internal import TunerInternal
 from ray.tune.trainable import Trainable
@@ -17,6 +20,12 @@ if TYPE_CHECKING:
 
 
 class TunerRay210(Tuner):
+    """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
+
+    Specifically, this Tuner ensures that TunerInternalRay210 is called by the class.
+    For more details, see TunerInternalRay210.
+    """
+
     def __init__(
         self,
         trainable: Optional[
@@ -117,6 +126,12 @@ class TunerRay210(Tuner):
 
 
 class TunerInternalRay210(TunerInternal):
+    """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
+
+    This TunerInternal ensures that a division by zero is avoided when running zero-CPU hyperopt trials.
+    This is fixed in ray>=2.2 (but not ray<=2.1) here: https://github.com/ray-project/ray/pull/30598
+    """
+
     def _expected_utilization(self, cpus_per_trial, cpus_total):
         num_samples = self._tune_config.num_samples
         if num_samples < 0:  # TODO: simplify this in Tune
@@ -133,3 +148,36 @@ class TunerInternalRay210(TunerInternal):
             )
         )
         return (actual_concurrency * cpus_per_trial) / (cpus_total + 0.001)
+
+
+class HorovodTrainerRay210(HorovodTrainer):
+    """HACK(geoffrey): This is a temporary fix to support Ray 2.1.0.
+
+    Specifically, this Trainer ensures that TunerRay210 is called by the class.
+    For more details, see TunerRay210.
+    """
+
+    def fit(self) -> Result:
+        """Runs training.
+
+        Returns:
+            A Result object containing the training result.
+
+        Raises:
+            TrainingFailedError: If any failures during the execution of
+            ``self.as_trainable()``.
+        """
+        from ray.tune.error import TuneError
+
+        trainable = self.as_trainable()
+
+        tuner = TunerRay210(trainable=trainable, run_config=self.run_config)
+        result_grid = tuner.fit()
+        assert len(result_grid) == 1
+        try:
+            result = result_grid[0]
+            if result.error:
+                raise result.error
+        except TuneError as e:
+            raise TrainingFailedError from e
+        return result

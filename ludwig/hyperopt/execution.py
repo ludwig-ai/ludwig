@@ -34,7 +34,7 @@ from ludwig.backend import initialize_backend, RAY
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.hyperopt._ray210_compat import TunerRay210
+from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
@@ -50,7 +50,7 @@ from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
-_ray220 = version.parse(ray.__version__) < version.parse("2.2.0")
+_ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
 
 try:
@@ -779,21 +779,19 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
+        # HACK(geoffrey): `hyperopt_resources` is for hyperopt as of Ray >= 2.0.0
+        # Required because we are now using a Ray Trainer for Hyperopt (which itself uses a Ray Tuner).
+        # Remove after refactor.
         if _is_ray_backend(backend):
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
-            resources = {}
+            resources = [{"hyperopt_resources": 1}]
         else:
             # If not Ray backend, request all of the resources required at the trial level
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
-            resources = {"CPU": num_cpus, "GPU": num_gpus}
+            resources = [{"hyperopt_resources": 1}, {"CPU": num_cpus, "GPU": num_gpus}]
 
-        # HACK(geoffrey): `hyperopt_resources` is for hyperopt as of Ray >= 2.0.0
-        # Required because we are now using a Ray Trainer for Hyperopt (which itself uses a Ray Tuner).
-        # Remove after refactor.
-        resources["hyperopt_resources"] = 1
-
-        resources_per_trial = PlacementGroupFactory([resources])
+        resources_per_trial = PlacementGroupFactory(resources)
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)
 
         @ray.remote(num_cpus=0)
