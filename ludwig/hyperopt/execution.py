@@ -464,9 +464,7 @@ class RayTuneExecutor:
 
         tune_executor = self
         if is_using_ray_backend:
-            print("ASDFASDF RayQueue instantiated node ip:", ray.util.get_node_ip_address())
             ray_queue = RayQueue(actor_options={"num_cpus": 0})
-            print("ASDFASDF ray_queue.actor:", ray_queue.actor)
         else:
             ray_queue = None
 
@@ -503,13 +501,9 @@ class RayTuneExecutor:
             def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
                 """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
-                    print("ASDFASDF _checkpoint_progress node id: ", ray.util.get_node_ip_address())
                     trainer_ckpt = Checkpoint.from_directory(save_path)
                     ckpt_ref = ray.put(trainer_ckpt.to_dict(), _owner=ray_queue.actor)
-                    print("ASDFASDF ckpt_ref: ", ckpt_ref)
-                    print("ASDFASDF _checkpoint_progress ray_queue.qsize before put: ", ray_queue.qsize())
                     ray_queue.put((progress_tracker, ckpt_ref))
-                    print("ASDFASDF _checkpoint_progress ray_queue.qsize after put: ", ray_queue.qsize())
                     return
                 checkpoint(progress_tracker, save_path)
 
@@ -616,16 +610,11 @@ class RayTuneExecutor:
             def check_queue():
                 qsize = ray_queue.qsize()
                 if qsize:
-                    print("ASDFASDF check_queue node id:", ray.util.get_node_ip_address())
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, ckpt_ref in results:
-                        print("ASDFASDF check_queue ckpt_ref:", ckpt_ref)
                         trainer_ckpt = Checkpoint.from_object_ref(ckpt_ref)
-                        print("ASDFASDF check_queue trainer_ckpt (from ckpt_ref):", trainer_ckpt)
                         with trainer_ckpt.as_directory() as save_path:
-                            print("ASDFASDF check_queue before checkpoint:", save_path)
                             checkpoint(progress_tracker, save_path)
-                            print("ASDFASDF check_queue after checkpoint:", save_path)
                         report(progress_tracker)
 
             while thread.is_alive():
@@ -784,7 +773,6 @@ class RayTuneExecutor:
                 tune_callbacks,
             )
 
-        print("ASDFASDF output_directory: ", output_directory)
         if has_remote_protocol(output_directory):
             self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
             self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
@@ -794,9 +782,6 @@ class RayTuneExecutor:
 
             self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
-
-        print("ASDFASDF sync_client.__dict__: ", self.sync_client.__dict__)
-        print("ASDFASDF sync_config.__dict__: ", self.sync_config.__dict__)
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 

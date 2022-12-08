@@ -209,7 +209,6 @@ def train_fn(
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the train_results object above.
-        print("ASDFASDF node id from within train_fn:", ray.util.get_node_ip_address())
         session.report(
             metrics={
                 "validation_field": trainer.validation_field,
@@ -443,8 +442,6 @@ class RayTrainerV2(BaseTrainer):
         # Set validation field and metric used by trainer
         self._validation_field = trainer_results.metrics["validation_field"]
         self._validation_metric = trainer_results.metrics["validation_metric"]
-
-        print("ASDFASDF node id from within RayTrainerV2", ray.util.get_node_ip_address())
 
         # Load model from checkpoint
         ckpt = TorchCheckpoint.from_checkpoint(trainer_results.checkpoint)
