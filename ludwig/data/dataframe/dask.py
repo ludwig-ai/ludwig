@@ -39,6 +39,7 @@ from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
 from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, load_json, save_json, split_by_slices
 from ludwig.utils.dataframe_utils import flatten_df, set_index_name, unflatten_df
+from ludwig.utils.error_handling_utils import x_minio_backend_down_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 
 _ray200 = version.parse(ray.__version__) >= version.parse("2.0")
@@ -207,6 +208,7 @@ class DaskEngine(DataFrameEngine):
         df = dd.from_delayed(df_delayed_new, meta=empty_partition)
         return df
 
+    @x_minio_backend_down_retry()
     def to_parquet(self, df, path, index=False):
         schema = get_pa_schema(df)
         with ProgressBar():
