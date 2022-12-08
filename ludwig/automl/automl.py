@@ -256,12 +256,14 @@ def create_auto_config(
     if not isinstance(dataset, DatasetInfo):
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
+    print("Auto-generating config for dataset: {} ...".format(dataset))
+
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
-    default_configs, features_metadata = _create_default_config(
+    default_configs = _create_default_config(
         dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
     )
     model_config, model_category, row_count = _model_select(
-        dataset_info, default_configs, features_metadata, user_config, use_reference_config
+        dataset_info, default_configs, user_config, use_reference_config
     )
     if tune_for_memory:
         args = (model_config, dataset, model_category, row_count, backend)
@@ -338,7 +340,6 @@ def train_with_config(
 def _model_select(
     dataset_info: DatasetInfo,
     default_configs,
-    features_metadata,
     user_config,
     use_reference_config: bool,
 ):
@@ -348,7 +349,7 @@ def _model_select(
     """
     fields = dataset_info.fields
 
-    base_config = default_configs["base_config"]
+    base_config = copy.deepcopy(default_configs["base_config"])
     model_category = None
 
     # tabular dataset heuristics
@@ -363,7 +364,7 @@ def _model_select(
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
-        for input_feature in base_config["input_features"]:
+        for input_feature in default_configs["base_config"]["input_features"]:
             # default text encoder is bert
             if input_feature[TYPE] == TEXT:
                 model_category = TEXT
@@ -371,7 +372,9 @@ def _model_select(
                     input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
                 else:
                     input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
+                # TODO(shreya): Should this hyperopt config param be set here?
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
+                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
 
             # TODO (ASN): add image heuristics
             if input_feature[TYPE] == IMAGE:
@@ -381,8 +384,7 @@ def _model_select(
                 else:
                     input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
 
-        # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
-        base_config = merge_dict(base_config, default_configs.get(TEXT, {}).get(AUTOML_DEFAULT_TEXT_ENCODER, {}))
+        # Merge combiner config
         base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values

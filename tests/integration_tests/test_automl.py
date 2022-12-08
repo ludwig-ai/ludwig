@@ -13,6 +13,7 @@ from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from ludwig.types import FeatureConfigDict
 from tests.integration_tests.utils import (
+    binary_feature,
     category_feature,
     generate_data,
     image_feature,
@@ -41,7 +42,7 @@ def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
 
 
 @pytest.fixture(scope="module")
-def test_data():
+def test_data_tabular_large():
     with tempfile.TemporaryDirectory() as tmpdir:
         input_features = [
             number_feature(),
@@ -56,13 +57,85 @@ def test_data():
         yield input_features, output_features, dataset_csv
 
 
+@pytest.fixture(scope="module")
+def test_data_tabular_small():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_features = [
+            number_feature(),
+            category_feature(encoder={"vocab_size": 3}),
+        ]
+        output_features = [category_feature(decoder={"vocab_size": 3})]
+        dataset_csv = generate_data(
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=100
+        )
+        yield input_features, output_features, dataset_csv
+
+
+@pytest.fixture(scope="module")
+def test_data_image():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
+        input_features = [
+            image_feature(folder=image_dest_folder),
+        ]
+        output_features = [binary_feature()]
+        dataset_csv = generate_data(
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20
+        )
+        yield input_features, output_features, dataset_csv
+
+
+@pytest.fixture(scope="module")
+def test_data_text():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_features = [
+            text_feature(preprocessing={"tokenizer": "space"}),
+        ]
+        output_features = [binary_feature()]
+        dataset_csv = generate_data(
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20
+        )
+        yield input_features, output_features, dataset_csv
+
+
+@pytest.fixture(scope="module")
+def test_data_multimodal():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        image_dest_folder = os.path.join(tmpdir, "generated_images")
+        input_features = [
+            image_feature(folder=image_dest_folder),
+            text_feature(preprocessing={"tokenizer": "space"}),
+        ]
+        output_features = [binary_feature()]
+        dataset_csv = generate_data(
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=10
+        )
+        yield input_features, output_features, dataset_csv
+
+
 @pytest.mark.distributed
-@pytest.mark.parametrize("tune_for_memory", [True, False])
-def test_create_auto_config(tune_for_memory, test_data, ray_cluster_2cpu):
+@pytest.mark.parametrize(
+    "test_data",
+    ["test_data_tabular_large", "test_data_tabular_small", "test_data_image", "test_data_text", "test_data_multimodal"],
+)
+def test_create_auto_config(test_data, ray_cluster_2cpu, request):
+    test_data = request.getfixturevalue(test_data)
     input_features, output_features, dataset_csv = test_data
     targets = [feature[NAME] for feature in output_features]
     df = dd.read_csv(dataset_csv)
-    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=tune_for_memory, backend="ray")
+    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=False, backend="ray")
+
+    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
+    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+
+@pytest.mark.distributed
+@pytest.mark.parametrize("tune_for_memory", [True, False])
+def test_create_auto_config_tune_for_mem(tune_for_memory, test_data_tabular_large, ray_cluster_2cpu):
+    input_features, output_features, dataset_csv = test_data_tabular_large
+    targets = [feature[NAME] for feature in output_features]
+    df = dd.read_csv(dataset_csv)
+    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=True, backend="ray")
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
