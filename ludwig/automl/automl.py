@@ -256,8 +256,6 @@ def create_auto_config(
     if not isinstance(dataset, DatasetInfo):
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
-    print("Auto-generating config for dataset: {} ...".format(dataset))
-
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
     default_configs = _create_default_config(
         dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
