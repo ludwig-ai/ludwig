@@ -146,13 +146,6 @@ def ray_cluster_7cpu(request):
         yield
 
 
-@pytest.fixture(scope="module")
-def ray_cluster_small_object_store(request):
-    # Create a Ray cluster with the smallest possible object store.
-    with _ray_start(request, num_cpus=4, object_store_memory=78643200):
-        yield
-
-
 @contextlib.contextmanager
 def _ray_start(request, **kwargs):
     try:

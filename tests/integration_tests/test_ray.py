@@ -918,12 +918,17 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 class TestDatasetWindowAutosizing:
-    """Test dataset windowing with different dataset sizes and settings."""
+    """Test dataset windowing with different dataset sizes and settings.
+
+    Note that for these tests to run efficiently, windowing must be triggered while remaining within the object store
+    memory size. The current heuristic is to trigger windowing when the dataset exceeds
+    `ray.cluster_resources()['object_store_memory'] // 5` bytes.
+    """
 
     @property
     def object_store_size(self):
         """The amount of object store memory available to the cluster fixture."""
-        return int(ray.available_resources()["object_store_memory"])
+        return int(ray.cluster_resources()["object_store_memory"])
 
     @property
     def auto_window_size(self):
@@ -998,39 +1003,37 @@ class TestDatasetWindowAutosizing:
         for window in pipe._base_iterable:
             yield window()
 
-    def test_small_dataset(self, ray_cluster_small_object_store):
+    def test_small_dataset(self, ray_cluster_2cpu):
         """A small dataset should not trigger automatic window sizing.
 
         Without automatic window sizing, the number of blocks in the pipeline should match the number of partitions in
         the Dask dataframe.
         """
-        pipe = self.create_dataset_pipeline(self.object_store_size // 8)
+        pipe = self.create_dataset_pipeline(self.auto_window_size // 2)
         window = next(self.window_gen(pipe))
         assert window.num_blocks() == self.num_partitions
 
-    def test_large_dataset(self, ray_cluster_small_object_store):
+    def test_large_dataset(self, ray_cluster_2cpu):
         """A large dataset should trigger windowing."""
-        pipe = self.create_dataset_pipeline(self.object_store_size * 8)
+        pipe = self.create_dataset_pipeline(self.auto_window_size * 2)
         for i, window in enumerate(self.window_gen(pipe)):
             assert window.num_blocks() < self.num_partitions
-            if i > 99:
+            if i > 100:
                 break
 
-    def test_window_autosizing_disabled(self, ray_cluster_small_object_store):
+    def test_window_autosizing_disabled(self, ray_cluster_2cpu):
         """If window autosizing is disabled, no datasets should be windowed."""
-        pipe = self.create_dataset_pipeline(self.object_store_size * 8, auto_window=False)
+        pipe = self.create_dataset_pipeline(self.auto_window_size * 2, auto_window=False)
         window = next(self.window_gen(pipe))
         assert window.num_blocks() == self.num_partitions
 
-    def test_user_window_size(self, ray_cluster_small_object_store):
+    def test_user_window_size(self, ray_cluster_2cpu):
         """If the user supplies a window size, do not autosize."""
-        auto_pipe = self.create_dataset_pipeline(self.object_store_size * 8)
-        user_pipe = self.create_dataset_pipeline(
-            self.object_store_size * 8, window_size_bytes=self.object_store_size * 2
-        )
+        auto_pipe = self.create_dataset_pipeline(self.auto_window_size * 2)
+        user_pipe = self.create_dataset_pipeline(self.auto_window_size * 2, window_size_bytes=self.auto_window_size * 4)
         windows = zip(self.window_gen(auto_pipe), self.window_gen(user_pipe))
 
         for i, (auto_window, user_window) in enumerate(windows):
             assert auto_window.num_blocks() < user_window.num_blocks()
-            if i > 99:
+            if i > 100:
                 break
