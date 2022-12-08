@@ -353,7 +353,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to include the entire training set during evaluation.",
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
