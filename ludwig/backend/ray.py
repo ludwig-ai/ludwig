@@ -972,19 +972,10 @@ def initialize_ray():
     if not ray.is_initialized():
         try:
             ray.init("auto", ignore_reinit_error=True)
-            # HACK(geoffrey): `hyperopt_resources` is a required resource for hyperopt.
-            # Putting this here to ensure fast failure in for existing clusters. Remove after refactor.
-            if "hyperopt_resources" not in ray.available_resources():
-                raise ValueError(
-                    "Ludwig with Ray 2.0.0 currently requires clusters to be initialized with the custom "
-                    + "resource 'hyperopt_resources'. Consider updating your cluster configuration."
-                )
         except ConnectionError:
             init_ray_local()
 
 
 def init_ray_local():
     logger.info("Initializing new Ray cluster...")
-    # HACK(geoffrey): `hyperopt_resources` is a required resource for hyperopt.
-    # Remove after refactor.
-    ray.init(ignore_reinit_error=True, resources={"hyperopt_resources": 1000})
+    ray.init(ignore_reinit_error=True)

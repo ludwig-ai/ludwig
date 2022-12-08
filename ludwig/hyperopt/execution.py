@@ -133,6 +133,7 @@ class RayTuneExecutor:
         goal: str,
         split: str,
         search_alg: Dict,
+        trial_function_resources: Dict,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
@@ -160,6 +161,7 @@ class RayTuneExecutor:
         self.metric = metric
         self.split = split
         self.trial_id = 0
+        self.trial_function_resources = trial_function_resources
         self.cpu_resources_per_trial = cpu_resources_per_trial
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
@@ -790,12 +792,12 @@ class RayTuneExecutor:
         # Remove after refactor.
         if _is_ray_backend(backend):
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
-            resources = [{"hyperopt_resources": 1}]
+            resources = [self.trial_function_resources]
         else:
             # If not Ray backend, request all of the resources required at the trial level
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
-            resources = [{"hyperopt_resources": 1}, {"CPU": num_cpus, "GPU": num_gpus}]
+            resources = [self.trial_function_resources, {"CPU": num_cpus, "GPU": num_gpus}]
 
         resources_per_trial = PlacementGroupFactory(resources)
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)

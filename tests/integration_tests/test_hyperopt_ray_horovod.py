@@ -75,7 +75,12 @@ HYPEROPT_CONFIG = {
 
 SCENARIOS = [
     {
-        "executor": {"type": "ray", "num_samples": 2, "cpu_resources_per_trial": 1},
+        "executor": {
+            "type": "ray",
+            "num_samples": 2,
+            "trial_function_resources": {"hyperopt_resources": 1},  # Used to prevent deadlock
+            "cpu_resources_per_trial": 1,
+        },
         "search_alg": {"type": "variant_generator"},
     },
     {
@@ -87,6 +92,7 @@ SCENARIOS = [
                 "time_attr": "training_iteration",
                 "reduction_factor": 4,
             },
+            "trial_function_resources": {"hyperopt_resources": 1},  # Used to prevent deadlock
             "cpu_resources_per_trial": 1,
         },
         "search_alg": {"type": "bohb"},

@@ -161,7 +161,7 @@ def _ray_start(request, **kwargs):
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
-    # HACK(geoffrey): `hyperopt_resources` is a required resource for hyperopt.
+    # HACK(geoffrey): `hyperopt_resources` is a required resource for hyperopt to prevent deadlocks in Ludwig tests.
     res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})
     try:
         yield res

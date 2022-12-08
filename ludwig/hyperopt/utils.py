@@ -207,7 +207,10 @@ def update_hyperopt_params_with_defaults(hyperopt_params: HyperoptConfigDict) ->
     set_default_value(hyperopt_params, METRIC, LOSS)
     set_default_value(hyperopt_params, GOAL, MINIMIZE)
 
-    set_default_values(hyperopt_params[EXECUTOR], {TYPE: RAY, NUM_SAMPLES: 1, MAX_CONCURRENT_TRIALS: AUTO})
+    set_default_values(
+        hyperopt_params[EXECUTOR],
+        {TYPE: RAY, NUM_SAMPLES: 1, MAX_CONCURRENT_TRIALS: AUTO, "trial_function_resources": {"CPU": 1, "GPU": 0}},
+    )
 
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
