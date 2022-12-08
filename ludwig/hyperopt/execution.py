@@ -464,7 +464,9 @@ class RayTuneExecutor:
 
         tune_executor = self
         if is_using_ray_backend:
+            print("ASDFASDF RayQueue instantiated node ip:", ray.util.get_node_ip_address())
             ray_queue = RayQueue(actor_options={"num_cpus": 0})
+            print("ASDFASDF ray_queue.actor:", ray_queue.actor)
         else:
             ray_queue = None
 
@@ -501,9 +503,13 @@ class RayTuneExecutor:
             def _checkpoint_progress(self, trainer, progress_tracker, save_path) -> None:
                 """Checkpoints the progress tracker."""
                 if is_using_ray_backend:
+                    print("ASDFASDF _checkpoint_progress node id: ", ray.util.get_node_ip_address())
                     trainer_ckpt = Checkpoint.from_directory(save_path)
-                    ckpt_ref = trainer_ckpt.to_object_ref()
+                    ckpt_ref = ray.put(trainer_ckpt.to_dict(), _owner=ray_queue.actor)
+                    print("ASDFASDF ckpt_ref: ", ckpt_ref)
+                    print("ASDFASDF _checkpoint_progress ray_queue.qsize before put: ", ray_queue.qsize())
                     ray_queue.put((progress_tracker, ckpt_ref))
+                    print("ASDFASDF _checkpoint_progress ray_queue.qsize after put: ", ray_queue.qsize())
                     return
                 checkpoint(progress_tracker, save_path)
 
@@ -572,14 +578,20 @@ class RayTuneExecutor:
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
 
             hvd_kwargs = {
-                "num_workers": int(num_gpus) if use_gpu else 1,
                 "use_gpu": use_gpu,
+                "num_workers": int(num_gpus) if use_gpu else 1,
                 "resources_per_worker": {
                     "CPU": num_cpus,
                     "GPU": num_gpus,
                 },
             }
-            hyperopt_dict["backend"].set_distributed_kwargs(**hvd_kwargs)
+            # Check for custom HorovodConfig
+            backend_config = hyperopt_dict["backend"].distributed_kwargs.get("backend", None)
+            if backend_config is not None:
+                hvd_kwargs["backend"] = backend_config
+                hvd_kwargs["nics"] = hyperopt_dict["backend"].distributed_kwargs.get("nics", [""])
+
+            hyperopt_dict["backend"].distributed_kwargs = hvd_kwargs
 
             logger.debug(f"Trial horovod kwargs: {hvd_kwargs}")
 
@@ -604,11 +616,16 @@ class RayTuneExecutor:
             def check_queue():
                 qsize = ray_queue.qsize()
                 if qsize:
+                    print("ASDFASDF check_queue node id:", ray.util.get_node_ip_address())
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, ckpt_ref in results:
+                        print("ASDFASDF check_queue ckpt_ref:", ckpt_ref)
                         trainer_ckpt = Checkpoint.from_object_ref(ckpt_ref)
+                        print("ASDFASDF check_queue trainer_ckpt (from ckpt_ref):", trainer_ckpt)
                         with trainer_ckpt.as_directory() as save_path:
+                            print("ASDFASDF check_queue before checkpoint:", save_path)
                             checkpoint(progress_tracker, save_path)
+                            print("ASDFASDF check_queue after checkpoint:", save_path)
                         report(progress_tracker)
 
             while thread.is_alive():
@@ -767,6 +784,7 @@ class RayTuneExecutor:
                 tune_callbacks,
             )
 
+        print("ASDFASDF output_directory: ", output_directory)
         if has_remote_protocol(output_directory):
             self.sync_client = RemoteSyncer(creds=backend.storage.artifacts.credentials)
             self.sync_config = tune.SyncConfig(upload_dir=output_directory, syncer=self.sync_client)
@@ -776,6 +794,9 @@ class RayTuneExecutor:
 
             self.sync_config = tune.SyncConfig(sync_to_driver=NamespacedKubernetesSyncer(self.kubernetes_namespace))
             self.sync_client = KubernetesSyncClient(self.kubernetes_namespace)
+
+        print("ASDFASDF sync_client.__dict__: ", self.sync_client.__dict__)
+        print("ASDFASDF sync_config.__dict__: ", self.sync_config.__dict__)
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
@@ -986,37 +1007,37 @@ def run_experiment(
         callbacks=callbacks,
     )
 
-    eval_stats, train_stats, _, _ = model.experiment(
-        dataset=dataset,
-        training_set=training_set,
-        validation_set=validation_set,
-        test_set=test_set,
-        training_set_metadata=training_set_metadata,
-        data_format=data_format,
-        experiment_name=experiment_name,
-        model_name=model_name,
-        model_resume_path=model_resume_path,
-        eval_split=eval_split,
-        skip_save_training_description=skip_save_training_description,
-        skip_save_training_statistics=skip_save_training_statistics,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        skip_save_processed_input=skip_save_processed_input,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
-        skip_save_predictions=skip_save_predictions,
-        skip_save_eval_stats=skip_save_eval_stats,
-        output_directory=output_directory,
-        skip_collect_predictions=True,
-        skip_collect_overall_stats=False,
-        random_seed=random_seed,
-        debug=debug,
-    )
-
-    for callback in callbacks or []:
-        callback.on_hyperopt_trial_end(parameters)
-
-    return train_stats, eval_stats
+    try:
+        eval_stats, train_stats, _, _ = model.experiment(
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            model_resume_path=model_resume_path,
+            eval_split=eval_split,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_predictions=skip_save_predictions,
+            skip_save_eval_stats=skip_save_eval_stats,
+            output_directory=output_directory,
+            skip_collect_predictions=True,
+            skip_collect_overall_stats=False,
+            random_seed=random_seed,
+            debug=debug,
+        )
+        return train_stats, eval_stats
+    finally:
+        for callback in callbacks or []:
+            callback.on_hyperopt_trial_end(parameters)
 
 
 def _run_experiment_unary(kwargs):

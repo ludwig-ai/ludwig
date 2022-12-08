@@ -201,7 +201,7 @@ def train_fn(
 
         torch.cuda.empty_cache()
 
-        # Passing objects containg Torch tensors as metrics is not supported as it will throw an
+        # Passing objects containing Torch tensors as metrics is not supported as it will throw an
         # exception on deserialization, so create a checkpoint and return via session.report() along
         # with the path of the checkpoint
         ckpt = Checkpoint.from_dict({"state_dict": results})
@@ -209,11 +209,11 @@ def train_fn(
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the train_results object above.
+        print("ASDFASDF node id from within train_fn:", ray.util.get_node_ip_address())
         session.report(
             metrics={
                 "validation_field": trainer.validation_field,
                 "validation_metric": trainer.validation_metric,
-                "ckpt_directory": torch_ckpt.to_directory(),
             },
             checkpoint=torch_ckpt,
         )
@@ -444,8 +444,11 @@ class RayTrainerV2(BaseTrainer):
         self._validation_field = trainer_results.metrics["validation_field"]
         self._validation_metric = trainer_results.metrics["validation_metric"]
 
+        print("ASDFASDF node id from within RayTrainerV2", ray.util.get_node_ip_address())
+
         # Load model from checkpoint
-        results = Checkpoint.from_directory(trainer_results.metrics["ckpt_directory"]).to_dict()["state_dict"]
+        ckpt = TorchCheckpoint.from_checkpoint(trainer_results.checkpoint)
+        results = ckpt.to_dict()["state_dict"]
 
         # load state dict back into the model
         state_dict, *args = results
@@ -836,8 +839,13 @@ class RayBackend(RemoteTrainingMixin, Backend):
             **executable_kwargs,
         )
 
-    def set_distributed_kwargs(self, **kwargs):
-        self._horovod_kwargs = kwargs
+    @property
+    def distributed_kwargs(self):
+        return self._horovod_kwargs
+
+    @distributed_kwargs.setter
+    def distributed_kwargs(self, value):
+        self._horovod_kwargs = value
 
     @property
     def df_engine(self):
