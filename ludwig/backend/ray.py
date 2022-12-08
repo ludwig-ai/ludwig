@@ -18,7 +18,6 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from packaging import version
 from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 
 import dask
@@ -28,6 +27,7 @@ import ray
 import torch
 import tqdm
 from fsspec.config import conf
+from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
 from ray.air import session
@@ -42,9 +42,9 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.backend._ray210_compat import HorovodTrainerRay210
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
