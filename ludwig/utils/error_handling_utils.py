@@ -2,7 +2,7 @@ import logging
 import random
 import time
 from functools import partial, wraps
-from typing import Callable, Dict, List, Optional, Any
+from typing import Any, Callable, Dict, List, Optional
 
 import ludwig.constants as const
 
