@@ -99,17 +99,26 @@ class GBM(BaseModel):
         output_feature_name = self.output_features.keys()[0]
         output_feature = self.output_features[output_feature_name]
 
+        # If `inputs` is a tuple, it should contain (inputs, targets). When using the LGBM sklearn interface, targets
+        # is not needed, so we extract the inputs here.
         if isinstance(inputs, tuple):
             inputs, _ = inputs
 
         assert list(inputs.keys()) == self.input_features.keys()
 
+        # The LGBM sklearn interface works with array-likes, so we place the inputs into a 2D numpy array.
         in_array = np.stack(list(inputs.values()), axis=0).T
 
+        # Predict on the input batch. The predictions are then converted to torch tensors so that we can pass them to
+        # the existing metrics modules.
         if output_feature.type() == NUMBER:
+            # Input: 2D eval_batch_size x n_features array
+            # Output: 1D eval_batch_size array
             preds = torch.from_numpy(self.lgbm_model.predict(in_array))
             logits = preds.view(-1)
         else:
+            # Input: 2D eval_batch_size x n_features array
+            # Output: 2D eval_batch_size x n_classes array
             probs = torch.from_numpy(self.lgbm_model.predict_proba(in_array))
             if output_feature.type() == BINARY:
                 probs = torch.logit(probs[:, 1])
