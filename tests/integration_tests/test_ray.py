@@ -165,6 +165,9 @@ def run_preprocessing(
     dataset_type="parquet",
     num_examples_per_split=20,
     nan_percent=0.0,
+    first_row_none=False,
+    last_row_none=False,
+    nan_cols=None,
 ):
     # Split the dataset manually to avoid randomness in splitting
     split_to_df = {}
@@ -182,7 +185,8 @@ def run_preprocessing(
         split_to_df[split] = dataset_df
     full_df_path = os.path.join(tmpdir, "dataset.csv")
     pd.concat(split_to_df.values()).to_csv(full_df_path, index=False)
-    dataset_path = create_data_set_to_use(dataset_type, full_df_path, nan_percent=nan_percent)
+    dataset = create_data_set_to_use(dataset_type, full_df_path, nan_percent=nan_percent)
+    dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
     # Configure ray backend
     config = {
@@ -204,7 +208,7 @@ def run_preprocessing(
     ray_model = LudwigModel(config, backend=backend_config)
     *ray_datasets, ray_training_set_metadata = ray_model.preprocess(
         skip_save_processed_input=False,  # Save the processed input to test pyarrow write/read
-        dataset=dataset_path,
+        dataset=dataset,
     )
 
     # Run preprocessing with local backend using the ray_training_set_metadata to ensure parity of
@@ -212,7 +216,7 @@ def run_preprocessing(
     local_model = LudwigModel(config, backend=LOCAL_BACKEND)
     *local_datasets, _ = local_model.preprocess(
         training_set_metadata=ray_training_set_metadata,
-        dataset=dataset_path,
+        dataset=dataset,
     )
 
     for ray_dataset, local_dataset in zip(ray_datasets, local_datasets):
@@ -280,7 +284,7 @@ def run_test_with_features(
     preprocessing=None,
     first_row_none=False,
     last_row_none=False,
-    nan_cols=[],
+    nan_cols=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -573,12 +577,12 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type="pandas+numpy_images",
-        skip_save_processed_input=False,
         first_row_none=first_row_none,
         last_row_none=last_row_none,
         nan_cols=[input_features[0][NAME]],
@@ -755,7 +759,10 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
-def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
+@pytest.mark.parametrize(
+    ("max_batch_size", "expected_final_batch_size"), [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE), (64, 64)]
+)
+def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -764,7 +771,12 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
         ],
         "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2, "batch_size": "auto", "learning_rate": "auto"},
+        TRAINER: {
+            "epochs": 2,
+            "batch_size": "auto",
+            "learning_rate": "auto",
+            "max_batch_size": max_batch_size,
+        },
     }
 
     backend_config = {**RAY_BACKEND_CONFIG}
@@ -773,10 +785,8 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu):
     dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-    assert (
-        model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
-    )  # On CPU, batch size tuning is disabled, so assert it is equal to default
-    assert model.config_obj.trainer.learning_rate != "auto"
+    assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
+    assert model.config[TRAINER]["learning_rate"] != "auto"
 
 
 @pytest.mark.distributed

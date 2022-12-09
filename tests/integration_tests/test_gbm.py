@@ -8,6 +8,7 @@ try:
 except ImportError:
     _ray = None
 import torch
+from jsonschema.exceptions import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
@@ -95,7 +96,7 @@ def run_test_gbm_multiple_outputs(tmpdir, backend_config):
         category_feature(decoder={"vocab_size": 3}),
     ]
 
-    with pytest.raises(ValueError, match="Only single task currently supported"):
+    with pytest.raises(ValidationError):
         _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
 
 

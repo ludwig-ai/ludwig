@@ -563,10 +563,14 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 
 @DeveloperAPI
-def get_model_type_jsonschema():
+def get_model_type_jsonschema(model_type: str = MODEL_ECD):
+    enum = [MODEL_ECD, "ecd_ray_legacy"]
+    if model_type == MODEL_GBM:
+        enum = [MODEL_GBM]
+
     return {
         "type": "string",
-        "enum": [MODEL_ECD, MODEL_GBM, "ecd_ray_legacy"],
+        "enum": enum,
         "default": MODEL_ECD,
         "title": "model_type",
         "description": "Select the model type.",
