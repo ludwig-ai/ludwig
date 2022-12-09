@@ -787,7 +787,6 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        print("ASDFASDF self.trial_function_resources: ", self.trial_function_resources)
         if _is_ray_backend(backend):
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
             resources = [self.trial_function_resources]
