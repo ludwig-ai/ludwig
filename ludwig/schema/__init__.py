@@ -1,23 +1,3 @@
-#
-# Module structure:
-# ludwig.schema               <-- Meant to contain all schemas, utilities, helpers related to describing and validating
-#                                 Ludwig configs.
-# ├── __init__.py             <-- Contains fully assembled Ludwig schema (`get_schema()`), `validate_config()` for YAML
-#                                 validation, and all "top-level" schema functions.
-# ├── utils.py                <-- An extensive set of marshmallow-related fields, methods, and schemas that are used
-#                                 elsewhere in Ludwig.
-# ├── trainer.py              <-- Contains `TrainerConfig()` and `get_trainer_jsonschema`
-# ├── optimizers.py           <-- Contains every optimizer config (e.g. `SGDOptimizerConfig`, `AdamOptimizerConfig`,
-#                                 etc.) and related marshmallow fields/methods.
-# └── combiners/
-#     ├── __init__.py         <-- Imports for each combiner config file (making imports elsewhere more convenient).
-#     ├── utils.py            <-- Location of `combiner_registry`, `get_combiner_jsonschema()`, `get_combiner_conds()`
-#     ├── base.py             <-- Location of `BaseCombinerConfig`
-#     ├── comparator.py       <-- Location of `ComparatorCombinerConfig`
-#     ... <file for each combiner> ...
-#     └──  transformer.py     <-- Location of `TransformerCombinerConfig`
-#
-
 from functools import lru_cache
 from threading import Lock
 
@@ -30,6 +10,7 @@ from ludwig.constants import (
     DEFAULTS,
     HYPEROPT,
     INPUT_FEATURES,
+    LUDWIG_VERSION,
     MODEL_ECD,
     MODEL_TYPE,
     OUTPUT_FEATURES,
@@ -47,6 +28,14 @@ from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonsch
 VALIDATION_LOCK = Lock()
 
 
+def get_ludwig_version_jsonschema():
+    return {
+        "type": "string",
+        "title": "ludwig_version",
+        "description": "Current Ludwig model schema version.",
+    }
+
+
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
@@ -60,9 +49,11 @@ def get_schema(model_type: str = MODEL_ECD):
             PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: get_hyperopt_jsonschema(),
             DEFAULTS: get_defaults_jsonschema(),
+            LUDWIG_VERSION: get_ludwig_version_jsonschema(),
         },
         "definitions": {},
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
+        "additionalProperties": False,
     }
 
     if model_type == MODEL_ECD:
@@ -99,6 +90,4 @@ def validate_config(config):
     splitter.validate(updated_config)
 
     with VALIDATION_LOCK:
-        # There is a race condition during schema validation that can cause the marshmallow schema class to
-        # be missing during validation if more than one thread is trying to validate at once.
         validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())

@@ -25,7 +25,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List, Union
+from typing import List, Optional, Union
 
 import cloudpickle
 import numpy as np
@@ -821,7 +821,7 @@ def create_data_set_to_use(data_format, raw_data, nan_percent=0.0):
 
 
 def augment_dataset_with_none(
-    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: List = []
+    df: pd.DataFrame, first_row_none: bool = False, last_row_none: bool = False, nan_cols: Optional[List] = None
 ) -> pd.DataFrame:
     """Optionally sets the first and last rows of nan_cols of the given dataframe to nan.
 
@@ -834,6 +834,8 @@ def augment_dataset_with_none(
     :param nan_cols: a list of columns in the dataframe to explicitly set the first or last rows to np.nan
     :type nan_cols: list
     """
+    nan_cols = nan_cols if nan_cols is not None else []
+
     if first_row_none:
         for col in nan_cols:
             df.iloc[0, df.columns.get_loc(col)] = np.nan
