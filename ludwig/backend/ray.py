@@ -967,8 +967,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
         fnames = pd_column.values.tolist()
         idxs = pd_column.index.tolist()
 
-        print(f"ASDFASDF fnames: {fnames}")
-
         # Sample a filename to extract the filesystem info
         sample_fname = fnames[0]
         if isinstance(sample_fname, str):
@@ -1001,10 +999,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         if map_fn is not None:
             df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
-
-        print(f"ASDFASDF df.compute().isna().sum(): {df.compute().isna().sum()}")
-        print(f"ASDFASDF len(df.compute()): {len(df.compute())}")
-        print(f"ASDFASDF df.head(2).values: {df.head(2).values}")
 
         if "idx" in df.columns:
             df = df.set_index("idx", drop=True)
