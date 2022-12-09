@@ -31,10 +31,10 @@ from ray.util.queue import Queue as RayQueue
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
+from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
-from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
