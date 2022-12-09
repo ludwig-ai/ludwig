@@ -30,11 +30,11 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     )
 
     trial_function_resources: Dict[str, float] = schema_utils.Dict(
-        default={"CPU": 1, "GPU": 0},
+        default=None,
         description=(
             "The resources reserved by each trial function. This differs from cpu_resources_per_trial and "
             "gpu_resources_per_trial because these resources are reserved for the function, not its subsequent "
-            "workers. Only used when the trials themselves are on the Ray backend."
+            "workers. Only used when the trials themselves are on the Ray backend. Defaults to 1 CPU."
         ),
     )
 

@@ -195,6 +195,8 @@ def run_hyperopt_executor(
     search_alg = hyperopt_config["search_alg"]
     executor = hyperopt_config["executor"]
 
+    print("ASDFASDF executor: ", executor)
+
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )

@@ -31,10 +31,10 @@ from ray.util.queue import Queue as RayQueue
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
 from ludwig.backend import initialize_backend, RAY
-from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.backend.ray import initialize_ray
 from ludwig.callbacks import Callback
 from ludwig.constants import MAXIMIZE, TEST, TRAINER, TRAINING, TYPE, VALIDATION
+from ludwig.backend._ray210_compat import TunerRay210
 from ludwig.hyperopt.registry import instantiate_search_algorithm
 from ludwig.hyperopt.results import HyperoptResults, TrialResults
 from ludwig.hyperopt.syncer import RemoteSyncer
@@ -133,7 +133,7 @@ class RayTuneExecutor:
         goal: str,
         split: str,
         search_alg: Dict,
-        trial_function_resources: Dict,
+        trial_function_resources: Optional[Dict] = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
@@ -787,9 +787,7 @@ class RayTuneExecutor:
 
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
-        # HACK(geoffrey): `hyperopt_resources` is for hyperopt as of Ray >= 2.0.0
-        # Required because we are now using a Ray Trainer for Hyperopt (which itself uses a Ray Tuner).
-        # Remove after refactor.
+        print("ASDFASDF self.trial_function_resources: ", self.trial_function_resources)
         if _is_ray_backend(backend):
             # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
             resources = [self.trial_function_resources]
