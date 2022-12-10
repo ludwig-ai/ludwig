@@ -362,14 +362,16 @@ def _model_select(
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
-        for input_feature in default_configs["base_config"]["input_features"]:
+        input_features = default_configs["base_config"]["input_features"]
+        for i, input_feature in enumerate(input_features):
+            base_config_input_feature = base_config["input_features"][i]
             # default text encoder is bert
             if input_feature[TYPE] == TEXT:
                 model_category = TEXT
                 if ENCODER in input_feature:
-                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
+                    base_config_input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
                 else:
-                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
+                    base_config_input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
                 # TODO(shreya): Should this hyperopt config param be set here?
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
                 base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
@@ -378,9 +380,9 @@ def _model_select(
             if input_feature[TYPE] == IMAGE:
                 model_category = IMAGE
                 if ENCODER in input_feature:
-                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
+                    base_config_input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
                 else:
-                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
+                    base_config_input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
 
         # Merge combiner config
         base_config = merge_dict(base_config, default_configs["combiner"]["concat"])

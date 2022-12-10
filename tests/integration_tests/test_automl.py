@@ -142,8 +142,8 @@ def test_create_auto_config_tune_for_mem(tune_for_memory, test_data_tabular_larg
 
 
 @pytest.mark.distributed
-def test_create_auto_config_with_dataset_profile(test_data, ray_cluster_2cpu):
-    input_features, output_features, dataset_csv = test_data
+def test_create_auto_config_with_dataset_profile(test_data_tabular_large, ray_cluster_2cpu):
+    input_features, output_features, dataset_csv = test_data_tabular_large
     targets = [feature[NAME] for feature in output_features]
     df = dd.read_csv(dataset_csv)
     config = create_auto_config_with_dataset_profile(dataset=df, target=targets[0], backend="ray")
@@ -218,12 +218,12 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("time_budget", [200, 1], ids=["high", "low"])
-def test_train_with_config(time_budget, test_data, ray_cluster_2cpu, tmpdir):
-    _run_train_with_config(time_budget, test_data, tmpdir)
+def test_train_with_config(time_budget, test_data_tabular_large, ray_cluster_2cpu, tmpdir):
+    _run_train_with_config(time_budget, test_data_tabular_large, tmpdir)
 
 
 @pytest.mark.parametrize("fs_protocol,bucket", [private_param(("s3", "ludwig-tests"))], ids=["s3"])
-def test_train_with_config_remote(fs_protocol, bucket, test_data, ray_cluster_2cpu):
+def test_train_with_config_remote(fs_protocol, bucket, test_data_tabular_large, ray_cluster_2cpu):
     backend = {
         "type": "local",
         "credentials": {
@@ -233,7 +233,7 @@ def test_train_with_config_remote(fs_protocol, bucket, test_data, ray_cluster_2c
 
     with remote_tmpdir(fs_protocol, bucket) as tmpdir:
         with pytest.raises(ValueError) if not _ray200 else contextlib.nullcontext():
-            _run_train_with_config(200, test_data, tmpdir, backend=backend)
+            _run_train_with_config(200, test_data_tabular_large, tmpdir, backend=backend)
 
 
 def _run_train_with_config(time_budget, test_data, tmpdir, **kwargs):
