@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 import pandas as pd
 from tqdm import tqdm
 
-from ludwig.api_annotations import PublicAPI, DeveloperAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.constants import SPLIT
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
