@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 import pandas as pd
 from tqdm import tqdm
 
-from ludwig.api_annotations import PublicAPI, DeveloperAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.constants import SPLIT
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
@@ -284,7 +284,7 @@ class DatasetLoader:
         :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
         0: train, 1: validation, 2: test.
         """
-        self._download_and_process()
+        self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         if self.state == DatasetState.TRANSFORMED:
             dataset_df = self.load_transformed_dataset()
             if split:
