@@ -1,4 +1,4 @@
-from ludwig.profiling import dataset_profile_pb2
+from ludwig.profiling.python import dataset_profile_pb2
 
 
 def test_dataset_profile_works():

@@ -4,7 +4,7 @@ syntax = "proto3";
 
 package dataset_profile;
 
-import "ludwig/profiling/proto/whylogs_messages.proto";
+import "ludwig/profiling/whylogs_messages.proto";
 
 option go_package = "github.com/ludwig-ai/ludwig/dataset_profile";
 

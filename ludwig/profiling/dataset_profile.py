@@ -6,7 +6,7 @@ from whylogs.core.proto import ColumnMessage
 from whylogs.core.view.column_profile_view import ColumnProfileView
 from whylogs.core.view.dataset_profile_view import DatasetProfileView
 
-from ludwig.profiling import dataset_profile_pb2
+from ludwig.profiling.python import dataset_profile_pb2
 from ludwig.profiling.types import ColumnProfileSummary
 from ludwig.utils.data_utils import load_dataset
 from ludwig.utils.types import DataFrame
