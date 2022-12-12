@@ -47,12 +47,12 @@ from ludwig.constants import (
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
+from ludwig.profiling import dataset_profile_pb2
 from ludwig.profiling.dataset_profile import (
     get_column_profile_summaries_from_proto,
     get_dataset_profile_proto,
     get_dataset_profile_view,
 )
-from ludwig.profiling.python import dataset_profile_pb2
 from ludwig.profiling.type_inference import get_ludwig_type_map_from_column_profile_summaries
 from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import _add_transfer_config, get_model_type, set_output_feature_metric

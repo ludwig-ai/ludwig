@@ -26,7 +26,7 @@ Useful reference: https://developers.google.com/protocol-buffers/docs/gotutorial
 Python:
 
 ```python
-from ludwig.profiling.python import dataset_profile_pb2
+from ludwig.profiling import dataset_profile_pb2
 
 dataset_profile = dataset_profile_pb2.DatasetProfile()
 dataset_profile.num_examples = 10

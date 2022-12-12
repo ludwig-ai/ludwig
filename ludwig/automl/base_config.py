@@ -35,8 +35,8 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
+from ludwig.profiling import dataset_profile_pb2
 from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
-from ludwig.profiling.python import dataset_profile_pb2
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
