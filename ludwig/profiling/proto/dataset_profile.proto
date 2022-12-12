@@ -25,7 +25,7 @@
 //
 //   2. Generate go code.
 //   > protoc --go_out=. ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
-//   
+//
 //   3. Copy generated files to where go.mod is defined for these files.
 //   mv github.com/ludwig-ai/ludwig/dataset_profile/* ludwig/profiling
 //
