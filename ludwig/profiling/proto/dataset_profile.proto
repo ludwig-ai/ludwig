@@ -1,45 +1,4 @@
-// To generate compiled proto code, run:
-//   (if protoc not installed yet)
-//   > sudo apt install protobuf-compiler
-//
-//   Regenerate generated code.
-//   For python:
-//   Generate
-//   > protoc --proto_path=. --python_out=. \
-//       ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
-//
-//   In new python code, proto objects can be referenced like so:
-//
-//   > from ludwig.profiling import dataset_profile_pb2
-//   > dataset_profile = dataset_profile_pb2.DatasetProfile()
-//   > dataset_profile.num_examples = 10
-//   > dataset_profile.SerializeToString())
-//
-// Read more on proto compilation: https://developers.google.com/protocol-buffers/docs/reference/python-generated
-//
-//   For go:
-//   1. Install the go protocol buffers plugin (https://developers.google.com/protocol-buffers/docs/gotutorial)
-//
-//   > go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-//   > go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-//
-//   2. Generate go code.
-//   > protoc --go_out=. ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
-//   
-//   3. Copy generated files to where go.mod is defined for these files.
-//   mv github.com/ludwig-ai/ludwig/dataset_profile/* ludwig/profiling
-//
-//   New go code can use the proto objects like so:
-//   Run `go get`.
-//   > go get github.com/ludwig-ai/ludwig/ludwig/profiling
-//
-//   If there are local changes, push the commit to a branch and specify the commit:
-//   > go get github.com/ludwig-ai/ludwig/ludwig/profiling@commit
-//
-//   Sample go code:
-//   > dataset_profile "github.com/ludwig-ai/ludwig/ludwig/profiling"
-//   > p := &dataset_profile.DatasetProfile{}
-// For protoc CLI help, check `man protoc`.
+// A whylogs-based dataset profile.
 
 syntax = "proto3";
 
