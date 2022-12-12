@@ -7,4 +7,4 @@ order_by_type = "False"
 
 [tool.black]
 line-length = 120
-exclude = "/*_pb2.py"
+exclude = "./python/"
