@@ -280,6 +280,7 @@ class RayDatasetBatcher(Batcher):
 
         self.features = features
         self.columns = list(features.keys())
+        self._sample_feature_name = self.columns[0]
         self.reshape_map = {
             proc_column: training_set_metadata[feature[NAME]].get("reshape")
             for proc_column, feature in features.items()
@@ -342,8 +343,9 @@ class RayDatasetBatcher(Batcher):
         self._last_batch = False
         try:
             self._next_batch = next(self.dataset_batch_iter)
-            print(self._next_batch)
-            if self.ignore_last and len(self._next_batch) == 1:
+            # If the batch has only one row and self.ignore_last, skip the batch
+            # to prevent batchnorm / dropout related Torch errors
+            if self.ignore_last and len(self._next_batch[self._sample_feature_name]) == 1:
                 raise StopIteration
         except StopIteration:
             self._last_batch = True
