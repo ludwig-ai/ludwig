@@ -30,6 +30,13 @@
 //   mv github.com/ludwig-ai/ludwig/dataset_profile/* ludwig/profiling
 //
 //   New go code can use the proto objects like so:
+//   Run `go get`.
+//   > go get github.com/ludwig-ai/ludwig/ludwig/profiling
+//
+//   If there are local changes, push the commit to a branch and specify the commit:
+//   > go get github.com/ludwig-ai/ludwig/ludwig/profiling@commit
+//
+//   Sample go code:
 //   > dataset_profile "github.com/ludwig-ai/ludwig/ludwig/profiling"
 //   > p := &dataset_profile.DatasetProfile{}
 // For protoc CLI help, check `man protoc`.
