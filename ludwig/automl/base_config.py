@@ -174,7 +174,7 @@ def _create_default_config(
       trial
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param dataset_info: (str) filepath Dataset Info object.
     :param target_name: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                                     as the stopping parameter
@@ -183,6 +183,7 @@ def _create_default_config(
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
     :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
+    :param backend: (Backend) backend to use for training.
 
     # Return
     :return: (dict) dictionaries contain auto train config files for all available
@@ -234,7 +235,7 @@ def _create_default_config(
         combiner_config = load_yaml(default_config)
         model_configs[COMBINER][combiner_type] = combiner_config
 
-    return model_configs, features_metadata
+    return model_configs
 
 
 # Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
