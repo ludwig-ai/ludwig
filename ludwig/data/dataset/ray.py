@@ -276,7 +276,7 @@ class RayDatasetBatcher(Batcher):
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
-        self.ignore_last = self._set_ignore_last(ignore_last)
+        self.ignore_last = ignore_last
 
         self.features = features
         self.columns = list(features.keys())
@@ -291,14 +291,6 @@ class RayDatasetBatcher(Batcher):
         self._last_batch = False
         self._step = 0
         self._fetch_next_epoch()
-
-    def _set_ignore_last(self, ignore_last: bool = False) -> bool:
-        """Set ignore_last based on batch_size and samples_per_epoch."""
-        # Only drop the last batch if it has 1 row, otherwise keep the incomplete last batch
-        if ignore_last and self.samples_per_epoch % self.batch_size == 1:
-            logger.info("Last batch in epoch only has 1 sample and will be dropped.")
-            return True
-        return False
 
     def next_batch(self):
         if self.last_batch():
@@ -350,6 +342,9 @@ class RayDatasetBatcher(Batcher):
         self._last_batch = False
         try:
             self._next_batch = next(self.dataset_batch_iter)
+            print(self._next_batch)
+            if self.ignore_last and len(self._next_batch) == 1:
+                raise StopIteration
         except StopIteration:
             self._last_batch = True
 
@@ -389,10 +384,7 @@ class RayDatasetBatcher(Batcher):
 
         def sync_read():
             for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0,
-                batch_size=self.batch_size,
-                batch_format="pandas",
-                drop_last=self.ignore_last,
+                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
             ):
                 yield self._prepare_batch(batch)
 
@@ -405,10 +397,7 @@ class RayDatasetBatcher(Batcher):
 
         def producer():
             for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0,
-                batch_size=batch_size,
-                batch_format="pandas",
-                drop_last=self.ignore_last,
+                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
@@ -438,12 +427,7 @@ class RayDatasetBatcher(Batcher):
             for batch in (
                 splits[i]
                 .map_batches(to_tensors, batch_format="pandas")
-                .iter_batches(
-                    prefetch_blocks=0,
-                    batch_size=batch_size,
-                    batch_format="pandas",
-                    drop_last=self.ignore_last,
-                )
+                .iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas")
             ):
                 res = self._prepare_batch(batch)
                 q.put(res)
