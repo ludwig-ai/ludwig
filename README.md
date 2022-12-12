@@ -405,7 +405,7 @@ know, please consider [joining the Ludwig Slack](https://join.slack.com/t/ludwig
 # Join the community to build Ludwig with us
 
 Ludwig is an actively managed open-source project that relies on contributions from folks just like
-yourselves. Consider joining the active group of Ludwig contributors to make Ludwig an even
+you. Consider joining the active group of Ludwig contributors to make Ludwig an even
 more accessible and feature rich framework for everyone to use!
 
 <a href="https://github.com/ludwig-ai/ludwig/graphs/contributors">
