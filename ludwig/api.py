@@ -1385,6 +1385,7 @@ class LudwigModel:
 
         preprocessing_params = get_preprocessing_params(self.config_obj)
 
+        proc_training_set = proc_validation_set = proc_test_set = None
         try:
             with provision_preprocessing_workers(self.backend):
                 # TODO (Connor): Refactor to use self.config_obj
@@ -1406,6 +1407,8 @@ class LudwigModel:
             (proc_training_set, proc_validation_set, proc_test_set, training_set_metadata) = preprocessed_data
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
+        except Exception as e:
+            raise RuntimeError(f"Caught exception during model preprocessing: {e}")
         finally:
             for callback in self.callbacks:
                 callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
