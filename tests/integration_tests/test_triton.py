@@ -40,9 +40,9 @@ def test_triton_torchscript(csv_filename, tmpdir):
         binary_feature(),
         number_feature(),
         category_feature(encoder={"vocab_size": 3}),
+        text_feature(encoder={"vocab_size": 3, "type": "bert"}),
         # TODO: future support
         # sequence_feature(encoder={"vocab_size": 3}),
-        # text_feature(encoder={"vocab_size": 3}),
         # vector_feature(),
         # timeseries_feature(),
         # date_feature(),
