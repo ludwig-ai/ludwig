@@ -158,7 +158,7 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
 
     if "tune_checkpoint_num" not in ret:
         ret["tune_checkpoint_num"] = 0
-    
+
     if "last_improvement_timestamp" not in ret:
         ret["last_improvement_timestamp"] = 0.0
 
