@@ -1335,48 +1335,50 @@ class LudwigModel:
     ) -> PreprocessedDataset:
         """This function is used to preprocess data.
 
-        # Inputs
+        # Args:
+            :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
+                source containing the entire dataset to be used in the experiment.
+                If it has a split column, it will be used for splitting
+                (0 for train, 1 for validation, 2 for test),
+                otherwise the dataset will be randomly split.
+            :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+                source containing training data.
+            :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+                source containing validation data.
+            :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
+                source containing test data.
+            :param training_set_metadata: (Union[str, dict], default: `None`)
+                metadata JSON file or loaded metadata. Intermediate preprocessed
+            structure containing the mappings of the input
+                dataset created the first time an input file is used in the same
+                directory with the same name and a '.meta.json' extension.
+            :param data_format: (str, default: `None`) format to interpret data
+                sources. Will be inferred automatically if not specified.  Valid
+                formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
+                `'feather'`, `'fwf'`,
+                `'hdf5'` (cache file produced during previous training),
+                `'html'` (file containing a single HTML `<table>`),
+                `'json'`, `'jsonl'`, `'parquet'`,
+                `'pickle'` (pickled Pandas DataFrame),
+                `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
+            :param skip_save_processed_input: (bool, default: `False`) if input
+                dataset is provided it is preprocessed and cached by saving an HDF5
+                and JSON files to avoid running the preprocessing again. If this
+                parameter is `False`, the HDF5 and JSON file are not saved.
+            :param output_directory: (str, default: `'results'`) the directory that
+                will contain the training statistics, TensorBoard logs, the saved
+                model and the training progress files.
+            :param random_seed: (int, default: `42`) a random seed that will be
+                used anywhere there is a call to a random number generator: data
+                splitting, parameter initialization and training set shuffling
 
-        :param dataset: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing the entire dataset to be used in the experiment.
-            If it has a split column, it will be used for splitting
-            (0 for train, 1 for validation, 2 for test),
-            otherwise the dataset will be randomly split.
-        :param training_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing training data.
-        :param validation_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing validation data.
-        :param test_set: (Union[str, dict, pandas.DataFrame], default: `None`)
-            source containing test data.
-        :param training_set_metadata: (Union[str, dict], default: `None`)
-            metadata JSON file or loaded metadata. Intermediate preprocessed
-        structure containing the mappings of the input
-            dataset created the first time an input file is used in the same
-            directory with the same name and a '.meta.json' extension.
-        :param data_format: (str, default: `None`) format to interpret data
-            sources. Will be inferred automatically if not specified.  Valid
-            formats are `'auto'`, `'csv'`, `'df'`, `'dict'`, `'excel'`,
-            `'feather'`, `'fwf'`,
-            `'hdf5'` (cache file produced during previous training),
-            `'html'` (file containing a single HTML `<table>`),
-            `'json'`, `'jsonl'`, `'parquet'`,
-            `'pickle'` (pickled Pandas DataFrame),
-            `'sas'`, `'spss'`, `'stata'`, `'tsv'`.
-        :param skip_save_processed_input: (bool, default: `False`) if input
-            dataset is provided it is preprocessed and cached by saving an HDF5
-            and JSON files to avoid running the preprocessing again. If this
-            parameter is `False`, the HDF5 and JSON file are not saved.
-        :param output_directory: (str, default: `'results'`) the directory that
-            will contain the training statistics, TensorBoard logs, the saved
-            model and the training progress files.
-        :param random_seed: (int, default: `42`) a random seed that will be
-               used anywhere there is a call to a random number generator: data
-               splitting, parameter initialization and training set shuffling
+        # Returns:
+            :return: (PreprocessedDataset) data structure containing
+                `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
 
-        # Return
-
-        :return: (PreprocessedDataset) data structure containing
-            `(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)`.
+        # Raises:
+            RuntimeError: An error occured while preprocessing the data. Examples include training dataset
+                being empty after preprocessing, lazy loading not being supported with RayBackend, etc.
         """
         print_boxed("PREPROCESSING")
 
