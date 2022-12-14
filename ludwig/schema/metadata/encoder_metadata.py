@@ -7215,7 +7215,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "kernel_size": ParameterMetadata(
             ui_display_name=None,
@@ -7428,7 +7428,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "RoBERTaEncoder": {
