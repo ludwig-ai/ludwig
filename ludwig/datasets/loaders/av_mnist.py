@@ -14,7 +14,6 @@
 # ==============================================================================
 import logging
 import os
-import re
 from sklearn.decomposition import PCA
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional
@@ -181,7 +180,7 @@ class AV_MNISTLoader(DatasetLoader):
 
                 saved_path = os.path.join(raw_dataset_dir, "images")
                 if not os.path.exists(saved_path):
-                    os.makedirs(saved_path)
+                    makedirs(saved_path)
                 saved_name = key + '.npy'
                 np.save(os.path.join(saved_path, saved_name), rec)
             else:
@@ -189,7 +188,7 @@ class AV_MNISTLoader(DatasetLoader):
 
                 saved_path = os.path.join(raw_dataset_dir, "labels")
                 if not os.path.exists(saved_path):
-                    os.makedirs(saved_path)
+                    makedirs(saved_path)
                 saved_name = key + '.npy'
                 np.save(os.path.join(saved_path, saved_name), data)
 
