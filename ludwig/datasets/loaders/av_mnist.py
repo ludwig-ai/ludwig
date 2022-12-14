@@ -192,7 +192,7 @@ class AV_MNISTLoader(DatasetLoader):
                 saved_name = key + '.npy'
                 np.save(os.path.join(saved_path, saved_name), data)
 
-    def write_output_dataset(self, labels, images, output_dir):
+    def write_output_dataset(self, labels:str, images:list, output_dir:str):
         """Create output directories where we write out the images.
 
         :args:
