@@ -266,3 +266,5 @@ JITTER = (0, 1)
 
 # image support constants
 IMAGENET1K = "imagenet1k"
+
+AUGMENTATION = "augmentation"

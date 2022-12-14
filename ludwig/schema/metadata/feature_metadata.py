@@ -622,6 +622,22 @@ FEATURE_METADATA = {
         }
     },
     "image": {
+        "augmentation": {
+            "random_vertical_flip": ParameterMetadata(
+                ui_display_name=None,
+                default_value_reasoning=None,
+                example_value=None,
+                related_parameters=None,
+                other_information=None,
+                description_implications=None,
+                suggested_values=None,
+                suggested_values_reasoning=None,
+                commonly_used=False,
+                expected_impact=ExpectedImpact.UNKNOWN,
+                literature_references=None,
+                internal_only=True,
+            ),
+        },
         "preprocessing": {
             "computed_fill_value": ParameterMetadata(
                 ui_display_name=None,
