@@ -1,6 +1,10 @@
 import logging
+import sys
 from collections import defaultdict, OrderedDict
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
+
+from ludwig.callbacks import Callback
 
 try:
     from typing import Literal
@@ -246,6 +250,39 @@ class ProgressTracker:
                 log_metrics[f"best.test_metrics.{feature_name}.{metric_name}"] = metric_value
 
         return log_metrics
+
+
+@DeveloperAPI
+class WalltimeEarlyStopCallback(Callback):
+    """Callback that stops training when a timeout is reached and no improvement has been made."""
+
+    def __init__(self, timeout_s: float, early_stopping_steps: int = sys.maxsize) -> None:
+        """Initializes the callback.
+
+        Args:
+            timeout_s: The timeout in seconds. Can be a float to allow for sub-second timeouts.
+            early_stopping_steps: The number of steps to wait before stopping.
+        """
+        super().__init__()
+        self.timeout_delta = timedelta(seconds=timeout_s)
+        self.early_stopping_steps = early_stopping_steps
+
+    def should_early_stop(self, trainer, progress_tracker, is_coordinator):
+        """
+        Returns:
+            True if the timeout has been reached and no improvement has been made for the given early stopping steps.
+        """
+        # Time since last improvement > timeout
+        timed_out = (
+            datetime.now() - datetime.fromtimestamp(progress_tracker.last_improvement_timestamp) > self.timeout_delta
+        )
+
+        # Steps since last improvement >= early stopping steps
+        steps_threshold_met = (
+            progress_tracker.steps - progress_tracker.last_improvement_steps >= self.early_stopping_steps
+        )
+
+        return timed_out and steps_threshold_met
 
 
 @DeveloperAPI
