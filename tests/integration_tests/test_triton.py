@@ -35,12 +35,14 @@ from tests.integration_tests.utils import (
 
 
 def test_triton_torchscript(csv_filename, tmpdir):
+    import torchtext
+
     # Configure features to be tested:
     input_features = [
         binary_feature(),
         number_feature(),
         category_feature(encoder={"vocab_size": 3}),
-        text_feature(encoder={"vocab_size": 3, "type": "bert"}),
+        text_feature(encoder={"vocab_size": 3}),
         # TODO: future support
         # sequence_feature(encoder={"vocab_size": 3}),
         # vector_feature(),
@@ -52,6 +54,9 @@ def test_triton_torchscript(csv_filename, tmpdir):
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
     ]
+    if torch.torch_version.TorchVersion(torchtext.__version__) >= (0, 14, 0):
+        input_features += [text_feature(encoder={"vocab_size": 3, "type": "bert"})]
+
     output_features = [
         binary_feature(),
         number_feature(),
