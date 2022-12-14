@@ -28,7 +28,7 @@ repos:
       - id: trailing-whitespace
       - id: mixed-line-ending
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.0
+    rev: v3.3.1
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
@@ -39,7 +39,7 @@ repos:
       - id: docformatter
         args: [--in-place, --wrap-summaries=115, --wrap-descriptions=120]
   - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
+    rev: 5.11.1
     hooks:
       - id: isort
         name: Format imports
@@ -50,7 +50,7 @@ repos:
       - id: flake8
         exclude: "./proto/"
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 22.12.0
     hooks:
       - id: black
         name: Format code

@@ -389,7 +389,10 @@ class Trainer(BaseTrainer):
 
         self.model.train()  # Sets model training mode.
         with training_set.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            horovod=self.horovod,
+            ignore_last=True,
         ) as batcher:
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
@@ -800,6 +803,7 @@ class Trainer(BaseTrainer):
                 should_shuffle=self.should_shuffle,
                 seed=self.random_seed,
                 horovod=self.horovod,
+                ignore_last=True,
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
@@ -1044,7 +1048,7 @@ class Trainer(BaseTrainer):
     def train_online(self, dataset):
         self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
+            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
         ) as batcher:
 
             # training step loop
