@@ -67,6 +67,7 @@ def get_new_progress_tracker(
         last_learning_rate_reduction_steps=0,
         last_increase_batch_size_steps=0,
         last_improvement_steps=0,
+        last_improvement_timestamp=0.0,
         best_eval_metric_value=best_eval_metric_value,
         best_increase_batch_size_eval_metric=best_increase_batch_size_eval_metric,
         last_increase_batch_size_eval_metric_improvement=0,
@@ -97,6 +98,7 @@ class ProgressTracker:
         best_eval_metric_epoch: int,
         best_eval_metric_checkpoint_number: int,
         last_improvement_steps: int,
+        last_improvement_timestamp: float,
         last_learning_rate_reduction_steps: int,
         last_increase_batch_size_steps: int,
         best_eval_metric_value: float,
@@ -170,6 +172,7 @@ class ProgressTracker:
         self.best_eval_metric_epoch = best_eval_metric_epoch
         self.best_eval_metric_checkpoint_number = best_eval_metric_checkpoint_number
         self.last_improvement_steps = last_improvement_steps
+        self.last_improvement_timestamp = last_improvement_timestamp
         self.last_learning_rate_reduction_steps = last_learning_rate_reduction_steps
         self.last_learning_rate_reduction = last_learning_rate_reduction
         self.last_increase_batch_size_steps = last_increase_batch_size_steps
@@ -207,6 +210,7 @@ class ProgressTracker:
             "tune_checkpoint_num": self.tune_checkpoint_num,
             "checkpoint_number": self.checkpoint_number,
             "last_improvement_steps": self.last_improvement_steps,
+            "last_improvement_timestamp": self.last_improvement_timestamp,
             "best_eval_metric_steps": self.best_eval_metric_steps,
             "best_eval_metric_epoch": self.best_eval_metric_epoch,
             "best_eval_metric_checkpoint_number": self.best_eval_metric_checkpoint_number,

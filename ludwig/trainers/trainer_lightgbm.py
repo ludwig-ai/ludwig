@@ -5,6 +5,7 @@ import signal
 import sys
 import threading
 import time
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
@@ -424,6 +425,7 @@ class LightGBMTrainer(BaseTrainer):
         eval_metric_value = eval_metric[-1]
 
         if improved(eval_metric_value, progress_tracker.best_eval_metric_value):
+            progress_tracker.last_improvement_timestamp = datetime.now().timestamp()
             previous_best_eval_metric_value = progress_tracker.best_eval_metric_value
 
             # Save the value, steps, epoch, and checkpoint number.
