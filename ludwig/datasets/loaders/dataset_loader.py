@@ -20,13 +20,13 @@ import shutil
 import urllib
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import pandas as pd
 from tqdm import tqdm
 
-from ludwig.api_annotations import PublicAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.constants import SPLIT
 from ludwig.datasets import model_configs_for_dataset
 from ludwig.datasets.archives import extract_archive, is_archive, list_archive
@@ -37,6 +37,7 @@ from ludwig.utils.strings_utils import make_safe_filename
 logger = logging.getLogger(__name__)
 
 
+@DeveloperAPI
 class TqdmUpTo(tqdm):
     """Provides progress bar for `urlretrieve`.
 
@@ -57,6 +58,7 @@ class TqdmUpTo(tqdm):
         self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
 
+@DeveloperAPI
 def get_default_cache_location() -> str:
     """Returns a path to the default LUDWIG_CACHE location, or $HOME/.ludwig_cache."""
     if "LUDWIG_CACHE" in os.environ and os.environ["LUDWIG_CACHE"]:
@@ -101,7 +103,7 @@ class DatasetState(int, Enum):
     TRANSFORMED = 3
 
 
-@PublicAPI()
+@PublicAPI
 class DatasetLoader:
     """Base class that defines the default pipeline for loading a ludwig dataset.
 
@@ -110,7 +112,7 @@ class DatasetLoader:
     A dataset is processed in 4 phases:
         1. Download       - The dataset files are downloaded to the cache.
         2. Verify         - Hashes of downloaded files are verified.
-        2. Extract        - The dataset files are extracted from an archive (may be a no-op if data is not archived).
+        3. Extract        - The dataset files are extracted from an archive (may be a no-op if data is not archived).
         4. Transform      - The dataset is transformed into a format usable for training and is ready to load.
             a. Transform Files      (Files -> Files)
             b. Load Dataframe       (Files -> DataFrame)
@@ -140,36 +142,36 @@ class DatasetLoader:
         return self.config.version
 
     @property
-    def is_kaggle_dataset(self):
+    def is_kaggle_dataset(self) -> bool:
         return self.config.kaggle_dataset_id or self.config.kaggle_competition
 
     @property
-    def download_dir(self):
+    def download_dir(self) -> str:
         """Directory where all dataset artifacts are saved."""
         return os.path.join(self.cache_dir, f"{self.name}_{self.version}")
 
     @property
-    def raw_dataset_dir(self):
+    def raw_dataset_dir(self) -> str:
         """Save path for raw data downloaded from the web."""
         return os.path.join(self.download_dir, "raw")
 
     @property
-    def processed_dataset_dir(self):
+    def processed_dataset_dir(self) -> str:
         """Save path for processed data."""
         return os.path.join(self.download_dir, "processed")
 
     @property
-    def processed_dataset_filename(self):
+    def processed_dataset_filename(self) -> str:
         """Filename for processed data."""
         return f"{make_safe_filename(self.config.name)}.parquet"
 
     @property
-    def processed_dataset_path(self):
+    def processed_dataset_path(self) -> str:
         """Save path to processed dataset file."""
         return os.path.join(self.processed_dataset_dir, self.processed_dataset_filename)
 
     @property
-    def processed_temp_dir(self):
+    def processed_temp_dir(self) -> str:
         """Save path for processed temp data."""
         return os.path.join(self.download_dir, "_processed")
 
@@ -204,7 +206,7 @@ class DatasetLoader:
             return _list_of_strings(self.config.archive_filenames)
         return [os.path.basename(urlparse(url).path) for url in self.download_urls]
 
-    def description(self):
+    def description(self) -> str:
         """Returns human-readable description of the dataset."""
         return f"{self.config.name} {self.config.version}\n{self.config.description}"
 
@@ -235,7 +237,7 @@ class DatasetLoader:
         preserved_paths = _glob_multiple(_list_of_strings(self.config.preserve_paths), root_dir=root_dir)
         return [os.path.relpath(p, start=root_dir) for p in preserved_paths]
 
-    def export(self, output_directory: str):
+    def export(self, output_directory: str) -> None:
         """Exports the dataset (and any files required by it) into the specified directory."""
         self._download_and_process()
         os.makedirs(output_directory, exist_ok=True)
@@ -281,8 +283,6 @@ class DatasetLoader:
 
         :param split: (bool) splits dataset along 'split' column if present. The split column should always have values
         0: train, 1: validation, 2: test.
-        :param kaggle_username: (str) Kaggle username for downloading datasets from Kaggle.
-        :param kaggle_key: (str) Kaggle key for downloading datasets from Kaggle.
         """
         self._download_and_process(kaggle_username=kaggle_username, kaggle_key=kaggle_key)
         if self.state == DatasetState.TRANSFORMED:
@@ -292,7 +292,7 @@ class DatasetLoader:
             else:
                 return dataset_df
 
-    def download(self, kaggle_username=None, kaggle_key=None):
+    def download(self, kaggle_username=None, kaggle_key=None) -> List[str]:
         if not os.path.exists(self.raw_dataset_dir):
             os.makedirs(self.raw_dataset_dir)
         if self.is_kaggle_dataset:
@@ -309,7 +309,7 @@ class DatasetLoader:
                 with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=filename) as t:
                     urllib.request.urlretrieve(url, downloaded_file_path, t.update_to)
 
-    def verify(self):
+    def verify(self) -> None:
         """Verifies checksums for dataset."""
         for filename, sha256sum in self.config.sha256.items():
             digest = _sha256_digest(os.path.join(self.raw_dataset_dir, filename))
@@ -341,7 +341,7 @@ class DatasetLoader:
                         logger.warning(f"Error extracting {extracted_file}" + str(e))
         return list(extracted_files)
 
-    def transform(self) -> pd.DataFrame:
+    def transform(self) -> None:
         data_filenames = [
             os.path.join(self.raw_dataset_dir, f) for f in os.listdir(self.raw_dataset_dir) if not is_archive(f)
         ]
@@ -349,7 +349,6 @@ class DatasetLoader:
         unprocessed_dataframe = self.load_unprocessed_dataframe(transformed_files)
         transformed_dataframe = self.transform_dataframe(unprocessed_dataframe)
         self.save_processed(transformed_dataframe)
-        pass
 
     def transform_files(self, file_paths: List[str]) -> List[str]:
         """Transform data files before loading to dataframe.
@@ -440,17 +439,17 @@ class DatasetLoader:
             dataframe[column_name] = dataframe[column_name].astype(type)
         return dataframe
 
-    def save_processed(self, dataframe: pd.DataFrame):
+    def save_processed(self, dataframe: pd.DataFrame) -> None:
         """Saves transformed dataframe as a flat file ludwig can load for training."""
         if not os.path.exists(self.processed_dataset_dir):
             os.makedirs(self.processed_dataset_dir)
         dataframe.to_parquet(self.processed_dataset_path, engine="pyarrow")
 
-    def load_transformed_dataset(self):
+    def load_transformed_dataset(self) -> pd.DataFrame:
         """Load processed dataset into a dataframe."""
         return pd.read_parquet(self.processed_dataset_path)
 
-    def split(self, dataset: pd.DataFrame):
+    def split(self, dataset: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if SPLIT in dataset:
             dataset[SPLIT] = pd.to_numeric(dataset[SPLIT])
             training_set = dataset[dataset[SPLIT] == 0].drop(columns=[SPLIT])
@@ -459,4 +458,3 @@ class DatasetLoader:
             return training_set, test_set, val_set
         else:
             raise ValueError(f"The dataset does not a '{SPLIT}' column, load with `split=False`")
-        return dataset

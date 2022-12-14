@@ -29,6 +29,7 @@ from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 from ray.data.extensions import TensorArray
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
@@ -49,12 +50,14 @@ def cast_as_tensor_dtype(series: Series) -> Series:
     return TensorArray(series)
 
 
+@DeveloperAPI
 @default_retry()
 def read_remote_parquet(path: str):
     fs, path = get_fs_and_path(path)
     return read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
 
+@DeveloperAPI
 class RayDataset(Dataset):
     """Wrapper around ray.data.Dataset.
 
@@ -102,13 +105,21 @@ class RayDataset(Dataset):
         return -1
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        seed=0,
+        ignore_last=False,
+        horovod=None,
+    ):
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
             self.features,
             self.training_set_metadata,
             batch_size,
             self.size,
+            ignore_last,
         )
 
     def __len__(self):
@@ -143,6 +154,7 @@ class RayDataset(Dataset):
         self.ds = self.ds.repartition(num_blocks=num_blocks)
 
 
+@DeveloperAPI
 class RayDatasetManager(DatasetManager):
     def __init__(self, backend):
         self.backend = backend
@@ -182,6 +194,7 @@ class RayDatasetManager(DatasetManager):
         return "parquet"
 
 
+@DeveloperAPI
 class RayDatasetShard(Dataset):
     def __init__(
         self,
@@ -210,6 +223,7 @@ class RayDatasetShard(Dataset):
             self.training_set_metadata,
             batch_size,
             self.size,
+            ignore_last,
         )
 
     @lru_cache(1)
@@ -222,6 +236,7 @@ class RayDatasetShard(Dataset):
         return len(self)
 
 
+@DeveloperAPI
 class RayDatasetBatcher(Batcher):
     def __init__(
         self,
@@ -230,14 +245,17 @@ class RayDatasetBatcher(Batcher):
         training_set_metadata: TrainingSetMetadataDict,
         batch_size: int,
         samples_per_epoch: int,
+        ignore_last: bool = False,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
+        self.ignore_last = ignore_last
 
         self.features = features
         self.columns = list(features.keys())
+        self._sample_feature_name = self.columns[0]
         self.reshape_map = {
             proc_column: training_set_metadata[feature[NAME]].get("reshape")
             for proc_column, feature in features.items()
@@ -300,6 +318,10 @@ class RayDatasetBatcher(Batcher):
         self._last_batch = False
         try:
             self._next_batch = next(self.dataset_batch_iter)
+            # If the batch has only one row and self.ignore_last, skip the batch
+            # to prevent batchnorm / dropout related Torch errors
+            if self.ignore_last and len(self._next_batch[self._sample_feature_name]) == 1:
+                raise StopIteration
         except StopIteration:
             self._last_batch = True
 
@@ -347,9 +369,7 @@ class RayDatasetBatcher(Batcher):
 
     def _create_async_reader(self, pipeline: DatasetPipeline):
         q = queue.Queue(maxsize=100)
-
         batch_size = self.batch_size
-
         to_tensors = self._to_tensors_fn()
 
         def producer():

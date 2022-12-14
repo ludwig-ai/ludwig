@@ -26,7 +26,6 @@ import pandas as pd
 import ray
 import torch
 import tqdm
-from fsspec.config import conf
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray import ObjectRef
@@ -54,8 +53,12 @@ from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.registry import ray_trainers_registry, register_ray_trainer
 from ludwig.trainers.trainer import BaseTrainer, RemoteTrainer
-from ludwig.types import HyperoptConfigDict, ModelConfigDict, TrainerConfigDict, TrainingSetMetadataDict
-from ludwig.utils.data_utils import use_credentials
+from ludwig.types import (
+    HyperoptConfigDict,
+    ModelConfigDict,
+    TrainerConfigDict,
+    TrainingSetMetadataDict,
+)
 from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
@@ -898,29 +901,16 @@ class RayBackend(RemoteTrainingMixin, Backend):
             ds = ds.add_column("idx", lambda df: df["value"].map(lambda row: int(row["idx"])))
             # Overwrite the "value" column with the actual data
             ds = ds.add_column("value", lambda df: df["value"].map(lambda row: row["data"]))
+            df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
         else:
             # Assume the path has already been read in, so just convert directly to a dataset
             # Name the column "value" to match the behavior of the above
-            column_df = column.to_frame(name="value")
-            column_df["idx"] = column_df.index
-            ds = self.df_engine.to_ray_dataset(column_df)
-
-        def map_batches_fn(df: pd.DataFrame, fn: Callable) -> pd.DataFrame:
-            # HACK: Workaround for https://github.com/modin-project/modin/issues/4686
-            if "value" in df:
-                key = "value"
-            else:
-                key = column.name
-
-            # We need to explicitly pass the credentials stored in fsspec.conf since the operation occurs on Ray.
-            with use_credentials(conf):
-                df[key] = df[key].map(fn)
-                return df
+            df = column.to_frame(name=column.name)
+            df["idx"] = df.index
 
         if map_fn is not None:
-            ds = ds.map_batches(partial(map_batches_fn, fn=map_fn), batch_format="pandas")
+            df[column.name] = self.df_engine.map_objects(df[column.name], map_fn)
 
-        df = self.df_engine.from_ray_dataset(ds).rename(columns={"value": column.name})
         if "idx" in df.columns:
             df = df.set_index("idx", drop=True)
             df = self.df_engine.map_partitions(
