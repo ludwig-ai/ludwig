@@ -1,5 +1,6 @@
 version: 1.0
 name: avmnist
+# the first two download urls are the training data and the rest are test data
 download_urls:
   - http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
   - http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
