@@ -102,6 +102,7 @@ def test_progress_tracker_empty():
         "best_eval_metric_epoch": 0,
         "checkpoint_number": 0,
         "last_improvement_steps": 0,
+        "last_improvement_timestamp": 0.0,
     }
 
 
@@ -139,6 +140,7 @@ def test_progress_tracker():
         "checkpoint_number": 0,
         "epoch": 0,
         "best_eval_metric_steps": 0,
+        "last_improvement_timestamp": 0.0,
         "learning_rate": 0.01,
         "num_increases_bs": 0,
         "num_reductions_lr": 0,
