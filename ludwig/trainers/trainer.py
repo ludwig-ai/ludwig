@@ -348,7 +348,8 @@ class Trainer(BaseTrainer):
             }
             self.train_step(inputs, targets)
         duration_s = time.time() - start_ts
-        return batch_size / duration_s / total_steps
+        avg_duration_s = duration_s / total_steps
+        return batch_size / avg_duration_s
 
     def tune_learning_rate(
         self,
