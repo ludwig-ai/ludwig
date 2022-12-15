@@ -1172,6 +1172,8 @@ class Trainer(BaseTrainer):
                     self.model.save(save_path)
 
         last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
+        progress_tracker.last_improvement_steps = last_improvement_in_steps
+
         if last_improvement_in_steps != 0 and self.is_coordinator():
             logger.info(
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "

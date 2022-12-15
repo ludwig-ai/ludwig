@@ -177,7 +177,7 @@ class LightGBMTrainer(BaseTrainer):
         predictor = Predictor(
             self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
-        metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
+        metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
 
@@ -229,6 +229,7 @@ class LightGBMTrainer(BaseTrainer):
         start_time = time.time()
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
+        progress_tracker.checkpoint_number += 1
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
@@ -308,7 +309,7 @@ class LightGBMTrainer(BaseTrainer):
         elapsed_time = (time.time() - start_time) * 1000.0
 
         if self.is_coordinator():
-            logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
+            logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
@@ -418,31 +419,60 @@ class LightGBMTrainer(BaseTrainer):
         should_break = False
         # record how long its been since an improvement
         improved = get_improved_fn(validation_metric)
-        validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
-        last_validation_metric = validation_metrics[validation_metric][-1]
-        last_validation_metric_value = last_validation_metric[-1]
+        all_validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
+        # The most recent validation_metric metric.
+        eval_metric: TrainerMetric = all_validation_metrics[validation_metric][-1]
+        eval_metric_value = eval_metric[-1]
 
-        if improved(last_validation_metric_value, progress_tracker.best_eval_metric_value):
+        if improved_fn(eval_metric_value, progress_tracker.best_eval_metric_value):
+            previous_best_eval_metric_value = progress_tracker.best_eval_metric_value
+
+            # Save the value, steps, epoch, and checkpoint number.
+            progress_tracker.best_eval_metric_value = eval_metric_value
             progress_tracker.best_eval_metric_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric_value = last_validation_metric_value
+            progress_tracker.best_eval_metric_epoch = progress_tracker.epoch
+            progress_tracker.best_eval_metric_checkpoint_number = progress_tracker.checkpoint_number
 
-            if self.is_coordinator() and not skip_save_model:
-                self.model.save(save_path)
+            # Save best metrics for all data subsets.
+            progress_tracker.best_eval_train_metrics = get_latest_metrics_dict(progress_tracker.train_metrics)
+            progress_tracker.best_eval_validation_metrics = get_latest_metrics_dict(progress_tracker.validation_metrics)
+            progress_tracker.best_eval_test_metrics = get_latest_metrics_dict(progress_tracker.test_metrics)
+
+            if self.is_coordinator():
                 logger.info(
-                    f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
+                    f"Evaluation validation metric: '{validation_output_feature_name}' '{validation_metric}' improved."
                 )
+                absolute_eval_metric_value_change = round(
+                    abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
+                )
+                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                    logger.info(
+                        f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
+                        f"{absolute_eval_metric_value_change}."
+                    )
+                else:
+                    logger.info(
+                        f"'{validation_output_feature_name}' '{validation_metric}' increased by "
+                        f"{absolute_eval_metric_value_change}."
+                    )
+                # Save the model.
+                if not skip_save_model:
+                    logger.info("New best model saved.\n")
+                    self.model.save(save_path)
 
-        progress_tracker.last_improvement = progress_tracker.steps - progress_tracker.best_eval_metric_steps
-        if progress_tracker.last_improvement != 0 and self.is_coordinator():
+        last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
+        progress_tracker.last_improvement_steps = last_improvement_in_steps
+
+        if last_improvement_in_steps != 0 and self.is_coordinator():
             logger.info(
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
-                + f"{progress_tracker.last_improvement} step(s) ago.\n"
+                + f"{last_improvement_in_steps} step(s) ago.\n"
             )
 
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
-        early_stop_bool = 0 < early_stopping_steps <= progress_tracker.last_improvement
+        early_stop_bool = 0 < early_stopping_steps <= last_improvement_in_steps
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
@@ -455,9 +485,8 @@ class LightGBMTrainer(BaseTrainer):
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
-                    "\nEARLY STOPPING due to lack of validation improvement. "
-                    f"It has been {progress_tracker.steps - progress_tracker.best_eval_metric_steps} step(s) since "
-                    f"last validation improvement.\n"
+                    f"\nEARLY STOPPING due to lack of validation improvement. It has been {last_improvement_in_steps} "
+                    "step(s) since last validation improvement."
                 )
             should_break = True
         return should_break

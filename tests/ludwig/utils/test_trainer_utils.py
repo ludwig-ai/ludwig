@@ -102,6 +102,7 @@ def test_progress_tracker_empty():
         "best_eval_metric_checkpoint_number": 0,
         "best_eval_metric_epoch": 0,
         "checkpoint_number": 0,
+        'last_improvement_steps': 0,
     }
 
 
@@ -146,6 +147,7 @@ def test_progress_tracker():
         "steps": 0,
         "tune_checkpoint_num": 0,
         "validation_metrics.combined.loss": 0.2,
+        'last_improvement_steps': 0,
     }
 
 

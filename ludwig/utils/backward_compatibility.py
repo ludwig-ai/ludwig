@@ -159,6 +159,9 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     if "checkpoint_number" not in ret:
         ret["checkpoint_number"] = 0
 
+    if "best_eval_metric_steps" not in ret:
+        ret["best_eval_metric_steps"] = 0
+
     if "best_eval_metric_epoch" not in ret:
         ret["best_eval_metric_epoch"] = 0
 
@@ -173,10 +176,6 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
 
     if "best_eval_test_metrics" not in ret:
         ret["best_eval_test_metrics"] = {}
-
-    if "last_improvement_steps" in ret:
-        ret["best_eval_metric_steps"] = ret["last_improvement_steps"]
-        del ret["last_improvement_steps"]
 
     if "best_eval_metric" in ret:
         ret["best_eval_metric_value"] = ret["best_eval_metric"]

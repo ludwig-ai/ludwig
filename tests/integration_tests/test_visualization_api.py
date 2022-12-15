@@ -75,7 +75,7 @@ class Experiment:
         self.csv_file = os.path.join(tmpdir, csv_filename)
         self.input_features = [category_feature(encoder={"vocab_size": 10})]
         self.output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
-        data_csv = generate_data(self.input_features, self.output_features, self.csv_file, num_examples=25)
+        data_csv = generate_data(self.input_features, self.output_features, self.csv_file)
         self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
         (self.train_stats, self.preprocessed_data, self.output_dir) = self.model.train(

@@ -67,6 +67,7 @@ def get_new_progress_tracker(
         best_eval_metric_checkpoint_number=0,
         last_learning_rate_reduction_steps=0,
         last_increase_batch_size_steps=0,
+        last_improvement_steps=0,
         best_eval_metric_value=best_eval_metric_value,
         best_reduce_learning_rate_eval_metric=best_reduce_learning_rate_eval_metric,
         last_reduce_learning_rate_eval_metric_improvement=0,
@@ -98,6 +99,7 @@ class ProgressTracker:
         best_eval_metric_steps: int,
         best_eval_metric_epoch: int,
         best_eval_metric_checkpoint_number: int,
+        last_improvement_steps: int,
         last_learning_rate_reduction_steps: int,
         last_increase_batch_size_steps: int,
         best_eval_metric_value: float,
@@ -133,6 +135,7 @@ class ProgressTracker:
         self.best_eval_metric_steps = best_eval_metric_steps
         self.best_eval_metric_epoch = best_eval_metric_epoch
         self.best_eval_metric_checkpoint_number = best_eval_metric_checkpoint_number
+        self.last_improvement_steps = last_improvement_steps
         self.last_learning_rate_reduction_steps = last_learning_rate_reduction_steps
         self.last_learning_rate_reduction = last_learning_rate_reduction
         self.last_increase_batch_size_steps = last_increase_batch_size_steps
@@ -163,7 +166,6 @@ class ProgressTracker:
 
         loaded = upgrade_model_progress(progress_tracking_dict)
         return ProgressTracker(**loaded)
-        # return ProgressTracker(**progress_tracking_dict) # Works.
 
     def log_metrics(self):
         log_metrics = {
@@ -172,6 +174,7 @@ class ProgressTracker:
             "steps": self.steps,
             "tune_checkpoint_num": self.tune_checkpoint_num,
             "checkpoint_number": self.checkpoint_number,
+            "last_improvement_steps": self.last_improvement_steps,
             "best_eval_metric_steps": self.best_eval_metric_steps,
             "best_eval_metric_epoch": self.best_eval_metric_epoch,
             "best_eval_metric_checkpoint_number": self.best_eval_metric_checkpoint_number,

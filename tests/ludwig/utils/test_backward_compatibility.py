@@ -570,11 +570,12 @@ def test_old_class_weights_default():
 def test_upgrade_model_progress():
     old_model_progress = {
         "batch_size": 64,
-        "best_eval_metric_value": 0.5,
+        "best_eval_metric": 0.5,
         "best_increase_batch_size_eval_metric": math.inf,
         "best_reduce_learning_rate_eval_metric": math.inf,
         "epoch": 2,
         "last_improvement": 1,
+        "last_improvement_epoch": 1,
         "best_eval_metric_epoch": 1,
         "last_increase_batch_size": 0,
         "last_increase_batch_size_epoch": 0,
@@ -604,6 +605,8 @@ def test_upgrade_model_progress():
         "best_increase_batch_size_eval_metric": float("inf"),
         "best_reduce_learning_rate_eval_metric": float("inf"),
         "epoch": 2,
+        "last_improvement_steps": 64,
+        "best_eval_metric_steps": 0,
         "best_eval_metric_epoch": 1,
         "last_increase_batch_size": 0,
         "last_increase_batch_size_eval_metric_improvement": 0,
