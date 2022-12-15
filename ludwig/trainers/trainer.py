@@ -20,6 +20,7 @@ import math
 import os
 import os.path
 import signal
+import statistics
 import sys
 import threading
 import time
@@ -328,7 +329,7 @@ class Trainer(BaseTrainer):
     def train_for_tuning(
         self,
         batch_size: int,
-        total_steps: int = 3,
+        total_steps: int = 5,
     ) -> float:
         """Function to be used by tune_batch_size.
 
@@ -336,8 +337,9 @@ class Trainer(BaseTrainer):
             Average throughput in samples / sec.
         """
         self.model.train()  # Sets model training mode.
-        start_ts = time.time()
+        durations = []
         for _ in range(total_steps):
+            start_ts = time.time()
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
                 for input_feature_name, input_feature in self.model.input_features.items()
@@ -347,9 +349,9 @@ class Trainer(BaseTrainer):
                 for output_feature_name, output_feature in self.model.output_features.items()
             }
             self.train_step(inputs, targets)
-        duration_s = time.time() - start_ts
-        avg_duration_s = duration_s / total_steps
-        return batch_size / avg_duration_s
+            durations.append(time.time() - start_ts)
+        med_duration_s = statistics.median(durations)
+        return batch_size / med_duration_s
 
     def tune_learning_rate(
         self,
@@ -508,7 +510,7 @@ class Trainer(BaseTrainer):
                 gc.collect()
 
                 try:
-                    samples_per_sec = self.train_for_tuning(batch_size, total_steps=3)
+                    samples_per_sec = self.train_for_tuning(batch_size, total_steps=5)
                     logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
                     if samples_per_sec < best_samples_per_sec:
                         # We assume that once the throughput starts degrading, it won't go up again
