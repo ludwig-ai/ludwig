@@ -12,12 +12,13 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
+from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
+from ludwig.modules.metric_registry import metric_registry
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -28,7 +29,12 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.trainer_utils import append_metrics, get_new_progress_tracker, ProgressTracker
+from ludwig.utils.trainer_utils import (
+    append_metrics,
+    get_latest_metrics_dict,
+    get_new_progress_tracker,
+    ProgressTracker,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -424,7 +430,7 @@ class LightGBMTrainer(BaseTrainer):
         eval_metric: TrainerMetric = all_validation_metrics[validation_metric][-1]
         eval_metric_value = eval_metric[-1]
 
-        if improved_fn(eval_metric_value, progress_tracker.best_eval_metric_value):
+        if improved(eval_metric_value, progress_tracker.best_eval_metric_value):
             previous_best_eval_metric_value = progress_tracker.best_eval_metric_value
 
             # Save the value, steps, epoch, and checkpoint number.
