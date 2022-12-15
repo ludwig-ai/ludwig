@@ -133,11 +133,11 @@ class ProgressTracker:
             batch_size: The current batch size.
             tune_checkpoint_num: The hyperopt checkpoint number (Ray Tune).
             checkpoint_number: The current checkpoint number.
-            
+
             best_eval_metric_steps: The step of training that has the best evaluation so far.
             best_eval_metric_epoch: The epoch of training that has the best evaluation so far.
             best_eval_metric_checkpoint_number: The checkpoint number that has the best evaluation so far.
-            
+
             last_improvement_steps: The number of steps since the last improvement.
             last_learning_rate_reduction_steps: The training step of the last learning rate reduction.
             last_increase_batch_size_steps: The training_step of the the last batch size increase.
@@ -145,13 +145,13 @@ class ProgressTracker:
             best_eval_metric_value: The metric value of the best evaluation so far.
             best_reduce_learning_rate_eval_metric: The metric value of the best evaluation so far, for reducing the learning rate.
             best_increase_batch_size_eval_metric: The metric value of the best evaluation so far, for increasing the batch size.
-            
+
             last_learning_rate_reduction: The number of steps since the last learning rate reduction.
             last_increase_batch_size: The number of steps since the last batch size increase.
 
             last_reduce_learning_rate_eval_metric_improvement: The number of checkpoints since the last learning rate reduction.
             last_increase_batch_size_eval_metric_improvement: The number of checkpoints since the last batch size increase.
-            
+
             num_reductions_learning_rate: The number of total reductions in learning rate.
             num_increases_batch_size: The number of total increases in batch size.
 
