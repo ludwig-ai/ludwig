@@ -509,9 +509,10 @@ class Trainer(BaseTrainer):
 
                 try:
                     samples_per_sec = self.train_for_tuning(batch_size, total_steps=3)
-                    logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples / s")
+                    logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
                     if samples_per_sec < best_samples_per_sec:
                         # We assume that once the throughput starts degrading, it won't go up again
+                        logger.info(f"Throughput decrease at batch_size={batch_size}")
                         break
 
                     best_samples_per_sec = samples_per_sec
