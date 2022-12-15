@@ -334,7 +334,7 @@ class Trainer(BaseTrainer):
         """Function to be used by tune_batch_size.
 
         Return:
-            Average throughput in samples / sec.
+            Median throughput in samples / sec.
         """
         self.model.train()  # Sets model training mode.
         durations = []
