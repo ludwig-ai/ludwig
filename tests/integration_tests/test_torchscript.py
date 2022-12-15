@@ -364,8 +364,8 @@ def test_torchscript_e2e_text(tmpdir, csv_filename):
 
 
 @pytest.mark.skipif(
-    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 13, 0),
-    reason="requires torchtext 0.13.0 or higher",
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
+    reason="requires torchtext 0.14.0 or higher",
 )
 def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)

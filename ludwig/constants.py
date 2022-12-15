@@ -104,6 +104,12 @@ CROP_OR_PAD = "crop_or_pad"
 INTERPOLATE = "interpolate"
 RESIZE_METHODS = [CROP_OR_PAD, INTERPOLATE]
 
+# Special symbols for text.
+STOP_SYMBOL = "<EOS>"
+START_SYMBOL = "<SOS>"
+PADDING_SYMBOL = "<PAD>"
+UNKNOWN_SYMBOL = "<UNK>"
+
 TRAINER = "trainer"
 LIGHTGBM_TRAINER = "lightgbm_trainer"
 OPTIMIZER = "optimizer"
@@ -238,6 +244,7 @@ MODEL_TYPE = "model_type"
 MODEL_ECD = "ecd"
 MODEL_GBM = "gbm"
 DASK_MODULE_NAME = "dask.dataframe"
+LUDWIG_VERSION = "ludwig_version"
 
 PREPROCESSOR = "preprocessor"
 PREDICTOR = "predictor"

@@ -9,7 +9,7 @@ import torch
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.features.base_feature import InputFeature, OutputFeature
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.model_config import InputFeaturesContainer, OutputFeaturesContainer
@@ -72,7 +72,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
             if tied_input_feature_name in other_input_features:
                 encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
-        input_feature_class = get_from_registry(feature_config.type, input_type_registry)
+        input_feature_class = get_from_registry(feature_config.type, get_input_type_registry())
         input_feature_obj = input_feature_class(feature_config, encoder_obj=encoder_obj)
         return input_feature_obj
 
@@ -99,7 +99,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
     ) -> OutputFeature:
         """Builds a single output feature from the output feature definition."""
         logger.debug(f"Output {feature_config.type} feature {feature_config.name}")
-        output_feature_class = get_from_registry(feature_config.type, output_type_registry)
+        output_feature_class = get_from_registry(feature_config.type, get_output_type_registry())
         output_feature_obj = output_feature_class(feature_config, output_features=output_features)
         return output_feature_obj
 
