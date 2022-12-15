@@ -8,7 +8,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import DEFAULT_BATCH_SIZE, TRAINER
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -109,8 +109,6 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
         # check batch size
         assert model.config_obj.trainer.batch_size != "auto"
         assert model.config_obj.trainer.batch_size > 1
-        if is_cpu:
-            assert model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
 
         assert model.config_obj.trainer.eval_batch_size != "auto"
         assert model.config_obj.trainer.eval_batch_size > 1
