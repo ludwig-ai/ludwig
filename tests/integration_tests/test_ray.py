@@ -32,7 +32,6 @@ from ludwig.constants import (
     CATEGORY,
     COLUMN,
     DATE,
-    DEFAULT_BATCH_SIZE,
     H3,
     IMAGE,
     NAME,
@@ -759,9 +758,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
-@pytest.mark.parametrize(
-    ("max_batch_size", "expected_final_batch_size"), [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE), (64, 64)]
-)
+@pytest.mark.parametrize(("max_batch_size", "expected_final_batch_size"), [(256, 128), (64, 64)])
 def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size):
     config = {
         "input_features": [
