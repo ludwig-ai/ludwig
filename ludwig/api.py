@@ -620,6 +620,12 @@ class LudwigModel:
                     self.config_obj.trainer.learning_rate = tuned_learning_rate
                     trainer.set_base_learning_rate(tuned_learning_rate)
 
+                trainer.encode(training_set)
+                if validation_set is not None:
+                    trainer.encode(validation_set)
+                if test_set is not None:
+                    trainer.encoder(test_set)
+
                 # train model
                 if self.backend.is_coordinator():
                     print_boxed("TRAINING")

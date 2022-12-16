@@ -692,12 +692,6 @@ class RayPredictor(BasePredictor):
         return num_cpus, num_gpus
 
     def encode(self, dataset: RayDataset):
-        # self.model,
-        #     predictor_kwargs,
-        #     output_columns,
-        #     dataset.features,
-        #     dataset.training_set_metadata,
-
         model_ref = ray.put(self.model)
         features = dataset.features
         training_set_metadata = dataset.training_set_metadata
@@ -724,7 +718,7 @@ class RayPredictor(BasePredictor):
 
                 with torch.no_grad():
                     with self.model.skip_features(
-                        set([feat for feat in self.model.input_features if feat.is_trainable()])
+                        set([feat.feature_name for feat in self.model.input_features if feat.is_trainable()])
                     ):
                         inputs = {
                             i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
