@@ -52,7 +52,6 @@ def test_triton_torchscript(csv_filename, tmpdir):
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
     ]
-
     output_features = [
         binary_feature(),
         number_feature(),
