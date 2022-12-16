@@ -19,7 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterator, Optional, Union
+from typing import Callable, Dict, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -165,6 +165,24 @@ class RayDataset(Dataset):
             batch_size,
             self.size,
             ignore_last,
+        )
+
+    def transform(self, transform_fn: Callable, batch_size: int, resources: Dict[str, int]):
+        features = self.features
+        columns = list(features.keys())
+
+        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
+            for c in columns:
+                # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
+                if features[c][TYPE] not in _SCALAR_TYPES:
+                    df[c] = cast_as_tensor_dtype(df[c])
+                elif features[c][TYPE] == BINARY:
+                    # TODO(travis): figure out why Ray is converting these into object types by default
+                    df[c] = df[c].astype(np.bool_)
+            return df
+
+        self.ds = self.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+            transform_fn, batch_size=batch_size, compute="actors", batch_format="pandas", **resources
         )
 
     def __len__(self):

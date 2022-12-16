@@ -67,7 +67,7 @@ from ludwig.types import (
     TrainerConfigDict,
     TrainingSetMetadataDict,
 )
-from ludwig.utils.dataframe_utils import set_index_name
+from ludwig.utils.dataframe_utils import from_numpy_dataset, set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
@@ -690,6 +690,72 @@ class RayPredictor(BasePredictor):
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return num_cpus, num_gpus
+
+    def encode(self, dataset: RayDataset):
+        # self.model,
+        #     predictor_kwargs,
+        #     output_columns,
+        #     dataset.features,
+        #     dataset.training_set_metadata,
+
+        model_ref = ray.put(self.model)
+        features = dataset.features
+        training_set_metadata = dataset.training_set_metadata
+        output_columns = get_output_columns(self.model.output_features, include_logits=False)
+
+        class TransformFn:
+            def __init__(self):
+                model = ray.get(model_ref)
+                self.device = get_torch_device()
+                self.model = model.to(self.device)
+
+                self.output_columns = output_columns
+                self.features = dataset.features
+                self.training_set_metadata = training_set_metadata
+                self.reshape_map = {
+                    f[PROC_COLUMN]: training_set_metadata[f[NAME]].get("reshape") for f in features.values()
+                }
+
+            def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+                batch = self._prepare_batch(df)
+
+                prev_model_training_mode = self.model.training  # store previous model training mode
+                self.model.eval()  # set model to eval mode
+
+                with torch.no_grad():
+                    with self.model.skip_features(set([feat for feat in self.model.input_features if feat.trainable])):
+                        inputs = {
+                            i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                                self.device
+                            )
+                            for i_feat in self.model.input_features.values()
+                        }
+                        encoded = {
+                            k: v["encoder_output"].detach().cpu().numpy() for k, v in self.model.encode(inputs).items()
+                        }
+
+                # reset model to its original training mode
+                self.model.train(prev_model_training_mode)
+                return from_numpy_dataset(encoded)
+
+            def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
+                res = {}
+                for c in self.features.keys():
+                    if self.features[c][TYPE] not in _SCALAR_TYPES:
+                        # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
+                        res[c] = np.stack(batch[c].values)
+                    else:
+                        res[c] = batch[c].to_numpy()
+
+                for c in self.features.keys():
+                    reshape = self.reshape_map.get(c)
+                    if reshape is not None:
+                        res[c] = res[c].reshape((-1, *reshape))
+
+                return res
+
+        num_cpus, num_gpus = self.get_resources_per_worker()
+        dataset.transform(TransformFn, self.batch_size, resources=dict(num_cpus=num_cpus, num_gpus=num_gpus))
 
     def batch_predict(self, dataset: RayDataset, *args, collect_logits: bool = False, **kwargs):
         self._check_dataset(dataset)

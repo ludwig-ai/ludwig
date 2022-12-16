@@ -860,25 +860,26 @@ class Trainer(BaseTrainer):
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                     # Trains over a full epoch of data.
-                    should_break = self._train_loop(
-                        batcher,
-                        progress_tracker,
-                        save_path,
-                        train_summary_writer,
-                        progress_bar,
-                        training_set,
-                        validation_set,
-                        test_set,
-                        start_time,
-                        validation_summary_writer,
-                        test_summary_writer,
-                        model_hyperparameters_path,
-                        output_features,
-                        metrics_names,
-                        checkpoint_manager,
-                        final_steps_per_checkpoint,
-                        early_stopping_steps,
-                    )
+                    with self.model.skip_features(set([feat for feat in self.model.input_features if feat.trainable])):
+                        should_break = self._train_loop(
+                            batcher,
+                            progress_tracker,
+                            save_path,
+                            train_summary_writer,
+                            progress_bar,
+                            training_set,
+                            validation_set,
+                            test_set,
+                            start_time,
+                            validation_summary_writer,
+                            test_summary_writer,
+                            model_hyperparameters_path,
+                            output_features,
+                            metrics_names,
+                            checkpoint_manager,
+                            final_steps_per_checkpoint,
+                            early_stopping_steps,
+                        )
 
                     # ================ Post Training Epoch ================
                     progress_tracker.epoch += 1

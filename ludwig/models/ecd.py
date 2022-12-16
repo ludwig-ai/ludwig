@@ -1,6 +1,7 @@
+import contextlib
 import logging
 import os
-from typing import Dict, Tuple, Union
+from typing import Dict, Set, Tuple, Union
 
 import numpy as np
 import torch
@@ -57,8 +58,19 @@ class ECD(BaseModel):
         self.eval_loss_metric = torchmetrics.MeanMetric()
         self.eval_additional_losses_metrics = torchmetrics.MeanMetric()
 
+        self._skip_features = set()
+
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
+
+    @contextlib.contextmanager
+    def skip(self, features: Set[str]):
+        prev_features = self._skip_features
+        try:
+            self._skip_features = features
+            yield
+        finally:
+            self._skip_features = prev_features
 
     def encode(
         self,
@@ -75,6 +87,10 @@ class ECD(BaseModel):
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
+            if input_feature_name in self._skip_features:
+                encoder_outputs = {"encoder_output": input_values}
+                continue
+
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
