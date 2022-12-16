@@ -104,6 +104,18 @@ except ImportError:
     _modin_ray_incompatible = False
 
 
+@pytest.mark.distributed
+def test_ray_text_pretrained(ray_cluster_2cpu):
+    input_features = [
+        text_feature(encoder={"type": "distilbert"}),
+    ]
+    output_features = [
+        # binary_feature(),
+        category_feature(decoder={"vocab_size": 5}, reduce_input="sum"),
+    ]
+    run_test_with_features(input_features, output_features)
+
+
 def run_api_experiment(
     config, dataset, backend_config, predict=False, skip_save_processed_input=True, skip_save_predictions=True
 ):
@@ -121,7 +133,7 @@ def run_api_experiment(
         backend_config,
         config,
         dataset=dataset,
-        evaluate=True,
+        evaluate=False,
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,

@@ -145,8 +145,8 @@ class RayDataset(Dataset):
             pipe = self.ds.repeat()
         else:
             pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
-        if shuffle:
-            pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
+        # if shuffle:
+        #     pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
         return pipe
 
     @contextlib.contextmanager

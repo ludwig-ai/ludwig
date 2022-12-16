@@ -952,6 +952,7 @@ class Trainer(BaseTrainer):
         early_stopping_steps: int,
     ) -> bool:
         """Completes up to one epoch through the data."""
+        inputs = targets = None
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
@@ -990,14 +991,19 @@ class Trainer(BaseTrainer):
             batch = batcher.next_batch()
 
             # Move tensors to cuda here.
-            inputs = {
-                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
-                for i_feat in self.model.input_features.values()
-            }
-            targets = {
-                o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
-                for o_feat in self.model.output_features.values()
-            }
+            if inputs is None:
+                inputs = {
+                    i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
+                        self.device
+                    )
+                    for i_feat in self.model.input_features.values()
+                }
+                targets = {
+                    o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
+                        self.device
+                    )
+                    for o_feat in self.model.output_features.values()
+                }
 
             loss, all_losses = self.train_step(
                 inputs,

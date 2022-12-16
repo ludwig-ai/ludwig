@@ -1381,15 +1381,26 @@ class DistilBERTEncoder(Encoder):
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.resize_token_embeddings(vocab_size)
+        self.last_inputs = None
+        self.last_hidden = None
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
         if mask is not None:
             mask = mask.to(torch.int32)
+
+        # print("ENCODER INPUTS", inputs)
+        # TODO(travis): uncomment to ensure self.transformer is fixed
+        # self.transformer.eval()
         transformer_outputs = self.transformer(
             input_ids=inputs,
             attention_mask=mask,
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
+        print("HIDDEN", inputs, hidden)
+        if self.last_inputs is not None and torch.equal(inputs, self.last_inputs):
+            assert torch.equal(hidden, self.last_hidden)
+        self.last_inputs = inputs
+        self.last_hidden = hidden
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {"encoder_output": hidden}
 
