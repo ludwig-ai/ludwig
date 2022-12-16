@@ -504,16 +504,23 @@ class RayTrainerV2(BaseTrainer):
                 }
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-                print("INPUTS", df)
+                # print("INPUTS", df)
                 batch = self._prepare_batch(df)
 
                 prev_model_training_mode = self.model.training  # store previous model training mode
                 self.model.eval()  # set model to eval mode
 
+                outputs_features = {
+                    o_feat.proc_column: batch[o_feat.proc_column] for o_feat in self.model.output_features.values()
+                }
+
                 with torch.no_grad():
                     with self.model.skip_features(
                         set([feat.feature_name for feat in self.model.input_features.values() if feat.is_trainable()])
                     ):
+                        name_to_proc = {
+                            i_feat.feature_name: i_feat.proc_column for i_feat in self.model.input_features.values()
+                        }
                         inputs = {
                             i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
                                 self.device
@@ -521,12 +528,15 @@ class RayTrainerV2(BaseTrainer):
                             for i_feat in self.model.input_features.values()
                         }
                         encoder_outputs = self.model.encode(inputs)
-                        encoded = {k: v["encoder_output"].detach().cpu().numpy() for k, v in encoder_outputs.items()}
+                        encoded = {
+                            name_to_proc[k]: v["encoder_output"].detach().cpu().numpy()
+                            for k, v in encoder_outputs.items()
+                        }
 
                 # reset model to its original training mode
                 self.model.train(prev_model_training_mode)
-                df = from_numpy_dataset(encoded)
-                print("OUTPUTS", df)
+                df = from_numpy_dataset({**encoded, **outputs_features})
+                # print("OUTPUTS", df)
                 return df
 
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
