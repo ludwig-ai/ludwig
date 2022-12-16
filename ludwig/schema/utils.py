@@ -1,10 +1,10 @@
 import copy
 from abc import ABC
 from dataclasses import field
-from typing import Any, Optional
+from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Optional, Tuple, Type, Union
 
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
