@@ -511,7 +511,7 @@ class RayTrainerV2(BaseTrainer):
 
                 with torch.no_grad():
                     with self.model.skip_features(
-                        set([feat.feature_name for feat in self.model.input_features if feat.is_trainable()])
+                        set([feat.feature_name for feat in self.model.input_features.values() if feat.is_trainable()])
                     ):
                         inputs = {
                             i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
@@ -519,9 +519,8 @@ class RayTrainerV2(BaseTrainer):
                             )
                             for i_feat in self.model.input_features.values()
                         }
-                        encoded = {
-                            k: v["encoder_output"].detach().cpu().numpy() for k, v in self.model.encode(inputs).items()
-                        }
+                        encoder_outputs = self.model.encode(inputs)
+                        encoded = {k: v["encoder_output"].detach().cpu().numpy() for k, v in encoder_outputs.items()}
 
                 # reset model to its original training mode
                 self.model.train(prev_model_training_mode)

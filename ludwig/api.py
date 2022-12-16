@@ -624,7 +624,7 @@ class LudwigModel:
                 if validation_set is not None:
                     trainer.encode(validation_set)
                 if test_set is not None:
-                    trainer.encoder(test_set)
+                    trainer.encode(test_set)
 
                 # train model
                 if self.backend.is_coordinator():

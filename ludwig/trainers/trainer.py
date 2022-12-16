@@ -861,7 +861,13 @@ class Trainer(BaseTrainer):
 
                     # Trains over a full epoch of data.
                     with self.model.skip_features(
-                        set([feat.feature_name for feat in self.model.input_features if not feat.is_trainable()])
+                        set(
+                            [
+                                feat.feature_name
+                                for feat in self.model.input_features.values()
+                                if not feat.is_trainable()
+                            ]
+                        )
                     ):
                         should_break = self._train_loop(
                             batcher,

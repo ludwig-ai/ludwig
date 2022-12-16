@@ -88,11 +88,10 @@ class ECD(BaseModel):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             if input_feature_name in self._skip_features:
-                encoder_outputs = {"encoder_output": input_values}
-                continue
-
-            encoder = self.input_features[input_feature_name]
-            encoder_output = encoder(input_values)
+                encoder_output = {"encoder_output": input_values}
+            else:
+                encoder = self.input_features[input_feature_name]
+                encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
         return encoder_outputs

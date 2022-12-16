@@ -225,7 +225,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return _SequencePreprocessing(metadata)
 
     def is_trainable(self) -> bool:
-        return self.encoder.is_trainable()
+        return self.encoder_obj.is_trainable()
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
