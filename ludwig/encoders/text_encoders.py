@@ -1326,7 +1326,7 @@ class DistilBERTEncoder(HFEncoder):
         pretrained_model_name_or_path: str = "distilbert-base-uncased",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         use_pretrained: bool = True,
         vocab_size: int = 30522,
         max_position_embeddings: int = 512,

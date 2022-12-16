@@ -504,6 +504,7 @@ class RayTrainerV2(BaseTrainer):
                 }
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+                print("INPUTS", df)
                 batch = self._prepare_batch(df)
 
                 prev_model_training_mode = self.model.training  # store previous model training mode
@@ -524,7 +525,9 @@ class RayTrainerV2(BaseTrainer):
 
                 # reset model to its original training mode
                 self.model.train(prev_model_training_mode)
-                return from_numpy_dataset(encoded)
+                df = from_numpy_dataset(encoded)
+                print("OUTPUTS", df)
+                return df
 
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
                 res = {}
