@@ -860,7 +860,9 @@ class Trainer(BaseTrainer):
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                     # Trains over a full epoch of data.
-                    with self.model.skip_features(set([feat for feat in self.model.input_features if feat.trainable])):
+                    with self.model.skip_features(
+                        set([feat for feat in self.model.input_features if not feat.trainable])
+                    ):
                         should_break = self._train_loop(
                             batcher,
                             progress_tracker,
