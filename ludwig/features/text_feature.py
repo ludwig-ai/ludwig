@@ -30,6 +30,7 @@ from ludwig.constants import (
     PROC_COLUMN,
     TEXT,
 )
+from ludwig.encoders.text_encoders import EncoderMode
 from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
@@ -226,6 +227,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def is_trainable(self) -> bool:
         return self.encoder_obj.is_trainable()
+
+    def set_mode(self, mode: EncoderMode) -> bool:
+        return self.encoder_obj.set_mode(mode)
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):

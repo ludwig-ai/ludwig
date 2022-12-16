@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from enum import Enum
 import logging
 import sys
 from typing import Callable, Dict, List, Optional, Union
@@ -56,13 +57,25 @@ def _cls_pooled_error_message(encoder: str):
     sys.exit(1)
 
 
+class EncoderMode(Enum):
+    """How the encoder should handle inputs / outputs."""
+
+    FULL_INPUT_OUTPUT = 0
+    EMBEDDING_INPUT = 1
+    EMBEDDING_OUTPUT = 2
+
+
 class HFEncoder(Encoder):
     def __init__(self, trainable: bool):
         super().__init__()
         self._trainable = trainable
+        self.mode = EncoderMode.FULL_INPUT_OUTPUT
 
     def is_trainable(self) -> bool:
         return self._trainable
+
+    def set_mode(self, mode: EncoderMode):
+        self.mode = mode
 
 
 @DeveloperAPI
@@ -527,18 +540,24 @@ class BERTEncoder(HFEncoder):
         self.max_sequence_length = max_sequence_length
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
-        if mask is not None:
-            mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer(
-            input_ids=inputs,
-            attention_mask=mask,
-            token_type_ids=torch.zeros_like(inputs),
-        )
-        if self.reduce_output == "cls_pooled":
-            hidden = transformer_outputs[1]
+        if self.mode != EncoderMode.EMBEDDING_INPUT:
+            if mask is not None:
+                mask = mask.to(torch.int32)
+            transformer_outputs = self.transformer(
+                input_ids=inputs,
+                attention_mask=mask,
+                token_type_ids=torch.zeros_like(inputs),
+            )
+            if self.reduce_output == "cls_pooled":
+                hidden = transformer_outputs[1]
+            else:
+                hidden = transformer_outputs[0][:, 1:-1, :]
         else:
-            hidden = transformer_outputs[0][:, 1:-1, :]
-            hidden = self.reduce_sequence(hidden, self.reduce_output)
+            hidden = inputs
+
+        if self.mode != EncoderMode.EMBEDDING_OUTPUT:
+            if self.reduce_output != "cls_pooled":
+                hidden = self.reduce_sequence(hidden, self.reduce_output)
 
         return {"encoder_output": hidden}
 
@@ -1392,14 +1411,20 @@ class DistilBERTEncoder(HFEncoder):
         self.transformer.resize_token_embeddings(vocab_size)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
-        if mask is not None:
-            mask = mask.to(torch.int32)
-        transformer_outputs = self.transformer(
-            input_ids=inputs,
-            attention_mask=mask,
-        )
-        hidden = transformer_outputs[0][:, 1:-1, :]
-        hidden = self.reduce_sequence(hidden, self.reduce_output)
+        if self.mode != EncoderMode.EMBEDDING_INPUT:
+            if mask is not None:
+                mask = mask.to(torch.int32)
+            transformer_outputs = self.transformer(
+                input_ids=inputs,
+                attention_mask=mask,
+            )
+            hidden = transformer_outputs[0][:, 1:-1, :]
+        else:
+            hidden = inputs
+
+        if self.mode != EncoderMode.EMBEDDING_OUTPUT:
+            hidden = self.reduce_sequence(hidden, self.reduce_output)
+
         return {"encoder_output": hidden}
 
     @staticmethod

@@ -36,6 +36,8 @@ from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
+from ludwig.encoders.text_encoders import EncoderMode
+
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
@@ -515,8 +517,9 @@ class RayTrainerV2(BaseTrainer):
                 }
 
                 with torch.no_grad():
-                    with self.model.skip_features(
-                        set([feat.feature_name for feat in self.model.input_features.values() if feat.is_trainable()])
+                    with self.model.set_mode(
+                        set([feat.feature_name for feat in self.model.input_features.values() if feat.is_trainable()]),
+                        EncoderMode.EMBEDDING_OUTPUT,
                     ):
                         name_to_proc = {
                             i_feat.feature_name: i_feat.proc_column for i_feat in self.model.input_features.values()

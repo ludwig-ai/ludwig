@@ -35,6 +35,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
+from ludwig.encoders.text_encoders import EncoderMode
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -862,14 +863,15 @@ class Trainer(BaseTrainer):
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
 
                     # Trains over a full epoch of data.
-                    with self.model.skip_features(
+                    with self.model.set_mode(
                         set(
                             [
                                 feat.feature_name
                                 for feat in self.model.input_features.values()
                                 if not feat.is_trainable()
                             ]
-                        )
+                        ),
+                        EncoderMode.EMBEDDING_INPUT,
                     ):
                         should_break = self._train_loop(
                             batcher,

@@ -9,6 +9,7 @@ import torchmetrics
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD
+from ludwig.encoders.text_encoders import EncoderMode
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig
@@ -64,13 +65,14 @@ class ECD(BaseModel):
         clear_data_cache()
 
     @contextlib.contextmanager
-    def skip_features(self, features: Set[str]):
-        prev_features = self._skip_features
+    def set_mode(self, features: Set[str], mode: EncoderMode):
         try:
-            self._skip_features = features
+            for f in features:
+                f.set_mode(mode)
             yield
         finally:
-            self._skip_features = prev_features
+            for f in features:
+                f.set_mode(EncoderMode.FULL_INPUT_OUTPUT)
 
     def encode(
         self,
@@ -87,11 +89,8 @@ class ECD(BaseModel):
 
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
-            if input_feature_name in self._skip_features:
-                encoder_output = {"encoder_output": input_values}
-            else:
-                encoder = self.input_features[input_feature_name]
-                encoder_output = encoder(input_values)
+            encoder = self.input_features[input_feature_name]
+            encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output
 
         return encoder_outputs
