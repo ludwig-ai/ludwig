@@ -1441,7 +1441,7 @@ class CTRLEncoder(HFEncoder):
         pretrained_model_name_or_path: str = "ctrl",
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
-        trainable: bool = True,
+        trainable: bool = False,
         vocab_size: int = 246534,
         n_positions: int = 256,
         n_ctx: int = 256,
