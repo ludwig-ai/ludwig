@@ -6040,7 +6040,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "num_channels": ParameterMetadata(
             ui_display_name=None,
@@ -6122,7 +6122,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "MT5Encoder": {
@@ -7215,7 +7215,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "kernel_size": ParameterMetadata(
             ui_display_name=None,
@@ -7428,7 +7428,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "RoBERTaEncoder": {
@@ -8500,7 +8500,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "kernel_size": ParameterMetadata(
             ui_display_name="Kernel Size",
@@ -8747,7 +8747,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "StackedCNN": {
@@ -13090,7 +13090,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
         "hidden_act": ParameterMetadata(
             ui_display_name="Hidden Layer Activation",
@@ -13355,7 +13355,7 @@ ENCODER_METADATA = {
             commonly_used=False,
             expected_impact=ExpectedImpact.UNKNOWN,
             literature_references=None,
-            internal_only=False,
+            internal_only=True,
         ),
     },
     "XLMEncoder": {

@@ -307,7 +307,7 @@ def run_test_with_features(
         dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
         if expect_error:
-            with pytest.raises(ValueError):
+            with pytest.raises(RuntimeError):
                 run_fn(
                     config,
                     dataset=dataset,
