@@ -397,7 +397,7 @@ class RayDatasetBatcher(Batcher):
         return to_tensors
 
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
-        print("BATCH", batch)
+        # print("BATCH", batch)
         res = {}
         for c in self.columns:
             if self.features[c][TYPE] not in _SCALAR_TYPES:
