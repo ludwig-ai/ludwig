@@ -165,7 +165,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
-        default="l2", description="Type of regularization.", parameter_metadata=TRAINER_METADATA["regularization_type"],
+        default="l2",
+        description="Type of regularization.",
+        parameter_metadata=TRAINER_METADATA["regularization_type"],
     )
 
     regularization_lambda: float = schema_utils.FloatRange(
