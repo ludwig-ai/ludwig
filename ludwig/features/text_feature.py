@@ -224,6 +224,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         return _SequencePreprocessing(metadata)
 
+    def is_trainable(self) -> bool:
+        return self.encoder.is_trainable()
+
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     metric_functions = TextOutputFeatureConfig.get_output_metric_functions()

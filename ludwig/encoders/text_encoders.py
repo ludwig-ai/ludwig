@@ -56,9 +56,18 @@ def _cls_pooled_error_message(encoder: str):
     sys.exit(1)
 
 
+class HFEncoder(Encoder):
+    def __init__(self, trainable: bool):
+        super.__init__()
+        self._trainable = trainable
+
+    def is_trainable(self) -> bool:
+        return self._trainable
+
+
 @DeveloperAPI
 @register_encoder("albert", TEXT)
-class ALBERTEncoder(Encoder):
+class ALBERTEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -100,7 +109,7 @@ class ALBERTEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -194,7 +203,7 @@ class ALBERTEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("mt5", TEXT)
-class MT5Encoder(Encoder):
+class MT5Encoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -235,7 +244,7 @@ class MT5Encoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -324,7 +333,7 @@ class MT5Encoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("xlmroberta", TEXT)
-class XLMRoBERTaEncoder(Encoder):
+class XLMRoBERTaEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -351,7 +360,7 @@ class XLMRoBERTaEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -429,7 +438,7 @@ class XLMRoBERTaEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("bert", TEXT)
-class BERTEncoder(Encoder):
+class BERTEncoder(HFEncoder):
     # TODO(justin): Use official class properties.
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -468,7 +477,7 @@ class BERTEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -561,7 +570,7 @@ class BERTEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("xlm", TEXT)
-class XLMEncoder(Encoder):
+class XLMEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -611,7 +620,7 @@ class XLMEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -709,7 +718,7 @@ class XLMEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("gpt", TEXT)
-class GPTEncoder(Encoder):
+class GPTEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -743,7 +752,7 @@ class GPTEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -820,7 +829,7 @@ class GPTEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("gpt2", TEXT)
-class GPT2Encoder(Encoder):
+class GPT2Encoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -855,7 +864,7 @@ class GPT2Encoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -934,7 +943,7 @@ class GPT2Encoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("roberta", TEXT)
-class RoBERTaEncoder(Encoder):
+class RoBERTaEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -960,7 +969,7 @@ class RoBERTaEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1028,7 +1037,7 @@ class RoBERTaEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("transformer_xl", TEXT)
-class TransformerXLEncoder(Encoder):
+class TransformerXLEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1076,7 +1085,7 @@ class TransformerXLEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1160,7 +1169,7 @@ class TransformerXLEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("xlnet", TEXT)
-class XLNetEncoder(Encoder):
+class XLNetEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1209,7 +1218,7 @@ class XLNetEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1301,7 +1310,7 @@ class XLNetEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
-class DistilBERTEncoder(Encoder):
+class DistilBERTEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1336,7 +1345,7 @@ class DistilBERTEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1415,7 +1424,7 @@ class DistilBERTEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("ctrl", TEXT)
-class CTRLEncoder(Encoder):
+class CTRLEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1449,7 +1458,7 @@ class CTRLEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1527,7 +1536,7 @@ class CTRLEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("camembert", TEXT)
-class CamemBERTEncoder(Encoder):
+class CamemBERTEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1565,7 +1574,7 @@ class CamemBERTEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1655,7 +1664,7 @@ class CamemBERTEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("t5", TEXT)
-class T5Encoder(Encoder):
+class T5Encoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1689,7 +1698,7 @@ class T5Encoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1772,7 +1781,7 @@ class T5Encoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("flaubert", TEXT)
-class FlauBERTEncoder(Encoder):
+class FlauBERTEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1820,7 +1829,7 @@ class FlauBERTEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -1917,7 +1926,7 @@ class FlauBERTEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("electra", TEXT)
-class ELECTRAEncoder(Encoder):
+class ELECTRAEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -1954,7 +1963,7 @@ class ELECTRAEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -2040,7 +2049,7 @@ class ELECTRAEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("longformer", TEXT)
-class LongformerEncoder(Encoder):
+class LongformerEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -2065,7 +2074,7 @@ class LongformerEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:
@@ -2136,7 +2145,7 @@ class LongformerEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("auto_transformer", TEXT)
-class AutoTransformerEncoder(Encoder):
+class AutoTransformerEncoder(HFEncoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
         "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
@@ -2153,7 +2162,7 @@ class AutoTransformerEncoder(Encoder):
         encoder_config=None,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(trainable)
         self.config = encoder_config
 
         try:

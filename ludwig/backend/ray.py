@@ -723,7 +723,9 @@ class RayPredictor(BasePredictor):
                 self.model.eval()  # set model to eval mode
 
                 with torch.no_grad():
-                    with self.model.skip_features(set([feat for feat in self.model.input_features if feat.trainable])):
+                    with self.model.skip_features(
+                        set([feat for feat in self.model.input_features if feat.is_trainable()])
+                    ):
                         inputs = {
                             i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
                                 self.device

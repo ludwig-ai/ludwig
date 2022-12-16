@@ -29,3 +29,6 @@ class Encoder(LudwigModule, ABC):
     @property
     def name(self):
         return self.__class__.__name__
+
+    def is_trainable(self) -> bool:
+        return True

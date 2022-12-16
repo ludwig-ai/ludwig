@@ -161,6 +161,14 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
         raise NotImplementedError("Torchscript tracing not supported for feature")
 
+    def is_trainable(self) -> bool:
+        """Whether the input feature encoder's weights will be updated during training.
+
+        Some pretrained encoders will not be trainable, and in those cases we will optimize
+        the data loader to avoid repeatedly encoding the same input tensors between epochs.
+        """
+        return True
+
 
 class OutputFeature(BaseFeature, LudwigModule, ABC):
     """Parent class for all output features."""
