@@ -1742,7 +1742,7 @@ class DistilBERTConfig(BaseEncoderConfig):
     )
 
     trainable: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="Whether to train the model.",
         parameter_metadata=ENCODER_METADATA["DistilBERTEncoder"]["trainable"],
     )
@@ -1898,7 +1898,7 @@ class CTRLConfig(BaseEncoderConfig):
     )
 
     trainable: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="Whether to train the model.",
         parameter_metadata=ENCODER_METADATA["CTRLEncoder"]["trainable"],
     )

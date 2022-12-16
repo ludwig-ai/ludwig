@@ -22,6 +22,7 @@ from typing import List, Optional, Set, Union
 
 import numpy as np
 
+from ludwig.constants import PADDING_SYMBOL, START_SYMBOL, STOP_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataframe.pandas import PANDAS
 from ludwig.utils.fs_utils import open_file
@@ -34,12 +35,6 @@ PANDAS_FALSE_STRS = {"false"}
 
 BOOL_TRUE_STRS = {"yes", "y", "true", "t", "1", "1.0"}
 BOOL_FALSE_STRS = {"no", "n", "false", "f", "0", "0.0"}
-
-# Special symbols.
-STOP_SYMBOL = "<EOS>"
-START_SYMBOL = "<SOS>"
-PADDING_SYMBOL = "<PAD>"
-UNKNOWN_SYMBOL = "<UNK>"
 
 logger = logging.getLogger(__name__)
 

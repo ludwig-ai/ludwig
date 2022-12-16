@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Set, Union
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+import yaml
 from dataclasses_json import dataclass_json, LetterCase
 
 from ludwig.api_annotations import DeveloperAPI
@@ -34,6 +35,8 @@ from ludwig.constants import (
     TEXT,
     TYPE,
 )
+from ludwig.profiling import dataset_profile_pb2
+from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
@@ -93,7 +96,13 @@ def allocate_experiment_resources(resources: Resources) -> dict:
     return experiment_resources
 
 
-def _get_hyperopt_config(experiment_resources: Dict[str, Any], time_limit_s: Union[int, float], random_seed: int):
+def get_resource_aware_hyperopt_config(
+    experiment_resources: Dict[str, Any], time_limit_s: Union[int, float], random_seed: int
+) -> Dict[str, Any]:
+    """Returns a Ludwig config with the hyperopt section populated with appropriate parameters.
+
+    Hyperopt parameters are intended to be appropriate for the given resources and time limit.
+    """
     executor = experiment_resources
     executor.update({"time_budget_s": time_limit_s})
     if time_limit_s is not None:
@@ -118,6 +127,33 @@ def _get_stratify_split_config(field_meta: FieldMetadata) -> dict:
     }
 
 
+def get_default_automl_hyperopt() -> Dict[str, Any]:
+    """Returns general, default settings for hyperopt.
+
+    For example:
+    - We set a random_state_seed for sample sequence repeatability
+    - We use an increased reduction_factor to get more pruning/exploration.
+
+    TODO: If settings seem reasonable, consider building this into the hyperopt schema, directly.
+    """
+    return yaml.safe_load(
+        """
+  search_alg:
+    type: hyperopt
+  executor:
+    type: ray
+    num_samples: 10
+    time_budget_s: 3600
+    scheduler:
+      type: async_hyperband
+      time_attr: time_total_s
+      max_t: 3600
+      grace_period: 72
+      reduction_factor: 5
+"""
+    )
+
+
 def _create_default_config(
     dataset_info: DatasetInfo,
     target_name: Union[str, List[str]],
@@ -138,7 +174,7 @@ def _create_default_config(
       trial
 
     # Inputs
-    :param dataset: (str) filepath to dataset.
+    :param dataset_info: (str) filepath Dataset Info object.
     :param target_name: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                                     as the stopping parameter
@@ -147,6 +183,7 @@ def _create_default_config(
                         hyperparameter search sampling, as well as data splitting,
                         parameter initialization and training set shuffling
     :param imbalance_threshold: (float) maximum imbalance ratio (minority / majority) to perform stratified sampling
+    :param backend: (Backend) backend to use for training.
 
     # Return
     :return: (dict) dictionaries contain auto train config files for all available
@@ -170,7 +207,7 @@ def _create_default_config(
     # update hyperopt config
     experiment_resources = allocate_experiment_resources(resources)
     base_automl_config = merge_dict(
-        base_automl_config, _get_hyperopt_config(experiment_resources, time_limit_s, random_seed)
+        base_automl_config, get_resource_aware_hyperopt_config(experiment_resources, time_limit_s, random_seed)
     )
 
     # add preprocessing section if single output feature is imbalanced
@@ -198,7 +235,7 @@ def _create_default_config(
         combiner_config = load_yaml(default_config)
         model_configs[COMBINER][combiner_type] = combiner_config
 
-    return model_configs, features_metadata
+    return model_configs
 
 
 # Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
@@ -241,6 +278,11 @@ def is_field_boolean(source: DataSource, field: str) -> bool:
             return False
         return True
     return False
+
+
+@DeveloperAPI
+def get_dataset_profile_from_source(source: DataSource) -> dataset_profile_pb2.DatasetProfile:
+    return get_dataset_profile_proto(get_dataset_profile_view(source.df))
 
 
 @DeveloperAPI

@@ -19,9 +19,17 @@ import pandas as pd
 import yaml
 
 from ludwig.api import LudwigModel
-from ludwig.api_annotations import PublicAPI
+from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.automl.auto_tune_config import memory_tune_config
-from ludwig.automl.base_config import _create_default_config, _get_reference_configs, DatasetInfo, get_dataset_info
+from ludwig.automl.base_config import (
+    _create_default_config,
+    _get_reference_configs,
+    allocate_experiment_resources,
+    DatasetInfo,
+    get_dataset_info,
+    get_default_automl_hyperopt,
+    get_resource_aware_hyperopt_config,
+)
 from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
@@ -30,6 +38,8 @@ from ludwig.constants import (
     ENCODER,
     HYPEROPT,
     IMAGE,
+    INPUT_FEATURES,
+    OUTPUT_FEATURES,
     TABULAR,
     TEXT,
     TYPE,
@@ -37,18 +47,21 @@ from ludwig.constants import (
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.hyperopt.run import hyperopt
-from ludwig.utils.automl.ray_utils import _ray_init
-from ludwig.utils.automl.utils import (
-    _add_transfer_config,
-    get_model_type,
-    has_imbalanced_output,
-    set_output_feature_metric,
+from ludwig.profiling import dataset_profile_pb2
+from ludwig.profiling.dataset_profile import (
+    get_column_profile_summaries_from_proto,
+    get_dataset_profile_proto,
+    get_dataset_profile_view,
 )
+from ludwig.profiling.type_inference import get_ludwig_type_map_from_column_profile_summaries
+from ludwig.utils.automl.ray_utils import _ray_init
+from ludwig.utils.automl.utils import _add_transfer_config, get_model_type, set_output_feature_metric
 from ludwig.utils.data_utils import load_dataset, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.types import DataFrame
 
 try:
     import dask.dataframe as dd
@@ -144,6 +157,66 @@ def auto_train(
     return train_with_config(dataset, config, output_directory=output_directory, random_seed=random_seed, **kwargs)
 
 
+@DeveloperAPI
+def create_auto_config_with_dataset_profile(
+    target: str,
+    dataset: Optional[Union[str, DataFrame]] = None,
+    dataset_profile: dataset_profile_pb2.DatasetProfile = None,
+    random_seed: int = default_random_seed,
+    include_hyperopt: bool = False,
+    time_limit_s: Union[int, float] = None,
+    backend: Union[Backend, str] = None,
+) -> dict:
+    """Returns the best single-shot Ludwig config given a Ludwig dataset or dataset profile.
+
+    If only the dataset is provided, then a new profile is computed.
+    Only one of the dataset or dataset_profile should be specified, not both.
+
+    This function is intended to eventually replace create_auto_config().
+    """
+    if dataset is None and dataset_profile is None:
+        raise ValueError("Please specify either a dataset or a dataset_profile.")
+    if dataset is not None and dataset_profile is not None:
+        raise ValueError("Please specify either a dataset or a dataset_profile. It is an error to specify both.")
+
+    # Get the dataset profile.
+    if dataset_profile is None:
+        dataset_profile = get_dataset_profile_proto(get_dataset_profile_view(dataset))
+
+    # Use the dataset profile to get Ludwig types.
+    ludwig_type_map = get_ludwig_type_map_from_column_profile_summaries(
+        get_column_profile_summaries_from_proto(dataset_profile)
+    )
+
+    # Add features along with their profiled types.
+    automl_config = {}
+    automl_config[INPUT_FEATURES] = []
+    automl_config[OUTPUT_FEATURES] = []
+    for feature_name, ludwig_type in ludwig_type_map.items():
+        if feature_name == target:
+            automl_config[OUTPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
+        else:
+            automl_config[INPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
+
+    # Set the combiner to tabnet, by default.
+    automl_config.get("combiner", {})[TYPE] = "tabnet"
+
+    # Add hyperopt, if desired.
+    if include_hyperopt:
+        automl_config[HYPEROPT] = get_default_automl_hyperopt()
+
+        # Merge resource-sensitive settings.
+        backend = initialize_backend(backend)
+        resources = backend.get_available_resources()
+        experiment_resources = allocate_experiment_resources(resources)
+        automl_config = merge_dict(
+            automl_config, get_resource_aware_hyperopt_config(experiment_resources, time_limit_s, random_seed)
+        )
+
+    # TODO: Adjust preprocessing parameters according to output feature imbalance.
+    return automl_config
+
+
 @PublicAPI
 def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
@@ -184,11 +257,11 @@ def create_auto_config(
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
-    default_configs, features_metadata = _create_default_config(
+    default_configs = _create_default_config(
         dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
     )
     model_config, model_category, row_count = _model_select(
-        dataset_info, default_configs, features_metadata, user_config, use_reference_config
+        dataset_info, default_configs, user_config, use_reference_config
     )
     if tune_for_memory:
         args = (model_config, dataset, model_category, row_count, backend)
@@ -265,7 +338,6 @@ def train_with_config(
 def _model_select(
     dataset_info: DatasetInfo,
     default_configs,
-    features_metadata,
     user_config,
     use_reference_config: bool,
 ):
@@ -275,7 +347,7 @@ def _model_select(
     """
     fields = dataset_info.fields
 
-    base_config = default_configs["base_config"]
+    base_config = copy.deepcopy(default_configs["base_config"])
     model_category = None
 
     # tabular dataset heuristics
@@ -290,26 +362,29 @@ def _model_select(
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
-        for input_feature in base_config["input_features"]:
+        input_features = default_configs["base_config"]["input_features"]
+        for i, input_feature in enumerate(input_features):
+            base_config_input_feature = base_config["input_features"][i]
             # default text encoder is bert
             if input_feature[TYPE] == TEXT:
                 model_category = TEXT
                 if ENCODER in input_feature:
-                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
+                    base_config_input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_TEXT_ENCODER
                 else:
-                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
+                    base_config_input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_TEXT_ENCODER}
+                # TODO(shreya): Should this hyperopt config param be set here?
                 base_config[HYPEROPT]["executor"]["num_samples"] = 5  # set for small hyperparameter search space
+                base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
 
             # TODO (ASN): add image heuristics
             if input_feature[TYPE] == IMAGE:
                 model_category = IMAGE
                 if ENCODER in input_feature:
-                    input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
+                    base_config_input_feature[ENCODER][TYPE] = AUTOML_DEFAULT_IMAGE_ENCODER
                 else:
-                    input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
+                    base_config_input_feature[ENCODER] = {TYPE: AUTOML_DEFAULT_IMAGE_ENCODER}
 
-        # Needs to be outside for loop because merge dict creates deep copy - this prevents image section from setting
-        base_config = merge_dict(base_config, default_configs[TEXT][AUTOML_DEFAULT_TEXT_ENCODER])
+        # Merge combiner config
         base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
 
     # override and constrain automl config based on user specified values
@@ -324,10 +399,6 @@ def _model_select(
             if config_section in user_config.keys():
                 if param in user_config[config_section]:
                     del base_config["hyperopt"]["parameters"][hyperopt_params]
-
-    # check if any binary or category output feature has highly imbalanced minority vs majority values
-    # note: check is done after any relevant user_config has been applied
-    has_imbalanced_output(base_config, features_metadata)
 
     # if single output feature, set relevant metric and goal if not already set
     base_config = set_output_feature_metric(base_config)
