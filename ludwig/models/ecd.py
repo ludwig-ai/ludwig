@@ -10,6 +10,7 @@ import torchmetrics
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD
 from ludwig.encoders.text_encoders import EncoderMode
+from ludwig.features.base_feature import InputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig
@@ -65,7 +66,7 @@ class ECD(BaseModel):
         clear_data_cache()
 
     @contextlib.contextmanager
-    def set_mode(self, features: Set[str], mode: EncoderMode):
+    def set_mode(self, features: Set[InputFeature], mode: EncoderMode):
         try:
             for f in features:
                 f.set_mode(mode)

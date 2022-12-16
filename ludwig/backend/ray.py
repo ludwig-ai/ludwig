@@ -506,7 +506,7 @@ class RayTrainerV2(BaseTrainer):
                 }
 
             def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-                # print("INPUTS", df)
+                print("INPUTS", df)
                 batch = self._prepare_batch(df)
 
                 prev_model_training_mode = self.model.training  # store previous model training mode
@@ -518,7 +518,7 @@ class RayTrainerV2(BaseTrainer):
 
                 with torch.no_grad():
                     with self.model.set_mode(
-                        set([feat.feature_name for feat in self.model.input_features.values() if feat.is_trainable()]),
+                        set([feat for feat in self.model.input_features.values() if not feat.is_trainable()]),
                         EncoderMode.EMBEDDING_OUTPUT,
                     ):
                         name_to_proc = {
@@ -539,7 +539,7 @@ class RayTrainerV2(BaseTrainer):
                 # reset model to its original training mode
                 self.model.train(prev_model_training_mode)
                 df = from_numpy_dataset({**encoded, **outputs_features})
-                # print("OUTPUTS", df)
+                print("OUTPUTS", df)
                 return df
 
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:

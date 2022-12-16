@@ -177,23 +177,27 @@ class TextFeatureMixin(BaseFeatureMixin):
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
+        self.mode = EncoderMode.FULL_INPUT_OUTPUT
 
     def forward(self, inputs, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert (
-            inputs.dtype == torch.int8
-            or inputs.dtype == torch.int16
-            or inputs.dtype == torch.int32
-            or inputs.dtype == torch.int64
-        )
-        assert len(inputs.shape) == 2
+        if self.mode != EncoderMode.EMBEDDING_INPUT:
+            assert isinstance(inputs, torch.Tensor)
+            assert (
+                inputs.dtype == torch.int8
+                or inputs.dtype == torch.int16
+                or inputs.dtype == torch.int32
+                or inputs.dtype == torch.int64
+            )
+            assert len(inputs.shape) == 2
 
-        inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
+            inputs_mask = torch.not_equal(inputs, SpecialSymbol.PADDING.value)
 
-        inputs_exp = inputs.type(torch.int32)
-        lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
-        encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
-        encoder_output[LENGTHS] = lengths
+            inputs_exp = inputs.type(torch.int32)
+            lengths = torch.sum(inputs_mask.type(torch.int32), dim=1)
+            encoder_output = self.encoder_obj(inputs_exp, mask=inputs_mask)
+            encoder_output[LENGTHS] = lengths
+        else:
+            encoder_output = self.encoder_obj(inputs, mask=None)
 
         return encoder_output
 
@@ -229,6 +233,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         return self.encoder_obj.is_trainable()
 
     def set_mode(self, mode: EncoderMode) -> bool:
+        self.mode = mode
         return self.encoder_obj.set_mode(mode)
 
 
