@@ -57,7 +57,7 @@ from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.features.feature_registries import base_type_registry
+from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
@@ -1248,7 +1248,7 @@ def cast_columns(dataset_cols, features, backend) -> None:
         # todo figure out if additional parameters are needed
         #  for the cast_column function
         try:
-            dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], base_type_registry).cast_column(
+            dataset_cols[feature[COLUMN]] = get_from_registry(feature[TYPE], get_base_type_registry()).cast_column(
                 dataset_cols[feature[COLUMN]], backend
             )
         except KeyError as e:
@@ -1324,7 +1324,7 @@ def build_metadata(
         preprocessing_parameters = feature_name_to_preprocessing_parameters[feature_name]
 
         column = dataset_cols[feature_config[COLUMN]]
-        metadata[feature_name] = get_from_registry(feature_config[TYPE], base_type_registry).get_feature_meta(
+        metadata[feature_name] = get_from_registry(feature_config[TYPE], get_base_type_registry()).get_feature_meta(
             column, preprocessing_parameters, backend
         )
 
@@ -1360,7 +1360,7 @@ def build_data(
         # Need to run this again here as cast_columns may have introduced new missing values
         handle_missing_values(input_cols, feature_config, preprocessing_parameters, backend)
 
-        get_from_registry(feature_config[TYPE], base_type_registry).add_feature_data(
+        get_from_registry(feature_config[TYPE], get_base_type_registry()).add_feature_data(
             feature_config,
             input_cols,
             proc_cols,

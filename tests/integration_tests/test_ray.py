@@ -172,6 +172,9 @@ def run_preprocessing(
     dataset_type="parquet",
     num_examples_per_split=20,
     nan_percent=0.0,
+    first_row_none=False,
+    last_row_none=False,
+    nan_cols=None,
 ):
     # Split the dataset manually to avoid randomness in splitting
     split_to_df = {}
@@ -189,7 +192,8 @@ def run_preprocessing(
         split_to_df[split] = dataset_df
     full_df_path = os.path.join(tmpdir, "dataset.csv")
     pd.concat(split_to_df.values()).to_csv(full_df_path, index=False)
-    dataset_path = create_data_set_to_use(dataset_type, full_df_path, nan_percent=nan_percent)
+    dataset = create_data_set_to_use(dataset_type, full_df_path, nan_percent=nan_percent)
+    dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
     # Configure ray backend
     config = {
@@ -211,7 +215,7 @@ def run_preprocessing(
     ray_model = LudwigModel(config, backend=backend_config)
     *ray_datasets, ray_training_set_metadata = ray_model.preprocess(
         skip_save_processed_input=False,  # Save the processed input to test pyarrow write/read
-        dataset=dataset_path,
+        dataset=dataset,
     )
 
     # Run preprocessing with local backend using the ray_training_set_metadata to ensure parity of
@@ -219,7 +223,7 @@ def run_preprocessing(
     local_model = LudwigModel(config, backend=LOCAL_BACKEND)
     *local_datasets, _ = local_model.preprocess(
         training_set_metadata=ray_training_set_metadata,
-        dataset=dataset_path,
+        dataset=dataset,
     )
 
     for ray_dataset, local_dataset in zip(ray_datasets, local_datasets):
@@ -287,7 +291,7 @@ def run_test_with_features(
     preprocessing=None,
     first_row_none=False,
     last_row_none=False,
-    nan_cols=[],
+    nan_cols=None,
     required_metrics=None,
 ):
     preprocessing = preprocessing or {}
@@ -311,7 +315,7 @@ def run_test_with_features(
         dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
         if expect_error:
-            with pytest.raises(ValueError):
+            with pytest.raises(RuntimeError):
                 run_fn(
                     config,
                     dataset=dataset,
@@ -592,12 +596,12 @@ def test_ray_image_with_fill_strategy_edge_cases(tmpdir, settings, ray_cluster_2
     output_features = [
         binary_feature(),
     ]
-    run_test_with_features(
+    run_preprocessing(
+        tmpdir,
+        "dask",
         input_features,
         output_features,
-        df_engine="dask",
         dataset_type="pandas+numpy_images",
-        skip_save_processed_input=False,
         first_row_none=first_row_none,
         last_row_none=last_row_none,
         nan_cols=[input_features[0][NAME]],

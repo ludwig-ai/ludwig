@@ -21,7 +21,7 @@ import yaml
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.contrib import add_contrib_callback_args
-from ludwig.features.feature_registries import input_type_registry
+from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema import validate_config
 from ludwig.schema.model_config import ModelConfig
@@ -37,7 +37,8 @@ default_random_seed = 42
 
 # Still needed for preprocessing  TODO(Connor): Refactor ludwig/data/preprocessing to use schema
 default_feature_specific_preprocessing_parameters = {
-    name: preproc_sect.get_schema_cls()().preprocessing.to_dict() for name, preproc_sect in input_type_registry.items()
+    name: preproc_sect.get_schema_cls()().preprocessing.to_dict()
+    for name, preproc_sect in get_input_type_registry().items()
 }
 
 default_preprocessing_parameters = copy.deepcopy(default_feature_specific_preprocessing_parameters)

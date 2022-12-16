@@ -18,7 +18,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.feature_registries import output_type_registry
+from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema import get_schema, validate_config
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
@@ -93,7 +93,7 @@ def test_config_features():
 
     # test various invalid output features
     input_only_features = [
-        feature for feature in all_input_features if feature["type"] not in output_type_registry.keys()
+        feature for feature in all_input_features if feature["type"] not in get_output_type_registry().keys()
     ]
     for input_feature in input_only_features:
         config = {
@@ -364,9 +364,6 @@ def test_schema_no_duplicates():
         assert field not in schema["properties"]["output_features"]["items"]["allOf"][0]["then"]["properties"]
         assert field not in schema["properties"]["combiner"]["allOf"][0]["then"]["properties"]
         assert field not in schema["properties"]["trainer"]["properties"]["optimizer"]["allOf"][0]["then"]["properties"]
-        assert (
-            field not in schema["properties"]["preprocessing"]["properties"]["split"]["allOf"][0]["then"]["properties"]
-        )
         assert (
             field
             not in schema["properties"]["input_features"]["items"]["allOf"][0]["then"]["properties"]["encoder"][

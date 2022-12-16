@@ -163,14 +163,20 @@ def stratify_split_dataframe(
 
     # Dataframe of just the column on which to stratify
     y = df[[column]]
-    df_train, df_temp, _, y_temp = train_test_split(
-        df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
-    )
-    # Split the temp dataframe into val and test dataframes.
-    relative_frac_test = frac_test / (frac_val + frac_test)
-    df_val, df_test, _, _ = train_test_split(
-        df_temp, y_temp, stratify=y_temp, test_size=relative_frac_test, random_state=random_seed
-    )
+    try:
+        df_train, df_temp, _, y_temp = train_test_split(
+            df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
+        )
+        # Split the temp dataframe into val and test dataframes.
+        relative_frac_test = frac_test / (frac_val + frac_test)
+        df_val, df_test, _, _ = train_test_split(
+            df_temp, y_temp, stratify=y_temp, test_size=relative_frac_test, random_state=random_seed
+        )
+    except ValueError:
+        raise ValueError(
+            "Stratified splitting cannot be performed because the least populated class has too few examples. "
+            "Consider adding more data, consolidating rare classes by setting vocab_size, or using a random split."
+        )
 
     return df_train, df_val, df_test
 

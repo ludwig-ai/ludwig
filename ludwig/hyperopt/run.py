@@ -33,7 +33,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import output_type_registry
+from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import (
     log_warning_if_all_grid_type_parameters,
@@ -301,7 +301,7 @@ def hyperopt(
         for of in full_config[OUTPUT_FEATURES]:
             if of[NAME] == output_feature:
                 output_feature_type = of[TYPE]
-        feature_class = get_from_registry(output_feature_type, output_type_registry)
+        feature_class = get_from_registry(output_feature_type, get_output_type_registry())
         if metric not in feature_class.metric_functions:
             # todo v0.4: allow users to specify also metrics from the overall
             #  and per class metrics from the training stats and in general
