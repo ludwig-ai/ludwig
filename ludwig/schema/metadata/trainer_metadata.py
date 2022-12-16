@@ -650,7 +650,10 @@ TRAINER_METADATA = (
                                                                          'data. Unfortunately, that ideal value of '
                                                                          'lambda '
                                                                          "is data-dependent, so you'll need to do some "
-                                                                         'tuning.',
+                                                                         'tuning. We recommend trying a handful of '
+                                                                         "values (0.01, 0.02, ... 0.4) gradually "
+                                                                         "increasing the value until training curves "
+                                                                         "get worse",
                                                 suggested_values=0.1,
                                                 suggested_values_reasoning='The most common type of regularization is '
                                                                            'L2, '

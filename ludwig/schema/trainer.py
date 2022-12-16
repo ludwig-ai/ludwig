@@ -52,7 +52,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
         field_options=[
-            schema_utils.NonNegativeFloat(default=0.001, allow_none=False),
+            schema_utils.NonNegativeFloat(default=0.001, allow_none=False, max=1),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -165,12 +165,13 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
-        default="l2", description="Type of regularization."
+        default="l2", description="Type of regularization.", parameter_metadata=TRAINER_METADATA["regularization_type"],
     )
 
-    regularization_lambda: float = schema_utils.FloatRange(
+    regularization_lambda: float = schema_utils.NonNegativeFloat(
         default=0.0,
         min=0,
+        max=1,
         description="Strength of the $L2$ regularization.",
         parameter_metadata=TRAINER_METADATA["regularization_lambda"],
     )
