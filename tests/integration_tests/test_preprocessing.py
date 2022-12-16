@@ -370,7 +370,7 @@ def test_empty_training_set_error(backend, tmpdir, ray_cluster_2cpu):
     df[out_feat[COLUMN]] = None
 
     ludwig_model = LudwigModel(config, backend=backend)
-    with pytest.raises(ValueError, match="Training data is empty following preprocessing"):
+    with pytest.raises(RuntimeError, match="Training data is empty following preprocessing"):
         ludwig_model.preprocess(dataset=df)
 
 
