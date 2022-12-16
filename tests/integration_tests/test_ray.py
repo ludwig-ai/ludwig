@@ -480,22 +480,14 @@ def test_ray_text_sequence_timeseries(tmpdir, ray_cluster_2cpu, dataset_type):
 
 
 @pytest.mark.distributed
-@pytest.mark.parametrize("dataset_type", "parquet")
-def test_ray_text_pretrained(tmpdir, ray_cluster_2cpu, dataset_type):
+def test_ray_text_pretrained(ray_cluster_2cpu):
     input_features = [
         text_feature(encoder={"type": "distilbert"}),
     ]
     output_features = [
         binary_feature(),
     ]
-    run_preprocessing(
-        tmpdir,
-        "dask",
-        input_features,
-        output_features,
-        dataset_type=dataset_type,
-        nan_percent=0.0,
-    )
+    run_test_with_features(input_features, output_features)
 
 
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])

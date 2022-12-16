@@ -58,7 +58,7 @@ def _cls_pooled_error_message(encoder: str):
 
 class HFEncoder(Encoder):
     def __init__(self, trainable: bool):
-        super.__init__()
+        super().__init__()
         self._trainable = trainable
 
     def is_trainable(self) -> bool:

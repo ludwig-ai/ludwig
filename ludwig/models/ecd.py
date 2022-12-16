@@ -64,7 +64,7 @@ class ECD(BaseModel):
         clear_data_cache()
 
     @contextlib.contextmanager
-    def skip(self, features: Set[str]):
+    def skip_features(self, features: Set[str]):
         prev_features = self._skip_features
         try:
             self._skip_features = features
