@@ -380,6 +380,23 @@ def test_torchscript_e2e_text_hf_tokenizer(tmpdir, csv_filename):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
 
 
+@pytest.mark.skipif(
+    torch.torch_version.TorchVersion(torchtext.__version__) < (0, 14, 0),
+    reason="requires torchtext 0.14.0 or higher",
+)
+def test_torchscript_e2e_text_hf_tokenizer_truncated_sequence(tmpdir, csv_filename):
+    data_csv_path = os.path.join(tmpdir, csv_filename)
+    input_features = [text_feature(encoder={"vocab_size": 3, "type": "bert"}, preprocessing={"max_sequence_length": 3})]
+    output_features = [
+        text_feature(decoder={"vocab_size": 3}),
+    ]
+    backend = LocalTestBackend()
+    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
+
+    validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
+
+
 def test_torchscript_e2e_sequence(tmpdir, csv_filename):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     input_features = [
