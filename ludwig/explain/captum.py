@@ -241,26 +241,21 @@ def get_total_attribution(
         attributions_reduced = []
         for a in attribution:
             a_reduced = a.detach().cpu()
-            if a.dim() > 1:
+            if a.ndim > 1:
                 # Convert to token-level attributions by summing over the embedding dimension.
                 a_reduced = a.sum(dim=-1).squeeze(0)
-            if a_reduced.dim() == 2:
+            if a_reduced.ndim == 2:
                 # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
                 # norm of the sequence.
                 a_reduced = a_reduced / torch.norm(a_reduced)
             attributions_reduced.append(a_reduced.numpy())
 
+        token_attributions = {}
+        for inputs, attrs, feat_name in zip(input_batch, attributions_reduced, model.model.input_features.keys()):
+            if attrs.ndim == 2:
+                token_attributions[feat_name] = get_token_attributions(model, feat_name, inputs, attrs)
+
         # TODO: refactor below
-
-        # get the input tokens
-        vocab = model.training_set_metadata["text_B53E8"]["idx2str"]
-        detokenize = lambda idx: vocab[idx]
-        detokenize = np.vectorize(detokenize)
-        input_ids = input_batch[0].numpy()
-        input_tokens = detokenize(input_ids)
-
-        # add attribution to the input tokens
-        tok_attrs = np.stack((input_tokens, attributions_reduced[0]), axis=2)  # [batch_size, sequence_length, 2]
 
         # Transpose to [batch_size, num_input_features]
         attribution = attribution.T
@@ -280,3 +275,41 @@ def get_total_attribution(
         total_attribution /= nsamples
 
     return total_attribution
+
+
+def get_token_attributions(
+    model: LudwigModel,
+    feature_name: str,
+    input_ids: torch.Tensor,
+    token_attributions: np.array,
+) -> np.array:
+    """
+    Convert token-level attributions to an array of token-attribution pairs of shape [batch_size, sequence_length, 2].
+
+    # Inputs
+
+    model: LudwigModel: The LudwigModel used to generate the attributions.
+    feature_name: str: The name of the feature for which the attributions were generated.
+    input_ids: torch.Tensor: The input ids of shape [batch_size, sequence_length].
+    token_attributions: torch.Tensor: The token-level attributions of shape [batch_size, sequence_length].
+
+    # Returns
+
+    np.array: An array of token-attribution pairs of shape [batch_size, sequence_length, 2].
+    """
+    assert (
+        input_ids.dtype == torch.int8
+        or input_ids.dtype == torch.int16
+        or input_ids.dtype == torch.int32
+        or input_ids.dtype == torch.int64
+    )
+
+    # map input ids to input tokens via the vocabulary
+    vocab = model.training_set_metadata[feature_name]["idx2str"]
+    idx2str = np.vectorize(lambda idx: vocab[idx])
+    input_tokens = idx2str(input_ids)
+
+    # add attribution to the input tokens
+    tok_attrs = np.stack((input_tokens, token_attributions), axis=2)  # [batch_size, sequence_length, 2]
+
+    return tok_attrs
