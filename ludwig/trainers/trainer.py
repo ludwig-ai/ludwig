@@ -267,6 +267,10 @@ class Trainer(BaseTrainer):
         else:
             self.optimizer.step()
 
+        # Update evaluation metrics with current model params:
+        # noisy but fast way to get metrics on the training set
+        self.model.update_metrics(targets, model_outputs)
+
         return loss, all_losses
 
     def clip_grads(self, variables):
@@ -582,28 +586,9 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
-        if self.evaluate_training_set:
-            self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
-            )
 
-            self.write_eval_summary(
-                summary_writer=train_summary_writer,
-                metrics=progress_tracker.train_metrics,
-                step=progress_tracker.steps,
-            )
-        else:
-            # Training set is not evaluated. Add loss to the progress tracker.
-            progress_tracker.train_metrics[COMBINED][LOSS].append(
-                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
-            )
-            for output_feature_name, loss_tensor in all_losses.items():
-                progress_tracker.train_metrics[output_feature_name][LOSS].append(
-                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
-                )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
-
+        metrics = self.model.get_metrics()
+        append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
         self.write_eval_summary(
             summary_writer=train_summary_writer,
             metrics=progress_tracker.train_metrics,
