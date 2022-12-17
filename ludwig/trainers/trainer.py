@@ -269,7 +269,8 @@ class Trainer(BaseTrainer):
 
         # Update evaluation metrics with current model params:
         # noisy but fast way to get metrics on the training set
-        self.model.update_metrics(targets, model_outputs)
+        predictions = self.model.outputs_to_predictions(model_outputs)
+        self.model.update_metrics(targets, predictions)
 
         return loss, all_losses
 
