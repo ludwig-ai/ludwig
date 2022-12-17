@@ -18,6 +18,7 @@ import sys
 from typing import Callable, Dict, List, Optional, Union
 
 import torch
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
@@ -1299,6 +1300,22 @@ class XLNetEncoder(Encoder):
         return torch.int32
 
 
+class WrapperModule(nn.Module):
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.module = module
+
+
+class FrozenModule(nn.Module):
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.module = module
+
+    def train(self, mode: bool = True):
+        # Ignores any attempt to set params trainable
+        return self
+
+
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
 class DistilBERTEncoder(Encoder):
@@ -1351,7 +1368,7 @@ class DistilBERTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            self.transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = DistilBertConfig(
                 vocab_size=vocab_size,
@@ -1368,20 +1385,22 @@ class DistilBERTEncoder(Encoder):
                 qa_dropout=qa_dropout,
                 seq_classif_dropout=seq_classif_dropout,
             )
-            self.transformer = DistilBertModel(config)
+            transformer = DistilBertModel(config)
 
         if trainable:
-            self.transformer.train()
+            transformer.train()
+            self.transformer = WrapperModule(transformer)
         else:
-            freeze_parameters(self.transformer)
-            self.transformer.eval()
+            freeze_parameters(transformer)
+            transformer.eval()
+            self.transformer = FrozenModule(transformer)
 
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.resize_token_embeddings(vocab_size)
+        self.transformer.module.resize_token_embeddings(vocab_size)
         self.last_inputs = None
         self.last_hidden = None
 
@@ -1392,7 +1411,7 @@ class DistilBERTEncoder(Encoder):
         # print("ENCODER INPUTS", inputs)
         # TODO(travis): uncomment to ensure self.transformer is fixed
         # self.transformer.eval()
-        transformer_outputs = self.transformer(
+        transformer_outputs = self.transformer.module(
             input_ids=inputs,
             attention_mask=mask,
         )
