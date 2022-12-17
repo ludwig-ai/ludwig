@@ -86,10 +86,6 @@ def test_tune_learning_rate_hf_encoder(tmpdir):
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
-
-    assert model.config_obj.trainer.batch_size == "auto"
-    assert model.config_obj.trainer.learning_rate == "auto"
-
     _, _, output_directory = model.train(
         training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
     )
