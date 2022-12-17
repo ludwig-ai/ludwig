@@ -232,6 +232,8 @@ class FreezeModule(nn.Module):
         if frozen:
             freeze_parameters(module)
             module.eval()
+        else:
+            module.train()
         self.module = module
         self.frozen = frozen
 

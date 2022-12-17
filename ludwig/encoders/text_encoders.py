@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import sys
 from typing import Callable, Dict, List, Optional, Union
 
 import torch
@@ -1267,16 +1266,11 @@ class DistilBERTEncoder(Encoder):
         if mask is not None:
             mask = mask.to(torch.int32)
 
-        # print("ENCODER INPUTS", inputs)
-        # TODO(travis): uncomment to ensure self.transformer is fixed
-        # self.transformer.eval()
         transformer_outputs = self.transformer.module(
             input_ids=inputs,
             attention_mask=mask,
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
-        # if self.last_inputs is not None and torch.equal(inputs, self.last_inputs):
-        #     assert torch.equal(hidden, self.last_hidden)
         self.last_inputs = inputs
         self.last_hidden = hidden
         hidden = self.reduce_sequence(hidden, self.reduce_output)
