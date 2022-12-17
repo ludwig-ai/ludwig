@@ -219,22 +219,28 @@ class LudwigModule(Module):
             raise ValueError("Unknown output tensor type.")
 
 
-@DeveloperAPI
-class WrapperModule(nn.Module):
-    def __init__(self, module: nn.Module):
-        super().__init__()
-        self.module = module
+def freeze_parameters(module: nn.Module):
+    """Freezes the parameters of a torch module."""
+    for p in module.parameters():
+        p.requires_grad = False
 
 
 @DeveloperAPI
-class FrozenModule(nn.Module):
-    def __init__(self, module: nn.Module):
+class FreezeModule(nn.Module):
+    def __init__(self, module: nn.Module, frozen: bool):
         super().__init__()
+        if frozen:
+            freeze_parameters(module)
+            module.eval()
         self.module = module
+        self.frozen = frozen
 
     def train(self, mode: bool = True):
-        # Ignores any attempt to set params trainable
-        return self
+        if self.frozen:
+            # Ignores any attempt to set params trainable
+            return self
+
+        return super().train(mode)
 
 
 @DeveloperAPI
