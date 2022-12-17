@@ -1275,7 +1275,6 @@ class DistilBERTEncoder(Encoder):
             attention_mask=mask,
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
-        print("HIDDEN", inputs, hidden)
         # if self.last_inputs is not None and torch.equal(inputs, self.last_inputs):
         #     assert torch.equal(hidden, self.last_hidden)
         self.last_inputs = inputs
