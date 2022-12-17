@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
-import copy
-
 import gc
 import logging
 import math
@@ -35,8 +33,19 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION, TEXT, IMAGE, SEQUENCE, AUTO, \
-    TIMESERIES
+from ludwig.constants import (
+    AUTO,
+    COMBINED,
+    IMAGE,
+    LOSS,
+    MODEL_ECD,
+    SEQUENCE,
+    TEST,
+    TEXT,
+    TIMESERIES,
+    TRAINING,
+    VALIDATION,
+)
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -83,19 +92,19 @@ class Trainer(BaseTrainer):
         return ECDTrainerConfig
 
     def __init__(
-            self,
-            config: ECDTrainerConfig,
-            model: ECD,
-            resume: float = False,
-            skip_save_model: bool = False,
-            skip_save_progress: bool = False,
-            skip_save_log: bool = False,
-            callbacks: List = None,
-            report_tqdm_to_ray=False,
-            random_seed: float = default_random_seed,
-            horovod: Optional[Dict] = None,
-            device: Optional[str] = None,
-            **kwargs,
+        self,
+        config: ECDTrainerConfig,
+        model: ECD,
+        resume: float = False,
+        skip_save_model: bool = False,
+        skip_save_progress: bool = False,
+        skip_save_log: bool = False,
+        callbacks: List = None,
+        report_tqdm_to_ray=False,
+        random_seed: float = default_random_seed,
+        horovod: Optional[Dict] = None,
+        device: Optional[str] = None,
+        **kwargs,
     ):
         """Trains a model with a set of options and hyperparameters listed below. Customizable.
 
@@ -209,7 +218,7 @@ class Trainer(BaseTrainer):
             )
 
     def train_step(
-            self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
+        self, inputs: Dict[str, torch.Tensor], targets: Dict[str, torch.Tensor]
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Performs a single training step.
 
@@ -295,10 +304,10 @@ class Trainer(BaseTrainer):
 
     @classmethod
     def write_eval_summary(
-            cls,
-            summary_writer,
-            metrics,
-            step,
+        cls,
+        summary_writer,
+        metrics,
+        step,
     ):
         if not summary_writer:
             return
@@ -330,9 +339,9 @@ class Trainer(BaseTrainer):
         train_summary_writer.flush()
 
     def train_for_tuning(
-            self,
-            batch_size: int,
-            total_steps: int = 5,
+        self,
+        batch_size: int,
+        total_steps: int = 5,
     ) -> float:
         """Function to be used by tune_batch_size.
 
@@ -357,8 +366,7 @@ class Trainer(BaseTrainer):
         return batch_size / med_duration_s
 
     def tune_learning_rate(self, config: ModelConfigDict) -> float:
-        """Recommend a learning rate based on the feautres in the configs
-        and the associated encoders.
+        """Recommend a learning rate based on the feautres in the configs and the associated encoders.
 
         param:
             config: Ludwig config used to train the model.
@@ -366,7 +374,26 @@ class Trainer(BaseTrainer):
         logger.info("Tuning learning rate...")
 
         features_with_large_encoders = {TEXT, IMAGE, SEQUENCE, AUTO, TIMESERIES}
-        huggingface_encoders = {"bert", "roberta"}
+        huggingface_encoders = {
+            "vit",
+            "ctrl",
+            "camembert",
+            "xlnet",
+            "distilbert",
+            "falubert",
+            "transformer_xl",
+            "xlm",
+            "gpt",
+            "gpt2",
+            "bert",
+            "roberta",
+            "electra",
+            "longformer",
+            "t5",
+            "albert",
+            "mt5",
+            "xlmroberta",
+        }
 
         encoders_in_config = set()
         features_in_config = set()
@@ -410,12 +437,12 @@ class Trainer(BaseTrainer):
         return torch.device(self.device) == torch.device("cpu")
 
     def tune_batch_size(
-            self,
-            config: ModelConfigDict,
-            training_set: Dataset,
-            random_seed: int = default_random_seed,
-            max_trials: int = 20,
-            halving_limit: int = 3,
+        self,
+        config: ModelConfigDict,
+        training_set: Dataset,
+        random_seed: int = default_random_seed,
+        max_trials: int = 20,
+        halving_limit: int = 3,
     ) -> int:
         logger.info("Tuning batch size...")
 
@@ -485,21 +512,21 @@ class Trainer(BaseTrainer):
         return best_batch_size
 
     def run_evaluation(
-            self,
-            training_set,
-            validation_set,
-            test_set,
-            progress_tracker,
-            train_summary_writer,
-            validation_summary_writer,
-            test_summary_writer,
-            model_hyperparameters_path,
-            output_features,
-            metrics_names,
-            save_path,
-            loss: torch.Tensor,
-            all_losses: Dict[str, torch.Tensor],
-            early_stopping_steps: int,
+        self,
+        training_set,
+        validation_set,
+        test_set,
+        progress_tracker,
+        train_summary_writer,
+        validation_summary_writer,
+        test_summary_writer,
+        model_hyperparameters_path,
+        output_features,
+        metrics_names,
+        save_path,
+        loss: torch.Tensor,
+        all_losses: Dict[str, torch.Tensor],
+        early_stopping_steps: int,
     ) -> bool:
         """Runs evaluation over training, validation, and test sets.
 
@@ -748,11 +775,11 @@ class Trainer(BaseTrainer):
 
         try:
             with training_set.initialize_batcher(
-                    batch_size=self.batch_size,
-                    should_shuffle=self.should_shuffle,
-                    seed=self.random_seed,
-                    horovod=self.horovod,
-                    ignore_last=True,
+                batch_size=self.batch_size,
+                should_shuffle=self.should_shuffle,
+                seed=self.random_seed,
+                horovod=self.horovod,
+                ignore_last=True,
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
@@ -875,24 +902,24 @@ class Trainer(BaseTrainer):
         )
 
     def _train_loop(
-            self,
-            batcher,
-            progress_tracker,
-            save_path,
-            train_summary_writer,
-            progress_bar,
-            training_set,
-            validation_set,
-            test_set,
-            start_time,
-            validation_summary_writer,
-            test_summary_writer,
-            model_hyperparameters_path,
-            output_features,
-            metrics_names,
-            checkpoint_manager,
-            final_steps_per_checkpoint: int,
-            early_stopping_steps: int,
+        self,
+        batcher,
+        progress_tracker,
+        save_path,
+        train_summary_writer,
+        progress_bar,
+        training_set,
+        validation_set,
+        test_set,
+        start_time,
+        validation_summary_writer,
+        test_summary_writer,
+        model_hyperparameters_path,
+        output_features,
+        metrics_names,
+        checkpoint_manager,
+        final_steps_per_checkpoint: int,
+        early_stopping_steps: int,
     ) -> bool:
         """Completes up to one epoch through the data."""
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
@@ -997,7 +1024,7 @@ class Trainer(BaseTrainer):
     def train_online(self, dataset):
         self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
-                batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
+            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
         ) as batcher:
             # training step loop
             progress_bar_config = {
@@ -1052,25 +1079,25 @@ class Trainer(BaseTrainer):
         return metrics_log, tables
 
     def check_progress_on_validation(
-            self,
-            progress_tracker,
-            validation_output_feature_name,
-            validation_metric,
-            save_path,
-            model_hyperparameters_path,
-            reduce_learning_rate_on_plateau,
-            reduce_learning_rate_on_plateau_patience,
-            reduce_learning_rate_on_plateau_rate,
-            reduce_learning_rate_eval_metric,
-            reduce_learning_rate_eval_split,
-            increase_batch_size_on_plateau,
-            increase_batch_size_on_plateau_patience,
-            increase_batch_size_on_plateau_rate,
-            increase_batch_size_on_plateau_max,
-            increase_batch_size_eval_metric,
-            increase_batch_size_eval_split,
-            early_stopping_steps: int,
-            skip_save_model,
+        self,
+        progress_tracker,
+        validation_output_feature_name,
+        validation_metric,
+        save_path,
+        model_hyperparameters_path,
+        reduce_learning_rate_on_plateau,
+        reduce_learning_rate_on_plateau_patience,
+        reduce_learning_rate_on_plateau_rate,
+        reduce_learning_rate_eval_metric,
+        reduce_learning_rate_eval_split,
+        increase_batch_size_on_plateau,
+        increase_batch_size_on_plateau_patience,
+        increase_batch_size_on_plateau_rate,
+        increase_batch_size_on_plateau_max,
+        increase_batch_size_eval_metric,
+        increase_batch_size_eval_split,
+        early_stopping_steps: int,
+        skip_save_model,
     ):
         """Checks the history of validation scores.
 
@@ -1115,12 +1142,12 @@ class Trainer(BaseTrainer):
                 reduce_learning_rate_eval_split,
             )
             progress_tracker.last_learning_rate_reduction = (
-                    progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
+                progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
             )
             if (
-                    progress_tracker.last_learning_rate_reduction > 0
-                    and progress_tracker.last_reduce_learning_rate_eval_metric_improvement > 0
-                    and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
+                progress_tracker.last_learning_rate_reduction > 0
+                and progress_tracker.last_reduce_learning_rate_eval_metric_improvement > 0
+                and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
             ):
                 logger.info(
                     f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} step(s) "
@@ -1142,13 +1169,13 @@ class Trainer(BaseTrainer):
                 increase_batch_size_eval_split,
             )
             progress_tracker.last_increase_batch_size = (
-                    progress_tracker.steps - progress_tracker.last_increase_batch_size_steps
+                progress_tracker.steps - progress_tracker.last_increase_batch_size_steps
             )
             if (
-                    progress_tracker.last_increase_batch_size > 0
-                    and progress_tracker.last_increase_batch_size_eval_metric_improvement > 0
-                    and not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
-                    and not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
+                progress_tracker.last_increase_batch_size > 0
+                and progress_tracker.last_increase_batch_size_eval_metric_improvement > 0
+                and not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
+                and not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
             ):
                 logger.info(
                     "Last batch size increase "
@@ -1198,9 +1225,9 @@ class Trainer(BaseTrainer):
             sys.exit(1)
 
     def resume_files_exist(
-            self,
-            training_progress_tracker_path: str,
-            training_checkpoint_path: str,
+        self,
+        training_progress_tracker_path: str,
+        training_checkpoint_path: str,
     ) -> bool:
         missing_files = []
         if self.is_coordinator():
@@ -1230,21 +1257,21 @@ class Trainer(BaseTrainer):
         return progress_tracker
 
     def resume_weights_and_optimizer(
-            self,
-            model_weights_progress_path: str,
-            checkpoint: Checkpoint,
+        self,
+        model_weights_progress_path: str,
+        checkpoint: Checkpoint,
     ):
         CheckpointManager.load_latest_checkpoint(checkpoint, model_weights_progress_path, self.device)
 
     def reduce_learning_rate(
-            self,
-            progress_tracker: ProgressTracker,
-            validation_output_feature_name: str,
-            reduce_learning_rate_on_plateau: int,
-            reduce_learning_rate_on_plateau_patience: int,
-            reduce_learning_rate_on_plateau_rate: float,
-            reduce_learning_rate_eval_metric: str = LOSS,
-            reduce_learning_rate_eval_split: str = TRAINING,
+        self,
+        progress_tracker: ProgressTracker,
+        validation_output_feature_name: str,
+        reduce_learning_rate_on_plateau: int,
+        reduce_learning_rate_on_plateau_patience: int,
+        reduce_learning_rate_on_plateau_rate: float,
+        reduce_learning_rate_eval_metric: str = LOSS,
+        reduce_learning_rate_eval_split: str = TRAINING,
     ):
         """Uses the progress tracker to determine if the learning rate should be reduced."""
         if not (progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau):
@@ -1270,11 +1297,11 @@ class Trainer(BaseTrainer):
             else:
                 progress_tracker.last_reduce_learning_rate_eval_metric_improvement += 1
                 if not is_improved and (
-                        # learning rate reduction happened more than N steps ago
-                        progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
-                        # No improvement of the evaluation metric since more than N steps ago
-                        and progress_tracker.last_reduce_learning_rate_eval_metric_improvement
-                        >= reduce_learning_rate_on_plateau_patience
+                    # learning rate reduction happened more than N steps ago
+                    progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
+                    # No improvement of the evaluation metric since more than N steps ago
+                    and progress_tracker.last_reduce_learning_rate_eval_metric_improvement
+                    >= reduce_learning_rate_on_plateau_patience
                 ):
                     progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
 
@@ -1297,20 +1324,20 @@ class Trainer(BaseTrainer):
                             )
 
     def increase_batch_size(
-            self,
-            progress_tracker: ProgressTracker,
-            validation_output_feature_name: str,
-            increase_batch_size_on_plateau: int,
-            increase_batch_size_on_plateau_patience: int,
-            increase_batch_size_on_plateau_rate: float,
-            increase_batch_size_on_plateau_max: int,
-            increase_batch_size_eval_metric: str = LOSS,
-            increase_batch_size_eval_split: str = TRAINING,
+        self,
+        progress_tracker: ProgressTracker,
+        validation_output_feature_name: str,
+        increase_batch_size_on_plateau: int,
+        increase_batch_size_on_plateau_patience: int,
+        increase_batch_size_on_plateau_rate: float,
+        increase_batch_size_on_plateau_max: int,
+        increase_batch_size_eval_metric: str = LOSS,
+        increase_batch_size_eval_split: str = TRAINING,
     ):
         """Uses the progress tracker to determine if the batch size should be increased."""
         if (
-                not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
-                and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
+            not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
+            and not progress_tracker.batch_size == increase_batch_size_on_plateau_max
         ):
 
             if increase_batch_size_eval_split == TRAINING:
@@ -1334,13 +1361,13 @@ class Trainer(BaseTrainer):
             else:
                 progress_tracker.last_increase_batch_size_eval_metric_improvement += 1
                 if not is_improved and (
-                        # Batch size increase happened more than N steps ago
-                        progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
-                        and (
-                                # No improvement of the evaluation metric since more than N steps ago
-                                progress_tracker.last_increase_batch_size_eval_metric_improvement
-                                >= increase_batch_size_on_plateau_patience
-                        )
+                    # Batch size increase happened more than N steps ago
+                    progress_tracker.last_increase_batch_size >= increase_batch_size_on_plateau_patience
+                    and (
+                        # No improvement of the evaluation metric since more than N steps ago
+                        progress_tracker.last_increase_batch_size_eval_metric_improvement
+                        >= increase_batch_size_on_plateau_patience
+                    )
                 ):
                     progress_tracker.batch_size = min(
                         int(increase_batch_size_on_plateau_rate * progress_tracker.batch_size),
