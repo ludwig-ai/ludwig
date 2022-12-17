@@ -379,7 +379,6 @@ def spread_env(use_gpu: bool = False, num_workers: int = 1, **kwargs):
 @contextlib.contextmanager
 def create_runner(**kwargs):
     trainer_kwargs = get_trainer_kwargs(**kwargs)
-    print("KWARGS", trainer_kwargs)
     with spread_env(**trainer_kwargs):
         trainer = Trainer(**trainer_kwargs)
 
