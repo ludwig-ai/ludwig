@@ -1374,6 +1374,7 @@ class DistilBERTEncoder(Encoder):
             self.transformer.train()
         else:
             freeze_parameters(self.transformer)
+            self.transformer.eval()
 
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
@@ -1397,8 +1398,8 @@ class DistilBERTEncoder(Encoder):
         )
         hidden = transformer_outputs[0][:, 1:-1, :]
         print("HIDDEN", inputs, hidden)
-        if self.last_inputs is not None and torch.equal(inputs, self.last_inputs):
-            assert torch.equal(hidden, self.last_hidden)
+        # if self.last_inputs is not None and torch.equal(inputs, self.last_inputs):
+        #     assert torch.equal(hidden, self.last_hidden)
         self.last_inputs = inputs
         self.last_hidden = hidden
         hidden = self.reduce_sequence(hidden, self.reduce_output)
