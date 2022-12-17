@@ -286,13 +286,9 @@ def tune_batch_size_fn(
 
 @ray.remote(max_calls=1)
 def tune_learning_rate_fn(
-    dataset: RayDataset,
     config: ModelConfigDict,
-    data_loader_kwargs: Dict[str, Any] = None,
     executable_kwargs: Dict[str, Any] = None,
     model: ECD = None,  # noqa: F821
-    training_set_metadata: TrainingSetMetadataDict = None,
-    features: Dict[str, Dict] = None,
     **kwargs,
 ) -> float:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
@@ -300,18 +296,11 @@ def tune_learning_rate_fn(
     try:
         initialize_pytorch(horovod=hvd)
 
-        pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
-        train_shard = RayDatasetShard(
-            pipe,
-            features,
-            training_set_metadata,
-        )
-
         device = get_torch_device()
         model = model.to(device)
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
-        return trainer.tune_learning_rate(config, train_shard, **kwargs)
+        return trainer.tune_learning_rate(config)
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
@@ -470,16 +459,12 @@ class RayTrainerV2(BaseTrainer):
             )
         )
 
-    def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
+    def tune_learning_rate(self, config, **kwargs) -> float:
         return ray.get(
             tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
-                dataset=training_set,
                 config=config,
-                data_loader_kwargs=self.data_loader_kwargs,
                 executable_kwargs=self.executable_kwargs,
                 model=ray.put(self.model),
-                training_set_metadata=training_set.training_set_metadata,
-                features=training_set.features,
                 **kwargs,
             )
         )
