@@ -220,6 +220,24 @@ class LudwigModule(Module):
 
 
 @DeveloperAPI
+class WrapperModule(nn.Module):
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.module = module
+
+
+@DeveloperAPI
+class FrozenModule(nn.Module):
+    def __init__(self, module: nn.Module):
+        super().__init__()
+        self.module = module
+
+    def train(self, mode: bool = True):
+        # Ignores any attempt to set params trainable
+        return self
+
+
+@DeveloperAPI
 class Dense(LudwigModule):
     def __init__(
         self,

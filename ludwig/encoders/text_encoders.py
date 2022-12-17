@@ -18,7 +18,6 @@ import sys
 from typing import Callable, Dict, List, Optional, Union
 
 import torch
-from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
@@ -46,6 +45,7 @@ from ludwig.schema.encoders.text_encoders import (
     XLNetConfig,
 )
 from ludwig.utils.pytorch_utils import freeze_parameters
+from ludwig.utils.torch_utils import FrozenModule, WrapperModule
 
 logger = logging.getLogger(__name__)
 
@@ -1300,22 +1300,6 @@ class XLNetEncoder(Encoder):
         return torch.int32
 
 
-class WrapperModule(nn.Module):
-    def __init__(self, module: nn.Module):
-        super().__init__()
-        self.module = module
-
-
-class FrozenModule(nn.Module):
-    def __init__(self, module: nn.Module):
-        super().__init__()
-        self.module = module
-
-    def train(self, mode: bool = True):
-        # Ignores any attempt to set params trainable
-        return self
-
-
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
 class DistilBERTEncoder(Encoder):
@@ -1400,7 +1384,7 @@ class DistilBERTEncoder(Encoder):
             _cls_pooled_error_message(self.__class__.__name__)
         self.max_sequence_length = max_sequence_length
         self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer.module.resize_token_embeddings(vocab_size)
+        transformer.resize_token_embeddings(vocab_size)
         self.last_inputs = None
         self.last_hidden = None
 
