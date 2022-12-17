@@ -226,15 +226,7 @@ class MT5Encoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import MT5Config, MT5EncoderModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import MT5Config, MT5EncoderModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -339,15 +331,7 @@ class XLMRoBERTaEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import XLMRobertaConfig, XLMRobertaModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import XLMRobertaConfig, XLMRobertaModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -453,15 +437,7 @@ class BERTEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import BertConfig, BertModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import BertConfig, BertModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -593,15 +569,7 @@ class XLMEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import XLMConfig, XLMModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import XLMConfig, XLMModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -724,15 +692,7 @@ class GPTEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import OpenAIGPTConfig, OpenAIGPTModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import OpenAIGPTConfig, OpenAIGPTModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -833,15 +793,7 @@ class GPT2Encoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import GPT2Config, GPT2Model
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import GPT2Config, GPT2Model
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -935,15 +887,7 @@ class RoBERTaEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import RobertaConfig, RobertaModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import RobertaConfig, RobertaModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1048,15 +992,7 @@ class TransformerXLEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import TransfoXLConfig, TransfoXLModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import TransfoXLConfig, TransfoXLModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1178,15 +1114,7 @@ class XLNetEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import XLNetConfig, XLNetModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import XLNetConfig, XLNetModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1302,15 +1230,7 @@ class DistilBERTEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import DistilBertConfig, DistilBertModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import DistilBertConfig, DistilBertModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1422,15 +1342,7 @@ class CTRLEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import CTRLConfig, CTRLModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import CTRLConfig, CTRLModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1535,15 +1447,7 @@ class CamemBERTEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import CamembertConfig, CamembertModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import CamembertConfig, CamembertModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1656,15 +1560,7 @@ class T5Encoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import T5Config, T5Model
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import T5Config, T5Model
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1784,15 +1680,7 @@ class FlauBERTEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import FlaubertConfig, FlaubertModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import FlaubertConfig, FlaubertModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -1915,15 +1803,7 @@ class ELECTRAEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import ElectraConfig, ElectraModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import ElectraConfig, ElectraModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -2023,15 +1903,7 @@ class LongformerEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import LongformerConfig, LongformerModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import LongformerConfig, LongformerModel
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
@@ -2108,15 +1980,7 @@ class AutoTransformerEncoder(Encoder):
         super().__init__()
         self.config = encoder_config
 
-        try:
-            from transformers import AutoModel
-        except ModuleNotFoundError:
-            logger.error(
-                " transformers is not installed. "
-                "In order to install all text feature dependencies run "
-                "pip install ludwig[text]"
-            )
-            sys.exit(-1)
+        from transformers import AutoModel
 
         pretrained_kwargs = pretrained_kwargs or {}
         transformer = AutoModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
