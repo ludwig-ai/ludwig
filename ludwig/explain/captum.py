@@ -252,6 +252,16 @@ def get_total_attribution(
 
         # TODO: refactor below
 
+        # get the input tokens
+        vocab = model.training_set_metadata["text_B53E8"]["idx2str"]
+        detokenize = lambda idx: vocab[idx]
+        detokenize = np.vectorize(detokenize)
+        input_ids = input_batch[0].numpy()
+        input_tokens = detokenize(input_ids)
+
+        # add attribution to the input tokens
+        tok_attrs = np.stack((input_tokens, attributions_reduced[0]), axis=2)  # [batch_size, sequence_length, 2]
+
         # Transpose to [batch_size, num_input_features]
         attribution = attribution.T
 
