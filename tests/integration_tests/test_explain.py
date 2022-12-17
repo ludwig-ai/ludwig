@@ -17,6 +17,7 @@ from tests.integration_tests.utils import (
     generate_data,
     LocalTestBackend,
     number_feature,
+    text_feature,
 )
 
 
@@ -90,7 +91,7 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
 def run_test_explainer_api(
     explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
 ):
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    input_features = [text_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")

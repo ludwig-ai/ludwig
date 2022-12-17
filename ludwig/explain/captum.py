@@ -3,16 +3,20 @@ from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
-from captum.attr import IntegratedGradients
+import torch.nn as nn
+from captum.attr import LayerIntegratedGradients, TokenReferenceBase
+from captum.attr._utils.input_layer_wrapper import InputIdentity
 from torch.autograd import Variable
 from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
+from ludwig.constants import CATEGORY, TEXT, UNKNOWN_SYMBOL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
 from ludwig.explain.util import get_pred_col
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
 
@@ -30,30 +34,37 @@ class WrapperModule(torch.nn.Module):
         super().__init__()
         self.model = model
         self.target = target
+        self.input_maps = nn.ModuleDict(
+            {
+                arg_name: InputIdentity(arg_name)
+                for arg_name in self.model.input_features.keys()
+                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY}
+            }
+        )
 
     def forward(self, *args):
-        preds = self.predict_from_encoded(*args)
-        return get_pred_col(preds, self.target)
-
-    def predict_from_encoded(self, *args):
         # Add back the dictionary structure so it conforms to ECD format.
-        encoded_inputs = {}
-        for k, v in zip(self.model.input_features.keys(), args):
-            encoded_inputs[k] = {"encoder_output": v}
+        inputs = {
+            # Send the input through the identity layer so that we can use the output of the layer for attribution.
+            # Except for text/category features where we use the embedding layer for attribution.
+            feat_name: feat_input
+            if self.model.input_features[feat_name].type() in {TEXT, CATEGORY}
+            else self.input_maps[feat_name](feat_input)
+            for feat_name, feat_input in zip(self.model.input_features.keys(), args)
+        }
 
-        # Run the combiner and decoder separately since we already encoded the input.
-        combined_outputs = self.model.combine(encoded_inputs)
-        outputs = self.model.decode(combined_outputs, None, None)
+        outputs = self.model(inputs)
 
         # At this point we only have the raw logits, but to make explainability work we need the probabilities
         # and predictions as well, so derive them.
         predictions = {}
         for of_name in self.model.output_features:
             predictions[of_name] = self.model.output_features[of_name].predictions(outputs, of_name)
-        return predictions
+
+        return get_pred_col(predictions, self.target)
 
 
-def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Variable]:
+def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch.Tensor]:
     """Convert the input data into a list of variables, one for each input feature.
 
     # Inputs
@@ -86,26 +97,22 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[Varia
     # Dict of lists to list of dicts
     input_batches = [dict(zip(inputs, t)) for t in zip(*inputs.values())]
 
-    # Encode the inputs into embedding space. This is necessary to ensure differentiability. Otherwise, category
-    # and other features that pass through an embedding will not be explainable via gradient based methods.
-    output_batches = []
-    for batch in input_batches:
-        batch = {k: v.to(DEVICE) for k, v in batch.items()}
-        output = model.model.encode(batch)
-
-        # Extract the output tensor, discarding additional state used for sequence decoding.
-        output = {k: v["encoder_output"].detach().cpu() for k, v in output.items()}
-        output_batches.append(output)
-
     # List of dicts to dict of lists
-    encoded_inputs = {k: torch.cat([d[k] for d in output_batches]) for k in output_batches[0]}
+    encoded_inputs = {k: torch.cat([d[k] for d in input_batches]) for k in input_batches[0]}
 
-    # Wrap the output into a variable so torch will track the gradient.
-    # TODO(travis): this won't work for text decoders, but we don't support explanations for those yet
     data_to_predict = [v for _, v in encoded_inputs.items()]
-    data_to_predict = [Variable(t, requires_grad=True) for t in data_to_predict]
+    tensors = []
+    for t in data_to_predict:
+        if t.dtype == torch.int8 or t.dtype == torch.int16 or t.dtype == torch.int32 or t.dtype == torch.int64:
+            # Don't wrap input into a variable if it's an integer type, since it will be used as an index into the
+            # embedding table. We explain the output of the embedding table, not the input to the embedding table using
+            # LayerIntegratedGradients.
+            tensors.append(t)
+        else:
+            # Wrap input into a variable so torch will track the gradient and LayerIntegratedGradients can explain it.
+            tensors.append(Variable(t, requires_grad=True))
 
-    return data_to_predict
+    return tensors
 
 
 @PublicAPI(stability="experimental")
@@ -128,7 +135,7 @@ class IntegratedGradientsExplainer(Explainer):
         # Convert input data into embedding tensors from the output of the model encoders.
         inputs_encoded = get_input_tensors(self.model, self.inputs_df)
         sample_encoded = get_input_tensors(self.model, self.sample_df)
-        baseline = get_baseline(sample_encoded)
+        baseline = get_baseline(self.model, sample_encoded)
 
         # Compute attribution for each possible output feature label separately.
         expected_values = []
@@ -166,10 +173,31 @@ class IntegratedGradientsExplainer(Explainer):
         return self.explanations, expected_values
 
 
-def get_baseline(sample_encoded: List[Variable]) -> List[Variable]:
-    # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
+def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[torch.Tensor]:
     # TODO(travis): pre-compute this during training from the full training dataset.
-    return [torch.unsqueeze(torch.mean(t, dim=0), 0) for t in sample_encoded]
+    input_features: LudwigFeatureDict = model.model.input_features
+
+    baselines = []
+    for sample_input, (name, feature) in zip(sample_encoded, input_features.items()):
+        metadata = model.training_set_metadata[name]
+        if feature.type() == TEXT:
+            PAD_IND = metadata["pad_idx"]
+            token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
+            baseline = token_reference.generate_reference(sequence_length=sample_input.shape[1], device=DEVICE)
+        elif feature.type() == CATEGORY:
+            most_popular_token = max(metadata["str2freq"], key=metadata["str2freq"].get)
+            most_popular_tok_idx = metadata["str2idx"].get(most_popular_token)
+
+            # If an unknown is defined, use that as the baseline index, else use the most popular token
+            baseline_tok_idx = metadata["str2idx"].get(UNKNOWN_SYMBOL, most_popular_tok_idx)
+            baseline = torch.tensor(baseline_tok_idx, device=DEVICE)
+        else:
+            # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
+            # TODO(joppe): now that we don't have embeddings, we should re-evaluate this.
+            baseline = torch.mean(sample_input.float(), dim=0)
+        baselines.append(baseline.unsqueeze(0))
+
+    return baselines
 
 
 def get_total_attribution(
@@ -177,15 +205,26 @@ def get_total_attribution(
     target_feature_name: str,
     target_idx: Optional[int],
     inputs_encoded: List[Variable],
-    baseline: List[Variable],
+    baseline: List[torch.Tensor],
     use_global: bool,
     nsamples: int,
 ) -> np.array:
 
     # Configure the explainer, which includes wrapping the model so its interface conforms to
     # the format expected by Captum.
+    model.model.zero_grad()
     explanation_model = WrapperModule(model.model, target_feature_name)
-    explainer = IntegratedGradients(explanation_model)
+
+    layers = []
+    for feat_name, feat in model.model.input_features.items():
+        if feat.type() in {TEXT, CATEGORY}:
+            # Get embedding layer from encoder, which is the first child of the encoder.
+            layers.append(next(feat.encoder_obj.children()))
+        else:
+            # Get the wrapped input layer.
+            layers.append(explanation_model.input_maps[feat_name])
+
+    explainer = LayerIntegratedGradients(explanation_model, layers)
 
     inputs_encoded_splits = [ipt.split(model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
     baseline = [t.to(DEVICE) for t in baseline]
@@ -199,10 +238,19 @@ def get_total_attribution(
             target=target_idx,
         )
 
-        # Attribution over the feature embeddings returns a vector with the same dimensions of
-        # shape [batch_size, embedding_size], so take the sum over this vector in order to return a single
-        # floating point attribution value per input feature.
-        attribution = np.array([t.detach().cpu().numpy().sum(1) for t in attribution])
+        attributions_reduced = []
+        for a in attribution:
+            a_reduced = a.detach().cpu()
+            if a.dim() > 1:
+                # Convert to token-level attributions by summing over the embedding dimension.
+                a_reduced = a.sum(dim=-1).squeeze(0)
+            if a_reduced.dim() == 2:
+                # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
+                # norm of the sequence.
+                a_reduced = a_reduced / torch.norm(a_reduced)
+            attributions_reduced.append(a_reduced.numpy())
+
+        # TODO: refactor below
 
         # Transpose to [batch_size, num_input_features]
         attribution = attribution.T
