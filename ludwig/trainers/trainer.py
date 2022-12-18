@@ -287,19 +287,10 @@ class Trainer(BaseTrainer):
             else:
                 self.optimizer.step()
 
-<<<<<<< HEAD
-=======
         if self.use_amp:
             # Update scaler in case of overflow/underflow
             self.scaler.update()
 
-        if not self.evaluate_training_set:
-            # Update evaluation metrics with current model params:
-            # noisy but fast way to get metrics on the training set
-            predictions = self.model.outputs_to_predictions(model_outputs)
-            self.model.update_metrics(targets, predictions)
-
->>>>>>> 48eb6b855 (Add support for automatic mixed precision (AMP) training)
         return loss, all_losses
 
     def clip_grads(self, variables):
