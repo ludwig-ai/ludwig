@@ -596,6 +596,7 @@ class Trainer(BaseTrainer):
             metrics=progress_tracker.train_metrics,
             step=progress_tracker.steps,
         )
+        self.model.reset_metrics()
 
         if validation_set is not None:
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
