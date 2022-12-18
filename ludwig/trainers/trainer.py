@@ -280,12 +280,12 @@ class Trainer(BaseTrainer):
         self.clip_grads(variables)
 
         # Apply gradient updates
-        if self.horovod:
-            # Because we already synchronized above, we can doing so here
-            with self.optimizer.skip_synchronize():
+        with self.optimizer.skip_synchronize() if self.horovod else contextlib.nullcontext():
+            # Because we already synchronized above, we skip doing so here
+            if self.use_amp:
+                self.scaler.step(self.optimizer)
+            else:
                 self.optimizer.step()
-        else:
-            self.optimizer.step()
 
 <<<<<<< HEAD
 =======
