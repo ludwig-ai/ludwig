@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
+import contextlib
 import gc
 import logging
 import math
@@ -191,6 +192,12 @@ class Trainer(BaseTrainer):
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
+        # Setup for automatic mixed precision (AMP)
+        self.use_amp = config.use_mixed_precision
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
+        if self.use_amp:
+            logger.info("Enabling automatic mixed precision (AMP)")
+
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
         # the original sigint to restore at the end of training
@@ -219,6 +226,7 @@ class Trainer(BaseTrainer):
         """
         if isinstance(self.optimizer, torch.optim.LBFGS):
             # NOTE: Horovod is not supported for L-BFGS.
+            # NOTE: AMP is not supported for L-BFGS yet.
 
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
@@ -242,19 +250,31 @@ class Trainer(BaseTrainer):
 
         self.optimizer.zero_grad()
 
-        # Obtain model predictions and loss
-        model_outputs = self.model((inputs, targets))
-        loss, all_losses = self.model.train_loss(
-            targets, model_outputs, self.regularization_type, self.regularization_lambda
-        )
+        with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
+            # Obtain model predictions and loss
+            model_outputs = self.model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
 
         # Begin the backward pass
         variables = self.model.parameters()
-        loss.backward()
+        if self.use_amp:
+            self.scaler.scale(loss).backward()
+        else:
+            loss.backward()
 
         if self.horovod:
             # Wait for gradient aggregation to complete before clipping the gradients
+            # When using AMP, we need to do this before unscaling.
+            # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
             self.optimizer.synchronize()
+
+        if self.use_amp:
+            # In-place unscaling of all gradients before weights update
+            # Do this before gradient clipping per docs:
+            # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
+            self.scaler.unscale_(self.optimizer)
 
         # Clip gradients
         self.clip_grads(variables)
@@ -267,6 +287,19 @@ class Trainer(BaseTrainer):
         else:
             self.optimizer.step()
 
+<<<<<<< HEAD
+=======
+        if self.use_amp:
+            # Update scaler in case of overflow/underflow
+            self.scaler.update()
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            predictions = self.model.outputs_to_predictions(model_outputs)
+            self.model.update_metrics(targets, predictions)
+
+>>>>>>> 48eb6b855 (Add support for automatic mixed precision (AMP) training)
         return loss, all_losses
 
     def clip_grads(self, variables):
