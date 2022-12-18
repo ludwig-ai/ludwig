@@ -17,7 +17,11 @@ _TORCH_INIT_PARAMS: Optional[Tuple] = None
 
 @DeveloperAPI
 def get_torch_device():
-    return "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        return "mps"
+    return "cpu"
 
 
 DEVICE = get_torch_device()
