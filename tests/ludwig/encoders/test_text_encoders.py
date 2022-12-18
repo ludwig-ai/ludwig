@@ -287,3 +287,23 @@ def test_distilbert_param_updates(trainable: bool):
     else:
         # Outputs should be the same if the model wasn't updated
         assert torch.equal(encoder_output1, encoder_output2)
+
+    if not trainable:
+        distil_bert_encoder.set_mode(text_encoders.EncoderMode.EMBEDDING_OUTPUT)
+        embedding1 = distil_bert_encoder(inputs)["encoder_output"]
+
+        target = torch.randn(outputs["encoder_output"].shape)
+        check_module_parameters_updated(distil_bert_encoder, (inputs,), target)
+
+        embedding2 = distil_bert_encoder(inputs)["encoder_output"]
+        assert torch.equal(embedding1, embedding2)
+
+        distil_bert_encoder.set_mode(text_encoders.EncoderMode.EMBEDDING_INPUT)
+        reduced1 = distil_bert_encoder(embedding1)["encoder_output"]
+
+        target = torch.randn(outputs["encoder_output"].shape)
+        check_module_parameters_updated(distil_bert_encoder, (inputs,), target)
+
+        reduced2 = distil_bert_encoder(embedding2)["encoder_output"]
+        assert torch.equal(reduced1, reduced2)
+        assert torch.equal(encoder_output1, reduced1)
