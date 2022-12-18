@@ -101,9 +101,9 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
     input_batches = [dict(zip(inputs, t)) for t in zip(*inputs.values())]
 
     # List of dicts to dict of lists
-    encoded_inputs = {k: torch.cat([d[k] for d in input_batches]) for k in input_batches[0]}
+    preproc_inputs = {k: torch.cat([d[k] for d in input_batches]) for k in input_batches[0]}
 
-    data_to_predict = [v for _, v in encoded_inputs.items()]
+    data_to_predict = [v for _, v in preproc_inputs.items()]
     tensors = []
     for t in data_to_predict:
         if t.dtype == torch.int8 or t.dtype == torch.int16 or t.dtype == torch.int32 or t.dtype == torch.int64:
