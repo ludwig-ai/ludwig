@@ -1,6 +1,8 @@
-from typing import List, Optional, Tuple
+from collections import defaultdict
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -11,7 +13,7 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import CATEGORY, DATE, TEXT, UNKNOWN_SYMBOL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -38,19 +40,20 @@ class WrapperModule(torch.nn.Module):
             {
                 arg_name: InputIdentity(arg_name)
                 for arg_name in self.model.input_features.keys()
-                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY}
+                if self.model.input_features[arg_name].type() not in {TEXT, CATEGORY, DATE}
             }
         )
 
     def forward(self, *args):
         # Add back the dictionary structure so it conforms to ECD format.
+        input_features: LudwigFeatureDict = self.model.input_features
         inputs = {
             # Send the input through the identity layer so that we can use the output of the layer for attribution.
             # Except for text/category features where we use the embedding layer for attribution.
             feat_name: feat_input
-            if self.model.input_features[feat_name].type() in {TEXT, CATEGORY}
+            if input_features[feat_name].type() in {TEXT, CATEGORY, DATE}
             else self.input_maps[feat_name](feat_input)
-            for feat_name, feat_input in zip(self.model.input_features.keys(), args)
+            for feat_name, feat_input in zip(input_features.keys(), args)
         }
 
         outputs = self.model(inputs)
@@ -132,6 +135,8 @@ class IntegratedGradientsExplainer(Explainer):
         """
         self.model.model.to(DEVICE)
 
+        input_features: LudwigFeatureDict = self.model.model.input_features
+
         # Convert input data into embedding tensors from the output of the model encoders.
         inputs_encoded = get_input_tensors(self.model, self.inputs_df)
         sample_encoded = get_input_tensors(self.model, self.sample_df)
@@ -140,7 +145,7 @@ class IntegratedGradientsExplainer(Explainer):
         # Compute attribution for each possible output feature label separately.
         expected_values = []
         for target_idx in tqdm(range(self.vocab_size), desc="Explain"):
-            total_attribution = get_total_attribution(
+            total_attribution, feat_to_token_attributions = get_total_attribution(
                 self.model,
                 self.target_feature_name,
                 target_idx if self.is_category_target else None,
@@ -150,9 +155,13 @@ class IntegratedGradientsExplainer(Explainer):
                 len(self.inputs_df),
             )
 
-            for feature_attributions, explanation in zip(total_attribution, self.explanations):
+            for i, (feature_attributions, explanation) in enumerate(zip(total_attribution, self.explanations)):
                 # Add the feature attributions to the explanation object for this row.
-                explanation.add(feature_attributions)
+                explanation.add(
+                    input_features.keys(),
+                    feature_attributions,
+                    {k: v[i] for k, v in feat_to_token_attributions.items()},
+                )
 
             # TODO(travis): for force plots, need something similar to SHAP E[X]
             expected_values.append(0.0)
@@ -165,7 +174,13 @@ class IntegratedGradientsExplainer(Explainer):
         if self.is_binary_target:
             for explanation in self.explanations:
                 le_true = explanation.label_explanations[0]
-                explanation.add(le_true.feature_attributions * -1)
+                negated_attributions = le_true.to_array() * -1
+                negated_token_attributions = {
+                    fa.feature_name: [(t, -a) for t, a in fa.token_attributions]
+                    for fa in le_true.feature_attributions
+                    if fa.token_attributions is not None
+                }
+                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions)
 
             # TODO(travis): for force plots, need something similar to SHAP E[X]
             expected_values.append(0.0)
@@ -204,11 +219,37 @@ def get_total_attribution(
     model: LudwigModel,
     target_feature_name: str,
     target_idx: Optional[int],
-    inputs_encoded: List[Variable],
+    feature_inputs: List[Variable],
     baseline: List[torch.Tensor],
     use_global: bool,
     nsamples: int,
-) -> np.array:
+) -> Tuple[npt.NDArray[np.float64], Dict[str, List[List[Tuple[str, float]]]]]:
+    """Compute the total attribution for each input feature for each row in the input data.
+
+    # Inputs
+
+    :param model: (LudwigModel) The Ludwig model to explain.
+    :param target_feature_name: (str) The name of the target feature to explain.
+    :param target_idx: (Optional[int]) The index of the target feature label to explain if the target feature is a
+        category.
+    :param feature_inputs: (List[Variable]) The preprocessed input data as a list of tensors of length [num_features].
+    :param baseline: (List[torch.Tensor]) The baseline input data as a list of tensors of length [num_features].
+    :param use_global: (bool) Whether to use global attribution or local attribution.
+    :param nsamples: (int) The total number of samples in the input data.
+
+    # Return
+
+    :return: (Tuple[npt.NDArray[np.float64], Dict[str, npt.NDArray[np.float64]]])
+        `(total_attribution, feat_to_token_attributions)`
+
+        `total_attribution`: (npt.NDArray[np.float64]) of shape [num_rows, num_features]
+        The total attribution for each input feature for each row in the input data.
+
+        `feat_to_token_attributions`: (Dict[str, List[List[Tuple[str, float]]]]) with values of shape
+        [num_rows, seq_len, 2]
+        The token-attribution pair for each token in the input feature for each row in the input data.
+    """
+    input_features: LudwigFeatureDict = model.model.input_features
 
     # Configure the explainer, which includes wrapping the model so its interface conforms to
     # the format expected by Captum.
@@ -216,8 +257,8 @@ def get_total_attribution(
     explanation_model = WrapperModule(model.model, target_feature_name)
 
     layers = []
-    for feat_name, feat in model.model.input_features.items():
-        if feat.type() in {TEXT, CATEGORY}:
+    for feat_name, feat in input_features.items():
+        if feat.type() in {TEXT, CATEGORY, DATE}:
             # Get embedding layer from encoder, which is the first child of the encoder.
             layers.append(next(feat.encoder_obj.children()))
         else:
@@ -226,11 +267,12 @@ def get_total_attribution(
 
     explainer = LayerIntegratedGradients(explanation_model, layers)
 
-    inputs_encoded_splits = [ipt.split(model.config_obj.trainer.batch_size) for ipt in inputs_encoded]
+    feature_inputs_splits = [ipt.split(model.config_obj.trainer.batch_size) for ipt in feature_inputs]
     baseline = [t.to(DEVICE) for t in baseline]
 
     total_attribution = None
-    for input_batch in zip(*inputs_encoded_splits):
+    feat_to_token_attributions = defaultdict(list)
+    for input_batch in zip(*feature_inputs_splits):
         input_batch = [ipt.to(DEVICE) for ipt in input_batch]
         attribution = explainer.attribute(
             tuple(input_batch),
@@ -248,14 +290,16 @@ def get_total_attribution(
                 # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
                 # norm of the sequence.
                 a_reduced = a_reduced / torch.norm(a_reduced)
-            attributions_reduced.append(a_reduced.numpy())
+            attributions_reduced.append(a_reduced)
 
-        token_attributions = {}
-        for inputs, attrs, feat_name in zip(input_batch, attributions_reduced, model.model.input_features.keys()):
+        for inputs, attrs, feat_name in zip(input_batch, attributions_reduced, input_features.keys()):
             if attrs.ndim == 2:
-                token_attributions[feat_name] = get_token_attributions(model, feat_name, inputs, attrs)
+                tok_attrs = get_token_attributions(model, feat_name, inputs, attrs)
+                feat_to_token_attributions[feat_name].append(tok_attrs)
 
-        # TODO: refactor below
+        # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
+        attribution = [a.sum(dim=-1) if a.ndim == 2 else a for a in attributions_reduced]
+        attribution = np.stack(attribution)
 
         # Transpose to [batch_size, num_input_features]
         attribution = attribution.T
@@ -274,15 +318,17 @@ def get_total_attribution(
     if use_global:
         total_attribution /= nsamples
 
-    return total_attribution
+    feat_to_token_attributions = {k: [e for lst in v for e in lst] for k, v in feat_to_token_attributions.items()}
+
+    return total_attribution, feat_to_token_attributions
 
 
 def get_token_attributions(
     model: LudwigModel,
     feature_name: str,
     input_ids: torch.Tensor,
-    token_attributions: np.array,
-) -> np.array:
+    token_attributions: torch.Tensor,
+) -> List[List[Tuple[str, float]]]:
     """
     Convert token-level attributions to an array of token-attribution pairs of shape [batch_size, sequence_length, 2].
 
@@ -295,7 +341,7 @@ def get_token_attributions(
 
     # Returns
 
-    np.array: An array of token-attribution pairs of shape [batch_size, sequence_length, 2].
+    List[List[Tuple[str, float]]]: An array of token-attribution pairs of shape [batch_size, sequence_length, 2].
     """
     assert (
         input_ids.dtype == torch.int8
@@ -310,6 +356,8 @@ def get_token_attributions(
     input_tokens = idx2str(input_ids)
 
     # add attribution to the input tokens
-    tok_attrs = np.stack((input_tokens, token_attributions), axis=2)  # [batch_size, sequence_length, 2]
+    tok_attrs = [
+        list(zip(t, a)) for t, a in zip(input_tokens, token_attributions.tolist())
+    ]  # [batch_size, sequence_length, 2]
 
     return tok_attrs
