@@ -422,6 +422,11 @@ class Trainer(BaseTrainer):
         has_huggingface_encoder = len(encoders_in_config & huggingface_encoders) > 0
         has_trainable_encoder = any(trainable_in_config)
 
+        # The main idea behind the following heuristics is that smaller learning rates are more
+        # suitable for features with larger encoders (i.e. TEXT, IMAGE, SEQUENCE, AUTO, TIMESERIES).
+        # Note that these are meant to be rough heuristics that are solely based on feature
+        # types and the type of the corresponding encoder. More factors could be taken into
+        # consideration such as model size, dataset size, batch size, number of features, etc.
         if is_feature_with_large_encoder:
             if has_huggingface_encoder:
                 if has_trainable_encoder:
