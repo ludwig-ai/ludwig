@@ -344,6 +344,7 @@ class Trainer(BaseTrainer):
         self.model.train()  # Sets model training mode.
         durations = []
         for _ in range(total_steps):
+            self.model.reset_metrics()
             start_ts = time.time()
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
