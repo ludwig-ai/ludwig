@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from enum import Enum
 import logging
+from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
 
 import torch

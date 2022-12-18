@@ -518,7 +518,7 @@ class RayTrainerV2(BaseTrainer):
 
                 with torch.no_grad():
                     with self.model.set_mode(
-                        set([feat for feat in self.model.input_features.values() if not feat.is_trainable()]),
+                        {feat for feat in self.model.input_features.values() if not feat.is_trainable()},
                         EncoderMode.EMBEDDING_OUTPUT,
                     ):
                         name_to_proc = {

@@ -864,7 +864,7 @@ class Trainer(BaseTrainer):
 
                     # Trains over a full epoch of data.
                     with self.model.set_mode(
-                        set([feat for feat in self.model.input_features.values() if not feat.is_trainable()]),
+                        {feat for feat in self.model.input_features.values() if not feat.is_trainable()},
                         EncoderMode.EMBEDDING_INPUT,
                     ):
                         should_break = self._train_loop(
