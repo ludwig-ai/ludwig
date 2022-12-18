@@ -111,10 +111,12 @@ class _SequencePreprocessing(torch.nn.Module):
         sequence_vector = torch.full([self.max_sequence_length], self.unit_to_id[self.padding_symbol])
 
         if self.tokenizer_type == "hf_tokenizer":
+            # Handles start, stop, and unknown symbols implicitly
             unit_sequence = self.tokenizer(sequence)
             assert torch.jit.isinstance(unit_sequence, List[int])
-            # Handles start, stop, and unknown symbols implicitly
-            sequence_vector[: len(unit_sequence)] = torch.tensor(unit_sequence)
+            # Ensures that the sequence lengths are aligned between the input and output tensors.
+            sequence_length = min(len(unit_sequence), self.max_sequence_length)
+            sequence_vector[:sequence_length] = torch.tensor(unit_sequence)[:sequence_length]
             return sequence_vector
 
         # If tokenizer is not HF, we manually convert tokens to IDs and insert start, stop, and unknown symbols.
