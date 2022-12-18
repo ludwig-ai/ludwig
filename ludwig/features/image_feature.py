@@ -47,6 +47,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
+from ludwig.schema.utils import InputAugmentationContainer
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
@@ -567,6 +568,10 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
+
+        self.augmentation = input_feature_config.augmentation
+
+        pass
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
