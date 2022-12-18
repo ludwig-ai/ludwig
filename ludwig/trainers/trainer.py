@@ -267,10 +267,11 @@ class Trainer(BaseTrainer):
         else:
             self.optimizer.step()
 
-        # Update evaluation metrics with current model params:
-        # noisy but fast way to get metrics on the training set
-        predictions = self.model.outputs_to_predictions(model_outputs)
-        self.model.update_metrics(targets, predictions)
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            predictions = self.model.outputs_to_predictions(model_outputs)
+            self.model.update_metrics(targets, predictions)
 
         return loss, all_losses
 
@@ -589,14 +590,22 @@ class Trainer(BaseTrainer):
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
-        metrics = self.model.get_metrics()
-        append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+        if self.evaluate_training_set:
+            # Run a separate pass over the training data to compute metrics
+            self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            )
+        else:
+            # Use metrics accumulated during training
+            metrics = self.model.get_metrics()
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            self.model.reset_metrics()
+
         self.write_eval_summary(
             summary_writer=train_summary_writer,
             metrics=progress_tracker.train_metrics,
             step=progress_tracker.steps,
         )
-        self.model.reset_metrics()
 
         if validation_set is not None:
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
