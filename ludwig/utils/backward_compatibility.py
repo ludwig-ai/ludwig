@@ -328,6 +328,7 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         "type",
         "encoder",
         "tied",
+        "augmentation",
         # Internal-only parameters.
         "column",
         "proc_column",
