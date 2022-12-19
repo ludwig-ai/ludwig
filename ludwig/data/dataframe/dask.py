@@ -238,7 +238,9 @@ class DaskEngine(DataFrameEngine):
             return
 
         ds = self.to_ray_dataset(df)
-
+        # We disable tensor extension casting here because we are writing out to Parquet and there is no need
+        # to cast to the ray Tensor dtype extension before doing so (they will be written out as object dtype as if
+        # we were writing to parquet using dask).
         with tensor_extension_casting(False):
             fs, path = get_fs_and_path(path)
             ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
