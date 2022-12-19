@@ -177,12 +177,51 @@ class TextFeatureMixin(BaseFeatureMixin):
 
 class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
-        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
+        super().__init__(input_feature_config, **kwargs)
+        if encoder_obj is None:
+            encoder_obj = self.initialize_encoder(input_feature_config.encoder)
+
+        if encoder_obj.encoded_in_preprocessing:
+            self._module = _TextEncodedInputFeature(self.encoder_obj.output_shape)
+        else:
+            self._module = _TextTrainableInputFeature(encoder_obj)
+
+    def forward(self, inputs, mask=None):
+        return self._module(inputs, mask=mask)
+
+    @property
+    def input_dtype(self):
+        return self._module.input_dtype
+
+    @property
+    def input_shape(self):
+        return self._module.input_shape
+
+    @staticmethod
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
+        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
+        feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
+
+    @staticmethod
+    def get_schema_cls():
+        return TextInputFeatureConfig
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self._module.output_shape
+
+    @staticmethod
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return _SequencePreprocessing(metadata)
 
 
 class _TextTrainableInputFeature(LudwigModule):
-    def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
-        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
+    def __init__(self, encoder_obj):
+        super().__init__()
+        self.encoder_obj = encoder_obj
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -211,25 +250,34 @@ class _TextTrainableInputFeature(LudwigModule):
     def input_shape(self):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
-    @staticmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        feature_config.encoder.vocab = feature_metadata["idx2str"]
-        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
-        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
-        feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
-        feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
-
-    @staticmethod
-    def get_schema_cls():
-        return TextInputFeatureConfig
-
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
 
-    @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-        return _SequencePreprocessing(metadata)
+
+class _TextEncodedInputFeature(LudwigModule):
+    def __init__(self, shape):
+        super().__init__()
+        self.shape = shape
+
+    def forward(self, inputs, mask=None):
+        assert isinstance(inputs, torch.Tensor)
+        assert inputs.dtype == torch.float32
+        assert len(inputs.shape) == 2
+
+        return inputs
+
+    @property
+    def input_dtype(self):
+        return torch.float32
+
+    @property
+    def input_shape(self):
+        return self.shape
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.shape
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
