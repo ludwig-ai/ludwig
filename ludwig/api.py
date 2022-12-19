@@ -523,6 +523,7 @@ class LudwigModel:
                         logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
                         print_boxed("LUDWIG CONFIG")
+                        # TODO(#2858): Print the user's config.
                         logger.info(
                             "Full config saved to: "
                             f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"

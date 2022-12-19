@@ -147,15 +147,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
     # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
         default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
+        description="The name of an output feature or `combined` used for validation. The specific metric is "
+        "configured using `validation_metric`. By default, this is set to `combined`, which has one metric, `loss`.",
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric used on `validation_field`, set by default to the "
-            "output feature type's `default_validation_metric`."
+            "Metric used on `validation_field`, set by default to `loss`."
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
