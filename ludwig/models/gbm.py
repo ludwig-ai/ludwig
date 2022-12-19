@@ -129,7 +129,9 @@ class GBM(BaseModel):
                 # Output: 2D eval_batch_size x n_classes array
                 probs = torch.from_numpy(self.lgbm_model.predict_proba(in_array))
                 if output_feature.type() == BINARY:
-                    probs = torch.logit(probs[:, 1])
+                    probs = torch.logit(probs)[:, 1]
+                elif output_feature.num_classes == 2:
+                    probs = torch.logit(probs)
                 logits = probs
 
         else:
@@ -184,16 +186,18 @@ class GBM(BaseModel):
 
                 if output_feature.type() == BINARY:
                     # keep positive class only for binary feature
-                    probs = probs[:, 1]  # shape (batch_size,)
+                    probs = torch.logit(probs)[:, 1]  # shape (batch_size,)
+                elif output_feature.num_classes == 2:
+                    probs = torch.logit(probs)
                 elif output_feature.num_classes > 2:
                     probs = probs.view(-1, 2, output_feature.num_classes)  # shape (batch_size, 2, num_classes)
                     probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
 
                     # probabilities for belonging to each class
-                    probs = probs[:, :, 1]  # shape (batch_size, num_classes)
+                    probs = torch.softmax(torch.logit(probs[:, :, 1]), -1)  # shape (batch_size, num_classes)
 
                 # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
-                logits = torch.logit(probs)
+                logits = probs
 
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
