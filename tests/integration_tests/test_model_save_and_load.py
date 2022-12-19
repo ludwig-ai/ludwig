@@ -221,7 +221,11 @@ def test_model_weights_match_training(tmpdir, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "trainer": {"epochs": 5, "batch_size": 32},
+        "trainer": {
+            "epochs": 5,
+            "batch_size": 32,
+            "evaluate_training_set": True,  # needed to ensure exact training metrics computed
+        },
     }
 
     model = LudwigModel(

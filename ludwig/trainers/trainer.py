@@ -246,6 +246,12 @@ class Trainer(BaseTrainer):
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
 
+            if not self.evaluate_training_set:
+                # Update evaluation metrics with current model params:
+                # noisy but fast way to get metrics on the training set
+                predictions = self.model.outputs_to_predictions(model_outputs)
+                self.model.update_metrics(targets, predictions)
+
             return loss, all_losses
 
         self.optimizer.zero_grad()
@@ -290,6 +296,12 @@ class Trainer(BaseTrainer):
         if self.use_amp:
             # Update scaler in case of overflow/underflow
             self.scaler.update()
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            predictions = self.model.outputs_to_predictions(model_outputs)
+            self.model.update_metrics(targets, predictions)
 
         return loss, all_losses
 
@@ -363,6 +375,7 @@ class Trainer(BaseTrainer):
         self.model.train()  # Sets model training mode.
         durations = []
         for _ in range(total_steps):
+            self.model.reset_metrics()
             start_ts = time.time()
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
@@ -606,27 +619,17 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+
         if self.evaluate_training_set:
+            # Run a separate pass over the training data to compute metrics
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
             )
-
-            self.write_eval_summary(
-                summary_writer=train_summary_writer,
-                metrics=progress_tracker.train_metrics,
-                step=progress_tracker.steps,
-            )
         else:
-            # Training set is not evaluated. Add loss to the progress tracker.
-            progress_tracker.train_metrics[COMBINED][LOSS].append(
-                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
-            )
-            for output_feature_name, loss_tensor in all_losses.items():
-                progress_tracker.train_metrics[output_feature_name][LOSS].append(
-                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
-                )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
+            # Use metrics accumulated during training
+            metrics = self.model.get_metrics()
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            self.model.reset_metrics()
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
