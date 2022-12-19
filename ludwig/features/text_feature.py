@@ -30,11 +30,12 @@ from ludwig.constants import (
     PROC_COLUMN,
     TEXT,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
     _SequencePostprocessing,
     _SequencePreprocessing,
+    SequenceFeatureMixin,
     SequenceInputFeature,
     SequenceOutputFeature,
 )
@@ -42,6 +43,7 @@ from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutp
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
+from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -173,7 +175,12 @@ class TextFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
+class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
+    def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
+
+
+class _TextTrainableInputFeature(LudwigModule):
     def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
