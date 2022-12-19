@@ -139,8 +139,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to include the entire training set during evaluation.",
+        default=False,
+        description=(
+            "Whether to evaluate on the entire training set during evaluation. By default, training metrics will be "
+            "computed at the end of each training step, and accumulated up to the evaluation phase. In practice, "
+            "computing training set metrics during training is up to 30% faster than running a separate evaluation "
+            "pass over the training set, but results in more noisy training metrics, particularly during the earlier "
+            "epochs. It's recommended to only set this to True if you need very exact training set metrics, and are "
+            "willing to pay a significant performance penalty for them."
+        ),
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
@@ -303,6 +310,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
+    use_mixed_precision: bool = schema_utils.Boolean(
+        default=False,
+        description="Enable automatic mixed-precision (AMP) during training.",
+        parameter_metadata=TRAINER_METADATA["use_mixed_precision"],
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
@@ -353,8 +366,15 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to include the entire training set during evaluation.",
+        default=False,
+        description=(
+            "Whether to evaluate on the entire training set during evaluation. By default, training metrics will be "
+            "computed at the end of each training step, and accumulated up to the evaluation phase. In practice, "
+            "computing training set metrics during training is up to 30% faster than running a separate evaluation "
+            "pass over the training set, but results in more noisy training metrics, particularly during the earlier "
+            "epochs. It's recommended to only set this to True if you need very exact training set metrics, and are "
+            "willing to pay a significant performance penalty for them."
+        ),
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
