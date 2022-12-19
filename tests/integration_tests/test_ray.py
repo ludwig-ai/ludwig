@@ -847,13 +847,14 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         backend_config = {**RAY_BACKEND_CONFIG}
+        # Manually override num workers to 2 for distributed training and distributed predict
+        backend_config["trainer"]["num_workers"] = 2
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
         dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
         model = LudwigModel(config, backend=backend_config)
-        output_dir = None
 
-        _, _, output_dir = model.train(
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=dataset,
             skip_save_processed_input=True,
