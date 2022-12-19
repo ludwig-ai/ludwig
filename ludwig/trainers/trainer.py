@@ -71,6 +71,33 @@ from ludwig.utils.trainer_utils import (
 
 logger = logging.getLogger(__name__)
 
+from torch.optim.lr_scheduler import LambdaLR
+
+
+def get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_steps, last_epoch=-1):
+    """
+    Create a schedule with a learning rate that decreases linearly from the initial lr set in the optimizer to 0, after
+    a warmup period during which it increases linearly from 0 to the initial lr set in the optimizer.
+    Args:
+        optimizer ([`~torch.optim.Optimizer`]):
+            The optimizer for which to schedule the learning rate.
+        num_warmup_steps (`int`):
+            The number of steps for the warmup phase.
+        num_training_steps (`int`):
+            The total number of training steps.
+        last_epoch (`int`, *optional*, defaults to -1):
+            The index of the last epoch when resuming training.
+    Return:
+        `torch.optim.lr_scheduler.LambdaLR` with the appropriate schedule.
+    """
+
+    def lr_lambda(current_step: int):
+        if current_step < num_warmup_steps:
+            return float(current_step) / float(max(1, num_warmup_steps))
+        return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
+
+    return LambdaLR(optimizer, lr_lambda, last_epoch)
+
 
 @register_trainer(MODEL_ECD, default=True)
 class Trainer(BaseTrainer):
@@ -191,6 +218,7 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
+        self.scheduler = None
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision
@@ -840,6 +868,9 @@ class Trainer(BaseTrainer):
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
+                self.scheduler = get_linear_schedule_with_warmup(
+                    self.optimizer, batcher.steps_per_epoch * 2, self.total_steps
+                )
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -1030,6 +1061,9 @@ class Trainer(BaseTrainer):
                 inputs,
                 targets,
             )
+
+            # Update LR schduler here to avoid having it updated during batch size tuning, etc.
+            self.scheduler.step()
 
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
