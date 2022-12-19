@@ -1049,7 +1049,7 @@ class Trainer(BaseTrainer):
             #         batcher.steps_per_epoch,
             #     )
             # self.set_optimizer_learning_rate(current_learning_rate)
-            current_learning_rate = self.optimizer.param_groups[0]["lr"]
+            progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
 
             # obtain batch
             batch = batcher.next_batch()
@@ -1078,7 +1078,7 @@ class Trainer(BaseTrainer):
                     combined_loss=loss,
                     all_losses=all_losses,
                     step=progress_tracker.steps,
-                    learning_rate=current_learning_rate,
+                    learning_rate=progress_tracker.learning_rate,
                 )
 
             progress_tracker.steps += 1
