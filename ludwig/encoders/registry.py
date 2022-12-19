@@ -13,9 +13,11 @@ _sequence_encoder_registry = Registry()
 def get_encoder_registry() -> Registry:
     return _encoder_registry
 
+
 @DeveloperAPI
 def get_huggingface_encoder_registry() -> Registry:
     return _huggingface_encoder_registry
+
 
 @DeveloperAPI
 def get_sequence_encoder_registry() -> Registry:
