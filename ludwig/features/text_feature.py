@@ -182,9 +182,9 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
             encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
         if encoder_obj.encoded_in_preprocessing:
-            self._module = _TextEncodedInputFeature(self.encoder_obj.output_shape)
+            self._module = _TextInputPassthroughModule(self.encoder_obj.output_shape)
         else:
-            self._module = _TextTrainableInputFeature(encoder_obj)
+            self._module = _TextInputEncoderModule(encoder_obj)
 
     def forward(self, inputs, mask=None):
         return self._module(inputs, mask=mask)
@@ -218,7 +218,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
         return _SequencePreprocessing(metadata)
 
 
-class _TextTrainableInputFeature(LudwigModule):
+class _TextInputEncoderModule(LudwigModule):
     def __init__(self, encoder_obj):
         super().__init__()
         self.encoder_obj = encoder_obj
@@ -255,7 +255,7 @@ class _TextTrainableInputFeature(LudwigModule):
         return self.encoder_obj.output_shape
 
 
-class _TextEncodedInputFeature(LudwigModule):
+class _TextInputPassthroughModule(LudwigModule):
     def __init__(self, shape):
         super().__init__()
         self.shape = shape
