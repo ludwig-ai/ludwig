@@ -75,6 +75,7 @@ logger = logging.getLogger(__name__)
 def _convert_back_to_uint8(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
     std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
+    print(mean.device, images.device)
     return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
 
 
