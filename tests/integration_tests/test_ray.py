@@ -459,6 +459,18 @@ def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
 
 
 @pytest.mark.distributed
+def test_ray_text_pretrained(ray_cluster_2cpu):
+    input_features = [
+        text_feature(encoder={"type": "distilbert"}),
+    ]
+    output_features = [
+        # binary_feature(),
+        category_feature(decoder={"vocab_size": 5}, reduce_input="sum"),
+    ]
+    run_test_with_features(input_features, output_features)
+
+
+@pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 def test_ray_text_sequence_timeseries(tmpdir, ray_cluster_2cpu, dataset_type):
     input_features = [

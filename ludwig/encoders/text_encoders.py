@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 
@@ -1294,6 +1294,10 @@ class DistilBERTEncoder(Encoder):
     @property
     def input_dtype(self):
         return torch.int32
+
+    @classmethod
+    def is_fixed(cls, config: Dict[str, Any]) -> bool:
+        return not config.get("trainable", False) and not config.get("reduce_output") == "attention"
 
 
 @DeveloperAPI

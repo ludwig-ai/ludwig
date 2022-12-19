@@ -1239,7 +1239,25 @@ def build_dataset(
     # Remove partitions that are empty after removing NaNs
     dataset = backend.df_engine.remove_empty_partitions(dataset)
 
+    # Embed features with fixed encoders
+    dataset = encode(dataset, feature_configs, metadata, backend)
+
     return dataset, metadata
+
+
+def encode(dataset, feature_configs, metadata, backend):
+    for feature_config in feature_configs:
+        # deal with encoders that have fixed preprocessing
+        if ENCODER in feature_config:
+            if TYPE in feature_config[ENCODER]:
+                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
+
+                # TODO(travis): use encoder schema so we know the proper defaults
+                if encoder_class.is_fixed(feature_config[ENCODER]):
+                    # Convert to Ray Datasets, map batches to encode, then convert back to Dask
+
+                    # Set metadata so we know to skip encoding in the feature
+                
 
 
 def cast_columns(dataset_cols, features, backend) -> None:

@@ -15,6 +15,7 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.torch_utils import LudwigModule
@@ -29,3 +30,7 @@ class Encoder(LudwigModule, ABC):
     @property
     def name(self):
         return self.__class__.__name__
+
+    @classmethod
+    def is_fixed(cls, config: Dict[str, Any]) -> bool:
+        return False
