@@ -27,6 +27,7 @@ import torchvision
 from ludwig.constants import (
     CHECKSUM,
     COLUMN,
+    ENCODER,
     HEIGHT,
     IMAGE,
     INFER_IMAGE_DIMENSIONS,
@@ -37,8 +38,10 @@ from ludwig.constants import (
     NUM_CHANNELS,
     PREPROCESSING,
     PROC_COLUMN,
+    REQUIRES_EQUAL_DIMENSIONS,
     SRC,
     TRAINING,
+    TYPE,
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
@@ -228,7 +231,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
-    def _infer_image_size(image_sample: List[torch.Tensor], max_height: int, max_width: int):
+    def _infer_image_size(
+        image_sample: List[torch.Tensor], max_height: int, max_width: int, requires_equal_dimensions: bool
+    ):
         """Infers the size to use from a group of images. The returned height will be the average height of images
         in image_sample rounded to the nearest integer, or max_height. Likewise for width.
 
@@ -236,6 +241,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             image_sample: Sample of images to use to infer image size. Must be formatted as [channels, height, width].
             max_height: Maximum height.
             max_width: Maximum width.
+            requires_equal_dimensions: If height and width need to be equal for the downstream encoder.
 
         Return:
             (height, width) The inferred height and width.
@@ -244,6 +250,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         width_avg = sum(x.shape[2] for x in image_sample) / len(image_sample)
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
+
+        if requires_equal_dimensions and height != width:
+            width = height = min(height, width)
 
         logger.debug(f"Inferring height: {height} and width: {width}")
         return height, width
@@ -288,17 +297,24 @@ class ImageFeatureMixin(BaseFeatureMixin):
     @staticmethod
     def _finalize_preprocessing_parameters(
         preprocessing_parameters: dict,
+        encoder_parameters: dict,
         column: Series,
     ) -> Tuple:
         """Helper method to determine the height, width and number of channels for preprocessing the image data.
 
         This is achieved by looking at the parameters provided by the user. When there are some missing parameters, we
         fall back on to the first image in the dataset. The assumption being that all the images in the data are
-        expected be of the same size with the same number of channels
+        expected be of the same size with the same number of channels.
+
+        Args:
+            preprocessing_parameters: Parameters defining how the image feature should be preprocessed
+            encoder_parameters: Parameters for the encoder this image feature will during training after preprocessing
+            column: The data itself. Can be a Pandas, Modin or Dask series.
         """
 
         explicit_height_width = preprocessing_parameters[HEIGHT] or preprocessing_parameters[WIDTH]
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
+        requires_equal_dimensions = encoder_parameters[REQUIRES_EQUAL_DIMENSIONS]
 
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(column), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
@@ -336,6 +352,12 @@ class ImageFeatureMixin(BaseFeatureMixin):
             try:
                 height = int(preprocessing_parameters[HEIGHT])
                 width = int(preprocessing_parameters[WIDTH])
+                if requires_equal_dimensions and height != width:
+                    width = height = min(width, height)
+                    logger.info(
+                        f"Set image feature height and width to {width} to be compatible with"
+                        " {encoder_parameters[TYPE]} encoder requirements."
+                    )
             except ValueError as e:
                 raise ValueError("Image height and width must be set and have " "positive integer values: " + str(e))
             if height <= 0 or width <= 0:
@@ -349,6 +371,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     sample,
                     max_height=preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT],
                     max_width=preprocessing_parameters[INFER_IMAGE_MAX_WIDTH],
+                    requires_equal_dimensions=requires_equal_dimensions,
                 )
             else:
                 raise ValueError(
@@ -392,6 +415,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         name = feature_config[NAME]
         column = input_df[feature_config[COLUMN]]
+        encoder_parameters = feature_config[ENCODER]
 
         src_path = None
         if SRC in metadata:
@@ -408,7 +432,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
             num_channels,
             user_specified_num_channels,
             average_file_size,
-        ) = ImageFeatureMixin._finalize_preprocessing_parameters(preprocessing_parameters, abs_path_column)
+        ) = ImageFeatureMixin._finalize_preprocessing_parameters(
+            preprocessing_parameters, encoder_parameters, abs_path_column
+        )
 
         metadata[name][PREPROCESSING]["height"] = height
         metadata[name][PREPROCESSING]["width"] = width

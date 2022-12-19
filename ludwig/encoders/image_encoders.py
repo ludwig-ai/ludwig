@@ -373,6 +373,11 @@ class ViTEncoder(Encoder):
         img_width = img_width or img_height
         if img_width != img_height:
             raise ValueError("img_height and img_width should be identical.")
+        elif img_width != 224:
+            raise ValueError(
+                f"image dimension is ({img_width}x{img_height}) "
+                "but ViT encoder requires images with dimension (224x224)"
+            )
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained and not saved_weights_in_checkpoint:

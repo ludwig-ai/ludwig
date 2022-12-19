@@ -22,6 +22,7 @@ from tests.integration_tests.utils import (
     sequence_feature,
 )
 
+
 NUM_EXAMPLES = 20
 
 
@@ -483,3 +484,23 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
 
     # Check that a warning is logged.
     assert "unconventional boolean value" in caplog.text
+
+
+def test_vit_encoder_different_dimension_image(tmpdir, csv_filename):
+    input_features = [
+        image_feature(
+            os.path.join(tmpdir, "generated_output"),
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
+            encoder={"type": "vit"},
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    config = {"input_features": input_features, "output_features": output_features, "trainer": {"epochs": 2}}
+
+    model = LudwigModel(config)
+    model.train(dataset=data_csv)
