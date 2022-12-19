@@ -221,13 +221,8 @@ class Trainer(BaseTrainer):
         self.scheduler = None
 
         # Setup for automatic mixed precision (AMP)
-        self.use_amp = True
-        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
-        if self.use_amp:
-            logger.info("Enabling automatic mixed precision (AMP)")
-
-        # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision
+        self.use_amp = True
         self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
         if self.use_amp:
             logger.info("Enabling automatic mixed precision (AMP)")
