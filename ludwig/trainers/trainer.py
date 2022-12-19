@@ -57,7 +57,6 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.horovod_utils import return_first
-from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
@@ -218,6 +217,7 @@ class Trainer(BaseTrainer):
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
+        self.set_base_learning_rate(base_learning_rate)
         self.scheduler = None
 
         # Setup for automatic mixed precision (AMP)
@@ -1013,36 +1013,37 @@ class Trainer(BaseTrainer):
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
-            # Set learning rate for this batch
-            current_learning_rate = progress_tracker.learning_rate
+            # # Set learning rate for this batch
+            # current_learning_rate = progress_tracker.learning_rate
 
-            if self.decay:
-                current_learning_rate = exponential_decay(
-                    current_learning_rate,
-                    self.decay_rate,
-                    self.decay_steps,
-                    progress_tracker.steps,
-                    self.staircase,
-                )
+            # if self.decay:
+            #     current_learning_rate = exponential_decay(
+            #         current_learning_rate,
+            #         self.decay_rate,
+            #         self.decay_steps,
+            #         progress_tracker.steps,
+            #         self.staircase,
+            #     )
 
-            if self.horovod:
-                current_learning_rate = learning_rate_warmup_distributed(
-                    current_learning_rate,
-                    progress_tracker.epoch,
-                    self.learning_rate_warmup_epochs,
-                    self.horovod.size(),
-                    batcher.step,
-                    batcher.steps_per_epoch,
-                ) * self.lr_scale_fn(self.horovod.size())
-            else:
-                current_learning_rate = learning_rate_warmup(
-                    current_learning_rate,
-                    progress_tracker.epoch,
-                    self.learning_rate_warmup_epochs,
-                    batcher.step,
-                    batcher.steps_per_epoch,
-                )
-            self.set_optimizer_learning_rate(current_learning_rate)
+            # if self.horovod:
+            #     current_learning_rate = learning_rate_warmup_distributed(
+            #         current_learning_rate,
+            #         progress_tracker.epoch,
+            #         self.learning_rate_warmup_epochs,
+            #         self.horovod.size(),
+            #         batcher.step,
+            #         batcher.steps_per_epoch,
+            #     ) * self.lr_scale_fn(self.horovod.size())
+            # else:
+            #     current_learning_rate = learning_rate_warmup(
+            #         current_learning_rate,
+            #         progress_tracker.epoch,
+            #         self.learning_rate_warmup_epochs,
+            #         batcher.step,
+            #         batcher.steps_per_epoch,
+            #     )
+            # self.set_optimizer_learning_rate(current_learning_rate)
+            current_learning_rate = self.optimizer.param_groups[0]["lr"]
 
             # obtain batch
             batch = batcher.next_batch()
