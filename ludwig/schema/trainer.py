@@ -303,6 +303,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
+    use_mixed_precision: bool = schema_utils.Boolean(
+        default=False,
+        description="Enable automatic mixed-precision (AMP) during training.",
+        parameter_metadata=TRAINER_METADATA["use_mixed_precision"],
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
