@@ -75,7 +75,6 @@ logger = logging.getLogger(__name__)
 def _convert_back_to_uint8(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
     std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
-    print(mean.device, images.device)
     return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
 
 
@@ -108,6 +107,7 @@ class AugmentationPipeline(torch.nn.Module):
 
         self.augmentation_steps = torch.nn.Sequential()
 
+        # TODO: need to generalize to abritraty augmentation operations
         # for k, v in config["augmentation"].items():
         #     augmentation_op = get_from_registry(k, augmentation_registry)
         #     if isinstance(v, dict):
@@ -117,12 +117,14 @@ class AugmentationPipeline(torch.nn.Module):
         self.augmentation_steps.append(RandomVFlip())
 
     def forward(self, imgs):
+        # TODO: determine if we can avoid this step by refactoring image preprocessing
         # convert from float to uint8 values
         imgs = _convert_back_to_uint8(imgs)
 
         imgs = self.augmentation_steps(imgs)
 
-        # convert back to float32 and normalize with imagenet1K values
+        # TODO: determine if we can avoid this step by refactoring image preprocessing
+        # convert back to float32 values
         imgs = _renormalize_image(imgs)
 
         return imgs
@@ -639,10 +641,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.float32]
-
-        # perform augmentation if in training mode and augmentation pipeline exists
-        if self.training and self.augmentation_pipeline:
-            inputs = self.augmentation_pipeline(inputs)
 
         inputs_encoded = self.encoder_obj(inputs)
 
