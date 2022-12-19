@@ -22,6 +22,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
 from ludwig.constants import (
@@ -65,6 +66,65 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
+
+
+# function to partially undo the TorchVision ImageClassification transformation.
+#  back out the normalization step and convert from float32 to uint8 dtype
+#  to make the tensor displayable as an image
+#  crop size remains the same
+def _convert_back_to_uint8(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
+    std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
+    return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
+
+
+# function to redo part of the TorchVision ImageClassification transformation.
+#  convert uint8 to float32
+#  apply the imagenet1k normalization
+def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
+    std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
+    img = images.type(torch.float32).div(255.0)
+    return img.sub(mean).div(std)
+
+
+class RandomVFlip(torch.nn.Module):
+    def __init__(self, p=0.5):
+        super().__init__()
+
+        self.p = p
+
+    def forward(self, imgs):
+        if torch.rand(1) < self.p:
+            imgs = F.vflip(imgs)
+
+        return imgs
+
+
+class AugmentationPipeline(torch.nn.Module):
+    def __init__(self, config):
+        super().__init__()
+
+        self.augmentation_steps = torch.nn.Sequential()
+
+        # for k, v in config["augmentation"].items():
+        #     augmentation_op = get_from_registry(k, augmentation_registry)
+        #     if isinstance(v, dict):
+        #         self.augmentation_steps.append(augmentation_op(**v))
+        #     else:
+        #         self.augmentation_steps.append(augmentation_op(v))
+        self.augmentation_steps.append(RandomVFlip())
+
+    def forward(self, imgs):
+        # convert from float to uint8 values
+        imgs = _convert_back_to_uint8(imgs)
+
+        imgs = self.augmentation_steps(imgs)
+
+        # convert back to float32 and normalize with imagenet1K values
+        imgs = _renormalize_image(imgs)
+
+        return imgs
 
 
 class _ImagePreprocessing(torch.nn.Module):
@@ -569,13 +629,19 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        self.augmentation = input_feature_config.augmentation
-
-        pass
+        # TODO: generalize augmentation operations
+        if input_feature_config.augmentation.random_vertical_flip:
+            self.augmentation_pipeline = AugmentationPipeline({})
+        else:
+            self.augmentation_pipeline = None
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.float32]
+
+        # perform augmentation if in training mode and augmentation pipeline exists
+        if self.training and self.augmentation_pipeline:
+            inputs = self.augmentation_pipeline(inputs)
 
         inputs_encoded = self.encoder_obj(inputs)
 
