@@ -283,6 +283,12 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
     )
 
+    requires_equal_dimensions: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to resize images so that the dimensions are equal.",
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["requires_equal_dimensions"],
+    )
+
 
 @DeveloperAPI
 @register_encoder_config("resnet", IMAGE)
@@ -455,6 +461,12 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["fc_layers"],
     )
 
+    requires_equal_dimensions: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to resize images so that the dimensions are equal.",
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["requires_equal_dimensions"],
+    )
+
 
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
@@ -529,6 +541,12 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
         "the output tensor is of shape (n_patches, embed_size), where n_patches is img_height x img_width "
         "/ patch_size².",
         parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["avg_pool"],
+    )
+
+    requires_equal_dimensions: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether to resize images so that the dimensions are equal.",
+        parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["requires_equal_dimensions"],
     )
 
 
@@ -645,4 +663,10 @@ class ViTEncoderConfig(BaseEncoderConfig):
         default="google/vit-base-patch16-224",
         description="The name of the pre-trained model to use.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["pretrained_model"],
+    )
+
+    requires_equal_dimensions: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to resize images so that the dimensions are equal.",
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["requires_equal_dimensions"],
     )
