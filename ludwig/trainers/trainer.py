@@ -47,6 +47,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.dataset.base import Dataset
+from ludwig.encoders.registry import get_huggingface_encoder_registry
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -374,30 +375,14 @@ class Trainer(BaseTrainer):
         logger.info("Tuning learning rate...")
 
         features_with_large_encoders = {TEXT, IMAGE, SEQUENCE, AUTO, TIMESERIES}
-        huggingface_encoders = {
-            "vit",
-            "ctrl",
-            "camembert",
-            "xlnet",
-            "distilbert",
-            "falubert",
-            "transformer_xl",
-            "xlm",
-            "gpt",
-            "gpt2",
-            "bert",
-            "roberta",
-            "electra",
-            "longformer",
-            "t5",
-            "albert",
-            "mt5",
-            "xlmroberta",
-        }
 
         encoders_in_config = set()
         features_in_config = set()
         trainable_in_config = set()
+        huggingface_encoders = set()
+
+        for item in get_huggingface_encoder_registry().values():
+            huggingface_encoders |= item.keys()
 
         # input and output feature sections
         for feature in config["input_features"] + config["output_features"]:

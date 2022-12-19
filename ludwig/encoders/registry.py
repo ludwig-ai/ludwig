@@ -5,7 +5,7 @@ from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry
 
 _encoder_registry = Registry()
-
+_huggingface_encoder_registry = Registry()
 _sequence_encoder_registry = Registry()
 
 
@@ -13,6 +13,9 @@ _sequence_encoder_registry = Registry()
 def get_encoder_registry() -> Registry:
     return _encoder_registry
 
+@DeveloperAPI
+def get_huggingface_encoder_registry() -> Registry:
+    return _huggingface_encoder_registry
 
 @DeveloperAPI
 def get_sequence_encoder_registry() -> Registry:
@@ -27,15 +30,20 @@ def register_sequence_encoder(name: str):
     return wrap
 
 
-def register_encoder(name: str, features: Union[str, List[str]]):
+def register_encoder(name: str, features: Union[str, List[str]], is_huggingface=False):
     if isinstance(features, str):
         features = [features]
 
+    def update_registry(registry_getter_fn, cls, feature):
+        feature_registry = registry_getter_fn().get(feature, {})
+        feature_registry[name] = cls
+        registry_getter_fn()[feature] = feature_registry
+
     def wrap(cls):
         for feature in features:
-            feature_registry = get_encoder_registry().get(feature, {})
-            feature_registry[name] = cls
-            get_encoder_registry()[feature] = feature_registry
+            update_registry(get_encoder_registry, cls, feature)
+            if is_huggingface:
+                update_registry(get_huggingface_encoder_registry, cls, feature)
         return cls
 
     return wrap

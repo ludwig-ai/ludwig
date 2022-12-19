@@ -284,28 +284,6 @@ def tune_batch_size_fn(
         hvd.shutdown()
 
 
-@ray.remote(max_calls=1)
-def tune_learning_rate_fn(
-    config: ModelConfigDict,
-    executable_kwargs: Dict[str, Any] = None,
-    model: ECD = None,  # noqa: F821
-    **kwargs,
-) -> float:
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    try:
-        initialize_pytorch(horovod=hvd)
-
-        device = get_torch_device()
-        model = model.to(device)
-
-        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
-        return trainer.tune_learning_rate(config)
-    finally:
-        torch.cuda.empty_cache()
-        hvd.shutdown()
-
-
 @DeveloperAPI
 class TqdmCallback(rt.TrainingCallback):
     """Class for a custom ray callback that updates tqdm progress bars in the driver process."""
@@ -459,15 +437,9 @@ class RayTrainerV2(BaseTrainer):
             )
         )
 
-    def tune_learning_rate(self, config, **kwargs) -> float:
-        return ray.get(
-            tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
-                config=config,
-                executable_kwargs=self.executable_kwargs,
-                model=ray.put(self.model),
-                **kwargs,
-            )
-        )
+    def tune_learning_rate(self, config) -> float:
+        trainer = RemoteTrainer(model=self.model, **self.executable_kwargs)
+        return trainer.tune_learning_rate(config)
 
     @property
     def validation_field(self):
