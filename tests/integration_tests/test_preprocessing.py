@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import random
@@ -486,12 +487,13 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
     assert "unconventional boolean value" in caplog.text
 
 
-def test_vit_encoder_different_dimension_image(tmpdir, csv_filename):
+@pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
+def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
     input_features = [
         image_feature(
             os.path.join(tmpdir, "generated_output"),
             preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
-            encoder={"type": "vit"},
+            encoder={"type": "vit", "use_pretrained": use_pretrained},
         )
     ]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
@@ -500,7 +502,15 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename):
         input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
     )
 
-    config = {"input_features": input_features, "output_features": output_features, "trainer": {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"train_steps": 2},
+    }
 
     model = LudwigModel(config)
+
+    # Failure happens post preprocessing but before training during the ECD model creation phase
+    # so make sure the mode lcan be created properly and training can proceed
+    # with pytest.raises(ValueError) if use_pretrained else contextlib.nullcontext():
     model.train(dataset=data_csv)

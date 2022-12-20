@@ -373,14 +373,16 @@ class ViTEncoder(Encoder):
         img_width = img_width or img_height
         if img_width != img_height:
             raise ValueError("img_height and img_width should be identical.")
-        elif img_width != 224:
-            raise ValueError(
-                f"image dimension is ({img_width}x{img_height}) "
-                "but ViT encoder requires images with dimension (224x224)"
-            )
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained and not saved_weights_in_checkpoint:
+            if img_width != 224:
+                raise ValueError(
+                    f"Image dimension is ({img_width} x {img_height}) but pretrained ViT encoder requires images with "
+                    "dimension (224 x 224). Either explicitly set `width` and `height` to 224 in the preprocessing "
+                    "section of the feature's config if use_pretrained=True, or set use_pretrained=False to "
+                    "automatically resize images to work with ViTEncoder."
+                )
             transformer = ViTModel.from_pretrained(pretrained_model)
         else:
             config = ViTConfig(
