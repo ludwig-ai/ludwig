@@ -43,6 +43,7 @@ from ludwig.constants import (
     REQUIRES_EQUAL_DIMENSIONS,
     SRC,
     TRAINING,
+    TYPE,
     USE_PRETRAINED,
     WIDTH,
 )
@@ -270,7 +271,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 width = height = min(width, height)
             logger.info(
                 f"Set image feature height and width to {width} to be compatible with"
-                " {encoder_parameters[TYPE]} encoder requirements."
+                f" {encoder_parameters[TYPE]} encoder."
             )
         return width, height
 
