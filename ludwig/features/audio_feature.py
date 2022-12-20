@@ -49,7 +49,6 @@ logger = logging.getLogger(__name__)
 
 
 class _AudioPreprocessing(torch.nn.Module):
-
     audio_feature_dict: Dict[str, Union[float, int, str]]
 
     def __init__(self, metadata: TrainingSetMetadataDict):

@@ -14,12 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
+import contextlib
 import gc
 import logging
 import math
 import os
 import os.path
 import signal
+import statistics
 import sys
 import threading
 import time
@@ -32,7 +34,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -190,6 +192,12 @@ class Trainer(BaseTrainer):
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
+        # Setup for automatic mixed precision (AMP)
+        self.use_amp = config.use_mixed_precision
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
+        if self.use_amp:
+            logger.info("Enabling automatic mixed precision (AMP)")
+
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
         # the original sigint to restore at the end of training
@@ -218,6 +226,7 @@ class Trainer(BaseTrainer):
         """
         if isinstance(self.optimizer, torch.optim.LBFGS):
             # NOTE: Horovod is not supported for L-BFGS.
+            # NOTE: AMP is not supported for L-BFGS yet.
 
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
@@ -237,34 +246,62 @@ class Trainer(BaseTrainer):
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
 
+            if not self.evaluate_training_set:
+                # Update evaluation metrics with current model params:
+                # noisy but fast way to get metrics on the training set
+                predictions = self.model.outputs_to_predictions(model_outputs)
+                self.model.update_metrics(targets, predictions)
+
             return loss, all_losses
 
         self.optimizer.zero_grad()
 
-        # Obtain model predictions and loss
-        model_outputs = self.model((inputs, targets))
-        loss, all_losses = self.model.train_loss(
-            targets, model_outputs, self.regularization_type, self.regularization_lambda
-        )
+        with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
+            # Obtain model predictions and loss
+            model_outputs = self.model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
 
         # Begin the backward pass
         variables = self.model.parameters()
-        loss.backward()
+        if self.use_amp:
+            self.scaler.scale(loss).backward()
+        else:
+            loss.backward()
 
         if self.horovod:
             # Wait for gradient aggregation to complete before clipping the gradients
+            # When using AMP, we need to do this before unscaling.
+            # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
             self.optimizer.synchronize()
+
+        if self.use_amp:
+            # In-place unscaling of all gradients before weights update
+            # Do this before gradient clipping per docs:
+            # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
+            self.scaler.unscale_(self.optimizer)
 
         # Clip gradients
         self.clip_grads(variables)
 
         # Apply gradient updates
-        if self.horovod:
-            # Because we already synchronized above, we can doing so here
-            with self.optimizer.skip_synchronize():
+        with self.optimizer.skip_synchronize() if self.horovod else contextlib.nullcontext():
+            # Because we already synchronized above, we skip doing so here
+            if self.use_amp:
+                self.scaler.step(self.optimizer)
+            else:
                 self.optimizer.step()
-        else:
-            self.optimizer.step()
+
+        if self.use_amp:
+            # Update scaler in case of overflow/underflow
+            self.scaler.update()
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            predictions = self.model.outputs_to_predictions(model_outputs)
+            self.model.update_metrics(targets, predictions)
 
         return loss, all_losses
 
@@ -328,11 +365,18 @@ class Trainer(BaseTrainer):
     def train_for_tuning(
         self,
         batch_size: int,
-        total_steps: int = 3,
-    ):
-        """Function to be used by tune_batch_size."""
+        total_steps: int = 5,
+    ) -> float:
+        """Function to be used by tune_batch_size.
+
+        Return:
+            Median throughput in samples / sec.
+        """
         self.model.train()  # Sets model training mode.
+        durations = []
         for _ in range(total_steps):
+            self.model.reset_metrics()
+            start_ts = time.time()
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
                 for input_feature_name, input_feature in self.model.input_features.items()
@@ -342,7 +386,9 @@ class Trainer(BaseTrainer):
                 for output_feature_name, output_feature in self.model.output_features.items()
             }
             self.train_step(inputs, targets)
-        return self.model
+            durations.append(time.time() - start_ts)
+        med_duration_s = statistics.median(durations)
+        return batch_size / med_duration_s
 
     def tune_learning_rate(
         self,
@@ -389,7 +435,10 @@ class Trainer(BaseTrainer):
 
         self.model.train()  # Sets model training mode.
         with training_set.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            horovod=self.horovod,
+            ignore_last=True,
         ) as batcher:
             step_count = 0
             while epoch < self.epochs and step_count < total_training_steps and not diverging:
@@ -464,70 +513,67 @@ class Trainer(BaseTrainer):
     ) -> int:
         logger.info("Tuning batch size...")
 
-        if self.is_cpu_training():
-            # TODO(geoffrey): add support for batch size tuning on CPU
-            logger.warn("Batch size tuning is not supported on CPU")
-            # batch size will default to max_batch_size if it is set
-            if self.max_batch_size < DEFAULT_BATCH_SIZE:
-                logger.warn(f"Falling back to max_batch_size config param: {self.max_batch_size}")
-                best_batch_size = self.max_batch_size
-            else:
-                logger.warn(f"Falling back to default batch size: {DEFAULT_BATCH_SIZE}")
-                best_batch_size = DEFAULT_BATCH_SIZE
-        else:
+        def _is_valid_batch_size(batch_size):
+            # make sure that batch size is valid (e.g. less than size of ds)
+            is_smaller_than_training_set = batch_size < len(training_set)
+            is_under_max_batch_size = batch_size <= self.max_batch_size
+            is_valid = is_smaller_than_training_set and is_under_max_batch_size
+            if not is_valid:
+                logger.info(
+                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
+                    f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
+                )
+            return is_valid
 
-            def _is_valid_batch_size(batch_size):
-                # make sure that batch size is valid (e.g. less than size of ds)
-                is_smaller_than_training_set = batch_size < len(training_set)
-                is_under_max_batch_size = batch_size <= self.max_batch_size
-                is_valid = is_smaller_than_training_set and is_under_max_batch_size
-                if not is_valid:
-                    logger.info(
-                        f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                        f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
-                    )
-                return is_valid
+        # TODO (ASN) : Circle back on how we want to set default placeholder value
+        # Currently, since self.batch_size is originally set to auto, we provide a
+        # placeholder starting value
+        batch_size = 2
+        skip_save_model = self.skip_save_model
+        skip_save_progress = self.skip_save_progress
+        skip_save_log = self.skip_save_log
 
-            # TODO (ASN) : Circle back on how we want to set default placeholder value
-            # Currently, since self.batch_size is originally set to auto, we provide a
-            # placeholder starting value
-            batch_size = 2
-            skip_save_model = self.skip_save_model
-            skip_save_progress = self.skip_save_progress
-            skip_save_log = self.skip_save_log
-            # Set temporary values
-            self.skip_save_model = True
-            self.skip_save_progress = True
-            self.skip_save_log = True
+        # Set temporary values
+        self.skip_save_model = True
+        self.skip_save_progress = True
+        self.skip_save_log = True
 
-            best_batch_size = None
-            try:
-                count = 0
-                while count < max_trials and _is_valid_batch_size(batch_size):
-                    logger.info(f"Exploring batch_size={batch_size}")
-                    gc.collect()
+        best_samples_per_sec = 0
+        best_batch_size = None
+        try:
+            count = 0
+            while count < max_trials and _is_valid_batch_size(batch_size):
+                logger.info(f"Exploring batch_size={batch_size}")
+                gc.collect()
 
-                    try:
-                        self.train_for_tuning(batch_size, total_steps=3)
-                        best_batch_size = batch_size
-                        count += 1
-
-                        # double batch size
-                        batch_size *= 2
-                    except RuntimeError as e:
-                        # PyTorch only generates Runtime errors for CUDA OOM.
-                        gc.collect()
-                        if "CUDA out of memory" in str(e):
-                            logger.info(f"OOM at batch_size={batch_size}")
-                        else:
-                            # Not a CUDA error
-                            raise
+                try:
+                    samples_per_sec = self.train_for_tuning(batch_size, total_steps=5)
+                    logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
+                    if samples_per_sec < best_samples_per_sec:
+                        # We assume that once the throughput starts degrading, it won't go up again
+                        logger.info(f"Throughput decrease at batch_size={batch_size}")
                         break
-            finally:
-                # Restore original parameters to defaults
-                self.skip_save_model = skip_save_model
-                self.skip_save_progress = skip_save_progress
-                self.skip_save_log = skip_save_log
+
+                    best_samples_per_sec = samples_per_sec
+                    best_batch_size = batch_size
+                    count += 1
+
+                    # double batch size
+                    batch_size *= 2
+                except RuntimeError as e:
+                    # PyTorch only generates Runtime errors for CUDA OOM.
+                    gc.collect()
+                    if "CUDA out of memory" in str(e):
+                        logger.info(f"OOM at batch_size={batch_size}")
+                    else:
+                        # Not a CUDA error
+                        raise
+                    break
+        finally:
+            # Restore original parameters to defaults
+            self.skip_save_model = skip_save_model
+            self.skip_save_progress = skip_save_progress
+            self.skip_save_log = skip_save_log
 
         logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size
@@ -573,27 +619,17 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+
         if self.evaluate_training_set:
+            # Run a separate pass over the training data to compute metrics
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
             )
-
-            self.write_eval_summary(
-                summary_writer=train_summary_writer,
-                metrics=progress_tracker.train_metrics,
-                step=progress_tracker.steps,
-            )
         else:
-            # Training set is not evaluated. Add loss to the progress tracker.
-            progress_tracker.train_metrics[COMBINED][LOSS].append(
-                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
-            )
-            for output_feature_name, loss_tensor in all_losses.items():
-                progress_tracker.train_metrics[output_feature_name][LOSS].append(
-                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
-                )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
+            # Use metrics accumulated during training
+            metrics = self.model.get_metrics()
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            self.model.reset_metrics()
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -800,6 +836,7 @@ class Trainer(BaseTrainer):
                 should_shuffle=self.should_shuffle,
                 seed=self.random_seed,
                 horovod=self.horovod,
+                ignore_last=True,
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
@@ -1044,7 +1081,7 @@ class Trainer(BaseTrainer):
     def train_online(self, dataset):
         self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod
+            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
         ) as batcher:
 
             # training step loop

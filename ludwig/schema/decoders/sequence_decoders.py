@@ -12,7 +12,6 @@ from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
 @register_decoder_config("generator", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "generator",
         description="Type of decoder.",
@@ -62,7 +61,6 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 @register_decoder_config("tagger", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "tagger",
         description="Type of decoder.",

@@ -166,7 +166,6 @@ class ProjectorConfig(BaseDecoderConfig):
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "classifier",
         description="Type of decoder.",
