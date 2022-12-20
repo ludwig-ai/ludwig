@@ -15,10 +15,16 @@
 
 Useful reference: https://developers.google.com/protocol-buffers/docs/gotutorial
 
+3. Update your PATH so that the protoc compiler can find the plugins:
+
+```
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
 3. Execute protoc.
 
 ```
-> sh ludwig/profiling/gen-proto.sh
+> sh ludwig/profiling/proto/gen-proto.sh
 ```
 
 ## Sample usage
