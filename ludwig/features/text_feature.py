@@ -36,7 +36,6 @@ from ludwig.features.sequence_feature import (
     _SequencePostprocessing,
     _SequencePreprocessing,
     SequenceFeatureMixin,
-    SequenceInputFeature,
     SequenceOutputFeature,
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
@@ -181,7 +180,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
         if encoder_obj is None:
             encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        if encoder_obj.encoded_in_preprocessing:
+        if input_feature_config.encoded_in_preprocessing:
             self._module = _TextInputPassthroughModule(self.encoder_obj.output_shape)
         else:
             self._module = _TextInputEncoderModule(encoder_obj)

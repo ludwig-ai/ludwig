@@ -6,6 +6,7 @@ from typing import Dict as TDict
 from typing import List as TList
 from typing import Optional, Tuple, Type, Union
 
+import marshmallow_dataclass
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
@@ -146,6 +147,11 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    @classmethod
+    def from_dict(cls, d: TDict[str, Any]):
+        schema = marshmallow_dataclass.class_schema(cls)
+        return schema.load(d)
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)

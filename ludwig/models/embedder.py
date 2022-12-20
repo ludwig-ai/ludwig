@@ -1,0 +1,93 @@
+from typing import Any, Callable, Dict, List
+
+import numpy as np
+import pandas as pd
+import torch
+
+from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, PROC_COLUMN, TYPE
+from ludwig.features.feature_registries import get_input_type_registry
+from ludwig.features.feature_utils import LudwigFeatureDict
+from ludwig.models.base import BaseModel
+from ludwig.schema.model_config import InputFeaturesContainer
+from ludwig.utils.dataframe_utils import from_numpy_dataset
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.torch_utils import LudwigModule, get_torch_device
+
+
+_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
+
+
+class Embedder(LudwigModule):
+    def __init__(self, feature_configs: List[Dict[str, Any]]):
+        super().__init__()
+
+        self.input_features = LudwigFeatureDict()
+
+        input_feature_configs = InputFeaturesContainer()
+        for feature in feature_configs:
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+            feature_obj = feature_cls.from_dict(feature)
+            setattr(input_feature_configs, feature[NAME], feature_obj)
+
+        try:
+            self.input_features.update(BaseModel.build_inputs(input_feature_configs=input_feature_configs))
+        except KeyError as e:
+            raise KeyError(
+                f"An input feature has a name that conflicts with a class attribute of torch's ModuleDict: {e}"
+            )
+
+    def forward(self, inputs: Dict[str, torch.Tensor]):
+        encoder_outputs = {}
+        for input_feature_name, input_values in inputs.items():
+            encoder = self.input_features[input_feature_name]
+            encoder_output = encoder(input_values)
+            encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
+        return encoder_outputs
+
+
+def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata: Dict[str, Any]) -> Callable:
+    class EmbedTransformFn:
+        def __init__(self):
+            embedder = Embedder(features_to_encode)
+            self.device = get_torch_device()
+            self.embedder = embedder.to(self.device)
+            self.embedder.eval()
+
+        def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+            batch = _prepare_batch(df, features_to_encode, metadata)
+            name_to_proc = {i_feat.feature_name: i_feat.proc_column for i_feat in self.model.input_features.values()}
+            inputs = {
+                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
+                for i_feat in self.embedder.input_features.values()
+            }
+            with torch.no_grad():
+                encoder_outputs = self.embedder(inputs)
+
+            encoded = {name_to_proc[k]: v.detach().cpu().numpy() for k, v in encoder_outputs.items()}
+            output_df = from_numpy_dataset(encoded)
+
+            for c in output_df.columns:
+                df[c] = output_df[c]
+            return df
+
+    return EmbedTransformFn
+
+
+def _prepare_batch(
+    self, df: pd.DataFrame, features: List[Dict[str, Any]], metadata: Dict[str, Any]
+) -> Dict[str, np.ndarray]:
+    batch = {}
+    for feature in features:
+        c = feature[PROC_COLUMN]
+        if feature[TYPE] not in _SCALAR_TYPES:
+            # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
+            batch[c] = np.stack(df[c].values)
+        else:
+            batch[c] = df[c].to_numpy()
+
+    for c in self.features.keys():
+        reshape = metadata.get(feature[NAME], {}).get("reshape")
+        if reshape is not None:
+            batch[c] = batch[c].reshape((-1, *reshape))
+
+    return batch

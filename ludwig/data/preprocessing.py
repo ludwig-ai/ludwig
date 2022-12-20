@@ -59,6 +59,7 @@ from ludwig.data.utils import set_fixed_split
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.models.embedder import create_embed_transform_fn
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
@@ -1240,24 +1241,33 @@ def build_dataset(
     dataset = backend.df_engine.remove_empty_partitions(dataset)
 
     # Embed features with fixed encoders
-    dataset = encode(dataset, feature_configs, metadata, backend)
+    dataset = embed_fixed_features(dataset, feature_configs, metadata, backend)
 
     return dataset, metadata
 
 
-def encode(dataset, feature_configs, metadata, backend):
+def embed_fixed_features(dataset, feature_configs, metadata, backend):
+    # Encode features in bulk at the end
+    features_to_encode = []
     for feature_config in feature_configs:
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
             if TYPE in feature_config[ENCODER]:
-                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
-
                 # TODO(travis): use encoder schema so we know the proper defaults
+                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
                 if encoder_class.is_fixed(feature_config[ENCODER]):
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
+                    features_to_encode.append(feature_config)
 
-                    # Set metadata so we know to skip encoding in the feature
-                
+                    # Set metadata so we know to skip encoding the feature
+                    feature_config["encoded_in_preprocessing"] = True
+                    metadata[feature_config[NAME]]["encoded_in_preprocessing"] = True
+
+    if features_to_encode:
+        transform_fn = create_embed_transform_fn(features_to_encode, metadata)
+        return backend.batch_transform(dataset, transform_fn)
+    else:
+        return dataset
 
 
 def cast_columns(dataset_cols, features, backend) -> None:
