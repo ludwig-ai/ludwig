@@ -12,7 +12,6 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 @register_preprocessor(H3)
 @dataclass(repr=False)
 class H3PreprocessingConfig(BasePreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default="fill_with_const",

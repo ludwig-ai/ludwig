@@ -12,7 +12,6 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 @register_preprocessor(AUDIO)
 @dataclass(repr=False)
 class AudioPreprocessingConfig(BasePreprocessingConfig):
-
     audio_file_length_limit_in_s: int = schema_utils.NonNegativeFloat(
         default=7.5,
         allow_none=False,
