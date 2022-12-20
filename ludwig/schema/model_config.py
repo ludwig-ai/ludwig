@@ -39,6 +39,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
@@ -62,7 +63,6 @@ from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
-from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import set_default_value
 
@@ -487,7 +487,8 @@ class ModelConfig(BaseMarshmallowConfig):
                             f"The validation_metric: '{self.trainer.validation_metric}' corresponds to multiple "
                             f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
                             "specify the validation_field that should be used with the validation_metric "
-                            f"'{self.trainer.validation_metric}'.")
+                            f"'{self.trainer.validation_metric}'."
+                        )
             if validation_field is None:
                 raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
             self.trainer.validation_field = validation_field
@@ -496,8 +497,7 @@ class ModelConfig(BaseMarshmallowConfig):
         # The user has not explicitly set any validation fields.
         # Default to using the first output feature's default validation metric.
         self.trainer.validation_field = output_features[0]["name"]
-        self.trainer.validation_metric = (
-            output_config_registry[output_features[0]["type"]].default_validation_metric)
+        self.trainer.validation_metric = output_config_registry[output_features[0]["type"]].default_validation_metric
 
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while

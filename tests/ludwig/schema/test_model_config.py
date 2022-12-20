@@ -319,7 +319,7 @@ def test_config_object_validation_parameters_explicitly_set_validation_field():
         ],
         "trainer": {
             "validation_field": "combined",
-        }
+        },
     }
 
     config_object = ModelConfig.from_dict(config)
@@ -345,7 +345,7 @@ def test_config_object_validation_parameters_explicitly_set_validation_metric():
         ],
         "trainer": {
             "validation_metric": NumberOutputFeatureConfig.default_validation_metric,
-        }
+        },
     }
 
     config_object = ModelConfig.from_dict(config)
@@ -368,7 +368,7 @@ def test_config_object_validation_parameters_invalid_metric():
         ],
         "trainer": {
             "validation_metric": NumberOutputFeatureConfig.default_validation_metric,
-        }
+        },
     }
 
     with pytest.raises(Exception):
@@ -392,7 +392,7 @@ def test_config_object_validation_parameters_metric_conflict():
         ],
         "trainer": {
             "validation_metric": NumberOutputFeatureConfig.default_validation_metric,
-        }
+        },
     }
 
     with pytest.raises(Exception):
