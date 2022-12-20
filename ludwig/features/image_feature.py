@@ -253,10 +253,10 @@ class ImageFeatureMixin(BaseFeatureMixin):
             (width, height) Updated width and height so that they are equal
         """
 
-        use_pretrained = encoder_parameters[USE_PRETRAINED]
-        requires_equal_dimensions = encoder_parameters[REQUIRES_EQUAL_DIMENSIONS]
-        required_width = encoder_parameters[REQUIRED_WIDTH]
-        required_height = encoder_parameters[REQUIRED_HEIGHT]
+        use_pretrained = encoder_parameters.get(USE_PRETRAINED, False)
+        requires_equal_dimensions = encoder_parameters.get(REQUIRES_EQUAL_DIMENSIONS, False)
+        required_width = encoder_parameters.get(REQUIRED_WIDTH, None)
+        required_height = encoder_parameters.get(REQUIRED_HEIGHT, None)
 
         if requires_equal_dimensions and height != width:
             if use_pretrained:
