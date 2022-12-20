@@ -897,7 +897,7 @@ def train_with_backend(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
             assert eval_preds is not None
-            all_required_metrics_exist(eval_stats, required_metrics)
+            assert_all_required_metrics_exist(eval_stats, required_metrics)
 
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -930,7 +930,7 @@ def train_with_backend(
         return model
 
 
-def all_required_metrics_exist(
+def assert_all_required_metrics_exist(
     feature_to_metrics_dict: Dict[str, Dict[str, Any]], required_metrics: Optional[Dict[str, Set]] = None
 ):
     """Checks that all `required_metrics` exist in the dictionary returned during Ludwig model evaluation.
