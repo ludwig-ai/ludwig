@@ -8,6 +8,7 @@ from ludwig.schema.features.augmentation.utils import register_augmentation
 from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 
 
+# TODO: Is this needed?
 @DeveloperAPI
 @register_augmentation(IMAGE)
 @dataclass
