@@ -344,11 +344,11 @@ class DaskEngine(DataFrameEngine):
 @contextmanager
 def tensor_extension_casting(enforced: bool):
     """This context manager is used to enforce or disable tensor extension casting.
-    
-    Ray Datasets will automatically cast tensor columns to the ray Tensor dtype extension at the end of 
+
+    Ray Datasets will automatically cast tensor columns to the ray Tensor dtype extension at the end of
     map_batches calls and before writing to Parquet. This context manager can be used to disable this behavior
     and keep the tensor columns as object dtype. This is useful for writing to Parquet using dask.
-    
+
     Args:
         enforced (bool): Whether to enforce tensor extension casting.
     """
