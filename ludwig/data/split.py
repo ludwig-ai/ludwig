@@ -162,6 +162,7 @@ def stratify_split_dataframe(
     frac_train, frac_val, frac_test = probabilities
 
     def _safe_stratify(df, column, test_size):
+        # Get the examples with cardinality of 1
         df_cadinalities = df.groupby(column)[column].size()
         low_cardinality_elems = df_cadinalities.loc[lambda x: x == 1]
         df_low_card = df[df[column].isin(low_cardinality_elems.index)]
@@ -169,7 +170,11 @@ def stratify_split_dataframe(
         y = df[[column]]
 
         df_train, df_temp, _, _ = train_test_split(df, y, stratify=y, test_size=test_size, random_state=random_seed)
-        df_train = backend.df_engine.concat([df_train, df_low_card])
+
+        # concat the examples with cardinality of 1 to the training DF.
+        if len(df_low_card.index) > 0:
+            df_train = backend.df_engine.concat([df_train, df_low_card])
+
         return df_train, df_temp
 
     df_train, df_temp = _safe_stratify(df, column, 1.0 - frac_train)
