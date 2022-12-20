@@ -1,4 +1,4 @@
-module github.com/ludwig-ai/ludwig/ludwig/profiling
+module github.com/ludwig-ai/ludwig/ludwig/profiling/go
 
 go 1.19
 
