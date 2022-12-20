@@ -10,13 +10,13 @@ from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, input_mixin_registry
-from ludwig.schema.utils import BaseMarshmallowConfig, List as ListField
+from ludwig.schema import utils as schema_utils
 
 
 @DeveloperAPI
 @input_mixin_registry.register(IMAGE)
 @dataclass
-class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
+class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
     """ImageInputFeatureConfigMixin is a dataclass that configures the parameters used in both the image input
     feature and the image global defaults section of the Ludwig Config."""
 
@@ -28,7 +28,7 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
     )
 
     # augmentation: BaseAugmentationConfig = AugmentationDataclassField(feature_type=IMAGE)
-    augmentation: BaseAugmentationConfig = ListField()
+    augmentation: BaseAugmentationConfig = schema_utils.List()  # schema_utils.DictList() #schema_utils.List()
 
 
 @DeveloperAPI
