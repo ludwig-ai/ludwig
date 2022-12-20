@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, PROC_COLUMN, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -17,6 +18,7 @@ from ludwig.utils.torch_utils import LudwigModule, get_torch_device
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
+@DeveloperAPI
 class Embedder(LudwigModule):
     def __init__(self, feature_configs: List[Dict[str, Any]]):
         super().__init__()
@@ -45,6 +47,7 @@ class Embedder(LudwigModule):
         return encoder_outputs
 
 
+@DeveloperAPI
 def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata: Dict[str, Any]) -> Callable:
     class EmbedTransformFn:
         def __init__(self):
