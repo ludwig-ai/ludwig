@@ -23,7 +23,6 @@ from tests.integration_tests.utils import (
     sequence_feature,
 )
 
-
 NUM_EXAMPLES = 20
 
 

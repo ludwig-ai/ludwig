@@ -38,9 +38,9 @@ from ludwig.constants import (
     NUM_CHANNELS,
     PREPROCESSING,
     PROC_COLUMN,
-    REQUIRES_EQUAL_DIMENSIONS,
     REQUIRED_HEIGHT,
     REQUIRED_WIDTH,
+    REQUIRES_EQUAL_DIMENSIONS,
     SRC,
     TRAINING,
     USE_PRETRAINED,
@@ -238,9 +238,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         height: int,
         encoder_parameters: dict,
     ):
-        """Some pretrained image encoders require images with the same dimension, or images with a specific width and
-        heigh values. The returned width and height are set based on compatibility with the downstream encoder using
-        the encoder parameters for the feature.
+        """Some pretrained image encoders require images with the same dimension, or images with a specific width
+        and heigh values. The returned width and height are set based on compatibility with the downstream encoder
+        using the encoder parameters for the feature.
 
         Args:
             width: Represents the width of the image. This is either specified in the user config, or inferred using
