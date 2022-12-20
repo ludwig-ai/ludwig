@@ -1,10 +1,11 @@
 from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
+from ludwig.constants import DECODER, ENCODER, IMAGE, INPUT_FEATURES, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
+from ludwig.encoders.registry import get_pretrained_encoder_registry
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.schema.model_config import ModelConfig
-from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
+from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -75,3 +76,28 @@ def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_gr
         return feature_schema().encoder.type
     feature_schema = get_from_registry(feature.get(TYPE), get_output_type_registry()).get_schema_cls()
     return feature_schema().decoder.type
+
+
+def has_trainable_encoder(config_dict: ModelConfigDict) -> bool:
+    for feature in config_dict["input_features"]:
+        feature_encoder = feature.get("encoder", {})
+        encoder_type = feature_encoder.get("type")
+        if feature_encoder.get("trainable", False):
+            return True
+    return False
+
+
+def has_unstructured_input_feature(config_dict: ModelConfigDict) -> bool:
+    for feature in config_dict["input_features"]:
+        if feature.get("type", {}) in {TEXT, IMAGE, SEQUENCE, TIMESERIES}:
+            return True
+    return False
+
+
+def has_pretrained_encoder(config_dict: ModelConfigDict) -> bool:
+    for feature in config_dict["input_features"]:
+        feature_encoder = feature.get("encoder", {})
+        encoder_type = feature_encoder.get("type")
+        if encoder_type in get_pretrained_encoder_registry():
+            return True
+    return False

@@ -47,7 +47,7 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.dataset.base import Dataset
-from ludwig.encoders.registry import get_huggingface_encoder_registry
+from ludwig.encoders.registry import get_pretrained_encoder_registry
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -62,7 +62,6 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
-from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
@@ -366,8 +365,8 @@ class Trainer(BaseTrainer):
         med_duration_s = statistics.median(durations)
         return batch_size / med_duration_s
 
-    def tune_learning_rate(self, config: ModelConfigDict) -> float:
-        """Recommend a learning rate based on the feautres in the configs and the associated encoders.
+    def tune_learning_rate(self, config):  # ModelConfigDict) -> float:
+        """Recommend a learning rate based on the features in the configs and the associated encoders.
 
         param:
             config: Ludwig config used to train the model.
@@ -381,7 +380,7 @@ class Trainer(BaseTrainer):
         trainable_in_config = set()
         huggingface_encoders = set()
 
-        for item in get_huggingface_encoder_registry().values():
+        for item in get_pretrained_encoder_registry().values():
             huggingface_encoders |= item.keys()
 
         # input and output feature sections
@@ -428,7 +427,7 @@ class Trainer(BaseTrainer):
 
     def tune_batch_size(
         self,
-        config: ModelConfigDict,
+        config,  #: ModelConfigDict,
         training_set: Dataset,
         random_seed: int = default_random_seed,
         max_trials: int = 20,
