@@ -77,6 +77,10 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     image_def[ENCODER]["height"] = height
     image_def[ENCODER]["width"] = width
     image_def[ENCODER]["num_channels"] = num_channels
+    if encoder == "vit":
+        # Required encoder parameters for ViT encoder
+        image_def[ENCODER]["required_width"] = 224
+        image_def[ENCODER]["required_height"] = 224
 
     # pickup any other missing parameters
     defaults = ImageInputFeatureConfig().to_dict()
