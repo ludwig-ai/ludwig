@@ -511,5 +511,5 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     model = LudwigModel(config)
 
     # Failure happens post preprocessing but before training during the ECD model creation phase
-    # so make sure the mode lcan be created properly and training can proceed
+    # so make sure the model can be created properly and training can proceed
     model.train(dataset=data_csv)
