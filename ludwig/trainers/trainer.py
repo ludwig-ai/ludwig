@@ -15,18 +15,16 @@
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
 import contextlib
-import gc
 import logging
 import math
 import os
 import os.path
 import signal
-import statistics
 import sys
 import threading
 import time
 from collections import OrderedDict
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
@@ -52,6 +50,7 @@ from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
@@ -496,27 +495,34 @@ class Trainer(BaseTrainer):
 
         self.model.train()  # Sets model training mode.
 
+        evaluator = self._create_batch_size_evaluator()
         try:
-            return tune_batch_size(
-                self._train_for_batch_size_tuning, len(training_set), self.max_batch_size, max_trials
-            )
+            return evaluator.select_best_batch_size(len(training_set), self.max_batch_size, max_trials)
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
             self.skip_save_progress = skip_save_progress
             self.skip_save_log = skip_save_log
 
-    def _train_for_batch_size_tuning(self, batch_size: int):
-        self.model.reset_metrics()
-        inputs = {
-            input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
-            for input_feature_name, input_feature in self.model.input_features.items()
-        }
-        targets = {
-            output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(self.device)
-            for output_feature_name, output_feature in self.model.output_features.items()
-        }
-        self.train_step(inputs, targets)
+    def _create_batch_size_evaluator(self) -> BatchSizeEvaluator:
+        trainer = self
+
+        class _TrainerBatchSizeEvaluator(BatchSizeEvaluator):
+            def reset(self):
+                trainer.model.reset_metrics()
+
+            def step(self, batch_size: int):
+                inputs = {
+                    input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(trainer.device)
+                    for input_feature_name, input_feature in trainer.model.input_features.items()
+                }
+                targets = {
+                    output_feature_name: output_feature.create_sample_output(batch_size=batch_size).to(trainer.device)
+                    for output_feature_name, output_feature in trainer.model.output_features.items()
+                }
+                trainer.train_step(inputs, targets)
+
+        return _TrainerBatchSizeEvaluator
 
     def run_evaluation(
         self,
@@ -1416,85 +1422,6 @@ class Trainer(BaseTrainer):
         if not coordinator_only or self.is_coordinator():
             for callback in self.callbacks:
                 fn(callback)
-
-
-def tune_batch_size(
-    step_fn: Callable[[int]],
-    dataset_len: int,
-    max_batch_size: int,
-    max_trials: int = 20,
-) -> int:
-    logger.info("Tuning batch size...")
-
-    def _is_valid_batch_size(batch_size):
-        # make sure that batch size is valid (e.g. less than size of ds)
-        is_smaller_than_training_set = batch_size < dataset_len
-        is_under_max_batch_size = batch_size <= max_batch_size
-        is_valid = is_smaller_than_training_set and is_under_max_batch_size
-        if not is_valid:
-            logger.info(
-                f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                f"{dataset_len} and less than or equal to max batch size {max_batch_size}"
-            )
-        return is_valid
-
-    # TODO (ASN) : Circle back on how we want to set default placeholder value
-    # Currently, since self.batch_size is originally set to auto, we provide a
-    # placeholder starting value
-    batch_size = 2
-
-    best_samples_per_sec = 0
-    best_batch_size = None
-    count = 0
-    while count < max_trials and _is_valid_batch_size(batch_size):
-        logger.info(f"Exploring batch_size={batch_size}")
-        gc.collect()
-
-        try:
-            samples_per_sec = _calculate_throughput(step_fn, batch_size, total_steps=5)
-            logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
-            if samples_per_sec < best_samples_per_sec:
-                # We assume that once the throughput starts degrading, it won't go up again
-                logger.info(f"Throughput decrease at batch_size={batch_size}")
-                break
-
-            best_samples_per_sec = samples_per_sec
-            best_batch_size = batch_size
-            count += 1
-
-            # double batch size
-            batch_size *= 2
-        except RuntimeError as e:
-            # PyTorch only generates Runtime errors for CUDA OOM.
-            gc.collect()
-            if "CUDA out of memory" in str(e):
-                logger.info(f"OOM at batch_size={batch_size}")
-            else:
-                # Not a CUDA error
-                raise
-            break
-
-    logger.info(f"Selected batch_size={best_batch_size}")
-    return best_batch_size
-
-
-def _calculate_throughput(
-    step_fn: Callable[[int]],
-    batch_size: int,
-    total_steps: int = 5,
-) -> float:
-    """Function to be used by tune_batch_size.
-
-    Return:
-        Median throughput in samples / sec.
-    """
-    durations = []
-    for _ in range(total_steps):
-        start_ts = time.time()
-        step_fn(batch_size)
-        durations.append(time.time() - start_ts)
-    med_duration_s = statistics.median(durations)
-    return batch_size / med_duration_s
 
 
 class RemoteTrainer(Trainer):

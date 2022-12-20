@@ -59,7 +59,7 @@ from ludwig.data.utils import set_fixed_split
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
-from ludwig.models.embedder import create_embed_transform_fn
+from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
@@ -1264,8 +1264,9 @@ def embed_fixed_features(dataset, feature_configs, metadata, backend):
                     metadata[feature_config[NAME]]["encoded_in_preprocessing"] = True
 
     if features_to_encode:
+        batch_size = backend.tune_batch_size(create_embed_batch_size_evaluator(features_to_encode, metadata))
         transform_fn = create_embed_transform_fn(features_to_encode, metadata)
-        return backend.batch_transform(dataset, transform_fn)
+        return backend.batch_transform(dataset, batch_size, transform_fn)
     else:
         return dataset
 

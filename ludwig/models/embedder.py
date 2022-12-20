@@ -10,6 +10,7 @@ from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import InputFeaturesContainer
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import LudwigModule, get_torch_device
@@ -45,6 +46,28 @@ class Embedder(LudwigModule):
             encoder_output = encoder(input_values)
             encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
         return encoder_outputs
+
+
+@DeveloperAPI
+def create_embed_batch_size_evaluator(
+    features_to_encode: List[Dict[str, Any]], metadata: Dict[str, Any]
+) -> BatchSizeEvaluator:
+    class _EmbedBatchSizeEvaluator(BatchSizeEvaluator):
+        def __init__(self):
+            embedder = Embedder(features_to_encode)
+            self.device = get_torch_device()
+            self.embedder = embedder.to(self.device)
+            self.embedder.eval()
+
+        def step(self, batch_size: int):
+            inputs = {
+                input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
+                for input_feature_name, input_feature in self.embedder.input_features.items()
+            }
+            with torch.no_grad():
+                self.embedder(inputs)
+
+    return _EmbedBatchSizeEvaluator
 
 
 @DeveloperAPI
