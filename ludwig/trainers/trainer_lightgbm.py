@@ -516,7 +516,14 @@ class LightGBMTrainer(BaseTrainer):
             LightGBM Booster model
         """
         output_feature = next(iter(self.model.output_features.values()))
-        gbm_sklearn_cls = lgb.LGBMRegressor if output_feature.type() == NUMBER else lgb.LGBMClassifier
+        is_regression = output_feature.type() == NUMBER
+        gbm_sklearn_cls = lgb.LGBMRegressor if is_regression else lgb.LGBMClassifier
+
+        predictions = []
+
+        def save_predictions(env):
+            # have to copy because the buffer is reused in each iteration
+            predictions.append(env.model._Booster__inner_predict(0).copy())
 
         gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
             X=lgb_train.get_data(),
@@ -525,11 +532,23 @@ class LightGBMTrainer(BaseTrainer):
             eval_set=[(ds.get_data(), ds.get_label()) for ds in eval_sets],
             eval_names=eval_names,
             # add early stopping callback to populate best_iteration
-            callbacks=[lgb.early_stopping(boost_rounds_per_train_step)],
+            callbacks=[lgb.early_stopping(boost_rounds_per_train_step), save_predictions],
             # NOTE: hummingbird does not support categorical features
             # categorical_feature=categorical_features,
         )
         evals_result.update(gbm.evals_result_)
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            target_tensor = lgb_train.get_label().copy() if is_regression else lgb_train.get_label().copy().astype(int)
+            target_tensor = torch.from_numpy(target_tensor).to(self.device)
+            targets = {output_feature.feature_name: target_tensor}
+            predictions = self.model.outputs_to_predictions(
+                {f"{output_feature.feature_name}::logits": torch.tensor(predictions[-1])}
+            )
+            self.model.update_metrics(targets, predictions)
+            # TODO: make sure that the logits are actually what is being returned
 
         return gbm
 
