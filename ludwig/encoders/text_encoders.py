@@ -899,6 +899,7 @@ class RoBERTaEncoder(Encoder):
             )
             transformer = RobertaModel(config)
         self.transformer = FreezeModule(transformer, frozen=not trainable)
+        self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -930,7 +931,7 @@ class RoBERTaEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         if self.reduce_output is None:
-            return torch.Size([self.max_sequence_length, self.transformer.module.config.hidden_size])
+            return torch.Size([self.max_sequence_length - 2, self.transformer.module.config.hidden_size])
         return torch.Size([self.transformer.module.config.hidden_size])
 
     @property
