@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE
+from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, TRAINABLE, USE_PRETRAINED, WIDTH
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
@@ -33,12 +33,44 @@ from ludwig.schema.encoders.image_encoders import (
 )
 from ludwig.utils.torch_utils import FreezeModule
 
+
 logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
+class ImageEncoder(Encoder):
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        """If the encoder requires images of equal width and height"""
+        raise NotImplementedError
+
+    @classmethod
+    def required_width(cls) -> Union[int, None]:
+        """Required image width for the pretrained encoder"""
+        raise NotImplementedError
+
+    @classmethod
+    def required_height(cls) -> Union[int, None]:
+        """Required image height for the pretrained encoder"""
+        raise NotImplementedError
+
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict) -> Dict[str, Union[None, int]]:
+        """If the encoder is not in trainable mode, override the image width and height to be compatible
+        with the pretrained encoder image dimension requirements."""
+        if cls.requires_equal_dimensions() and cls.required_width() != cls.required_height():
+            raise ValueError("Invalid definition. required_width and required_height are not equal")
+        preprocessing_parameters = {REQUIRES_EQUAL_DIMENSIONS: cls.requires_equal_dimensions()}
+        if not encoder_params.get(TRAINABLE, False) or encoder_params.get(USE_PRETRAINED, False):
+            preprocessing_parameters[HEIGHT] = cls.required_height()
+            preprocessing_parameters[WIDTH] = cls.required_width()
+            return preprocessing_parameters
+        return preprocessing_parameters
+
+
+@DeveloperAPI
 @register_encoder("stacked_cnn", IMAGE)
-class Stacked2DCNN(Encoder):
+class Stacked2DCNN(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -160,10 +192,22 @@ class Stacked2DCNN(Encoder):
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return False
+
+    @classmethod
+    def required_width(cls) -> Union[int, None]:
+        return None
+
+    @classmethod
+    def required_height(cls) -> Union[int, None]:
+        return None
+
 
 @DeveloperAPI
 @register_encoder("resnet", IMAGE)
-class ResNetEncoder(Encoder):
+class ResNetEncoder(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -251,10 +295,22 @@ class ResNetEncoder(Encoder):
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return False
+
+    @classmethod
+    def required_width(cls) -> Union[int, None]:
+        return None
+
+    @classmethod
+    def required_height(cls) -> Union[int, None]:
+        return None
+
 
 @DeveloperAPI
 @register_encoder("mlp_mixer", IMAGE)
-class MLPMixerEncoder(Encoder):
+class MLPMixerEncoder(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -316,10 +372,22 @@ class MLPMixerEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self._output_shape
 
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return False
+
+    @classmethod
+    def required_width(cls) -> Union[int, None]:
+        return None
+
+    @classmethod
+    def required_height(cls) -> Union[int, None]:
+        return None
+
 
 @DeveloperAPI
 @register_encoder("vit", IMAGE)
-class ViTEncoder(Encoder):
+class ViTEncoder(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -417,3 +485,15 @@ class ViTEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
+
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return True
+
+    @classmethod
+    def required_width(cls) -> Union[int, None]:
+        return 224
+
+    @classmethod
+    def required_height(cls) -> Union[int, None]:
+        return 224

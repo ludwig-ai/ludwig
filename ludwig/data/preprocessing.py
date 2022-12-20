@@ -1293,11 +1293,18 @@ def build_preprocessing_parameters(
             if TYPE in feature_config[ENCODER]:
                 encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
                 if hasattr(encoder_class, "fixed_preprocessing_parameters"):
+                    # Update preprocessing parameters for text encoders using fixed_preprocessing_parameters
                     encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
                     preprocessing_parameters = merge_dict(
                         preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
                     )  # TODO(Connor): Temporary fix, refactor this during preproc refactor
+                elif callable(getattr(encoder_class, "get_fixed_preprocessing_params", None)):
+                    # Update preprocessing parameters for image encoders using
+                    # the get_fixed_preprocessing_params cls method
+                    preprocessing_parameters = merge_dict(
+                        preprocessing_parameters, encoder_class.get_fixed_preprocessing_params(feature_config[ENCODER])
+                    )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
