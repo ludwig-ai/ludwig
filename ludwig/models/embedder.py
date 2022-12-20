@@ -28,7 +28,7 @@ class Embedder(LudwigModule):
 
         input_feature_configs = InputFeaturesContainer()
         for feature in feature_configs:
-            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry()).get_schema_cls()
             feature_obj = feature_cls.from_dict(feature)
             setattr(input_feature_configs, feature[NAME], feature_obj)
 
@@ -44,7 +44,7 @@ class Embedder(LudwigModule):
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values)
-            encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
+            encoder_outputs[input_feature_name] = encoder_output
         return encoder_outputs
 
 
@@ -81,7 +81,7 @@ def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata
 
         def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
             batch = _prepare_batch(df, features_to_encode, metadata)
-            name_to_proc = {i_feat.feature_name: i_feat.proc_column for i_feat in self.model.input_features.values()}
+            name_to_proc = {i_feat.feature_name: i_feat.proc_column for i_feat in self.embedder.input_features.values()}
             inputs = {
                 i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
                 for i_feat in self.embedder.input_features.values()
@@ -90,6 +90,7 @@ def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata
                 encoder_outputs = self.embedder(inputs)
 
             encoded = {name_to_proc[k]: v.detach().cpu().numpy() for k, v in encoder_outputs.items()}
+            print("ENCODED", encoded)
             output_df = from_numpy_dataset(encoded)
 
             for c in output_df.columns:
@@ -99,9 +100,7 @@ def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata
     return EmbedTransformFn
 
 
-def _prepare_batch(
-    self, df: pd.DataFrame, features: List[Dict[str, Any]], metadata: Dict[str, Any]
-) -> Dict[str, np.ndarray]:
+def _prepare_batch(df: pd.DataFrame, features: List[Dict[str, Any]], metadata: Dict[str, Any]) -> Dict[str, np.ndarray]:
     batch = {}
     for feature in features:
         c = feature[PROC_COLUMN]
@@ -111,7 +110,8 @@ def _prepare_batch(
         else:
             batch[c] = df[c].to_numpy()
 
-    for c in self.features.keys():
+    for feature in features:
+        c = feature[PROC_COLUMN]
         reshape = metadata.get(feature[NAME], {}).get("reshape")
         if reshape is not None:
             batch[c] = batch[c].reshape((-1, *reshape))

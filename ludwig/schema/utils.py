@@ -150,7 +150,7 @@ class BaseMarshmallowConfig(ABC):
 
     @classmethod
     def from_dict(cls, d: TDict[str, Any]):
-        schema = marshmallow_dataclass.class_schema(cls)
+        schema = marshmallow_dataclass.class_schema(cls)()
         return schema.load(d)
 
     def __repr__(self):

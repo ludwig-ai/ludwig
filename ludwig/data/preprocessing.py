@@ -1259,16 +1259,20 @@ def embed_fixed_features(dataset, feature_configs, metadata, backend):
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
                     features_to_encode.append(feature_config)
 
-                    # Set metadata so we know to skip encoding the feature
-                    feature_config["encoded_in_preprocessing"] = True
-                    metadata[feature_config[NAME]]["encoded_in_preprocessing"] = True
-
     if features_to_encode:
         batch_size = backend.tune_batch_size(
             create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset)
         )
+        print("!!! BATCH SIZE", batch_size)
         transform_fn = create_embed_transform_fn(features_to_encode, metadata)
-        return backend.batch_transform(dataset, batch_size, transform_fn)
+        results = backend.batch_transform(dataset, batch_size, transform_fn)
+
+        for feature in features_to_encode:
+            # Set metadata so we know to skip encoding the feature
+            feature["encoded_in_preprocessing"] = True
+            metadata[feature[NAME]]["encoded_in_preprocessing"] = True
+
+        return results
     else:
         return dataset
 

@@ -181,7 +181,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
             encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
         if input_feature_config.encoded_in_preprocessing:
-            self._module = _TextInputPassthroughModule(self.encoder_obj.output_shape)
+            self._module = _TextInputPassthroughModule(encoder_obj.output_shape)
         else:
             self._module = _TextInputEncoderModule(encoder_obj)
 
@@ -261,7 +261,7 @@ class _TextInputPassthroughModule(LudwigModule):
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.float32
+        assert inputs.dtype == torch.float32, f"{inputs.dtype} != torch.float32"
         assert len(inputs.shape) == 2
 
         return inputs
