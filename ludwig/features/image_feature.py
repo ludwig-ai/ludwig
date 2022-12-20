@@ -39,9 +39,11 @@ from ludwig.constants import (
     PREPROCESSING,
     PROC_COLUMN,
     REQUIRES_EQUAL_DIMENSIONS,
+    REQUIRED_HEIGHT,
+    REQUIRED_WIDTH,
     SRC,
     TRAINING,
-    TYPE,
+    USE_PRETRAINED,
     WIDTH,
 )
 from ludwig.data.cache.types import wrap
@@ -231,9 +233,49 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return img.numpy()
 
     @staticmethod
-    def _infer_image_size(
-        image_sample: List[torch.Tensor], max_height: int, max_width: int, requires_equal_dimensions: bool
+    def _set_image_and_height_equal_for_encoder(
+        width: int,
+        height: int,
+        encoder_parameters: dict,
     ):
+        """Some pretrained image encoders require images with the same dimension, or images with a specific width and
+        heigh values. The returned width and height are set based on compatibility with the downstream encoder using
+        the encoder parameters for the feature.
+
+        Args:
+            width: Represents the width of the image. This is either specified in the user config, or inferred using
+                a sample of images.
+            height: Represents the height of the image. This is either specified in the user config, or inferred using
+                a sample of images.
+            encoder_parameters: Parameters for the encoder this image feature will during training after preprocessing
+
+        Return:
+            (width, height) Updated width and height so that they are equal
+        """
+
+        use_pretrained = encoder_parameters[USE_PRETRAINED]
+        requires_equal_dimensions = encoder_parameters[REQUIRES_EQUAL_DIMENSIONS]
+        required_width = encoder_parameters[REQUIRED_WIDTH]
+        required_height = encoder_parameters[REQUIRED_HEIGHT]
+
+        if requires_equal_dimensions and height != width:
+            if use_pretrained:
+                # Some pretrained image encoders require images to be of specific dimensions
+                width = required_width
+                height = required_height
+
+            else:
+                # The encoder doesn't need specific dimensions, so set width and height
+                # to the minimum of the two values to get an image with equal dimensions
+                width = height = min(width, height)
+            logger.info(
+                f"Set image feature height and width to {width} to be compatible with"
+                " {encoder_parameters[TYPE]} encoder requirements."
+            )
+        return width, height
+
+    @staticmethod
+    def _infer_image_size(image_sample: List[torch.Tensor], max_height: int, max_width: int, encoder_parameters: dict):
         """Infers the size to use from a group of images. The returned height will be the average height of images
         in image_sample rounded to the nearest integer, or max_height. Likewise for width.
 
@@ -241,18 +283,20 @@ class ImageFeatureMixin(BaseFeatureMixin):
             image_sample: Sample of images to use to infer image size. Must be formatted as [channels, height, width].
             max_height: Maximum height.
             max_width: Maximum width.
-            requires_equal_dimensions: If height and width need to be equal for the downstream encoder.
+            encoder_parameters: Parameters for the encoder this image feature will during training after preprocessing
 
         Return:
             (height, width) The inferred height and width.
         """
+
         height_avg = sum(x.shape[1] for x in image_sample) / len(image_sample)
         width_avg = sum(x.shape[2] for x in image_sample) / len(image_sample)
         height = min(int(round(height_avg)), max_height)
         width = min(int(round(width_avg)), max_width)
 
-        if requires_equal_dimensions and height != width:
-            width = height = min(height, width)
+        # Update height and width if the downstream encoder requires images
+        # with  the same dimension or specific width and height values
+        width, height = ImageFeatureMixin._set_image_and_height_equal_for_encoder(width, height, encoder_parameters)
 
         logger.debug(f"Inferring height: {height} and width: {width}")
         return height, width
@@ -314,7 +358,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         explicit_height_width = preprocessing_parameters[HEIGHT] or preprocessing_parameters[WIDTH]
         explicit_num_channels = NUM_CHANNELS in preprocessing_parameters and preprocessing_parameters[NUM_CHANNELS]
-        requires_equal_dimensions = encoder_parameters[REQUIRES_EQUAL_DIMENSIONS]
 
         if preprocessing_parameters[INFER_IMAGE_DIMENSIONS] and not (explicit_height_width and explicit_num_channels):
             sample_size = min(len(column), preprocessing_parameters[INFER_IMAGE_SAMPLE_SIZE])
@@ -352,12 +395,11 @@ class ImageFeatureMixin(BaseFeatureMixin):
             try:
                 height = int(preprocessing_parameters[HEIGHT])
                 width = int(preprocessing_parameters[WIDTH])
-                if requires_equal_dimensions and height != width:
-                    width = height = min(width, height)
-                    logger.info(
-                        f"Set image feature height and width to {width} to be compatible with"
-                        " {encoder_parameters[TYPE]} encoder requirements."
-                    )
+                # Update height and width if the downstream encoder requires images
+                # with the same dimension or specific width and height values
+                width, height = ImageFeatureMixin._set_image_and_height_equal_for_encoder(
+                    width, height, encoder_parameters
+                )
             except ValueError as e:
                 raise ValueError("Image height and width must be set and have " "positive integer values: " + str(e))
             if height <= 0 or width <= 0:
@@ -371,7 +413,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                     sample,
                     max_height=preprocessing_parameters[INFER_IMAGE_MAX_HEIGHT],
                     max_width=preprocessing_parameters[INFER_IMAGE_MAX_WIDTH],
-                    requires_equal_dimensions=requires_equal_dimensions,
+                    encoder_parameters=encoder_parameters,
                 )
             else:
                 raise ValueError(

@@ -505,12 +505,11 @@ def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrai
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        "trainer": {"train_steps": 2},
+        "trainer": {"train_steps": 1},
     }
 
     model = LudwigModel(config)
 
     # Failure happens post preprocessing but before training during the ECD model creation phase
     # so make sure the mode lcan be created properly and training can proceed
-    # with pytest.raises(ValueError) if use_pretrained else contextlib.nullcontext():
     model.train(dataset=data_csv)

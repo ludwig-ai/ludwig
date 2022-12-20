@@ -289,6 +289,20 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["requires_equal_dimensions"],
     )
 
+    required_width: int = schema_utils.PositiveInteger(
+        description="Required image width for pretrained Stacked2DCNN encoder",
+        default=None,
+        allow_none=True,
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["required_width"],
+    )
+
+    required_height: int = schema_utils.PositiveInteger(
+        description="Required image height for pretrained Stacked2DCNN encoder",
+        default=None,
+        allow_none=True,
+        parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["required_width"],
+    )
+
 
 @DeveloperAPI
 @register_encoder_config("resnet", IMAGE)
@@ -467,6 +481,20 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["requires_equal_dimensions"],
     )
 
+    required_width: int = schema_utils.PositiveInteger(
+        description="Required image width for pretrained ResNet encoder",
+        default=None,
+        allow_none=True,
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["required_width"],
+    )
+
+    required_height: int = schema_utils.PositiveInteger(
+        description="Required image height for pretrained ResNet encoder",
+        default=None,
+        allow_none=True,
+        parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["required_width"],
+    )
+
 
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
@@ -547,6 +575,20 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
         default=False,
         description="Whether to resize images so that the dimensions are equal.",
         parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["requires_equal_dimensions"],
+    )
+
+    required_width: int = schema_utils.PositiveInteger(
+        description="Required image width for pretrained MLPMixer encoder",
+        default=None,
+        allow_none=True,
+        parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["required_width"],
+    )
+
+    required_height: int = schema_utils.PositiveInteger(
+        description="Required image height for pretrained MLPMixer encoder",
+        default=None,
+        allow_none=True,
+        parameter_metadata=ENCODER_METADATA["MLPMixerEncoder"]["required_width"],
     )
 
 
@@ -669,4 +711,18 @@ class ViTEncoderConfig(BaseEncoderConfig):
         default=True,
         description="Whether to resize images so that the dimensions are equal.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["requires_equal_dimensions"],
+    )
+
+    required_width: int = schema_utils.PositiveInteger(
+        description="Required image width for pretrained ViT encoder",
+        default=224,
+        allow_none=False,
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["required_width"],
+    )
+
+    required_height: int = schema_utils.PositiveInteger(
+        description="Required image height for pretrained ViT encoder",
+        default=224,
+        allow_none=False,
+        parameter_metadata=ENCODER_METADATA["ViTEncoder"]["required_width"],
     )
