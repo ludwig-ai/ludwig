@@ -145,13 +145,13 @@ class RandomHFlip(torch.nn.Module):
 
 @register_augmentation_op(name="random_rotate", features=IMAGE)
 class RandomRotate(torch.nn.Module):
-    def __init__(self, degree_limit=None):
+    def __init__(self, degree=None):
         super().__init__()
-        self.degree_limit = degree_limit
+        self.degree = degree
 
     def forward(self, imgs):
-        # map angle to interval (-degree_limit, degree_limit)
-        angle = (torch.rand(1) * 2 * self.degree_limit - self.degree_limit).item()
+        # map angle to interval (-degree, +degree)
+        angle = (torch.rand(1) * 2 * self.degree - self.degree).item()
         return F.rotate(imgs, angle)
 
 
