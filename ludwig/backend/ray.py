@@ -19,7 +19,7 @@ import copy
 import logging
 import os
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Type, Union
 
 import dask
 import numpy as np
@@ -35,6 +35,8 @@ from ray.train.constants import TRAIN_ENABLE_WORKER_SPREAD_ENV
 from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
+
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
@@ -1046,6 +1048,14 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         return max_possible_trials
 
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        return ray.get(
+            _tune_batch_size_fn.options(**self._get_transform_kwargs()).remote(
+                evaluator_cls,
+                dataset_len,
+            )
+        )
+
     def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
         ds = self.df_engine.to_ray_dataset(df)
         ds = ds.map_batches(transform_fn, batch_size=batch_size, batch_format="pandas", **self._get_transform_kwargs())
@@ -1057,6 +1067,12 @@ class RayBackend(RemoteTrainingMixin, Backend):
         num_gpus = resources_per_worker.get("GPU", 0)
         num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
         return dict(num_cpus=num_cpus, num_gpus=num_gpus)
+
+
+@ray.remote(max_calls=1)
+def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    evaluator = evaluator_cls()
+    return evaluator.select_best_batch_size(dataset_len)
 
 
 def initialize_ray():

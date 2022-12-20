@@ -3,6 +3,7 @@ import logging
 import statistics
 import time
 from abc import ABC
+from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
 
@@ -15,11 +16,13 @@ class BatchSizeEvaluator(ABC):
     def select_best_batch_size(
         self,
         dataset_len: int,
-        max_batch_size: int,
+        max_batch_size: Optional[int] = None,
         max_trials: int = 20,
     ) -> int:
         """Returns optimal batch size as measured by throughput (samples / sec)."""
         logger.info("Tuning batch size...")
+
+        max_batch_size = max_batch_size or dataset_len
 
         def _is_valid_batch_size(batch_size):
             # make sure that batch size is valid (e.g. less than size of ds)
