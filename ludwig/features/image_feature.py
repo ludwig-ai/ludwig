@@ -273,6 +273,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 f"Set image feature height and width to {width} to be compatible with"
                 f" {encoder_parameters[TYPE]} encoder."
             )
+            print("hi")
         return width, height
 
     @staticmethod
