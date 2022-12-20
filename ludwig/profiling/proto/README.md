@@ -44,13 +44,13 @@ Go:
 Run `go get`.
 
 ```
-> go get github.com/ludwig-ai/ludwig/ludwig/profiling
+> go get github.com/ludwig-ai/ludwig/ludwig/profiling/go
 ```
 
 If there are local changes, run push the commit to a branch and specify the commit:
 
 ```
-> go get github.com/ludwig-ai/ludwig/ludwig/profiling@commit
+> go get github.com/ludwig-ai/ludwig/ludwig/profiling/go@commit
 ```
 
 Sample go code:
