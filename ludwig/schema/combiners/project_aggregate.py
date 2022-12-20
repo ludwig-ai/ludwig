@@ -11,7 +11,6 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 @DeveloperAPI
 @dataclass(order=True, repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
-
     type: str = schema_utils.ProtectedString(
         "project_aggregate",
         description="Type of combiner.",

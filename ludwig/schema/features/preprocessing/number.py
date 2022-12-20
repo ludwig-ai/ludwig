@@ -50,7 +50,6 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("number_output")
 @dataclass(repr=False)
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
