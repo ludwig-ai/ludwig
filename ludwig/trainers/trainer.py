@@ -33,21 +33,8 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import (
-    AUTO,
-    COMBINED,
-    IMAGE,
-    LOSS,
-    MODEL_ECD,
-    SEQUENCE,
-    TEST,
-    TEXT,
-    TIMESERIES,
-    TRAINING,
-    VALIDATION,
-)
+from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
-from ludwig.encoders.registry import get_pretrained_encoder_registry
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -364,63 +351,6 @@ class Trainer(BaseTrainer):
             durations.append(time.time() - start_ts)
         med_duration_s = statistics.median(durations)
         return batch_size / med_duration_s
-
-    def tune_learning_rate(self, config):  # ModelConfigDict) -> float:
-        """Recommend a learning rate based on the features in the configs and the associated encoders.
-
-        param:
-            config: Ludwig config used to train the model.
-        """
-        logger.info("Tuning learning rate...")
-
-        features_with_large_encoders = {TEXT, IMAGE, SEQUENCE, AUTO, TIMESERIES}
-
-        encoders_in_config = set()
-        features_in_config = set()
-        trainable_in_config = set()
-        huggingface_encoders = set()
-
-        for item in get_pretrained_encoder_registry().values():
-            huggingface_encoders |= item.keys()
-
-        # input and output feature sections
-        for feature in config["input_features"] + config["output_features"]:
-            features_in_config.add(feature.get("type"))
-            feature_encoder = feature.get("encoder", {})
-            encoder_type = feature_encoder.get("type")
-            encoder_is_trainable = feature_encoder.get("trainable")
-            trainable_in_config.add(encoder_is_trainable)
-            encoders_in_config.add(encoder_type)
-
-        # default section
-        defaults = config.get("defaults", {})
-        for feature_type in defaults.keys() & features_in_config:
-            feature_defaults = defaults.get(feature_type, {})
-            encoder_section = feature_defaults.get("encoder", {})
-            encoder_type = encoder_section.get("type")
-            encoder_is_trainable = encoder_section.get("trainable")
-            trainable_in_config.add(encoder_is_trainable)
-            encoders_in_config.add(encoder_type)
-
-        is_feature_with_large_encoder = len(features_in_config & features_with_large_encoders) > 0
-        has_huggingface_encoder = len(encoders_in_config & huggingface_encoders) > 0
-        has_trainable_encoder = any(trainable_in_config)
-
-        # The main idea behind the following heuristics is that smaller learning rates are more
-        # suitable for features with larger encoders (i.e. TEXT, IMAGE, SEQUENCE, AUTO, TIMESERIES).
-        # Note that these are meant to be rough heuristics that are solely based on feature
-        # types and the type of the corresponding encoder. More factors could be taken into
-        # consideration such as model size, dataset size, batch size, number of features, etc.
-        if is_feature_with_large_encoder:
-            if has_huggingface_encoder:
-                if has_trainable_encoder:
-                    return 0.00001
-                else:
-                    return 0.00002
-            else:
-                return 0.0001
-        else:
-            return 0.001
 
     def is_cpu_training(self):
         return torch.device(self.device) == torch.device("cpu")

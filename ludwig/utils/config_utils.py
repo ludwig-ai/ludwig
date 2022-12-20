@@ -80,24 +80,28 @@ def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_gr
 
 def has_trainable_encoder(config_dict: ModelConfigDict) -> bool:
     for feature in config_dict["input_features"]:
-        feature_encoder = feature.get("encoder", {})
-        encoder_type = feature_encoder.get("type")
-        if feature_encoder.get("trainable", False):
+        feature_type = feature.get("type")
+        feature_defaults = config_dict["defaults"].get(feature_type, {})
+        feature_encoder, defaults_encoder = feature.get("encoder", {}), feature_defaults.get("encoder", {})
+        if feature_encoder.get("trainable", False) or defaults_encoder.get("trainable", False):
             return True
     return False
 
 
 def has_unstructured_input_feature(config_dict: ModelConfigDict) -> bool:
     for feature in config_dict["input_features"]:
-        if feature.get("type", {}) in {TEXT, IMAGE, SEQUENCE, TIMESERIES}:
+        if feature.get("type", None) in {TEXT, IMAGE, SEQUENCE, TIMESERIES}:
             return True
     return False
 
 
 def has_pretrained_encoder(config_dict: ModelConfigDict) -> bool:
     for feature in config_dict["input_features"]:
-        feature_encoder = feature.get("encoder", {})
-        encoder_type = feature_encoder.get("type")
-        if encoder_type in get_pretrained_encoder_registry():
+        feature_type = feature.get("type")
+        feature_defaults = config_dict["defaults"].get(feature_type, {})
+        feature_encoder, defaults_encoder = feature.get("encoder", {}), feature_defaults.get("encoder", {})
+        feature_encoder_type, defaults_encoder_type = feature_encoder.get("type"), defaults_encoder.get("type")
+        registry = get_pretrained_encoder_registry()
+        if feature_encoder_type in registry or defaults_encoder_type in registry:
             return True
     return False

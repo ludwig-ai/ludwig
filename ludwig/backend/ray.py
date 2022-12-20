@@ -437,10 +437,6 @@ class RayTrainerV2(BaseTrainer):
             )
         )
 
-    def tune_learning_rate(self, config) -> float:
-        trainer = RemoteTrainer(model=self.model, **self.executable_kwargs)
-        return trainer.tune_learning_rate(config)
-
     @property
     def validation_field(self):
         return self._validation_field
