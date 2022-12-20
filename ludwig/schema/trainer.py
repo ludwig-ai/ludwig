@@ -154,9 +154,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
-        description=(
-            "Metric used on `validation_field`, set by default to `loss`."
-        ),
+        description=("Metric used on `validation_field`, set by default to `loss`."),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
 
