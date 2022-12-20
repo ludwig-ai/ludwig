@@ -33,7 +33,6 @@ from ludwig.schema.encoders.image_encoders import (
 )
 from ludwig.utils.torch_utils import FreezeModule
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,23 +40,23 @@ logger = logging.getLogger(__name__)
 class ImageEncoder(Encoder):
     @classmethod
     def requires_equal_dimensions(cls) -> bool:
-        """If the encoder requires images of equal width and height"""
+        """If the encoder requires images of equal width and height."""
         raise NotImplementedError
 
     @classmethod
     def required_width(cls) -> Union[int, None]:
-        """Required image width for the pretrained encoder"""
+        """Required image width for the pretrained encoder."""
         raise NotImplementedError
 
     @classmethod
     def required_height(cls) -> Union[int, None]:
-        """Required image height for the pretrained encoder"""
+        """Required image height for the pretrained encoder."""
         raise NotImplementedError
 
     @classmethod
     def get_fixed_preprocessing_params(cls, encoder_params: Dict) -> Dict[str, Union[None, int]]:
-        """If the encoder is not in trainable mode, override the image width and height to be compatible
-        with the pretrained encoder image dimension requirements."""
+        """If the encoder is not in trainable mode, override the image width and height to be compatible with the
+        pretrained encoder image dimension requirements."""
         if cls.requires_equal_dimensions() and cls.required_width() != cls.required_height():
             raise ValueError("Invalid definition. required_width and required_height are not equal")
         preprocessing_parameters = {REQUIRES_EQUAL_DIMENSIONS: cls.requires_equal_dimensions()}
