@@ -25,6 +25,7 @@ import torch
 from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     CHECKSUM,
     COLUMN,
@@ -63,9 +64,35 @@ from ludwig.utils.image_utils import (
     torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.registry import Registry
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
+_augmentation_registry = Registry()
+
 logger = logging.getLogger(__name__)
+
+
+@DeveloperAPI
+def get_augmentation_registry() -> Registry:
+    return _augmentation_registry
+
+
+def register_augmentation_op(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            augmentation_registry = get_augmentation_registry().get(feature, {})
+            augmentation_registry[name] = cls
+            get_augmentation_registry()[feature] = augmentation_registry
+        return cls
+
+    return wrap
+
+
+def get_augmentation_op(feature: str, name: str):
+    return get_augmentation_registry()[feature][name]
 
 
 # function to partially undo the TorchVision ImageClassification transformation.
@@ -88,6 +115,7 @@ def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.
     return img.sub(mean).div(std)
 
 
+@register_augmentation_op(name="random_vertical_flip", features=IMAGE)
 class RandomVFlip(torch.nn.Module):
     def __init__(self, p=0.5):
         super().__init__()
@@ -101,20 +129,76 @@ class RandomVFlip(torch.nn.Module):
         return imgs
 
 
+@register_augmentation_op(name="random_horizontal_flip", features=IMAGE)
+class RandomHFlip(torch.nn.Module):
+    def __init__(self, p=0.5):
+        super().__init__()
+
+        self.p = p
+
+    def forward(self, imgs):
+        if torch.rand(1) < self.p:
+            imgs = F.hflip(imgs)
+
+        return imgs
+
+
+@register_augmentation_op(name="random_rotate", features=IMAGE)
+class RandomRotate(torch.nn.Module):
+    def __init__(self, degree_limit=None):
+        super().__init__()
+        self.degree_limit = degree_limit
+
+    def forward(self, imgs):
+        # map angle to interval (-degree_limit, degree_limit)
+        angle = (torch.rand(1) * 2 * self.degree_limit - self.degree_limit).item()
+        return F.rotate(imgs, angle)
+
+
+@register_augmentation_op(name="random_contrast", features=IMAGE)
+class RandomContrast(torch.nn.Module):
+    def __init__(self, contrast_min=0.1, contrast_max=3.0):
+        super().__init__()
+        self.contrast_min = contrast_min
+        self.contrast_max = contrast_max
+        self.contrast_adjustment_range = contrast_max - contrast_min
+
+    def forward(self, imgs):
+        # random contrast adjustment
+        adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.contrast_min).item()
+        return F.adjust_contrast(imgs, adjust_factor)
+
+
+@register_augmentation_op(name="random_blur", features=IMAGE)
+class RandomBlur(torch.nn.Module):
+    def __init__(self, p=0.5, kernel_size=5):
+        super().__init__()
+        self.p = p
+        self.kernel_size = [kernel_size, kernel_size]
+
+    def forward(self, imgs):
+        if torch.rand(1) < self.p:
+            imgs = F.gaussian_blur(imgs, self.kernel_size)
+
+        return imgs
+
+
 class AugmentationPipeline(torch.nn.Module):
-    def __init__(self, config):
+    def __init__(self, augmentation_list: List[Dict[str, Any]]):
         super().__init__()
 
         self.augmentation_steps = torch.nn.Sequential()
 
-        # TODO: need to generalize to abritraty augmentation operations
-        # for k, v in config["augmentation"].items():
-        #     augmentation_op = get_from_registry(k, augmentation_registry)
-        #     if isinstance(v, dict):
-        #         self.augmentation_steps.append(augmentation_op(**v))
-        #     else:
-        #         self.augmentation_steps.append(augmentation_op(v))
-        self.augmentation_steps.append(RandomVFlip())
+        for aug in augmentation_list:
+            if isinstance(aug, str):
+                aug_op = get_augmentation_op(IMAGE, aug)
+                self.augmentation_steps.append(aug_op())
+            elif isinstance(aug, dict):
+                k, v = list(aug.items())[0]
+                aug_op = get_augmentation_op(IMAGE, k)
+                self.augmentation_steps.append(aug_op(**v))
+            else:
+                raise ValueError("Invalid augmentation operation")
 
     def forward(self, imgs):
         # TODO: determine if we can avoid this step by refactoring image preprocessing
@@ -633,8 +717,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
         # TODO: generalize augmentation operations
-        if input_feature_config.augmentation.random_vertical_flip:
-            self.augmentation_pipeline = AugmentationPipeline({})
+        if input_feature_config.augmentation:
+            self.augmentation_pipeline = AugmentationPipeline(input_feature_config.augmentation)
         else:
             self.augmentation_pipeline = None
 

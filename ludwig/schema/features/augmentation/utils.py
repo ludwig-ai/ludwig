@@ -30,8 +30,8 @@ def AugmentationDataclassField(feature_type: str):
     """
 
     class AugmentationMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid preprocessing config from the
-        preprocessing_registry and creates a corresponding JSON schema for external usage."""
+        """Custom marshmallow field that deserializes a list for a valid preprocessing config from the
+        augmentation_registry and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:

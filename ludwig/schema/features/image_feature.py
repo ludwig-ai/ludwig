@@ -10,7 +10,7 @@ from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, input_mixin_registry
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, List as ListField
 
 
 @DeveloperAPI
@@ -27,7 +27,8 @@ class ImageInputFeatureConfigMixin(BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: BaseAugmentationConfig = AugmentationDataclassField(feature_type=IMAGE)
+    # augmentation: BaseAugmentationConfig = AugmentationDataclassField(feature_type=IMAGE)
+    augmentation: BaseAugmentationConfig = ListField()
 
 
 @DeveloperAPI

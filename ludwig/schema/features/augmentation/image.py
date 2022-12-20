@@ -1,9 +1,5 @@
-from typing import Any, Dict, List
-
-# from ludwig.schema.metadata.augmentation_metadata import AUGMENTATION_METADATA
 
 from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUGMENTATION, IMAGE
 from ludwig.schema import utils as schema_utils
@@ -16,6 +12,7 @@ from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
 @register_augmentation(IMAGE)
 @dataclass
 class ImageAugmentationConfig(BaseAugmentationConfig):
+
     random_vertical_flip: bool = schema_utils.Boolean(
         default=False,
         description="If true, then image will be randomly flipped vertically.",
