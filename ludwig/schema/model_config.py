@@ -124,9 +124,11 @@ class ModelConfig(BaseMarshmallowConfig):
     """
 
     def __init__(self, config_dict: ModelConfigDict):
-
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
+
+        # ===== Save the original user config =====
+        self._user_config_dict = upgraded_config_dict
 
         # ===== Initialize Top Level Config Sections =====
 
@@ -202,6 +204,9 @@ class ModelConfig(BaseMarshmallowConfig):
             self.combiner = None
 
         self._validate_config(self.to_dict())
+
+    def get_user_config(self) -> ModelConfigDict:
+        return self._user_config_dict
 
     def __repr__(self):
         config_repr = self.to_dict()
