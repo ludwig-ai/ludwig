@@ -14,13 +14,9 @@ from ludwig.explain.gbm import GBMExplainer
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
-    date_feature,
     generate_data,
-    h3_feature,
     LocalTestBackend,
     number_feature,
-    sequence_feature,
-    set_feature,
     text_feature,
     timeseries_feature,
     vector_feature,
