@@ -9,6 +9,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
 
+# TODO: Is all of this needed?
 augmentation_registry = Registry()
 
 
