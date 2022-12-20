@@ -62,6 +62,7 @@ from ludwig.schema.split import get_split_cls
 from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTrainerConfig
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
+from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.misc_utils import set_default_value
 
@@ -130,9 +131,11 @@ class ModelConfig(BaseMarshmallowConfig):
     """
 
     def __init__(self, config_dict: ModelConfigDict):
-
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
+
+        # Keep track of the original (upgraded) user config dictionary.
+        self._user_config_dict = config_dict
 
         # ===== Initialize Top Level Config Sections =====
 
@@ -459,11 +462,42 @@ class ModelConfig(BaseMarshmallowConfig):
     def _set_validation_parameters(self):
         """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
         output_features = list(self.output_features.to_dict().values())
-        if len(output_features) > 1:
-            self.trainer.validation_field = COMBINED
-            self.trainer.validation_metric = LOSS
+
+        # The user has explicitly set validation_field. Don't override any validation parameters.
+        if TRAINER in self._user_config_dict and "validation_field" in self._user_config_dict[TRAINER]:
+            # TODO(Justin): Validate that validation_field is valid.
+            return
+
+        # The user has explicitly set the validation_metric.
+        if TRAINER in self._user_config_dict and "validation_metric" in self._user_config_dict[TRAINER]:
+            # Loss is valid for all features.
+            if self._user_config_dict[TRAINER]["validation_metric"] == LOSS:
+                return
+
+            # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
+            # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
+            feature_to_metric_names_map = get_feature_to_metric_names_map(output_features)
+            validation_field = None
+            for feature_name, metric_names in feature_to_metric_names_map.items():
+                if self.trainer.validation_metric in metric_names:
+                    if validation_field is None:
+                        validation_field = feature_name
+                    else:
+                        raise ValidationError(
+                            f"The validation_metric: '{self.trainer.validation_metric}' corresponds to multiple "
+                            f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
+                            "specify the validation_field that should be used with the validation_metric "
+                            f"'{self.trainer.validation_metric}'.")
+            if validation_field is None:
+                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
+            self.trainer.validation_field = validation_field
+            return
+
+        # The user has not explicitly set any validation fields.
+        # Default to using the first output feature's default validation metric.
         self.trainer.validation_field = output_features[0]["name"]
-        self.trainer.validation_metric = output_config_registry[output_features[0]["type"]].default_validation_metric
+        self.trainer.validation_metric = (
+            output_config_registry[output_features[0]["type"]].default_validation_metric)
 
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
@@ -563,3 +597,14 @@ class ModelConfig(BaseMarshmallowConfig):
         if self.combiner is not None:
             config_dict["combiner"] = self.combiner.to_dict()
         return convert_submodules(config_dict)
+
+
+def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {}
+    for output_feature in output_features:
+        output_feature_name = output_feature[NAME]
+        output_feature_type = output_feature[TYPE]
+        metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names

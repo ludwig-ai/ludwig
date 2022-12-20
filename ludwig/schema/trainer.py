@@ -147,17 +147,16 @@ class ECDTrainerConfig(BaseTrainerConfig):
     validation_field: str = schema_utils.String(
         default=None,
         description="The field for which the `validation_metric` is used for validation-related mechanics like early "
-        "stopping, parameter change plateaus, and what hyperparameter optimization uses to determine the best trial. "
-        "By default, the output feature name is used if there is only one output feature. If there are multiple output "
-        "features, then combined loss is used.",
+        "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
+        "trial. If unset (default), the first output feature's default validation is used.",
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric from `validation_field` that is used, set by default to the output feature type's "
-            "`default_validation_metric`."
+            "Metric from `validation_field` that is used, set by default to the first output feature type's "
+            "`default_validation_metric`. If explicitly specified, "
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
