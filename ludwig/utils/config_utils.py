@@ -98,10 +98,10 @@ def has_unstructured_input_feature(config_dict: ModelConfigDict) -> bool:
 def has_pretrained_encoder(config_dict: ModelConfigDict) -> bool:
     for feature in config_dict["input_features"]:
         feature_type = feature.get("type")
-        feature_defaults = config_dict["defaults"].get(feature_type, {})
+        feature_defaults = config_dict.get("defaults", {}).get(feature_type, {})
         feature_encoder, defaults_encoder = feature.get("encoder", {}), feature_defaults.get("encoder", {})
         feature_encoder_type, defaults_encoder_type = feature_encoder.get("type"), defaults_encoder.get("type")
         registry = get_pretrained_encoder_registry()
-        if feature_encoder_type in registry or defaults_encoder_type in registry:
+        if feature_encoder_type in registry[feature_type] or defaults_encoder_type in registry[feature_type]:
             return True
     return False
