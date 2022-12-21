@@ -226,28 +226,24 @@ def get_total_attribution(
 ) -> Tuple[npt.NDArray[np.float64], Dict[str, List[List[Tuple[str, float]]]]]:
     """Compute the total attribution for each input feature for each row in the input data.
 
-    # Inputs
+    Args:
+        model: The Ludwig model to explain.
+        target_feature_name: The name of the target feature to explain.
+        target_idx: The index of the target feature label to explain if the target feature is a category.
+        feature_inputs: The preprocessed input data as a list of tensors of length [num_features].
+        baseline: The baseline input data as a list of tensors of length [num_features].
+        use_global: Whether to use global attribution or local attribution.
+        nsamples: The total number of samples in the input data.
 
-    :param model: (LudwigModel) The Ludwig model to explain.
-    :param target_feature_name: (str) The name of the target feature to explain.
-    :param target_idx: (Optional[int]) The index of the target feature label to explain if the target feature is a
-        category.
-    :param feature_inputs: (List[Variable]) The preprocessed input data as a list of tensors of length [num_features].
-    :param baseline: (List[torch.Tensor]) The baseline input data as a list of tensors of length [num_features].
-    :param use_global: (bool) Whether to use global attribution or local attribution.
-    :param nsamples: (int) The total number of samples in the input data.
-
-    # Return
-
-    :return: (Tuple[npt.NDArray[np.float64], Dict[str, npt.NDArray[np.float64]]])
-        `(total_attribution, feat_to_token_attributions)`
+    Returns:
+        The token-attribution pair for each token in the input feature for each row in the input data. The members of
+        the output tuple are structured as follows:
 
         `total_attribution`: (npt.NDArray[np.float64]) of shape [num_rows, num_features]
         The total attribution for each input feature for each row in the input data.
 
         `feat_to_token_attributions`: (Dict[str, List[List[Tuple[str, float]]]]) with values of shape
         [num_rows, seq_len, 2]
-        The token-attribution pair for each token in the input feature for each row in the input data.
     """
     input_features: LudwigFeatureDict = model.model.input_features
 
@@ -329,19 +325,17 @@ def get_token_attributions(
     input_ids: torch.Tensor,
     token_attributions: torch.Tensor,
 ) -> List[List[Tuple[str, float]]]:
-    """Convert token-level attributions to an array of token-attribution pairs of shape [batch_size,
-    sequence_length, 2].
+    """Convert token-level attributions to an array of token-attribution pairs of shape
+    [batch_size, sequence_length, 2].
 
-    # Inputs
+    Args:
+        model: The LudwigModel used to generate the attributions.
+        feature_name: The name of the feature for which the attributions were generated.
+        input_ids: The input ids of shape [batch_size, sequence_length].
+        token_attributions: The token-level attributions of shape [batch_size, sequence_length].
 
-    model: LudwigModel: The LudwigModel used to generate the attributions.
-    feature_name: str: The name of the feature for which the attributions were generated.
-    input_ids: torch.Tensor: The input ids of shape [batch_size, sequence_length].
-    token_attributions: torch.Tensor: The token-level attributions of shape [batch_size, sequence_length].
-
-    # Returns
-
-    List[List[Tuple[str, float]]]: An array of token-attribution pairs of shape [batch_size, sequence_length, 2].
+    Returns:
+        An array of token-attribution pairs of shape [batch_size, sequence_length, 2].
     """
     assert (
         input_ids.dtype == torch.int8
