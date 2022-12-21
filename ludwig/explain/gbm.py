@@ -36,7 +36,7 @@ class GBMExplainer(Explainer):
         for _ in range(self.vocab_size):
             for explanation in self.explanations:
                 # Add the feature attributions to the explanation object for this row.
-                explanation.add(feat_imp)
+                explanation.add(base_model.input_features.keys(), feat_imp)
 
             # TODO:
             expected_values.append(0.0)
