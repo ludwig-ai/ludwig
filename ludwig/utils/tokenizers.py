@@ -997,7 +997,7 @@ try:
 
             def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
                 return torchtext.transforms.CLIPTokenizer(
-                    encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
+                    encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
                 )
 
         class GPT2BPETokenizer(_BPETokenizer):
