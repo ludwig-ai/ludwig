@@ -156,7 +156,6 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
 
         # check learning rate
         assert model.config_obj.trainer.learning_rate == 0.0001  # has sequence feature
-        assert model.config_obj.trainer.learning_rate > 0
 
     check_postconditions(model)
 

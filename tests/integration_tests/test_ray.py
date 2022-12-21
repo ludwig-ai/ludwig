@@ -789,7 +789,7 @@ def test_tune_batch_size_lr_cpu(
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
     assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
-    assert model.config[TRAINER]["learning_rate"] == 0.001
+    assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
 @pytest.mark.distributed
