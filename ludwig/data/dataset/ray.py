@@ -28,7 +28,6 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
-from ray.data.extensions import TensorDtype
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
@@ -41,12 +40,11 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
-from ludwig.utils.types import DataFrame, Series
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
 _ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
-_ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 

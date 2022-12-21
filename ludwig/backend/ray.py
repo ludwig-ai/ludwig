@@ -707,8 +707,6 @@ class RayPredictor(BasePredictor):
             **kwargs,
         )
 
-        columns = [f.proc_column for f in self.model.input_features.values()]
-
         num_cpus, num_gpus = self.get_resources_per_worker()
 
         predictions = dataset.ds.map_batches(
