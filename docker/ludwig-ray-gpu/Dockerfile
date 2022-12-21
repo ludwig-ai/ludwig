@@ -18,7 +18,14 @@ RUN sudo apt-key del 7fa2af80 && \
     sudo rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/apt.conf.d/99allow_unauth cuda-keyring_1.0-1_all.deb && \
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC F60F4B3D7FA2AF80
 
-RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
+# Upgrade to GCC-9 from GCC-7.5
+# Required for libgcc-s1 which is a dependency for libnccl2
+RUN sudo apt-get update && sudo apt install -y software-properties-common && \
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    sudo apt update && \
+    sudo apt install -y gcc-9
+
+RUN DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
     wget \
     git \
@@ -34,6 +41,10 @@ WORKDIR /ludwig
 
 # TODO(travis): remove this once we fix CUDA 11.6 NCCL version in base image
 RUN pip install torch==1.13 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+
+# Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
+RUN sudo apt install --allow-change-held-packages --allow-downgrades -y \
+    libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
 
 COPY . .
 RUN HOROVOD_GPU_OPERATIONS=NCCL \
