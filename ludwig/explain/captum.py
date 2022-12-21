@@ -327,7 +327,8 @@ def get_token_attributions(
     input_ids: torch.Tensor,
     token_attributions: torch.Tensor,
 ) -> List[List[Tuple[str, float]]]:
-    """Convert token-level attributions to an array of token-attribution pairs of shape
+    """Convert token-level attributions to an array of token-attribution pairs of shape.
+
     [batch_size, sequence_length, 2].
 
     Args:
