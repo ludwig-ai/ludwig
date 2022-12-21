@@ -57,7 +57,7 @@ def _cls_pooled_error_message(encoder: str):
 
 
 @DeveloperAPI
-@register_encoder("albert", TEXT, is_huggingface=True)
+@register_encoder("albert", TEXT, is_pretrained=True)
 class ALBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -193,7 +193,7 @@ class ALBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("mt5", TEXT, is_huggingface=True)
+@register_encoder("mt5", TEXT, is_pretrained=True)
 class MT5Encoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -323,7 +323,7 @@ class MT5Encoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("xlmroberta", TEXT, is_huggingface=True)
+@register_encoder("xlmroberta", TEXT, is_pretrained=True)
 class XLMRoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -428,7 +428,7 @@ class XLMRoBERTaEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("bert", TEXT, is_huggingface=True)
+@register_encoder("bert", TEXT, is_pretrained=True)
 class BERTEncoder(Encoder):
     # TODO(justin): Use official class properties.
     fixed_preprocessing_parameters = {
@@ -560,7 +560,7 @@ class BERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("xlm", TEXT, is_huggingface=True)
+@register_encoder("xlm", TEXT, is_pretrained=True)
 class XLMEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -708,7 +708,7 @@ class XLMEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("gpt", TEXT, is_huggingface=True)
+@register_encoder("gpt", TEXT, is_pretrained=True)
 class GPTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -819,7 +819,7 @@ class GPTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("gpt2", TEXT, is_huggingface=True)
+@register_encoder("gpt2", TEXT, is_pretrained=True)
 class GPT2Encoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -933,7 +933,7 @@ class GPT2Encoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("roberta", TEXT, is_huggingface=True)
+@register_encoder("roberta", TEXT, is_pretrained=True)
 class RoBERTaEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1027,7 +1027,7 @@ class RoBERTaEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("transformer_xl", TEXT, is_huggingface=True)
+@register_encoder("transformer_xl", TEXT, is_pretrained=True)
 class TransformerXLEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1159,7 +1159,7 @@ class TransformerXLEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("xlnet", TEXT, is_huggingface=True)
+@register_encoder("xlnet", TEXT, is_pretrained=True)
 class XLNetEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1300,7 +1300,7 @@ class XLNetEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("distilbert", TEXT, is_huggingface=True)
+@register_encoder("distilbert", TEXT, is_pretrained=True)
 class DistilBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1414,7 +1414,7 @@ class DistilBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("ctrl", TEXT, is_huggingface=True)
+@register_encoder("ctrl", TEXT, is_pretrained=True)
 class CTRLEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1526,7 +1526,7 @@ class CTRLEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("camembert", TEXT, is_huggingface=True)
+@register_encoder("camembert", TEXT, is_pretrained=True)
 class CamemBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1654,7 +1654,7 @@ class CamemBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("t5", TEXT, is_huggingface=True)
+@register_encoder("t5", TEXT, is_pretrained=True)
 class T5Encoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1771,7 +1771,7 @@ class T5Encoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("flaubert", TEXT, is_huggingface=True)
+@register_encoder("flaubert", TEXT, is_pretrained=True)
 class FlauBERTEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -1916,7 +1916,7 @@ class FlauBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("electra", TEXT, is_huggingface=True)
+@register_encoder("electra", TEXT, is_pretrained=True)
 class ELECTRAEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -2039,7 +2039,7 @@ class ELECTRAEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("longformer", TEXT, is_huggingface=True)
+@register_encoder("longformer", TEXT, is_pretrained=True)
 class LongformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",
@@ -2135,7 +2135,7 @@ class LongformerEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("auto_transformer", TEXT, is_huggingface=True)
+@register_encoder("auto_transformer", TEXT, is_pretrained=True)
 class AutoTransformerEncoder(Encoder):
     fixed_preprocessing_parameters = {
         "tokenizer": "hf_tokenizer",

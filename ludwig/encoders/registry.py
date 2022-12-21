@@ -32,7 +32,7 @@ def register_sequence_encoder(name: str):
     return wrap
 
 
-def register_encoder(name: str, features: Union[str, List[str]], is_huggingface=False):
+def register_encoder(name: str, features: Union[str, List[str]], is_pretrained=False):
     if isinstance(features, str):
         features = [features]
 
@@ -44,7 +44,7 @@ def register_encoder(name: str, features: Union[str, List[str]], is_huggingface=
     def wrap(cls):
         for feature in features:
             update_registry(get_encoder_registry, cls, feature)
-            if is_huggingface:
+            if is_pretrained:
                 update_registry(get_pretrained_encoder_registry, cls, feature)
         return cls
 
