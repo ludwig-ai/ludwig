@@ -11,8 +11,8 @@ def get_auto_learning_rate(config_dict: ModelConfigDict) -> float:
     type of the corresponding encoder. More factors could be taken into consideration such as model
     size, dataset size, batch size, number of features, etc.
 
-    param:
-        config: Ludwig config used to train the model.
+    Args:
+        config_dict: Ludwig config used to train the model.
     """
     if not has_unstructured_input_feature(config_dict):
         return 0.001
