@@ -182,7 +182,8 @@ class IntegratedGradientsExplainer(Explainer):
                     for fa in le_true.feature_attributions
                     if fa.token_attributions is not None
                 }
-                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions)
+                # Prepend the negative class to the list of label explanations.
+                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions, prepend=True)
 
             # TODO(travis): for force plots, need something similar to SHAP E[X]
             expected_values.append(0.0)

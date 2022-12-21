@@ -56,6 +56,7 @@ class Explanation:
         feat_names: List[str],
         feat_attributions: npt.NDArray[np.float64],
         feat_to_token_attributions: Dict[str, List[Tuple[str, float]]] = None,
+        prepend: bool = False,
     ):
         """Add the feature attributions for a single label."""
         assert len(feat_names) == len(
@@ -75,7 +76,7 @@ class Explanation:
                 feat_attributions[i],
                 feat_to_token_attributions.get(feat_name) if feat_to_token_attributions else None,
             )
-        self.label_explanations.append(le)
+        self.label_explanations.insert(0, le) if prepend else self.label_explanations.append(le)
 
     def to_array(self) -> npt.NDArray[np.float64]:
         """Convert the explanation to a 2D array of shape (num_labels, num_features)."""
