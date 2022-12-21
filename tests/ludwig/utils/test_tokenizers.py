@@ -4,7 +4,7 @@ import pytest
 import torch
 import torchtext
 
-from ludwig.utils.tokenizers import NgramTokenizer
+from ludwig.utils.tokenizers import EnglishLemmatizeFilterTokenizer, NgramTokenizer
 
 TORCHTEXT_0_14_0_HF_NAMES = [
     "bert-base-uncased",
@@ -69,3 +69,10 @@ def test_ngram_tokenizer():
     ]
     tokens = tokenizer(inputs)
     assert tokens == tokens_expected
+
+
+def test_english_lemmatize_filter_tokenizer():
+    inputs = "Hello, I'm a single sentence!"
+    tokenizer = EnglishLemmatizeFilterTokenizer()
+    tokens = tokenizer(inputs)
+    assert len(tokens) > 0
