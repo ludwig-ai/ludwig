@@ -318,7 +318,7 @@ class MLPMixerEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("vit", IMAGE)
+@register_encoder("vit", IMAGE, is_pretrained=True)
 class ViTEncoder(Encoder):
     def __init__(
         self,
