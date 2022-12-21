@@ -15,6 +15,7 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
+from typing import Dict, Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.torch_utils import LudwigModule
@@ -29,3 +30,8 @@ class Encoder(LudwigModule, ABC):
     @property
     def name(self):
         return self.__class__.__name__
+
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        """Returns a dict of fixed preprocessing parameters for the encoder if required."""
+        return {}

@@ -57,15 +57,6 @@ def _cls_pooled_error_message(encoder: str):
 @DeveloperAPI
 @register_encoder("albert", TEXT)
 class ALBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "albert-base-v2",
-    }
-
     def __init__(
         self,
         max_sequence_length,
@@ -178,19 +169,17 @@ class ALBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "albert-base-v2",
+        }
+
 
 @DeveloperAPI
 @register_encoder("mt5", TEXT)
 class MT5Encoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "google/mt5-base",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -297,19 +286,17 @@ class MT5Encoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "google/mt5-base",
+        }
+
 
 @DeveloperAPI
 @register_encoder("xlmroberta", TEXT)
 class XLMRoBERTaEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "xlm-roberta-base",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -391,20 +378,17 @@ class XLMRoBERTaEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "xlm-roberta-base",
+        }
+
 
 @DeveloperAPI
 @register_encoder("bert", TEXT)
 class BERTEncoder(Encoder):
-    # TODO(justin): Use official class properties.
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "bert-base-uncased",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -512,19 +496,17 @@ class BERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "bert-base-uncased",
+        }
+
 
 @DeveloperAPI
 @register_encoder("xlm", TEXT)
 class XLMEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "xlm-mlm-en-2048",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -651,19 +633,17 @@ class XLMEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "xlm-mlm-en-2048",
+        }
+
 
 @DeveloperAPI
 @register_encoder("gpt", TEXT)
 class GPTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "openai-gpt",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -751,19 +731,17 @@ class GPTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "openai-gpt",
+        }
+
 
 @DeveloperAPI
 @register_encoder("gpt2", TEXT)
 class GPT2Encoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "gpt2",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -854,19 +832,17 @@ class GPT2Encoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "gpt2",
+        }
+
 
 @DeveloperAPI
 @register_encoder("roberta", TEXT)
 class RoBERTaEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "roberta-base",
-    }
-
     def __init__(
         self,
         max_sequence_length,
@@ -938,19 +914,17 @@ class RoBERTaEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "roberta-base",
+        }
+
 
 @DeveloperAPI
 @register_encoder("transformer_xl", TEXT)
 class TransformerXLEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "transfo-xl-wt103",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1059,19 +1033,17 @@ class TransformerXLEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "transfo-xl-wt103",
+        }
+
 
 @DeveloperAPI
 @register_encoder("xlnet", TEXT)
 class XLNetEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "xlnet-base-cased",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1189,19 +1161,17 @@ class XLNetEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "xlnet-base-cased",
+        }
+
 
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
 class DistilBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "distilbert-base-uncased",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1296,19 +1266,17 @@ class DistilBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "distilbert-base-uncased",
+        }
+
 
 @DeveloperAPI
 @register_encoder("ctrl", TEXT)
 class CTRLEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "ctrl",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1397,19 +1365,17 @@ class CTRLEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "ctrl",
+        }
+
 
 @DeveloperAPI
 @register_encoder("camembert", TEXT)
 class CamemBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "jplu/camembert-base",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1514,19 +1480,17 @@ class CamemBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "jplu/camembert-base",
+        }
+
 
 @DeveloperAPI
 @register_encoder("t5", TEXT)
 class T5Encoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "t5-small",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1620,19 +1584,17 @@ class T5Encoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "t5-small",
+        }
+
 
 @DeveloperAPI
 @register_encoder("flaubert", TEXT)
 class FlauBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "flaubert/flaubert_small_cased",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1754,19 +1716,17 @@ class FlauBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "flaubert/flaubert_small_cased",
+        }
+
 
 @DeveloperAPI
 @register_encoder("electra", TEXT)
 class ELECTRAEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "google/electra-small-discriminator",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1866,19 +1826,17 @@ class ELECTRAEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "google/electra-small-discriminator",
+        }
+
 
 @DeveloperAPI
 @register_encoder("longformer", TEXT)
 class LongformerEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "allenai/longformer-base-4096",
-    }
-
     def __init__(
         self,
         max_sequence_length: int,
@@ -1951,15 +1909,17 @@ class LongformerEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": "allenai/longformer-base-4096",
+        }
+
 
 @DeveloperAPI
 @register_encoder("auto_transformer", TEXT)
 class AutoTransformerEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
     def __init__(
         self,
         pretrained_model_name_or_path: str,
@@ -2022,3 +1982,9 @@ class AutoTransformerEncoder(Encoder):
     @property
     def input_dtype(self):
         return torch.int32
+
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+        return {
+            "tokenizer": "hf_tokenizer",
+        }

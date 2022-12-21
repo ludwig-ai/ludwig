@@ -54,7 +54,7 @@ class ImageEncoder(Encoder):
         raise NotImplementedError
 
     @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict) -> Dict[str, Union[None, int]]:
+    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
         """If the encoder is not in trainable mode, override the image width and height to be compatible with the
         pretrained encoder image dimension requirements."""
         if cls.requires_equal_dimensions() and cls.required_width() != cls.required_height():

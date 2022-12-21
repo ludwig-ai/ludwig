@@ -106,7 +106,7 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
-from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
@@ -1288,23 +1288,13 @@ def build_preprocessing_parameters(
 
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
-        # deal with encoders that have fixed preprocessing
+        # Update preprocessing parameters if encoders require fixed preprocessing parameters
         if ENCODER in feature_config:
             if TYPE in feature_config[ENCODER]:
                 encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
-                if hasattr(encoder_class, "fixed_preprocessing_parameters"):
-                    # Update preprocessing parameters for text encoders using fixed_preprocessing_parameters
-                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
-                    preprocessing_parameters = merge_dict(
-                        preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                    )  # TODO(Connor): Temporary fix, refactor this during preproc refactor
-                elif callable(getattr(encoder_class, "get_fixed_preprocessing_params", None)):
-                    # Update preprocessing parameters for image encoders using
-                    # the get_fixed_preprocessing_params cls method
-                    preprocessing_parameters = merge_dict(
-                        preprocessing_parameters, encoder_class.get_fixed_preprocessing_params(feature_config[ENCODER])
-                    )
+                preprocessing_parameters = merge_dict(
+                    preprocessing_parameters, encoder_class.get_fixed_preprocessing_params(feature_config[ENCODER])
+                )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
