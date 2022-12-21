@@ -113,6 +113,8 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
             tensors.append(t)
         else:
             # Wrap input into a variable so torch will track the gradient and LayerIntegratedGradients can explain it.
+            if t.dtype == torch.bool:
+                t = t.to(torch.float32)
             tensors.append(Variable(t, requires_grad=True))
 
     return tensors

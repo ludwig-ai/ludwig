@@ -97,7 +97,7 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
 def run_test_explainer_api(
     explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
 ):
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     if model_type == MODEL_ECD:
         input_features += [
             text_feature(encoder={"vocab_size": 3}),
