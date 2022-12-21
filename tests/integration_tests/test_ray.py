@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import os
 import tempfile
 
@@ -846,7 +847,8 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        backend_config = {**RAY_BACKEND_CONFIG}
+        # Deep copy RAY_BACKEND_CONFIG to avoid shallow copy modification
+        backend_config = copy.deepcopy({**RAY_BACKEND_CONFIG})
         # Manually override num workers to 2 for distributed training and distributed predict
         backend_config["trainer"]["num_workers"] = 2
         csv_filename = os.path.join(tmpdir, "dataset.csv")
