@@ -21,15 +21,16 @@ _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 @DeveloperAPI
 class Embedder(LudwigModule):
-    def __init__(self, feature_configs: List[Dict[str, Any]]):
+    def __init__(self, feature_configs: List[Dict[str, Any]], metadata: Dict[str, Any]):
         super().__init__()
 
         self.input_features = LudwigFeatureDict()
 
         input_feature_configs = InputFeaturesContainer()
         for feature in feature_configs:
-            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry()).get_schema_cls()
-            feature_obj = feature_cls.from_dict(feature)
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+            feature_obj = feature_cls.get_schema_cls().from_dict(feature)
+            feature_cls.update_config_with_metadata(feature_obj, metadata[feature[NAME]])
             setattr(input_feature_configs, feature[NAME], feature_obj)
 
         try:
@@ -44,7 +45,7 @@ class Embedder(LudwigModule):
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
             encoder_output = encoder(input_values)
-            encoder_outputs[input_feature_name] = encoder_output
+            encoder_outputs[input_feature_name] = encoder_output["encoder_output"]
         return encoder_outputs
 
 
@@ -54,7 +55,7 @@ def create_embed_batch_size_evaluator(
 ) -> BatchSizeEvaluator:
     class _EmbedBatchSizeEvaluator(BatchSizeEvaluator):
         def __init__(self):
-            embedder = Embedder(features_to_encode)
+            embedder = Embedder(features_to_encode, metadata)
             self.device = get_torch_device()
             self.embedder = embedder.to(self.device)
             self.embedder.eval()
@@ -74,7 +75,7 @@ def create_embed_batch_size_evaluator(
 def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata: Dict[str, Any]) -> Callable:
     class EmbedTransformFn:
         def __init__(self):
-            embedder = Embedder(features_to_encode)
+            embedder = Embedder(features_to_encode, metadata)
             self.device = get_torch_device()
             self.embedder = embedder.to(self.device)
             self.embedder.eval()
@@ -90,7 +91,6 @@ def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata
                 encoder_outputs = self.embedder(inputs)
 
             encoded = {name_to_proc[k]: v.detach().cpu().numpy() for k, v in encoder_outputs.items()}
-            print("ENCODED", encoded)
             output_df = from_numpy_dataset(encoded)
 
             for c in output_df.columns:

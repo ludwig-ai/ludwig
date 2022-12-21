@@ -1260,16 +1260,18 @@ def embed_fixed_features(dataset, feature_configs, metadata, backend):
                     features_to_encode.append(feature_config)
 
     if features_to_encode:
+        for feature in features_to_encode:
+            # Temporarily set to False to ensure proper encoding
+            metadata[feature[NAME]]["encoded_in_preprocessing"] = False
+
         batch_size = backend.tune_batch_size(
             create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset)
         )
-        print("!!! BATCH SIZE", batch_size)
         transform_fn = create_embed_transform_fn(features_to_encode, metadata)
         results = backend.batch_transform(dataset, batch_size, transform_fn)
 
         for feature in features_to_encode:
             # Set metadata so we know to skip encoding the feature
-            feature["encoded_in_preprocessing"] = True
             metadata[feature[NAME]]["encoded_in_preprocessing"] = True
 
         return results

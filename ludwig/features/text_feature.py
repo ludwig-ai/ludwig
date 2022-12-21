@@ -203,6 +203,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
         feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
         feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
+        feature_config.encoded_in_preprocessing = feature_metadata.get("encoded_in_preprocessing", False)
 
     @staticmethod
     def get_schema_cls():
@@ -264,7 +265,7 @@ class _TextInputPassthroughModule(LudwigModule):
         assert inputs.dtype == torch.float32, f"{inputs.dtype} != torch.float32"
         assert len(inputs.shape) == 2
 
-        return inputs
+        return {"encoder_output": inputs}
 
     @property
     def input_dtype(self):

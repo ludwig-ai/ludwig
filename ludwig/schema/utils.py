@@ -1,7 +1,7 @@
 import copy
 from abc import ABC
 from dataclasses import field
-from typing import Any
+from typing import Any, Set
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Optional, Tuple, Type, Union
@@ -152,6 +152,11 @@ class BaseMarshmallowConfig(ABC):
     def from_dict(cls, d: TDict[str, Any]):
         schema = marshmallow_dataclass.class_schema(cls)()
         return schema.load(d)
+
+    @classmethod
+    def get_valid_field_names(cls) -> Set[str]:
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return set(schema.fields.keys())
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
