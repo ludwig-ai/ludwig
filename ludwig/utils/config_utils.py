@@ -102,6 +102,8 @@ def has_pretrained_encoder(config_dict: ModelConfigDict) -> bool:
         feature_encoder, defaults_encoder = feature.get("encoder", {}), feature_defaults.get("encoder", {})
         feature_encoder_type, defaults_encoder_type = feature_encoder.get("type"), defaults_encoder.get("type")
         registry = get_pretrained_encoder_registry()
-        if feature_encoder_type in registry[feature_type] or defaults_encoder_type in registry[feature_type]:
+        if feature_encoder_type in registry.get(feature_type, {}) or defaults_encoder_type in registry.get(
+            feature_type, {}
+        ):
             return True
     return False
