@@ -359,9 +359,7 @@ class RayDatasetBatcher(Batcher):
 
     def _create_sync_reader(self, pipeline: DatasetPipeline):
         def sync_read():
-            for batch in pipeline.iter_batches(
-                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
-            ):
+            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"):
                 yield self._prepare_batch(batch)
 
         return sync_read()
@@ -371,9 +369,7 @@ class RayDatasetBatcher(Batcher):
         batch_size = self.batch_size
 
         def producer():
-            for batch in pipeline.iter_batches(
-                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
-            ):
+            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
@@ -398,10 +394,7 @@ class RayDatasetBatcher(Batcher):
         splits = pipeline.split(n=num_threads)
 
         def producer(i):
-            for batch in (
-                splits[i]
-                .iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas")
-            ):
+            for batch in splits[i].iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
