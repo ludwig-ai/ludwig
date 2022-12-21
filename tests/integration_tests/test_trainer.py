@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from unittest import mock
@@ -5,10 +6,11 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import DEFAULT_BATCH_SIZE, TRAINER
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -17,6 +19,7 @@ from tests.integration_tests.utils import (
     number_feature,
     RAY_BACKEND_CONFIG,
     sequence_feature,
+    text_feature,
     vector_feature,
 )
 
@@ -92,7 +95,7 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
         TRAINER: trainer,
     }
 
-    model = LudwigModel(config, backend=LocalTestBackend())
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
 
     # check preconditions
     assert model.config_obj.trainer.batch_size == "auto"
@@ -109,8 +112,9 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
         # check batch size
         assert model.config_obj.trainer.batch_size != "auto"
         assert model.config_obj.trainer.batch_size > 1
-        if is_cpu:
-            assert model.config_obj.trainer.batch_size == DEFAULT_BATCH_SIZE
+
+        # 16 is the largest possible batch size for this dataset
+        assert model.config_obj.trainer.batch_size == 16
 
         assert model.config_obj.trainer.eval_batch_size != "auto"
         assert model.config_obj.trainer.eval_batch_size > 1
@@ -237,3 +241,33 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     assert train_ds.ds.num_blocks() == 2
     assert val_ds.ds.num_blocks() == 2
     assert test_ds.ds.num_blocks() == 2
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+def test_mixed_precision(tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "use_mixed_precision": True,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)

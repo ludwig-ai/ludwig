@@ -105,7 +105,13 @@ except ImportError:
 
 
 def run_api_experiment(
-    config, dataset, backend_config, predict=False, skip_save_processed_input=True, skip_save_predictions=True
+    config,
+    dataset,
+    backend_config,
+    predict=False,
+    skip_save_processed_input=True,
+    skip_save_predictions=True,
+    required_metrics=None,
 ):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
@@ -125,6 +131,7 @@ def run_api_experiment(
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
+        required_metrics=required_metrics,
     )
 
     assert isinstance(model.backend, RayBackend)
@@ -285,6 +292,7 @@ def run_test_with_features(
     first_row_none=False,
     last_row_none=False,
     nan_cols=None,
+    required_metrics=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -315,6 +323,7 @@ def run_test_with_features(
                     predict=predict,
                     skip_save_processed_input=skip_save_processed_input,
                     skip_save_predictions=skip_save_predictions,
+                    required_metrics=required_metrics,
                 )
         else:
             run_fn(
@@ -324,6 +333,7 @@ def run_test_with_features(
                 predict=predict,
                 skip_save_processed_input=skip_save_processed_input,
                 skip_save_predictions=skip_save_predictions,
+                required_metrics=required_metrics,
             )
 
 
@@ -372,12 +382,20 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
+    # The synthetic set feature generator inserts between 0 and `vocab_size` entities per entry. 0 entities creates a
+    # null (NaN) entry. The default behavior for such entries in output features is to DROP_ROWS. This leads to poorly
+    # handled non-determinism when comparing the metrics between the local and Ray backends. We work around this by
+    # setting the `missing_value_strategy` to `fill_with_const` and setting the `fill_value` to the empty string.
+    set_feature_config = set_feature(
+        decoder={"vocab_size": 3},
+        preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
+    )
     output_features = [
         binary_feature(),
         number_feature(),
         vector_feature(),
+        set_feature_config,
         # TODO: feature type not yet supported
-        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
         # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
@@ -390,6 +408,7 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
+        required_metrics={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 

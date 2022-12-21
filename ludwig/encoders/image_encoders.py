@@ -31,7 +31,7 @@ from ludwig.schema.encoders.image_encoders import (
     Stacked2DCNNEncoderConfig,
     ViTEncoderConfig,
 )
-from ludwig.utils.pytorch_utils import freeze_parameters
+from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +233,6 @@ class ResNetEncoder(Encoder):
         )
 
     def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-
         hidden = self.resnet(inputs)
         axes = [2, 3]
         hidden = torch.mean(hidden, axes)
@@ -376,7 +375,7 @@ class ViTEncoder(Encoder):
         self._input_shape = (in_channels, img_height, img_width)
 
         if use_pretrained and not saved_weights_in_checkpoint:
-            self.transformer = ViTModel.from_pretrained(pretrained_model)
+            transformer = ViTModel.from_pretrained(pretrained_model)
         else:
             config = ViTConfig(
                 image_size=img_height,
@@ -393,18 +392,15 @@ class ViTEncoder(Encoder):
                 layer_norm_eps=layer_norm_eps,
                 gradient_checkpointing=gradient_checkpointing,
             )
-            self.transformer = ViTModel(config)
+            transformer = ViTModel(config)
 
-        if trainable:
-            self.transformer.train()
-        else:
-            freeze_parameters(self.transformer)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
 
-        self._output_shape = (self.transformer.config.hidden_size,)
+        self._output_shape = (transformer.config.hidden_size,)
         self.output_attentions = output_attentions
 
     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-        output = self.transformer(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
+        output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
         return_dict = {"encoder_output": output.pooler_output}
         if self.output_attentions:
             return_dict["attentions"] = output.attentions

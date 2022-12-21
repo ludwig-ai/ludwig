@@ -52,7 +52,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
         field_options=[
-            schema_utils.NonNegativeFloat(default=0.001, allow_none=False),
+            schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -139,8 +139,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to include the entire training set during evaluation.",
+        default=False,
+        description=(
+            "Whether to evaluate on the entire training set during evaluation. By default, training metrics will be "
+            "computed at the end of each training step, and accumulated up to the evaluation phase. In practice, "
+            "computing training set metrics during training is up to 30% faster than running a separate evaluation "
+            "pass over the training set, but results in more noisy training metrics, particularly during the earlier "
+            "epochs. It's recommended to only set this to True if you need very exact training set metrics, and are "
+            "willing to pay a significant performance penalty for them."
+        ),
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
@@ -165,12 +172,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
-        default="l2", description="Type of regularization."
+        default="l2",
+        description="Type of regularization.",
+        parameter_metadata=TRAINER_METADATA["regularization_type"],
     )
 
     regularization_lambda: float = schema_utils.FloatRange(
         default=0.0,
         min=0,
+        max=1,
         description="Strength of the $L2$ regularization.",
         parameter_metadata=TRAINER_METADATA["regularization_lambda"],
     )
@@ -303,6 +313,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
+    use_mixed_precision: bool = schema_utils.Boolean(
+        default=False,
+        description="Enable automatic mixed-precision (AMP) during training.",
+        parameter_metadata=TRAINER_METADATA["use_mixed_precision"],
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
@@ -353,8 +369,15 @@ class GBMTrainerConfig(BaseTrainerConfig):
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to include the entire training set during evaluation.",
+        default=False,
+        description=(
+            "Whether to evaluate on the entire training set during evaluation. By default, training metrics will be "
+            "computed at the end of each training step, and accumulated up to the evaluation phase. In practice, "
+            "computing training set metrics during training is up to 30% faster than running a separate evaluation "
+            "pass over the training set, but results in more noisy training metrics, particularly during the earlier "
+            "epochs. It's recommended to only set this to True if you need very exact training set metrics, and are "
+            "willing to pay a significant performance penalty for them."
+        ),
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
