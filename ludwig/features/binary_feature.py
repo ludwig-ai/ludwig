@@ -368,7 +368,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 prob_col: np.where(
                     result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
                 ),
-                probabilities_col: result[probabilities_col].map(lambda x: [1 - x, x], axis=1),
+                probabilities_col: result[probabilities_col].map(lambda x: [1 - x, x]),
             }
             result = result.assign(
                 **postprocessed_output_dict,
