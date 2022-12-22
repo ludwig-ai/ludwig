@@ -1146,16 +1146,17 @@ class Trainer(BaseTrainer):
         last_validation_metric = validation_metrics[validation_metric][-1]
         last_validation_metric_value = last_validation_metric[-1]
 
+        if last_validation_metric_value != last_validation_metric_value:
+            # Fallback to 0 if the validation metric value is a NaN.
+            # This is potentially relevant for small datasets like those used in testing where if there's only a
+            # single output label, some metrics like ROC may turn out to be NaN.
+            # However, we want to guarantee that the model will be saved at least once over a full
+            # training-checkpoint-eval-loop.
+            last_validation_metric_value = 0
+
         if improved(last_validation_metric_value, progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
             progress_tracker.best_eval_metric = last_validation_metric_value
-            if last_validation_metric_value != last_validation_metric_value:
-                # Fallback to 0 if the validation metric value is a NaN.
-                # This is potentially relevant for small datasets like those used in testing where if there's only a
-                # single output label, some metrics like ROC may turn out to be NaN.
-                # However, we want to guarantee that the model will be saved at least once over a full
-                # training-checkpoint-eval-loop.
-                last_validation_metric_value = 0
 
             if self.is_coordinator() and not skip_save_model:
                 self.model.save(save_path)
