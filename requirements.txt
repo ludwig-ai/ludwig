@@ -27,7 +27,7 @@ tensorboard
 torchmetrics<0.9
 torchinfo
 filelock
-psutil
+psutil==5.9.4
 protobuf
 experiment_impact_tracker
 gpustat

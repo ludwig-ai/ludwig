@@ -45,8 +45,10 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str
     """Name corresponding to an optimizer `ludwig.modules.optimization_modules.optimizer_registry`.
-       Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will
-       result in a `ValidationError`."""
+
+    Technically mutable, but attempting to load a derived optimizer with `type` set to a mismatched value will result in
+    a `ValidationError`.
+    """
 
     lr: float = schema_utils.NonNegativeFloat(
         default=1e-03, description="Learning rate.", parameter_metadata=INTERNAL_ONLY
@@ -273,7 +275,6 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class FtrlOptimizerConfig(BaseOptimizerConfig):
-
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
     type: str = schema_utils.ProtectedString("ftrl")
 
@@ -290,7 +291,6 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 @register_optimizer(name="nadam")
 @dataclass(repr=False)
 class NadamOptimizerConfig(BaseOptimizerConfig):
-
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
     """Points to `torch.optim.NAdam`."""
 

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 """This module contains the class and auxiliary methods of a model."""
+import contextlib
 import gc
 import logging
 import math
@@ -191,6 +192,12 @@ class Trainer(BaseTrainer):
         self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
+        # Setup for automatic mixed precision (AMP)
+        self.use_amp = config.use_mixed_precision
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
+        if self.use_amp:
+            logger.info("Enabling automatic mixed precision (AMP)")
+
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
         # the original sigint to restore at the end of training
@@ -219,6 +226,7 @@ class Trainer(BaseTrainer):
         """
         if isinstance(self.optimizer, torch.optim.LBFGS):
             # NOTE: Horovod is not supported for L-BFGS.
+            # NOTE: AMP is not supported for L-BFGS yet.
 
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
@@ -238,34 +246,62 @@ class Trainer(BaseTrainer):
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
 
+            if not self.evaluate_training_set:
+                # Update evaluation metrics with current model params:
+                # noisy but fast way to get metrics on the training set
+                predictions = self.model.outputs_to_predictions(model_outputs)
+                self.model.update_metrics(targets, predictions)
+
             return loss, all_losses
 
         self.optimizer.zero_grad()
 
-        # Obtain model predictions and loss
-        model_outputs = self.model((inputs, targets))
-        loss, all_losses = self.model.train_loss(
-            targets, model_outputs, self.regularization_type, self.regularization_lambda
-        )
+        with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
+            # Obtain model predictions and loss
+            model_outputs = self.model((inputs, targets))
+            loss, all_losses = self.model.train_loss(
+                targets, model_outputs, self.regularization_type, self.regularization_lambda
+            )
 
         # Begin the backward pass
         variables = self.model.parameters()
-        loss.backward()
+        if self.use_amp:
+            self.scaler.scale(loss).backward()
+        else:
+            loss.backward()
 
         if self.horovod:
             # Wait for gradient aggregation to complete before clipping the gradients
+            # When using AMP, we need to do this before unscaling.
+            # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
             self.optimizer.synchronize()
+
+        if self.use_amp:
+            # In-place unscaling of all gradients before weights update
+            # Do this before gradient clipping per docs:
+            # https://pytorch.org/docs/master/notes/amp_examples.html#gradient-clipping
+            self.scaler.unscale_(self.optimizer)
 
         # Clip gradients
         self.clip_grads(variables)
 
         # Apply gradient updates
-        if self.horovod:
-            # Because we already synchronized above, we can doing so here
-            with self.optimizer.skip_synchronize():
+        with self.optimizer.skip_synchronize() if self.horovod else contextlib.nullcontext():
+            # Because we already synchronized above, we skip doing so here
+            if self.use_amp:
+                self.scaler.step(self.optimizer)
+            else:
                 self.optimizer.step()
-        else:
-            self.optimizer.step()
+
+        if self.use_amp:
+            # Update scaler in case of overflow/underflow
+            self.scaler.update()
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            predictions = self.model.outputs_to_predictions(model_outputs)
+            self.model.update_metrics(targets, predictions)
 
         return loss, all_losses
 
@@ -339,6 +375,7 @@ class Trainer(BaseTrainer):
         self.model.train()  # Sets model training mode.
         durations = []
         for _ in range(total_steps):
+            self.model.reset_metrics()
             start_ts = time.time()
             inputs = {
                 input_feature_name: input_feature.create_sample_input(batch_size=batch_size).to(self.device)
@@ -352,116 +389,6 @@ class Trainer(BaseTrainer):
             durations.append(time.time() - start_ts)
         med_duration_s = statistics.median(durations)
         return batch_size / med_duration_s
-
-    def tune_learning_rate(
-        self,
-        config,
-        training_set: Dataset,
-        random_seed: int = default_random_seed,
-        min_lr: float = 1e-8,
-        max_lr: float = 1.0,
-        total_training_steps: int = 100,
-        mode: str = "exponential",
-        early_stop_threshold: int = 3,
-        beta: float = 0.98,
-    ) -> float:
-        logger.info("Tuning learning rate...")
-
-        learning_rate = self.base_learning_rate
-
-        current_learning_rate = min_lr
-        losses = []
-        learning_rates = []
-        avg_loss = 0.0
-        best_loss = 0.0
-        epoch = 0
-        diverging = False
-
-        def linear_scheduler(current_learning_rate, current_step):
-            scale = (current_step + 1) / total_training_steps
-            return current_learning_rate + scale * (max_lr - current_learning_rate)
-
-        def exponential_scheduler(current_learning_rate, current_step):
-            scale = (current_step + 1) / total_training_steps
-            return current_learning_rate * (max_lr / current_learning_rate) ** scale
-
-        def get_optimal_lr(losses, learning_rates, skip_begin: int = 10, skip_end: int = 1):
-            try:
-                loss = np.array(losses[skip_begin:-skip_end])
-                loss = loss[np.isfinite(loss)]
-                best_lr_index = np.gradient(loss).argmin() + skip_begin
-                best_lr = learning_rates[best_lr_index]
-                return best_lr
-            except Exception:
-                logger.exception("Failed to detect optimal learning rate")
-                return None
-
-        self.model.train()  # Sets model training mode.
-        with training_set.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            horovod=self.horovod,
-            ignore_last=True,
-        ) as batcher:
-            step_count = 0
-            while epoch < self.epochs and step_count < total_training_steps and not diverging:
-                batcher.set_epoch(epoch, self.batch_size)
-                self.model.reset_metrics()
-                while not batcher.last_batch() and step_count < total_training_steps:
-                    batch = batcher.next_batch()
-                    inputs = {
-                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for i_feat in self.model.input_features.values()
-                    }
-                    targets = {
-                        o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for o_feat in self.model.output_features.values()
-                    }
-
-                    loss, _ = self.train_step(
-                        inputs,
-                        targets,
-                    )
-                    # compute smoothed loss
-                    avg_loss = beta * avg_loss + (1 - beta) * loss
-                    smoothed_loss = avg_loss / (1 - beta ** (step_count + 1))
-
-                    # store learning rate and loss
-                    learning_rates.append(current_learning_rate)
-                    losses.append(smoothed_loss.detach().cpu().numpy())
-                    logger.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
-
-                    # check whether loss is diverging
-                    if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
-                        diverging = True
-                        break
-                    else:
-                        if smoothed_loss < best_loss or step_count == 0:
-                            best_loss = smoothed_loss
-
-                    # compute new learning rate
-                    if mode == "exponential":
-                        current_learning_rate = exponential_scheduler(current_learning_rate, step_count)
-                    else:
-                        current_learning_rate = linear_scheduler(current_learning_rate, step_count)
-
-                    self.set_optimizer_learning_rate(current_learning_rate)
-                    step_count += 1
-
-                epoch += 1
-
-        optimal_lr = get_optimal_lr(losses, learning_rates)
-        if optimal_lr:
-            learning_rate = optimal_lr
-        else:
-            logger.info("Could not determine optimal learning rate, falling back to base default")
-
-        logger.info(f"Selected learning_rate={learning_rate}")
-        return learning_rate
 
     def is_cpu_training(self):
         return torch.device(self.device) == torch.device("cpu")
@@ -582,27 +509,17 @@ class Trainer(BaseTrainer):
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
+
         if self.evaluate_training_set:
+            # Run a separate pass over the training data to compute metrics
             self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
             )
-
-            self.write_eval_summary(
-                summary_writer=train_summary_writer,
-                metrics=progress_tracker.train_metrics,
-                step=progress_tracker.steps,
-            )
         else:
-            # Training set is not evaluated. Add loss to the progress tracker.
-            progress_tracker.train_metrics[COMBINED][LOSS].append(
-                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
-            )
-            for output_feature_name, loss_tensor in all_losses.items():
-                progress_tracker.train_metrics[output_feature_name][LOSS].append(
-                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
-                )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
+            # Use metrics accumulated during training
+            metrics = self.model.get_metrics()
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            self.model.reset_metrics()
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -890,7 +807,7 @@ class Trainer(BaseTrainer):
                         # ========== Save training progress ==========
                         logger.debug(
                             f"Epoch {progress_tracker.epoch} took: "
-                            f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                            f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
                         if not self.skip_save_progress:
                             checkpoint_manager.save(progress_tracker.steps)
@@ -1056,7 +973,6 @@ class Trainer(BaseTrainer):
         with dataset.initialize_batcher(
             batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
         ) as batcher:
-
             # training step loop
             progress_bar_config = {
                 "desc": "Training online",

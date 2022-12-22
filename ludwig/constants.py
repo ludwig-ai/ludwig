@@ -205,6 +205,8 @@ COMBINER = "combiner"
 ENCODER = "encoder"
 DECODER = "decoder"
 
+TRAINABLE = "trainable"
+
 DEFAULTS = "defaults"
 DEFAULT = "default"
 DEFAULT_VALIDATION_METRIC = "default_validation_metric"

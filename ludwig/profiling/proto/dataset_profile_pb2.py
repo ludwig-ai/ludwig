@@ -18,9 +18,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ludwig/profiling/proto/dataset_profile.proto',
   package='dataset_profile',
   syntax='proto3',
-  serialized_options=None,
+  serialized_options=b'Z+github.com/ludwig-ai/ludwig/dataset_profile',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n,ludwig/profiling/proto/dataset_profile.proto\x12\x0f\x64\x61taset_profile\x1a-ludwig/profiling/proto/whylogs_messages.proto\"\xf6\x01\n\x0e\x44\x61tasetProfile\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\x14\n\x0cnum_examples\x18\x02 \x01(\x03\x12\x12\n\nsize_bytes\x18\x03 \x01(\x03\x12N\n\x10\x66\x65\x61ture_profiles\x18\x14 \x03(\x0b\x32\x34.dataset_profile.DatasetProfile.FeatureProfilesEntry\x1aW\n\x14\x46\x65\x61tureProfilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12.\n\x05value\x18\x02 \x01(\x0b\x32\x1f.dataset_profile.FeatureProfile:\x02\x38\x01\"I\n\x0e\x46\x65\x61tureProfile\x12\x37\n\x0fwhylogs_metrics\x18\x01 \x01(\x0b\x32\x1e.dataset_profile.ColumnMessageb\x06proto3'
+  serialized_pb=b'\n,ludwig/profiling/proto/dataset_profile.proto\x12\x0f\x64\x61taset_profile\x1a-ludwig/profiling/proto/whylogs_messages.proto\"\xf6\x01\n\x0e\x44\x61tasetProfile\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\x14\n\x0cnum_examples\x18\x02 \x01(\x03\x12\x12\n\nsize_bytes\x18\x03 \x01(\x03\x12N\n\x10\x66\x65\x61ture_profiles\x18\x14 \x03(\x0b\x32\x34.dataset_profile.DatasetProfile.FeatureProfilesEntry\x1aW\n\x14\x46\x65\x61tureProfilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12.\n\x05value\x18\x02 \x01(\x0b\x32\x1f.dataset_profile.FeatureProfile:\x02\x38\x01\"I\n\x0e\x46\x65\x61tureProfile\x12\x37\n\x0fwhylogs_metrics\x18\x01 \x01(\x0b\x32\x1e.dataset_profile.ColumnMessageB-Z+github.com/ludwig-ai/ludwig/dataset_profileb\x06proto3'
   ,
   dependencies=[ludwig_dot_profiling_dot_proto_dot_whylogs__messages__pb2.DESCRIPTOR,])
 
@@ -180,5 +180,6 @@ FeatureProfile = _reflection.GeneratedProtocolMessageType('FeatureProfile', (_me
 _sym_db.RegisterMessage(FeatureProfile)
 
 
+DESCRIPTOR._options = None
 _DATASETPROFILE_FEATUREPROFILESENTRY._options = None
 # @@protoc_insertion_point(module_scope)

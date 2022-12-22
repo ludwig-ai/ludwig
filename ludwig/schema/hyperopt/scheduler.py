@@ -50,8 +50,10 @@ class BaseSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str
     """Name corresponding to a scheduler in `ludwig.schema.hyperopt.scheduler.scheduler_registry`.
-       Technically mutable, but attempting to load a derived scheduler with `type` set to a mismatched value will
-       result in a `ValidationError`."""
+
+    Technically mutable, but attempting to load a derived scheduler with `type` set to a mismatched value will result in
+    a `ValidationError`.
+    """
 
 
 # Field aliases to cut down on code reuse:
