@@ -87,9 +87,11 @@ class GBM(BaseModel):
             if isinstance(self.lgbm_model, lgb.LGBMClassifier)
             else {}
         )
-        self.compiled_model = convert(self.lgbm_model, "torch", extra_config=extra_config)
-        yield
-        self.compiled_model = None
+        try:
+            self.compiled_model = convert(self.lgbm_model, "torch", extra_config=extra_config)
+            yield
+        finally:
+            self.compiled_model = None
 
     def forward(
         self,
@@ -194,9 +196,9 @@ class GBM(BaseModel):
                     probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
 
                     # probabilities for belonging to each class
+                    # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
                     probs = torch.softmax(torch.logit(probs[:, :, 1]), -1)  # shape (batch_size, num_classes)
 
-                # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
                 logits = probs
 
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
