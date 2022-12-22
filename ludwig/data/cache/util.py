@@ -14,7 +14,7 @@ def calculate_checksum(original_dataset: CacheableDataset, config: dict):
         "feature_names": [feature[NAME] for feature in features],
         "feature_types": [feature[TYPE] for feature in features],
         # TODO(travis): hack until https://github.com/ludwig-ai/ludwig/pull/2862 lands
-        "encoded_in_preprocessing": [feature.get("encoder", {}).get("trainable", False) for feature in features],
+        "encoded_in_preprocessing_temp": [feature.get("encoder", {}).get("trainable", False) for feature in features],
         "feature_preprocessing": [feature.get(PREPROCESSING, {}) for feature in features],
     }
     return hash_dict(info, max_length=None).decode("ascii")
