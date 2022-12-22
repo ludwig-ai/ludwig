@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import time
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -362,8 +361,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             false_col = f"{probabilities_col}_{class_names[0]}"
             true_col = f"{probabilities_col}_{class_names[1]}"
             prob_col = f"{self.feature_name}_{PROBABILITY}"
-            
-            start_t = time.time()
+
             new_results_dict = {
                 false_col: lambda x: 1 - x[probabilities_col],
                 true_col: lambda x: x[probabilities_col],
@@ -375,7 +373,6 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             result = result.assign(
                 **new_results_dict,
             )
-            print(f"Time to assign: {time.time() - start_t}")
 
         return result
 
