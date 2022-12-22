@@ -362,7 +362,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             true_col = f"{probabilities_col}_{class_names[1]}"
             prob_col = f"{self.feature_name}_{PROBABILITY}"
 
-            new_results_dict = {
+            postprocessed_output_dict = {
                 false_col: lambda x: 1 - x[probabilities_col],
                 true_col: lambda x: x[probabilities_col],
                 prob_col: np.where(
@@ -371,7 +371,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                 probabilities_col: result.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], axis=1),
             }
             result = result.assign(
-                **new_results_dict,
+                **postprocessed_output_dict,
             )
 
         return result
