@@ -234,6 +234,45 @@ def test_stratify_split(df_engine, nrows, atol, class_probs, ray_cluster_2cpu):
 
 
 @pytest.mark.parametrize(
+    ("df_engine", "atol"),
+    [
+        pytest.param(PandasEngine(), 1, id="pandas"),
+        pytest.param(DaskEngine(_use_ray=False), 10, id="dask", marks=pytest.mark.distributed),
+    ],
+)
+def test_single_occurrence_stratified_split(df_engine, atol, ray_cluster_2cpu):
+    nrows = 1000
+    df = pd.DataFrame(np.random.randint(0, 100, size=(nrows, 2)), columns=["A", "B"])
+    # create 4 classes, where two of them each occurs once in the dataframe.
+    df["category"] = (nrows // 2 - 1) * [0, 1] + [2, 3]
+
+    if isinstance(df_engine, DaskEngine):
+        df = df_engine.df_lib.from_pandas(df, npartitions=10)
+
+    probs = (0.7, 0.1, 0.2)
+    split_params = {
+        "type": "stratify",
+        "column": "category",
+        "probabilities": probs,
+    }
+    splitter = get_splitter(**split_params)
+
+    backend = Mock()
+    backend.df_engine = df_engine
+    splits = splitter.split(df, backend, random_seed=42)
+    assert len(splits) == 3
+
+    ratios = np.array([0.499, 0.499, 0.001, 0.001]) * nrows
+    for split, p in zip(splits, probs):
+        if isinstance(df_engine, DaskEngine):
+            split = split.compute()
+        for idx, r in enumerate(ratios):
+            actual = np.sum(split["category"] == idx)
+            expected = int(r * p)
+            assert np.isclose(actual, expected, atol=atol)
+
+
+@pytest.mark.parametrize(
     ("df_engine",),
     [
         pytest.param(PandasEngine(), id="pandas"),

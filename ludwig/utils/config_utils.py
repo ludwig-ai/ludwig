@@ -1,10 +1,11 @@
 from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import DECODER, ENCODER, INPUT_FEATURES, PREPROCESSING, TYPE
+from ludwig.constants import DECODER, ENCODER, IMAGE, INPUT_FEATURES, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
+from ludwig.encoders.registry import get_pretrained_encoder_registry
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.schema.model_config import ModelConfig
-from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
+from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, ModelConfigDict, PreprocessingConfigDict
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -75,3 +76,34 @@ def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_gr
         return feature_schema().encoder.type
     feature_schema = get_from_registry(feature.get(TYPE), get_output_type_registry()).get_schema_cls()
     return feature_schema().decoder.type
+
+
+def has_trainable_encoder(config_dict: ModelConfigDict) -> bool:
+    for feature in config_dict["input_features"]:
+        feature_type = feature.get("type")
+        feature_defaults = config_dict["defaults"].get(feature_type, {})
+        feature_encoder, defaults_encoder = feature.get("encoder", {}), feature_defaults.get("encoder", {})
+        if feature_encoder.get("trainable", False) or defaults_encoder.get("trainable", False):
+            return True
+    return False
+
+
+def has_unstructured_input_feature(config_dict: ModelConfigDict) -> bool:
+    for feature in config_dict["input_features"]:
+        if feature.get("type", None) in {TEXT, IMAGE, SEQUENCE, TIMESERIES}:
+            return True
+    return False
+
+
+def has_pretrained_encoder(config_dict: ModelConfigDict) -> bool:
+    for feature in config_dict["input_features"]:
+        feature_type = feature.get("type")
+        feature_defaults = config_dict.get("defaults", {}).get(feature_type, {})
+        feature_encoder, defaults_encoder = feature.get("encoder", {}), feature_defaults.get("encoder", {})
+        feature_encoder_type, defaults_encoder_type = feature_encoder.get("type"), defaults_encoder.get("type")
+        registry = get_pretrained_encoder_registry()
+        if feature_encoder_type in registry.get(feature_type, {}) or defaults_encoder_type in registry.get(
+            feature_type, {}
+        ):
+            return True
+    return False

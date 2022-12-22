@@ -361,116 +361,6 @@ class Trainer(BaseTrainer):
 
         train_summary_writer.flush()
 
-    def tune_learning_rate(
-        self,
-        config,
-        training_set: Dataset,
-        random_seed: int = default_random_seed,
-        min_lr: float = 1e-8,
-        max_lr: float = 1.0,
-        total_training_steps: int = 100,
-        mode: str = "exponential",
-        early_stop_threshold: int = 3,
-        beta: float = 0.98,
-    ) -> float:
-        logger.info("Tuning learning rate...")
-
-        learning_rate = self.base_learning_rate
-
-        current_learning_rate = min_lr
-        losses = []
-        learning_rates = []
-        avg_loss = 0.0
-        best_loss = 0.0
-        epoch = 0
-        diverging = False
-
-        def linear_scheduler(current_learning_rate, current_step):
-            scale = (current_step + 1) / total_training_steps
-            return current_learning_rate + scale * (max_lr - current_learning_rate)
-
-        def exponential_scheduler(current_learning_rate, current_step):
-            scale = (current_step + 1) / total_training_steps
-            return current_learning_rate * (max_lr / current_learning_rate) ** scale
-
-        def get_optimal_lr(losses, learning_rates, skip_begin: int = 10, skip_end: int = 1):
-            try:
-                loss = np.array(losses[skip_begin:-skip_end])
-                loss = loss[np.isfinite(loss)]
-                best_lr_index = np.gradient(loss).argmin() + skip_begin
-                best_lr = learning_rates[best_lr_index]
-                return best_lr
-            except Exception:
-                logger.exception("Failed to detect optimal learning rate")
-                return None
-
-        self.model.train()  # Sets model training mode.
-        with training_set.initialize_batcher(
-            batch_size=self.batch_size,
-            should_shuffle=self.should_shuffle,
-            horovod=self.horovod,
-            ignore_last=True,
-        ) as batcher:
-            step_count = 0
-            while epoch < self.epochs and step_count < total_training_steps and not diverging:
-                batcher.set_epoch(epoch, self.batch_size)
-                self.model.reset_metrics()
-                while not batcher.last_batch() and step_count < total_training_steps:
-                    batch = batcher.next_batch()
-                    inputs = {
-                        i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for i_feat in self.model.input_features.values()
-                    }
-                    targets = {
-                        o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(
-                            self.device
-                        )
-                        for o_feat in self.model.output_features.values()
-                    }
-
-                    loss, _ = self.train_step(
-                        inputs,
-                        targets,
-                    )
-                    # compute smoothed loss
-                    avg_loss = beta * avg_loss + (1 - beta) * loss
-                    smoothed_loss = avg_loss / (1 - beta ** (step_count + 1))
-
-                    # store learning rate and loss
-                    learning_rates.append(current_learning_rate)
-                    losses.append(smoothed_loss.detach().cpu().numpy())
-                    logger.info(f"Explored learning_rate={current_learning_rate} loss={smoothed_loss}")
-
-                    # check whether loss is diverging
-                    if step_count > 0 and smoothed_loss > early_stop_threshold * best_loss:
-                        diverging = True
-                        break
-                    else:
-                        if smoothed_loss < best_loss or step_count == 0:
-                            best_loss = smoothed_loss
-
-                    # compute new learning rate
-                    if mode == "exponential":
-                        current_learning_rate = exponential_scheduler(current_learning_rate, step_count)
-                    else:
-                        current_learning_rate = linear_scheduler(current_learning_rate, step_count)
-
-                    self.set_optimizer_learning_rate(current_learning_rate)
-                    step_count += 1
-
-                epoch += 1
-
-        optimal_lr = get_optimal_lr(losses, learning_rates)
-        if optimal_lr:
-            learning_rate = optimal_lr
-        else:
-            logger.info("Could not determine optimal learning rate, falling back to base default")
-
-        logger.info(f"Selected learning_rate={learning_rate}")
-        return learning_rate
-
     def is_cpu_training(self):
         return torch.device(self.device) == torch.device("cpu")
 
@@ -863,7 +753,7 @@ class Trainer(BaseTrainer):
                         # ========== Save training progress ==========
                         logger.debug(
                             f"Epoch {progress_tracker.epoch} took: "
-                            f"{time_utils.strdelta((time.time()- start_time) * 1000.0)}."
+                            f"{time_utils.strdelta((time.time() - start_time) * 1000.0)}."
                         )
                         if not self.skip_save_progress:
                             checkpoint_manager.save(progress_tracker.steps)
@@ -1029,7 +919,6 @@ class Trainer(BaseTrainer):
         with dataset.initialize_batcher(
             batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
         ) as batcher:
-
             # training step loop
             progress_bar_config = {
                 "desc": "Training online",

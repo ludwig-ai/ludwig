@@ -65,7 +65,7 @@ def test_gpt_encoder(use_pretrained: bool, reduce_output: str, max_sequence_leng
 
 
 @pytest.mark.parametrize("use_pretrained", [False])
-@pytest.mark.parametrize("reduce_output", ["cls_pooled", "sum"])
+@pytest.mark.parametrize("reduce_output", ["cls_pooled", "sum", None])
 @pytest.mark.parametrize("max_sequence_length", [20])
 def test_roberta_encoder(use_pretrained: bool, reduce_output: str, max_sequence_length: int):
     roberta_encoder = text_encoders.RoBERTaEncoder(
