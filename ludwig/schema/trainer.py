@@ -363,7 +363,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
     # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
     eval_batch_size: Union[None, int, str] = schema_utils.PositiveInteger(
-        default=1024,
+        default=1048576,
         description="Size of batch to pass to the model for evaluation.",
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
