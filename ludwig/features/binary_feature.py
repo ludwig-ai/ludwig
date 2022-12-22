@@ -364,16 +364,15 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             prob_col = f"{self.feature_name}_{PROBABILITY}"
 
             start_t = time.time()
-            postprocessed_output_dict = {
-                false_col: lambda x: 1 - x[probabilities_col],
-                true_col: lambda x: x[probabilities_col],
-                prob_col: np.where(
-                    result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
-                ),
-                probabilities_col: result[probabilities_col].map(lambda x: [1 - x, x]),
-            }
             result = result.assign(
-                **postprocessed_output_dict,
+                **{
+                    false_col: lambda x: 1 - x[probabilities_col],
+                    true_col: lambda x: x[probabilities_col],
+                    prob_col: np.where(
+                        result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
+                    ),
+                    probabilities_col: result[probabilities_col].map(lambda x: [1 - x, x]),
+                },
             )
             print('time of assign operation:', time.time() - start_t)
 
