@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import os
 import tempfile
 
@@ -779,9 +780,12 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
 @pytest.mark.parametrize(
-    ("max_batch_size", "expected_final_batch_size"), [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE), (64, 64)]
+    ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
+    [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE, 0.001), (64, 64, 0.001)],
 )
-def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size):
+def test_tune_batch_size_lr_cpu(
+    tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
+):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -805,7 +809,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
     assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
-    assert model.config[TRAINER]["learning_rate"] != "auto"
+    assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
 @pytest.mark.distributed
@@ -865,14 +869,16 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        backend_config = {**RAY_BACKEND_CONFIG}
+        # Deep copy RAY_BACKEND_CONFIG to avoid shallow copy modification
+        backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
+        # Manually override num workers to 2 for distributed training and distributed predict
+        backend_config["trainer"]["num_workers"] = 2
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
         dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
         model = LudwigModel(config, backend=backend_config)
-        output_dir = None
 
-        _, _, output_dir = model.train(
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=dataset,
             skip_save_processed_input=True,
