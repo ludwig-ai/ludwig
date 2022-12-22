@@ -55,7 +55,7 @@ def _cls_pooled_error_message(encoder: str):
     raise ValueError(f"reduce_output cannot be cls_pooled for {encoder}")
 
 
-class HFEncoder(Encoder):
+class HFTextEncoder(Encoder):
     DEFAULT_MODEL_NAME: str
 
     @classmethod
@@ -71,10 +71,14 @@ class HFEncoder(Encoder):
             "pretrained_model_name_or_path": model_name,
         }
 
+    @classmethod
+    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
+        return encoder_params.get("use_pretrained", True)
+
 
 @DeveloperAPI
 @register_encoder("albert", TEXT)
-class ALBERTEncoder(HFEncoder):
+class ALBERTEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "albert-base-v2"
 
     def __init__(
@@ -192,7 +196,7 @@ class ALBERTEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("mt5", TEXT)
-class MT5Encoder(HFEncoder):
+class MT5Encoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "google/mt5-base"
 
     def __init__(
@@ -304,7 +308,7 @@ class MT5Encoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("xlmroberta", TEXT)
-class XLMRoBERTaEncoder(HFEncoder):
+class XLMRoBERTaEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "xlm-roberta-base"
 
     def __init__(
@@ -391,7 +395,7 @@ class XLMRoBERTaEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("bert", TEXT)
-class BERTEncoder(HFEncoder):
+class BERTEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "bert-base-uncased"
 
     def __init__(
@@ -504,7 +508,7 @@ class BERTEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("xlm", TEXT)
-class XLMEncoder(HFEncoder):
+class XLMEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "xlm-mlm-en-2048"
 
     def __init__(
@@ -636,7 +640,7 @@ class XLMEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("gpt", TEXT)
-class GPTEncoder(HFEncoder):
+class GPTEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "openai-gpt"
 
     def __init__(
@@ -729,7 +733,7 @@ class GPTEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("gpt2", TEXT)
-class GPT2Encoder(HFEncoder):
+class GPT2Encoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "gpt2"
 
     def __init__(
@@ -825,7 +829,7 @@ class GPT2Encoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("roberta", TEXT)
-class RoBERTaEncoder(HFEncoder):
+class RoBERTaEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "roberta-base"
 
     def __init__(
@@ -902,7 +906,7 @@ class RoBERTaEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("transformer_xl", TEXT)
-class TransformerXLEncoder(HFEncoder):
+class TransformerXLEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "transfo-xl-wt103"
 
     def __init__(
@@ -1016,7 +1020,7 @@ class TransformerXLEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("xlnet", TEXT)
-class XLNetEncoder(HFEncoder):
+class XLNetEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "xlnet-base-cased"
 
     def __init__(
@@ -1139,7 +1143,7 @@ class XLNetEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
-class DistilBERTEncoder(HFEncoder):
+class DistilBERTEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "distilbert-base-uncased"
 
     def __init__(
@@ -1239,7 +1243,7 @@ class DistilBERTEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("ctrl", TEXT)
-class CTRLEncoder(HFEncoder):
+class CTRLEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "ctrl"
 
     def __init__(
@@ -1333,7 +1337,7 @@ class CTRLEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("camembert", TEXT)
-class CamemBERTEncoder(HFEncoder):
+class CamemBERTEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "jplu/camembert-base"
 
     def __init__(
@@ -1443,7 +1447,7 @@ class CamemBERTEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("t5", TEXT)
-class T5Encoder(HFEncoder):
+class T5Encoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "t5-small"
 
     def __init__(
@@ -1542,7 +1546,7 @@ class T5Encoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("flaubert", TEXT)
-class FlauBERTEncoder(HFEncoder):
+class FlauBERTEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "flaubert/flaubert_small_cased"
 
     def __init__(
@@ -1669,7 +1673,7 @@ class FlauBERTEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("electra", TEXT)
-class ELECTRAEncoder(HFEncoder):
+class ELECTRAEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "google/electra-small-discriminator"
 
     def __init__(
@@ -1774,7 +1778,7 @@ class ELECTRAEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("longformer", TEXT)
-class LongformerEncoder(HFEncoder):
+class LongformerEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = "allenai/longformer-base-4096"
 
     def __init__(
@@ -1852,7 +1856,7 @@ class LongformerEncoder(HFEncoder):
 
 @DeveloperAPI
 @register_encoder("auto_transformer", TEXT)
-class AutoTransformerEncoder(HFEncoder):
+class AutoTransformerEncoder(HFTextEncoder):
     DEFAULT_MODEL_NAME = None
 
     def __init__(

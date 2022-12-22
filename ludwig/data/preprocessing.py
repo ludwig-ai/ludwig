@@ -55,13 +55,16 @@ from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
-from ludwig.data.utils import merge_fixed_preprocessing_params, set_fixed_split
+from ludwig.data.utils import set_fixed_split
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
+from ludwig.utils.config_utils import (
+    merge_config_preprocessing_with_feature_specific_defaults,
+    merge_fixed_preprocessing_params,
+)
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,

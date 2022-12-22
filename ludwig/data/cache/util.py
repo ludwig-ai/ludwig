@@ -1,7 +1,7 @@
 import ludwig
 from ludwig.constants import DEFAULTS, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TYPE
 from ludwig.data.cache.types import CacheableDataset
-from ludwig.data.utils import merge_fixed_preprocessing_params
+from ludwig.utils.config_utils import merge_fixed_preprocessing_params
 from ludwig.utils.data_utils import hash_dict
 
 

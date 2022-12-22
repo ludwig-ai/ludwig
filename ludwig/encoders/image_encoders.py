@@ -460,3 +460,7 @@ class ViTEncoder(ImageEncoder):
     @classmethod
     def required_height(cls) -> Optional[int]:
         return 224
+
+    @classmethod
+    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
+        return encoder_params.get("use_pretrained", True)
