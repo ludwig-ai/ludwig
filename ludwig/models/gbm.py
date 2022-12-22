@@ -9,7 +9,7 @@ import torchmetrics
 from hummingbird.ml import convert
 from hummingbird.ml.operator_converters import constants as hb_constants
 
-from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
@@ -121,20 +121,14 @@ class GBM(BaseModel):
 
             # Predict on the input batch and convert the predictions to torch tensors so that they are compatible with
             # the existing metrics modules.
-            if output_feature.type() == NUMBER:
-                # Input: 2D eval_batch_size x n_features array
-                # Output: 1D eval_batch_size array
-                preds = torch.from_numpy(self.lgbm_model.predict(in_array))
-                logits = preds.view(-1)
-            else:
-                # Input: 2D eval_batch_size x n_features array
-                # Output: 2D eval_batch_size x n_classes array
-                probs = torch.from_numpy(self.lgbm_model.predict_proba(in_array))
-                if output_feature.type() == BINARY:
-                    probs = torch.logit(probs)[:, 1]
-                elif output_feature.num_classes == 2:
-                    probs = torch.logit(probs)
-                logits = probs
+            # Input: 2D eval_batch_size x n_features array
+            # Output: 1D eval_batch_size array if regression, else 2D eval_batch_size x n_classes array
+            logits = torch.from_numpy(self.lgbm_model.predict(in_array, raw_score=True))
+
+            if output_feature.type() == CATEGORY and logits.ndim == 1:
+                # add logits for the negative class (LightGBM classifier only returns logits for the positive class)
+                logits = logits.view(-1, 1)
+                logits = torch.cat([-logits, logits], dim=1)
 
         else:
             if isinstance(inputs, tuple):
@@ -188,18 +182,16 @@ class GBM(BaseModel):
 
                 if output_feature.type() == BINARY:
                     # keep positive class only for binary feature
-                    probs = torch.logit(probs)[:, 1]  # shape (batch_size,)
-                elif output_feature.num_classes == 2:
-                    probs = torch.logit(probs)
+                    probs = probs[:, 1]  # shape (batch_size,)
                 elif output_feature.num_classes > 2:
                     probs = probs.view(-1, 2, output_feature.num_classes)  # shape (batch_size, 2, num_classes)
                     probs = probs.transpose(2, 1)  # shape (batch_size, num_classes, 2)
 
-                    # probabilities for belonging to each class
-                    # invert sigmoid to get back logits and use Ludwig's output feature prediction functionality
-                    probs = torch.softmax(torch.logit(probs[:, :, 1]), -1)  # shape (batch_size, num_classes)
+                    # sigmoid probabilities for belonging to each class
+                    probs = probs[:, :, 1]  # shape (batch_size, num_classes)
 
-                logits = probs
+                # invert probabilities to get back logits and use Ludwig's output feature prediction functionality
+                logits = torch.logit(probs)
 
         output_feature_utils.set_output_feature_tensor(output_logits, output_feature_name, LOGITS, logits)
 
