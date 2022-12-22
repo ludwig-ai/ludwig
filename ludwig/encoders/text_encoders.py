@@ -512,6 +512,10 @@ class BERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
+    @classmethod
+    def is_fixed(cls, config: Dict[str, Any]) -> bool:
+        return not config.get("trainable", False) and not config.get("reduce_output") == "attention"
+
 
 @DeveloperAPI
 @register_encoder("xlm", TEXT)
