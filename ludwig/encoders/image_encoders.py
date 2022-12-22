@@ -41,20 +41,20 @@ class ImageEncoder(Encoder):
     @classmethod
     def requires_equal_dimensions(cls) -> bool:
         """If the encoder requires images of equal width and height."""
-        raise NotImplementedError
+        return False
 
     @classmethod
-    def required_width(cls) -> Union[int, None]:
+    def required_width(cls) -> Optional[int]:
         """Required image width for the pretrained encoder."""
-        raise NotImplementedError
+        return None
 
     @classmethod
-    def required_height(cls) -> Union[int, None]:
+    def required_height(cls) -> Optional[int]:
         """Required image height for the pretrained encoder."""
-        raise NotImplementedError
+        return None
 
     @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
         """If the encoder is not in trainable mode, override the image width and height to be compatible with the
         pretrained encoder image dimension requirements."""
         if cls.requires_equal_dimensions() and cls.required_width() != cls.required_height():
@@ -191,18 +191,6 @@ class Stacked2DCNN(ImageEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
-    @classmethod
-    def requires_equal_dimensions(cls) -> bool:
-        return False
-
-    @classmethod
-    def required_width(cls) -> Union[int, None]:
-        return None
-
-    @classmethod
-    def required_height(cls) -> Union[int, None]:
-        return None
-
 
 @DeveloperAPI
 @register_encoder("resnet", IMAGE)
@@ -294,18 +282,6 @@ class ResNetEncoder(ImageEncoder):
     def input_shape(self) -> torch.Size:
         return torch.Size(self._input_shape)
 
-    @classmethod
-    def requires_equal_dimensions(cls) -> bool:
-        return False
-
-    @classmethod
-    def required_width(cls) -> Union[int, None]:
-        return None
-
-    @classmethod
-    def required_height(cls) -> Union[int, None]:
-        return None
-
 
 @DeveloperAPI
 @register_encoder("mlp_mixer", IMAGE)
@@ -370,18 +346,6 @@ class MLPMixerEncoder(ImageEncoder):
     @property
     def output_shape(self) -> torch.Size:
         return self._output_shape
-
-    @classmethod
-    def requires_equal_dimensions(cls) -> bool:
-        return False
-
-    @classmethod
-    def required_width(cls) -> Union[int, None]:
-        return None
-
-    @classmethod
-    def required_height(cls) -> Union[int, None]:
-        return None
 
 
 @DeveloperAPI
@@ -490,9 +454,9 @@ class ViTEncoder(ImageEncoder):
         return True
 
     @classmethod
-    def required_width(cls) -> Union[int, None]:
+    def required_width(cls) -> Optional[int]:
         return 224
 
     @classmethod
-    def required_height(cls) -> Union[int, None]:
+    def required_height(cls) -> Optional[int]:
         return 224
