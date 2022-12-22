@@ -1129,13 +1129,15 @@ class Trainer(BaseTrainer):
         increase_batch_size_eval_split,
         early_stopping_steps: int,
         skip_save_model,
-    ):
+    ) -> bool:
         """Checks the history of validation scores.
 
         Uses history of validation scores to reduce learning rate, increase batch size, and decide whether training
         should stop.
 
         Saves the model if scores have improved.
+
+        Returns whether the model should stop training.
         """
         should_break = False
         # record how long its been since an improvement
@@ -1149,6 +1151,10 @@ class Trainer(BaseTrainer):
             progress_tracker.best_eval_metric = last_validation_metric_value
             if last_validation_metric_value != last_validation_metric_value:
                 # Fallback to 0 if the validation metric value is a NaN.
+                # This is potentially relevant for small datasets like those used in testing where if there's only a
+                # single output label, some metrics like ROC may turn out to be NaN.
+                # However, we want to guarantee that the model will be saved at least once over a full
+                # training-checkpoint-eval-loop.
                 last_validation_metric_value = 0
 
             if self.is_coordinator() and not skip_save_model:
