@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+
 import pytest
 
 from ludwig.constants import DEFAULTS, ENCODER, TEXT, TRAINABLE, TRAINER, TYPE

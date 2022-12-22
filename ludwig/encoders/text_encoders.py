@@ -45,7 +45,6 @@ from ludwig.schema.encoders.text_encoders import (
 )
 from ludwig.utils.torch_utils import FreezeModule
 
-
 logger = logging.getLogger(__name__)
 
 
