@@ -1147,6 +1147,9 @@ class Trainer(BaseTrainer):
         if improved(last_validation_metric_value, progress_tracker.best_eval_metric):
             progress_tracker.last_improvement_steps = progress_tracker.steps
             progress_tracker.best_eval_metric = last_validation_metric_value
+            if last_validation_metric_value != last_validation_metric_value:
+                # Fallback to 0 if the validation metric value is a NaN.
+                last_validation_metric_value = 0
 
             if self.is_coordinator() and not skip_save_model:
                 self.model.save(save_path)
