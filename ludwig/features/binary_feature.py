@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 from typing import Dict, List, Tuple, Union
+import time
 
 import numpy as np
 import torch
@@ -362,6 +363,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             true_col = f"{probabilities_col}_{class_names[1]}"
             prob_col = f"{self.feature_name}_{PROBABILITY}"
 
+            start_t = time.time()
             postprocessed_output_dict = {
                 false_col: lambda x: 1 - x[probabilities_col],
                 true_col: lambda x: x[probabilities_col],
@@ -373,6 +375,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             result = result.assign(
                 **postprocessed_output_dict,
             )
+            print('time of assign operation:', time.time() - start_t)
 
         return result
 
