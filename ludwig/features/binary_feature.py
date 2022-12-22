@@ -14,8 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Tuple, Union
 import time
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch
@@ -375,7 +375,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
             result = result.assign(
                 **postprocessed_output_dict,
             )
-            print('time of assign operation:', time.time() - start_t)
+            print("time of assign operation:", time.time() - start_t)
 
         return result
 
