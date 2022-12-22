@@ -1,10 +1,12 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 
-from ludwig.constants import SPLIT
+from ludwig.constants import SPLIT, TYPE
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
+from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.types import DataFrame
 
 
@@ -47,3 +49,15 @@ def set_fixed_split(preprocessing_params: PreprocessingConfigDict) -> Preprocess
             "column": SPLIT,
         },
     }
+
+
+def merge_fixed_preprocessing_params(
+    feature_type: str, preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Update preprocessing parameters if encoders require fixed preprocessing parameters."""
+    encoder_type = encoder_params.get(TYPE)
+    if encoder_type is None:
+        return preprocessing_params
+
+    encoder_class = get_encoder_cls(feature_type, encoder_type)
+    return merge_dict(preprocessing_params, encoder_class.get_fixed_preprocessing_params(encoder_params))

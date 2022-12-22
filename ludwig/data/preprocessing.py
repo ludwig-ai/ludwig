@@ -55,8 +55,7 @@ from ludwig.data.cache.types import wrap
 from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, concatenate_splits
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
-from ludwig.data.utils import set_fixed_split
-from ludwig.encoders.registry import get_encoder_cls
+from ludwig.data.utils import merge_fixed_preprocessing_params, set_fixed_split
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
@@ -1289,12 +1288,9 @@ def build_preprocessing_parameters(
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
         # Update preprocessing parameters if encoders require fixed preprocessing parameters
-        if ENCODER in feature_config:
-            if TYPE in feature_config[ENCODER]:
-                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
-                preprocessing_parameters = merge_dict(
-                    preprocessing_parameters, encoder_class.get_fixed_preprocessing_params(feature_config[ENCODER])
-                )
+        preprocessing_parameters = merge_fixed_preprocessing_params(
+            feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
+        )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 
