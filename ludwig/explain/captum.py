@@ -199,7 +199,7 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
     for sample_input, (name, feature) in zip(sample_encoded, input_features.items()):
         metadata = model.training_set_metadata[name]
         if feature.type() == TEXT:
-            PAD_IND = metadata["pad_idx"]
+            PAD_IND = metadata.get("pad_idx", metadata.get("char_pad_idx"))
             token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
             baseline = token_reference.generate_reference(sequence_length=sample_input.shape[1], device=DEVICE)
         elif feature.type() == CATEGORY:
