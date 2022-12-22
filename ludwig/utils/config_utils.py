@@ -5,7 +5,7 @@ from ludwig.constants import DECODER, ENCODER, IMAGE, INPUT_FEATURES, PREPROCESS
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.schema.model_config import ModelConfig
-from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, ModelConfigDict, PreprocessingConfigDict
+from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
 from ludwig.utils.misc_utils import get_from_registry, merge_dict
 
 
@@ -99,13 +99,9 @@ def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_gr
         return get_default_decoder_type(feature[TYPE])
 
 
-def has_trainable_encoder(config_dict: ModelConfigDict) -> bool:
-    for feature in config_dict["input_features"]:
-        feature_type = feature.get("type")
-        default_encoder = config_dict.get("defaults", {}).get(feature_type, {}).get("encoder", {})
-        feature_encoder = feature.get("encoder", {})
-
-        encoder = merge_dict(default_encoder, feature_encoder)
+def has_trainable_encoder(config: ModelConfig) -> bool:
+    for feature in config.input_features.to_list():
+        encoder = feature.get("encoder", {})
         if encoder.get("trainable", False):
             # TODO(travis): we assume here that False is always the default, which may not be true. We should dervice
             # this from the schema.
@@ -114,21 +110,18 @@ def has_trainable_encoder(config_dict: ModelConfigDict) -> bool:
     return False
 
 
-def has_unstructured_input_feature(config_dict: ModelConfigDict) -> bool:
-    for feature in config_dict["input_features"]:
+def has_unstructured_input_feature(config: ModelConfig) -> bool:
+    for feature in config.input_features.to_list():
         if feature.get("type", None) in {TEXT, IMAGE, SEQUENCE, TIMESERIES}:
             return True
     return False
 
 
-def has_pretrained_encoder(config_dict: ModelConfigDict) -> bool:
-    for feature in config_dict["input_features"]:
+def has_pretrained_encoder(config: ModelConfig) -> bool:
+    for feature in config.input_features.to_list():
         feature_type = feature.get("type")
-        default_encoder = config_dict.get("defaults", {}).get(feature_type, {}).get("encoder", {})
-        feature_encoder = feature.get("encoder", {})
+        encoder = feature.get("encoder", {})
 
-        # Feature selections take precedence
-        encoder = merge_dict(default_encoder, feature_encoder)
         encoder_type = encoder.get(TYPE, get_default_encoder_type(feature_type))
         encoder_class = get_encoder_cls(feature_type, encoder_type)
         if encoder_class.is_pretrained(encoder):

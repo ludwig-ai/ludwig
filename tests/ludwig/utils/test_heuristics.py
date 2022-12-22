@@ -1,6 +1,7 @@
 import pytest
 
 from ludwig.constants import DEFAULTS, ENCODER, TEXT, TRAINABLE, TRAINER, TYPE
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.heuristics import get_auto_learning_rate
 
 
@@ -10,8 +11,8 @@ from ludwig.utils.heuristics import get_auto_learning_rate
         (None, 0.001),
         ({}, 0.00001),
         ({"type": "parallel_cnn"}, 0.0001),
-        ({"type": "bert"}, 0.00001),
-        ({"type": "bert", "trainable": False}, 0.00002),
+        ({"type": "bert"}, 0.00002),
+        ({"type": "bert", "trainable": True}, 0.00001),
         ({"type": "bert", "trainable": True, "use_pretrained": False}, 0.0001),
     ],
     ids=["no_text", "default_electra", "parallel_cnn", "bert_fixed", "bert_trainable", "bert_untrained"],
@@ -31,6 +32,8 @@ def test_get_auto_learning_rate(tmpdir, text_encoder, expected_lr):
         DEFAULTS: {
             TEXT: {
                 ENCODER: {
+                    # Note that encoder defaults are all or nothing: if the encoder type is overridden, trainable
+                    # here is ignored
                     TYPE: "electra",
                     TRAINABLE: True,
                 }
@@ -38,5 +41,6 @@ def test_get_auto_learning_rate(tmpdir, text_encoder, expected_lr):
         },
     }
 
+    config = ModelConfig.from_dict(config)
     lr = get_auto_learning_rate(config)
     assert lr == expected_lr

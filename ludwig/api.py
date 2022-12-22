@@ -615,7 +615,7 @@ class LudwigModel:
 
                 # auto tune learning rate
                 if self.config_obj.trainer.learning_rate == AUTO:
-                    detected_learning_rate = get_auto_learning_rate(self.config_obj.to_dict())
+                    detected_learning_rate = get_auto_learning_rate(self.config_obj)
                     self.config_obj.trainer.learning_rate = detected_learning_rate
                     trainer.set_base_learning_rate(detected_learning_rate)
 
