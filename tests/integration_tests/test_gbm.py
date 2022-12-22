@@ -209,16 +209,19 @@ def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
 
 
 def test_hummingbird_conversion_binary(tmpdir, local_backend):
+    """Verify that Hummingbird conversion predictions match LightGBM predictions for binary outputs."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [binary_feature()]
     output_feature = f'{output_features[0]["name"]}_probabilities'
 
+    # Train a model and predict using the LightGBM interface
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
     probs_lgbm = preds_lgbm[output_feature]
 
     _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
     test_inputs = test.to_df(model.model.input_features.values())
 
+    # Predict using the Hummingbird compiled model
     with model.model.compile():
         preds_hb, _ = model.predict(dataset=test_inputs)
         probs_hb = preds_hb[output_feature]
@@ -228,24 +231,30 @@ def test_hummingbird_conversion_binary(tmpdir, local_backend):
 
 
 def test_hummingbird_conversion_regression(tmpdir, local_backend):
+    """Verify that Hummingbird conversion predictions match LightGBM predictions for numeric outputs."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [number_feature()]
 
+    # Train a model and predict using the LightGBM interface
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
     _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
     test_inputs = test.to_df(model.model.input_features.values())
 
+    # Predict using the Hummingbird compiled model
     with model.model.compile():
         preds_hb, _ = model.predict(dataset=test_inputs)
 
+    # sanity check Hummingbird prediction equal to LightGBM prediction
     assert np.allclose(preds_hb.values, preds_lgbm)
 
 
 @pytest.mark.parametrize("vocab_size", [2, 3])
 def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
+    """Verify that Hummingbird conversion predictions match LightGBM predictions for categorical outputs."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": vocab_size})]
 
+    # Train a model and predict using the LightGBM interface
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
     output_feature = next(iter(model.model.output_features.values()))
     output_feature_name = f"{output_feature.column}_probabilities"
@@ -254,6 +263,7 @@ def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
     _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
     test_inputs = test.to_df(model.model.input_features.values())
 
+    # Predict using the Hummingbird compiled model
     with model.model.compile():
         preds_hb, _ = model.predict(dataset=test_inputs)
         probs_hb = np.stack(preds_hb[output_feature_name].to_numpy())
