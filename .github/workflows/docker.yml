@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 10 * * *" # everyday at 10am
   push:
-    branches: ["master", "release-*", "torch_113_image_upgrade"]
+    branches: ["master", "release-*"]
     tags: ["v*.*.*"]
 
 jobs:
