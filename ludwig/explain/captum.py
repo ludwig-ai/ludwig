@@ -291,10 +291,10 @@ def get_total_attribution(
                 a_reduced = a_reduced / torch.norm(a_reduced)
             attributions_reduced.append(a_reduced)
 
-        for inputs, attrs, feat_name in zip(input_batch, attributions_reduced, input_features.keys()):
-            if attrs.ndim == 2:
-                tok_attrs = get_token_attributions(model, feat_name, inputs, attrs)
-                feat_to_token_attributions[feat_name].append(tok_attrs)
+        for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
+            if feat.type() == TEXT:
+                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
         attribution = [a.sum(dim=-1) if a.ndim == 2 else a for a in attributions_reduced]
