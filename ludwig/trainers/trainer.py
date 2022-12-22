@@ -522,7 +522,7 @@ class Trainer(BaseTrainer):
                 }
                 trainer.train_step(inputs, targets)
 
-        return _TrainerBatchSizeEvaluator
+        return _TrainerBatchSizeEvaluator()
 
     def run_evaluation(
         self,
