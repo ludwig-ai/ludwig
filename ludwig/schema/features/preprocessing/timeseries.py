@@ -13,7 +13,6 @@ from ludwig.utils.tokenizers import tokenizer_registry
 @register_preprocessor(TIMESERIES)
 @dataclass(repr=False)
 class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
-
     tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),
         default="space",

@@ -2,6 +2,7 @@ import pytest
 import torch
 
 from ludwig.encoders import text_encoders
+from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 from tests.integration_tests.utils import slow
 
 
@@ -64,7 +65,7 @@ def test_gpt_encoder(use_pretrained: bool, reduce_output: str, max_sequence_leng
 
 
 @pytest.mark.parametrize("use_pretrained", [False])
-@pytest.mark.parametrize("reduce_output", ["cls_pooled", "sum"])
+@pytest.mark.parametrize("reduce_output", ["cls_pooled", "sum", None])
 @pytest.mark.parametrize("max_sequence_length", [20])
 def test_roberta_encoder(use_pretrained: bool, reduce_output: str, max_sequence_length: int):
     roberta_encoder = text_encoders.RoBERTaEncoder(
@@ -255,3 +256,34 @@ def test_xlnet_encoder(use_pretrained: bool, reduce_output: str, max_sequence_le
     inputs = torch.rand((2, max_sequence_length)).type(xlnet_encoder.input_dtype)
     outputs = xlnet_encoder(inputs)
     assert outputs["encoder_output"].shape[1:] == xlnet_encoder.output_shape
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+def test_distilbert_param_updates(trainable: bool):
+    max_sequence_length = 20
+    distil_bert_encoder = text_encoders.DistilBERTEncoder(
+        use_pretrained=False,
+        max_sequence_length=max_sequence_length,
+        trainable=trainable,
+    )
+
+    # send a random input through the model with its initial weights
+    inputs = torch.rand((2, max_sequence_length)).type(distil_bert_encoder.input_dtype)
+    outputs = distil_bert_encoder(inputs)
+
+    # perform a backward pass to update the model params
+    target = torch.randn(outputs["encoder_output"].shape)
+    check_module_parameters_updated(distil_bert_encoder, (inputs,), target)
+
+    # send the same input through the model again. should be different if trainable, else the same
+    outputs2 = distil_bert_encoder(inputs)
+
+    encoder_output1 = outputs["encoder_output"]
+    encoder_output2 = outputs2["encoder_output"]
+
+    if trainable:
+        # Outputs should be different if the model was updated
+        assert not torch.equal(encoder_output1, encoder_output2)
+    else:
+        # Outputs should be the same if the model wasn't updated
+        assert torch.equal(encoder_output1, encoder_output2)
