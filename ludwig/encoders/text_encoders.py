@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT
+from ludwig.constants import TEXT, TYPE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
@@ -45,6 +45,7 @@ from ludwig.schema.encoders.text_encoders import (
 )
 from ludwig.utils.torch_utils import FreezeModule
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,14 +55,33 @@ def _cls_pooled_error_message(encoder: str):
     raise ValueError(f"reduce_output cannot be cls_pooled for {encoder}")
 
 
+class HFEncoder(Encoder):
+    DEFAULT_MODEL_NAME: str
+
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+        model_name = encoder_params.get("pretrained_model_name_or_path", cls.DEFAULT_MODEL_NAME)
+        if model_name is None:
+            # no default model name, so model name is required by the subclass
+            raise ValueError(
+                f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
+            )
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": model_name,
+        }
+
+
 @DeveloperAPI
 @register_encoder("albert", TEXT)
-class ALBERTEncoder(Encoder):
+class ALBERTEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "albert-base-v2"
+
     def __init__(
         self,
         max_sequence_length,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "albert-base-v2",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "cls_pooled",
@@ -169,22 +189,17 @@ class ALBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "albert-base-v2",
-        }
-
 
 @DeveloperAPI
 @register_encoder("mt5", TEXT)
-class MT5Encoder(Encoder):
+class MT5Encoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "google/mt5-base"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "google/mt5-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "sum",
@@ -286,22 +301,17 @@ class MT5Encoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "google/mt5-base",
-        }
-
 
 @DeveloperAPI
 @register_encoder("xlmroberta", TEXT)
-class XLMRoBERTaEncoder(Encoder):
+class XLMRoBERTaEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "xlm-roberta-base"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlm-roberta-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
@@ -378,22 +388,17 @@ class XLMRoBERTaEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "xlm-roberta-base",
-        }
-
 
 @DeveloperAPI
 @register_encoder("bert", TEXT)
-class BERTEncoder(Encoder):
+class BERTEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "bert-base-uncased"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "bert-base-uncased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "cls_pooled",
@@ -496,22 +501,17 @@ class BERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "bert-base-uncased",
-        }
-
 
 @DeveloperAPI
 @register_encoder("xlm", TEXT)
-class XLMEncoder(Encoder):
+class XLMEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "xlm-mlm-en-2048"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "sum",
@@ -633,23 +633,18 @@ class XLMEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "xlm-mlm-en-2048",
-        }
-
 
 @DeveloperAPI
 @register_encoder("gpt", TEXT)
-class GPTEncoder(Encoder):
+class GPTEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "openai-gpt"
+
     def __init__(
         self,
         max_sequence_length: int,
         reduce_output: str = "sum",
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "openai-gpt",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         vocab_size: int = 30522,
@@ -731,22 +726,17 @@ class GPTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "openai-gpt",
-        }
-
 
 @DeveloperAPI
 @register_encoder("gpt2", TEXT)
-class GPT2Encoder(Encoder):
+class GPT2Encoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "gpt2"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "gpt2",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         reduce_output: str = "sum",
         trainable: bool = False,
         vocab_size: int = 50257,
@@ -832,22 +822,17 @@ class GPT2Encoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "gpt2",
-        }
-
 
 @DeveloperAPI
 @register_encoder("roberta", TEXT)
-class RoBERTaEncoder(Encoder):
+class RoBERTaEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "roberta-base"
+
     def __init__(
         self,
         max_sequence_length,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "roberta-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
@@ -914,22 +899,17 @@ class RoBERTaEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "roberta-base",
-        }
-
 
 @DeveloperAPI
 @register_encoder("transformer_xl", TEXT)
-class TransformerXLEncoder(Encoder):
+class TransformerXLEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "transfo-xl-wt103"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "transfo-xl-wt103",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1033,22 +1013,17 @@ class TransformerXLEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "transfo-xl-wt103",
-        }
-
 
 @DeveloperAPI
 @register_encoder("xlnet", TEXT)
-class XLNetEncoder(Encoder):
+class XLNetEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "xlnet-base-cased"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlnet-base-cased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1161,21 +1136,16 @@ class XLNetEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "xlnet-base-cased",
-        }
-
 
 @DeveloperAPI
 @register_encoder("distilbert", TEXT)
-class DistilBERTEncoder(Encoder):
+class DistilBERTEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "distilbert-base-uncased"
+
     def __init__(
         self,
         max_sequence_length: int,
-        pretrained_model_name_or_path: str = "distilbert-base-uncased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1266,22 +1236,17 @@ class DistilBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "distilbert-base-uncased",
-        }
-
 
 @DeveloperAPI
 @register_encoder("ctrl", TEXT)
-class CTRLEncoder(Encoder):
+class CTRLEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "ctrl"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "ctrl",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1365,22 +1330,17 @@ class CTRLEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "ctrl",
-        }
-
 
 @DeveloperAPI
 @register_encoder("camembert", TEXT)
-class CamemBERTEncoder(Encoder):
+class CamemBERTEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "jplu/camembert-base"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "jplu/camembert-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = False,
@@ -1480,22 +1440,17 @@ class CamemBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "jplu/camembert-base",
-        }
-
 
 @DeveloperAPI
 @register_encoder("t5", TEXT)
-class T5Encoder(Encoder):
+class T5Encoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "t5-small"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "t5-small",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1584,22 +1539,17 @@ class T5Encoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "t5-small",
-        }
-
 
 @DeveloperAPI
 @register_encoder("flaubert", TEXT)
-class FlauBERTEncoder(Encoder):
+class FlauBERTEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "flaubert/flaubert_small_cased"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool,
-        pretrained_model_name_or_path: str = "flaubert/flaubert_small_cased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1716,22 +1666,17 @@ class FlauBERTEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "flaubert/flaubert_small_cased",
-        }
-
 
 @DeveloperAPI
 @register_encoder("electra", TEXT)
-class ELECTRAEncoder(Encoder):
+class ELECTRAEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "google/electra-small-discriminator"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "google/electra-small-discriminator",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1826,24 +1771,19 @@ class ELECTRAEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "google/electra-small-discriminator",
-        }
-
 
 @DeveloperAPI
 @register_encoder("longformer", TEXT)
-class LongformerEncoder(Encoder):
+class LongformerEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = "allenai/longformer-base-4096"
+
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
         attention_window: Union[List[int], int] = 512,
         sep_token_id: int = 2,
-        pretrained_model_name_or_path: str = "allenai/longformer-base-4096",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: Optional[str] = "cls_pooled",
         trainable: bool = False,
@@ -1909,17 +1849,12 @@ class LongformerEncoder(Encoder):
     def input_dtype(self):
         return torch.int32
 
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": "allenai/longformer-base-4096",
-        }
-
 
 @DeveloperAPI
 @register_encoder("auto_transformer", TEXT)
-class AutoTransformerEncoder(Encoder):
+class AutoTransformerEncoder(HFEncoder):
+    DEFAULT_MODEL_NAME = None
+
     def __init__(
         self,
         pretrained_model_name_or_path: str,
@@ -1982,9 +1917,3 @@ class AutoTransformerEncoder(Encoder):
     @property
     def input_dtype(self):
         return torch.int32
-
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Optional[Dict]) -> Dict[str, Union[None, int]]:
-        return {
-            "tokenizer": "hf_tokenizer",
-        }
