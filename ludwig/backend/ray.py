@@ -53,7 +53,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -660,16 +660,9 @@ class RayPredictor(BasePredictor):
             **kwargs,
         )
 
-        columns = [f.proc_column for f in self.model.input_features.values()]
-
-        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-            for c in columns:
-                df[c] = cast_as_tensor_dtype(df[c])
-            return df
-
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+        predictions = dataset.ds.map_batches(
             batch_predictor,
             batch_size=self.batch_size,
             compute="actors",
