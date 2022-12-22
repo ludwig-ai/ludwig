@@ -374,10 +374,6 @@ class LightGBMTrainer(BaseTrainer):
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
         progress_tracker.best_eval_metric_steps = self.model.lgbm_model.best_iteration_
 
-        # convert to pytorch for inference
-        self.model.compile()
-        self.model = self.model.to(self.device)
-
         output_features = self.model.output_features
         metrics_names = get_metric_names(output_features)
         output_feature_name = next(iter(output_features))

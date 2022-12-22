@@ -87,6 +87,7 @@ from ludwig.utils.data_utils import (
 from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, path_exists, upload_output_directory
+from ludwig.utils.heuristics import get_auto_learning_rate
 from ludwig.utils.misc_utils import (
     get_commit_hash,
     get_file_names,
@@ -619,11 +620,9 @@ class LudwigModel:
 
                 # auto tune learning rate
                 if self.config_obj.trainer.learning_rate == AUTO:
-                    tuned_learning_rate = trainer.tune_learning_rate(
-                        self.config_obj.to_dict(), training_set, random_seed=random_seed
-                    )
-                    self.config_obj.trainer.learning_rate = tuned_learning_rate
-                    trainer.set_base_learning_rate(tuned_learning_rate)
+                    detected_learning_rate = get_auto_learning_rate(self.config_obj.to_dict())
+                    self.config_obj.trainer.learning_rate = detected_learning_rate
+                    trainer.set_base_learning_rate(detected_learning_rate)
 
                 # train model
                 if self.backend.is_coordinator():

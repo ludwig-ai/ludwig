@@ -58,7 +58,6 @@ class _GenericLossFunction(Function):
 
 
 class SparsemaxLossFunction(_GenericLossFunction):
-
     n_fwd_args = 1
 
     @classmethod
@@ -75,7 +74,6 @@ class SparsemaxLossFunction(_GenericLossFunction):
 
 
 class SparsemaxBisectLossFunction(_GenericLossFunction):
-
     n_fwd_args = 1
 
     @classmethod
@@ -92,7 +90,6 @@ class SparsemaxBisectLossFunction(_GenericLossFunction):
 
 
 class Entmax15LossFunction(_GenericLossFunction):
-
     n_fwd_args = 1
 
     @classmethod
@@ -109,7 +106,6 @@ class Entmax15LossFunction(_GenericLossFunction):
 
 
 class EntmaxBisectLossFunction(_GenericLossFunction):
-
     n_fwd_args = 2
 
     @classmethod

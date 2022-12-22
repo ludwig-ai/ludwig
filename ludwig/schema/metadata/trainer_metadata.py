@@ -650,7 +650,10 @@ TRAINER_METADATA = (
                                                                          'data. Unfortunately, that ideal value of '
                                                                          'lambda '
                                                                          "is data-dependent, so you'll need to do some "
-                                                                         'tuning.',
+                                                                         'tuning. We recommend trying a handful of '
+                                                                         "values (0.01, 0.02, ... 0.4) gradually "
+                                                                         "increasing the value until training curves "
+                                                                         "get worse",
                                                 suggested_values=0.1,
                                                 suggested_values_reasoning='The most common type of regularization is '
                                                                            'L2, '
@@ -882,5 +885,23 @@ TRAINER_METADATA = (
                                             commonly_used=False,
                                             expected_impact=ExpectedImpact.HIGH,
                                             literature_references=None,
-                                            internal_only=False)}
+                                            internal_only=False),
+     'use_mixed_precision': ParameterMetadata(ui_display_name='Use Mixed Precision',
+                                    default_value_reasoning='Speed up training by using float16 parameters where it '
+                                                            'makes sense.',
+                                    example_value=None,
+                                    related_parameters=None,
+                                    other_information=None,
+                                    description_implications='Mixed precision training on GPU can dramatically speed'
+                                                             'up training, with some risks to model convergence.',
+                                    suggested_values=False,
+                                    suggested_values_reasoning='Suggested to enable this if training is taking too '
+                                                               'long on GPU.',
+                                    commonly_used=False,
+                                    expected_impact=ExpectedImpact.HIGH,
+                                    literature_references=[
+                                        'https://pytorch.org/blog/what-every-user-should-know-about-mixed-precision-training-in-pytorch/'
+                                    ],
+                                    internal_only=False)
+    }
 )

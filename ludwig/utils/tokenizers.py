@@ -1095,7 +1095,7 @@ try:
                 "vocab_path": vocab_file,
                 "return_tokens": self.return_tokens,
             }
-            if torchtext_version > (0, 14, 0):
+            if torchtext_version >= (0, 14, 0):
                 # never_split kwarg added in torchtext 0.14.0
                 tokenizer_init_kwargs["never_split"] = self.never_split
 
