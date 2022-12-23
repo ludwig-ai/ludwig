@@ -24,7 +24,6 @@ from ludwig.schema.features.base import BaseFeatureConfig
 @DeveloperAPI
 @dataclass
 class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
-
     audio: BaseFeatureConfig = DefaultsDataclassField(feature_type=AUDIO)
 
     bag: BaseFeatureConfig = DefaultsDataclassField(feature_type=BAG)

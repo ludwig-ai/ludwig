@@ -54,7 +54,10 @@ def postprocess(
             )
         return df
 
-    predictions = backend.df_engine.map_batches(predictions, postprocess_batch)
+    # We disable tensor extension casting here because this step is the final data processing step and
+    # we do not expect return to Ray Datasets after this point. The dtype of the predictions will be
+    # whatever they would be if we did all postprocessing in Dask.
+    predictions = backend.df_engine.map_batches(predictions, postprocess_batch, enable_tensor_extension_casting=False)
 
     # Save any new columns but do not save the original columns again
     if not skip_save_unprocessed_output:

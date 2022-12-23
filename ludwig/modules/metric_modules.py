@@ -249,8 +249,8 @@ class R2Score(LudwigMetric):
     """Custom R-squared metric implementation that modifies torchmetrics R-squared implementation to return Nan
     when there is only sample. This is because R-squared is only defined for two or more samples.
 
-    Custom implementation uses code from torchmetrics v0.9.2's implementation of R2:
-    https://github.com/Lightning-AI/metrics/blob/master/src/torchmetrics/regression/r2.py
+    Custom implementation uses code from torchmetrics v0.9.2's implementation of R2: https://github.com/Lightning-
+    AI/metrics/blob/master/src/torchmetrics/regression/r2.py
     """
 
     def __init__(
@@ -503,7 +503,6 @@ class JaccardMetric(MeanMetric):
     def __init__(self, threshold: float = 0.5, **kwargs):
         super().__init__(dist_sync_fn=gather_all_tensors)
         self.threshold = threshold
-        self.add_state(name="loss", default=[], dist_reduce_fx="mean")
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         # notation: b is batch size and nc is number of unique elements in the set

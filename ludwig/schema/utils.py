@@ -525,10 +525,11 @@ def NonNegativeFloat(
     default: Union[None, float] = None,
     allow_none=False,
     description: str = "",
+    max: Optional[float] = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
-    val = validate.Range(min=0.0)
+    val = validate.Range(min=0.0, max=max)
     allow_none = allow_none or default is None
 
     if default is not None:
