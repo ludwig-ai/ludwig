@@ -198,10 +198,7 @@ def append_metrics(
 
 @DeveloperAPI
 def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
-    """Returns train_steps if non-negative.
-
-    Otherwise, returns the number of epochs.
-    """
+    """Returns train_steps if provided, otherwise epochs * steps_per_epoch."""
     if train_steps:
         return train_steps
     return epochs * steps_per_epoch

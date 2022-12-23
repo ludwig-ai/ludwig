@@ -45,16 +45,6 @@ def convert_size(size_bytes):
     return f"{s} {size_name[i]}"
 
 
-def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step, staircase=False):
-    decay_rate = float(decay_rate)
-    decay_steps = float(decay_steps)
-    step = float(step)
-    exponent = 1 + step / decay_steps
-    if staircase:
-        exponent = math.ceil(exponent)
-    return initial_learning_rate * math.pow(decay_rate, exponent)
-
-
 def learning_rate_warmup_distributed(learning_rate, epoch, warmup_epochs, num_workers, curr_step, steps_per_epoch):
     """Implements gradual learning rate warmup:
     `lr = initial_lr / hvd.size()` ---> `lr = initial_lr`

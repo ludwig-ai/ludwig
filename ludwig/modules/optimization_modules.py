@@ -33,7 +33,7 @@ def create_optimizer(
     model,
     optimizer_config: BaseOptimizerConfig = SGDOptimizerConfig(),
     horovod=None,
-):
+) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
     :param model: Underlying Ludwig model
