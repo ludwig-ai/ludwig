@@ -135,18 +135,6 @@ class Trainer(BaseTrainer):
 
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
-        self.learning_rate = config.learning_rate
-        try:
-            base_learning_rate = float(config.learning_rate)
-        except ValueError:
-            # TODO (ASN): Circle back on how we want to set default placeholder value
-            base_learning_rate = 0.001  # Default initial learning rate for autoML.
-
-        self.base_learning_rate = base_learning_rate
-        self.decay = config.decay
-        self.decay_rate = config.decay_rate
-        self.decay_steps = config.decay_steps
-        self.staircase = config.staircase
         self.batch_size = config.batch_size
         self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
@@ -167,7 +155,6 @@ class Trainer(BaseTrainer):
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
-        self.learning_rate_warmup_epochs = config.learning_rate_warmup_epochs
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
@@ -181,17 +168,21 @@ class Trainer(BaseTrainer):
         if self.device is None:
             self.device = get_torch_device()
 
+        base_learning_rate = config.learning_rate
+        if self.horovod:
+            lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
+            base_learning_rate *= lr_scale_fn(self.horovod.size())
+        self.base_learning_rate = base_learning_rate
+
         self.model = model
         self.model = self.model.to(self.device)
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
-        # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
-        optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
-        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
-        self.set_base_learning_rate(base_learning_rate)
+        self.optimizer = create_optimizer(
+            model, learning_rate=self.base_learning_rate, horovod=horovod, optimizer_config=optimizer_config
+        )
         self.scheduler = None
 
         # Setup for automatic mixed precision (AMP)
@@ -316,13 +307,6 @@ class Trainer(BaseTrainer):
             torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
         if self.gradient_clipping_config.clipvalue:
             torch.nn.utils.clip_grad_value_(variables, self.gradient_clipping_config.clipvalue)
-
-    def set_base_learning_rate(self, base_learning_rate):
-        """Sets the target learning rate, and updates the optimizer learning rate."""
-        if self.horovod:
-            base_learning_rate *= self.lr_scale_fn(self.horovod.size())
-        self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
-        self.set_optimizer_learning_rate(base_learning_rate)
 
     def set_optimizer_learning_rate(self, learning_rate):
         """Sets the learning rate of the optimizer."""
@@ -876,39 +860,8 @@ class Trainer(BaseTrainer):
     ) -> bool:
         """Completes up to one epoch through the data."""
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
-            self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
-
-            # # Set learning rate for this batch
-            # current_learning_rate = progress_tracker.learning_rate
-
-            # if self.decay:
-            #     current_learning_rate = exponential_decay(
-            #         current_learning_rate,
-            #         self.decay_rate,
-            #         self.decay_steps,
-            #         progress_tracker.steps,
-            #         self.staircase,
-            #     )
-
-            # if self.horovod:
-            #     current_learning_rate = learning_rate_warmup_distributed(
-            #         current_learning_rate,
-            #         progress_tracker.epoch,
-            #         self.learning_rate_warmup_epochs,
-            #         self.horovod.size(),
-            #         batcher.step,
-            #         batcher.steps_per_epoch,
-            #     ) * self.lr_scale_fn(self.horovod.size())
-            # else:
-            #     current_learning_rate = learning_rate_warmup(
-            #         current_learning_rate,
-            #         progress_tracker.epoch,
-            #         self.learning_rate_warmup_epochs,
-            #         batcher.step,
-            #         batcher.steps_per_epoch,
-            #     )
-            # self.set_optimizer_learning_rate(current_learning_rate)
             progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
+            self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
 
             # obtain batch
             batch = batcher.next_batch()

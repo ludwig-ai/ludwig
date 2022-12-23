@@ -31,12 +31,14 @@ def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
 
 def create_optimizer(
     model,
+    learning_rate,
     optimizer_config: BaseOptimizerConfig = SGDOptimizerConfig(),
     horovod=None,
 ) -> torch.optim.Optimizer:
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
     :param model: Underlying Ludwig model
+    :param lr: Initial learning rate for the optimizer
     :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
            `ludwig.modules.optimization_modules.SGDOptimizerConfig()`).
     :param horovod: Horovod parameters (default: None).
@@ -47,6 +49,7 @@ def create_optimizer(
 
     # Create a dict of parameters to be passed to torch (i.e. everything except `type`):
     cls_kwargs = {field: value for field, value in asdict(optimizer_config).items() if field != "type"}
+    cls_kwargs["lr"] = learning_rate
 
     # Instantiate the optimizer:
     torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
