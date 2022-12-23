@@ -300,13 +300,35 @@ FEATURE_METADATA = {
                 "they will follow a long-tailed distribution and the least common ones may not "
                 "provide a lot of information",
                 example_value=[10000],
-                related_parameters=["vocab_file, pretrained_embeddings"],
+                related_parameters=["most_common_percentile", "vocab_file, pretrained_embeddings"],
                 other_information="Specifying a vocab_file overrides this parameter",
                 description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
                 "smaller and reduce the memory footprint, but will also collapse more tokens "
                 "into the rare one, so the model may perform worse when rare tokens appear in "
                 "the data",
                 suggested_values="A value that covers at least 95% of the tokens in the data",
+                suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
+                "95% or 99% of the number of tokens will leave out only very rare tokens "
+                "that "
+                "should not influence performance substantially",
+                commonly_used=False,
+                expected_impact=ExpectedImpact.HIGH,
+                literature_references=None,
+                internal_only=False,
+            ),
+            "most_common_percentile": ParameterMetadata(
+                ui_display_name="Most common percentile of vocabulary size",
+                default_value_reasoning="If there are more than 10000 unique categories in the data, it is likely that "
+                "they will follow a long-tailed distribution and the least common ones may not "
+                "provide a lot of information",
+                example_value=[0.9],
+                related_parameters=["most_common", "vocab_file, pretrained_embeddings"],
+                other_information="Specifying a vocab_file or most_common overrides this parameter",
+                description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
+                "smaller and reduce the memory footprint, but will also collapse more tokens "
+                "into the rare one, so the model may perform worse when rare tokens appear in "
+                "the data",
+                suggested_values="0.95 will remove the 5% least common of the tokens in the vocab.",
                 suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
                 "95% or 99% of the number of tokens will leave out only very rare tokens "
                 "that "
@@ -474,13 +496,35 @@ FEATURE_METADATA = {
                 "they will follow a long-tailed distribution and the least common ones may not "
                 "provide a lot of information",
                 example_value=[10000],
-                related_parameters=["vocab_file, pretrained_embeddings"],
+                related_parameters=["most_common_percentile", "vocab_file, pretrained_embeddings"],
                 other_information="Specifying a vocab_file overrides this parameter",
                 description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
                 "smaller and reduce the memory footprint, but will also collapse more tokens "
                 "into the rare one, so the model may perform worse when rare tokens appear in "
                 "the data",
                 suggested_values="A value that covers at least 95% of the tokens in the data",
+                suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
+                "95% or 99% of the number of tokens will leave out only very rare tokens "
+                "that "
+                "should not influence performance substantially",
+                commonly_used=False,
+                expected_impact=ExpectedImpact.HIGH,
+                literature_references=None,
+                internal_only=False,
+            ),
+            "most_common_percentile": ParameterMetadata(
+                ui_display_name="Most common percentile of vocabulary size",
+                default_value_reasoning="If there are more than 10000 unique categories in the data, it is likely that "
+                "they will follow a long-tailed distribution and the least common ones may not "
+                "provide a lot of information",
+                example_value=[0.9],
+                related_parameters=["most_common", "vocab_file, pretrained_embeddings"],
+                other_information="Specifying a vocab_file or most_common overrides this parameter",
+                description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
+                "smaller and reduce the memory footprint, but will also collapse more tokens "
+                "into the rare one, so the model may perform worse when rare tokens appear in "
+                "the data",
+                suggested_values="0.95 will remove the 5% least common of the tokens in the vocab.",
                 suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
                 "95% or 99% of the number of tokens will leave out only very rare tokens "
                 "that "
@@ -1034,6 +1078,28 @@ FEATURE_METADATA = {
                 literature_references=None,
                 internal_only=False,
             ),
+            "most_common_percentile": ParameterMetadata(
+                ui_display_name="Most common percentile of vocabulary size",
+                default_value_reasoning="If there are more than 10000 unique categories in the data, it is likely that "
+                "they will follow a long-tailed distribution and the least common ones may not "
+                "provide a lot of information",
+                example_value=[0.9],
+                related_parameters=["most_common_percentile", "most_common", "vocab_file, pretrained_embeddings"],
+                other_information="Specifying a vocab_file or most_common overrides this parameter",
+                description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
+                "smaller and reduce the memory footprint, but will also collapse more tokens "
+                "into the rare one, so the model may perform worse when rare tokens appear in "
+                "the data",
+                suggested_values="0.95 will remove the 5% least common of the tokens in the vocab.",
+                suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
+                "95% or 99% of the number of tokens will leave out only very rare tokens "
+                "that "
+                "should not influence performance substantially",
+                commonly_used=False,
+                expected_impact=ExpectedImpact.HIGH,
+                literature_references=None,
+                internal_only=False,
+            ),
             "padding": ParameterMetadata(
                 ui_display_name=None,
                 default_value_reasoning=None,
@@ -1197,13 +1263,35 @@ FEATURE_METADATA = {
                 "they will follow a long-tailed distribution and the least common ones may not "
                 "provide a lot of information",
                 example_value=[10000],
-                related_parameters=["vocab_file, pretrained_embeddings"],
+                related_parameters=["most_common_percentile", "vocab_file, pretrained_embeddings"],
                 other_information="Specifying a vocab_file overrides this parameter",
                 description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
                 "smaller and reduce the memory footprint, but will also collapse more tokens "
                 "into the rare one, so the model may perform worse when rare tokens appear in "
                 "the data",
                 suggested_values="A value that covers at least 95% of the tokens in the data",
+                suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
+                "95% or 99% of the number of tokens will leave out only very rare tokens "
+                "that "
+                "should not influence performance substantially",
+                commonly_used=False,
+                expected_impact=ExpectedImpact.HIGH,
+                literature_references=None,
+                internal_only=False,
+            ),
+            "most_common_percentile": ParameterMetadata(
+                ui_display_name="Most common percentile of vocabulary size",
+                default_value_reasoning="If there are more than 10000 unique categories in the data, it is likely that "
+                "they will follow a long-tailed distribution and the least common ones may not "
+                "provide a lot of information",
+                example_value=[0.9],
+                related_parameters=["most_common", "vocab_file, pretrained_embeddings"],
+                other_information="Specifying a vocab_file or most_common overrides this parameter",
+                description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
+                "smaller and reduce the memory footprint, but will also collapse more tokens "
+                "into the rare one, so the model may perform worse when rare tokens appear in "
+                "the data",
+                suggested_values="0.95 will remove the 5% least common of the tokens in the vocab.",
                 suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
                 "95% or 99% of the number of tokens will leave out only very rare tokens "
                 "that "
@@ -1326,13 +1414,35 @@ FEATURE_METADATA = {
                 "they will follow a long-tailed distribution and the least common ones may not "
                 "provide a lot of information",
                 example_value=[10000],
-                related_parameters=["vocab_file, pretrained_embeddings"],
+                related_parameters=["most_common_percentile", "vocab_file, pretrained_embeddings"],
                 other_information="Specifying a vocab_file overrides this parameter",
                 description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
                 "smaller and reduce the memory footprint, but will also collapse more tokens "
                 "into the rare one, so the model may perform worse when rare tokens appear in "
                 "the data",
                 suggested_values="A value that covers at least 95% of the tokens in the data",
+                suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
+                "95% or 99% of the number of tokens will leave out only very rare tokens "
+                "that "
+                "should not influence performance substantially",
+                commonly_used=False,
+                expected_impact=ExpectedImpact.HIGH,
+                literature_references=None,
+                internal_only=False,
+            ),
+            "most_common_percentile": ParameterMetadata(
+                ui_display_name="Most common percentile of vocabulary size",
+                default_value_reasoning="If there are more than 10000 unique categories in the data, it is likely that "
+                "they will follow a long-tailed distribution and the least common ones may not "
+                "provide a lot of information",
+                example_value=[0.9],
+                related_parameters=["most_common", "vocab_file, pretrained_embeddings"],
+                other_information="Specifying a vocab_file or most_common overrides this parameter",
+                description_implications="A smaller number will reduce the vocabulary, making the embedding matrix "
+                "smaller and reduce the memory footprint, but will also collapse more tokens "
+                "into the rare one, so the model may perform worse when rare tokens appear in "
+                "the data",
+                suggested_values="0.95 will remove the 5% least common of the tokens in the vocab.",
                 suggested_values_reasoning="Depending on the data distribution and how important rare tokens are, 90%, "
                 "95% or 99% of the number of tokens will leave out only very rare tokens "
                 "that "

@@ -37,11 +37,22 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
     )
 
     most_common: int = schema_utils.PositiveInteger(
-        default=20000,
+        default=None,
         allow_none=False,
         description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
         "amount, the most infrequent symbols will be treated as unknown.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["most_common"],
+    )
+
+    most_common_percentile: int = schema_utils.FloatRange(
+        default=0.95,
+        min=0.0,
+        max=1.0,
+        min_inclusive=False,
+        allow_none=True,
+        description="The percentage of most common tokens to be considered. if the data contains more than this "
+        "amount, the most infrequent tokens will be treated as unknown.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["most_common_percentile"],
     )
 
     padding_symbol: str = schema_utils.String(
