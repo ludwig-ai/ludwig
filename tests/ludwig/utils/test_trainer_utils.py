@@ -151,6 +151,152 @@ def test_progress_tracker():
     }
 
 
+def test_full_progress_tracker():
+    progress_tracker = trainer_utils.ProgressTracker(
+        **{
+            "batch_size": 128,
+            "best_eval_metric_checkpoint_number": 7,
+            "best_eval_metric_epoch": 6,
+            "best_eval_metric_steps": 35,
+            "best_eval_metric_value": 0.719,
+            "last_improvement_steps": 35,
+            "best_eval_test_metrics": {
+                "Survived": {"accuracy": 0.634, "loss": 3.820, "roc_auc": 0.598},
+                "combined": {"loss": 3.820},
+            },
+            "best_eval_train_metrics": {
+                "Survived": {"accuracy": 0.682, "loss": 4.006, "roc_auc": 0.634},
+                "combined": {"loss": 4.006},
+            },
+            "best_eval_validation_metrics": {
+                "Survived": {"accuracy": 0.719, "loss": 4.396, "roc_auc": 0.667},
+                "combined": {"loss": 4.396},
+            },
+            "best_increase_batch_size_eval_metric": float("inf"),
+            "best_reduce_learning_rate_eval_metric": float("inf"),
+            "checkpoint_number": 12,
+            "epoch": 12,
+            "last_increase_batch_size": 0,
+            "last_increase_batch_size_eval_metric_improvement": 0,
+            "last_increase_batch_size_steps": 0,
+            "last_learning_rate_reduction": 0,
+            "last_learning_rate_reduction_steps": 0,
+            "last_reduce_learning_rate_eval_metric_improvement": 0,
+            "learning_rate": 0.001,
+            "num_increases_batch_size": 0,
+            "num_reductions_learning_rate": 0,
+            "steps": 60,
+            "test_metrics": {
+                "Survived": {
+                    "accuracy": [
+                        [0, 5, 0.651],
+                        [1, 10, 0.651],
+                    ],
+                    "loss": [
+                        [0, 5, 4.130],
+                        [1, 10, 4.074],
+                    ],
+                    "roc_auc": [
+                        [0, 5, 0.574],
+                        [1, 10, 0.595],
+                    ],
+                },
+                "combined": {
+                    "loss": [
+                        [0, 5, 4.130],
+                        [1, 10, 4.074],
+                    ]
+                },
+            },
+            "train_metrics": {
+                "Survived": {
+                    "accuracy": [
+                        [0, 5, 0.6875],
+                        [1, 10, 0.6875],
+                    ],
+                    "loss": [
+                        [0, 5, 4.417],
+                        [1, 10, 4.344],
+                    ],
+                    "roc_auc": [
+                        [0, 5, 0.628],
+                        [1, 10, 0.629],
+                    ],
+                },
+                "combined": {
+                    "loss": [
+                        [0, 5, 4.417],
+                        [1, 10, 4.344],
+                    ]
+                },
+            },
+            "tune_checkpoint_num": 0,
+            "validation_metrics": {
+                "Survived": {
+                    "accuracy": [
+                        [0, 5, 0.696],
+                        [1, 10, 0.696],
+                    ],
+                    "loss": [
+                        [0, 5, 4.494],
+                        [1, 10, 4.473],
+                    ],
+                    "roc_auc": [
+                        [0, 5, 0.675],
+                        [1, 10, 0.671],
+                    ],
+                },
+                "combined": {
+                    "loss": [
+                        [0, 5, 4.494],
+                        [1, 10, 4.473],
+                    ]
+                },
+            },
+        }
+    )
+
+    assert progress_tracker.log_metrics() == {
+        "batch_size": 128,
+        "best.train_metrics.Survived.accuracy": 0.682,
+        "best.train_metrics.Survived.loss": 4.006,
+        "best.train_metrics.Survived.roc_auc": 0.634,
+        "best.train_metrics.combined.loss": 4.006,
+        "best.test_metrics.Survived.accuracy": 0.634,
+        "best.test_metrics.Survived.loss": 3.82,
+        "best.test_metrics.Survived.roc_auc": 0.598,
+        "best.test_metrics.combined.loss": 3.82,
+        "best.validation_metrics.Survived.accuracy": 0.719,
+        "best.validation_metrics.Survived.loss": 4.396,
+        "best.validation_metrics.Survived.roc_auc": 0.667,
+        "best.validation_metrics.combined.loss": 4.396,
+        "best_eval_metric_checkpoint_number": 7,
+        "best_eval_metric_epoch": 6,
+        "best_eval_metric_steps": 35,
+        "best_valid_metric": 0.719,
+        "checkpoint_number": 12,
+        "epoch": 12,
+        "last_improvement_steps": 35,
+        "learning_rate": 0.001,
+        "num_increases_bs": 0,
+        "num_reductions_lr": 0,
+        "steps": 60,
+        "test_metrics.Survived.accuracy": 0.651,
+        "test_metrics.Survived.loss": 4.074,
+        "test_metrics.Survived.roc_auc": 0.595,
+        "test_metrics.combined.loss": 4.074,
+        "train_metrics.Survived.accuracy": 0.6875,
+        "train_metrics.Survived.loss": 4.344,
+        "train_metrics.Survived.roc_auc": 0.629,
+        "train_metrics.combined.loss": 4.344,
+        "tune_checkpoint_num": 0,
+        "validation_metrics.Survived.accuracy": 0.696,
+        "validation_metrics.Survived.loss": 4.473,
+        "validation_metrics.Survived.roc_auc": 0.671,
+        "validation_metrics.combined.loss": 4.473,
+    }
+
+
 def test_get_final_steps_per_checkpoint():
     # steps_per_checkpoint and checkpoints_per_epoch cannot both be specified.
     with pytest.raises(Exception):

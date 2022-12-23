@@ -241,6 +241,17 @@ class ProgressTracker:
                         # TODO: when loading an existing model, this loses metric values for all but the last epoch.
                         log_metrics[f"{metrics_dict_name}.{feature_name}.{metric_name}"] = metrics_tuples[-1][-1]
 
+        # Add best metrics.
+        for feature_name, metrics in self.best_eval_train_metrics.items():
+            for metric_name, metric_value in metrics.items():
+                log_metrics[f"best.train_metrics.{feature_name}.{metric_name}"] = metric_value
+        for feature_name, metrics in self.best_eval_validation_metrics.items():
+            for metric_name, metric_value in metrics.items():
+                log_metrics[f"best.validation_metrics.{feature_name}.{metric_name}"] = metric_value
+        for feature_name, metrics in self.best_eval_test_metrics.items():
+            for metric_name, metric_value in metrics.items():
+                log_metrics[f"best.test_metrics.{feature_name}.{metric_name}"] = metric_value
+
         return log_metrics
 
 
