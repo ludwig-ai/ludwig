@@ -1,7 +1,3 @@
-from abc import ABC
-
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 

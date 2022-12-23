@@ -48,8 +48,8 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
+# from ludwig.schema.features.augmentation.image import RandomVerticalFlipOperation, RandomHorizontalFlipOperation
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.schema.utils import InputAugmentationContainer
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
@@ -67,14 +67,15 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
-_augmentation_registry = Registry()
 
 logger = logging.getLogger(__name__)
 
+_augmentation_op_registry = Registry()
+
 
 @DeveloperAPI
-def get_augmentation_registry() -> Registry:
-    return _augmentation_registry
+def get_augmentation_op_registry() -> Registry:
+    return _augmentation_op_registry
 
 
 def register_augmentation_op(name: str, features: Union[str, List[str]]):
@@ -83,16 +84,16 @@ def register_augmentation_op(name: str, features: Union[str, List[str]]):
 
     def wrap(cls):
         for feature in features:
-            augmentation_registry = get_augmentation_registry().get(feature, {})
-            augmentation_registry[name] = cls
-            get_augmentation_registry()[feature] = augmentation_registry
+            augmentation_op_registry = get_augmentation_op_registry().get(feature, {})
+            augmentation_op_registry[name] = cls
+            get_augmentation_op_registry()[feature] = augmentation_op_registry
         return cls
 
     return wrap
 
 
 def get_augmentation_op(feature: str, name: str):
-    return get_augmentation_registry()[feature][name]
+    return get_augmentation_op_registry()[feature][name]
 
 
 # function to partially undo the TorchVision ImageClassification transformation.
@@ -117,6 +118,10 @@ def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.
 
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
 class RandomVFlip(torch.nn.Module):
+    # @classmethod
+    # def get_schema_cls(cls):
+    #     return RandomVerticalFlipOperation
+
     def __init__(self, p=0.5):
         super().__init__()
 
@@ -131,6 +136,10 @@ class RandomVFlip(torch.nn.Module):
 
 @register_augmentation_op(name="random_horizontal_flip", features=IMAGE)
 class RandomHFlip(torch.nn.Module):
+    # @classmethod
+    # def get_schema_cls(cls):
+    #     return RandomHorizontalFlipOperation
+
     def __init__(self, p=0.5):
         super().__init__()
 

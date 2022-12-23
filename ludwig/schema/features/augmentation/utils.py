@@ -10,20 +10,39 @@ from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
 
 # TODO: Is all of this needed?
-augmentation_registry = Registry()
+# augmentation_registry = Registry()
+#
+#
+# @DeveloperAPI
+# def register_augmentation(name: str):
+#     def wrap(augmentation_config: BaseAugmentationConfig):
+#         augmentation_registry[name] = augmentation_config
+#         return augmentation_config
+#
+#     return wrap
+
+_augmentation_config_registry = Registry()
 
 
 @DeveloperAPI
-def register_augmentation(name: str):
-    def wrap(augmentation_config: BaseAugmentationConfig):
-        augmentation_registry[name] = augmentation_config
-        return augmentation_config
+def get_augmentation_config_registry() -> Registry:
+    return _augmentation_config_registry
+
+
+def register_augmentation_config(name: str):
+    def wrap(cls):
+        get_augmentation_config_registry()[name] = cls
+        return cls
 
     return wrap
 
 
+def get_augmentation_op(feature: str, name: str):
+    return get_augmentation_config_registry()[feature][name]
+
+
 @DeveloperAPI
-def AugmentationDataclassField(feature_type: str):
+def AugmentationDataclassField():
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
@@ -31,17 +50,19 @@ def AugmentationDataclassField(feature_type: str):
     """
 
     class AugmentationMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a list for a valid preprocessing config from the
+        """Custom marshmallow field that deserializes a list for a valid augmentation config from the
         augmentation_registry and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
                 return None
-            if isinstance(value, dict):
-                if feature_type in augmentation_registry:
-                    pre = augmentation_registry[feature_type]
+            for augmentation in value:
+                if isinstance(augmentation, str) and augmentation in get_augmentation_config_registry():
+                    return augmentation
+                elif isinstance(augmentation, dict):
+                    pre = get_augmentation_config_registry()[tuple(augmentation.items())[0][0]]
                     try:
-                        return pre.Schema().load(value)
+                        return pre.Schema().load(augmentation)
                     except (TypeError, ValidationError) as error:
                         raise ValidationError(
                             f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
@@ -53,8 +74,8 @@ def AugmentationDataclassField(feature_type: str):
 
         @staticmethod
         def _jsonschema_type_mapping():
-            augmentation_cls = augmentation_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(augmentation_cls)["properties"]
+            # augmentation_cls = _augmentation_config_registry[feature_type]
+            props = schema_utils.unload_jsonschema_from_marshmallow_class(AugmentationMarshmallowField)["properties"]
             return {
                 "type": "object",
                 "properties": props,
@@ -63,9 +84,9 @@ def AugmentationDataclassField(feature_type: str):
             }
 
     try:
-        augmentation = augmentation_registry[feature_type]
-        load_default = augmentation.Schema().load({"feature_type": feature_type})
-        dump_default = augmentation.Schema().dump({"feature_type": feature_type})
+        # augmentation_config = _augmentation_config_registry[feature_type]
+        load_default = None  # augmentation_config.Schema().load({"feature_type": feature_type})
+        dump_default = None  # augmentation_config.Schema().dump({"feature_type": feature_type})
 
         return field(
             metadata={
@@ -79,5 +100,5 @@ def AugmentationDataclassField(feature_type: str):
         )
     except Exception as e:
         raise ValidationError(
-            f"Unsupported augmentation type: {feature_type}. See augmentation_registry. " f"Details: {e}"
+            f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}"
         )

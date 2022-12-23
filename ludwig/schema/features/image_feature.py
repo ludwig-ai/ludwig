@@ -27,8 +27,8 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    # augmentation: BaseAugmentationConfig = AugmentationDataclassField(feature_type=IMAGE)
-    augmentation: BaseAugmentationConfig = schema_utils.List()  # schema_utils.DictList() #schema_utils.List()
+    augmentation: BaseAugmentationConfig = AugmentationDataclassField()
+    # augmentation: BaseAugmentationConfig = schema_utils.List()  # schema_utils.DictList() #schema_utils.List()
 
 
 @DeveloperAPI

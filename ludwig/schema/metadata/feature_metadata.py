@@ -623,7 +623,7 @@ FEATURE_METADATA = {
     },
     "image": {
         "augmentation": {
-            "random_vertical_flip": ParameterMetadata(
+            "rotation_degree": ParameterMetadata(
                 ui_display_name=None,
                 default_value_reasoning=None,
                 example_value=None,
