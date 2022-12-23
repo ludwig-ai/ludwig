@@ -38,7 +38,7 @@ def create_optimizer(
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
     :param model: Underlying Ludwig model
-    :param lr: Initial learning rate for the optimizer
+    :param learning_rate: Initial learning rate for the optimizer
     :param optimizer_config: Instance of `ludwig.modules.optimization_modules.BaseOptimizerConfig` (default:
            `ludwig.modules.optimization_modules.SGDOptimizerConfig()`).
     :param horovod: Horovod parameters (default: None).
