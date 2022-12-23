@@ -46,7 +46,7 @@ class BagFeatureMixin(BaseFeatureMixin):
             data=column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
             most_common=preprocessing_parameters["most_common"],
-            most_common_percentile=preprocessing_parameters["most_common"],
+            most_common_percentile=preprocessing_parameters["most_common_percentile"],
             lowercase=preprocessing_parameters["lowercase"],
             processor=backend.df_engine,
         )

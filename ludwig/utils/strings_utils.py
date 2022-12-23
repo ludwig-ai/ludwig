@@ -294,15 +294,11 @@ def create_vocabulary(
     line_length_max = processor.compute(processed_lines.map(len).max())
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
-    print("\n\nBEFORE ANY TRUNCATION", most_common, most_common_percentile)
-
     if not most_common:
         most_common = int(len(unit_counts) * most_common_percentile)
 
     if vocab is None:
         vocab = [unit for unit, count in unit_counts.most_common(most_common)]
-
-    print("AFTER TRUNCATION,", "original vocab size:", len(unit_counts), "current vocab size:", len(vocab), "\n\n")
 
     vocab_set = set(vocab)
 
