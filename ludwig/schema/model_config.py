@@ -13,6 +13,7 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
+    COMBINED,
     COMBINER,
     DECODER,
     DEFAULT_VALIDATION_METRIC,
@@ -38,6 +39,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
+from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
@@ -49,7 +51,12 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import get_input_feature_cls, get_output_feature_cls, input_config_registry
+from ludwig.schema.features.utils import (
+    get_input_feature_cls,
+    get_output_feature_cls,
+    input_config_registry,
+    output_config_registry,
+)
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -127,6 +134,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
 
+        # Keep track of the original (upgraded) user config dictionary.
+        self._user_config_dict = config_dict
+
         # ===== Initialize Top Level Config Sections =====
 
         # Since 'ecd' is the default model type, we set it initially here.
@@ -195,6 +205,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Hyperopt =====
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
         self._set_hyperopt_defaults()
+
+        # Set up default validation metric, which is used for plateau metrics and early stopping.
+        self._set_validation_parameters()
 
         # ===== Validate Config =====
         if self.model_type == MODEL_GBM:
@@ -446,6 +459,46 @@ class ModelConfig(BaseMarshmallowConfig):
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
 
+    def _set_validation_parameters(self):
+        """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
+        output_features = list(self.output_features.to_dict().values())
+
+        # The user has explicitly set validation_field. Don't override any validation parameters.
+        if TRAINER in self._user_config_dict and "validation_field" in self._user_config_dict[TRAINER]:
+            # TODO(Justin): Validate that validation_field is valid.
+            return
+
+        # The user has explicitly set the validation_metric.
+        if TRAINER in self._user_config_dict and "validation_metric" in self._user_config_dict[TRAINER]:
+            # Loss is valid for all features.
+            if self._user_config_dict[TRAINER]["validation_metric"] == LOSS:
+                return
+
+            # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
+            # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
+            feature_to_metric_names_map = get_feature_to_metric_names_map(output_features)
+            validation_field = None
+            for feature_name, metric_names in feature_to_metric_names_map.items():
+                if self.trainer.validation_metric in metric_names:
+                    if validation_field is None:
+                        validation_field = feature_name
+                    else:
+                        raise ValidationError(
+                            f"The validation_metric: '{self.trainer.validation_metric}' corresponds to multiple "
+                            f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
+                            "specify the validation_field that should be used with the validation_metric "
+                            f"'{self.trainer.validation_metric}'."
+                        )
+            if validation_field is None:
+                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
+            self.trainer.validation_field = validation_field
+            return
+
+        # The user has not explicitly set any validation fields.
+        # Default to using the first output feature's default validation metric.
+        self.trainer.validation_field = output_features[0]["name"]
+        self.trainer.validation_metric = output_config_registry[output_features[0]["type"]].default_validation_metric
+
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
         the hyperopt section of the config object is not fully complete.
@@ -544,3 +597,14 @@ class ModelConfig(BaseMarshmallowConfig):
         if self.combiner is not None:
             config_dict["combiner"] = self.combiner.to_dict()
         return convert_submodules(config_dict)
+
+
+def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {}
+    for output_feature in output_features:
+        output_feature_name = output_feature[NAME]
+        output_feature_type = output_feature[TYPE]
+        metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names

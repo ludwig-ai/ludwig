@@ -199,7 +199,7 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
     for sample_input, (name, feature) in zip(sample_encoded, input_features.items()):
         metadata = model.training_set_metadata[name]
         if feature.type() == TEXT:
-            PAD_IND = metadata["pad_idx"]
+            PAD_IND = metadata.get("pad_idx", metadata.get("char_pad_idx"))
             token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
             baseline = token_reference.generate_reference(sequence_length=sample_input.shape[1], device=DEVICE)
         elif feature.type() == CATEGORY:
@@ -284,17 +284,17 @@ def get_total_attribution(
             a_reduced = a.detach().cpu()
             if a.ndim > 1:
                 # Convert to token-level attributions by summing over the embedding dimension.
-                a_reduced = a.sum(dim=-1).squeeze(0)
+                a_reduced = a.sum(dim=-1)
             if a_reduced.ndim == 2:
                 # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
                 # norm of the sequence.
                 a_reduced = a_reduced / torch.norm(a_reduced)
             attributions_reduced.append(a_reduced)
 
-        for inputs, attrs, feat_name in zip(input_batch, attributions_reduced, input_features.keys()):
-            if attrs.ndim == 2:
-                tok_attrs = get_token_attributions(model, feat_name, inputs, attrs)
-                feat_to_token_attributions[feat_name].append(tok_attrs)
+        for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
+            if feat.type() == TEXT:
+                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
         attribution = [a.sum(dim=-1) if a.ndim == 2 else a for a in attributions_reduced]
