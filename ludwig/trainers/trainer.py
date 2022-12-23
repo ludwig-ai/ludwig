@@ -1072,11 +1072,7 @@ class Trainer(BaseTrainer):
             # single output label, some metrics like ROC may turn out to be NaN.
             # However, we want to guarantee that the model will be saved at least once over a full
             # training-checkpoint-eval-loop.
-            last_validation_metric_value = 0
-
-        if improved_fn(last_validation_metric_value, progress_tracker.best_eval_metric):
-            progress_tracker.last_improvement_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric = last_validation_metric_value
+            eval_metric_value = 0
 
         if improved_fn(eval_metric_value, progress_tracker.best_eval_metric_value):
             previous_best_eval_metric_value = progress_tracker.best_eval_metric_value
