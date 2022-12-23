@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import signal
 import sys
 import threading
@@ -804,14 +805,32 @@ class LightGBMTrainer(BaseTrainer):
 
         # create dataset for lightgbm
         # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
-        lgb_train = lgb.Dataset(X_train, label=y_train, free_raw_data=False).construct()
+        try:
+            lgb_train = lgb.Dataset(X_train, label=y_train, free_raw_data=False).construct()
+        except lgb.basic.LightGBMError as e:
+            if re.search(r"special JSON characters", str(e)):
+                raise ValueError(
+                    "Some column names in the training set contain invalid characters. Please ensure column names only "
+                    "contain alphanumeric characters and underscores, then try training again."
+                )
+            else:
+                raise
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
             X_val = validation_set.to_df(self.model.input_features.values())
             y_val = validation_set.to_df(self.model.output_features.values())
-            lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
+            try:
+                lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
+            except lgb.basic.LightGBMError as e:
+                if re.search(r"special JSON characters", str(e)):
+                    raise ValueError(
+                        "Some column names in the validation set contain invalid characters. Please ensure column "
+                        "names only contain alphanumeric characters and underscores, then try training again."
+                    )
+                else:
+                    raise
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
         else:
@@ -821,7 +840,16 @@ class LightGBMTrainer(BaseTrainer):
         if test_set is not None:
             X_test = test_set.to_df(self.model.input_features.values())
             y_test = test_set.to_df(self.model.output_features.values())
-            lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
+            try:
+                lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
+            except lgb.basic.LightGBMError as e:
+                if re.search(r"special JSON characters", str(e)):
+                    raise ValueError(
+                        "Some column names in the test set contain invalid characters. Please ensure column "
+                        "names only contain alphanumeric characters and underscores, then try training again."
+                    )
+                else:
+                    raise
             eval_sets.append(lgb_test)
             eval_names.append(LightGBMTrainer.TEST_KEY)
 
