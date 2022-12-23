@@ -3,7 +3,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
-from ludwig.schema.features.augmentation.utils import AugmentationDataclassField
+from ludwig.schema.features.augmentation.utils import AugmentationContainerDataclassField
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
@@ -27,7 +27,7 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: BaseAugmentationConfig = AugmentationDataclassField()
+    augmentation: BaseAugmentationConfig = AugmentationContainerDataclassField()
     # augmentation: BaseAugmentationConfig = schema_utils.List()  # schema_utils.DictList() #schema_utils.List()
 
 

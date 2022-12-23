@@ -37,19 +37,19 @@ def register_augmentation_config(name: str):
     return wrap
 
 
-def get_augmentation_op(feature: str, name: str):
-    return get_augmentation_config_registry()[feature][name]
+def get_augmentation_cls(name: str):
+    return get_augmentation_config_registry()[name]
 
 
 @DeveloperAPI
-def AugmentationDataclassField():
+def AugmentationContainerDataclassField():
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to an augmentation config.
     """
 
-    class AugmentationMarshmallowField(fields.Field):
+    class AugmentationContainerMarshmallowField(fields.Field):
         """Custom marshmallow field that deserializes a list for a valid augmentation config from the
         augmentation_registry and creates a corresponding JSON schema for external usage."""
 
@@ -75,7 +75,8 @@ def AugmentationDataclassField():
         @staticmethod
         def _jsonschema_type_mapping():
             # augmentation_cls = _augmentation_config_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(AugmentationMarshmallowField)["properties"]
+            props = schema_utils.unload_jsonschema_from_marshmallow_class(AugmentationContainerMarshmallowField)[
+                "properties"]
             return {
                 "type": "object",
                 "properties": props,
@@ -90,7 +91,7 @@ def AugmentationDataclassField():
 
         return field(
             metadata={
-                "marshmallow_field": AugmentationMarshmallowField(
+                "marshmallow_field": AugmentationContainerMarshmallowField(
                     allow_none=False,
                     dump_default=dump_default,
                     load_default=load_default,
@@ -102,3 +103,55 @@ def AugmentationDataclassField():
         raise ValidationError(
             f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}"
         )
+
+
+@DeveloperAPI
+def get_augmentation_jsonschema():
+    """This function returns a JSON augmenation schema.
+
+    Returns: JSON Schema
+    """
+    augmentation_types = sorted(list(get_augmentation_config_registry().keys()))
+    schema = {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+            "type": "array",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": augmentation_types,
+                    "title": "type",
+                    "description": "Type of augmentation to apply.",
+                },
+            },
+            "additionalProperties": True,
+            "allOf": get_augmentation_conds(),
+            "required": ["name", "type"],
+            "title": "augmenttion",
+        },
+        # "uniqueItemProperties": ["name"],
+    }
+
+    return schema
+
+
+@DeveloperAPI
+def get_augmentation_conds():
+    """This function returns a list of if-then JSON clauses for each augmentation type along with their properties
+    and constraints.
+
+    Returns: List of JSON clauses
+    """
+    # input_feature_types = sorted(list(input_config_registry.keys()))
+    augmentation_types = sorted(list(get_augmentation_config_registry().keys()))
+    conds = []
+    # for feature_type in input_feature_types:  # TODO: placeholder for future use
+    for augmentation_type in augmentation_types:
+        schema_cls = get_augmentation_cls(augmentation_type)
+        feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        feature_props = feature_schema["properties"]
+        schema_utils.remove_duplicate_fields(feature_props)
+        feature_cond = schema_utils.create_cond({"type": augmentation_type}, feature_props)
+        conds.append(feature_cond)
+    return conds
