@@ -49,7 +49,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
         min=0.0,
         max=1.0,
         min_inclusive=False,
-        allow_none=True,
+        allow_none=False,
         description="The percentage of most common tokens to be considered. if the data contains more than this "
         "amount, the most infrequent tokens will be treated as unknown.",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["most_common_percentile"],

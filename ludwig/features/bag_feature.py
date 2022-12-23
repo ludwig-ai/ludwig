@@ -26,6 +26,7 @@ from ludwig.features.set_feature import _SetPreprocessing
 from ludwig.schema.features.bag_feature import BagInputFeatureConfig
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.types import Series
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +41,12 @@ class BagFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def get_feature_meta(column: Series, preprocessing_parameters: PreprocessingConfigDict, backend):
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
-            column,
-            preprocessing_parameters["tokenizer"],
-            num_most_frequent=preprocessing_parameters["most_common"],
+            data=column,
+            tokenizer_type=preprocessing_parameters["tokenizer"],
+            most_common=preprocessing_parameters["most_common"],
+            most_common_percentile=preprocessing_parameters["most_common"],
             lowercase=preprocessing_parameters["lowercase"],
             processor=backend.df_engine,
         )

@@ -44,7 +44,7 @@ from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
-from ludwig.utils.types import TorchscriptPreprocessingInput
+from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +121,13 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column: Series, preprocessing_parameters: PreprocessingConfigDict, backend
+    ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
-            column,
-            num_most_frequent=preprocessing_parameters["most_common"],
+            data=column,
+            most_common_percentile=preprocessing_parameters["most_common_percentile"],
+            most_common=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
         vocab_size = len(str2idx)

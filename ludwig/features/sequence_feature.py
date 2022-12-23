@@ -52,7 +52,7 @@ from ludwig.utils.strings_utils import (
     UNKNOWN_SYMBOL,
 )
 from ludwig.utils.tokenizers import get_tokenizer_from_registry
-from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
+from ludwig.utils.types import DataFrame, Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -198,12 +198,15 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column: Series, preprocessing_parameters: PreprocessingConfigDict, backend
+    ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
-            column,
-            preprocessing_parameters["tokenizer"],
+            data=column,
+            tokenizer_type=preprocessing_parameters["tokenizer"],
             lowercase=preprocessing_parameters["lowercase"],
-            num_most_frequent=preprocessing_parameters["most_common"],
+            most_common_percentile=preprocessing_parameters["most_common_percentile"],
+            most_common=preprocessing_parameters["most_common"],
             vocab_file=preprocessing_parameters["vocab_file"],
             unknown_symbol=preprocessing_parameters["unknown_symbol"],
             padding_symbol=preprocessing_parameters["padding_symbol"],

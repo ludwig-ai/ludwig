@@ -42,7 +42,7 @@ from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutp
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
-from ludwig.utils.types import DataFrame
+from ludwig.utils.types import DataFrame, Series
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def feature_meta(column: Series, preprocessing_parameters: PreprocessingConfigDict, backend):
         (
             idx2str,
             str2idx,
@@ -68,9 +68,10 @@ class TextFeatureMixin(BaseFeatureMixin):
             padding_symbol,
             unknown_symbol,
         ) = create_vocabulary(
-            column,
+            data=column,
             tokenizer_type=preprocessing_parameters["tokenizer"],
-            num_most_frequent=preprocessing_parameters["most_common"],
+            most_common_percentile=preprocessing_parameters["most_common_percentile"],
+            most_common=preprocessing_parameters["most_common"],
             lowercase=preprocessing_parameters["lowercase"],
             vocab_file=preprocessing_parameters["vocab_file"],
             unknown_symbol=preprocessing_parameters["unknown_symbol"],

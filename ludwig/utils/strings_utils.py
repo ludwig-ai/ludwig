@@ -193,9 +193,10 @@ def add_or_move_symbol(vocab_list: List[str], vocab_set: Set[str], symbol: str, 
 
 def create_vocabulary(
     data: Series,
+    most_common_percentile: float,
     tokenizer_type: str = "space",
     lowercase: bool = True,
-    num_most_frequent: int = None,
+    most_common: int = None,
     vocab_file: str = None,
     add_special_symbols: bool = True,
     unknown_symbol: str = UNKNOWN_SYMBOL,
@@ -224,7 +225,8 @@ def create_vocabulary(
         data: Series of string data.
         tokenizer_type: Tokenizer type. Can be a tokenizer registry value or 'hf_tokenizer' for huggingface.
         lowercase: Whether to lowercase all strings.
-        num_most_frequent: Upper limit on vocabulary size.,
+        most_common_percentile: Percent upper limit on vocabulary size.
+        most_common: Upper limit on vocabulary size.
         add_special_symbols: If True, START, STOP, PADDING special symbols are added to the vocabulary. UNKNOWN is
             always added.
         unknown_symbol: String representation for the UNKNOWN symbol.
@@ -292,8 +294,15 @@ def create_vocabulary(
     line_length_max = processor.compute(processed_lines.map(len).max())
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
+    print("\n\nBEFORE ANY TRUNCATION", most_common, most_common_percentile)
+
+    if not most_common:
+        most_common = int(len(unit_counts) * most_common_percentile)
+
     if vocab is None:
-        vocab = [unit for unit, count in unit_counts.most_common(num_most_frequent)]
+        vocab = [unit for unit, count in unit_counts.most_common(most_common)]
+
+    print("AFTER TRUNCATION,", "original vocab size:", len(unit_counts), "current vocab size:", len(vocab), "\n\n")
 
     vocab_set = set(vocab)
 
@@ -317,7 +326,8 @@ def create_vocabulary(
 
 def create_vocabulary_single_token(
     data: Series,
-    num_most_frequent: Optional[int] = None,
+    most_common_percentile: float,
+    most_common: Optional[int] = None,
     processor: DataFrameEngine = PANDAS,
     unknown_symbol: str = UNKNOWN_SYMBOL,
 ):
@@ -331,7 +341,8 @@ def create_vocabulary_single_token(
 
     Args:
         data: Series of string data.
-        num_most_frequent: Upper limit on vocabulary size.
+        most_common_percentile: Percent upper limit on vocabulary size.
+        most_common: Upper limit on vocabulary size.
         unknown_symbol: String representation for the UNKNOWN symbol.
         processor: Which processor to use to process data.
 
@@ -345,8 +356,12 @@ def create_vocabulary_single_token(
     processed_counts = processor.compute(processed_counts)
     full_vocab = processed_counts.index.tolist()
     # Only add unknown symbol if num most frequent tokens is less than total number of unique tokens
-    if num_most_frequent < len(full_vocab):
-        vocab = [unknown_symbol] + full_vocab[:num_most_frequent]
+
+    if not most_common:
+        most_common = int(len(full_vocab) * most_common_percentile)
+
+    if most_common < len(full_vocab):
+        vocab = [unknown_symbol] + full_vocab[:most_common]
     else:
         vocab = full_vocab
     str2idx = {unit: i for i, unit in enumerate(vocab)}
