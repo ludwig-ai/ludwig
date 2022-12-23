@@ -23,6 +23,9 @@ class LRScheduler:
         )
 
     def step(self):
+        self._train_scheduler.step()
+
+    def eval_step(self):
         pass
 
 
@@ -32,21 +35,8 @@ def get_linear_schedule_with_warmup(
     steps_per_checkpoint: int,
     num_training_steps: int,
 ) -> LambdaLR:
-    """
-    Create a schedule with a learning rate that decreases linearly from the initial lr set in the optimizer to 0, after
-    a warmup period during which it increases linearly from 0 to the initial lr set in the optimizer.
-    Args:
-        optimizer ([`~torch.optim.Optimizer`]):
-            The optimizer for which to schedule the learning rate.
-        num_warmup_steps (`int`):
-            The number of steps for the warmup phase.
-        num_training_steps (`int`):
-            The total number of training steps.
-        last_epoch (`int`, *optional*, defaults to -1):
-            The index of the last epoch when resuming training.
-    Return:
-        `torch.optim.lr_scheduler.LambdaLR` with the appropriate schedule.
-    """
+    """Creates a learning rate scheduler that updates each training step."""
+
     if config.learning_rate_warmup_fraction > 0 and config.learning_rate_warmup_evaluations > 0:
         raise ValueError(
             f"Cannot specify both learning_rate_warmup_fraction ({config.learning_rate_warmup_fraction}) and "
@@ -59,19 +49,36 @@ def get_linear_schedule_with_warmup(
     elif config.learning_rate_warmup_evaluations > 0:
         num_warmup_steps = config.learning_rate_warmup_evaluations * steps_per_checkpoint
 
+    decay_fn = decay_registry[config.decay]
+
     def lr_lambda(current_step: int):
         if current_step < num_warmup_steps:
             return float(current_step) / float(max(1, num_warmup_steps))
-        return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
+        return decay_fn(current_step, num_training_steps, num_warmup_steps, config)
 
     return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
 
 
-def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step, staircase=False):
-    decay_rate = float(decay_rate)
-    decay_steps = float(decay_steps)
-    step = float(step)
+def no_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
+    return 1.0
+
+
+def linear_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
+    return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - num_warmup_steps)))
+
+
+def exponential_decay(current_step: int, num_training_steps: int, num_warmup_steps: int, config: LRSchedulerConfig):
+    decay_rate = float(config.decay_rate)
+    decay_steps = float(config.decay_steps)
+    step = float(current_step)
     exponent = 1 + step / decay_steps
-    if staircase:
+    if config.staircase:
         exponent = math.ceil(exponent)
-    return initial_learning_rate * math.pow(decay_rate, exponent)
+    return math.pow(decay_rate, exponent)
+
+
+decay_registry = {
+    None: no_decay,
+    "linear": linear_decay,
+    "exponential": exponential_decay,
+}

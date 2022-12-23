@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import Dict
+from typing import Dict, Optional
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
@@ -28,9 +28,9 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA["learning_rate_warmup_evaluations"],
     )
 
-    decay: bool = schema_utils.Boolean(
-        default=False,
-        description="Turn on exponential decay of the learning rate.",
+    decay: Optional[str] = schema_utils.StringOptions(
+        ["linear", "exponential"],
+        description="Turn on decay of the learning rate.",
         parameter_metadata=TRAINER_METADATA["decay"],
     )
 
