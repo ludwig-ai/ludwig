@@ -199,7 +199,7 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
     for sample_input, (name, feature) in zip(sample_encoded, input_features.items()):
         metadata = model.training_set_metadata[name]
         if feature.type() == TEXT:
-            PAD_IND = metadata.get("pad_idx", metadata.get("char_pad_idx"))
+            PAD_IND = metadata.get("pad_idx", metadata.get("word_pad_idx"))
             token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
             baseline = token_reference.generate_reference(sequence_length=sample_input.shape[1], device=DEVICE)
         elif feature.type() == CATEGORY:
@@ -349,7 +349,8 @@ def get_token_attributions(
     )
 
     # map input ids to input tokens via the vocabulary
-    vocab = model.training_set_metadata[feature_name]["idx2str"]
+    feature = model.training_set_metadata[feature_name]
+    vocab = feature.get("idx2str", feature.get("word_str2idx"))
     idx2str = np.vectorize(lambda idx: vocab[idx])
     input_tokens = idx2str(input_ids)
 
