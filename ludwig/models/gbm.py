@@ -15,6 +15,7 @@ from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig, OutputFeaturesContainer
 from ludwig.utils import output_feature_utils
+from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.types import TorchDevice
 
@@ -223,6 +224,9 @@ class GBM(BaseModel):
             self.compiled_model.model.requires_grad_(False)
             trace = super().to_torchscript(device)
         return trace
+
+    def has_saved(self, save_path):
+        return path_exists(os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME))
 
     def get_args(self):
         """Returns init arguments for constructing this model."""

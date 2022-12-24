@@ -670,6 +670,12 @@ class LightGBMTrainer(BaseTrainer):
                     break
         finally:
             # ================ Finished Training ================
+            if not self.model.has_saved(save_path) and self.is_coordinator() and not self.skip_save_model:
+                try:
+                    self.model.save(save_path)
+                except ValueError:
+                    logger.info("No LightGBM model initialized, skipping save")
+
             self.callback(
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,
