@@ -224,6 +224,9 @@ class GBM(BaseModel):
             trace = super().to_torchscript(device)
         return trace
 
+    def has_saved(self, save_path):
+        return os.path.exists(os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME))
+
     def get_args(self):
         """Returns init arguments for constructing this model."""
         return self.config_obj.input_features.to_list(), self.config_obj.output_features.to_list(), self._random_seed
