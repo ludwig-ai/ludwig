@@ -350,7 +350,7 @@ def get_token_attributions(
 
     # map input ids to input tokens via the vocabulary
     feature = model.training_set_metadata[feature_name]
-    vocab = feature.get("idx2str", feature.get("word_str2idx"))
+    vocab = feature.get("idx2str", feature.get("word_idx2str"))
     idx2str = np.vectorize(lambda idx: vocab[idx])
     input_tokens = idx2str(input_ids)
 
