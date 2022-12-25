@@ -1,13 +1,23 @@
 from dataclasses import field
-from typing import List, Union
 
 from marshmallow import fields, ValidationError
+from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
+from ludwig.schema.features.augmentation.base import BaseAugmentationContainerConfig
+
 from ludwig.utils.registry import Registry
+
+
+@DeveloperAPI
+@dataclass(repr=False)
+class ImageAugmentationContainerConfig(BaseAugmentationContainerConfig):
+    """Augmentation container for image features."""
+
+    pass
+
 
 # TODO: Is all of this needed?
 # augmentation_registry = Registry()
@@ -56,27 +66,22 @@ def AugmentationContainerDataclassField():
         def _deserialize(self, value, attr, data, **kwargs):
             if value is None:
                 return None
+            augmentation_list = []
             for augmentation in value:
-                if isinstance(augmentation, str) and augmentation in get_augmentation_config_registry():
-                    return augmentation
-                elif isinstance(augmentation, dict):
-                    pre = get_augmentation_config_registry()[tuple(augmentation.items())[0][0]]
-                    try:
-                        return pre.Schema().load(augmentation)
-                    except (TypeError, ValidationError) as error:
-                        raise ValidationError(
-                            f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
-                        )
-                raise ValidationError(
-                    f"Invalid params for augmentation: {value}, expect dict with at least a valid `type` attribute."
-                )
-            raise ValidationError("Field should be None or dict")
+                augmentation_op = augmentation[TYPE]
+                augmentation_cls = get_augmentation_cls(augmentation_op)
+                pre = augmentation_cls()
+                try:
+                    augmentation_list.append(pre.Schema().load(augmentation))
+                except (TypeError, ValidationError) as error:
+                    raise ValidationError(
+                        f"Invalid augmentation params: {value}, see `{pre}` definition. Error: {error}"
+                    )
+            return augmentation_list
 
         @staticmethod
         def _jsonschema_type_mapping():
-            # augmentation_cls = _augmentation_config_registry[feature_type]
-            props = schema_utils.unload_jsonschema_from_marshmallow_class(AugmentationContainerMarshmallowField)[
-                "properties"]
+            props = get_augmentation_conds()
             return {
                 "type": "object",
                 "properties": props,
@@ -85,9 +90,9 @@ def AugmentationContainerDataclassField():
             }
 
     try:
-        # augmentation_config = _augmentation_config_registry[feature_type]
-        load_default = None  # augmentation_config.Schema().load({"feature_type": feature_type})
-        dump_default = None  # augmentation_config.Schema().dump({"feature_type": feature_type})
+        augmentation_container = ImageAugmentationContainerConfig
+        load_default = augmentation_container.Schema().load({})
+        dump_default = augmentation_container.Schema().dump({})
 
         return field(
             metadata={
@@ -115,8 +120,9 @@ def get_augmentation_jsonschema():
     schema = {
         "type": "array",
         "minItems": 1,
+        # "prefixItems": ["object", "object", "array"],  # TODO:  Is this needed?
         "items": {
-            "type": "array",
+            "type": "object",
             "properties": {
                 "type": {
                     "type": "string",
@@ -127,8 +133,8 @@ def get_augmentation_jsonschema():
             },
             "additionalProperties": True,
             "allOf": get_augmentation_conds(),
-            "required": ["name", "type"],
-            "title": "augmenttion",
+            "required": ["type"],
+            "title": "augmentation",
         },
         # "uniqueItemProperties": ["name"],
     }
@@ -149,9 +155,9 @@ def get_augmentation_conds():
     # for feature_type in input_feature_types:  # TODO: placeholder for future use
     for augmentation_type in augmentation_types:
         schema_cls = get_augmentation_cls(augmentation_type)
-        feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
-        feature_props = feature_schema["properties"]
-        schema_utils.remove_duplicate_fields(feature_props)
-        feature_cond = schema_utils.create_cond({"type": augmentation_type}, feature_props)
-        conds.append(feature_cond)
+        augmentation_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
+        augmentation_props = augmentation_schema["properties"]
+        schema_utils.remove_duplicate_fields(augmentation_props)
+        augmentation_cond = schema_utils.create_cond({"type": augmentation_type}, augmentation_props)
+        conds.append(augmentation_cond)
     return conds

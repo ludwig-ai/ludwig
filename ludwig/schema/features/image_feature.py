@@ -28,7 +28,6 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
     )
 
     augmentation: BaseAugmentationConfig = AugmentationContainerDataclassField()
-    # augmentation: BaseAugmentationConfig = schema_utils.List()  # schema_utils.DictList() #schema_utils.List()
 
 
 @DeveloperAPI

@@ -7,3 +7,10 @@ class BaseAugmentationConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for augmentation."""
 
     pass
+
+
+@DeveloperAPI
+class BaseAugmentationContainerConfig(schema_utils.BaseMarshmallowConfig):
+    """Base class for augmentation container."""
+
+    pass
