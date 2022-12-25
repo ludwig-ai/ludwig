@@ -124,7 +124,6 @@ class ModelConfig(BaseMarshmallowConfig):
     """
 
     def __init__(self, config_dict: ModelConfigDict):
-
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
 

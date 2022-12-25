@@ -6,10 +6,11 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
+from ludwig.constants import DEFAULTS, ENCODER, TEXT, TRAINABLE, TRAINER, TYPE
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -18,6 +19,7 @@ from tests.integration_tests.utils import (
     number_feature,
     RAY_BACKEND_CONFIG,
     sequence_feature,
+    text_feature,
     vector_feature,
 )
 
@@ -59,6 +61,37 @@ try:
 except ImportError:
     dask = None
     ray = None
+
+
+def test_tune_learning_rate_hf_encoder(tmpdir):
+    config = {
+        "input_features": [text_feature(), binary_feature()],
+        "output_features": [binary_feature()],
+        TRAINER: {
+            "train_steps": 1,
+            "learning_rate": "auto",
+        },
+        DEFAULTS: {
+            TEXT: {
+                ENCODER: {
+                    TYPE: "electra",
+                    TRAINABLE: True,
+                }
+            }
+        },
+    }
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(config["input_features"], config["output_features"], csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    _, _, output_directory = model.train(
+        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
+    )
+
+    assert model.config_obj.trainer.learning_rate == 0.00001  # has feature with HF trainable encoder
 
 
 @pytest.mark.parametrize("is_cpu", [True, False])
@@ -123,8 +156,7 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
             assert model.config_obj.trainer.eval_batch_size == eval_batch_size
 
         # check learning rate
-        assert model.config_obj.trainer.learning_rate != "auto"
-        assert model.config_obj.trainer.learning_rate > 0
+        assert model.config_obj.trainer.learning_rate == 0.0001  # has sequence feature
 
     check_postconditions(model)
 
@@ -239,3 +271,33 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     assert train_ds.ds.num_blocks() == 2
     assert val_ds.ds.num_blocks() == 2
     assert test_ds.ds.num_blocks() == 2
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+def test_mixed_precision(tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "use_mixed_precision": True,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)

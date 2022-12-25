@@ -4,7 +4,7 @@ from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Optional, Tuple, Type, Union
 
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
@@ -103,7 +103,7 @@ def create_cond(if_pred: TDict, then_pred: TDict):
 
 
 @DeveloperAPI
-def remove_duplicate_fields(properties: dict) -> None:
+def remove_duplicate_fields(properties: dict, fields: Optional[TList[str]] = None) -> None:
     """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
     type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
     both -
@@ -114,7 +114,8 @@ def remove_duplicate_fields(properties: dict) -> None:
     Args:
         properties: Dictionary of properties generated from a Ludwig schema class
     """
-    for key in [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE]:  # TODO: Remove col/proc_col once train metadata decoupled
+    duplicate_fields = [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE] if fields is None else fields
+    for key in duplicate_fields:  # TODO: Remove col/proc_col once train metadata decoupled
         if key in properties:
             del properties[key]
 
@@ -524,10 +525,11 @@ def NonNegativeFloat(
     default: Union[None, float] = None,
     allow_none=False,
     description: str = "",
+    max: Optional[float] = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
-    val = validate.Range(min=0.0)
+    val = validate.Range(min=0.0, max=max)
     allow_none = allow_none or default is None
 
     if default is not None:

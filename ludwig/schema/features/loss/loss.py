@@ -29,7 +29,6 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class MSELossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         MEAN_SQUARED_ERROR,
         description="Type of loss.",
@@ -44,7 +43,6 @@ class MSELossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class MAELossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         MEAN_ABSOLUTE_ERROR,
         description="Type of loss.",
@@ -59,7 +57,6 @@ class MAELossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class RMSELossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_ERROR,
         description="Type of loss.",
@@ -74,7 +71,6 @@ class RMSELossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class RMSPELossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
         description="Type of loss.",
@@ -89,7 +85,6 @@ class RMSPELossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class BWCEWLossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         BINARY_WEIGHTED_CROSS_ENTROPY,
         description="Type of loss.",
@@ -113,7 +108,6 @@ class BWCEWLossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         SOFTMAX_CROSS_ENTROPY,
         description="Type of loss.",
@@ -147,7 +141,6 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         SEQUENCE_SOFTMAX_CROSS_ENTROPY,
         description="Type of loss.",
@@ -186,7 +179,6 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 @DeveloperAPI
 @dataclass(repr=False)
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
-
     type: str = schema_utils.ProtectedString(
         SIGMOID_CROSS_ENTROPY,
         description="Type of loss.",
