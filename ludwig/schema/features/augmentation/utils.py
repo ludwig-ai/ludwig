@@ -119,8 +119,7 @@ def get_augmentation_jsonschema():
     augmentation_types = sorted(list(get_augmentation_config_registry().keys()))
     schema = {
         "type": "array",
-        "minItems": 1,
-        # "prefixItems": ["object", "object", "array"],  # TODO:  Is this needed?
+        "minItems": 0,
         "items": {
             "type": "object",
             "properties": {
