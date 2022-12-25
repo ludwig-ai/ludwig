@@ -93,8 +93,8 @@ def register_augmentation_op(name: str, features: Union[str, List[str]]):
     return wrap
 
 
-def get_augmentation_op(feature: str, name: str):
-    return get_augmentation_op_registry()[feature][name]
+def get_augmentation_op(feature_type: str, op_name: str):
+    return get_augmentation_op_registry()[feature_type][op_name]
 
 
 # function to partially undo the TorchVision ImageClassification transformation.
@@ -177,6 +177,20 @@ class RandomContrast(torch.nn.Module):
         # random contrast adjustment
         adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.contrast_min).item()
         return F.adjust_contrast(imgs, adjust_factor)
+
+
+@register_augmentation_op(name="random_brightness", features=IMAGE)
+class RandomBrightness(torch.nn.Module):
+    def __init__(self, min=0.1, max=3.0):
+        super().__init__()
+        self.contrast_min = min
+        self.contrast_max = max
+        self.brightness_adjustment_range = max - min
+
+    def forward(self, imgs):
+        # random contrast adjustment
+        adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.contrast_min).item()
+        return F.adjust_brightness(imgs, adjust_factor)
 
 
 @register_augmentation_op(name="random_blur", features=IMAGE)

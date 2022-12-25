@@ -88,3 +88,27 @@ class RandomBrightnessOperation(BaseAugmentationConfig):
         description="Maximum factor for random brightness.",
         parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["brightness_max"],
     )
+
+
+@DeveloperAPI
+@register_augmentation_config(name="random_contrast")
+@dataclass(repr=False)
+class RandomContrastOperation(BaseAugmentationConfig):
+    """Random Contrast augmentation operation."""
+
+    type: str = schema_utils.ProtectedString(
+        "random_contrast",
+        parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION][TYPE],
+    )
+
+    min: int = schema_utils.FloatRange(
+        default=0.5,
+        description="Minimum factor for random brightness.",
+        parameter_metadata=None  # FEATURE_METADATA[IMAGE][AUGMENTATION]["contrast_min"],
+    )
+
+    max: int = schema_utils.FloatRange(
+        default=1.5,
+        description="Maximum factor for random brightness.",
+        parameter_metadata=None  # FEATURE_METADATA[IMAGE][AUGMENTATION]["contrast_max"],
+    )
