@@ -201,6 +201,10 @@ class ModelConfig(BaseMarshmallowConfig):
         if self.model_type == MODEL_GBM:
             self.combiner = None
 
+        # TODO: alternative approaches
+        # special handling for image augmentation default
+        self.defaults.image.augmentation = []
+
         self._validate_config(self.to_dict())
 
     def __repr__(self):

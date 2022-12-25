@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 import os
 import warnings
@@ -196,25 +197,28 @@ class AugmentationPipeline(torch.nn.Module):
     def __init__(self, augmentation_list: List[Dict[str, Any]]):
         super().__init__()
 
-        self.augmentation_steps = torch.nn.Sequential()
-
-        for aug in augmentation_list:
-            if isinstance(aug, str):
-                aug_op = get_augmentation_op(IMAGE, aug)
-                self.augmentation_steps.append(aug_op())
-            elif isinstance(aug, dict):
-                k, v = list(aug.items())[0]
-                aug_op = get_augmentation_op(IMAGE, k)
-                self.augmentation_steps.append(aug_op(**v))
-            else:
-                raise ValueError("Invalid augmentation operation")
+        if self.training:
+            self.augmentation_steps = torch.nn.Sequential()
+            for aug in augmentation_list:
+                if isinstance(aug, str):
+                    aug_op = get_augmentation_op(IMAGE, aug)
+                    self.augmentation_steps.append(aug_op())
+                elif isinstance(aug, dict):
+                    aug_copy = copy.deepcopy(aug)
+                    aug_op = get_augmentation_op(IMAGE, aug_copy.pop(TYPE))
+                    self.augmentation_steps.append(aug_op(**aug_copy))
+                else:
+                    raise ValueError("Invalid augmentation operation")
+        else:
+            self.augmentation_steps = None
 
     def forward(self, imgs):
         # TODO: determine if we can avoid this step by refactoring image preprocessing
         # convert from float to uint8 values
         imgs = _convert_back_to_uint8(imgs)
 
-        imgs = self.augmentation_steps(imgs)
+        if self.augmentation_steps:
+            imgs = self.augmentation_steps(imgs)
 
         # TODO: determine if we can avoid this step by refactoring image preprocessing
         # convert back to float32 values
