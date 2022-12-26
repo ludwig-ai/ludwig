@@ -1,4 +1,5 @@
 import math
+import logging
 from typing import Type
 
 from torch.optim import Optimizer
@@ -65,17 +66,17 @@ def get_linear_schedule_with_warmup(
 ) -> LambdaLR:
     """Creates a learning rate scheduler that updates each training step."""
 
-    if config.learning_rate_warmup_fraction > 0 and config.learning_rate_warmup_evaluations > 0:
-        raise ValueError(
-            f"Cannot specify both learning_rate_warmup_fraction ({config.learning_rate_warmup_fraction}) and "
-            f"learning_rate_warmup_evaluations ({config.learning_rate_warmup_evaluations}) in the same config."
+    if config.warmup_fraction > 0 and config.warmup_evaluations > 0:
+        logging.info(
+            "Both `learning_rate_scheduler.warmup_fraction` and `learning_rate_scheduler.warmup_evaluations`. "
+            "This will result in the greater of the two (as a function of the total training steps) being used."
         )
 
     num_warmup_steps = 0
-    if config.learning_rate_warmup_fraction > 0:
-        num_warmup_steps = config.learning_rate_warmup_fraction * num_training_steps
-    elif config.learning_rate_warmup_evaluations > 0:
-        num_warmup_steps = config.learning_rate_warmup_evaluations * steps_per_checkpoint
+    if config.warmup_fraction > 0:
+        num_warmup_steps = max(config.warmup_fraction * num_training_steps, num_warmup_steps)
+    if config.warmup_evaluations > 0:
+        num_warmup_steps = max(config.warmup_evaluations * steps_per_checkpoint, num_warmup_steps)
 
     decay_fn = decay_registry[config.decay]
 

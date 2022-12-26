@@ -16,28 +16,28 @@ from ludwig.api_annotations import DeveloperAPI
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
-    learning_rate_warmup_fraction: float = schema_utils.NonNegativeFloat(
+    warmup_fraction: float = schema_utils.NonNegativeFloat(
         default=0.0,
         description="Fraction of total training steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_warmup_fraction"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
     )
 
-    learning_rate_warmup_evaluations: int = schema_utils.NonNegativeFloat(
+    warmup_evaluations: int = schema_utils.NonNegativeFloat(
         default=1,
         description="Number of evaluation steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_warmup_evaluations"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
     )
 
     decay: Optional[str] = schema_utils.StringOptions(
         ["linear", "exponential"],
         description="Turn on decay of the learning rate.",
-        parameter_metadata=TRAINER_METADATA["decay"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
     )
 
     decay_steps: int = schema_utils.PositiveInteger(
         default=10000,
         description="The number of steps to take in the exponential learning rate decay.",
-        parameter_metadata=TRAINER_METADATA["decay_steps"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
     )
 
     decay_rate: float = schema_utils.FloatRange(
@@ -45,57 +45,54 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         min=0,
         max=1,
         description="Decay per epoch (%): Factor to decrease the Learning rate.",
-        parameter_metadata=TRAINER_METADATA["decay_steps"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
     )
 
     staircase: bool = schema_utils.Boolean(
         default=False,
         description="Decays the learning rate at discrete intervals.",
-        parameter_metadata=TRAINER_METADATA["staircase"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["staircase"],
     )
 
-    reduce_learning_rate_on_plateau: int = schema_utils.NonNegativeInteger(
+    reduce_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
             "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the"
             "training set does not improve"
         ),
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_on_plateau"],
     )
 
-    reduce_learning_rate_on_plateau_patience: int = schema_utils.NonNegativeInteger(
+    reduce_on_plateau_patience: int = schema_utils.NonNegativeInteger(
         default=5,
         description=(
-            "How many evaluation steps have to pass before the learning rate reduces "
-            "when `reduce_learning_rate_on_plateau > 0`."
+            "How many evaluation steps have to pass before the learning rate reduces " "when `reduce_on_plateau > 0`."
         ),
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau_patience"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_on_plateau_patience"],
     )
 
-    reduce_learning_rate_on_plateau_rate: float = schema_utils.FloatRange(
+    reduce_on_plateau_rate: float = schema_utils.FloatRange(
         default=0.5,
         min=0,
         max=1,
-        description="Rate at which we reduce the learning rate when `reduce_learning_rate_on_plateau > 0`.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau_rate"],
+        description="Rate at which we reduce the learning rate when `reduce_on_plateau > 0`.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_on_plateau_rate"],
     )
 
-    reduce_learning_rate_eval_metric: str = schema_utils.String(
+    reduce_eval_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric plateau used to trigger when we reduce the learning rate "
-            "when `reduce_learning_rate_on_plateau > 0`."
+            "Metric plateau used to trigger when we reduce the learning rate " "when `reduce_on_plateau > 0`."
         ),
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_metric"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_eval_metric"],
     )
 
-    reduce_learning_rate_eval_split: str = schema_utils.String(
+    reduce_eval_split: str = schema_utils.String(
         default=TRAINING,
         description=(
-            "Which dataset split to listen on for reducing the learning rate "
-            "when `reduce_learning_rate_on_plateau > 0`."
+            "Which dataset split to listen on for reducing the learning rate " "when `reduce_on_plateau > 0`."
         ),
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_split"],
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_eval_split"],
     )
 
 
