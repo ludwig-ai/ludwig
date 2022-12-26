@@ -1,15 +1,34 @@
 import math
+from typing import Type
 
 from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LambdaLR
+from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
+from ludwig.constants import MINIMIZE
+from ludwig.modules.metric_modules import LudwigMetric
 
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
+from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
+
+
+class ReduceLROnPlateauLimited(ReduceLROnPlateau):
+    def __init__(self, optimizer: Optimizer, mode: str, step_limit: int, factor: float, patience: int):
+        super().__init__(optimizer, mode=mode, factor=factor, patience=patience)
+        self.step_limit = step_limit
+        self._steps = 0
+
+    def step(self, metrics, epoch=None):
+        if self._steps >= self.step_limit:
+            return
+
+        self._steps += 1
+        return super().step(metrics, epich=epoch)
 
 
 class LRScheduler:
-    def __init__(self, config: LRSchedulerConfig, optimizer: Optimizer):
+    def __init__(self, config: LRSchedulerConfig, optimizer: Optimizer, validation_metric: Type[LudwigMetric]):
         self.config = config
         self.optimizer = optimizer
+        self.validation_metric = validation_metric
 
         # Scheduler updated each training step
         self._train_scheduler = None
@@ -21,12 +40,21 @@ class LRScheduler:
         self._train_scheduler = get_linear_schedule_with_warmup(
             self.config, self.optimizer, steps_per_checkpoint, total_steps
         )
+        if self.config.reduce_learning_rate_on_plateau > 0:
+            mode = "min" if self.validation_metric.get_objective() == MINIMIZE else "max"
+            self._eval_scheduler = ReduceLROnPlateauLimited(
+                optimizer=self.optimizer,
+                mode=mode,
+                step_limit=self.config.reduce_learning_rate_on_plateau,
+                factor=self.config.reduce_learning_rate_on_plateau_rate,
+                patience=self.config.reduce_learning_rate_on_plateau_patience,
+            )
 
     def step(self):
         self._train_scheduler.step()
 
-    def eval_step(self):
-        pass
+    def eval_step(self, validation_metric: LudwigMetric):
+        self._eval_scheduler.step(get_scalar_from_ludwig_metric(validation_metric))
 
 
 def get_linear_schedule_with_warmup(

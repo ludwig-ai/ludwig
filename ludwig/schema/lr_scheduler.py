@@ -23,7 +23,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
     learning_rate_warmup_evaluations: int = schema_utils.NonNegativeFloat(
-        default=0,
+        default=1,
         description="Number of evaluation steps to warmup the learning rate for.",
         parameter_metadata=TRAINER_METADATA["learning_rate_warmup_evaluations"],
     )
@@ -82,7 +82,10 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     reduce_learning_rate_eval_metric: str = schema_utils.String(
         default=LOSS,
-        description="Rate at which we reduce the learning rate when `reduce_learning_rate_on_plateau > 0`.",
+        description=(
+            "Metric plateau used to trigger when we reduce the learning rate "
+            "when `reduce_learning_rate_on_plateau > 0`."
+        ),
         parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_metric"],
     )
 
