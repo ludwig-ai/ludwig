@@ -1,6 +1,5 @@
 ComparatorCombiner:
     activation:
-        commonly_used: false
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
             standard activation function used for adding non-linearity. It is simple,
@@ -9,19 +8,12 @@ ComparatorCombiner:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        example_value: null
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values:
             The default value will work well in the majority of the
             cases
-        suggested_values_reasoning: null
         ui_display_name: Activation
     bias_initializer:
-        commonly_used: false
         default_value_reasoning:
             It is possible and common to initialize the biases
             to be zero, since the asymmetry breaking is provided by the small random
@@ -32,12 +24,9 @@ ComparatorCombiner:
             constant value such as 0.01 for all biases to ensure that all ReLU units
             are activated in the beginning and have some effect on the gradient. However,
             it's still an open question as to whether this provides consistent improvement.
-        example_value: null
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://cs231n.github.io/neural-networks-2/
-        other_information: null
         related_parameters:
             - weights_initializer
         suggested_values: zeros
@@ -52,7 +41,6 @@ ComparatorCombiner:
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
     dropout:
-        commonly_used: false
         default_value_reasoning:
             Dropout can cause training to become less stable.
             Consider start with a dropout-free baseline, and add dropout gradually
@@ -67,11 +55,8 @@ ComparatorCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -80,35 +65,14 @@ ComparatorCombiner:
             performance.
         ui_display_name: Dropout
     entity_1:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
         literature_references:
             - https://ludwig.ai/0.6/configuration/combiner/#comparator-combiner
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: Entity 1
     entity_2:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
         literature_references:
             - https://ludwig.ai/0.6/configuration/combiner/#comparator-combiner
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: Entity 2
     fc_layers:
-        commonly_used: false
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
             output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
@@ -126,9 +90,6 @@ ComparatorCombiner:
             - norm: layer
               output_size: 64
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
         related_parameters:
             - output_size
             - use_bias
@@ -138,7 +99,6 @@ ComparatorCombiner:
             - norm_params
             - activation
             - dropout
-        suggested_values: null
         suggested_values_reasoning:
             It is easier to define a stack of fully connected
             layers by just specifying num_fc_layers, output_size and the other individual
@@ -147,7 +107,6 @@ ComparatorCombiner:
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
     norm:
-        commonly_used: false
         default_value_reasoning:
             While batch normalization and layer normalization
             usually lead to improvements, it can be useful to start with fewer bells
@@ -160,10 +119,8 @@ ComparatorCombiner:
         example_value:
             - batch
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-        other_information: null
         related_parameters:
             - norm_params
         suggested_values: '"batch" or "layer"'
@@ -175,20 +132,8 @@ ComparatorCombiner:
             normalizations to see if that helps with training stability
         ui_display_name: Normalization Type
     norm_params:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_fc_layers:
-        commonly_used: false
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
             the default is 1 for modules where the FC stack is used for shape management,
@@ -200,8 +145,6 @@ ComparatorCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -218,7 +161,6 @@ ComparatorCombiner:
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
     output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -227,10 +169,7 @@ ComparatorCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -245,7 +184,6 @@ ComparatorCombiner:
             with a larger capacity.
         ui_display_name: Output Size
     use_bias:
-        commonly_used: false
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
             have much impact in terms of memory or training speed. For most models
@@ -262,8 +200,6 @@ ComparatorCombiner:
         example_value:
             - true
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             If fc_layers is not specified, or use_bias is not specified
             for individual layers, the value of use_bias will be used as the default
@@ -271,10 +207,8 @@ ComparatorCombiner:
         related_parameters:
             - bias_initializer, fc_layers
         suggested_values: "TRUE"
-        suggested_values_reasoning: null
         ui_display_name: Use Bias
     weights_initializer:
-        commonly_used: false
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
             The method you choose to initialize layer weights
@@ -289,14 +223,10 @@ ComparatorCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        example_value: null
         expected_impact: 3
-        internal_only: false
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
-        other_information: null
-        related_parameters: null
         suggested_values: xavier_uniform
         suggested_values_reasoning:
             Changing the weights initialization scheme is
@@ -307,7 +237,6 @@ ComparatorCombiner:
         ui_display_name: Layer Weights Initializer
 ConcatCombiner:
     activation:
-        commonly_used: false
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
             standard activation function used for adding non-linearity. It is simple,
@@ -316,19 +245,12 @@ ConcatCombiner:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        example_value: null
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values:
             The default value will work well in the majority of the
             cases
-        suggested_values_reasoning: null
         ui_display_name: Activation
     bias_initializer:
-        commonly_used: false
         default_value_reasoning:
             It is possible and common to initialize the biases
             to be zero, since the asymmetry breaking is provided by the small random
@@ -339,12 +261,9 @@ ConcatCombiner:
             constant value such as 0.01 for all biases to ensure that all ReLU units
             are activated in the beginning and have some effect on the gradient. However,
             it's still an open question as to whether this provides consistent improvement.
-        example_value: null
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://cs231n.github.io/neural-networks-2/
-        other_information: null
         related_parameters:
             - weights_initializer
         suggested_values: zeros
@@ -359,7 +278,6 @@ ConcatCombiner:
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
     dropout:
-        commonly_used: false
         default_value_reasoning:
             Dropout can cause training to become less stable.
             Consider start with a dropout-free baseline, and add dropout gradually
@@ -374,11 +292,8 @@ ConcatCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -387,7 +302,6 @@ ConcatCombiner:
             performance.
         ui_display_name: Dropout
     fc_layers:
-        commonly_used: false
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
             output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
@@ -405,9 +319,6 @@ ConcatCombiner:
             - norm: layer
               output_size: 64
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
         related_parameters:
             - output_size
             - use_bias
@@ -417,7 +328,6 @@ ConcatCombiner:
             - norm_params
             - activation
             - dropout
-        suggested_values: null
         suggested_values_reasoning:
             It is easier to define a stack of fully connected
             layers by just specifying num_fc_layers, output_size and the other individual
@@ -426,20 +336,8 @@ ConcatCombiner:
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
     flatten_inputs:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     norm:
-        commonly_used: false
         default_value_reasoning:
             While batch normalization and layer normalization
             usually lead to improvements, it can be useful to start with fewer bells
@@ -452,10 +350,8 @@ ConcatCombiner:
         example_value:
             - batch
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-        other_information: null
         related_parameters:
             - norm_params
         suggested_values: '"batch" or "layer"'
@@ -467,20 +363,8 @@ ConcatCombiner:
             normalizations to see if that helps with training stability
         ui_display_name: Normalization Type
     norm_params:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_fc_layers:
-        commonly_used: false
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
             the default is 1 for modules where the FC stack is used for shape management,
@@ -492,8 +376,6 @@ ConcatCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -510,7 +392,6 @@ ConcatCombiner:
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
     output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -519,10 +400,7 @@ ConcatCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -537,20 +415,8 @@ ConcatCombiner:
             with a larger capacity.
         ui_display_name: Output Size
     residual:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     use_bias:
-        commonly_used: false
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
             have much impact in terms of memory or training speed. For most models
@@ -567,8 +433,6 @@ ConcatCombiner:
         example_value:
             - true
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             If fc_layers is not specified, or use_bias is not specified
             for individual layers, the value of use_bias will be used as the default
@@ -576,10 +440,8 @@ ConcatCombiner:
         related_parameters:
             - bias_initializer, fc_layers
         suggested_values: "TRUE"
-        suggested_values_reasoning: null
         ui_display_name: Use Bias
     weights_initializer:
-        commonly_used: false
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
             The method you choose to initialize layer weights
@@ -594,14 +456,10 @@ ConcatCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        example_value: null
         expected_impact: 3
-        internal_only: false
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
-        other_information: null
-        related_parameters: null
         suggested_values: xavier_uniform
         suggested_values_reasoning:
             Changing the weights initialization scheme is
@@ -612,7 +470,6 @@ ConcatCombiner:
         ui_display_name: Layer Weights Initializer
 ProjectAggregateCombiner:
     activation:
-        commonly_used: false
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
             standard activation function used for adding non-linearity. It is simple,
@@ -621,19 +478,12 @@ ProjectAggregateCombiner:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        example_value: null
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values:
             The default value will work well in the majority of the
             cases
-        suggested_values_reasoning: null
         ui_display_name: Activation
     bias_initializer:
-        commonly_used: false
         default_value_reasoning:
             It is possible and common to initialize the biases
             to be zero, since the asymmetry breaking is provided by the small random
@@ -644,12 +494,9 @@ ProjectAggregateCombiner:
             constant value such as 0.01 for all biases to ensure that all ReLU units
             are activated in the beginning and have some effect on the gradient. However,
             it's still an open question as to whether this provides consistent improvement.
-        example_value: null
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://cs231n.github.io/neural-networks-2/
-        other_information: null
         related_parameters:
             - weights_initializer
         suggested_values: zeros
@@ -664,7 +511,6 @@ ProjectAggregateCombiner:
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
     dropout:
-        commonly_used: false
         default_value_reasoning:
             Dropout can cause training to become less stable.
             Consider start with a dropout-free baseline, and add dropout gradually
@@ -679,11 +525,8 @@ ProjectAggregateCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -692,7 +535,6 @@ ProjectAggregateCombiner:
             performance.
         ui_display_name: Dropout
     fc_layers:
-        commonly_used: false
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
             output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
@@ -710,9 +552,6 @@ ProjectAggregateCombiner:
             - norm: layer
               output_size: 64
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
         related_parameters:
             - output_size
             - use_bias
@@ -722,7 +561,6 @@ ProjectAggregateCombiner:
             - norm_params
             - activation
             - dropout
-        suggested_values: null
         suggested_values_reasoning:
             It is easier to define a stack of fully connected
             layers by just specifying num_fc_layers, output_size and the other individual
@@ -731,7 +569,6 @@ ProjectAggregateCombiner:
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
     norm:
-        commonly_used: false
         default_value_reasoning:
             While batch normalization and layer normalization
             usually lead to improvements, it can be useful to start with fewer bells
@@ -744,10 +581,8 @@ ProjectAggregateCombiner:
         example_value:
             - batch
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-        other_information: null
         related_parameters:
             - norm_params
         suggested_values: '"batch" or "layer"'
@@ -759,20 +594,8 @@ ProjectAggregateCombiner:
             normalizations to see if that helps with training stability
         ui_display_name: Normalization Type
     norm_params:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_fc_layers:
-        commonly_used: false
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
             the default is 1 for modules where the FC stack is used for shape management,
@@ -784,8 +607,6 @@ ProjectAggregateCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -802,7 +623,6 @@ ProjectAggregateCombiner:
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
     output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -811,10 +631,7 @@ ProjectAggregateCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -829,33 +646,10 @@ ProjectAggregateCombiner:
             with a larger capacity.
         ui_display_name: Output Size
     projection_size:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     residual:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     use_bias:
-        commonly_used: false
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
             have much impact in terms of memory or training speed. For most models
@@ -872,8 +666,6 @@ ProjectAggregateCombiner:
         example_value:
             - true
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             If fc_layers is not specified, or use_bias is not specified
             for individual layers, the value of use_bias will be used as the default
@@ -881,10 +673,8 @@ ProjectAggregateCombiner:
         related_parameters:
             - bias_initializer, fc_layers
         suggested_values: "TRUE"
-        suggested_values_reasoning: null
         ui_display_name: Use Bias
     weights_initializer:
-        commonly_used: false
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
             The method you choose to initialize layer weights
@@ -899,14 +689,10 @@ ProjectAggregateCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        example_value: null
         expected_impact: 3
-        internal_only: false
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
-        other_information: null
-        related_parameters: null
         suggested_values: xavier_uniform
         suggested_values_reasoning:
             Changing the weights initialization scheme is
@@ -917,74 +703,18 @@ ProjectAggregateCombiner:
         ui_display_name: Layer Weights Initializer
 SequenceCombiner:
     encoder:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     main_sequence_feature:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     reduce_output:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
 SequenceConcatCombiner:
     main_sequence_feature:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     reduce_output:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
 TabNetCombiner:
     bn_epsilon:
-        commonly_used: false
         default_value_reasoning:
             Default value found in popular ML packages like Keras
             and Tensorflow.
@@ -995,17 +725,12 @@ TabNetCombiner:
         example_value:
             - 1.0e-05
         expected_impact: 1
-        internal_only: false
         literature_references:
             - "[Keras example](https://keras.io/api/layers/normalization_layers/batch_normalization/)"
-        other_information: null
-        related_parameters: null
         suggested_values: 1e-3-1e-9
         suggested_values_reasoning: Common epsilon choices
         ui_display_name: Batch Normalization Epsilon
     bn_momentum:
-        commonly_used: false
-        default_value_reasoning: null
         description_implications:
             "Higher values result in faster updates, but more
             sensitivity to noise in the dataset.  Lower values result in slower updates.
@@ -1016,8 +741,6 @@ TabNetCombiner:
             and is not recommended."
         example_value:
             - 0.05
-        expected_impact: 0
-        internal_only: false
         literature_references:
             - "TabNet Paper: https://arxiv.org/abs/1908.07442"
             - "Torch Batch Norm: https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html"
@@ -1032,12 +755,9 @@ TabNetCombiner:
             x_hat = (1 - momentum) * x_hat + momentum * x_t,
 
             where x_hat is the estimated statistic and x_t is the new observed value."
-        related_parameters: null
         suggested_values: 0.01-0.2
-        suggested_values_reasoning: null
         ui_display_name: Batch Norm Momentum
     bn_virtual_bs:
-        commonly_used: false
         default_value_reasoning: Paper default.
         description_implications:
             Virtual Batch Normalization is a normalization method
@@ -1052,18 +772,11 @@ TabNetCombiner:
             of data, so the authors use it only in the generator network. A higher
             virtual batch size could improve normalization, but it also causes training
             to run slower since each batch will be sampled multiple times.
-        example_value: null
         expected_impact: 2
-        internal_only: false
         literature_references:
             - https://paperswithcode.com/method/virtual-batch-normalization
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: "Ghost Normalization: Virtual batch size"
     dropout:
-        commonly_used: false
         default_value_reasoning: Taken from published literature (https://arxiv.org/abs/1908.07442).
         description_implications:
             "Dropout is a computationally cheap regularization\
@@ -1075,11 +788,8 @@ TabNetCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -1088,72 +798,16 @@ TabNetCombiner:
             performance.
         ui_display_name: Dropout
     entmax_alpha:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     entmax_mode:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_shared_blocks:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_steps:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_total_blocks:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -1162,10 +816,7 @@ TabNetCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1180,47 +831,13 @@ TabNetCombiner:
             with a larger capacity.
         ui_display_name: Output Size
     relaxation_factor:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     size:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     sparsity:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
 TabTransformerCombiner:
     bias_initializer:
-        commonly_used: false
         default_value_reasoning:
             It is possible and common to initialize the biases
             to be zero, since the asymmetry breaking is provided by the small random
@@ -1231,12 +848,9 @@ TabTransformerCombiner:
             constant value such as 0.01 for all biases to ensure that all ReLU units
             are activated in the beginning and have some effect on the gradient. However,
             it's still an open question as to whether this provides consistent improvement.
-        example_value: null
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://cs231n.github.io/neural-networks-2/
-        other_information: null
         related_parameters:
             - weights_initializer
         suggested_values: zeros
@@ -1251,7 +865,6 @@ TabTransformerCombiner:
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
     dropout:
-        commonly_used: false
         default_value_reasoning: Taken from published literature (https://arxiv.org/abs/1706.03762).
         description_implications:
             "Dropout is a computationally cheap regularization\
@@ -1263,11 +876,8 @@ TabTransformerCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -1276,7 +886,6 @@ TabTransformerCombiner:
             performance.
         ui_display_name: Dropout
     embed_input_feature_name:
-        commonly_used: false
         default_value_reasoning:
             Though the ideal embedding size depends on the task
             and dataset, setting the feature embedding size equal to the hidden size
@@ -1290,8 +899,6 @@ TabTransformerCombiner:
             input features.
         example_value:
             - 64
-        expected_impact: 0
-        internal_only: false
         literature_references:
             - "TabTransformer: Tabular Data Modeling Using Contextual Embeddings"
         other_information:
@@ -1303,11 +910,8 @@ TabTransformerCombiner:
             If null, input feature embeddings are not used.
         related_parameters:
             - hidden_size
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: Embed Input Feature Name
     fc_activation:
-        commonly_used: false
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
             standard activation function used for adding non-linearity. It is simple,
@@ -1319,10 +923,8 @@ TabTransformerCombiner:
         example_value:
             - relu
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://ml-cheatsheet.readthedocs.io/en/latest/activation_functions.html
-        other_information: null
         related_parameters:
             - activation, activation_function, conv_activation, recurrent_activation
         suggested_values: relu, alternatively leakyRelu or elu
@@ -1331,7 +933,6 @@ TabTransformerCombiner:
             of the cases
         ui_display_name: FC Activation
     fc_dropout:
-        commonly_used: false
         default_value_reasoning:
             Dropout can cause training to become less stable.
             Consider start with a dropout-free baseline, and add dropout gradually
@@ -1346,11 +947,8 @@ TabTransformerCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -1359,7 +957,6 @@ TabTransformerCombiner:
             performance.
         ui_display_name: FC Dropout
     fc_layers:
-        commonly_used: false
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
             output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
@@ -1377,11 +974,6 @@ TabTransformerCombiner:
             - norm: layer
               output_size: 64
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
         suggested_values_reasoning:
             It is easier to define a stack of fully connected
             layers by just specifying num_fc_layers, output_size and the other individual
@@ -1390,31 +982,14 @@ TabTransformerCombiner:
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
     fc_residual:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     hidden_size:
-        commonly_used: false
         default_value_reasoning: Not too big, not too small.
         description_implications:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -1423,7 +998,6 @@ TabTransformerCombiner:
             after the architecture of the model has been settled.
         ui_display_name: Hidden Size
     norm:
-        commonly_used: false
         default_value_reasoning:
             While batch normalization and layer normalization
             usually lead to improvements, it can be useful to start with fewer bells
@@ -1436,10 +1010,8 @@ TabTransformerCombiner:
         example_value:
             - batch
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-        other_information: null
         related_parameters:
             - norm_params
         suggested_values: '"batch" or "layer"'
@@ -1451,20 +1023,8 @@ TabTransformerCombiner:
             normalizations to see if that helps with training stability
         ui_display_name: Normalization Type
     norm_params:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_fc_layers:
-        commonly_used: false
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
             the default is 1 for modules where the FC stack is used for shape management,
@@ -1476,8 +1036,6 @@ TabTransformerCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -1494,7 +1052,6 @@ TabTransformerCombiner:
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
     num_heads:
-        commonly_used: false
         default_value_reasoning:
             "The middle value explored in the original TabTransformer
             paper. Source: https://arxiv.org/pdf/2012.06678.pdf"
@@ -1504,11 +1061,8 @@ TabTransformerCombiner:
         example_value:
             - 8
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://arxiv.org/pdf/2012.06678.pdf
-        other_information: null
-        related_parameters: null
         suggested_values: 16
         suggested_values_reasoning:
             If your model is underperforming, increasing the
@@ -1516,7 +1070,6 @@ TabTransformerCombiner:
             a sequence.
         ui_display_name: Number of attention heads
     num_layers:
-        commonly_used: false
         default_value_reasoning:
             The ideal number of layers depends on the data. For
             many data types, one layer is sufficient.
@@ -1531,10 +1084,6 @@ TabTransformerCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values: 1 - 12
         suggested_values_reasoning:
             Increasing the number of layers may improve encoder
@@ -1542,7 +1091,6 @@ TabTransformerCombiner:
             cause overfitting.  Small numbers of layers usually work best.
         ui_display_name: Number of Transformer Layers
     output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -1551,10 +1099,7 @@ TabTransformerCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1569,20 +1114,8 @@ TabTransformerCombiner:
             with a larger capacity.
         ui_display_name: Output Size
     reduce_output:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     transformer_output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -1591,10 +1124,7 @@ TabTransformerCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1609,7 +1139,6 @@ TabTransformerCombiner:
             with a larger capacity.
         ui_display_name: Transformer Output Size
     use_bias:
-        commonly_used: false
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
             have much impact in terms of memory or training speed. For most models
@@ -1626,8 +1155,6 @@ TabTransformerCombiner:
         example_value:
             - true
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             If fc_layers is not specified, or use_bias is not specified
             for individual layers, the value of use_bias will be used as the default
@@ -1635,10 +1162,8 @@ TabTransformerCombiner:
         related_parameters:
             - bias_initializer, fc_layers
         suggested_values: "TRUE"
-        suggested_values_reasoning: null
         ui_display_name: Use Bias
     weights_initializer:
-        commonly_used: false
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
             The method you choose to initialize layer weights
@@ -1653,14 +1178,10 @@ TabTransformerCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        example_value: null
         expected_impact: 3
-        internal_only: false
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
-        other_information: null
-        related_parameters: null
         suggested_values: xavier_uniform
         suggested_values_reasoning:
             Changing the weights initialization scheme is
@@ -1671,7 +1192,6 @@ TabTransformerCombiner:
         ui_display_name: Layer Weights Initializer
 TransformerCombiner:
     bias_initializer:
-        commonly_used: false
         default_value_reasoning:
             It is possible and common to initialize the biases
             to be zero, since the asymmetry breaking is provided by the small random
@@ -1682,12 +1202,9 @@ TransformerCombiner:
             constant value such as 0.01 for all biases to ensure that all ReLU units
             are activated in the beginning and have some effect on the gradient. However,
             it's still an open question as to whether this provides consistent improvement.
-        example_value: null
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://cs231n.github.io/neural-networks-2/
-        other_information: null
         related_parameters:
             - weights_initializer
         suggested_values: zeros
@@ -1702,7 +1219,6 @@ TransformerCombiner:
             worse) and it is more common to simply use 0 bias initialization.
         ui_display_name: Bias Initializer
     dropout:
-        commonly_used: false
         default_value_reasoning: Taken from published literature (https://arxiv.org/abs/1706.03762).
         description_implications:
             "Dropout is a computationally cheap regularization\
@@ -1714,11 +1230,8 @@ TransformerCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -1727,7 +1240,6 @@ TransformerCombiner:
             performance.
         ui_display_name: Dropout
     fc_activation:
-        commonly_used: false
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
             standard activation function used for adding non-linearity. It is simple,
@@ -1739,10 +1251,8 @@ TransformerCombiner:
         example_value:
             - relu
         expected_impact: 1
-        internal_only: false
         literature_references:
             - https://ml-cheatsheet.readthedocs.io/en/latest/activation_functions.html
-        other_information: null
         related_parameters:
             - activation, activation_function, conv_activation, recurrent_activation
         suggested_values: relu, alternatively leakyRelu or elu
@@ -1751,7 +1261,6 @@ TransformerCombiner:
             of the cases
         ui_display_name: FC Activation
     fc_dropout:
-        commonly_used: false
         default_value_reasoning:
             Dropout can cause training to become less stable.
             Consider start with a dropout-free baseline, and add dropout gradually
@@ -1766,11 +1275,8 @@ TransformerCombiner:
         example_value:
             - 0.2
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html
-        other_information: null
-        related_parameters: null
         suggested_values: 0.05 - 0.8
         suggested_values_reasoning:
             Tuning dropout is really something to be done
@@ -1779,7 +1285,6 @@ TransformerCombiner:
             performance.
         ui_display_name: FC Dropout
     fc_layers:
-        commonly_used: false
         default_value_reasoning:
             By default the stack is built by using num_fc_layers,
             output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
@@ -1797,11 +1302,6 @@ TransformerCombiner:
             - norm: layer
               output_size: 64
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
         suggested_values_reasoning:
             It is easier to define a stack of fully connected
             layers by just specifying num_fc_layers, output_size and the other individual
@@ -1810,31 +1310,14 @@ TransformerCombiner:
             each individual layer in the stack.
         ui_display_name: Fully Connected Layers
     fc_residual:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     hidden_size:
-        commonly_used: false
         default_value_reasoning: Not too big, not too small.
         description_implications:
             Increasing the hidden size makes the model larger
             and slower to train, increases the model's capacity to capture more complexity.
             It also increases the chance of overfitting.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values: 10 - 2048
         suggested_values_reasoning:
             Increasing the hidden size makes sense if the
@@ -1843,7 +1326,6 @@ TransformerCombiner:
             after the architecture of the model has been settled.
         ui_display_name: Hidden Size
     norm:
-        commonly_used: false
         default_value_reasoning:
             While batch normalization and layer normalization
             usually lead to improvements, it can be useful to start with fewer bells
@@ -1856,10 +1338,8 @@ TransformerCombiner:
         example_value:
             - batch
         expected_impact: 3
-        internal_only: false
         literature_references:
             - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-        other_information: null
         related_parameters:
             - norm_params
         suggested_values: '"batch" or "layer"'
@@ -1871,20 +1351,8 @@ TransformerCombiner:
             normalizations to see if that helps with training stability
         ui_display_name: Normalization Type
     norm_params:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_fc_layers:
-        commonly_used: false
         default_value_reasoning:
             The encoder already has learnable parameters.Sometimes
             the default is 1 for modules where the FC stack is used for shape management,
@@ -1896,8 +1364,6 @@ TransformerCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             Not all modules that have fc_layers also have an accompanying
             num_fc_layers parameter. Where both are present, fc_layers takes precedent
@@ -1914,20 +1380,8 @@ TransformerCombiner:
             is used for shape management, or the only source of learnable parameters.
         ui_display_name: Number of Fully Connected Layers
     num_heads:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     num_layers:
-        commonly_used: false
         default_value_reasoning:
             The ideal number of layers depends on the data. For
             many data types, one layer is sufficient.
@@ -1942,10 +1396,6 @@ TransformerCombiner:
         example_value:
             - 1
         expected_impact: 1
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
         suggested_values: 1 - 12
         suggested_values_reasoning:
             Increasing the number of layers may improve encoder
@@ -1953,7 +1403,6 @@ TransformerCombiner:
             cause overfitting.  Small numbers of layers usually work best.
         ui_display_name: Number of Transformer Layers
     output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -1962,10 +1411,7 @@ TransformerCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -1980,20 +1426,8 @@ TransformerCombiner:
             with a larger capacity.
         ui_display_name: Output Size
     reduce_output:
-        commonly_used: false
-        default_value_reasoning: null
-        description_implications: null
-        example_value: null
-        expected_impact: 0
-        internal_only: false
-        literature_references: null
-        other_information: null
-        related_parameters: null
-        suggested_values: null
-        suggested_values_reasoning: null
         ui_display_name: null
     transformer_output_size:
-        commonly_used: false
         default_value_reasoning: A modest value, not too small, not too large.
         description_implications:
             If there are fully connected layers in this module,
@@ -2002,10 +1436,7 @@ TransformerCombiner:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        example_value: null
         expected_impact: 2
-        internal_only: false
-        literature_references: null
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -2020,7 +1451,6 @@ TransformerCombiner:
             with a larger capacity.
         ui_display_name: Transformer Output Size
     use_bias:
-        commonly_used: false
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
             have much impact in terms of memory or training speed. For most models
@@ -2037,8 +1467,6 @@ TransformerCombiner:
         example_value:
             - true
         expected_impact: 1
-        internal_only: false
-        literature_references: null
         other_information:
             If fc_layers is not specified, or use_bias is not specified
             for individual layers, the value of use_bias will be used as the default
@@ -2046,10 +1474,8 @@ TransformerCombiner:
         related_parameters:
             - bias_initializer, fc_layers
         suggested_values: "TRUE"
-        suggested_values_reasoning: null
         ui_display_name: Use Bias
     weights_initializer:
-        commonly_used: false
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
             The method you choose to initialize layer weights
@@ -2064,14 +1490,10 @@ TransformerCombiner:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        example_value: null
         expected_impact: 3
-        internal_only: false
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
-        other_information: null
-        related_parameters: null
         suggested_values: xavier_uniform
         suggested_values_reasoning:
             Changing the weights initialization scheme is
@@ -2082,14 +1504,5 @@ TransformerCombiner:
         ui_display_name: Layer Weights Initializer
 type:
     commonly_used: true
-    default_value_reasoning: null
-    description_implications: null
-    example_value: null
     expected_impact: 3
-    internal_only: false
-    literature_references: null
-    other_information: null
-    related_parameters: null
-    suggested_values: null
-    suggested_values_reasoning: null
     ui_display_name: Combiner Type

@@ -24,7 +24,8 @@ def _to_metadata(d: Dict[str, Any]) -> Union[ParameterMetadata, Dict[str, Any]]:
 
 
 def _load(fname: str) -> Dict[str, Any]:
-    return _to_metadata(yaml.load(os.path.join(_CONFIG_DIR, fname)))
+    with open(os.path.join(_CONFIG_DIR, fname), "r") as f:
+        return _to_metadata(yaml.safe_load(f))
 
 
 COMBINER_METADATA = _load("combiners.yaml")

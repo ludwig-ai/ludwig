@@ -1,59 +1,16 @@
 audio:
     preprocessing:
         audio_file_length_limit_in_s:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         in_memory:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -64,18 +21,11 @@ audio:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         norm:
-            commonly_used: false
             default_value_reasoning:
                 While batch normalization and layer normalization
                 usually lead to improvements, it can be useful to start with fewer
@@ -88,10 +38,8 @@ audio:
             example_value:
                 - batch
             expected_impact: 3
-            internal_only: false
             literature_references:
                 - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
-            other_information: null
             related_parameters:
                 - norm_params
             suggested_values: '"batch" or "layer"'
@@ -104,50 +52,18 @@ audio:
                 stability
             ui_display_name: Normalization Type
         num_fft_points:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         num_filter_bands:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
             literature_references:
                 - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-            other_information: null
             related_parameters:
                 - window_length_in_s
                 - type
                 - window_shift_in_s
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Type
         padding_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         type:
-            commonly_used: false
             default_value_reasoning:
                 The default type fbank is set based on values
                 that we have tested and determined to be a good starting point for
@@ -161,7 +77,6 @@ audio:
             example_value:
                 - stft
             expected_impact: 3
-            internal_only: false
             literature_references:
                 - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
             other_information:
@@ -174,99 +89,36 @@ audio:
                 - norm
                 - padding_value
                 - in_memory
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Type
         window_length_in_s:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
             literature_references:
                 - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-            other_information: null
             related_parameters:
                 - window_shift_in_s
                 - type
                 - num_filter_bands
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Window Length in Seconds
         window_shift_in_s:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
             literature_references:
                 - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
-            other_information: null
             related_parameters:
                 - window_length_in_s
                 - type
                 - num_filter_bands
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Window Shift in Seconds
         window_type:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
 bag:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         lowercase:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -277,18 +129,11 @@ bag:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         most_common:
-            commonly_used: false
             default_value_reasoning:
                 If there are more than 10000 unique categories
                 in the data, it is likely that they will follow a long-tailed distribution
@@ -301,8 +146,6 @@ bag:
             example_value:
                 - 10000
             expected_impact: 3
-            internal_only: false
-            literature_references: null
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -316,65 +159,24 @@ bag:
                 substantially
             ui_display_name: Most common (vocabulary size)
         tokenizer:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
 binary:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fallback_true_label:
-            commonly_used: false
-            default_value_reasoning: null
             description_implications:
                 Modeling performance should not be affected,
                 but the semantics of some binary metrics may change like for "false
                 positives", "false negatives", etc. if the true label is pinned to
                 the other value.
-            example_value: null
             expected_impact: 2
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fallback True Label
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -385,59 +187,20 @@ binary:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
 category:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         lowercase:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -448,18 +211,10 @@ category:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         most_common:
-            commonly_used: false
             default_value_reasoning:
                 If there are more than 10000 unique categories
                 in the data, it is likely that they will follow a long-tailed distribution
@@ -472,8 +227,6 @@ category:
             example_value:
                 - 10000
             expected_impact: 3
-            internal_only: false
-            literature_references: null
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -489,20 +242,9 @@ category:
 date:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         datetime_format:
-            commonly_used: false
             default_value_reasoning:
                 Ludwig will try to infer the date format automatically,
                 but a specific format can be provided. The date string spec is the
@@ -517,28 +259,12 @@ date:
             example_value:
                 - "%d %b %Y"
             expected_impact: 1
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
             suggested_values_reasoning: Have Ludwig figure out the date format automatically.
             ui_display_name: Datetime format
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -549,46 +275,18 @@ date:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
 h3:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -599,137 +297,32 @@ h3:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
 image:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         height:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         in_memory:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         infer_image_dimensions:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         infer_image_max_height:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         infer_image_max_width:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         infer_image_num_channels:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         infer_image_sample_size:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -740,44 +333,14 @@ image:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         num_channels:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         num_processes:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         resize_method:
-            commonly_used: false
             default_value_reasoning:
                 Interpolation may stretch or squish the image,
                 but it does not remove content or change the statistical distribution
@@ -789,72 +352,23 @@ image:
 
                 crop_or_pad will preserve the aspect ratio of the image, but may remove
                 some content (in the case of cropping)."
-            example_value: null
             expected_impact: 1
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - height, width
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Resize Method
         scaling:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         width:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
 number:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -865,18 +379,10 @@ number:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         normalization:
-            commonly_used: false
             default_value_reasoning:
                 It could be valuable to observe how the model
                 trains without normalization, and see how the performance changes
@@ -889,13 +395,9 @@ number:
                 your number features. The best normalization technique is one that
                 empirically works well, so try new ideas if you think they'll work
                 well on your feature distribution.
-            example_value: null
             expected_impact: 3
-            internal_only: false
             literature_references:
                 - https://developers.google.com/machine-learning/data-prep/transform/normalization
-            other_information: null
-            related_parameters: null
             suggested_values: z-score
             suggested_values_reasoning:
                 "Z-score is a variation of scaling that represents\
@@ -907,46 +409,14 @@ number:
 sequence:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         lowercase:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         max_sequence_length:
-            commonly_used: false
             default_value_reasoning:
                 The default value is 256. Every sequence will
                 be truncated to this length.
@@ -956,21 +426,15 @@ sequence:
                 memory and longer training time). A smaller sequence length keeps
                 less information from the data, but also makes it less computationally
                 expensive (less memory and shorter training time).
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - vocab_size, embedding_size
             suggested_values:
                 Use the lowest value that covers most of your input
                 data. Only increase the value if crucial parts of the input data are
                 truncated.
-            suggested_values_reasoning: null
             ui_display_name: Maximum Sequence Length
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -981,18 +445,10 @@ sequence:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         most_common:
-            commonly_used: false
             default_value_reasoning:
                 If there are more than 10000 unique categories
                 in the data, it is likely that they will follow a long-tailed distribution
@@ -1005,8 +461,6 @@ sequence:
             example_value:
                 - 10000
             expected_impact: 3
-            internal_only: false
-            literature_references: null
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -1020,72 +474,19 @@ sequence:
                 substantially
             ui_display_name: Most common (vocabulary size)
         ngram_size:
-            commonly_used: false
             default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
-            description_implications: null
-            example_value: 3
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
+            example_value:
+                - 3
             ui_display_name: n-gram size
         padding:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         padding_symbol:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         tokenizer:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         unknown_symbol:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         vocab_file:
-            commonly_used: false
             default_value_reasoning:
                 The vocabulary can be parsed automatically from
                 the incoming input features.
@@ -1095,58 +496,19 @@ sequence:
                 that fits your data, or if there are several uncommon or infrequently
                 occurring tokens that we want to guarantee to be a part of the vocabulary,
                 rather than treated as an unknown.
-            example_value: null
             expected_impact: 2
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Vocab File
 set:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         lowercase:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -1157,18 +519,10 @@ set:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         most_common:
-            commonly_used: false
             default_value_reasoning:
                 If there are more than 10000 unique categories
                 in the data, it is likely that they will follow a long-tailed distribution
@@ -1181,8 +535,6 @@ set:
             example_value:
                 - 10000
             expected_impact: 3
-            internal_only: false
-            literature_references: null
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -1196,50 +548,20 @@ set:
                 substantially
             ui_display_name: Most common (vocabulary size)
         tokenizer:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
 text:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
             example_value:
                 - Depends on dtype
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
             related_parameters:
                 - missing_value_strategy, fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: DOCSTRING ONLY
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         lowercase:
-            commonly_used: false
             default_value_reasoning:
                 Reading the text in lowercase enables the model
                 to treat capitalized and lowercase words as the same, effectively
@@ -1250,9 +572,6 @@ text:
             example_value:
                 - true
             expected_impact: 1
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - vocab_size
             suggested_values: "TRUE"
@@ -1262,7 +581,6 @@ text:
                 it is preferable to bucket the words and make the model case-insensitive.
             ui_display_name: Convert to lowercase
         max_sequence_length:
-            commonly_used: false
             default_value_reasoning:
                 The default value is 256. Every sequence will
                 be truncated to this length.
@@ -1272,21 +590,15 @@ text:
                 memory and longer training time). A smaller sequence length keeps
                 less information from the data, but also makes it less computationally
                 expensive (less memory and shorter training time).
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - vocab_size, embedding_size
             suggested_values:
                 Use the lowest value that covers most of your input
                 data. Only increase the value if crucial parts of the input data are
                 truncated.
-            suggested_values_reasoning: null
             ui_display_name: Maximum Sequence Length
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -1297,18 +609,10 @@ text:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         most_common:
-            commonly_used: false
             default_value_reasoning:
                 If there are more than 10000 unique categories
                 in the data, it is likely that they will follow a long-tailed distribution
@@ -1321,8 +625,6 @@ text:
             example_value:
                 - 10000
             expected_impact: 3
-            internal_only: false
-            literature_references: null
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -1336,20 +638,11 @@ text:
                 substantially
             ui_display_name: Most common (vocabulary size)
         ngram_size:
-            commonly_used: false
             default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
-            description_implications: null
-            example_value: 3
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
+            example_value:
+                - 3
             ui_display_name: n-gram size
         padding:
-            commonly_used: false
             default_value_reasoning:
                 We usually want to add padding to the end of
                 a text sequence to fill in any remaining space as opposed to the beggining
@@ -1358,11 +651,7 @@ text:
                 If you pad to the left, the encoded vector will
                 have leading padding tokens as opposed to trailing padding tokens.
                 This could matter based on the type of text input you are expecting.
-            example_value: null
             expected_impact: 1
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - "padding_symbol,
 
@@ -1373,33 +662,10 @@ text:
                 to a text sequence
             ui_display_name: Padding
         padding_symbol:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         pretrained_model_name_or_path:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         tokenizer:
-            commonly_used: false
             default_value_reasoning:
                 'The default tokenizer is `space_punct`, an abbreviation
                 of "Space punctuation". This tokenizer creates sub-words by dividing
@@ -1418,10 +684,8 @@ text:
             example_value:
                 - space_punct
             expected_impact: 3
-            internal_only: false
             literature_references:
                 - https://huggingface.co/course/chapter2/4?fw=pt
-            other_information: null
             related_parameters:
                 - vocab_file, pretrained_model_name_or_path
             suggested_values: sentencepiece
@@ -1434,20 +698,8 @@ text:
                 the default."
             ui_display_name: Tokenizer
         unknown_symbol:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         vocab_file:
-            commonly_used: false
             default_value_reasoning:
                 The vocabulary can be parsed automatically from
                 the incoming input features.
@@ -1457,45 +709,17 @@ text:
                 that fits your data, or if there are several uncommon or infrequently
                 occurring tokens that we want to guarantee to be a part of the vocabulary,
                 rather than treated as an unknown.
-            example_value: null
             expected_impact: 2
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Vocab File
 timeseries:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -1506,98 +730,26 @@ timeseries:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         padding:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         padding_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         timeseries_length_limit:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         tokenizer:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
 vector:
     preprocessing:
         computed_fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
             internal_only: true
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null
         fill_value:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Fill Value
         missing_value_strategy:
-            commonly_used: false
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
                 values with the value specified by `fill_value`.
@@ -1608,26 +760,9 @@ vector:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
-            example_value: null
             expected_impact: 3
-            internal_only: false
-            literature_references: null
-            other_information: null
             related_parameters:
                 - fill_value
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: Missing Value Strategy
         vector_size:
-            commonly_used: false
-            default_value_reasoning: null
-            description_implications: null
-            example_value: null
-            expected_impact: 0
-            internal_only: false
-            literature_references: null
-            other_information: null
-            related_parameters: null
-            suggested_values: null
-            suggested_values_reasoning: null
             ui_display_name: null

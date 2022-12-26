@@ -1,21 +1,12 @@
 force_split:
-    commonly_used: false
     default_value_reasoning:
         We do not expect most datasets to have an explicit "split"
         column in the data. Used mostly internally by ludwig datasets.
-    description_implications: null
-    example_value: null
     expected_impact: 3
-    internal_only: false
-    literature_references: null
-    other_information: null
     related_parameters:
         - split_probabilities, stratify
-    suggested_values: null
-    suggested_values_reasoning: null
     ui_display_name: Force Split
 oversample_minority:
-    commonly_used: false
     default_value_reasoning:
         We do not want to randomly oversample by default since
         this is a strategy to deal with imbalanced datasets, but can cause issues
@@ -30,19 +21,15 @@ oversample_minority:
     example_value:
         - 0.5
     expected_impact: 2
-    internal_only: false
     literature_references:
         - https://machinelearningmastery.com/random-oversampling-and-undersampling-for-imbalanced-classification/
     other_information:
         This parameter is one of many strategies to combat issues with
         class imbalance, though it is not a cure all. Oversampling too much can cause
         overfitting which can adversely affect your model so use with caution.
-    related_parameters: null
     suggested_values: Depends on imbalance ratio and dataset size
-    suggested_values_reasoning: null
     ui_display_name: Oversample Minority
 sample_ratio:
-    commonly_used: false
     default_value_reasoning:
         The default value is 1.0 because we do not want to shrink
         the dataset by default. In the rare occurences when you do want to downsample
@@ -55,15 +42,9 @@ sample_ratio:
     example_value:
         - 0.8
     expected_impact: 2
-    internal_only: false
-    literature_references: null
-    other_information: null
-    related_parameters: null
     suggested_values: Depends on data size
-    suggested_values_reasoning: null
     ui_display_name: Sample Ratio
 split_probabilities:
-    commonly_used: false
     default_value_reasoning:
         Most of the dataset should be used for training, with
         some portion heldout for validation and testing.
@@ -86,9 +67,7 @@ split_probabilities:
         The testing set is the portion of data that is tested in the final model and
         is compared against the previous sets of data. The testing set acts as an
         evaluation of the final mode and algorithm."
-    example_value: null
     expected_impact: 3
-    internal_only: false
     literature_references:
         - "https://www.techtarget.com/searchenterpriseai/definition/data-splitting#:~:text=Data%20splitting%20is%20when%20data,creating%20models%20based%20on%20data. "
     other_information: "Split data into train, validation, and test.
@@ -122,7 +101,6 @@ split_probabilities:
         for getting a good sense of model generalization.
     ui_display_name: Split Probabilities
 stratify:
-    commonly_used: false
     default_value_reasoning:
         The default is set to None since we do not want to stratify
         unless specifically told to do so. There are a variety of reasons for this,
@@ -132,17 +110,13 @@ stratify:
     example_value:
         - Category_Feature_A
     expected_impact: 3
-    internal_only: false
     literature_references:
         - https://medium.com/analytics-vidhya/stratified-sampling-in-machine-learning-f5112b5b9cfe
-    other_information: null
     related_parameters:
         - force_split, split_probabilities
     suggested_values: Depends on dataset
-    suggested_values_reasoning: null
     ui_display_name: Stratify
 undersample_majority:
-    commonly_used: false
     default_value_reasoning:
         We do not want to randomly undersample by default since
         this is a strategy to deal with imbalanced datasets, but can cause issues
@@ -158,14 +132,11 @@ undersample_majority:
     example_value:
         - 0.5
     expected_impact: 2
-    internal_only: false
     literature_references:
         - https://machinelearningmastery.com/random-oversampling-and-undersampling-for-imbalanced-classification/
     other_information:
         This parameter is one of many strategies to combat issues with
         class imbalance, though it is not a cure all. Undersampling too much can cause
         loss of data which can adversely affect your model so use with caution.
-    related_parameters: null
     suggested_values: Depends on imbalance ratio and dataset size
-    suggested_values_reasoning: null
     ui_display_name: Undersample Majority
