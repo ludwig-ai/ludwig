@@ -22,31 +22,5 @@ PREPROCESSING_METADATA = _load("preprocessing.yaml")
 TRAINER_METADATA = _load("trainer.yaml")
 
 
-def get_combiner_metadata(*keys) -> ParameterMetadata:
-    return _get_metadata(COMBINER_METADATA, *keys)
-
-
-def get_decoder_metadata(*keys) -> ParameterMetadata:
-    return _get_metadata(DECODER_METADATA, *keys)
-
-
-def get_encoder_metadata(*keys) -> ParameterMetadata:
-    return _get_metadata(ENCODER_METADATA, *keys)
-
-
-def get_feature_metadata(*keys) -> ParameterMetadata:
-    return _get_metadata(FEATURE_METADATA, *keys)
-
-
-def get_preprocessing_metadata(*keys) -> ParameterMetadata:
-    return _get_metadata(PREPROCESSING_METADATA, *keys)
-
-
-def get_trainermetadata(*keys) -> ParameterMetadata:
-    return _get_metadata(TRAINER_METADATA, *keys)
-
-
-def _get_metadata(d: Dict[str, Any], *keys) -> ParameterMetadata:
-    for k in keys:
-        d = d[k]
+def to_metadata(d: Dict[str, Any]) -> ParameterMetadata:
     return ParameterMetadata.from_dict(d)

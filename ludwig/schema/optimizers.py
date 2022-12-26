@@ -9,7 +9,7 @@ from marshmallow_dataclass import dataclass
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, INTERNAL_ONLY
-from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
+from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.utils.registry import Registry
 
 optimizer_registry = Registry()

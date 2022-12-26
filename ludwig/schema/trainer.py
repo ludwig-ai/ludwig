@@ -6,7 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
+from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
     GradientClippingConfig,
