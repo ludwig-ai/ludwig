@@ -5,7 +5,6 @@ import yaml
 
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
-
 _PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 _CONFIG_DIR = os.path.join(_PATH_HERE, "configs")
 
@@ -24,7 +23,7 @@ def _to_metadata(d: Dict[str, Any]) -> Union[ParameterMetadata, Dict[str, Any]]:
 
 
 def _load(fname: str) -> Dict[str, Any]:
-    with open(os.path.join(_CONFIG_DIR, fname), "r") as f:
+    with open(os.path.join(_CONFIG_DIR, fname)) as f:
         return _to_metadata(yaml.safe_load(f))
 
 
