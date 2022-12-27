@@ -189,13 +189,13 @@ learning_rate:
         faster model convergence. Decreasing the learning rate can help stabilize
         learning curves at the cost of slower time to convergence.
     expected_impact: 3
-    suggested_values: 0.00001 - 0.1
+    suggested_values: 0.00001 - 0.1 or auto
     suggested_values_reasoning:
         Tabular models trained from scratch typically use
         learning rates around 1e-3 while learning rates for pre-trained models should
         be much smaller, typically around 1e-5, which is important to mitigate catastrophic
         forgetting. To make the model more robust to any specific choice of learning
-        rate, consider turning enabling learning rate exponential decay.
+        rate, consider turning enabling learning rate decay.
     ui_display_name: Learning Rate
 learning_rate_scaling:
     default_value_reasoning:
@@ -442,9 +442,12 @@ learning_rate_scheduler:
             - https://datascience.stackexchange.com/questions/55991/in-the-context-of-deep-learning-what-is-training-warmup-steps
         suggested_values: 0 - 5
         suggested_values_reasoning:
-            You don't want to warm up for too long, as after the
-            model is starting to hill climb, you want to use the full weight of the learning
-            rate to descend into good loss minima.
+            You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
+            full weight of the learning rate to descend into good loss minima.
+
+            If you observe your loss curve converging very early into training, within the first few epochs, then
+            increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
+            warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.
         ui_display_name: Warmup Evaluations
     warmup_fraction:
         default_value_reasoning:
@@ -480,10 +483,11 @@ learning_rate_scheduler:
             - learning_rate
         suggested_values: exponential
         suggested_values_reasoning:
-            There is no go-to schedule for all models. Changing
-            the learning rate, in general, has shown to make training less sensitive to
-            the learning rate value you pick for it. So using a learning rate schedule
-            can give better training performance and make the model converge faster
+            Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
+            rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
+            most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
+            If you observer your loss curves shooting up, even on the training set, in later epochs, increasing the
+            decay rate may help mitigate this effect.
         ui_display_name: Decay
     decay_rate:
         default_value_reasoning:
