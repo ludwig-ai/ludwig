@@ -5,7 +5,7 @@ from typing import Dict, Optional
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 from ludwig.constants import LOSS, TRAINING
-from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
+from ludwig.schema.metadata import TRAINER_METADATA
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
@@ -16,16 +16,16 @@ from ludwig.api_annotations import DeveloperAPI
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
-    warmup_fraction: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Fraction of total training steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
-    )
-
     warmup_evaluations: int = schema_utils.NonNegativeFloat(
         default=1,
         description="Number of evaluation steps to warmup the learning rate for.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
+    )
+
+    warmup_fraction: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Fraction of total training steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
     )
 
     decay: Optional[str] = schema_utils.StringOptions(
