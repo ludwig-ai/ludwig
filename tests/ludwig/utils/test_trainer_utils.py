@@ -27,7 +27,6 @@ def test_progress_tracker_empty():
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
         best_eval_metric=0,
-        best_reduce_learning_rate_eval_metric=0,
         best_increase_batch_size_eval_metric=0,
         learning_rate=0.01,
         output_features=output_features,
@@ -64,7 +63,6 @@ def test_progress_tracker():
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
         best_eval_metric=0,
-        best_reduce_learning_rate_eval_metric=0,
         best_increase_batch_size_eval_metric=0,
         learning_rate=0.01,
         output_features=output_features,

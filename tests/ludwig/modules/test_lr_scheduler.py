@@ -1,10 +1,13 @@
 from torch.optim import SGD
 
-from ludwig.features.number_feature import NumberInputFeature
+from ludwig.features.number_feature import NumberInputFeature, NumberOutputFeature
 from ludwig.modules.lr_scheduler import LRScheduler
+from ludwig.schema.decoders.base import PassthroughDecoderConfig
 from ludwig.schema.encoders.base import DenseEncoderConfig
-from ludwig.schema.features.number_feature import NumberInputFeatureConfig
+from ludwig.schema.features.number_feature import NumberInputFeatureConfig, NumberOutputFeatureConfig
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
+from ludwig.utils.metric_utils import TrainerMetric
+from ludwig.utils.trainer_utils import ProgressTracker, get_new_progress_tracker
 
 
 def test_lr_scheduler_warmup_decay():
@@ -56,3 +59,49 @@ def test_lr_scheduler_warmup_decay():
             assert exp_lr < base_lr, f"step: {step}"
 
     assert linear_lr < exp_lr
+
+
+def test_lr_scheduler_reduce_on_plateau():
+    total_eval_steps = 100
+    base_lr = 1.0
+    reduce_limit = 3
+
+    module = NumberInputFeature(NumberInputFeatureConfig(name="num1", encoder=DenseEncoderConfig()))
+    output1 = NumberOutputFeature(
+        NumberOutputFeatureConfig(name="output1", input_size=10, decoder=PassthroughDecoderConfig()), output_features={}
+    )
+
+    optimizer = SGD(module.parameters(), lr=base_lr)
+    config = LRSchedulerConfig(warmup_evaluations=0, reduce_on_plateau=reduce_limit)
+    scheduler = LRScheduler(config=config, optimizer=optimizer)
+
+    progress_tracker = get_new_progress_tracker(
+        batch_size=64,
+        best_eval_metric=float("inf"),
+        best_increase_batch_size_eval_metric=float("inf"),
+        learning_rate=base_lr,
+        output_features={"output1": output1},
+    )
+
+    num_reductions = 0
+
+    last_lr = optimizer.param_groups[0]["lr"]
+    steps_to_plateau = 5
+    loss = 10.0
+    for epoch in range(total_eval_steps):
+        steps_to_plateau -= 1
+        if steps_to_plateau > 0:
+            loss -= 0.1
+
+        progress_tracker.train_metrics["output1"]["loss"].append(
+            TrainerMetric(epoch=epoch, step=epoch * 100, value=loss)
+        )
+        scheduler.eval_step(progress_tracker, "output1")
+        lr = optimizer.param_groups[0]["lr"]
+        if lr < last_lr:
+            # Reset steps to plateau
+            steps_to_plateau = 5
+            num_reductions += 1
+        last_lr = lr
+
+    assert num_reductions == reduce_limit

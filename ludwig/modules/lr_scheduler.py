@@ -23,7 +23,7 @@ class ReduceLROnPlateauLimited(ReduceLROnPlateau):
             # Already reduce the LR as many times as we will allow
             return
 
-        return super().step(metrics, epich=epoch)
+        return super().step(metrics, epoch=epoch)
 
     def _reduce_lr(self, epoch):
         super()._reduce_lr(epoch)
@@ -60,7 +60,7 @@ class LRScheduler:
             self._eval_scheduler = ReduceLROnPlateauLimited(
                 optimizer=self.optimizer,
                 mode=mode,
-                step_limit=self.config.reduce_on_plateau,
+                reduce_limit=self.config.reduce_on_plateau,
                 factor=self.config.reduce_on_plateau_rate,
                 patience=self.config.reduce_on_plateau_patience,
             )
