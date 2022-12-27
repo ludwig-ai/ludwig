@@ -13,17 +13,21 @@ from ludwig.utils.trainer_utils import ProgressTracker
 
 
 class ReduceLROnPlateauLimited(ReduceLROnPlateau):
-    def __init__(self, optimizer: Optimizer, mode: str, step_limit: int, factor: float, patience: int):
+    def __init__(self, optimizer: Optimizer, mode: str, reduce_limit: int, factor: float, patience: int):
         super().__init__(optimizer, mode=mode, factor=factor, patience=patience)
-        self.step_limit = step_limit
-        self._steps = 0
+        self.reduce_limit = reduce_limit
+        self._num_reduce_lr = 0
 
     def step(self, metrics, epoch=None):
-        if self._steps >= self.step_limit:
+        if self._num_reduce_lr >= self.reduce_limit:
+            # Already reduce the LR as many times as we will allow
             return
 
-        self._steps += 1
         return super().step(metrics, epich=epoch)
+
+    def _reduce_lr(self, epoch):
+        super()._reduce_lr(epoch)
+        self._num_reduce_lr += 1
 
 
 class LRScheduler:
@@ -39,9 +43,7 @@ class LRScheduler:
         self._eval_scheduler = None
 
     def reset(self, steps_per_checkpoint: int, total_steps: int):
-        self._train_scheduler = get_linear_schedule_with_warmup(
-            self.config, self.optimizer, steps_per_checkpoint, total_steps
-        )
+        self._train_scheduler = get_schedule_with_warmup(self.config, self.optimizer, steps_per_checkpoint, total_steps)
 
         if self.config.reduce_on_plateau > 0:
             mode = "min" if self.validation_metric.get_objective() == MINIMIZE else "max"
@@ -57,6 +59,10 @@ class LRScheduler:
         self._train_scheduler.step()
 
     def eval_step(self, progress_tracker: ProgressTracker, validation_field: str):
+        if self.config.reduce_on_plateau <= 0:
+            # No reduce on plateau
+            return
+
         if self.config.reduce_eval_split == TRAINING:
             split_metrics = progress_tracker.train_metrics
         elif self.config.reduce_eval_split == VALIDATION:
@@ -81,7 +87,7 @@ class LRScheduler:
         self._eval_scheduler.load_state_dict(d["eval_scheduler_state"])
 
 
-def get_linear_schedule_with_warmup(
+def get_schedule_with_warmup(
     config: LRSchedulerConfig,
     optimizer: Optimizer,
     steps_per_checkpoint: int,
