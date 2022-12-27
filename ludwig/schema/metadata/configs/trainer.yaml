@@ -486,7 +486,7 @@ learning_rate_scheduler:
             Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
             rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
             most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
-            If you observer your loss curves shooting up, even on the training set, in later epochs, increasing the
+            If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
             decay rate may help mitigate this effect.
         ui_display_name: Decay
     decay_rate:
