@@ -44,7 +44,7 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
-from ludwig.modules.lr_scheduler import get_linear_schedule_with_warmup
+from ludwig.modules.lr_scheduler import LRScheduler, get_linear_schedule_with_warmup
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
@@ -183,7 +183,7 @@ class Trainer(BaseTrainer):
         self.optimizer = create_optimizer(
             model, learning_rate=self.base_learning_rate, horovod=horovod, optimizer_config=optimizer_config
         )
-        self.scheduler = None
+        self.scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision
@@ -665,7 +665,7 @@ class Trainer(BaseTrainer):
         # ====== Setup session =======
         checkpoint = checkpoint_manager = None
         if self.is_coordinator() and not self.skip_save_progress:
-            checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
+            checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer, scheduler=self.scheduler)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         # ====== Setup Tensorboard writers =======
@@ -680,11 +680,13 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
+        resumed_from_checkpoint = False
         if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
             logger.info("Resuming training from previous run.")
             progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
             if self.is_coordinator():
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+            resumed_from_checkpoint = True
         else:
             logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
@@ -704,6 +706,7 @@ class Trainer(BaseTrainer):
             # training is started with random weights or restored from a checkpoint.
             self.horovod.broadcast_parameters(self.model.state_dict(), root_rank=0)
             self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
+            self.scheduler.load_state_dict(self.horovod.broadcast_object(self.scheduler.state_dict()))
 
         set_random_seed(self.random_seed)
 
@@ -717,9 +720,6 @@ class Trainer(BaseTrainer):
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
-                self.scheduler = get_linear_schedule_with_warmup(
-                    self.optimizer, batcher.steps_per_epoch * 2, self.total_steps
-                )
 
                 # Get the terminal steps per checkpoint.
                 final_steps_per_checkpoint = get_final_steps_per_checkpoint(
@@ -729,8 +729,11 @@ class Trainer(BaseTrainer):
                     self.is_coordinator(),
                 )
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
-
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+
+                if not resumed_from_checkpoint:
+                    # Initialize learning rate scheduler which depends on number of steps
+                    self.scheduler.reset(final_steps_per_checkpoint, self.total_steps)
 
                 if self.is_coordinator():
                     logger.info(
@@ -1050,31 +1053,8 @@ class Trainer(BaseTrainer):
                 + f"{progress_tracker.last_improvement} step(s) ago.\n"
             )
 
-        # ========== Reduce Learning Rate Plateau logic ========
-        if reduce_learning_rate_on_plateau > 0:
-            self.reduce_learning_rate(
-                progress_tracker,
-                validation_output_feature_name,
-                reduce_learning_rate_on_plateau,
-                reduce_learning_rate_on_plateau_patience,
-                reduce_learning_rate_on_plateau_rate,
-                reduce_learning_rate_eval_metric,
-                reduce_learning_rate_eval_split,
-            )
-            progress_tracker.last_learning_rate_reduction = (
-                progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
-            )
-            if (
-                progress_tracker.last_learning_rate_reduction > 0
-                and progress_tracker.last_reduce_learning_rate_eval_metric_improvement > 0
-                and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
-            ):
-                logger.info(
-                    f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} step(s) "
-                    f"ago, improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
-                    f"{reduce_learning_rate_eval_metric} happened "
-                    f"{progress_tracker.last_reduce_learning_rate_eval_metric_improvement} step(s) ago."
-                )
+        # ========== Learning Rate Schedule evaluation updates ========
+        self.scheduler.eval_step(progress_tracker, validation_output_feature_name)
 
         # ========== Increase Batch Size Plateau logic =========
         if increase_batch_size_on_plateau > 0:

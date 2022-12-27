@@ -1,13 +1,15 @@
 import math
 import logging
+from typing import Any, Dict
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
-from ludwig.constants import MINIMIZE
-from ludwig.modules.metric_modules import LudwigMetric, get_metric_cls
+from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
+from ludwig.modules.metric_modules import get_metric_cls
 
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
-from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
+from ludwig.utils.metric_utils import TrainerMetric
+from ludwig.utils.trainer_utils import ProgressTracker
 
 
 class ReduceLROnPlateauLimited(ReduceLROnPlateau):
@@ -54,8 +56,29 @@ class LRScheduler:
     def step(self):
         self._train_scheduler.step()
 
-    def eval_step(self, validation_metric: LudwigMetric):
-        self._eval_scheduler.step(get_scalar_from_ludwig_metric(validation_metric))
+    def eval_step(self, progress_tracker: ProgressTracker, validation_field: str):
+        if self.config.reduce_eval_split == TRAINING:
+            split_metrics = progress_tracker.train_metrics
+        elif self.config.reduce_eval_split == VALIDATION:
+            split_metrics = progress_tracker.validation_metrics
+        else:  # if self.config.reduce_eval_split == TEST:
+            split_metrics = progress_tracker.test_metrics
+
+        validation_metric = self.config.reduce_eval_metric
+        last_metric: TrainerMetric = split_metrics[validation_field][validation_metric][-1]
+        last_metric_value = last_metric[-1]
+
+        self._eval_scheduler.step(last_metric_value)
+
+    def state_dict(self) -> Dict[str, Any]:
+        return {
+            "train_scheduler_state": self._train_scheduler.state_dict(),
+            "eval_scheduler_state": self._eval_scheduler.state_dict(),
+        }
+
+    def load_state_dict(self, d: Dict[str, Any]):
+        self._train_scheduler.load_state_dict(d["train_scheduler_state"])
+        self._eval_scheduler.load_state_dict(d["eval_scheduler_state"])
 
 
 def get_linear_schedule_with_warmup(
