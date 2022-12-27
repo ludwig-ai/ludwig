@@ -31,7 +31,13 @@ class ReduceLROnPlateauLimited(ReduceLROnPlateau):
 
 
 class LRScheduler:
-    def __init__(self, config: LRSchedulerConfig, optimizer: Optimizer):
+    def __init__(
+        self,
+        config: LRSchedulerConfig,
+        optimizer: Optimizer,
+        steps_per_checkpoint: int = 1000,
+        total_steps: int = 10000,
+    ):
         self.config = config
         self.optimizer = optimizer
         self.validation_metric = get_metric_cls(self.config.reduce_eval_metric)
@@ -41,6 +47,10 @@ class LRScheduler:
 
         # Scheduler updated each eval step
         self._eval_scheduler = None
+
+        # Initialize here in case we need to load from a checkpoint, will be overridden at train time with exact
+        # step counts.
+        self.reset(steps_per_checkpoint, total_steps)
 
     def reset(self, steps_per_checkpoint: int, total_steps: int):
         self._train_scheduler = get_schedule_with_warmup(self.config, self.optimizer, steps_per_checkpoint, total_steps)
@@ -59,7 +69,7 @@ class LRScheduler:
         self._train_scheduler.step()
 
     def eval_step(self, progress_tracker: ProgressTracker, validation_field: str):
-        if self.config.reduce_on_plateau <= 0:
+        if self._eval_scheduler is None:
             # No reduce on plateau
             return
 
@@ -79,12 +89,13 @@ class LRScheduler:
     def state_dict(self) -> Dict[str, Any]:
         return {
             "train_scheduler_state": self._train_scheduler.state_dict(),
-            "eval_scheduler_state": self._eval_scheduler.state_dict(),
+            "eval_scheduler_state": self._eval_scheduler.state_dict() if self._eval_scheduler is not None else {},
         }
 
     def load_state_dict(self, d: Dict[str, Any]):
         self._train_scheduler.load_state_dict(d["train_scheduler_state"])
-        self._eval_scheduler.load_state_dict(d["eval_scheduler_state"])
+        if self._eval_scheduler is not None:
+            self._eval_scheduler.load_state_dict(d["eval_scheduler_state"])
 
 
 def get_schedule_with_warmup(
