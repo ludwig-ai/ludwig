@@ -64,7 +64,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
     reduce_on_plateau_patience: int = schema_utils.NonNegativeInteger(
-        default=5,
+        default=10,
         description=(
             "How many evaluation steps have to pass before the learning rate reduces " "when `reduce_on_plateau > 0`."
         ),
@@ -72,7 +72,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     )
 
     reduce_on_plateau_rate: float = schema_utils.FloatRange(
-        default=0.5,
+        default=0.1,
         min=0,
         max=1,
         description="Rate at which we reduce the learning rate when `reduce_on_plateau > 0`.",
