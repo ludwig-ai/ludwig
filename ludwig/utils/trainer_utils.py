@@ -36,7 +36,6 @@ def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[
 def get_new_progress_tracker(
     batch_size: int,
     best_eval_metric: float,
-    best_reduce_learning_rate_eval_metric: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
     output_features: Dict[str, OutputFeature],
@@ -51,8 +50,6 @@ def get_new_progress_tracker(
         last_learning_rate_reduction_steps=0,
         last_increase_batch_size_steps=0,
         best_eval_metric=best_eval_metric,
-        best_reduce_learning_rate_eval_metric=best_reduce_learning_rate_eval_metric,
-        last_reduce_learning_rate_eval_metric_improvement=0,
         best_increase_batch_size_eval_metric=best_increase_batch_size_eval_metric,
         last_increase_batch_size_eval_metric_improvement=0,
         learning_rate=learning_rate,
@@ -79,8 +76,6 @@ class ProgressTracker:
         last_learning_rate_reduction_steps: int,
         last_increase_batch_size_steps: int,
         best_eval_metric: float,
-        best_reduce_learning_rate_eval_metric: float,
-        last_reduce_learning_rate_eval_metric_improvement: int,
         best_increase_batch_size_eval_metric: float,
         last_increase_batch_size_eval_metric_improvement: int,
         learning_rate: float,
@@ -113,8 +108,6 @@ class ProgressTracker:
         self.last_increase_batch_size = last_increase_batch_size
         self.learning_rate = learning_rate
         self.best_eval_metric = best_eval_metric
-        self.best_reduce_learning_rate_eval_metric = best_reduce_learning_rate_eval_metric
-        self.last_reduce_learning_rate_eval_metric_improvement = last_reduce_learning_rate_eval_metric_improvement
         self.best_increase_batch_size_eval_metric = best_increase_batch_size_eval_metric
         self.last_increase_batch_size_eval_metric_improvement = last_increase_batch_size_eval_metric_improvement
         self.num_reductions_learning_rate = num_reductions_learning_rate

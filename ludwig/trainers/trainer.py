@@ -44,7 +44,7 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
-from ludwig.modules.lr_scheduler import LRScheduler, get_linear_schedule_with_warmup
+from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
@@ -58,7 +58,7 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.horovod_utils import return_first
-from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metric_utils import get_metric_names
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
@@ -145,11 +145,6 @@ class Trainer(BaseTrainer):
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.evaluate_training_set = config.evaluate_training_set
-        self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
-        self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
-        self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
-        self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
-        self.reduce_learning_rate_eval_split = config.reduce_learning_rate_eval_split
         self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
         self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
@@ -567,11 +562,6 @@ class Trainer(BaseTrainer):
                 self.validation_metric,
                 save_path,
                 model_hyperparameters_path,
-                self.reduce_learning_rate_on_plateau,
-                self.reduce_learning_rate_on_plateau_patience,
-                self.reduce_learning_rate_on_plateau_rate,
-                self.reduce_learning_rate_eval_metric,
-                self.reduce_learning_rate_eval_split,
                 self.increase_batch_size_on_plateau,
                 self.increase_batch_size_on_plateau_patience,
                 self.increase_batch_size_on_plateau_rate,
@@ -693,9 +683,6 @@ class Trainer(BaseTrainer):
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
                 best_eval_metric=get_initial_validation_value(self.validation_metric),
-                best_reduce_learning_rate_eval_metric=get_initial_validation_value(
-                    self.reduce_learning_rate_eval_metric
-                ),
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
                 output_features=output_features,
             )
@@ -998,11 +985,6 @@ class Trainer(BaseTrainer):
         validation_metric,
         save_path,
         model_hyperparameters_path,
-        reduce_learning_rate_on_plateau,
-        reduce_learning_rate_on_plateau_patience,
-        reduce_learning_rate_on_plateau_rate,
-        reduce_learning_rate_eval_metric,
-        reduce_learning_rate_eval_split,
         increase_batch_size_on_plateau,
         increase_batch_size_on_plateau_patience,
         increase_batch_size_on_plateau_rate,
@@ -1162,66 +1144,6 @@ class Trainer(BaseTrainer):
         checkpoint: Checkpoint,
     ):
         CheckpointManager.load_latest_checkpoint(checkpoint, model_weights_progress_path, self.device)
-
-    def reduce_learning_rate(
-        self,
-        progress_tracker: ProgressTracker,
-        validation_output_feature_name: str,
-        reduce_learning_rate_on_plateau: int,
-        reduce_learning_rate_on_plateau_patience: int,
-        reduce_learning_rate_on_plateau_rate: float,
-        reduce_learning_rate_eval_metric: str = LOSS,
-        reduce_learning_rate_eval_split: str = TRAINING,
-    ):
-        """Uses the progress tracker to determine if the learning rate should be reduced."""
-        if not (progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau):
-
-            if reduce_learning_rate_eval_split == TRAINING:
-                split_metrics = progress_tracker.train_metrics
-            elif reduce_learning_rate_eval_split == VALIDATION:
-                split_metrics = progress_tracker.validation_metrics
-            else:  # if reduce_learning_rate_eval_split == TEST:
-                split_metrics = progress_tracker.test_metrics
-
-            validation_metric = reduce_learning_rate_eval_metric
-            last_metric: TrainerMetric = split_metrics[validation_output_feature_name][validation_metric][-1]
-            last_metric_value = last_metric[-1]
-
-            improved = get_improved_fun(validation_metric)
-            is_improved = improved(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
-            if is_improved:
-                # we update the best metric value and set it to the current one
-                # and reset last improvement step count
-                progress_tracker.best_reduce_learning_rate_eval_metric = last_metric_value
-                progress_tracker.last_reduce_learning_rate_eval_metric_improvement = 0
-            else:
-                progress_tracker.last_reduce_learning_rate_eval_metric_improvement += 1
-                if not is_improved and (
-                    # learning rate reduction happened more than N steps ago
-                    progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
-                    # No improvement of the evaluation metric since more than N steps ago
-                    and progress_tracker.last_reduce_learning_rate_eval_metric_improvement
-                    >= reduce_learning_rate_on_plateau_patience
-                ):
-                    progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
-
-                    if self.is_coordinator():
-                        logger.info(
-                            f"PLATEAU REACHED, reducing learning rate to {progress_tracker.learning_rate} due to lack "
-                            f"of improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
-                            f"{validation_metric}."
-                        )
-
-                    progress_tracker.last_learning_rate_reduction_steps = progress_tracker.steps
-                    progress_tracker.last_learning_rate_reduction = 0
-                    progress_tracker.num_reductions_learning_rate += 1
-
-                    if progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau:
-                        if self.is_coordinator():
-                            logger.info(
-                                f"Learning rate was already reduced {progress_tracker.num_reductions_learning_rate} "
-                                "time(s), not reducing it anymore."
-                            )
 
     def increase_batch_size(
         self,
