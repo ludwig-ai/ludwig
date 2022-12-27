@@ -491,7 +491,7 @@ learning_rate_scheduler:
         ui_display_name: Decay
     decay_rate:
         default_value_reasoning:
-            4-5% decay each step is an empirically useful decary
+            4-5% decay each step is an empirically useful decay
             rate to start with.
         description_implications:
             Increasing the decay rate will lower the learning rate
