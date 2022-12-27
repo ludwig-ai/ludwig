@@ -1,11 +1,10 @@
 import math
 import logging
-from typing import Type
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
 from ludwig.constants import MINIMIZE
-from ludwig.modules.metric_modules import LudwigMetric
+from ludwig.modules.metric_modules import LudwigMetric, get_metric_cls
 
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
 from ludwig.utils.metric_utils import get_scalar_from_ludwig_metric
@@ -26,10 +25,10 @@ class ReduceLROnPlateauLimited(ReduceLROnPlateau):
 
 
 class LRScheduler:
-    def __init__(self, config: LRSchedulerConfig, optimizer: Optimizer, validation_metric: Type[LudwigMetric]):
+    def __init__(self, config: LRSchedulerConfig, optimizer: Optimizer):
         self.config = config
         self.optimizer = optimizer
-        self.validation_metric = validation_metric
+        self.validation_metric = get_metric_cls(self.config.reduce_eval_metric)
 
         # Scheduler updated each training step
         self._train_scheduler = None
@@ -41,14 +40,15 @@ class LRScheduler:
         self._train_scheduler = get_linear_schedule_with_warmup(
             self.config, self.optimizer, steps_per_checkpoint, total_steps
         )
-        if self.config.reduce_learning_rate_on_plateau > 0:
+
+        if self.config.reduce_on_plateau > 0:
             mode = "min" if self.validation_metric.get_objective() == MINIMIZE else "max"
             self._eval_scheduler = ReduceLROnPlateauLimited(
                 optimizer=self.optimizer,
                 mode=mode,
-                step_limit=self.config.reduce_learning_rate_on_plateau,
-                factor=self.config.reduce_learning_rate_on_plateau_rate,
-                patience=self.config.reduce_learning_rate_on_plateau_patience,
+                step_limit=self.config.reduce_on_plateau,
+                factor=self.config.reduce_on_plateau_rate,
+                patience=self.config.reduce_on_plateau_patience,
             )
 
     def step(self):
