@@ -19,7 +19,7 @@ def get_marshmallow_from_dataclass_field(dfield):
 def test_torch_description_pull():
     example_empty_desc_prop = schema_utils.unload_jsonschema_from_marshmallow_class(lso.AdamOptimizerConfig)[
         "properties"
-    ]["lr"]
+    ]["eps"]
     assert (
         isinstance(example_empty_desc_prop, dict)
         and "description" in example_empty_desc_prop
