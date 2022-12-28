@@ -25,7 +25,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import ENCODER, H3, TRAINER, TYPE
+from ludwig.constants import ENCODER, H3, PREPROCESSING, TRAINER, TYPE
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.encoders.registry import get_encoder_classes
@@ -821,7 +821,7 @@ def test_experiment_h3(encoder, csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_experiment_vector_feature_1(csv_filename):
+def test_experiment_vector_feature(csv_filename):
     input_features = [vector_feature()]
     output_features = [binary_feature()]
     # Generate test data
@@ -830,10 +830,14 @@ def test_experiment_vector_feature_1(csv_filename):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_experiment_vector_feature_2(csv_filename):
+def test_experiment_vector_feature_infer_size(csv_filename):
     input_features = [vector_feature()]
     output_features = [vector_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # Unset vector_size so it needs to be inferred
+    del input_features[0][PREPROCESSING]
+    del output_features[0][PREPROCESSING]
 
     run_experiment(input_features, output_features, dataset=rel_path)
