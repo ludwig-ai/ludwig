@@ -171,6 +171,7 @@ class RandomContrast(torch.nn.Module):
         else:
             return imgs
 
+
 @register_augmentation_op(name="random_brightness", features=IMAGE)
 class RandomBrightness(torch.nn.Module):
     def __init__(self, min_brightness=0.1, max_brightness=3.0):
@@ -185,6 +186,7 @@ class RandomBrightness(torch.nn.Module):
             return F.adjust_brightness(imgs, adjust_factor)
         else:
             return imgs
+
 
 @register_augmentation_op(name="random_blur", features=IMAGE)
 class RandomBlur(torch.nn.Module):
