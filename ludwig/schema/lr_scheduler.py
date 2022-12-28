@@ -156,8 +156,6 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
                 dump_default=dump_default,
                 metadata={
                     "description": description,
-                    # TODO(travis): do this once we convert the metadata to yaml so it's not so painful
-                    # "parameter_metadata": convert_metadata_to_json(TRAINER_METADATA["learning_rate_scheduler"]),
                 },
             )
         },
