@@ -43,18 +43,11 @@ class LRScheduler:
         self.validation_metric = get_metric_cls(self.config.reduce_eval_metric)
 
         # Scheduler updated each training step
-        self._train_scheduler = None
+        self.step_info = StepInfo(steps_per_checkpoint, total_steps, self.config)
+        self._train_scheduler = get_schedule_with_warmup(self.config, self.optimizer, self.step_info)
 
         # Scheduler updated each eval step
         self._eval_scheduler = None
-
-        # Initialize here in case we need to load from a checkpoint, will be overridden at train time with exact
-        # step counts.
-        self.reset(steps_per_checkpoint, total_steps)
-
-    def reset(self, steps_per_checkpoint: int, total_steps: int):
-        self._train_scheduler = get_schedule_with_warmup(self.config, self.optimizer, steps_per_checkpoint, total_steps)
-
         if self.config.reduce_on_plateau > 0:
             mode = "min" if self.validation_metric.get_objective() == MINIMIZE else "max"
             self._eval_scheduler = ReduceLROnPlateauLimited(
@@ -64,6 +57,12 @@ class LRScheduler:
                 factor=self.config.reduce_on_plateau_rate,
                 patience=self.config.reduce_on_plateau_patience,
             )
+
+        self.reset(steps_per_checkpoint, total_steps)
+
+    def reset(self, steps_per_checkpoint: int, total_steps: int):
+        # Retain state but update number of steps for training
+        self.step_info.reset(steps_per_checkpoint, total_steps)
 
     def step(self):
         self._train_scheduler.step()
@@ -98,32 +97,41 @@ class LRScheduler:
             self._eval_scheduler.load_state_dict(d["eval_scheduler_state"])
 
 
+class StepInfo:
+    def __init__(self, steps_per_checkpoint: int, total_steps: int, config: LRSchedulerConfig):
+        self.config = config
+        self.reset(steps_per_checkpoint, total_steps)
+
+    def reset(self, steps_per_checkpoint: int, total_steps: int):
+        self.steps_per_checkpoint = steps_per_checkpoint
+        self.num_training_steps = total_steps
+
+        if self.config.warmup_fraction > 0 and self.config.warmup_evaluations > 0:
+            logging.info(
+                "Both `learning_rate_scheduler.warmup_fraction` and `learning_rate_scheduler.warmup_evaluations`. "
+                "This will result in the greater of the two (as a function of the total training steps) being used."
+            )
+
+        num_warmup_steps = 0
+        if self.config.warmup_fraction > 0:
+            num_warmup_steps = max(self.config.warmup_fraction * self.num_training_steps, num_warmup_steps)
+        if self.config.warmup_evaluations > 0:
+            num_warmup_steps = max(self.config.warmup_evaluations * self.steps_per_checkpoint, num_warmup_steps)
+        self.num_warmup_steps = num_warmup_steps
+
+
 def get_schedule_with_warmup(
     config: LRSchedulerConfig,
     optimizer: Optimizer,
-    steps_per_checkpoint: int,
-    num_training_steps: int,
+    step_info: StepInfo,
 ) -> LambdaLR:
     """Creates a learning rate scheduler that updates each training step."""
-
-    if config.warmup_fraction > 0 and config.warmup_evaluations > 0:
-        logging.info(
-            "Both `learning_rate_scheduler.warmup_fraction` and `learning_rate_scheduler.warmup_evaluations`. "
-            "This will result in the greater of the two (as a function of the total training steps) being used."
-        )
-
-    num_warmup_steps = 0
-    if config.warmup_fraction > 0:
-        num_warmup_steps = max(config.warmup_fraction * num_training_steps, num_warmup_steps)
-    if config.warmup_evaluations > 0:
-        num_warmup_steps = max(config.warmup_evaluations * steps_per_checkpoint, num_warmup_steps)
-
     decay_fn = decay_registry[config.decay]
 
     def lr_lambda(current_step: int):
-        if current_step < num_warmup_steps:
-            return float(current_step) / float(max(1, num_warmup_steps))
-        return decay_fn(current_step, num_training_steps, num_warmup_steps, config)
+        if current_step < step_info.num_warmup_steps:
+            return float(current_step) / float(max(1, step_info.num_warmup_steps))
+        return decay_fn(current_step, step_info.num_training_steps, step_info.num_warmup_steps, config)
 
     return LambdaLR(optimizer, lr_lambda, last_epoch=-1)
 

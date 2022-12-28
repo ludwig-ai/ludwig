@@ -670,13 +670,11 @@ class Trainer(BaseTrainer):
                 test_summary_writer = SummaryWriter(os.path.join(tensorboard_log_dir, TEST))
 
         # ================ Resume logic ================
-        resumed_from_checkpoint = False
         if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
             logger.info("Resuming training from previous run.")
             progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
             if self.is_coordinator():
                 self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
-            resumed_from_checkpoint = True
         else:
             logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
@@ -718,9 +716,8 @@ class Trainer(BaseTrainer):
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
 
-                if not resumed_from_checkpoint:
-                    # Initialize learning rate scheduler which depends on number of steps
-                    self.scheduler.reset(final_steps_per_checkpoint, self.total_steps)
+                # Update learning rate scheduler which depends on number of steps
+                self.scheduler.reset(final_steps_per_checkpoint, self.total_steps)
 
                 if self.is_coordinator():
                     logger.info(
