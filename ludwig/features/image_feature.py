@@ -167,29 +167,27 @@ class RandomRotate(torch.nn.Module):
 
 @register_augmentation_op(name="random_contrast", features=IMAGE)
 class RandomContrast(torch.nn.Module):
-    def __init__(self, contrast_min=0.1, contrast_max=3.0):
+    def __init__(self, min_contrast=0.1, max_contrast=3.0):
         super().__init__()
-        self.contrast_min = contrast_min
-        self.contrast_max = contrast_max
-        self.contrast_adjustment_range = contrast_max - contrast_min
+        self.min_contrast = min_contrast
+        self.contrast_adjustment_range = max_contrast - min_contrast
 
     def forward(self, imgs):
         # random contrast adjustment
-        adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.contrast_min).item()
+        adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.min_contrast).item()
         return F.adjust_contrast(imgs, adjust_factor)
 
 
 @register_augmentation_op(name="random_brightness", features=IMAGE)
 class RandomBrightness(torch.nn.Module):
-    def __init__(self, min=0.1, max=3.0):
+    def __init__(self, min_brightness=0.1, max_brightness=3.0):
         super().__init__()
-        self.contrast_min = min
-        self.contrast_max = max
-        self.brightness_adjustment_range = max - min
+        self.min_brightness = min_brightness
+        self.brightness_adjustment_range = max_brightness - min_brightness
 
     def forward(self, imgs):
         # random contrast adjustment
-        adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.contrast_min).item()
+        adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.min_brightness).item()
         return F.adjust_brightness(imgs, adjust_factor)
 
 
