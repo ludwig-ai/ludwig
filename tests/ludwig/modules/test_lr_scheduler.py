@@ -159,9 +159,9 @@ def test_lr_scheduler_save_load():
         scheduler2.step()
 
     progress_tracker.train_metrics["output1"]["loss"].append(TrainerMetric(epoch=1, step=20, value=0.8))
-    # scheduler.eval_step(progress_tracker, "output1")
-    # scheduler2.eval_step(progress_tracker, "output1")
+    scheduler.eval_step(progress_tracker, "output1")
+    scheduler2.eval_step(progress_tracker, "output1")
 
     assert lr != optimizer.param_groups[0]["lr"]
-    # assert optimizer.param_groups[0]["lr"] == optimizer2.param_groups[0]["lr"]
+    assert optimizer.param_groups[0]["lr"] == optimizer2.param_groups[0]["lr"]
     assert scheduler.state_dict() == scheduler2.state_dict()
