@@ -1,12 +1,12 @@
-import math
 import logging
+import math
 from typing import Any, Dict
 
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LambdaLR, ReduceLROnPlateau
+
 from ludwig.constants import MINIMIZE, TRAINING, VALIDATION
 from ludwig.modules.metric_modules import get_metric_cls
-
 from ludwig.schema.lr_scheduler import LRSchedulerConfig
 from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import ProgressTracker

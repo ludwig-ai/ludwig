@@ -4,11 +4,11 @@ from typing import Dict, Optional
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
-from ludwig.constants import LOSS, TRAINING
-from ludwig.schema.metadata import TRAINER_METADATA
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import LOSS, TRAINING
+from ludwig.schema.metadata import TRAINER_METADATA
 
 
 @DeveloperAPI
@@ -111,8 +111,8 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
     class LRSchedulerMarshmallowField(fields.Field):
         """Custom marshmallow field class for learjing rate scheduler.
 
-        Deserializes a dict to a valid instance of `LRSchedulerConfig` and
-        creates a corresponding JSON schema for external usage.
+        Deserializes a dict to a valid instance of `LRSchedulerConfig` and creates a corresponding JSON schema for
+        external usage.
         """
 
         def _deserialize(self, value, attr, data, **kwargs):
