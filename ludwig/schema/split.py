@@ -6,7 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import SPLIT, TYPE
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
+from ludwig.schema.metadata import PREPROCESSING_METADATA
 from ludwig.utils.registry import Registry
 
 split_config_registry = Registry()

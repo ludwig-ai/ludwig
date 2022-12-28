@@ -6,7 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
+from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
     GradientClippingConfig,
@@ -151,18 +151,19 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
-    # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
+        default=None,
+        description="The field for which the `validation_metric` is used for validation-related mechanics like early "
+        "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
+        "trial. If unset (default), the first output feature's default validation is used.",
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric used on `validation_field`, set by default to the "
-            "output feature type's `default_validation_metric`."
+            "Metric from `validation_field` that is used, set by default to the first output feature type's "
+            "`default_validation_metric`. If explicitly specified, "
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
@@ -363,7 +364,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
     # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
     eval_batch_size: Union[None, int, str] = schema_utils.PositiveInteger(
-        default=1024,
+        default=1048576,
         description="Size of batch to pass to the model for evaluation.",
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )

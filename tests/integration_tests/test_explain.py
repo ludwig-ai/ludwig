@@ -103,6 +103,7 @@ def run_test_explainer_api(
             text_feature(encoder={"vocab_size": 3}),
             vector_feature(),
             timeseries_feature(),
+            # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
             # sequence_feature(encoder={"vocab_size": 3}),
             # date_feature(),
             # h3_feature(),

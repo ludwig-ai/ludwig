@@ -10,7 +10,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import DEFAULTS, ENCODER, TEXT, TRAINABLE, TRAINER, TYPE
+from ludwig.constants import TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -63,21 +63,13 @@ except ImportError:
     ray = None
 
 
-def test_tune_learning_rate_hf_encoder(tmpdir):
+def test_tune_learning_rate(tmpdir):
     config = {
         "input_features": [text_feature(), binary_feature()],
         "output_features": [binary_feature()],
         TRAINER: {
             "train_steps": 1,
             "learning_rate": "auto",
-        },
-        DEFAULTS: {
-            TEXT: {
-                ENCODER: {
-                    TYPE: "electra",
-                    TRAINABLE: True,
-                }
-            }
         },
     }
 
@@ -87,11 +79,9 @@ def test_tune_learning_rate_hf_encoder(tmpdir):
     test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
 
     model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
-    _, _, output_directory = model.train(
-        training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir
-    )
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
 
-    assert model.config_obj.trainer.learning_rate == 0.00001  # has feature with HF trainable encoder
+    assert model.config_obj.trainer.learning_rate == 0.0001
 
 
 @pytest.mark.parametrize("is_cpu", [True, False])
