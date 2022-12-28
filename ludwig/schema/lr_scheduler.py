@@ -17,7 +17,7 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
     warmup_evaluations: int = schema_utils.NonNegativeFloat(
-        default=1,
+        default=0,
         description="Number of evaluation steps to warmup the learning rate for.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
     )
