@@ -119,17 +119,11 @@ def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.
 
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
 class RandomVFlip(torch.nn.Module):
-    # @classmethod
-    # def get_schema_cls(cls):
-    #     return RandomVerticalFlipOperation
-
-    def __init__(self, p=0.5):
+    def __init__(self, ):
         super().__init__()
 
-        self.p = p
-
     def forward(self, imgs):
-        if torch.rand(1) < self.p:
+        if torch.rand(1) < 0.5:
             imgs = F.vflip(imgs)
 
         return imgs
@@ -137,17 +131,11 @@ class RandomVFlip(torch.nn.Module):
 
 @register_augmentation_op(name="random_horizontal_flip", features=IMAGE)
 class RandomHFlip(torch.nn.Module):
-    # @classmethod
-    # def get_schema_cls(cls):
-    #     return RandomHorizontalFlipOperation
-
-    def __init__(self, p=0.5):
+    def __init__(self, ):
         super().__init__()
 
-        self.p = p
-
     def forward(self, imgs):
-        if torch.rand(1) < self.p:
+        if torch.rand(1) < 0.5:
             imgs = F.hflip(imgs)
 
         return imgs
@@ -160,9 +148,12 @@ class RandomRotate(torch.nn.Module):
         self.degree = degree
 
     def forward(self, imgs):
-        # map angle to interval (-degree, +degree)
-        angle = (torch.rand(1) * 2 * self.degree - self.degree).item()
-        return F.rotate(imgs, angle)
+        if torch.rand(1) < 0.5:
+            # map angle to interval (-degree, +degree)
+            angle = (torch.rand(1) * 2 * self.degree - self.degree).item()
+            return F.rotate(imgs, angle)
+        else:
+            return imgs
 
 
 @register_augmentation_op(name="random_contrast", features=IMAGE)
@@ -173,10 +164,12 @@ class RandomContrast(torch.nn.Module):
         self.contrast_adjustment_range = max_contrast - min_contrast
 
     def forward(self, imgs):
-        # random contrast adjustment
-        adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.min_contrast).item()
-        return F.adjust_contrast(imgs, adjust_factor)
-
+        if torch.rand(1) < 0.5:
+            # random contrast adjustment
+            adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.min_contrast).item()
+            return F.adjust_contrast(imgs, adjust_factor)
+        else:
+            return imgs
 
 @register_augmentation_op(name="random_brightness", features=IMAGE)
 class RandomBrightness(torch.nn.Module):
@@ -186,20 +179,21 @@ class RandomBrightness(torch.nn.Module):
         self.brightness_adjustment_range = max_brightness - min_brightness
 
     def forward(self, imgs):
-        # random contrast adjustment
-        adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.min_brightness).item()
-        return F.adjust_brightness(imgs, adjust_factor)
-
+        if torch.rand(1) < 0.5:
+            # random contrast adjustment
+            adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.min_brightness).item()
+            return F.adjust_brightness(imgs, adjust_factor)
+        else:
+            return imgs
 
 @register_augmentation_op(name="random_blur", features=IMAGE)
 class RandomBlur(torch.nn.Module):
-    def __init__(self, p=0.5, kernel_size=5):
+    def __init__(self, kernel_size=5):
         super().__init__()
-        self.p = p
         self.kernel_size = [kernel_size, kernel_size]
 
     def forward(self, imgs):
-        if torch.rand(1) < self.p:
+        if torch.rand(1) < 0.5:
             imgs = F.gaussian_blur(imgs, self.kernel_size)
 
         return imgs
