@@ -504,9 +504,11 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
                             },
                             "trainer": {
                                 "learning_rate_scaling": "sqrt",
-                                "decay": True,
-                                "decay_steps": 20000,
-                                "decay_rate": 0.8,
+                                "learning_rate_scheduler": {
+                                    "decay": "exponential",
+                                    "decay_steps": 20000,
+                                    "decay_rate": 0.8,
+                                },
                                 "optimizer": {"type": "adam"},
                             },
                         },
@@ -548,9 +550,9 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster):
         if trial_config[COMBINER][TYPE] == "tabnet":
             assert trial_config[COMBINER]["bn_virtual_bs"] == 256
             assert trial_config[TRAINER]["learning_rate_scaling"] == "sqrt"
-            assert trial_config[TRAINER]["decay"] is True
-            assert trial_config[TRAINER]["decay_steps"] == 20000
-            assert trial_config[TRAINER]["decay_rate"] == 0.8
+            assert trial_config[TRAINER]["learning_rate_scheduler"]["decay"] == "exponential"
+            assert trial_config[TRAINER]["learning_rate_scheduler"]["decay_steps"] == 20000
+            assert trial_config[TRAINER]["learning_rate_scheduler"]["decay_rate"] == 0.8
             assert trial_config[TRAINER]["optimizer"]["type"] == "adam"
         else:
             assert trial_config[TRAINER]["learning_rate_scaling"] == "linear"
