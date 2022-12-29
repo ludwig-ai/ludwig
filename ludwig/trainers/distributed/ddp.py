@@ -1,3 +1,4 @@
+import contextlib
 from typing import Any
 
 import torch
@@ -10,10 +11,13 @@ from ludwig.trainers.distributed.base import DistributedStrategy
 
 
 class DDPStrategy(DistributedStrategy):
+    def __init__(self, local_rank: int):
+        self.local_rank = local_rank
+
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return DDP(model, device_ids=[self.rank()])
 
-    def wrap_optimizer(self, optimizer: Optimizer) -> Optimizer:
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
         return optimizer
 
     def size(self) -> int:
@@ -21,6 +25,9 @@ class DDPStrategy(DistributedStrategy):
 
     def rank(self) -> int:
         return dist.get_rank()
+
+    def local_rank(self) -> int:
+        return self.local_rank
 
     def barrier(self):
         return dist.barrier()
@@ -41,3 +48,10 @@ class DDPStrategy(DistributedStrategy):
 
     def broadcast_object(self, v: Any) -> Any:
         return dist.broadcast_object_list([v])[0]
+
+    def wait_optimizer_synced(self, optimizer: Optimizer):
+        pass
+
+    @contextlib.contextmanager
+    def prepare_optimizer_update(self, optimizer: Optimizer):
+        yield

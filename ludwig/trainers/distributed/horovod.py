@@ -1,7 +1,9 @@
+import contextlib
 from typing import Any
 
 import horovod.torch as hvd
 import torch
+from horovod.torch.optimizer import _DistributedOptimizer
 from torch import nn
 from torch.optim import Optimizer
 
@@ -12,8 +14,11 @@ class HorovodStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model
 
-    def wrap_optimizer(self, optimizer: Optimizer) -> Optimizer:
-        return optimizer
+    def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
+        return hvd.DistributedOptimizer(
+            optimizer,
+            named_parameters=model.named_parameters(),
+        )
 
     def size(self) -> int:
         return hvd.size()
@@ -38,3 +43,11 @@ class HorovodStrategy(DistributedStrategy):
 
     def broadcast_object(self, v: Any) -> Any:
         return hvd.broadcast_object(v)
+
+    def wait_optimizer_synced(self, optimizer: _DistributedOptimizer):
+        optimizer.synchronize()
+
+    @contextlib.contextmanager
+    def prepare_optimizer_update(self, optimizer: _DistributedOptimizer):
+        with optimizer.skip_synchronize():
+            yield
