@@ -37,4 +37,4 @@ class HorovodStrategy(DistributedStrategy):
         hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 
     def broadcast_object(self, v: Any) -> Any:
-        pass
+        return hvd.broadcast_object(v)

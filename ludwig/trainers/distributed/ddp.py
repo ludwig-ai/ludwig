@@ -40,4 +40,4 @@ class DDPStrategy(DistributedStrategy):
         pass
 
     def broadcast_object(self, v: Any) -> Any:
-        pass
+        return dist.broadcast_object_list([v])[0]
