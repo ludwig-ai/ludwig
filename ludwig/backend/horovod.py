@@ -78,6 +78,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         return self._distributed.size()
 
     def get_available_resources(self) -> Resources:
+        # TODO(travis): this double-counts on the same device, it should use a cross-communicator instead
         cpus = torch.as_tensor([psutil.cpu_count()], dtype=torch.int)
         cpus = self._distributed.allreduce(cpus).item()
 
