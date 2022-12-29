@@ -676,11 +676,14 @@ def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_
         "backend": {"type": "ray", "trainer": {"strategy": dist_strategy, "num_workers": 2}},
     }
 
-    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
+    outdir = os.path.join(tmpdir, "results1")
+    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=outdir)
 
-    experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
+    outdir = os.path.join(tmpdir, "results2")
+    experiment_cli(config, dataset=rel_path, model_resume_path=output_dir, output_directory=outdir)
 
-    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
+    outdir = os.path.join(tmpdir, "results3")
+    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path, output_directory=outdir)
 
 
 @pytest.mark.parametrize(

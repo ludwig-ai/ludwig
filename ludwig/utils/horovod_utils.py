@@ -85,4 +85,4 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
 
 
 def is_distributed_available() -> bool:
-    return _HVD is not None and _HVD.is_initialized()
+    return _HVD is not None and (_HVD.is_initialized() or os.environ.get("HOROVOD_RANK"))
