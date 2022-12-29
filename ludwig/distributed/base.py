@@ -25,6 +25,10 @@ class DistributedStrategy(ABC):
         pass
 
     @abstractmethod
+    def local_size(self) -> int:
+        pass
+
+    @abstractmethod
     def local_rank(self) -> int:
         pass
 
@@ -73,6 +77,9 @@ class LocalStrategy(DistributedStrategy):
         return 1
 
     def rank(self) -> int:
+        return 0
+
+    def local_size(self) -> int:
         return 0
 
     def local_rank(self) -> int:

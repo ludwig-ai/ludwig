@@ -7,7 +7,7 @@ from horovod.torch.optimizer import _DistributedOptimizer
 from torch import nn
 from torch.optim import Optimizer
 
-from ludwig.trainers.distributed.base import DistributedStrategy
+from ludwig.distributed.base import DistributedStrategy
 
 
 class HorovodStrategy(DistributedStrategy):
@@ -25,6 +25,12 @@ class HorovodStrategy(DistributedStrategy):
 
     def rank(self) -> int:
         return hvd.rank()
+
+    def local_size(self) -> int:
+        return hvd.local_size()
+
+    def local_rank(self) -> int:
+        return hvd.local_rank()
 
     def barrier(self):
         return hvd.allreduce(torch.as_tensor([0], dtype=torch.int))
