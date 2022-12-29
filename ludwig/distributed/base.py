@@ -75,6 +75,18 @@ class DistributedStrategy(ABC):
     def gather_all_tensors_fn(cls) -> Optional[Callable]:
         pass
 
+    def return_first(self, fn: Callable) -> Callable:
+        """Wraps function so results are only returned by the first (coordinator) rank.
+
+        The purpose of this function is to reduce network overhead.
+        """
+
+        def wrapped(*args, **kwargs):
+            res = fn(*args, **kwargs)
+            return res if self.rank() == 0 else None
+
+        return wrapped
+
 
 class LocalStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:

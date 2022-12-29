@@ -57,7 +57,6 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
-from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
@@ -1377,8 +1376,8 @@ class RemoteTrainer(Trainer):
         super().__init__(**kwargs)
 
         # Only return results from rank 0 to reduce network overhead
-        self.train = return_first(self.train)
-        self.train_online = return_first(self.train_online)
+        self.train = self.distributed.return_first(self.train)
+        self.train_online = self.distributed.return_first(self.train_online)
 
 
 learning_rate_scale_fns = {
