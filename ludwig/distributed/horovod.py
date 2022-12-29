@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 
 import horovod.torch as hvd
 import torch
@@ -71,8 +71,13 @@ class HorovodStrategy(DistributedStrategy):
         return gather_all_tensors
 
     @classmethod
-    def get_ray_trainer_name(cls) -> Optional[str]:
-        return "horovod"
+    def get_ray_trainer_backend(cls, nics: Optional[List[str]] = None, **kwargs) -> Optional[Any]:
+        from ray.train.horovod import HorovodConfig
+
+        # Explicitly override network interfaces Horovod will attempt to use
+        if nics is not None:
+            nics = set(nics)
+        return HorovodConfig(nics=nics)
 
     def shutdown(self):
         hvd.shutdown()

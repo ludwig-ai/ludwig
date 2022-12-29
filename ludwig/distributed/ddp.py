@@ -74,10 +74,13 @@ class DDPStrategy(DistributedStrategy):
         return gather_all_tensors
 
     @classmethod
-    def get_ray_trainer_name(cls) -> Optional[str]:
+    def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         return "torch"
 
     def shutdown(self):
+        # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers gets stuck,
+        # we should figure out a way to make this safe to call multiple times
+        # dist.destroy_process_group()
         pass
 
 

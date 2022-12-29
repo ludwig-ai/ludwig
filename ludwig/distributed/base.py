@@ -77,7 +77,7 @@ class DistributedStrategy(ABC):
 
     @classmethod
     @abstractmethod
-    def get_ray_trainer_name(cls) -> Optional[str]:
+    def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         pass
 
     @abstractmethod
@@ -152,7 +152,7 @@ class LocalStrategy(DistributedStrategy):
         return None
 
     @classmethod
-    def get_ray_trainer_name(cls) -> Optional[str]:
+    def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         return None
 
     def shutdown(self):

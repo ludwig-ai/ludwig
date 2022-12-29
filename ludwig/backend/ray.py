@@ -122,19 +122,11 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     else:
         num_workers = _num_nodes()
 
-    # Explicitly override network interfaces Horovod will attempt to use
-    nics = kwargs.pop("nics", None)
-    if nics is not None:
-        nics = set(nics)
-
     strategy = kwargs.pop("strategy", "horovod")
-    if strategy == "horovod":
-        # Horovod is an optional import, so avoid importing at the top.
-        from ray.train.horovod import HorovodConfig
+    backend = get_dist_strategy(strategy).get_ray_trainer_backend(**kwargs)
 
-        backend = HorovodConfig(nics=nics)
-    else:
-        backend = get_dist_strategy(strategy).get_ray_trainer_name()
+    # Remove params used by strategy but not the trainer here
+    kwargs.pop("nics", None)
 
     defaults = dict(
         backend=backend,
