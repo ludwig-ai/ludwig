@@ -12,6 +12,9 @@ from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_availa
 
 
 class HorovodStrategy(DistributedStrategy):
+    def __init__(self):
+        hvd.init()
+
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model
 
@@ -66,3 +69,10 @@ class HorovodStrategy(DistributedStrategy):
     @classmethod
     def gather_all_tensors_fn(cls) -> Optional[Callable]:
         return gather_all_tensors
+
+    @classmethod
+    def get_ray_trainer_name(cls) -> Optional[str]:
+        return "horovod"
+
+    def shutdown(self):
+        hvd.shutdown()

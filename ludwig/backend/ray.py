@@ -36,6 +36,8 @@ from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
+from ludwig.distributed import get_current_dist_strategy, get_dist_strategy
+
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
@@ -108,19 +110,7 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
-def initialize_horovod():
-    # Guarded import here to avoid causing import errors when doing hyperopt without
-    # distributed training, where Horovod is an optional dependency.
-    from ludwig.utils.horovod_utils import initialize_horovod as _initialize_horovod
-
-    return _initialize_horovod()
-
-
 def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
-    # Horovod an optional import, so avoid importing at the top.
-    from ray.train.horovod import HorovodConfig
-    # from ray.train.torch import TorchConfig
-
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -137,8 +127,17 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     if nics is not None:
         nics = set(nics)
 
+    ttype = kwargs.pop("type", "horovod")
+    if ttype == "horovod":
+        # Horovod is an optional import, so avoid importing at the top.
+        from ray.train.horovod import HorovodConfig
+
+        backend = HorovodConfig(nics=nics)
+    else:
+        backend = get_dist_strategy(ttype).get_ray_trainer_name()
+
     defaults = dict(
-        backend=HorovodConfig(nics=nics),
+        backend=backend,
         num_workers=num_workers,
         use_gpu=use_gpu,
         resources_per_worker={
@@ -197,9 +196,9 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
+    distributed = get_current_dist_strategy(allow_local=False)
     try:
-        initialize_pytorch(horovod=hvd)
+        initialize_pytorch(distributed=distributed)
 
         train_shard = RayDatasetShard(
             rt.get_dataset_shard("train"),
@@ -235,7 +234,7 @@ def train_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, horovod=hvd, report_tqdm_to_ray=True, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
         if results is not None:
@@ -248,7 +247,7 @@ def train_fn(
         train_results = results, trainer.validation_field, trainer.validation_metric
 
     finally:
-        hvd.shutdown()
+        distributed.shutdown()
     return train_results
 
 
@@ -264,9 +263,9 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
+    distributed = get_current_dist_strategy(allow_local=False)
     try:
-        initialize_pytorch(horovod=hvd)
+        initialize_pytorch(distributed=distributed)
 
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
@@ -278,11 +277,11 @@ def tune_batch_size_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, distributed=distributed, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
-        hvd.shutdown()
+        distributed.shutdown()
 
 
 @DeveloperAPI
@@ -497,16 +496,16 @@ def legacy_train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    initialize_pytorch(horovod=hvd)
+    distributed = get_current_dist_strategy(allow_local=False)
+    initialize_pytorch(distributed == distributed)
 
     train_shard = RayDatasetShard(
-        train_shards[hvd.rank()],
+        train_shards[distributed.rank()],
         features,
         training_set_metadata,
     )
 
-    val_shard = val_shards[hvd.rank()] if val_shards else None
+    val_shard = val_shards[distributed.rank()] if val_shards else None
     if val_shard is not None:
         val_shard = RayDatasetShard(
             val_shard,
@@ -514,7 +513,7 @@ def legacy_train_fn(
             training_set_metadata,
         )
 
-    test_shard = test_shards[hvd.rank()] if test_shards else None
+    test_shard = test_shards[distributed.rank()] if test_shards else None
     if test_shard is not None:
         test_shard = RayDatasetShard(
             test_shard,
@@ -528,8 +527,8 @@ def legacy_train_fn(
 
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
-        horovod = initialize_horovod()
-        super().__init__(horovod=horovod, **kwargs)
+        distributed = get_current_dist_strategy(allow_local=False)
+        super().__init__(distributed=distributed, **kwargs)
 
 
 @register_ray_trainer("ecd_ray_legacy")
@@ -602,9 +601,9 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
+    distributed = get_current_dist_strategy(allow_local=False)
     try:
-        initialize_pytorch(horovod=hvd)
+        initialize_pytorch(distributed=distributed)
 
         eval_shard = RayDatasetShard(
             rt.get_dataset_shard("eval"),
@@ -616,11 +615,11 @@ def eval_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        predictor = RemotePredictor(model=model, horovod=hvd, report_tqdm_to_ray=True, **predictor_kwargs)
+        predictor = RemotePredictor(model=model, distributed=distributed, report_tqdm_to_ray=True, **predictor_kwargs)
         return predictor.batch_evaluation(eval_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
-        hvd.shutdown()
+        distributed.shutdown()
 
 
 class RayPredictor(BasePredictor):

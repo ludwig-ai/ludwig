@@ -69,6 +69,13 @@ class DDPStrategy(DistributedStrategy):
     def gather_all_tensors_fn(cls) -> Optional[Callable]:
         return gather_all_tensors
 
+    @classmethod
+    def get_ray_trainer_name(cls) -> Optional[str]:
+        return "torch"
+
+    def shutdown(self):
+        pass
+
 
 def local_rank_and_size() -> Tuple[int, int]:
     # Gather the rank and hostnames from every worker so we can count up how many belong to the same host, which

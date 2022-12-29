@@ -75,6 +75,15 @@ class DistributedStrategy(ABC):
     def gather_all_tensors_fn(cls) -> Optional[Callable]:
         pass
 
+    @abstractmethod
+    @classmethod
+    def get_ray_trainer_name(cls) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    def shutdown(self):
+        pass
+
     def return_first(self, fn: Callable) -> Callable:
         """Wraps function so results are only returned by the first (coordinator) rank.
 
@@ -141,3 +150,10 @@ class LocalStrategy(DistributedStrategy):
     @classmethod
     def gather_all_tensors_fn(cls) -> Optional[Callable]:
         return None
+
+    @classmethod
+    def get_ray_trainer_name(cls) -> Optional[str]:
+        return None
+
+    def shutdown(self):
+        pass
