@@ -122,8 +122,8 @@ class Trainer(BaseTrainer):
         :param report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting
         :param random_seed: Default initialization for the random seeds (default: 42).
         :type random_seed: Float
-        :param horovod: Horovod parameters (default: None).
-        :type horovod: dict
+        :param distributed: Distributed strategy (default: None).
+        :type distributed: `DistributedStrategy`
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
         :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters

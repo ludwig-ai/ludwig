@@ -134,7 +134,7 @@ class RayDataset(Dataset):
         should_shuffle=True,
         seed=0,
         ignore_last=False,
-        horovod=None,
+        distributed=None,
     ):
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
@@ -231,7 +231,7 @@ class RayDatasetShard(Dataset):
         self.epoch_iter = dataset_shard.iter_epochs()
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
         yield RayDatasetBatcher(
             self.epoch_iter,
             self.features,
