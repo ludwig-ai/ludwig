@@ -694,8 +694,7 @@ class Trainer(BaseTrainer):
         if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
             logger.info("Resuming training from previous run.")
             progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-            if self.is_coordinator():
-                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+            self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
         else:
             logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
