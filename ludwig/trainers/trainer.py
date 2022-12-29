@@ -50,6 +50,7 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
+from ludwig.trainers.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
@@ -91,7 +92,7 @@ class Trainer(BaseTrainer):
         callbacks: List = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
-        horovod: Optional[Dict] = None,
+        distributed: Optional[DistributedStrategy] = None,
         device: Optional[str] = None,
         **kwargs,
     ):
@@ -173,7 +174,7 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
-        self.horovod = horovod
+        self.distributed = distributed if distributed is not None else LocalStrategy()
         self.received_sigint = False
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
@@ -189,7 +190,7 @@ class Trainer(BaseTrainer):
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
+        self.optimizer = create_optimizer(model, distributed=self.distributed, optimizer_config=optimizer_config)
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # Setup for automatic mixed precision (AMP)
@@ -270,11 +271,10 @@ class Trainer(BaseTrainer):
         else:
             loss.backward()
 
-        if self.horovod:
-            # Wait for gradient aggregation to complete before clipping the gradients
-            # When using AMP, we need to do this before unscaling.
-            # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
-            self.optimizer.synchronize()
+        # Wait for gradient aggregation to complete before clipping the gradients
+        # When using AMP, we need to do this before unscaling.
+        # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
+        self.distributed.wait_optimizer_synced(self.optimizer)
 
         if self.use_amp:
             # In-place unscaling of all gradients before weights update
@@ -286,7 +286,7 @@ class Trainer(BaseTrainer):
         self.clip_grads(variables)
 
         # Apply gradient updates
-        with self.optimizer.skip_synchronize() if self.horovod else contextlib.nullcontext():
+        with self.distributed.prepare_optimizer_update(self.optimizer):
             # Because we already synchronized above, we skip doing so here
             if self.use_amp:
                 self.scaler.step(self.optimizer)
@@ -316,8 +316,7 @@ class Trainer(BaseTrainer):
 
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""
-        if self.horovod:
-            base_learning_rate *= self.lr_scale_fn(self.horovod.size())
+        base_learning_rate *= self.lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(base_learning_rate)
 
@@ -711,12 +710,11 @@ class Trainer(BaseTrainer):
                 output_features=output_features,
             )
 
-        if self.horovod:
-            # Horovod: broadcast initial variable states from rank 0 to all other processes.
-            # This is necessary to ensure consistent initialization of all workers when
-            # training is started with random weights or restored from a checkpoint.
-            self.horovod.broadcast_parameters(self.model.state_dict(), root_rank=0)
-            self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
+        # Horovod: broadcast initial variable states from rank 0 to all other processes.
+        # This is necessary to ensure consistent initialization of all workers when
+        # training is started with random weights or restored from a checkpoint.
+        self.distributed.sync_model(self.model)
+        self.distributed.sync_optimizer(self.optimizer)
 
         set_random_seed(self.random_seed)
 
@@ -725,7 +723,7 @@ class Trainer(BaseTrainer):
                 batch_size=self.batch_size,
                 should_shuffle=self.should_shuffle,
                 seed=self.random_seed,
-                horovod=self.horovod,
+                distributed=self.distributed,
                 ignore_last=True,
             ) as batcher:
                 # ================ Training Loop ================
@@ -884,15 +882,15 @@ class Trainer(BaseTrainer):
                     self.staircase,
                 )
 
-            if self.horovod:
+            if self.distributed:
                 current_learning_rate = learning_rate_warmup_distributed(
                     current_learning_rate,
                     progress_tracker.epoch,
                     self.learning_rate_warmup_epochs,
-                    self.horovod.size(),
+                    self.distributed.size(),
                     batcher.step,
                     batcher.steps_per_epoch,
-                ) * self.lr_scale_fn(self.horovod.size())
+                ) * self.lr_scale_fn(self.distributed.size())
             else:
                 current_learning_rate = learning_rate_warmup(
                     current_learning_rate,
@@ -971,7 +969,10 @@ class Trainer(BaseTrainer):
     def train_online(self, dataset):
         self.model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            distributed=self.distributed,
+            ignore_last=True,
         ) as batcher:
             # training step loop
             progress_bar_config = {
@@ -1017,7 +1018,7 @@ class Trainer(BaseTrainer):
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
-            self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
@@ -1153,8 +1154,7 @@ class Trainer(BaseTrainer):
                     break
 
         should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
-        if self.horovod:
-            should_early_stop = self.horovod.allreduce(should_early_stop)
+        should_early_stop = self.distributed.allreduce(should_early_stop)
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
@@ -1205,11 +1205,12 @@ class Trainer(BaseTrainer):
         if self.is_coordinator():
             logger.info(f"Loading progress tracker for model: {training_progress_tracker_path}")
             progress_tracker_dict = load_json(training_progress_tracker_path)
-        if self.horovod:
-            logger.debug("Broadcasting model progress tracker dict to all workers")
-            progress_tracker_dict = self.horovod.broadcast_object(
-                progress_tracker_dict, name="broadcast_progress_tracker"
-            )
+
+        logger.debug("Broadcasting model progress tracker dict to all workers")
+        progress_tracker_dict = self.distributed.broadcast_object(
+            progress_tracker_dict, name="broadcast_progress_tracker"
+        )
+
         progress_tracker = ProgressTracker.load(progress_tracker_dict)
         return progress_tracker
 
@@ -1356,20 +1357,14 @@ class Trainer(BaseTrainer):
                             )
 
     def is_coordinator(self):
-        if not self.horovod:
-            return True
-        return self.horovod.rank() == 0
+        return self.distributed.rank() == 0
 
     @property
     def local_rank(self) -> int:
-        if not self.horovod:
-            return 0
-        return self.horovod.local_rank()
+        return self.distributed.local_rank()
 
     def barrier(self):
-        if not self.horovod:
-            return
-        self.horovod.allreduce(torch.as_tensor([0], dtype=torch.int))
+        self.distributed.allreduce(torch.as_tensor([0], dtype=torch.int))
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():

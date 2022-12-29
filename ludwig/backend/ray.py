@@ -119,7 +119,7 @@ def initialize_horovod():
 def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     # Horovod an optional import, so avoid importing at the top.
     from ray.train.horovod import HorovodConfig
-    from ray.train.torch import TorchConfig
+    # from ray.train.torch import TorchConfig
 
     kwargs = copy.deepcopy(kwargs)
 
