@@ -38,10 +38,12 @@ class DDPStrategy(DistributedStrategy):
         return dist.barrier()
 
     def allreduce(self, t: torch.Tensor) -> torch.Tensor:
-        return dist.all_reduce(t)
+        dist.all_reduce(t)
+        return t
 
     def broadcast(self, t: torch.Tensor) -> torch.Tensor:
-        return dist.broadcast(t)
+        dist.broadcast(t)
+        return t
 
     def sync_model(self, model: nn.Module):
         # TODO(travis): open question if this is needed to ensure all workers using same weights
@@ -51,8 +53,10 @@ class DDPStrategy(DistributedStrategy):
         # TODO(travis): open question if this is needed to ensure all workers using same optimizer state
         pass
 
-    def broadcast_object(self, v: Any) -> Any:
-        return dist.broadcast_object_list([v])[0]
+    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
+        output = [v]
+        dist.broadcast_object_list(output)
+        return output[0]
 
     def wait_optimizer_synced(self, optimizer: Optimizer):
         pass

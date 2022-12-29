@@ -53,7 +53,7 @@ class DistributedStrategy(ABC):
         pass
 
     @abstractmethod
-    def broadcast_object(self, v: Any) -> Any:
+    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
         pass
 
     @abstractmethod
@@ -65,18 +65,18 @@ class DistributedStrategy(ABC):
     def prepare_optimizer_update(self, optimizer: Optimizer):
         pass
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def is_available(cls) -> bool:
         pass
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def gather_all_tensors_fn(cls) -> Optional[Callable]:
         pass
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def get_ray_trainer_name(cls) -> Optional[str]:
         pass
 
@@ -131,7 +131,7 @@ class LocalStrategy(DistributedStrategy):
     def sync_optimizer(self, optimizer: Optimizer):
         pass
 
-    def broadcast_object(self, v: Any) -> Any:
+    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
         return v
 
     def wait_optimizer_synced(self, optimizer: Optimizer):

@@ -52,8 +52,8 @@ class HorovodStrategy(DistributedStrategy):
     def sync_optimizer(self, optimizer: Optimizer):
         hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 
-    def broadcast_object(self, v: Any) -> Any:
-        return hvd.broadcast_object(v)
+    def broadcast_object(self, v: Any, name: Optional[str] = None) -> Any:
+        return hvd.broadcast_object(v, name=name)
 
     def wait_optimizer_synced(self, optimizer: _DistributedOptimizer):
         optimizer.synchronize()

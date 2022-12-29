@@ -196,7 +196,7 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    distributed = get_current_dist_strategy(allow_local=False)
+    distributed = get_current_dist_strategy(allow_local=False)()
     try:
         initialize_pytorch(distributed=distributed)
 
@@ -263,7 +263,7 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    distributed = get_current_dist_strategy(allow_local=False)
+    distributed = get_current_dist_strategy(allow_local=False)()
     try:
         initialize_pytorch(distributed=distributed)
 
@@ -496,7 +496,7 @@ def legacy_train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    distributed = get_current_dist_strategy(allow_local=False)
+    distributed = get_current_dist_strategy(allow_local=False)()
     initialize_pytorch(distributed == distributed)
 
     train_shard = RayDatasetShard(
@@ -527,7 +527,7 @@ def legacy_train_fn(
 
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
-        distributed = get_current_dist_strategy(allow_local=False)
+        distributed = get_current_dist_strategy(allow_local=False)()
         super().__init__(distributed=distributed, **kwargs)
 
 
@@ -601,7 +601,7 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    distributed = get_current_dist_strategy(allow_local=False)
+    distributed = get_current_dist_strategy(allow_local=False)()
     try:
         initialize_pytorch(distributed=distributed)
 
