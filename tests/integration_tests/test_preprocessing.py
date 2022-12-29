@@ -484,6 +484,7 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
     # Check that a warning is logged.
     assert "unconventional boolean value" in caplog.text
 
+
 # TODO: (jimthompson5802) discuss with tgaddair
 # @pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
 # def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
