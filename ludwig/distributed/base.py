@@ -1,6 +1,6 @@
 import contextlib
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable, Optional
 
 import torch
 from torch import nn
@@ -65,6 +65,16 @@ class DistributedStrategy(ABC):
     def prepare_optimizer_update(self, optimizer: Optimizer):
         pass
 
+    @abstractmethod
+    @classmethod
+    def is_available(cls) -> bool:
+        pass
+
+    @abstractmethod
+    @classmethod
+    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+        pass
+
 
 class LocalStrategy(DistributedStrategy):
     def wrap_model(self, model: nn.Module) -> nn.Module:
@@ -109,3 +119,13 @@ class LocalStrategy(DistributedStrategy):
     @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):
         yield
+
+    @classmethod
+    def is_available(cls) -> bool:
+        # While this strategy is always an option, it is not "distributed" which is the meaning of availability
+        # in this context.
+        return False
+
+    @classmethod
+    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+        return None

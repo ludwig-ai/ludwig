@@ -1,5 +1,5 @@
 import contextlib
-from typing import Any
+from typing import Any, Callable, Optional
 
 import horovod.torch as hvd
 import torch
@@ -8,6 +8,7 @@ from torch import nn
 from torch.optim import Optimizer
 
 from ludwig.distributed.base import DistributedStrategy
+from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
 
 
 class HorovodStrategy(DistributedStrategy):
@@ -57,3 +58,11 @@ class HorovodStrategy(DistributedStrategy):
     def prepare_optimizer_update(self, optimizer: _DistributedOptimizer):
         with optimizer.skip_synchronize():
             yield
+
+    @classmethod
+    def is_available(cls) -> bool:
+        return is_distributed_available()
+
+    @classmethod
+    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+        return gather_all_tensors

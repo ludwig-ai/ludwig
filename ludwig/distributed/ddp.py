@@ -1,12 +1,13 @@
 import contextlib
 import socket
-from typing import Any, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 import torch
 import torch.distributed as dist
 from torch import nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Optimizer
+from torchmetrics.utilities.distributed import gather_all_tensors
 
 from ludwig.distributed.base import DistributedStrategy
 
@@ -59,6 +60,14 @@ class DDPStrategy(DistributedStrategy):
     @contextlib.contextmanager
     def prepare_optimizer_update(self, optimizer: Optimizer):
         yield
+
+    @classmethod
+    def is_available(cls) -> bool:
+        return dist.is_available() and dist.is_initialized()
+
+    @classmethod
+    def gather_all_tensors_fn(cls) -> Optional[Callable]:
+        return gather_all_tensors
 
 
 def local_rank_and_size() -> Tuple[int, int]:
