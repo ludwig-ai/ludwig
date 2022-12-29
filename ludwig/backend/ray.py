@@ -127,14 +127,14 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     if nics is not None:
         nics = set(nics)
 
-    ttype = kwargs.pop("type", "horovod")
-    if ttype == "horovod":
+    strategy = kwargs.pop("strategy", "horovod")
+    if strategy == "horovod":
         # Horovod is an optional import, so avoid importing at the top.
         from ray.train.horovod import HorovodConfig
 
         backend = HorovodConfig(nics=nics)
     else:
-        backend = get_dist_strategy(ttype).get_ray_trainer_name()
+        backend = get_dist_strategy(strategy).get_ray_trainer_name()
 
     defaults = dict(
         backend=backend,

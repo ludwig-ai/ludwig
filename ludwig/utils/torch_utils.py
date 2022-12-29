@@ -279,7 +279,7 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    distributed: Optional[DistributedStrategy] = None,  # Optional["horovod.torch"]
+    distributed: Optional[DistributedStrategy] = None,
 ):
     use_distributed = distributed is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_distributed)

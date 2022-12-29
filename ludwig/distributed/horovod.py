@@ -1,11 +1,12 @@
 import contextlib
 from typing import Any, Callable, Optional
 
-import horovod.torch as hvd
 import torch
-from horovod.torch.optimizer import _DistributedOptimizer
 from torch import nn
 from torch.optim import Optimizer
+
+import horovod.torch as hvd
+from horovod.torch.optimizer import _DistributedOptimizer
 
 from ludwig.distributed.base import DistributedStrategy
 from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
