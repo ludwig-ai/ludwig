@@ -36,6 +36,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
+from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -50,7 +51,6 @@ from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.trainers.base import BaseTrainer
 from ludwig.trainers.registry import register_trainer
-from ludwig.trainers.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
