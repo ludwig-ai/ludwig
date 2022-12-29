@@ -6,7 +6,7 @@ from torch import nn
 from torch.optim import Optimizer
 
 
-class DistributedBase(ABC):
+class DistributedStrategy(ABC):
     @abstractmethod
     def wrap_model(self, model: nn.Module) -> nn.Module:
         pass
@@ -24,14 +24,6 @@ class DistributedBase(ABC):
         pass
 
     @abstractmethod
-    def local_size(self) -> int:
-        pass
-
-    @abstractmethod
-    def local_rank(self) -> int:
-        pass
-
-    @abstractmethod
     def barrier(self):
         pass
 
@@ -44,11 +36,11 @@ class DistributedBase(ABC):
         pass
 
     @abstractmethod
-    def sync_model(self, model: nn.Module) -> nn.Module:
+    def sync_model(self, model: nn.Module):
         pass
 
     @abstractmethod
-    def sync_optimizer(self, optimizer: Optimizer) -> Optimizer:
+    def sync_optimizer(self, optimizer: Optimizer):
         pass
 
     @abstractmethod
