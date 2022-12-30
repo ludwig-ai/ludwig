@@ -16,20 +16,23 @@ from ludwig.export import export_mlflow
 from tests.integration_tests.utils import category_feature, FakeRemoteBackend, generate_data, sequence_feature
 
 
-def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, test_data, tmpdir):
-    exp_name = "mlflow_test"
+def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, test_data, tmpdir, exp_name=None):
+    ludwig_exp_name = "mlflow_test"
     callback = MlflowCallback()
     wrapped_callback = mock.Mock(wraps=callback)
 
     model = LudwigModel(config, callbacks=[wrapped_callback], backend=FakeRemoteBackend())
-    model.train(training_set=training_data, validation_set=val_data, test_set=test_data, experiment_name=exp_name)
+    model.train(
+        training_set=training_data, validation_set=val_data, test_set=test_data, experiment_name=ludwig_exp_name
+    )
     expected_df, _ = model.predict(test_data)
 
     # Check mlflow artifacts
     assert callback.experiment_id is not None
     assert callback.run is not None
 
-    experiment = mlflow.get_experiment_by_name(exp_name)
+    mlflow_exp_name = exp_name or ludwig_exp_name
+    experiment = mlflow.get_experiment_by_name(mlflow_exp_name)
     assert experiment.experiment_id == callback.experiment_id
 
     df = mlflow.search_runs([experiment.experiment_id])
@@ -39,7 +42,8 @@ def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, tes
     assert run_id == callback.run.info.run_id
 
     run = mlflow.get_run(run_id)
-    assert run.info.status == "FINISHED"
+    expected_status = "FINISHED" if exp_name is None else "RUNNING"
+    assert run.info.status == expected_status
     assert wrapped_callback.on_trainer_train_setup.call_count == 1
     assert wrapped_callback.on_trainer_train_teardown.call_count == 1
 
@@ -116,14 +120,15 @@ def test_mlflow(tmpdir, external_run):
     mlflow.set_tracking_uri(mlflow_uri)
     client = MlflowClient(tracking_uri=mlflow_uri)
 
+    exp_name = None
     run = None
     if external_run:
         # Start a run here and make sure it's still active when training completes
-        run = mlflow.start_run(
-            experiment_id=f"ext_experiment_{uuid.uuid4().hex}", run_name=f"ext_run_{uuid.uuid4().hex}"
-        )
+        exp_name = f"ext_experiment_{uuid.uuid4().hex}"
+        exp_id = mlflow.create_experiment(name=exp_name)
+        run = mlflow.start_run(experiment_id=exp_id, run_name=f"ext_run_{uuid.uuid4().hex}")
 
-    callback_run = run_mlflow_callback_test(client, config, data_csv, val_csv, test_csv, tmpdir)
+    callback_run = run_mlflow_callback_test(client, config, data_csv, val_csv, test_csv, tmpdir, exp_name=exp_name)
 
     if not external_run:
         run_mlflow_callback_test_without_artifacts(client, config, data_csv, val_csv, test_csv)
