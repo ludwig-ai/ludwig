@@ -14,6 +14,7 @@ from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_availa
 class HorovodStrategy(DistributedStrategy):
     def __init__(self):
         hvd.init()
+        print("\n!!! HOROVOD BACKEND !!!\n")
 
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model

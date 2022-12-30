@@ -15,6 +15,7 @@ from ludwig.distributed.base import DistributedStrategy
 class DDPStrategy(DistributedStrategy):
     def __init__(self):
         self._local_rank, self._local_size = local_rank_and_size()
+        print("\n!!! DDP BACKEND !!!\n")
 
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return DDP(model)
@@ -105,4 +106,5 @@ def local_rank_and_size() -> Tuple[int, int]:
             if other_rank < rank:
                 local_rank += 1
 
+    print("DETECTED", rank, host, local_rank, local_size, output)
     return local_rank, local_size
