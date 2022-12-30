@@ -255,7 +255,7 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    distributed = get_current_dist_strategy(allow_local=False)()
+    distributed = get_current_dist_strategy(allow_local=True)()
     try:
         initialize_pytorch(distributed=distributed)
 
