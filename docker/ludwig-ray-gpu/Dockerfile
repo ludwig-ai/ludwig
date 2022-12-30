@@ -35,16 +35,18 @@ RUN DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     tzdata \
     rsync \
     vim
+
+# Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
+# https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
+RUN sudo apt-get update && sudo apt install --allow-change-held-packages --allow-downgrades -y \
+    libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
+
 RUN pip install -U pip
 
 WORKDIR /ludwig
 
-RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
-
-# Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
-# https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
-RUN sudo apt install --allow-change-held-packages --allow-downgrades -y \
-    libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
+# RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+RUN pip install numpy --pre torch torchtext torchvision torchaudio --force-reinstall --extra-index-url https://download.pytorch.org/whl/nightly/cu116
 
 COPY . .
 RUN HOROVOD_GPU_OPERATIONS=NCCL \
