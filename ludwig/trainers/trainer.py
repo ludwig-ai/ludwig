@@ -190,7 +190,9 @@ class Trainer(BaseTrainer):
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        self.optimizer = create_optimizer(model, distributed=self.distributed, optimizer_config=optimizer_config)
+        self.optimizer = create_optimizer(
+            self.dist_model, distributed=self.distributed, optimizer_config=optimizer_config
+        )
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # Setup for automatic mixed precision (AMP)
