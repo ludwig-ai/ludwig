@@ -61,9 +61,9 @@ jobs:
       fail-fast: false
       matrix:
         docker-image:
-          - ludwig
-          - ludwig-gpu
-          - ludwig-ray
+          # - ludwig
+          # - ludwig-gpu
+          # - ludwig-ray
           - ludwig-ray-gpu
 
     steps:
