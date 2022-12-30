@@ -1,7 +1,7 @@
 import os
 import shutil
-from unittest import mock
 import uuid
+from unittest import mock
 
 import mlflow
 import pandas as pd
