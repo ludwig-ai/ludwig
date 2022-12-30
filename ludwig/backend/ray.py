@@ -238,8 +238,13 @@ def train_fn(
 
         train_results = results, trainer.validation_field, trainer.validation_metric
 
+    except Exception:
+        logger.exception("Exception raised during training by one of the workers")
+        raise
+
     finally:
         distributed.shutdown()
+
     return train_results
 
 

@@ -183,6 +183,11 @@ class Trainer(BaseTrainer):
 
         self.model = model
         self.model = self.model.to(self.device)
+
+        # Some frameworks like DDP will wrap the model in a new interface that loses the methods from ECD. To
+        # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
+        # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
+        # so it is safe to train with the wrapped model and save the best model from the ECD model.
         self.dist_model = self.distributed.wrap_model(self.model)
 
         # ================ Optimizer tuning ================
@@ -267,7 +272,7 @@ class Trainer(BaseTrainer):
             )
 
         # Begin the backward pass
-        variables = self.model.parameters()
+        variables = self.dist_model.parameters()
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
@@ -373,7 +378,7 @@ class Trainer(BaseTrainer):
         Return:
             Median throughput in samples / sec.
         """
-        self.model.train()  # Sets model training mode.
+        self.dist_model.train()  # Sets model training mode.
         durations = []
         for _ in range(total_steps):
             self.model.reset_metrics()
@@ -680,7 +685,7 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint_manager = None
-        checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
+        checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer)
         if self.is_coordinator() and not self.skip_save_progress:
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
@@ -716,7 +721,7 @@ class Trainer(BaseTrainer):
         # Horovod: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
         # training is started with random weights or restored from a checkpoint.
-        self.distributed.sync_model(self.model)
+        self.distributed.sync_model(self.dist_model)
         self.distributed.sync_optimizer(self.optimizer)
 
         set_random_seed(self.random_seed)
@@ -774,7 +779,7 @@ class Trainer(BaseTrainer):
                     start_time = time.time()
 
                     # Reset the metrics at the start of the next epoch
-                    self.model.train()  # Sets model to training mode.
+                    self.dist_model.train()  # Sets model to training mode.
                     self.model.reset_metrics()
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
@@ -970,7 +975,7 @@ class Trainer(BaseTrainer):
         return False
 
     def train_online(self, dataset):
-        self.model.train()  # Sets model training mode.
+        self.dist_model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
             batch_size=self.batch_size,
             should_shuffle=self.should_shuffle,

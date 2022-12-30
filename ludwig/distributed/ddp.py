@@ -78,8 +78,10 @@ class DDPStrategy(DistributedStrategy):
         return "torch"
 
     def shutdown(self):
-        # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers gets stuck,
-        # we should figure out a way to make this safe to call multiple times
+        # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers raises an
+        # exception and the other makes a collective op. We should figure out a way to make this safe to call
+        # multiple times. It looks like there is a fix we can make use of when we upgrade to Ray 2.1:
+        # https://discuss.ray.io/t/torchtrainer-hangs-when-only-1-worker-raises-error/7447/11
         # dist.destroy_process_group()
         pass
 
