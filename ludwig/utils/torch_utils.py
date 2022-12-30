@@ -10,7 +10,6 @@ from torch import nn
 from torch.nn import Module, ModuleDict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.distributed.base import DistributedStrategy
 from ludwig.utils.strings_utils import SpecialSymbol
 
 _TORCH_INIT_PARAMS: Optional[Tuple] = None
@@ -279,10 +278,10 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    distributed: Optional[DistributedStrategy] = None,
+    local_rank: int = 0,
+    local_size: int = 1,
 ):
-    use_distributed = distributed is not None
-    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_distributed)
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, local_rank, local_size)
     if _TORCH_INIT_PARAMS is not None:
         if _TORCH_INIT_PARAMS != param_tuple:
             warnings.warn(
@@ -302,17 +301,17 @@ def initialize_pytorch(
             torch.backends.cudnn.benchmark = False
 
     gpu_device_count = torch.cuda.device_count()
-    if distributed is not None and gpus is None:
-        if 0 < gpu_device_count < distributed.local_size():
+    if local_size > 1 and gpus is None:
+        if 0 < gpu_device_count < local_size:
             warnings.warn(
                 f"Distributed: disabling GPU support! This host is running with "
-                f"{distributed.local_size()} worker processes but only {gpu_device_count} "
+                f"{local_size} worker processes but only {gpu_device_count} "
                 f"GPUs. To enable GPU training, reduce the number of worker processes "
                 f"on this host to match the number of GPUs."
             )
             gpus = [-1]
         else:
-            gpus = [distributed.local_rank()]
+            gpus = [local_rank]
 
     if isinstance(gpus, int):
         gpus = [gpus]

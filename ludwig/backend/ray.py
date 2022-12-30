@@ -180,6 +180,10 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
+def _local_size() -> int:
+    return torch.cuda.device_count() if torch.cuda.is_available() else 1
+
+
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
@@ -188,10 +192,9 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
+    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
-        initialize_pytorch(distributed=distributed)
-
         train_shard = RayDatasetShard(
             rt.get_dataset_shard("train"),
             features,
@@ -260,10 +263,9 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
+    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=True)()
     try:
-        initialize_pytorch(distributed=distributed)
-
         pipe = dataset.pipeline(shuffle=False, **data_loader_kwargs)
         train_shard = RayDatasetShard(
             pipe,
@@ -493,8 +495,8 @@ def legacy_train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
+    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
-    initialize_pytorch(distributed == distributed)
 
     train_shard = RayDatasetShard(
         train_shards[distributed.rank()],
@@ -598,10 +600,9 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
+    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
-        initialize_pytorch(distributed=distributed)
-
         eval_shard = RayDatasetShard(
             rt.get_dataset_shard("eval"),
             features,

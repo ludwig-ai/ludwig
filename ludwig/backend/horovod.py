@@ -43,7 +43,9 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
         self._distributed = HorovodStrategy()
 
     def initialize_pytorch(self, *args, **kwargs):
-        initialize_pytorch(*args, distributed=self._distributed, **kwargs)
+        initialize_pytorch(
+            *args, local_rank=self._distributed.local_rank(), local_size=self._distributed.local_size() ** kwargs
+        )
 
     def create_trainer(self, **kwargs) -> "BaseTrainer":  # noqa: F821
         if kwargs.get(MODEL_TYPE, "") == MODEL_GBM:
