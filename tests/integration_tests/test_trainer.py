@@ -11,6 +11,7 @@ import torch
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
 from ludwig.constants import TRAINER
+from ludwig.distributed.horovod import HorovodStrategy
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -38,12 +39,9 @@ try:
     def run_scale_lr(config, data_csv, num_workers, outdir):
         class FakeHorovodBackend(HorovodBackend):
             def initialize(self):
-                import horovod.torch as hvd
-
-                hvd.init()
-
-                self._horovod = mock.Mock(wraps=hvd)
-                self._horovod.size.return_value = num_workers
+                distributed = HorovodStrategy()
+                self._distributed = mock.Mock(wraps=distributed)
+                self._distributed.size.return_value = num_workers
 
         class TestCallback(Callback):
             def __init__(self):

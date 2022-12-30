@@ -659,15 +659,17 @@ class Trainer(BaseTrainer):
 
         # ====== Setup file names =======
         model_hyperparameters_path = None
-        training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
             tensorboard_log_dir = os.path.join(save_path, "logs")
+
+        training_progress_tracker_path = None
+        training_checkpoints_path = None
         if save_path:
             training_progress_tracker_path = os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME)
-        training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
+            training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
 
         self.callback(
             lambda c: c.on_trainer_train_setup(self, save_path, self.is_coordinator()), coordinator_only=False
