@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from typing import Any, Callable, List, Optional
 
 import horovod.torch as hvd
@@ -14,7 +15,7 @@ from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_availa
 class HorovodStrategy(DistributedStrategy):
     def __init__(self):
         hvd.init()
-        print("\n!!! HOROVOD BACKEND !!!\n")
+        logging.info("Using Horovod strategy")
 
     def wrap_model(self, model: nn.Module) -> nn.Module:
         return model

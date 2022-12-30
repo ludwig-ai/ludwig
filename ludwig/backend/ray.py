@@ -122,13 +122,11 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     else:
         num_workers = _num_nodes()
 
-    # strategy = kwargs.pop("strategy", "horovod")
-    strategy = "ddp"
+    strategy = kwargs.pop("strategy", "horovod")
     backend = get_dist_strategy(strategy).get_ray_trainer_backend(**kwargs)
 
     # Remove params used by strategy but not the trainer here
     kwargs.pop("nics", None)
-    kwargs.pop("backend", None)
 
     defaults = dict(
         backend=backend,
