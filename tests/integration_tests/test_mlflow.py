@@ -1,9 +1,11 @@
 import os
 import shutil
 from unittest import mock
+import uuid
 
 import mlflow
 import pandas as pd
+import pytest
 import yaml
 from mlflow.tracking import MlflowClient
 
@@ -71,6 +73,7 @@ def run_mlflow_callback_test(mlflow_client, config, training_data, val_data, tes
     test_df = pd.read_csv(test_data)
     pred_df = loaded_model.predict(test_df)
     assert pred_df.equals(expected_df)
+    return run
 
 
 def run_mlflow_callback_test_without_artifacts(mlflow_client, config, training_data, val_data, test_data):
@@ -87,7 +90,8 @@ def run_mlflow_callback_test_without_artifacts(mlflow_client, config, training_d
     assert len(artifacts) == 0
 
 
-def test_mlflow(tmpdir):
+@pytest.mark.parametrize("external_run", [False, True], ids=["internal_run", "external_run"])
+def test_mlflow(tmpdir, external_run):
     epochs = 2
     batch_size = 8
     num_examples = 32
@@ -112,8 +116,25 @@ def test_mlflow(tmpdir):
     mlflow.set_tracking_uri(mlflow_uri)
     client = MlflowClient(tracking_uri=mlflow_uri)
 
-    run_mlflow_callback_test(client, config, data_csv, val_csv, test_csv, tmpdir)
-    run_mlflow_callback_test_without_artifacts(client, config, data_csv, val_csv, test_csv)
+    run = None
+    if external_run:
+        # Start a run here and make sure it's still active when training completes
+        run = mlflow.start_run(
+            experiment_id=f"ext_experiment_{uuid.uuid4().hex}", run_name=f"ext_run_{uuid.uuid4().hex}"
+        )
+
+    callback_run = run_mlflow_callback_test(client, config, data_csv, val_csv, test_csv, tmpdir)
+
+    if not external_run:
+        run_mlflow_callback_test_without_artifacts(client, config, data_csv, val_csv, test_csv)
+    else:
+        assert run.info.run_id == callback_run.info.run_id
+
+        active_run = mlflow.active_run()
+        assert active_run is not None
+        assert run.info.run_id == active_run.info.run_id
+
+        mlflow.end_run()
 
 
 def test_export_mlflow_local(tmpdir):
