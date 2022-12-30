@@ -188,7 +188,8 @@ class Trainer(BaseTrainer):
         # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
         # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
         # so it is safe to train with the wrapped model and save the best model from the ECD model.
-        self.dist_model = self.distributed.wrap_model(self.model)
+        compiled_model = torch.compile(self.model)
+        self.dist_model = self.distributed.wrap_model(compiled_model)
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
