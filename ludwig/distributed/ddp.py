@@ -17,7 +17,7 @@ class DDPStrategy(DistributedStrategy):
         self._local_rank, self._local_size = local_rank_and_size()
 
     def wrap_model(self, model: nn.Module) -> nn.Module:
-        return DDP(model, device_ids=[self.rank()])
+        return DDP(model)
 
     def wrap_optimizer(self, optimizer: Optimizer, model: nn.Module) -> Optimizer:
         return optimizer
