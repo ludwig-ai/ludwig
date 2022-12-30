@@ -305,7 +305,7 @@ def initialize_pytorch(
     if distributed is not None and gpus is None:
         if 0 < gpu_device_count < distributed.local_size():
             warnings.warn(
-                f"Horovod: disabling GPU support! This host is running with "
+                f"Distributed: disabling GPU support! This host is running with "
                 f"{distributed.local_size()} worker processes but only {gpu_device_count} "
                 f"GPUs. To enable GPU training, reduce the number of worker processes "
                 f"on this host to match the number of GPUs."
