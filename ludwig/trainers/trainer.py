@@ -1161,7 +1161,7 @@ class Trainer(BaseTrainer):
                     early_stop_bool = True
                     break
 
-        should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
+        should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int, device=self.device)
         should_early_stop = self.distributed.allreduce(should_early_stop)
         if should_early_stop.item():
             if self.is_coordinator():
