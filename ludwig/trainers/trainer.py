@@ -183,6 +183,7 @@ class Trainer(BaseTrainer):
 
         self.model = model
         self.model = self.model.to(self.device)
+        self.dist_model = self.distributed.wrap_model(self.model)
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
@@ -231,7 +232,7 @@ class Trainer(BaseTrainer):
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
                 self.optimizer.zero_grad()
-                model_outputs = self.model((inputs, targets))
+                model_outputs = self.dist_model((inputs, targets))
                 loss, all_losses = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
@@ -241,7 +242,7 @@ class Trainer(BaseTrainer):
             self.optimizer.step(closure)
 
             # Obtain model predictions and loss
-            model_outputs = self.model((inputs, targets))
+            model_outputs = self.dist_model((inputs, targets))
             loss, all_losses = self.model.train_loss(
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
@@ -258,7 +259,7 @@ class Trainer(BaseTrainer):
 
         with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
             # Obtain model predictions and loss
-            model_outputs = self.model((inputs, targets))
+            model_outputs = self.dist_model((inputs, targets))
             loss, all_losses = self.model.train_loss(
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
