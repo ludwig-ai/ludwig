@@ -164,6 +164,9 @@ parameters_builders_registry = {
 
 @DeveloperAPI
 def build_synthetic_dataset_df(dataset_size: int, config: ModelConfigDict) -> pd.DataFrame:
+    for feature in config[OUTPUT_FEATURES]:
+        if DECODER not in feature:
+            feature[DECODER] = {}
     features = config[INPUT_FEATURES] + config[OUTPUT_FEATURES]
     df = build_synthetic_dataset(dataset_size, features)
     data = [next(df) for _ in range(dataset_size + 1)]
