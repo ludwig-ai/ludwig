@@ -189,6 +189,8 @@ class Trainer(BaseTrainer):
         # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
         # so it is safe to train with the wrapped model and save the best model from the ECD model.
         compiled_model = torch.compile(self.model)
+        logger.info("Training with dynamo compiled model")
+
         self.dist_model = self.distributed.wrap_model(compiled_model)
 
         # ================ Optimizer tuning ================
