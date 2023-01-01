@@ -858,7 +858,7 @@ class Trainer(BaseTrainer):
         :return: augmented tensor
         """
         feature_input = torch.from_numpy(feature_input)
-        if i_feat.augmentation_pipeline:
+        if hasattr(i_feat, "augmentation_pipeline"):
             feature_input = i_feat.augmentation_pipeline(feature_input)
         return feature_input
 
