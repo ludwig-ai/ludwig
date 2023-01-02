@@ -728,6 +728,7 @@ class Trainer(BaseTrainer):
                 seed=self.random_seed,
                 horovod=self.horovod,
                 ignore_last=True,
+                input_features=self.model.input_features,
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)
@@ -849,19 +850,6 @@ class Trainer(BaseTrainer):
             progress_tracker.test_metrics,
         )
 
-    @staticmethod
-    def do_augmentation(feature_input: np.ndarray, i_feat: InputFeature) -> torch.Tensor:
-        """If augmentation specified for feature, perform augmentation opeation.
-
-        :param feature_input: batch of feature data
-        :param i_feat: feature
-        :return: augmented tensor
-        """
-        feature_input = torch.from_numpy(feature_input)
-        if hasattr(i_feat, "augmentation_pipeline"):
-            feature_input = i_feat.augmentation_pipeline(feature_input)
-        return feature_input
-
     def _train_loop(
         self,
         batcher,
@@ -922,16 +910,9 @@ class Trainer(BaseTrainer):
 
             # Move tensors to cuda here.
             inputs = {
-                i_feat.feature_name: (
-                    self.do_augmentation(np.array(batch[i_feat.proc_column], copy=True), i_feat).to(self.device)
-                )
+                i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
                 for i_feat in self.model.input_features.values()
             }
-            # TODO: clean up code
-            # inputs = {
-            #     i_feat.feature_name: torch.from_numpy(np.array(batch[i_feat.proc_column], copy=True)).to(self.device)
-            #     for i_feat in self.model.input_features.values()
-            # }
             targets = {
                 o_feat.feature_name: torch.from_numpy(np.array(batch[o_feat.proc_column], copy=True)).to(self.device)
                 for o_feat in self.model.output_features.values()
