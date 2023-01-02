@@ -7,7 +7,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.utils import register_decoder_config
-from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
+from ludwig.schema.metadata import DECODER_METADATA
 
 
 @DeveloperAPI
