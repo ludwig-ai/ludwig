@@ -7,7 +7,7 @@ from ludwig.constants import BINARY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, P
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.utils import strings_utils
 
 

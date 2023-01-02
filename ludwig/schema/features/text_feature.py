@@ -51,9 +51,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
-    encoded_in_preprocessing: bool = schema_utils.Boolean(
-        default=False, description="[internal] Whether the features were encoded during preprocessing."
-    )
+    pass
 
 
 @DeveloperAPI

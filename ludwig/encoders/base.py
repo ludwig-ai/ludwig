@@ -32,5 +32,10 @@ class Encoder(LudwigModule, ABC):
         return self.__class__.__name__
 
     @classmethod
-    def is_fixed(cls, config: Dict[str, Any]) -> bool:
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+        """Returns a dict of fixed preprocessing parameters for the encoder if required."""
+        return {}
+
+    @classmethod
+    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
         return False

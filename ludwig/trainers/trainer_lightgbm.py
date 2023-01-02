@@ -367,10 +367,6 @@ class LightGBMTrainer(BaseTrainer):
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
         progress_tracker.last_improvement_steps = self.model.lgbm_model.best_iteration_
 
-        # convert to pytorch for inference
-        self.model.compile()
-        self.model = self.model.to(self.device)
-
         output_features = self.model.output_features
         metrics_names = get_metric_names(output_features)
         output_feature_name = next(iter(output_features))
@@ -674,6 +670,12 @@ class LightGBMTrainer(BaseTrainer):
                     break
         finally:
             # ================ Finished Training ================
+            if not self.model.has_saved(save_path) and self.is_coordinator() and not self.skip_save_model:
+                try:
+                    self.model.save(save_path)
+                except ValueError:
+                    logger.info("No LightGBM model initialized, skipping save")
+
             self.callback(
                 lambda c: c.on_trainer_train_teardown(self, progress_tracker, save_path, self.is_coordinator()),
                 coordinator_only=False,

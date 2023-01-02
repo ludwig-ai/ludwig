@@ -25,6 +25,7 @@ from ludwig.constants import (
     LENGTHS,
     NAME,
     PREDICTIONS,
+    PREPROCESSING,
     PROBABILITIES,
     PROBABILITY,
     PROC_COLUMN,
@@ -180,7 +181,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
         if encoder_obj is None:
             encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        if input_feature_config.encoded_in_preprocessing:
+        if input_feature_config.encoder.skip:
             self._module = _TextInputPassthroughModule(encoder_obj.output_shape)
         else:
             self._module = _TextInputEncoderModule(encoder_obj)
@@ -203,7 +204,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
         feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
         feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
         feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
-        feature_config.encoded_in_preprocessing = feature_metadata.get("encoded_in_preprocessing", False)
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
     @staticmethod
     def get_schema_cls():
