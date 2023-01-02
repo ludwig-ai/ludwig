@@ -202,7 +202,7 @@ class RandomBlur(torch.nn.Module):
 
 
 class AugmentationPipeline(torch.nn.Module):
-    def __init__(self, augmentation_list: List[Dict[str, Any]]):
+    def __init__(self, augmentation_list: List[Dict]):
         super().__init__()
 
         if self.training:
@@ -797,7 +797,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        # TODO: generalize augmentation operations
         if input_feature_config.augmentation:
             self.augmentation_pipeline = AugmentationPipeline(input_feature_config.augmentation)
 
