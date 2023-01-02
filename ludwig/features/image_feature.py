@@ -144,7 +144,7 @@ class RandomHFlip(torch.nn.Module):
 
 @register_augmentation_op(name="random_rotate", features=IMAGE)
 class RandomRotate(torch.nn.Module):
-    def __init__(self, degree=None):
+    def __init__(self, degree=15):
         super().__init__()
         self.degree = degree
 
