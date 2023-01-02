@@ -13,8 +13,7 @@ from ludwig.schema.model_config import InputFeaturesContainer
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
-from ludwig.utils.torch_utils import LudwigModule, get_torch_device
-
+from ludwig.utils.torch_utils import get_torch_device, LudwigModule
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 

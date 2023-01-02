@@ -7,7 +7,6 @@ from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
 
-
 logger = logging.getLogger(__name__)
 
 

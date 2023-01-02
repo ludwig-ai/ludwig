@@ -19,7 +19,7 @@ import copy
 import logging
 import os
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import dask
 import numpy as np
