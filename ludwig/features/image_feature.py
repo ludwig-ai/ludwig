@@ -50,7 +50,6 @@ from ludwig.constants import (
 )
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
-# from ludwig.schema.features.augmentation.image import RandomVerticalFlipOperation, RandomHorizontalFlipOperation
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
@@ -209,16 +208,15 @@ class AugmentationPipeline(torch.nn.Module):
         if self.training:
             self.augmentation_steps = torch.nn.Sequential()
             for aug in augmentation_list:
-                if isinstance(aug, str):
-                    aug_op = get_augmentation_op(IMAGE, aug)
-                    self.augmentation_steps.append(aug_op())
-                elif isinstance(aug, dict):
+                try:
                     aug_copy = copy.deepcopy(aug)
                     aug_op = get_augmentation_op(IMAGE, aug_copy.pop(TYPE))
                     self.augmentation_steps.append(aug_op(**aug_copy))
-                else:
-                    raise ValueError("Invalid augmentation operation")
+                except KeyError:
+                    # TODO: this try/except maybe be redundant with schema validation
+                    raise ValueError(f"Invalid augmentation operation specification: {aug}")
         else:
+            # TODO: should this raise an exception if not in training mode?
             self.augmentation_steps = None
 
     def forward(self, imgs):
@@ -802,8 +800,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         # TODO: generalize augmentation operations
         if input_feature_config.augmentation:
             self.augmentation_pipeline = AugmentationPipeline(input_feature_config.augmentation)
-        else:
-            self.augmentation_pipeline = None
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
