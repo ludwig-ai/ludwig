@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -98,3 +98,17 @@ def from_numpy_dataset(dataset) -> pd.DataFrame:
 def set_index_name(pd_df: pd.DataFrame, name: str) -> pd.DataFrame:
     pd_df.index.name = name
     return pd_df
+
+
+@DeveloperAPI
+def to_batches(df: pd.DataFrame, batch_size: int) -> List[pd.DataFrame]:
+    batches = []
+    num_batches = len(df) // batch_size + 1
+    for i in range(num_batches):
+        batches.append(df[i * batch_size : (i + 1) * batch_size])
+    return batches
+
+
+@DeveloperAPI
+def from_batches(batches: List[pd.DataFrame]) -> pd.DataFrame:
+    return pd.concat(batches)

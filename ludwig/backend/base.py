@@ -17,7 +17,7 @@
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -33,11 +33,13 @@ from ludwig.data.dataset.pandas import PandasDatasetManager
 from ludwig.models.base import BaseModel
 from ludwig.schema.trainer import ECDTrainerConfig, GBMTrainerConfig
 from ludwig.types import HyperoptConfigDict
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
+from ludwig.utils.dataframe_utils import from_batches, to_batches
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
-from ludwig.utils.types import Series
+from ludwig.utils.types import DataFrame, Series
 
 
 @DeveloperAPI
@@ -121,6 +123,14 @@ class Backend(ABC):
     def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+        raise NotImplementedError()
+
 
 class LocalPreprocessingMixin:
     @property
@@ -154,6 +164,12 @@ class LocalPreprocessingMixin:
 
         return pd.Series(result, index=column.index, name=column.name)
 
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+        batches = to_batches(df, batch_size)
+        transform = transform_fn()
+        out_batches = [transform(batch) for batch in batches]
+        return from_batches(out_batches)
+
 
 class LocalTrainingMixin:
     def initialize_pytorch(self, *args, **kwargs):
@@ -181,6 +197,10 @@ class LocalTrainingMixin:
 
     def is_coordinator(self):
         return True
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        evaluator = evaluator_cls()
+        return evaluator.select_best_batch_size(dataset_len)
 
 
 class RemoteTrainingMixin:
