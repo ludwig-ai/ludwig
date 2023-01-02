@@ -94,6 +94,7 @@ def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata
 
             for c in output_df.columns:
                 df[c] = output_df[c]
+
             return df
 
     return EmbedTransformFn

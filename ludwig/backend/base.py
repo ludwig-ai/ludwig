@@ -167,7 +167,7 @@ class LocalPreprocessingMixin:
     def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
         batches = to_batches(df, batch_size)
         transform = transform_fn()
-        out_batches = [transform(batch) for batch in batches]
+        out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
         return from_batches(out_batches)
 
 
