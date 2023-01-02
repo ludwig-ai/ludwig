@@ -4,7 +4,7 @@ from ludwig.constants import AUGMENTATION, IMAGE, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.augmentation.base import BaseAugmentationConfig, BaseAugmentationContainerConfig
 from ludwig.schema.features.augmentation.utils import register_augmentation_config
-from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA
 
 
 
@@ -104,11 +104,11 @@ class RandomContrastOperation(BaseAugmentationConfig):
     min: int = schema_utils.FloatRange(
         default=0.5,
         description="Minimum factor for random brightness.",
-        parameter_metadata=None  # FEATURE_METADATA[IMAGE][AUGMENTATION]["contrast_min"],
+        parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["contrast_min"],
     )
 
     max: int = schema_utils.FloatRange(
         default=1.5,
         description="Maximum factor for random brightness.",
-        parameter_metadata=None  # FEATURE_METADATA[IMAGE][AUGMENTATION]["contrast_max"],
+        parameter_metadata=FEATURE_METADATA[IMAGE][AUGMENTATION]["contrast_max"],
     )
