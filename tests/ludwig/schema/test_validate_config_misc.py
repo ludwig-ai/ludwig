@@ -365,9 +365,6 @@ def test_schema_no_duplicates():
         assert field not in schema["properties"]["combiner"]["allOf"][0]["then"]["properties"]
         assert field not in schema["properties"]["trainer"]["properties"]["optimizer"]["allOf"][0]["then"]["properties"]
         assert (
-            field not in schema["properties"]["preprocessing"]["properties"]["split"]["allOf"][0]["then"]["properties"]
-        )
-        assert (
             field
             not in schema["properties"]["input_features"]["items"]["allOf"][0]["then"]["properties"]["encoder"][
                 "allOf"

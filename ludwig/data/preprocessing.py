@@ -56,13 +56,15 @@ from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, 
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
-from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
+from ludwig.utils.config_utils import (
+    merge_config_preprocessing_with_feature_specific_defaults,
+    merge_fixed_preprocessing_params,
+)
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -106,7 +108,7 @@ from ludwig.utils.data_utils import (
 )
 from ludwig.utils.defaults import default_preprocessing_parameters, default_random_seed
 from ludwig.utils.fs_utils import file_lock, path_exists
-from ludwig.utils.misc_utils import get_from_registry, merge_dict, resolve_pointers
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.types import DataFrame, Series
 
 REPARTITIONING_FEATURE_TYPES = {"image", "audio"}
@@ -1288,16 +1290,10 @@ def build_preprocessing_parameters(
 
         preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
 
-        # deal with encoders that have fixed preprocessing
-        if ENCODER in feature_config:
-            if TYPE in feature_config[ENCODER]:
-                encoder_class = get_encoder_cls(feature_config[TYPE], feature_config[ENCODER][TYPE])
-                if hasattr(encoder_class, "fixed_preprocessing_parameters"):
-                    encoder_fpp = encoder_class.fixed_preprocessing_parameters
-
-                    preprocessing_parameters = merge_dict(
-                        preprocessing_parameters, resolve_pointers(encoder_fpp, feature_config, "feature.")
-                    )  # TODO(Connor): Temporary fix, refactor this during preproc refactor
+        # Update preprocessing parameters if encoders require fixed preprocessing parameters
+        preprocessing_parameters = merge_fixed_preprocessing_params(
+            feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
+        )
 
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
 

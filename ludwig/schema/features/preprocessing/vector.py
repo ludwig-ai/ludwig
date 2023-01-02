@@ -5,14 +5,13 @@ from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA
 
 
 @DeveloperAPI
 @register_preprocessor(VECTOR)
 @dataclass(repr=False)
 class VectorPreprocessingConfig(BasePreprocessingConfig):
-
     vector_size: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
@@ -50,7 +49,6 @@ class VectorPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("vector_output")
 @dataclass(repr=False)
 class VectorOutputPreprocessingConfig(VectorPreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,

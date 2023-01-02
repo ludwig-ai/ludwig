@@ -6,7 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.trainer_metadata import TRAINER_METADATA
+from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
     GradientClippingConfig,
@@ -52,7 +52,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["learning_rate"],
         field_options=[
-            schema_utils.NonNegativeFloat(default=0.001, allow_none=False),
+            schema_utils.FloatRange(default=0.001, allow_none=False, min=0, max=1),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -139,23 +139,31 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to include the entire training set during evaluation.",
+        default=False,
+        description=(
+            "Whether to evaluate on the entire training set during evaluation. By default, training metrics will be "
+            "computed at the end of each training step, and accumulated up to the evaluation phase. In practice, "
+            "computing training set metrics during training is up to 30% faster than running a separate evaluation "
+            "pass over the training set, but results in more noisy training metrics, particularly during the earlier "
+            "epochs. It's recommended to only set this to True if you need very exact training set metrics, and are "
+            "willing to pay a significant performance penalty for them."
+        ),
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 
-    # TODO(#1673): Need some more logic here for validating against output features
     validation_field: str = schema_utils.String(
-        default=COMBINED,
-        description="First output feature, by default it is set as the same field of the first output feature.",
+        default=None,
+        description="The field for which the `validation_metric` is used for validation-related mechanics like early "
+        "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
+        "trial. If unset (default), the first output feature's default validation is used.",
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric used on `validation_field`, set by default to the "
-            "output feature type's `default_validation_metric`."
+            "Metric from `validation_field` that is used, set by default to the first output feature type's "
+            "`default_validation_metric`. If explicitly specified, "
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
@@ -165,12 +173,15 @@ class ECDTrainerConfig(BaseTrainerConfig):
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
-        default="l2", description="Type of regularization."
+        default="l2",
+        description="Type of regularization.",
+        parameter_metadata=TRAINER_METADATA["regularization_type"],
     )
 
     regularization_lambda: float = schema_utils.FloatRange(
         default=0.0,
         min=0,
+        max=1,
         description="Strength of the $L2$ regularization.",
         parameter_metadata=TRAINER_METADATA["regularization_lambda"],
     )
@@ -303,6 +314,12 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["bucketing_field"],
     )
 
+    use_mixed_precision: bool = schema_utils.Boolean(
+        default=False,
+        description="Enable automatic mixed-precision (AMP) during training.",
+        parameter_metadata=TRAINER_METADATA["use_mixed_precision"],
+    )
+
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
@@ -347,14 +364,21 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # NOTE: Overwritten here to provide a default value. In many places, we fall back to eval_batch_size if batch_size
     # is not specified. GBM does not have a value for batch_size, so we need to specify eval_batch_size here.
     eval_batch_size: Union[None, int, str] = schema_utils.PositiveInteger(
-        default=1024,
+        default=1048576,
         description="Size of batch to pass to the model for evaluation.",
         parameter_metadata=TRAINER_METADATA["eval_batch_size"],
     )
 
     evaluate_training_set: bool = schema_utils.Boolean(
-        default=True,
-        description="Whether to include the entire training set during evaluation.",
+        default=False,
+        description=(
+            "Whether to evaluate on the entire training set during evaluation. By default, training metrics will be "
+            "computed at the end of each training step, and accumulated up to the evaluation phase. In practice, "
+            "computing training set metrics during training is up to 30% faster than running a separate evaluation "
+            "pass over the training set, but results in more noisy training metrics, particularly during the earlier "
+            "epochs. It's recommended to only set this to True if you need very exact training set metrics, and are "
+            "willing to pay a significant performance penalty for them."
+        ),
         parameter_metadata=TRAINER_METADATA["evaluate_training_set"],
     )
 

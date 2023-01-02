@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import os
 import tempfile
 
@@ -105,7 +106,13 @@ except ImportError:
 
 
 def run_api_experiment(
-    config, dataset, backend_config, predict=False, skip_save_processed_input=True, skip_save_predictions=True
+    config,
+    dataset,
+    backend_config,
+    predict=False,
+    skip_save_processed_input=True,
+    skip_save_predictions=True,
+    required_metrics=None,
 ):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
@@ -125,6 +132,7 @@ def run_api_experiment(
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
+        required_metrics=required_metrics,
     )
 
     assert isinstance(model.backend, RayBackend)
@@ -285,6 +293,7 @@ def run_test_with_features(
     first_row_none=False,
     last_row_none=False,
     nan_cols=None,
+    required_metrics=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -307,7 +316,7 @@ def run_test_with_features(
         dataset = augment_dataset_with_none(dataset, first_row_none, last_row_none, nan_cols)
 
         if expect_error:
-            with pytest.raises(ValueError):
+            with pytest.raises(RuntimeError):
                 run_fn(
                     config,
                     dataset=dataset,
@@ -315,6 +324,7 @@ def run_test_with_features(
                     predict=predict,
                     skip_save_processed_input=skip_save_processed_input,
                     skip_save_predictions=skip_save_predictions,
+                    required_metrics=required_metrics,
                 )
         else:
             run_fn(
@@ -324,6 +334,7 @@ def run_test_with_features(
                 predict=predict,
                 skip_save_processed_input=skip_save_processed_input,
                 skip_save_predictions=skip_save_predictions,
+                required_metrics=required_metrics,
             )
 
 
@@ -372,12 +383,20 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
+    # The synthetic set feature generator inserts between 0 and `vocab_size` entities per entry. 0 entities creates a
+    # null (NaN) entry. The default behavior for such entries in output features is to DROP_ROWS. This leads to poorly
+    # handled non-determinism when comparing the metrics between the local and Ray backends. We work around this by
+    # setting the `missing_value_strategy` to `fill_with_const` and setting the `fill_value` to the empty string.
+    set_feature_config = set_feature(
+        decoder={"vocab_size": 3},
+        preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
+    )
     output_features = [
         binary_feature(),
         number_feature(),
         vector_feature(),
+        set_feature_config,
         # TODO: feature type not yet supported
-        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
         # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
@@ -390,6 +409,7 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
+        required_metrics={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 
@@ -760,9 +780,12 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
 @pytest.mark.parametrize(
-    ("max_batch_size", "expected_final_batch_size"), [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE), (64, 64)]
+    ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
+    [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE, 0.001), (64, 64, 0.001)],
 )
-def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size):
+def test_tune_batch_size_lr_cpu(
+    tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
+):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -786,7 +809,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
     assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
-    assert model.config[TRAINER]["learning_rate"] != "auto"
+    assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
 @pytest.mark.distributed
@@ -846,14 +869,16 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        backend_config = {**RAY_BACKEND_CONFIG}
+        # Deep copy RAY_BACKEND_CONFIG to avoid shallow copy modification
+        backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
+        # Manually override num workers to 2 for distributed training and distributed predict
+        backend_config["trainer"]["num_workers"] = 2
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
         dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
         model = LudwigModel(config, backend=backend_config)
-        output_dir = None
 
-        _, _, output_dir = model.train(
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=dataset,
             skip_save_processed_input=True,
