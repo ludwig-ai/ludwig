@@ -168,7 +168,8 @@ class LocalPreprocessingMixin:
         batches = to_batches(df, batch_size)
         transform = transform_fn()
         out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
-        return from_batches(out_batches)
+        out_df = from_batches(out_batches).reset_index(drop=True)
+        return out_df
 
 
 class LocalTrainingMixin:

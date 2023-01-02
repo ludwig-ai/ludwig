@@ -66,7 +66,7 @@ class HFTextEncoder(Encoder):
                 f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
             )
 
-        is_fixed = not encoder_params.get("trainable", False) and not encoder_params.get("reduce_output") == "attention"
+        is_fixed = not encoder_params.get("trainable", False) and encoder_params.get("reduce_output") != "attention"
         return {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
