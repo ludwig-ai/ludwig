@@ -8,8 +8,8 @@ from ludwig.features.image_feature import get_augmentation_op
 
 @pytest.fixture(scope="module")
 def test_image():
-    # return random normal image of size 3x32x32
-    return torch.randn(3, 32, 32)
+    # return random normal image of size 2x3x32x32 [batch_size, channels, height, width]
+    return torch.randn(2, 3, 32, 32)
 
 
 @pytest.mark.parametrize(
