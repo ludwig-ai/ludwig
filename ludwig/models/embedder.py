@@ -30,6 +30,12 @@ class Embedder(LudwigModule):
             feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
             feature_obj = feature_cls.get_schema_cls().from_dict(feature)
             feature_cls.update_config_with_metadata(feature_obj, metadata[feature[NAME]])
+
+            # When running prediction or eval, we need the preprocessing to use the original pretrained
+            # weights, which requires unsetting this field. In the future, we could avoid this by plumbing
+            # through the saved weights and loading them dynamically after building the model.
+            feature_obj.encoder.saved_weights_in_checkpoint = False
+
             setattr(input_feature_configs, feature[NAME], feature_obj)
 
         try:
