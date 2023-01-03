@@ -108,3 +108,22 @@ def to_batches(df: pd.DataFrame, batch_size: int) -> List[pd.DataFrame]:
 @DeveloperAPI
 def from_batches(batches: List[pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(batches)
+
+
+@DeveloperAPI
+def to_scalar_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """Converts all columns in a pd.DataFrame to be scalar types.
+
+    For object columns of lists, each element of the list is expanded into its own column named {column}_{index}. We
+    assume all object columns are lists of the same length (i.e., tensor format output from preprocessing).
+    """
+    scalar_df = df
+    for c in df.columns:
+        s = df[c]
+        if s.dtype == "object":
+            s_split = s.to_list()
+            ncols = s_split[0].shape[0]
+            sdf = pd.DataFrame(s_split, columns=[f"{c}_{k}" for k in range(ncols)])
+            scalar_df = scalar_df.drop([c], axis=1)
+            scalar_df = pd.concat([scalar_df, sdf], axis=1)
+    return scalar_df

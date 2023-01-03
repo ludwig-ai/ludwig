@@ -25,6 +25,7 @@ from ludwig.trainers.registry import register_ray_trainer, register_trainer
 from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
+from ludwig.utils.dataframe_utils import to_scalar_cols
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
@@ -801,19 +802,18 @@ class LightGBMTrainer(BaseTrainer):
         validation_set: Optional["Dataset"] = None,  # noqa: F821
         test_set: Optional["Dataset"] = None,  # noqa: F821
     ) -> Tuple[lgb.Dataset, List[lgb.Dataset], List[str]]:
-        X_train = training_set.to_df(self.model.input_features.values())
-        y_train = training_set.to_df(self.model.output_features.values())
+        X_train = to_scalar_cols(training_set.to_df(self.model.input_features.values()))
+        y_train = to_scalar_cols(training_set.to_df(self.model.output_features.values()))
 
         # create dataset for lightgbm
         # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
         lgb_train = lgb.Dataset(X_train, label=y_train, free_raw_data=False).construct()
-        print(lgb_train.get_data())
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
         if validation_set is not None:
-            X_val = validation_set.to_df(self.model.input_features.values())
-            y_val = validation_set.to_df(self.model.output_features.values())
+            X_val = to_scalar_cols(validation_set.to_df(self.model.input_features.values()))
+            y_val = to_scalar_cols(validation_set.to_df(self.model.output_features.values()))
             lgb_val = lgb.Dataset(X_val, label=y_val, reference=lgb_train, free_raw_data=False).construct()
             eval_sets.append(lgb_val)
             eval_names.append(LightGBMTrainer.VALID_KEY)
@@ -822,8 +822,8 @@ class LightGBMTrainer(BaseTrainer):
             pass
 
         if test_set is not None:
-            X_test = test_set.to_df(self.model.input_features.values())
-            y_test = test_set.to_df(self.model.output_features.values())
+            X_test = to_scalar_cols(test_set.to_df(self.model.input_features.values()))
+            y_test = to_scalar_cols(test_set.to_df(self.model.output_features.values()))
             lgb_test = lgb.Dataset(X_test, label=y_test, reference=lgb_train, free_raw_data=False).construct()
             eval_sets.append(lgb_test)
             eval_names.append(LightGBMTrainer.TEST_KEY)
