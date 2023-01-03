@@ -192,8 +192,8 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 @register_encoder_config("onehot", CATEGORY)
 @dataclass(order=True)
 class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
-    """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical
-    onehot encoder."""
+    """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical onehot
+    encoder."""
 
     type: str = schema_utils.ProtectedString(
         "onehot",

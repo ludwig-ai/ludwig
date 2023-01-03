@@ -14,7 +14,6 @@ from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINE
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
-
 LOCAL_BACKEND = {"type": "local"}
 RAY_BACKEND = {
     "type": "ray",

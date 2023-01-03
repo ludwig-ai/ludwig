@@ -17,8 +17,8 @@
 import contextlib
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
-from ludwig.features.base_feature import BaseFeature
 
+from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.types import DataFrame
 
 
