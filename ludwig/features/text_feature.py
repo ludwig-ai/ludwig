@@ -180,6 +180,7 @@ class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
         super().__init__(input_feature_config, **kwargs)
         if encoder_obj is None:
             encoder_obj = self.initialize_encoder(input_feature_config.encoder)
+        self.encoder_obj = encoder_obj
 
         if input_feature_config.encoder.skip:
             self._module = _TextInputPassthroughModule(encoder_obj.output_shape)

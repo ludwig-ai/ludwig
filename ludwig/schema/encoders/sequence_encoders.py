@@ -11,9 +11,17 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 
 @DeveloperAPI
+@dataclass(repr=False, order=True)
+class SequenceEncoderConfig(BaseEncoderConfig):
+    """Base class for sequence encoders."""
+
+    skip: bool = schema_utils.Boolean(False, "[internal] Whether to skip encoder and use input as output.")
+
+
+@DeveloperAPI
 @register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class SequencePassthroughConfig(BaseEncoderConfig):
+class SequencePassthroughConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description="Type of encoder.",
@@ -42,7 +50,7 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("embed", [SEQUENCE, TEXT])
 @dataclass(repr=False)
-class SequenceEmbedConfig(BaseEncoderConfig):
+class SequenceEmbedConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
         description="Type of encoder.",
@@ -117,7 +125,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class ParallelCNNConfig(BaseEncoderConfig):
+class ParallelCNNConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "parallel_cnn",
         description="Type of encoder.",
@@ -281,7 +289,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class StackedCNNConfig(BaseEncoderConfig):
+class StackedCNNConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
         description="Type of encoder.",
@@ -477,7 +485,7 @@ class StackedCNNConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class StackedParallelCNNConfig(BaseEncoderConfig):
+class StackedParallelCNNConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_parallel_cnn",
         description="Type of encoder.",
@@ -659,7 +667,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class StackedRNNConfig(BaseEncoderConfig):
+class StackedRNNConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "rnn",
         description="Type of encoder.",
@@ -870,7 +878,7 @@ class StackedRNNConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class StackedCNNRNNConfig(BaseEncoderConfig):
+class StackedCNNRNNConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "cnnrnn",
         description="Type of encoder.",
@@ -1162,7 +1170,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
-class StackedTransformerConfig(BaseEncoderConfig):
+class StackedTransformerConfig(SequenceEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "transformer",
         description="Type of encoder.",
