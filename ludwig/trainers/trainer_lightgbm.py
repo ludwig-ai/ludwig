@@ -807,6 +807,7 @@ class LightGBMTrainer(BaseTrainer):
         # create dataset for lightgbm
         # keep raw data for continued training https://github.com/microsoft/LightGBM/issues/4965#issuecomment-1019344293
         lgb_train = lgb.Dataset(X_train, label=y_train, free_raw_data=False).construct()
+        print(lgb_train.get_data())
 
         eval_sets = [lgb_train]
         eval_names = [LightGBMTrainer.TRAIN_KEY]
