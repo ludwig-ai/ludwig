@@ -19,7 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
-from typing import Dict, Iterator, Optional, Union
+from typing import Dict, Iterable, Iterator, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -34,8 +34,10 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
+from ludwig.features.base_feature import BaseFeature
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
+from ludwig.utils.dataframe_utils import to_scalar_df
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
@@ -162,8 +164,22 @@ class RayDataset(Dataset):
         https://docs.ray.io/en/releases-1.12.1/_modules/ray/data/dataset.html#Dataset.size_bytes."""
         return self.ds.size_bytes() if self.ds is not None else 0
 
-    def to_df(self):
-        return self.df_engine.from_ray_dataset(self.ds)
+    def to_df(self, features: Optional[Iterable[BaseFeature]] = None):
+        ds = self.filter_features(features)
+        return self.df_engine.from_ray_dataset(ds)
+
+    def filter_features(self, features: Optional[Iterable[BaseFeature]] = None):
+        if features is None:
+            return self.ds
+        feat_cols = [f.proc_column for f in features]
+        return self.ds.map_batches(lambda df: df[feat_cols], batch_size=None)
+
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        return self.df_engine.from_ray_dataset(self.to_scalar(features))
+
+    def to_scalar(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        ds = self.filter_features(features) if features else self.ds
+        return ds.map_batches(lambda df: to_scalar_df(df), batch_size=None)
 
     def repartition(self, num_blocks: int):
         """Repartition the dataset into the specified number of blocks.
