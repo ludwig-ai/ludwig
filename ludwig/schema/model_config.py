@@ -172,17 +172,6 @@ class ModelConfig(BaseMarshmallowConfig):
                 ):
                     raise ValidationError("GBM Model trainer must be of type: 'lightgbm_trainer'")
 
-                for feature in self.input_features.to_dict().keys():
-                    feature_cls = getattr(self.input_features, feature)
-                    if feature_cls.type == BINARY:
-                        feature_cls.encoder = BinaryPassthroughEncoderConfig()
-                    elif feature_cls.type in [CATEGORY, NUMBER]:
-                        feature_cls.encoder = PassthroughEncoderConfig()
-                    else:
-                        raise ValidationError(
-                            "GBM Models currently only support Binary, Category, and Number " "features"
-                        )
-
         # ===== Combiner =====
         if COMBINER in upgraded_config_dict:
             if self.combiner.type != upgraded_config_dict[COMBINER][TYPE]:

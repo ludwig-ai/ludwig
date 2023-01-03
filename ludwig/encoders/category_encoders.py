@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 
@@ -194,7 +194,8 @@ class CategoricalOneHotEncoder(Encoder):
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1]
         """
-        return torch.nn.functional.one_hot(inputs, num_classes=self.vocab_size)
+        t = inputs.squeeze(1).long()
+        return torch.nn.functional.one_hot(t, num_classes=self.vocab_size)
 
     @staticmethod
     def get_schema_cls():
@@ -207,3 +208,9 @@ class CategoricalOneHotEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size([self.vocab_size])
+
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "cache_encoder_embeddings": True,
+        }
