@@ -25,7 +25,7 @@ from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.data.sampler import DistributedSampler
 from ludwig.features.base_feature import BaseFeature
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, save_hdf5
-from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset
+from ludwig.utils.dataframe_utils import from_numpy_dataset, to_numpy_dataset, to_scalar_df
 from ludwig.utils.fs_utils import download_h5
 from ludwig.utils.misc_utils import get_proc_features
 
@@ -42,6 +42,9 @@ class PandasDataset(Dataset):
         if features:
             return from_numpy_dataset({feature.feature_name: self.dataset[feature.proc_column] for feature in features})
         return from_numpy_dataset(self.dataset)
+
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        return to_scalar_df(self.to_df(features))
 
     def get(self, proc_column, idx=None):
         if idx is None:

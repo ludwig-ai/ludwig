@@ -120,6 +120,8 @@ class GBM(BaseModel):
             feature_vectors = []
             for a in inputs.values():
                 if len(a.shape) > 1:
+                    # Input feature is a vector of shape [batch_size, nfeatures]
+                    # We need to expand this into `nfeatures` individual vectors of shape [batch_size]
                     nfeatures = a.shape[1]
                     vectors = [v.squeeze() for v in np.hsplit(a, nfeatures)]
                     feature_vectors += vectors
