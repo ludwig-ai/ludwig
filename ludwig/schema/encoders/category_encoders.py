@@ -186,3 +186,21 @@ class CategoricalSparseConfig(BaseEncoderConfig):
         "representation is dense.",
         parameter_metadata=ENCODER_METADATA["CategoricalSparseEncoder"]["pretrained_embeddings"],
     )
+
+
+@DeveloperAPI
+@register_encoder_config("onehot", CATEGORY)
+@dataclass(order=True)
+class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
+    """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical
+    onehot encoder."""
+
+    type: str = schema_utils.ProtectedString(
+        "onehot",
+        description="Type of encoder.",
+    )
+
+    vocab: List[str] = schema_utils.List(
+        default=None,
+        description="[internal] Vocabulary of the encoder",
+    )
