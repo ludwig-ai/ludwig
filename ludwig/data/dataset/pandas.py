@@ -87,7 +87,7 @@ class PandasDataset(Dataset):
         seed=0,
         ignore_last=False,
         horovod=None,
-        input_features=None,
+        augmentation_pipeline=None,
     ):
         sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, horovod=horovod)
         batcher = RandomAccessBatcher(
@@ -95,7 +95,7 @@ class PandasDataset(Dataset):
             sampler,
             batch_size=batch_size,
             ignore_last=ignore_last,
-            input_features=input_features
+            augmentation_pipeline=augmentation_pipeline,
         )
         yield batcher
 

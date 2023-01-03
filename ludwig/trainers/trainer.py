@@ -728,7 +728,7 @@ class Trainer(BaseTrainer):
                 seed=self.random_seed,
                 horovod=self.horovod,
                 ignore_last=True,
-                input_features=self.model.input_features,
+                augmentation_pipeline=self.model.get_augmentation_pipeline(),
             ) as batcher:
                 # ================ Training Loop ================
                 self.total_steps = get_total_steps(self.epochs, batcher.steps_per_epoch, self.train_steps)

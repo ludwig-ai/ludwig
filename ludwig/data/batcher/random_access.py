@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 @DeveloperAPI
 class RandomAccessBatcher(Batcher):
-    def __init__(self, dataset, sampler, batch_size=128, ignore_last=False, input_features=None):
+    def __init__(self, dataset, sampler, batch_size=128, ignore_last=False, augmentation_pipeline=None):
         # store our dataset as well
         self.dataset = dataset
         self.sampler = sampler
@@ -36,7 +36,7 @@ class RandomAccessBatcher(Batcher):
         self.ignore_last = ignore_last
         self.batch_size = batch_size
         self.total_size = len(sampler)
-        self.input_features = input_features
+        self.augmentation_pipeline = augmentation_pipeline
         self.steps_per_epoch = self._compute_steps_per_epoch()
         self.index = 0
         self.step = 0
@@ -53,28 +53,14 @@ class RandomAccessBatcher(Batcher):
             except StopIteration:
                 break
 
-        sub_batch = {}
-        for features_name in self.dataset.features:
-            # determine if this is input feature
-            original_feature_name = self.dataset.features[features_name][NAME]
-            try:
-                input_feature_obj = self.input_features[original_feature_name]
-            except (TypeError, KeyError):
-                input_feature_obj = None
+        sub_batch = {
+            feature_name: self.dataset.get(feature_name, indices)
+            for feature_name in self.dataset.features
+        }
 
-            if input_feature_obj:
-                # if training mode and augmentation pipeline is specified, perform augmentation
-                if input_feature_obj.training and hasattr(input_feature_obj, 'augmentation_pipeline'):
-                    # if so, apply it
-                    sub_batch[features_name] = input_feature_obj.augmentation_pipeline(
-                        torch.tensor(self.dataset.get(features_name, indices))
-                    )
-                else:
-                    # no augmentation pipeline specified, just get the data
-                    sub_batch[features_name] = self.dataset.get(features_name, indices)
-            else:
-                # for output feature, just get the data
-                sub_batch[features_name] = self.dataset.get(features_name, indices)
+        if self.augmentation_pipeline:
+            for feature_name, augmentations in self.augmentation_pipeline.items():
+                sub_batch[feature_name] = augmentations(torch.tensor(sub_batch[feature_name]))
 
         self.step += 1
         return sub_batch

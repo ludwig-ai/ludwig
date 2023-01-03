@@ -201,6 +201,7 @@ class RandomBlur(torch.nn.Module):
         return imgs
 
 
+# TODO: move to feature independent module?
 class AugmentationPipeline(torch.nn.Module):
     def __init__(self, augmentation_list: List[Dict]):
         super().__init__()
