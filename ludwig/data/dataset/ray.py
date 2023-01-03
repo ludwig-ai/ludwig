@@ -168,17 +168,17 @@ class RayDataset(Dataset):
         ds = self.filter_features(features)
         return self.df_engine.from_ray_dataset(ds)
 
+    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
+        return self.df_engine.from_ray_dataset(self.to_scalar(features))
+
     def filter_features(self, features: Optional[Iterable[BaseFeature]] = None):
         if features is None:
             return self.ds
         feat_cols = [f.proc_column for f in features]
         return self.ds.map_batches(lambda df: df[feat_cols], batch_size=None)
 
-    def to_scalar_df(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
-        return self.df_engine.from_ray_dataset(self.to_scalar(features))
-
     def to_scalar(self, features: Optional[Iterable[BaseFeature]] = None) -> DataFrame:
-        ds = self.filter_features(features) if features else self.ds
+        ds = self.filter_features(features)
         return ds.map_batches(lambda df: to_scalar_df(df), batch_size=None)
 
     def repartition(self, num_blocks: int):
