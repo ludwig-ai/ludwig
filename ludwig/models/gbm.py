@@ -117,8 +117,17 @@ class GBM(BaseModel):
 
             assert list(inputs.keys()) == self.input_features.keys()
 
+            feature_vectors = []
+            for a in inputs.values():
+                if len(a.shape) > 1:
+                    nfeatures = a.shape[1]
+                    vectors = [v.squeeze() for v in np.hsplit(a, nfeatures)]
+                    feature_vectors += vectors
+                else:
+                    feature_vectors.append(a)
+
             # The LGBM sklearn interface works with array-likes, so we place the inputs into a 2D numpy array.
-            in_array = np.stack(list(inputs.values()), axis=0).T
+            in_array = np.stack(feature_vectors, axis=0).T
 
             # Predict on the input batch and convert the predictions to torch tensors so that they are compatible with
             # the existing metrics modules.
