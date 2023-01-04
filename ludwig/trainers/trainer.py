@@ -34,7 +34,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import COMBINED, LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -45,7 +45,8 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
-from ludwig.modules.metric_modules import get_improved_fun, get_initial_validation_value
+from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
+from ludwig.modules.metric_registry import metric_registry
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -64,6 +65,7 @@ from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
     append_metrics,
     get_final_steps_per_checkpoint,
+    get_latest_metrics_dict,
     get_new_progress_tracker,
     get_total_steps,
     ProgressTracker,
@@ -503,6 +505,7 @@ class Trainer(BaseTrainer):
         start_time = time.time()
         self.callback(lambda c: c.on_eval_start(self, progress_tracker, save_path))
 
+        progress_tracker.checkpoint_number += 1
         if self.is_coordinator():
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
@@ -573,7 +576,7 @@ class Trainer(BaseTrainer):
         elapsed_time = (time.time() - start_time) * 1000.0
 
         if self.is_coordinator():
-            logger.debug(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
+            logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
             for output_feature, table in tables.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
@@ -710,7 +713,7 @@ class Trainer(BaseTrainer):
             progress_tracker = get_new_progress_tracker(
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
-                best_eval_metric=get_initial_validation_value(self.validation_metric),
+                best_eval_metric_value=get_initial_validation_value(self.validation_metric),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
                     self.reduce_learning_rate_eval_metric
                 ),
@@ -1028,7 +1031,7 @@ class Trainer(BaseTrainer):
         predictor = Predictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
-        metrics, predictions = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
+        metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
         append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
 
@@ -1038,7 +1041,7 @@ class Trainer(BaseTrainer):
         self,
         progress_tracker,
         validation_output_feature_name,
-        validation_metric,
+        validation_metric: str,
         save_path,
         model_hyperparameters_path,
         reduce_learning_rate_on_plateau,
@@ -1065,35 +1068,64 @@ class Trainer(BaseTrainer):
         Returns whether the model should stop training.
         """
         should_break = False
-        # record how long its been since an improvement
-        improved = get_improved_fun(validation_metric)
-        validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
-        last_validation_metric = validation_metrics[validation_metric][-1]
-        last_validation_metric_value = last_validation_metric[-1]
+        improved_fn = get_improved_fn(validation_metric)
 
-        if last_validation_metric_value != last_validation_metric_value:
+        all_validation_metrics = progress_tracker.validation_metrics[validation_output_feature_name]
+        # The most recent validation_metric metric.
+        eval_metric: TrainerMetric = all_validation_metrics[validation_metric][-1]
+        eval_metric_value = eval_metric[-1]
+
+        if eval_metric_value != eval_metric_value:
             # Fallback to 0 if the validation metric value is a NaN.
             # This is potentially relevant for small datasets like those used in testing where if there's only a
             # single output label, some metrics like ROC may turn out to be NaN.
             # However, we want to guarantee that the model will be saved at least once over a full
             # training-checkpoint-eval-loop.
-            last_validation_metric_value = 0
+            eval_metric_value = 0
 
-        if improved(last_validation_metric_value, progress_tracker.best_eval_metric):
-            progress_tracker.last_improvement_steps = progress_tracker.steps
-            progress_tracker.best_eval_metric = last_validation_metric_value
+        if improved_fn(eval_metric_value, progress_tracker.best_eval_metric_value):
+            previous_best_eval_metric_value = progress_tracker.best_eval_metric_value
 
-            if self.is_coordinator() and not skip_save_model:
-                self.model.save(save_path)
+            # Save the value, steps, epoch, and checkpoint number.
+            progress_tracker.best_eval_metric_value = eval_metric_value
+            progress_tracker.best_eval_metric_steps = progress_tracker.steps
+            progress_tracker.best_eval_metric_epoch = progress_tracker.epoch
+            progress_tracker.best_eval_metric_checkpoint_number = progress_tracker.checkpoint_number
+
+            # Save best metrics for all data subsets.
+            progress_tracker.best_eval_train_metrics = get_latest_metrics_dict(progress_tracker.train_metrics)
+            progress_tracker.best_eval_validation_metrics = get_latest_metrics_dict(progress_tracker.validation_metrics)
+            progress_tracker.best_eval_test_metrics = get_latest_metrics_dict(progress_tracker.test_metrics)
+
+            if self.is_coordinator():
                 logger.info(
-                    f"Validation {validation_metric} on {validation_output_feature_name} improved, model saved.\n"
+                    f"Evaluation validation metric: '{validation_output_feature_name}' '{validation_metric}' improved."
                 )
+                absolute_eval_metric_value_change = round(
+                    abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
+                )
+                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                    logger.info(
+                        f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
+                        f"{absolute_eval_metric_value_change}."
+                    )
+                else:
+                    logger.info(
+                        f"'{validation_output_feature_name}' '{validation_metric}' increased by "
+                        f"{absolute_eval_metric_value_change}."
+                    )
+                # Save the model.
+                if not skip_save_model:
+                    logger.info("New best model saved.\n")
+                    self.model.save(save_path)
 
-        progress_tracker.last_improvement = progress_tracker.steps - progress_tracker.last_improvement_steps
-        if progress_tracker.last_improvement != 0 and self.is_coordinator():
+        last_improvement_in_steps = progress_tracker.steps - progress_tracker.best_eval_metric_steps
+        progress_tracker.last_improvement_steps = last_improvement_in_steps
+
+        if last_improvement_in_steps != 0 and self.is_coordinator():
             logger.info(
                 f"Last improvement of {validation_output_feature_name} validation {validation_metric} happened "
-                + f"{progress_tracker.last_improvement} step(s) ago.\n"
+                + f"{last_improvement_in_steps} step(s) ago.\n"
             )
 
         # ========== Reduce Learning Rate Plateau logic ========
@@ -1154,7 +1186,7 @@ class Trainer(BaseTrainer):
         # ========== Early Stop logic ==========
         # If any early stopping condition is satisfied, either lack of improvement for many steps, or via callbacks on
         # any worker, then trigger early stopping.
-        early_stop_bool = 0 < early_stopping_steps <= progress_tracker.last_improvement
+        early_stop_bool = 0 < early_stopping_steps <= last_improvement_in_steps
         if not early_stop_bool:
             for callback in self.callbacks:
                 if callback.should_early_stop(self, progress_tracker, self.is_coordinator()):
@@ -1166,9 +1198,8 @@ class Trainer(BaseTrainer):
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
-                    "\nEARLY STOPPING due to lack of validation improvement. "
-                    f"It has been {progress_tracker.steps - progress_tracker.last_improvement_steps} step(s) since "
-                    f"last validation improvement.\n"
+                    f"\nEARLY STOPPING due to lack of validation improvement. It has been {last_improvement_in_steps} "
+                    "step(s) since last validation improvement."
                 )
             should_break = True
         return should_break
@@ -1253,8 +1284,8 @@ class Trainer(BaseTrainer):
             last_metric: TrainerMetric = split_metrics[validation_output_feature_name][validation_metric][-1]
             last_metric_value = last_metric[-1]
 
-            improved = get_improved_fun(validation_metric)
-            is_improved = improved(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
+            improved_fn = get_improved_fn(validation_metric)
+            is_improved = improved_fn(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
             if is_improved:
                 # we update the best metric value and set it to the current one
                 # and reset last improvement step count
@@ -1317,8 +1348,8 @@ class Trainer(BaseTrainer):
             last_metric = split_metrics[validation_output_feature_name][validation_metric][-1]
             last_metric_value = last_metric[-1]
 
-            improved = get_improved_fun(validation_metric)
-            is_improved = improved(last_metric_value, progress_tracker.best_increase_batch_size_eval_metric)
+            improved_fn = get_improved_fn(validation_metric)
+            is_improved = improved_fn(last_metric_value, progress_tracker.best_increase_batch_size_eval_metric)
             if is_improved:
                 # We update the best metric value and set it to the current one, and reset last
                 # improvement step count

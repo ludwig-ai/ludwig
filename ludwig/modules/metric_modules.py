@@ -530,7 +530,7 @@ class JaccardMetric(MeanMetric):
         return PROBABILITIES
 
 
-def get_improved_fun(metric: str) -> Callable:
+def get_improved_fn(metric: str) -> Callable:
     if metric_registry[metric].get_objective() == MINIMIZE:
         return lambda x, y: x < y
     else:
