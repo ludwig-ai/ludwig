@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, PROC_COLUMN, TYPE
+from ludwig.constants import NAME, PROC_COLUMN, TYPE
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
@@ -14,8 +14,6 @@ from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.torch_utils import get_torch_device, LudwigModule
-
-_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 @DeveloperAPI
@@ -110,7 +108,7 @@ def _prepare_batch(df: pd.DataFrame, features: List[Dict[str, Any]], metadata: D
     batch = {}
     for feature in features:
         c = feature[PROC_COLUMN]
-        if feature[TYPE] not in _SCALAR_TYPES:
+        if df[c].values.dtype == "object":
             # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
             batch[c] = np.stack(df[c].values)
         else:

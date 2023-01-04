@@ -52,10 +52,9 @@ from ludwig.constants import (
     NAME,
     PREPROCESSING,
     PROC_COLUMN,
-    TYPE,
 )
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -770,7 +769,7 @@ class RayPredictor(BasePredictor):
             def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
                 res = {}
                 for c in self.features.keys():
-                    if self.features[c][TYPE] not in _SCALAR_TYPES:
+                    if batch[c].values.dtype == "object":
                         # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
                         res[c] = np.stack(batch[c].values)
                     else:

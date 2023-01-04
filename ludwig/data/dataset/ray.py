@@ -31,7 +31,7 @@ from ray.data.dataset_pipeline import DatasetPipeline
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
-from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
+from ludwig.constants import NAME
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.features.base_feature import BaseFeature
@@ -47,8 +47,6 @@ from ludwig.utils.types import DataFrame
 logger = logging.getLogger(__name__)
 
 _ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
-
-_SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 
 @DeveloperAPI
@@ -359,11 +357,13 @@ class RayDatasetBatcher(Batcher):
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
         res = {}
         for c in self.columns:
-            if self.features[c][TYPE] not in _SCALAR_TYPES:
+            print(batch[c].values, batch[c].values.dtype)
+            if batch[c].values.dtype == "object":
                 # Ensure columns stacked instead of turned into np.array([np.array, ...], dtype=object) objects
                 res[c] = np.stack(batch[c].values)
             else:
                 res[c] = batch[c].to_numpy()
+            print(res[c])
 
         for c in self.columns:
             reshape = self.reshape_map.get(c)

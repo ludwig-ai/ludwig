@@ -327,7 +327,10 @@ def test_save_load(tmpdir, local_backend):
 )
 def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
     """Test that the GBM model can train and predict with non-number inputs."""
-    input_features = [binary_feature(), category_feature(encoder={"type": "onehot"})]
+    input_features = [
+        binary_feature(),
+        category_feature(encoder={"type": "onehot"}),
+    ]
     output_feature = binary_feature()
     output_features = [output_feature]
 
