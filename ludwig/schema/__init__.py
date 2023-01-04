@@ -37,7 +37,7 @@ def get_ludwig_version_jsonschema():
 
 
 @DeveloperAPI
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=None)
 def get_schema(model_type: str = MODEL_ECD):
     schema = {
         "type": "object",
@@ -63,7 +63,7 @@ def get_schema(model_type: str = MODEL_ECD):
 
 
 @DeveloperAPI
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=1)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
     def custom_is_array(checker, instance):

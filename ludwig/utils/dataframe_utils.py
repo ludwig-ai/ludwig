@@ -116,6 +116,9 @@ def to_scalar_df(df: pd.DataFrame) -> pd.DataFrame:
 
     For object columns of lists, each element of the list is expanded into its own column named {column}_{index}. We
     assume all object columns are lists of the same length (i.e., tensor format output from preprocessing).
+
+    It's also important that the relative order of the columns is preserved, to maintain consistency with other
+    conversions like the one for Hummingbird.
     """
     scalar_df = df
     column_ordering = []

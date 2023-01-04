@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Any, Dict, Set
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY
+from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
@@ -56,3 +57,7 @@ class BinaryPassthroughEncoder(Encoder):
     @property
     def input_shape(self) -> torch.Size:
         return torch.Size([1])
+
+    @classmethod
+    def get_supported_model_types(cls, encoder_params: Dict[str, Any]) -> Set[str]:
+        return {MODEL_ECD, MODEL_GBM}

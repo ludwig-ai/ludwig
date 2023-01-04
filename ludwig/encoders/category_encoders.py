@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY
+from ludwig.constants import CATEGORY, MODEL_ECD, MODEL_GBM
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.embedding_modules import Embed
@@ -214,3 +214,7 @@ class CategoricalOneHotEncoder(Encoder):
         return {
             "cache_encoder_embeddings": True,
         }
+
+    @classmethod
+    def get_supported_model_types(cls, encoder_params: Dict[str, Any]) -> Set[str]:
+        return {MODEL_ECD, MODEL_GBM}

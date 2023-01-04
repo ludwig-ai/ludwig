@@ -64,6 +64,7 @@ from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTraine
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.config_utils import validate_encoders
 from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
@@ -203,6 +204,7 @@ class ModelConfig(BaseMarshmallowConfig):
             self.combiner = None
 
         self._validate_config(self.to_dict())
+        validate_encoders(self)
 
     def __repr__(self):
         config_repr = self.to_dict()

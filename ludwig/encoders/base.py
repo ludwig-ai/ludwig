@@ -15,9 +15,10 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Set
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import MODEL_ECD
 from ludwig.utils.torch_utils import LudwigModule
 
 
@@ -39,3 +40,7 @@ class Encoder(LudwigModule, ABC):
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
         return False
+
+    @classmethod
+    def get_supported_model_types(cls, encoder_params: Dict[str, Any]) -> Set[str]:
+        return {MODEL_ECD}

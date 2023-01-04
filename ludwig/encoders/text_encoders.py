@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT, TYPE
+from ludwig.constants import MODEL_ECD, MODEL_GBM, TEXT, TYPE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
@@ -66,16 +66,30 @@ class HFTextEncoder(Encoder):
                 f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
             )
 
-        is_fixed = not encoder_params.get("trainable", False) and encoder_params.get("reduce_output") != "attention"
         return {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
-            "cache_encoder_embeddings": is_fixed,
+            "cache_encoder_embeddings": cls.is_fixed(encoder_params),
         }
 
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
         return encoder_params.get("use_pretrained", True)
+
+    @classmethod
+    def get_supported_model_types(cls, encoder_params: Dict[str, Any]) -> Set[str]:
+        if cls.is_fixed(encoder_params):
+            return {MODEL_ECD, MODEL_GBM}
+        else:
+            return {MODEL_ECD}
+
+    @classmethod
+    def is_fixed(cls, encoder_params: Dict[str, Any]) -> bool:
+        return (
+            cls.is_pretrained(encoder_params)
+            and not encoder_params.get("trainable", False)
+            and encoder_params.get("reduce_output") != "attention"
+        )
 
 
 @DeveloperAPI
