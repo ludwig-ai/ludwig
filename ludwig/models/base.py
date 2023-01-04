@@ -9,7 +9,7 @@ import torch
 from ludwig.combiners.combiners import Combiner
 from ludwig.constants import COMBINED, LOSS, NAME
 from ludwig.encoders.base import Encoder
-from ludwig.features.base_feature import InputFeature, OutputFeature, create_passthrough_input_feature
+from ludwig.features.base_feature import create_passthrough_input_feature, InputFeature, OutputFeature
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
