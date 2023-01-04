@@ -52,6 +52,7 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     VECTOR,
 )
+from ludwig.distributed import get_current_dist_strategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
     SequenceSoftmaxCrossEntropyLoss,
@@ -59,12 +60,15 @@ from ludwig.modules.loss_modules import (
     SoftmaxCrossEntropyLoss,
 )
 from ludwig.modules.metric_registry import metric_registry, register_metric
-from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
 
 logger = logging.getLogger(__name__)
+
+
+def _gather_all_tensors_fn() -> Optional[Callable]:
+    get_current_dist_strategy().gather_all_tensors_fn()
 
 
 class LudwigMetric(Metric, ABC):
@@ -95,12 +99,13 @@ class LudwigMetric(Metric, ABC):
         should_unsync: bool = True,
         distributed_available: Optional[Callable] = jit_distributed_available,
     ) -> Generator:
-        """Override the behavior of this in the base class to support Horovod."""
+        """Override the behavior of this in the base class to support custom distributed strategies."""
+        dist_strategy = get_current_dist_strategy()
         self.sync(
-            dist_sync_fn=gather_all_tensors,
+            dist_sync_fn=dist_strategy.gather_all_tensors_fn(),
             process_group=process_group,
             should_sync=should_sync,
-            distributed_available=is_distributed_available,
+            distributed_available=dist_strategy.is_available,
         )
 
         yield
@@ -113,7 +118,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(squared=False, dist_sync_fn=gather_all_tensors, **kwargs)
+        super().__init__(squared=False, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
 
     @classmethod
     def get_objective(cls):
@@ -134,7 +139,7 @@ class ROCAUCMetric(LudwigMetric):
         epsilon: float = 1e-7,
         **kwargs,
     ) -> None:
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
         self.num_thresholds = num_thresholds
         self.epsilon = epsilon
         self.add_state("summary_stats", torch.zeros(num_thresholds, 4), dist_reduce_fx="sum")
@@ -207,7 +212,7 @@ class MeanMetric(LudwigMetric):
     """Abstract class for computing mean of metrics."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
         self.avg = _MeanMetric()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
@@ -228,7 +233,7 @@ class MeanMetric(LudwigMetric):
 @register_metric(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMBER])
 class RMSPEMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     """ Root mean squared percentage error metric. """
 
@@ -391,7 +396,7 @@ class SigmoidCrossEntropyMetric(LossMetric):
 @register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT])
 class TokenAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
@@ -413,7 +418,7 @@ class Accuracy(_Accuracy, LudwigMetric):
     """R-squared metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
     def get_objective(cls):
@@ -427,7 +432,7 @@ class Accuracy(_Accuracy, LudwigMetric):
 @register_metric(ACCURACY, [CATEGORY])
 class CategoryAccuracy(_Accuracy, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # make sure y_true is tf.int64
@@ -446,7 +451,7 @@ class CategoryAccuracy(_Accuracy, LudwigMetric):
 @register_metric(HITS_AT_K, [CATEGORY])
 class HitsAtKMetric(_Accuracy, LudwigMetric):
     def __init__(self, top_k: int = 3, **kwargs):
-        super().__init__(top_k=top_k, dist_sync_fn=gather_all_tensors)
+        super().__init__(top_k=top_k, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -467,7 +472,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR])
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -484,7 +489,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
 @register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -501,7 +506,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 @register_metric(JACCARD, [SET])
 class JaccardMetric(MeanMetric):
     def __init__(self, threshold: float = 0.5, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
         self.threshold = threshold
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:

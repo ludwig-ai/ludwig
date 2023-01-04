@@ -42,19 +42,6 @@ def has_horovodrun():
     return "OMPI_COMM_WORLD_RANK" in os.environ or "HOROVOD_RANK" in os.environ
 
 
-def return_first(fn):
-    """Wraps function so results are only returned by the first (coordinator) rank.
-
-    The purpose of this function is to reduce network overhead.
-    """
-
-    def wrapped(*args, **kwargs):
-        res = fn(*args, **kwargs)
-        return res if _HVD.rank() == 0 else None
-
-    return wrapped
-
-
 def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> List[torch.Tensor]:
     """Function to gather all tensors from several processes onto a list that is broadcast to all processes.
 
@@ -98,4 +85,4 @@ def gather_all_tensors(result: torch.Tensor, group: Optional[Any] = None) -> Lis
 
 
 def is_distributed_available() -> bool:
-    return _HVD is not None and _HVD.is_initialized()
+    return _HVD is not None and (_HVD.is_initialized() or os.environ.get("HOROVOD_RANK"))

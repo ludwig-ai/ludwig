@@ -659,7 +659,8 @@ def test_experiment_model_resume(tmpdir):
 
 
 @pytest.mark.distributed
-def test_experiment_model_resume_distributed(tmpdir, ray_cluster_4cpu):
+@pytest.mark.parametrize("dist_strategy", ["horovod", "ddp"])
+def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_4cpu):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
     input_features = [number_feature()]
@@ -672,14 +673,16 @@ def test_experiment_model_resume_distributed(tmpdir, ray_cluster_4cpu):
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 8},
         TRAINER: {"epochs": 1},
-        "backend": {"type": "ray", "trainer": {"num_workers": 2}},
+        "backend": {"type": "ray", "trainer": {"strategy": dist_strategy, "num_workers": 2}},
     }
 
-    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
+    _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=os.path.join(tmpdir, "results1"))
 
-    experiment_cli(config, dataset=rel_path, model_resume_path=output_dir)
+    experiment_cli(
+        config, dataset=rel_path, model_resume_path=output_dir, output_directory=os.path.join(tmpdir, "results2")
+    )
 
-    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path)
+    predict_cli(os.path.join(output_dir, "model"), dataset=rel_path, output_directory=os.path.join(tmpdir, "results3"))
 
 
 @pytest.mark.parametrize(

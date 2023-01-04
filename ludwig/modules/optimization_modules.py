@@ -17,6 +17,7 @@ from typing import Optional
 
 import torch
 
+from ludwig.distributed.base import DistributedStrategy
 from ludwig.schema.optimizers import BaseOptimizerConfig, GradientClippingConfig, optimizer_registry, SGDOptimizerConfig
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -31,8 +32,8 @@ def create_clipper(gradient_clipping_config: Optional[GradientClippingConfig]):
 
 def create_optimizer(
     model,
+    distributed: DistributedStrategy,
     optimizer_config: BaseOptimizerConfig = SGDOptimizerConfig(),
-    horovod=None,
 ):
     """Returns a ready-to-use torch optimizer instance based on the given optimizer config.
 
@@ -50,9 +51,5 @@ def create_optimizer(
 
     # Instantiate the optimizer:
     torch_optimizer: torch.optim.Optimizer = optimizer_cls(params=model.parameters(), **cls_kwargs)
-    if horovod:
-        torch_optimizer = horovod.DistributedOptimizer(
-            torch_optimizer,
-            named_parameters=model.named_parameters(),
-        )
+    torch_optimizer = distributed.wrap_optimizer(torch_optimizer, model)
     return torch_optimizer

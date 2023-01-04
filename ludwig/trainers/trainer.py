@@ -36,6 +36,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import COMBINED, LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
+from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
     is_progressbar_disabled,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -57,7 +58,6 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
-from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
@@ -93,7 +93,7 @@ class Trainer(BaseTrainer):
         callbacks: List = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
-        horovod: Optional[Dict] = None,
+        distributed: Optional[DistributedStrategy] = None,
         device: Optional[str] = None,
         **kwargs,
     ):
@@ -123,8 +123,8 @@ class Trainer(BaseTrainer):
         :param report_tqdm_to_ray: Enables using the ray based tqdm Callback for progress bar reporting
         :param random_seed: Default initialization for the random seeds (default: 42).
         :type random_seed: Float
-        :param horovod: Horovod parameters (default: None).
-        :type horovod: dict
+        :param distributed: Distributed strategy (default: None).
+        :type distributed: `DistributedStrategy`
         :param device: Device to load the model on from a saved checkpoint (default: None).
         :type device: str
         :param config: `ludwig.schema.trainer.BaseTrainerConfig` instance that specifies training hyperparameters
@@ -175,7 +175,7 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = skip_save_progress
         self.skip_save_log = skip_save_log
         self.random_seed = random_seed
-        self.horovod = horovod
+        self.distributed = distributed if distributed is not None else LocalStrategy()
         self.received_sigint = False
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
@@ -186,12 +186,20 @@ class Trainer(BaseTrainer):
         self.model = model
         self.model = self.model.to(self.device)
 
+        # Some frameworks like DDP will wrap the model in a new interface that loses the methods from ECD. To
+        # workaround this, we maintain a separate attribute for the wrapped model, which will be used for training
+        # steps, while other operations happen on the original ECD model. Parameters are shared between the two models
+        # so it is safe to train with the wrapped model and save the best model from the ECD model.
+        self.dist_model = self.distributed.wrap_model(self.model)
+
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
         # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
         optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
-        self.optimizer = create_optimizer(model, horovod=horovod, optimizer_config=optimizer_config)
+        self.optimizer = create_optimizer(
+            self.dist_model, distributed=self.distributed, optimizer_config=optimizer_config
+        )
         self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
 
         # Setup for automatic mixed precision (AMP)
@@ -233,7 +241,7 @@ class Trainer(BaseTrainer):
             def closure():
                 # Allows L-BFGS to reevaluate the loss function
                 self.optimizer.zero_grad()
-                model_outputs = self.model((inputs, targets))
+                model_outputs = self.dist_model((inputs, targets))
                 loss, all_losses = self.model.train_loss(
                     targets, model_outputs, self.regularization_type, self.regularization_lambda
                 )
@@ -243,7 +251,7 @@ class Trainer(BaseTrainer):
             self.optimizer.step(closure)
 
             # Obtain model predictions and loss
-            model_outputs = self.model((inputs, targets))
+            model_outputs = self.dist_model((inputs, targets))
             loss, all_losses = self.model.train_loss(
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
@@ -260,23 +268,22 @@ class Trainer(BaseTrainer):
 
         with torch.cuda.amp.autocast() if self.use_amp else contextlib.nullcontext():
             # Obtain model predictions and loss
-            model_outputs = self.model((inputs, targets))
+            model_outputs = self.dist_model((inputs, targets))
             loss, all_losses = self.model.train_loss(
                 targets, model_outputs, self.regularization_type, self.regularization_lambda
             )
 
         # Begin the backward pass
-        variables = self.model.parameters()
+        variables = self.dist_model.parameters()
         if self.use_amp:
             self.scaler.scale(loss).backward()
         else:
             loss.backward()
 
-        if self.horovod:
-            # Wait for gradient aggregation to complete before clipping the gradients
-            # When using AMP, we need to do this before unscaling.
-            # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
-            self.optimizer.synchronize()
+        # Wait for gradient aggregation to complete before clipping the gradients
+        # When using AMP, we need to do this before unscaling.
+        # See: https://github.com/horovod/horovod/blob/master/examples/pytorch/pytorch_mnist.py
+        self.distributed.wait_optimizer_synced(self.optimizer)
 
         if self.use_amp:
             # In-place unscaling of all gradients before weights update
@@ -288,7 +295,7 @@ class Trainer(BaseTrainer):
         self.clip_grads(variables)
 
         # Apply gradient updates
-        with self.optimizer.skip_synchronize() if self.horovod else contextlib.nullcontext():
+        with self.distributed.prepare_optimizer_update(self.optimizer):
             # Because we already synchronized above, we skip doing so here
             if self.use_amp:
                 self.scaler.step(self.optimizer)
@@ -318,8 +325,7 @@ class Trainer(BaseTrainer):
 
     def set_base_learning_rate(self, base_learning_rate):
         """Sets the target learning rate, and updates the optimizer learning rate."""
-        if self.horovod:
-            base_learning_rate *= self.lr_scale_fn(self.horovod.size())
+        base_learning_rate *= self.lr_scale_fn(self.distributed.size())
         self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
         self.set_optimizer_learning_rate(base_learning_rate)
 
@@ -374,7 +380,7 @@ class Trainer(BaseTrainer):
         Return:
             Median throughput in samples / sec.
         """
-        self.model.train()  # Sets model training mode.
+        self.dist_model.train()  # Sets model training mode.
         durations = []
         for _ in range(total_steps):
             self.model.reset_metrics()
@@ -664,24 +670,26 @@ class Trainer(BaseTrainer):
 
         # ====== Setup file names =======
         model_hyperparameters_path = None
-        training_checkpoints_path = training_progress_tracker_path = None
         tensorboard_log_dir = None
         if self.is_coordinator():
             os.makedirs(save_path, exist_ok=True)
             model_hyperparameters_path = os.path.join(save_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-            training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
             tensorboard_log_dir = os.path.join(save_path, "logs")
+
+        training_progress_tracker_path = None
+        training_checkpoints_path = None
         if save_path:
             training_progress_tracker_path = os.path.join(save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME)
+            training_checkpoints_path = os.path.join(save_path, TRAINING_CHECKPOINTS_DIR_PATH)
 
         self.callback(
             lambda c: c.on_trainer_train_setup(self, save_path, self.is_coordinator()), coordinator_only=False
         )
 
         # ====== Setup session =======
-        checkpoint = checkpoint_manager = None
+        checkpoint_manager = None
+        checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer)
         if self.is_coordinator() and not self.skip_save_progress:
-            checkpoint = Checkpoint(model=self.model, optimizer=self.optimizer)
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
         # ====== Setup Tensorboard writers =======
@@ -699,8 +707,7 @@ class Trainer(BaseTrainer):
         if self.resume and self.resume_files_exist(training_progress_tracker_path, training_checkpoints_path):
             logger.info("Resuming training from previous run.")
             progress_tracker = self.resume_training_progress_tracker(training_progress_tracker_path)
-            if self.is_coordinator():
-                self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
+            self.resume_weights_and_optimizer(training_checkpoints_path, checkpoint)
         else:
             logger.info("Creating fresh model training run.")
             progress_tracker = get_new_progress_tracker(
@@ -714,12 +721,11 @@ class Trainer(BaseTrainer):
                 output_features=output_features,
             )
 
-        if self.horovod:
-            # Horovod: broadcast initial variable states from rank 0 to all other processes.
-            # This is necessary to ensure consistent initialization of all workers when
-            # training is started with random weights or restored from a checkpoint.
-            self.horovod.broadcast_parameters(self.model.state_dict(), root_rank=0)
-            self.horovod.broadcast_optimizer_state(self.optimizer, root_rank=0)
+        # Horovod: broadcast initial variable states from rank 0 to all other processes.
+        # This is necessary to ensure consistent initialization of all workers when
+        # training is started with random weights or restored from a checkpoint.
+        self.distributed.sync_model(self.dist_model)
+        self.distributed.sync_optimizer(self.optimizer)
 
         set_random_seed(self.random_seed)
 
@@ -728,7 +734,7 @@ class Trainer(BaseTrainer):
                 batch_size=self.batch_size,
                 should_shuffle=self.should_shuffle,
                 seed=self.random_seed,
-                horovod=self.horovod,
+                distributed=self.distributed,
                 ignore_last=True,
             ) as batcher:
                 # ================ Training Loop ================
@@ -776,7 +782,7 @@ class Trainer(BaseTrainer):
                     start_time = time.time()
 
                     # Reset the metrics at the start of the next epoch
-                    self.model.train()  # Sets model to training mode.
+                    self.dist_model.train()  # Sets model to training mode.
                     self.model.reset_metrics()
 
                     self.callback(lambda c: c.on_epoch_start(self, progress_tracker, save_path))
@@ -887,15 +893,15 @@ class Trainer(BaseTrainer):
                     self.staircase,
                 )
 
-            if self.horovod:
+            if self.distributed:
                 current_learning_rate = learning_rate_warmup_distributed(
                     current_learning_rate,
                     progress_tracker.epoch,
                     self.learning_rate_warmup_epochs,
-                    self.horovod.size(),
+                    self.distributed.size(),
                     batcher.step,
                     batcher.steps_per_epoch,
-                ) * self.lr_scale_fn(self.horovod.size())
+                ) * self.lr_scale_fn(self.distributed.size())
             else:
                 current_learning_rate = learning_rate_warmup(
                     current_learning_rate,
@@ -972,9 +978,12 @@ class Trainer(BaseTrainer):
         return False
 
     def train_online(self, dataset):
-        self.model.train()  # Sets model training mode.
+        self.dist_model.train()  # Sets model training mode.
         with dataset.initialize_batcher(
-            batch_size=self.batch_size, should_shuffle=self.should_shuffle, horovod=self.horovod, ignore_last=True
+            batch_size=self.batch_size,
+            should_shuffle=self.should_shuffle,
+            distributed=self.distributed,
+            ignore_last=True,
         ) as batcher:
             # training step loop
             progress_bar_config = {
@@ -1020,7 +1029,7 @@ class Trainer(BaseTrainer):
 
     def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
         predictor = Predictor(
-            self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
@@ -1184,9 +1193,8 @@ class Trainer(BaseTrainer):
                     early_stop_bool = True
                     break
 
-        should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
-        if self.horovod:
-            should_early_stop = self.horovod.allreduce(should_early_stop)
+        should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int, device=self.device)
+        should_early_stop = self.distributed.allreduce(should_early_stop)
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
@@ -1236,11 +1244,12 @@ class Trainer(BaseTrainer):
         if self.is_coordinator():
             logger.info(f"Loading progress tracker for model: {training_progress_tracker_path}")
             progress_tracker_dict = load_json(training_progress_tracker_path)
-        if self.horovod:
-            logger.debug("Broadcasting model progress tracker dict to all workers")
-            progress_tracker_dict = self.horovod.broadcast_object(
-                progress_tracker_dict, name="broadcast_progress_tracker"
-            )
+
+        logger.debug("Broadcasting model progress tracker dict to all workers")
+        progress_tracker_dict = self.distributed.broadcast_object(
+            progress_tracker_dict, name="broadcast_progress_tracker"
+        )
+
         progress_tracker = ProgressTracker.load(progress_tracker_dict)
         return progress_tracker
 
@@ -1387,20 +1396,14 @@ class Trainer(BaseTrainer):
                             )
 
     def is_coordinator(self):
-        if not self.horovod:
-            return True
-        return self.horovod.rank() == 0
+        return self.distributed.rank() == 0
 
     @property
     def local_rank(self) -> int:
-        if not self.horovod:
-            return 0
-        return self.horovod.local_rank()
+        return self.distributed.local_rank()
 
     def barrier(self):
-        if not self.horovod:
-            return
-        self.horovod.allreduce(torch.as_tensor([0], dtype=torch.int))
+        self.distributed.allreduce(torch.as_tensor([0], dtype=torch.int))
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():
@@ -1413,8 +1416,8 @@ class RemoteTrainer(Trainer):
         super().__init__(**kwargs)
 
         # Only return results from rank 0 to reduce network overhead
-        self.train = return_first(self.train)
-        self.train_online = return_first(self.train_online)
+        self.train = self.distributed.return_first(self.train)
+        self.train_online = self.distributed.return_first(self.train_online)
 
 
 learning_rate_scale_fns = {

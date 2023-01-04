@@ -14,6 +14,7 @@ from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
+from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
@@ -64,7 +65,7 @@ class LightGBMTrainer(BaseTrainer):
         callbacks: List = None,
         report_tqdm_to_ray=False,
         random_seed: float = default_random_seed,
-        horovod: Optional[Dict] = None,
+        distributed: Optional[DistributedStrategy] = None,
         device: Optional[str] = None,
         **kwargs,
     ):
@@ -72,7 +73,7 @@ class LightGBMTrainer(BaseTrainer):
 
         self.random_seed = random_seed
         self.model = model
-        self.horovod = horovod
+        self.distributed = distributed if distributed is not None else LocalStrategy()
         self.received_sigint = False
         self.report_tqdm_to_ray = report_tqdm_to_ray
         self.callbacks = callbacks or []
@@ -182,7 +183,7 @@ class LightGBMTrainer(BaseTrainer):
         progress_tracker: ProgressTracker,
     ):
         predictor = Predictor(
-            self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
+            self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
@@ -483,8 +484,7 @@ class LightGBMTrainer(BaseTrainer):
                     break
 
         should_early_stop = torch.as_tensor([early_stop_bool], dtype=torch.int)
-        if self.horovod:
-            should_early_stop = self.horovod.allreduce(should_early_stop)
+        should_early_stop = self.distributed.allreduce(should_early_stop)
         if should_early_stop.item():
             if self.is_coordinator():
                 logger.info(
@@ -893,9 +893,7 @@ class LightGBMTrainer(BaseTrainer):
         return lgb_train, eval_sets, eval_names
 
     def is_coordinator(self) -> bool:
-        if not self.horovod:
-            return True
-        return self.horovod.rank() == 0
+        return self.distributed.rank() == 0
 
     def callback(self, fn, coordinator_only=True):
         if not coordinator_only or self.is_coordinator():
@@ -932,7 +930,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
         skip_save_log: bool = False,
         callbacks: List = None,
         random_seed: float = default_random_seed,
-        horovod: Optional[Dict] = None,
+        distributed: Optional[DistributedStrategy] = None,
         device: Optional[str] = None,
         trainer_kwargs: Optional[Dict] = {},
         data_loader_kwargs: Optional[Dict] = None,
@@ -948,7 +946,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             skip_save_log=skip_save_log,
             callbacks=callbacks,
             random_seed=random_seed,
-            horovod=horovod,
+            distributed=distributed,
             device=device,
             **kwargs,
         )
