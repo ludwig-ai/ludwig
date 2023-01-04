@@ -1,14 +1,11 @@
 from typing import Any, Dict, Set
 
-from marshmallow import ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     DECODER,
     ENCODER,
     IMAGE,
     INPUT_FEATURES,
-    NAME,
     PREPROCESSING,
     SEQUENCE,
     TEXT,
@@ -16,10 +13,10 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.encoders.registry import get_encoder_cls
-from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
-from ludwig.schema.model_config import ModelConfig
+from ludwig.features.feature_registries import get_input_type_registry
+from ludwig.schema.model_config import ModelConfig, get_default_decoder_type, get_default_encoder_type
 from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
-from ludwig.utils.misc_utils import get_from_registry, merge_dict
+from ludwig.utils.misc_utils import merge_dict
 
 
 @DeveloperAPI
@@ -92,22 +89,10 @@ def merge_fixed_preprocessing_params(
 
 
 @DeveloperAPI
-def get_default_encoder_type(feature_type: str) -> str:
-    feature_schema = get_from_registry(feature_type, get_input_type_registry()).get_schema_cls()
-    return feature_schema().encoder.type
-
-
-@DeveloperAPI
-def get_default_decoder_type(feature_type: str) -> str:
-    feature_schema = get_from_registry(feature_type, get_output_type_registry()).get_schema_cls()
-    return feature_schema().decoder.type
-
-
-@DeveloperAPI
 def get_default_encoder_or_decoder(feature: FeatureConfigDict, config_feature_group: str) -> str:
     """Returns the default encoder or decoder for a feature."""
     if config_feature_group == INPUT_FEATURES:
-        return get_default_encoder_type(feature[TYPE])
+        return get_default_decoder_type(feature[TYPE])
     else:
         return get_default_decoder_type(feature[TYPE])
 
@@ -141,20 +126,3 @@ def has_pretrained_encoder(config: ModelConfig) -> bool:
             return True
 
     return False
-
-
-def validate_encoders(config: ModelConfig) -> bool:
-    model_type = config.model_type
-    for feature in config.input_features.to_list():
-        feature_type = feature.get("type")
-        encoder = feature.get("encoder", {})
-
-        encoder_type = encoder.get(TYPE, get_default_encoder_type(feature_type))
-        encoder_class = get_encoder_cls(feature_type, encoder_type)
-
-        supported_types = encoder_class.get_supported_model_types(encoder)
-        if model_type not in supported_types:
-            raise ValidationError(
-                f"Model type {model_type} does not support encoder with params {encoder} "
-                f"used by input feature {feature[NAME]}"
-            )

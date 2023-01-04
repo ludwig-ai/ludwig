@@ -39,7 +39,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.features.feature_registries import get_output_type_registry
+from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
@@ -64,8 +64,7 @@ from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTraine
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-from ludwig.utils.config_utils import validate_encoders
-from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import get_from_registry, set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
@@ -599,3 +598,35 @@ def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) ->
         metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
     metrics_names[COMBINED] = [LOSS]
     return metrics_names
+
+
+@DeveloperAPI
+def validate_encoders(config: ModelConfig) -> bool:
+    from ludwig.encoders.registry import get_encoder_cls as get_encoder_module_cls
+
+    model_type = config.model_type
+    for feature in config.input_features.to_list():
+        feature_type = feature.get("type")
+        encoder = feature.get("encoder", {})
+
+        encoder_type = encoder.get(TYPE, get_default_encoder_type(feature_type))
+        encoder_class = get_encoder_module_cls(feature_type, encoder_type)
+
+        supported_types = encoder_class.get_supported_model_types(encoder)
+        if model_type not in supported_types:
+            raise ValidationError(
+                f"Model type {model_type} does not support encoder with params {encoder} "
+                f"used by input feature {feature[NAME]}"
+            )
+
+
+@DeveloperAPI
+def get_default_encoder_type(feature_type: str) -> str:
+    feature_schema = get_from_registry(feature_type, get_input_type_registry()).get_schema_cls()
+    return feature_schema().encoder.type
+
+
+@DeveloperAPI
+def get_default_decoder_type(feature_type: str) -> str:
+    feature_schema = get_from_registry(feature_type, get_output_type_registry()).get_schema_cls()
+    return feature_schema().decoder.type
