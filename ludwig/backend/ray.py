@@ -768,7 +768,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
         all_kwargs = {
             "model": model,
-            "trainer_kwargs": copy.deepcopy(self._horovod_kwargs),
+            "trainer_kwargs": self._horovod_kwargs,
             "data_loader_kwargs": self._data_loader_kwargs,
             "executable_kwargs": executable_kwargs,
         }
@@ -780,7 +780,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
         return RayPredictor(
             model,
             self.df_engine,
-            copy.deepcopy(self._horovod_kwargs),
+            self._horovod_kwargs,
             self._data_loader_kwargs,
             **executable_kwargs,
         )

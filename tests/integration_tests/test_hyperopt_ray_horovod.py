@@ -111,7 +111,20 @@ SCENARIOS = [
 ]
 
 
-# TODO ray: replace legacy mode when Ray Train supports placement groups
+# NOTE(geoffrey): As of PR #2079, we reduce the test's processor parallelism from 4 to 1.
+#
+# We reduce parallelism to ensure that Ray Datasets doesn't reserve all available CPUs ahead of the other trials
+# being scheduled. Before this change, all CPUs for the train_fn of each trial were scheduled up front by
+# the Tuner, which meant that Ray Datasets could safely grab all remaining CPUs.
+#
+# In this change, only the dummy hyperopt_resources are scheduled by the Tuner. The inner Tuners then
+# schedule CPUs ad-hoc as they are called and executed by each trial. The danger with this is in its interaction with
+# Ray Datasets, which grabs resources opportunistically. If an inner Tuner is scheduled and its Ray Datasets tasks grab
+# the remaining CPUs, other trials may be prevented from starting, causing the test to double in duration
+# (since some trials are executed in sequence instead of all at once).
+#
+# Setting parallelism to 1 here ensures that the number of CPUs requested by Ray Datasets is limited to 1 per trial.
+# For more context, see https://github.com/ludwig-ai/ludwig/pull/2709/files#r1042812690
 RAY_BACKEND_KWARGS = {"processor": {"parallelism": 1}}
 
 

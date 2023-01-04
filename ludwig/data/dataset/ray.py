@@ -19,6 +19,7 @@ import math
 import queue
 import threading
 from functools import lru_cache
+from packaging import version
 from typing import Dict, Iterator, Optional, Union
 
 import numpy as np
@@ -84,9 +85,10 @@ class RayDataset(Dataset):
         # If user has specified a window size, use it as is
         if window_size_bytes:
             return window_size_bytes
+
         # If the user does not supply a window size and the dataset is large,
         # set the window size to `<available memory> // 5`.
-        elif self.auto_window and window_size_bytes is None:
+        if self.auto_window and window_size_bytes is None:
             ds_memory_size = self.in_memory_size_bytes
             cluster_memory_size = ray.cluster_resources()["object_store_memory"]
             if ds_memory_size > cluster_memory_size // 5:

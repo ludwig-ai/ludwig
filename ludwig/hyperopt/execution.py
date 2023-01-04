@@ -788,13 +788,28 @@ class RayTuneExecutor:
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
         if _is_ray_backend(backend):
-            # If Ray backend, only request custom resource at trial level (inner Tuner will request resources)
+            # NOTE(geoffrey): as of PR #2709, when we are using a Ray backend, there are two main processes
+            # spawned during a Ray Tune trial.
+            #
+            # The first process is the `trial_function`, which is the function that is passed to `tune.run`.
+            # The `tuner` object allocates resources for this function using `self.trial_function_resources` below.
+            # Note that `trial_function` is a very lightweight process whose main purpose is to spawn the `trainer`
+            # process and communicate with the `tuner` object.
+            #
+            # The second process is the actual `trainer`, which is spawned by `trial_function`. The `tuner` object
+            # does not know about this process, so we cannot allocate resources for it ahead of time. Instead, the
+            # `trainer` will reserve its own resources downstream based on its config.
+            #
+            # In summary, we should only request resources for `trial_function` at this level.
+            # `trainer` will request its own resources.
             resources = [self.trial_function_resources]
         else:
-            # If not Ray backend, request all of the resources required at the trial level
+            # If we are NOT using the Ray backend, the `trial_function` and the `trainer` are executed in the same
+            # process. Since the `trial_function` doesn't really require its own resources, we can just request
+            # resources for the `trainer` here.
             use_gpu = bool(self._gpu_resources_per_trial_non_none)
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
-            resources = [self.trial_function_resources, {"CPU": num_cpus, "GPU": num_gpus}]
+            resources = [{"CPU": num_cpus, "GPU": num_gpus}]
 
         resources_per_trial = PlacementGroupFactory(resources)
         run_experiment_trial_params = tune.with_resources(run_experiment_trial_params, resources_per_trial)

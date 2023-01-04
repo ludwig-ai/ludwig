@@ -16,7 +16,6 @@
 
 import collections
 import logging
-import os
 from contextlib import contextmanager
 from typing import Any, Dict, Iterable, Tuple, Union
 
