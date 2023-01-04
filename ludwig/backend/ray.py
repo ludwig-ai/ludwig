@@ -44,15 +44,7 @@ if TYPE_CHECKING:
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
-from ludwig.constants import (
-    CPU_RESOURCES_PER_TRIAL,
-    EXECUTOR,
-    MODEL_ECD,
-    MODEL_GBM,
-    NAME,
-    PREPROCESSING,
-    PROC_COLUMN,
-)
+from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, MODEL_GBM, NAME, PREPROCESSING, PROC_COLUMN
 from ludwig.data.dataframe.base import DataFrameEngine
 from ludwig.data.dataset.ray import RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
