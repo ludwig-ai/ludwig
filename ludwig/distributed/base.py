@@ -10,9 +10,9 @@ from torch.optim import Optimizer
 class DistributedStrategy(ABC):
     """Interface that wraps a distributed training framework (Horovod, DDP).
 
-    Distributed strategies modify the model and/or optimizer to coordinate gradient updates
-    among multiple workers running in parallel. In most cases, these are using collective communication
-    libraries pass messages between processes.
+    Distributed strategies modify the model and/or optimizer to coordinate gradient updates among multiple workers
+    running in parallel. In most cases, these are using collective communication libraries pass messages between
+    processes.
     """
 
     @abstractmethod
