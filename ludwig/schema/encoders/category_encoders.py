@@ -11,9 +11,17 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 
 @DeveloperAPI
+@dataclass(repr=False, order=True)
+class CategoryEncoderConfig(BaseEncoderConfig):
+    """Base class for category encoders."""
+
+    skip: bool = schema_utils.Boolean(False, "[internal] Whether to skip encoder and use input as output.")
+
+
+@DeveloperAPI
 @register_encoder_config("passthrough", CATEGORY)
 @dataclass(order=True)
-class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
+class CategoricalPassthroughEncoderConfig(CategoryEncoderConfig):
     """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
     passthrough encoder."""
 
@@ -26,7 +34,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("dense", CATEGORY)
 @dataclass(repr=False, order=True)
-class CategoricalEmbedConfig(BaseEncoderConfig):
+class CategoricalEmbedConfig(CategoryEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "dense",
         description="Type of encoder.",
@@ -113,7 +121,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("sparse", CATEGORY)
 @dataclass(repr=False, order=True)
-class CategoricalSparseConfig(BaseEncoderConfig):
+class CategoricalSparseConfig(CategoryEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "sparse",
         description="Type of encoder.",
@@ -191,7 +199,7 @@ class CategoricalSparseConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("onehot", CATEGORY)
 @dataclass(order=True)
-class CategoricalOneHotEncoderConfig(BaseEncoderConfig):
+class CategoricalOneHotEncoderConfig(CategoryEncoderConfig):
     """CategoricalOneHotEncoderConfig is a dataclass that configures the parameters used for a categorical onehot
     encoder."""
 
