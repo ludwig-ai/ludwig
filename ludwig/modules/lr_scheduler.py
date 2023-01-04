@@ -100,8 +100,8 @@ class LRScheduler:
 class StepInfo:
     """Stores the steps_per_checkpoint and total_steps used during the current training run.
 
-    This class is needed by LambdaLR to allow us to update the steps on training init without resetting the
-    entire LRScheduler from scratch (which would result in resetting the optimizer learning rate).
+    This class is needed by LambdaLR to allow us to update the steps on training init without resetting the entire
+    LRScheduler from scratch (which would result in resetting the optimizer learning rate).
     """
 
     def __init__(self, steps_per_checkpoint: int, total_steps: int, config: LRSchedulerConfig):
