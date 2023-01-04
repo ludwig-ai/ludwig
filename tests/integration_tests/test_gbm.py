@@ -330,6 +330,7 @@ def test_gbm_category_one_hot_encoding(tmpdir, backend, ray_cluster_4cpu):
     input_features = [
         binary_feature(),
         category_feature(encoder={"type": "onehot"}),
+        number_feature(),
     ]
     output_feature = binary_feature()
     output_features = [output_feature]

@@ -118,12 +118,16 @@ def to_scalar_df(df: pd.DataFrame) -> pd.DataFrame:
     assume all object columns are lists of the same length (i.e., tensor format output from preprocessing).
     """
     scalar_df = df
+    column_ordering = []
     for c in df.columns:
         s = df[c]
         if s.dtype == "object":
-            s_split = s.to_list()
-            ncols = s_split[0].shape[0]
-            sdf = pd.DataFrame(s_split, columns=[f"{c}_{k}" for k in range(ncols)])
-            scalar_df = scalar_df.drop([c], axis=1)
+            s_list = s.to_list()
+            ncols = s_list[0].shape[0]
+            split_cols = [f"{c}_{k}" for k in range(ncols)]
+            sdf = pd.DataFrame(s_list, columns=split_cols)
             scalar_df = pd.concat([scalar_df, sdf], axis=1)
-    return scalar_df
+            column_ordering += split_cols
+        else:
+            column_ordering.append(c)
+    return scalar_df[column_ordering]
