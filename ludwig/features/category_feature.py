@@ -45,7 +45,6 @@ from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
-from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
@@ -200,50 +199,13 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: CategoryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
-        if encoder_obj is None:
-            encoder_obj = self.initialize_encoder(input_feature_config.encoder)
-        self.encoder_obj = encoder_obj
 
-        if input_feature_config.encoder.skip:
-            self._module = _CategoryInputPassthroughModule(encoder_obj.output_shape)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
         else:
-            self._module = _CategoryEncoderModule(encoder_obj)
+            self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-    def forward(self, inputs, mask=None):
-        return self._module(inputs, mask=mask)
-
-    @property
-    def input_dtype(self):
-        return self._module.input_dtype
-
-    @property
-    def input_shape(self):
-        return self._module.input_shape
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return self._module.output_shape
-
-    @staticmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        feature_config.encoder.vocab = feature_metadata["idx2str"]
-        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
-
-    @staticmethod
-    def get_schema_cls():
-        return CategoryInputFeatureConfig
-
-    @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-        return _CategoryPreprocessing(metadata)
-
-
-class _CategoryEncoderModule(LudwigModule):
-    def __init__(self, encoder_obj):
-        super().__init__()
-        self.encoder_obj = encoder_obj
-
-    def forward(self, inputs, mask=None):
+    def forward(self, inputs):
         assert isinstance(inputs, torch.Tensor)
         assert (
             inputs.dtype == torch.int8
@@ -274,30 +236,18 @@ class _CategoryEncoderModule(LudwigModule):
     def output_shape(self) -> torch.Size:
         return torch.Size(self.encoder_obj.output_shape)
 
+    @staticmethod
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
 
-class _CategoryInputPassthroughModule(LudwigModule):
-    def __init__(self, shape):
-        super().__init__()
-        self.shape = shape
+    @staticmethod
+    def get_schema_cls():
+        return CategoryInputFeatureConfig
 
-    def forward(self, inputs, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.int64, f"{inputs.dtype} != torch.int64"
-        assert len(inputs.shape) == 2
-
-        return {"encoder_output": inputs}
-
-    @property
-    def input_dtype(self):
-        return torch.int64
-
-    @property
-    def input_shape(self):
-        return self.shape
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return self.shape
+    @staticmethod
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return _CategoryPreprocessing(metadata)
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
