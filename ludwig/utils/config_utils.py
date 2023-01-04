@@ -1,20 +1,10 @@
 from typing import Any, Dict, Set
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    DECODER,
-    ENCODER,
-    IMAGE,
-    INPUT_FEATURES,
-    PREPROCESSING,
-    SEQUENCE,
-    TEXT,
-    TIMESERIES,
-    TYPE,
-)
+from ludwig.constants import DECODER, ENCODER, IMAGE, INPUT_FEATURES, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_input_type_registry
-from ludwig.schema.model_config import ModelConfig, get_default_decoder_type, get_default_encoder_type
+from ludwig.schema.model_config import get_default_decoder_type, get_default_encoder_type, ModelConfig
 from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
 from ludwig.utils.misc_utils import merge_dict
 
