@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import logging
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
@@ -322,12 +323,19 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         feature (Dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
     """
-    if input_feature:
-        module_type = ENCODER
-        feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
-    else:
-        module_type = DECODER
-        feature_cls = get_from_registry(feature[TYPE], get_output_type_registry())
+    if TYPE not in feature:
+        return feature
+
+    try:
+        if input_feature:
+            module_type = ENCODER
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+        else:
+            module_type = DECODER
+            feature_cls = get_from_registry(feature[TYPE], get_output_type_registry())
+    except ValueError:
+        logging.exception("Failed to obtain encoder / decoder from registry")
+        return feature
 
     feature_schema_cls = feature_cls.get_schema_cls()
     feature_keys = feature_schema_cls.get_valid_field_names()

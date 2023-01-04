@@ -31,19 +31,18 @@ from ludwig.constants import (
     PROC_COLUMN,
     TEXT,
 )
-from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature
+from ludwig.features.base_feature import BaseFeatureMixin, OutputFeature
 from ludwig.features.feature_utils import compute_sequence_probability, compute_token_probabilities
 from ludwig.features.sequence_feature import (
     _SequencePostprocessing,
     _SequencePreprocessing,
-    SequenceFeatureMixin,
+    SequenceInputFeature,
     SequenceOutputFeature,
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
 from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
-from ludwig.utils.torch_utils import LudwigModule
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -175,55 +174,9 @@ class TextFeatureMixin(BaseFeatureMixin):
         return proc_df
 
 
-class TextInputFeature(TextFeatureMixin, SequenceFeatureMixin, InputFeature):
+class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     def __init__(self, input_feature_config: TextInputFeatureConfig, encoder_obj=None, **kwargs):
-        super().__init__(input_feature_config, **kwargs)
-        if encoder_obj is None:
-            encoder_obj = self.initialize_encoder(input_feature_config.encoder)
-        self.encoder_obj = encoder_obj
-
-        if input_feature_config.encoder.skip:
-            self._module = _TextInputPassthroughModule(encoder_obj.output_shape)
-        else:
-            self._module = _TextInputEncoderModule(encoder_obj)
-
-    def forward(self, inputs, mask=None):
-        return self._module(inputs, mask=mask)
-
-    @property
-    def input_dtype(self):
-        return self._module.input_dtype
-
-    @property
-    def input_shape(self):
-        return self._module.input_shape
-
-    @staticmethod
-    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        feature_config.encoder.vocab = feature_metadata["idx2str"]
-        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
-        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
-        feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
-        feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
-        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
-
-    @staticmethod
-    def get_schema_cls():
-        return TextInputFeatureConfig
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return self._module.output_shape
-
-    @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-        return _SequencePreprocessing(metadata)
-
-
-class _TextInputEncoderModule(LudwigModule):
-    def __init__(self, encoder_obj):
-        super().__init__()
-        self.encoder_obj = encoder_obj
+        super().__init__(input_feature_config, encoder_obj=encoder_obj, **kwargs)
 
     def forward(self, inputs, mask=None):
         assert isinstance(inputs, torch.Tensor)
@@ -252,34 +205,26 @@ class _TextInputEncoderModule(LudwigModule):
     def input_shape(self):
         return torch.Size([self.encoder_obj.config.max_sequence_length])
 
+    @staticmethod
+    def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
+        feature_config.encoder.vocab = feature_metadata["idx2str"]
+        feature_config.encoder.vocab_size = len(feature_metadata["idx2str"])
+        feature_config.encoder.max_sequence_length = feature_metadata["max_sequence_length"]
+        feature_config.encoder.pad_idx = feature_metadata["pad_idx"]
+        feature_config.encoder.num_tokens = len(feature_metadata["idx2str"])
+        feature_config.encoder.skip = feature_metadata[PREPROCESSING].get("cache_encoder_embeddings", False)
+
+    @staticmethod
+    def get_schema_cls():
+        return TextInputFeatureConfig
+
     @property
     def output_shape(self) -> torch.Size:
         return self.encoder_obj.output_shape
 
-
-class _TextInputPassthroughModule(LudwigModule):
-    def __init__(self, shape):
-        super().__init__()
-        self.shape = shape
-
-    def forward(self, inputs, mask=None):
-        assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype == torch.float32, f"{inputs.dtype} != torch.float32"
-        assert len(inputs.shape) == 2
-
-        return {"encoder_output": inputs}
-
-    @property
-    def input_dtype(self):
-        return torch.float32
-
-    @property
-    def input_shape(self):
-        return self.shape
-
-    @property
-    def output_shape(self) -> torch.Size:
-        return self.shape
+    @staticmethod
+    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
+        return _SequencePreprocessing(metadata)
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
