@@ -29,6 +29,7 @@ try:
 
     from ludwig.backend.horovod import HorovodBackend
     from ludwig.data.dataset.ray import RayDataset
+    from ludwig.distributed.horovod import HorovodStrategy
     from ludwig.models.gbm import GBM
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
@@ -38,12 +39,9 @@ try:
     def run_scale_lr(config, data_csv, num_workers, outdir):
         class FakeHorovodBackend(HorovodBackend):
             def initialize(self):
-                import horovod.torch as hvd
-
-                hvd.init()
-
-                self._horovod = mock.Mock(wraps=hvd)
-                self._horovod.size.return_value = num_workers
+                distributed = HorovodStrategy()
+                self._distributed = mock.Mock(wraps=distributed)
+                self._distributed.size.return_value = num_workers
 
         class TestCallback(Callback):
             def __init__(self):

@@ -156,6 +156,35 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     if "tune_checkpoint_num" not in ret:
         ret["tune_checkpoint_num"] = 0
 
+    # Upgrades related to extending progress tracker with explicit bests.
+    if "checkpoint_number" not in ret:
+        ret["checkpoint_number"] = 0
+
+    if "best_eval_metric_steps" not in ret:
+        ret["best_eval_metric_steps"] = 0
+
+    if "best_eval_metric_epoch" not in ret:
+        ret["best_eval_metric_epoch"] = 0
+
+    if "best_eval_metric_checkpoint_number" not in ret:
+        ret["best_eval_metric_checkpoint_number"] = 0
+
+    if "best_eval_train_metrics" not in ret:
+        ret["best_eval_train_metrics"] = {}
+
+    if "best_eval_validation_metrics" not in ret:
+        ret["best_eval_validation_metrics"] = {}
+
+    if "best_eval_test_metrics" not in ret:
+        ret["best_eval_test_metrics"] = {}
+
+    if "best_eval_metric" in ret:
+        ret["best_eval_metric_value"] = ret["best_eval_metric"]
+        del ret["best_eval_metric"]
+
+    if "last_improvement" in ret:
+        del ret["last_improvement"]
+
     return ret
 
 
