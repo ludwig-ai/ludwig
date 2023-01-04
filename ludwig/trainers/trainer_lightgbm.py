@@ -812,7 +812,7 @@ class LightGBMTrainer(BaseTrainer):
                 raise ValueError(
                     "Some column names in the training set contain invalid characters. Please ensure column names only "
                     "contain alphanumeric characters and underscores, then try training again."
-                )
+                ) from e
             else:
                 raise
 
@@ -828,7 +828,7 @@ class LightGBMTrainer(BaseTrainer):
                     raise ValueError(
                         "Some column names in the validation set contain invalid characters. Please ensure column "
                         "names only contain alphanumeric characters and underscores, then try training again."
-                    )
+                    ) from e
                 else:
                     raise
             eval_sets.append(lgb_val)
