@@ -5,13 +5,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import TRAINER
-from tests.integration_tests.utils import (
-    binary_feature,
-    category_feature,
-    generate_data,
-    number_feature,
-    text_feature,
-)
+from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
 
 def run_test_suite(config, dataset, backend):
