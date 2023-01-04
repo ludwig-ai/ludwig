@@ -10,8 +10,14 @@ from tests.integration_tests.utils import binary_feature, generate_data, number_
 
 def run_test_suite(config, dataset, backend):
     with tempfile.TemporaryDirectory() as tmpdir:
-        ludwig_model = LudwigModel(config, backend=backend)
-        ludwig_model.train(dataset=dataset, output_directory=tmpdir)
+        model = LudwigModel(config, backend=backend)
+        _, _, output_dir = model.train(dataset=dataset, output_directory=tmpdir)
+
+        model_dir = os.path.join(output_dir, "model")
+        loaded_model = LudwigModel.load(model_dir, backend=backend)
+        loaded_model.predict(dataset=dataset)
+
+        loaded_model.to_torchscript()
 
 
 @pytest.mark.parametrize(
