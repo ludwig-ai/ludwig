@@ -102,8 +102,9 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 def LRSchedulerDataclassField(description: str, default: Dict = None):
     """Returns custom dataclass field for `LRSchedulerConfig`. Allows `None` by default.
 
-    :param description: Description of the dataclass field
-    :param default: dict that specifies param values that will be loaded by its schema class (default: None).
+    Args:
+        description: Description of the dataclass field
+        default: dict that specifies param values that will be loaded by its schema class (default: None).
     """
     allow_none = True
     default = default or {}

@@ -12,18 +12,18 @@ from ludwig.utils.metric_utils import TrainerMetric
 from ludwig.utils.trainer_utils import ProgressTracker
 
 
-class ReduceLROnPlateauLimited(ReduceLROnPlateau):
+class ReduceLROnPLateauCappedDecreases(ReduceLROnPlateau):
     def __init__(self, optimizer: Optimizer, mode: str, reduce_limit: int, factor: float, patience: int):
         super().__init__(optimizer, mode=mode, factor=factor, patience=patience)
         self.reduce_limit = reduce_limit
         self._num_reduce_lr = 0
 
-    def step(self, metrics, epoch=None):
+    def step(self, metrics):
         if self._num_reduce_lr >= self.reduce_limit:
-            # Already reduce the LR as many times as we will allow
+            # Already reduced the LR as many times as we will allow
             return
 
-        return super().step(metrics, epoch=epoch)
+        return super().step(metrics)
 
     def _reduce_lr(self, epoch):
         super()._reduce_lr(epoch)
@@ -50,7 +50,7 @@ class LRScheduler:
         self._eval_scheduler = None
         if self.config.reduce_on_plateau > 0:
             mode = "min" if self.validation_metric.get_objective() == MINIMIZE else "max"
-            self._eval_scheduler = ReduceLROnPlateauLimited(
+            self._eval_scheduler = ReduceLROnPLateauCappedDecreases(
                 optimizer=self.optimizer,
                 mode=mode,
                 reduce_limit=self.config.reduce_on_plateau,
@@ -98,6 +98,12 @@ class LRScheduler:
 
 
 class StepInfo:
+    """Stores the steps_per_checkpoint and total_steps used during the current training run.
+
+    This class is needed by LambdaLR to allow us to update the steps on training init without resetting the
+    entire LRScheduler from scratch (which would result in resetting the optimizer learning rate).
+    """
+
     def __init__(self, steps_per_checkpoint: int, total_steps: int, config: LRSchedulerConfig):
         self.config = config
         self.reset(steps_per_checkpoint, total_steps)
@@ -108,8 +114,8 @@ class StepInfo:
 
         if self.config.warmup_fraction > 0 and self.config.warmup_evaluations > 0:
             logging.info(
-                "Both `learning_rate_scheduler.warmup_fraction` and `learning_rate_scheduler.warmup_evaluations`. "
-                "This will result in the greater of the two (as a function of the total training steps) being used."
+                "Both `learning_rate_scheduler.warmup_fraction` and `learning_rate_scheduler.warmup_evaluations` "
+                "provided. The larger of the two (as a function of the total training steps) will be used."
             )
 
         num_warmup_steps = 0
