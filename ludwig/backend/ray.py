@@ -46,7 +46,7 @@ from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.data.dataset.ray import _SCALAR_TYPES, cast_as_tensor_dtype, RayDataset, RayDatasetManager, RayDatasetShard
+from ludwig.data.dataset.ray import _SCALAR_TYPES, RayDataset, RayDatasetManager, RayDatasetShard
 from ludwig.models.base import BaseModel
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import BasePredictor, get_output_columns, Predictor, RemotePredictor
@@ -241,34 +241,6 @@ def tune_batch_size_fn(
 
         trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
-    finally:
-        torch.cuda.empty_cache()
-        hvd.shutdown()
-
-
-@ray.remote(max_calls=1)
-def tune_learning_rate_fn(
-    dataset: RayDataset,
-    config: ModelConfigDict,
-    data_loader_kwargs: Dict[str, Any] = None,
-    executable_kwargs: Dict[str, Any] = None,
-    model: ECD = None,  # noqa: F821
-    training_set_metadata: TrainingSetMetadataDict = None,
-    features: Dict[str, Dict] = None,
-    **kwargs,
-) -> float:
-    # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
-    try:
-        initialize_pytorch(horovod=hvd)
-
-        train_shard = RayDatasetShard(dataset.ds, features, training_set_metadata)
-
-        device = get_torch_device()
-        model = model.to(device)
-
-        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
-        return trainer.tune_learning_rate(config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
         hvd.shutdown()
@@ -476,20 +448,6 @@ class RayTrainerV2(BaseTrainer):
             )
         )
 
-    def tune_learning_rate(self, config, training_set: RayDataset, **kwargs) -> float:
-        return ray.get(
-            tune_learning_rate_fn.options(num_cpus=self.num_cpus, num_gpus=self.num_gpus).remote(
-                dataset=training_set,
-                config=config,
-                data_loader_kwargs=self.data_loader_kwargs,
-                executable_kwargs=self.executable_kwargs,
-                model=ray.put(self.model),
-                training_set_metadata=training_set.training_set_metadata,
-                features=training_set.features,
-                **kwargs,
-            )
-        )
-
     @property
     def validation_field(self):
         return self._validation_field
@@ -611,16 +569,9 @@ class RayPredictor(BasePredictor):
             **kwargs,
         )
 
-        columns = [f.proc_column for f in self.model.input_features.values()]
-
-        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-            for c in columns:
-                df[c] = cast_as_tensor_dtype(df[c])
-            return df
-
         num_cpus, num_gpus = self.get_resources_per_worker()
 
-        predictions = dataset.ds.map_batches(to_tensors, batch_format="pandas").map_batches(
+        predictions = dataset.ds.map_batches(
             batch_predictor,
             batch_size=self.batch_size,
             compute="actors",

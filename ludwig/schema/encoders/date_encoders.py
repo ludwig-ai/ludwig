@@ -7,14 +7,13 @@ from ludwig.constants import DATE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
+from ludwig.schema.metadata import ENCODER_METADATA
 
 
 @DeveloperAPI
 @register_encoder_config("embed", DATE)
 @dataclass(repr=False)
 class DateEmbedConfig(BaseEncoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "embed",
         description="Type of encoder.",
@@ -101,7 +100,6 @@ class DateEmbedConfig(BaseEncoderConfig):
 @register_encoder_config("wave", DATE)
 @dataclass(repr=False)
 class DateWaveConfig(BaseEncoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "wave",
         description="Type of encoder.",

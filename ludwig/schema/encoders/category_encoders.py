@@ -7,7 +7,7 @@ from ludwig.constants import CATEGORY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
+from ludwig.schema.metadata import ENCODER_METADATA
 
 
 @DeveloperAPI
@@ -27,7 +27,6 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("dense", CATEGORY)
 @dataclass(repr=False, order=True)
 class CategoricalEmbedConfig(BaseEncoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "dense",
         description="Type of encoder.",
@@ -115,7 +114,6 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 @register_encoder_config("sparse", CATEGORY)
 @dataclass(repr=False, order=True)
 class CategoricalSparseConfig(BaseEncoderConfig):
-
     type: str = schema_utils.ProtectedString(
         "sparse",
         description="Type of encoder.",

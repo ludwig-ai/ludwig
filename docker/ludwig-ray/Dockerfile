@@ -25,8 +25,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-# TODO(travis): remove this once we fix CUDA 11.6 NCCL version in base image
-RUN pip install torch==1.12.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 RUN HOROVOD_WITH_PYTORCH=1 \

@@ -5,13 +5,12 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
 @dataclass(order=True, repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
-
     type: str = schema_utils.ProtectedString(
         "project_aggregate",
         description="Type of combiner.",

@@ -16,6 +16,8 @@
 
 import collections
 import logging
+import os
+from contextlib import contextmanager
 from typing import Any, Dict, Iterable, Tuple, Union
 
 import dask
@@ -29,7 +31,7 @@ from dask.diagnostics import ProgressBar
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset, read_parquet
 from ray.data.block import Block, BlockAccessor
-from ray.data.extensions import ArrowTensorType, TensorArray, TensorDtype
+from ray.data.extensions import ArrowTensorType, TensorDtype
 from ray.util.client.common import ClientObjectRef
 
 from ludwig.api_annotations import DeveloperAPI
@@ -154,12 +156,22 @@ class DaskEngine(DataFrameEngine):
         meta = meta if meta is not None else ("data", "object")
         return series.map_partitions(map_fn, meta=meta)
 
-    def map_batches(self, series, map_fn):
+    def map_batches(self, series, map_fn, enable_tensor_extension_casting=True):
+        """Map a function over batches of a Dask Series.
+
+        Args:
+            series: Dask Series
+            map_fn: Function to apply to each batch
+            enable_tensor_extension_casting: Whether to enable tensor extension casting at the end of the Ray Datasets
+                map_batches call. This is useful in cases where the output is not supported by the ray Tensor dtype
+                extension, such as when the output consists of ragged tensors.
+        """
         import ray.data
 
-        ds = ray.data.from_dask(series)
-        ds = ds.map_batches(map_fn, batch_format="pandas")
-        return self._to_dask(ds)
+        with tensor_extension_casting(enable_tensor_extension_casting):
+            ds = ray.data.from_dask(series)
+            ds = ds.map_batches(map_fn, batch_format="pandas")
+            return self._to_dask(ds)
 
     def apply_objects(self, df, apply_fn, meta=None):
         meta = meta if meta is not None else ("data", "object")
@@ -215,21 +227,12 @@ class DaskEngine(DataFrameEngine):
 
     def write_predictions(self, df: dd.DataFrame, path: str):
         ds = self.to_ray_dataset(df)
-
-        def to_tensors(batch: pd.DataFrame) -> pd.DataFrame:
-            data = {}
-            for c in batch.columns:
-                try:
-                    data[c] = TensorArray(batch[c])
-                except TypeError:
-                    # Not a tensor, likely a string which pyarrow can handle natively
-                    pass
-            return pd.DataFrame(data)
-
-        ds = ds.map_batches(to_tensors)
-
-        fs, path = get_fs_and_path(path)
-        ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
+        # We disable tensor extension casting here because we are writing out to Parquet and there is no need
+        # to cast to the ray Tensor dtype extension before doing so (they will be written out as object dtype as if
+        # we were writing to parquet using dask).
+        with tensor_extension_casting(False):
+            fs, path = get_fs_and_path(path)
+            ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
     def read_predictions(self, path: str) -> dd.DataFrame:
         fs, path = get_fs_and_path(path)
@@ -319,3 +322,25 @@ class DaskEngine(DataFrameEngine):
     @property
     def partitioned(self):
         return True
+
+
+@contextmanager
+def tensor_extension_casting(enforced: bool):
+    """This context manager is used to enforce or disable tensor extension casting.
+
+    Ray Datasets will automatically cast tensor columns to the ray Tensor dtype extension at the end of
+    map_batches calls and before writing to Parquet. This context manager can be used to disable this behavior
+    and keep the tensor columns as object dtype. This is useful for writing to Parquet using dask.
+
+    Args:
+        enforced (bool): Whether to enforce tensor extension casting.
+    """
+    from ray.data.context import DatasetContext
+
+    ctx = DatasetContext.get_current()
+    prev_enable_tensor_extension_casting = ctx.enable_tensor_extension_casting
+    try:
+        ctx.enable_tensor_extension_casting = enforced
+        yield
+    finally:
+        ctx.enable_tensor_extension_casting = prev_enable_tensor_extension_casting

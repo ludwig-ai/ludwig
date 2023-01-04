@@ -105,7 +105,6 @@ class HorovodBackend(Backend):
     share_cuda_visible_devices: bool = True
 
     def on_start(self, worker_group: WorkerGroup, backend_config: HorovodConfig):
-
         # TODO(matt): Implement placement group strategies in BackendExecutor.
 
         # Initialize workers with Horovod environment variables

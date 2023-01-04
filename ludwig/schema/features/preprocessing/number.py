@@ -5,7 +5,7 @@ from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, NUMBER, P
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA
 
 
 @DeveloperAPI
@@ -50,7 +50,6 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("number_output")
 @dataclass(repr=False)
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,

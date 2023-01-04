@@ -243,7 +243,7 @@ def test_optimizers(optimizer_type, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 5, "batch_size": 16, "optimizer": {"type": optimizer_type}},
+        TRAINER: {"epochs": 5, "batch_size": 16, "evaluate_training_set": True, "optimizer": {"type": optimizer_type}},
     }
 
     # special handling for adadelta, break out of local minima

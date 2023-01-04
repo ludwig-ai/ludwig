@@ -7,7 +7,7 @@ from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
-from ludwig.schema.metadata.encoder_metadata import ENCODER_METADATA
+from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
@@ -1181,6 +1181,12 @@ class RoBERTaConfig(BaseEncoderConfig):
         description="Type of encoder.",
     )
 
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=None,
+        description="Maximum length of the input sequence.",
+        parameter_metadata=ENCODER_METADATA["RoBERTaEncoder"]["max_sequence_length"],
+    )
+
     use_pretrained: bool = schema_utils.Boolean(
         default=True,
         description="Whether to use the pretrained weights for the model.",
@@ -1742,7 +1748,7 @@ class DistilBERTConfig(BaseEncoderConfig):
     )
 
     trainable: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="Whether to train the model.",
         parameter_metadata=ENCODER_METADATA["DistilBERTEncoder"]["trainable"],
     )
@@ -1898,7 +1904,7 @@ class CTRLConfig(BaseEncoderConfig):
     )
 
     trainable: bool = schema_utils.Boolean(
-        default=True,
+        default=False,
         description="Whether to train the model.",
         parameter_metadata=ENCODER_METADATA["CTRLEncoder"]["trainable"],
     )

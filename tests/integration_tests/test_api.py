@@ -445,7 +445,12 @@ def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, s
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": epochs, "batch_size": batch_size, "steps_per_checkpoint": steps_per_checkpoint},
+        TRAINER: {
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "steps_per_checkpoint": steps_per_checkpoint,
+            "early_stop": 0,  # Disable early stopping.
+        },
     }
     model = LudwigModel(config, callbacks=[mock_callback])
 
@@ -494,7 +499,12 @@ def test_api_callbacks_checkpoints_per_epoch(
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": epochs, "batch_size": batch_size, "checkpoints_per_epoch": checkpoints_per_epoch},
+        TRAINER: {
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "checkpoints_per_epoch": checkpoints_per_epoch,
+            "early_stop": 0,  # Disable early stopping.
+        },
     }
     model = LudwigModel(config, callbacks=[mock_callback])
 
