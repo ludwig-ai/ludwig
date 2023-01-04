@@ -25,7 +25,7 @@ class Dataset(ABC):
 
     @contextlib.contextmanager
     @abstractmethod
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
         raise NotImplementedError()
 
     def to_df(self):
