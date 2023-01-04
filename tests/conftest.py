@@ -167,6 +167,9 @@ def _ray_start(request, **kwargs):
     #   (default trial function request), then the trial will be scheduled on 1 CPU and the trainer will later request
     #   an additional 1 CPU. Across all 4 trials, this will possibly consume >7 CPUs, causing a deadlock since
     #   Ray Datasets will not be able to grab resources for data preprocessing.
+    #
+    #   By adding a `hyperopt_resources` resource, we can ensure that the trial function will be scheduled without
+    #   consuming any CPU resources. This allows each trial's trainer to request 1 CPU without starving Ray Datasets.
     # TODO(geoffrey): remove for Ray 2.2
     res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})
     try:
