@@ -15,7 +15,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class SequenceEncoderConfig(BaseEncoderConfig):
     """Base class for sequence encoders."""
 
-    skip: bool = schema_utils.Boolean(False, "[internal] Whether to skip encoder and use input as output.")
+    pass
 
 
 @DeveloperAPI
