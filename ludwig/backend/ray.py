@@ -24,6 +24,7 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
+import ray.train as rt
 import torch
 import tqdm
 from packaging import version
@@ -32,7 +33,6 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
-import ray.train as rt
 from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
 from ray.util.dask import ray_dask_get
