@@ -17,15 +17,15 @@ class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     type: str = schema_utils.ProtectedString(
         "transformer",
         description="The transformer combiner combines input features using a stack of Transformer blocks (from "
-                    "Attention Is All You Need). It assumes all outputs from encoders are tensors of size `b x h` "
-                    "where `b` is the batch size and `h` is the hidden dimension, which can be different for each "
-                    "input. If the input tensors have a different shape, it automatically flattens them. It then "
-                    "projects each input tensor to the same hidden / embedding size and encodes them with a stack of "
-                    "Transformer layers. Finally, the transformer combiner applies a reduction to the outputs of the "
-                    "Transformer stack, followed by optional fully connected layers. The output is a `b x h` tensor "
-                    "where `h` is the size of the last fully connected layer or the hidden / embedding size, or a "
-                    "`b x n x h` where `n` is the number of input features and `h` is the hidden / embedding size if "
-                    "no reduction is applied.",
+        "Attention Is All You Need). It assumes all outputs from encoders are tensors of size `b x h` "
+        "where `b` is the batch size and `h` is the hidden dimension, which can be different for each "
+        "input. If the input tensors have a different shape, it automatically flattens them. It then "
+        "projects each input tensor to the same hidden / embedding size and encodes them with a stack of "
+        "Transformer layers. Finally, the transformer combiner applies a reduction to the outputs of the "
+        "Transformer stack, followed by optional fully connected layers. The output is a `b x h` tensor "
+        "where `h` is the size of the last fully connected layer or the hidden / embedding size, or a "
+        "`b x n x h` where `n` is the number of input features and `h` is the hidden / embedding size if "
+        "no reduction is applied.",
     )
 
     reduce_output: Optional[str] = schema_utils.ReductionOptions(
