@@ -19,12 +19,12 @@ class SequenceCombinerConfig(BaseCombinerConfig):
     type: str = schema_utils.ProtectedString(
         "sequence",
         description="The sequence combiner stacks a sequence concat combiner with a sequence encoder. All the "
-                    "considerations about input tensor ranks described for the sequence concat combiner apply also in "
-                    "this case, but the main difference is that this combiner uses the `b x s x h` output of the "
-                    "sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h` is the "
-                    "sum of the hidden dimensions of all input features, as input for any of the sequence encoders "
-                    "described in the sequence features encoders section. All considerations on the shape of "
-                    "the outputs for the sequence encoders also apply to the sequence combiner.",
+        "considerations about input tensor ranks described for the sequence concat combiner apply also in "
+        "this case, but the main difference is that this combiner uses the `b x s x h` output of the "
+        "sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h` is the "
+        "sum of the hidden dimensions of all input features, as input for any of the sequence encoders "
+        "described in the sequence features encoders section. All considerations on the shape of "
+        "the outputs for the sequence encoders also apply to the sequence combiner.",
     )
 
     main_sequence_feature: Optional[str] = schema_utils.String(

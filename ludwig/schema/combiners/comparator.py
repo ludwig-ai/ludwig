@@ -16,13 +16,13 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
     type: str = schema_utils.ProtectedString(
         "comparator",
         description="The comparator combiner compares the hidden representation of two entities defined by lists of "
-                    "features. It assumes all outputs from encoders are tensors of size `b x h` where `b` is the batch "
-                    "size and `h` is the hidden dimension, which can be different for each input. If the input tensors "
-                    "have a different shape, it automatically flattens them. It then concatenates the representations "
-                    "of each entity and projects them both to vectors of size `output_size`. Finally, it compares the "
-                    "two entity representations by dot product, element-wise multiplication, absolute difference and "
-                    "bilinear product. It returns the final `b x h` tensor where `h` is the size of the concatenation "
-                    "of the four comparisons.",
+        "features. It assumes all outputs from encoders are tensors of size `b x h` where `b` is the batch "
+        "size and `h` is the hidden dimension, which can be different for each input. If the input tensors "
+        "have a different shape, it automatically flattens them. It then concatenates the representations "
+        "of each entity and projects them both to vectors of size `output_size`. Finally, it compares the "
+        "two entity representations by dot product, element-wise multiplication, absolute difference and "
+        "bilinear product. It returns the final `b x h` tensor where `h` is the size of the concatenation "
+        "of the four comparisons.",
     )
 
     entity_1: List[str] = schema_utils.List(

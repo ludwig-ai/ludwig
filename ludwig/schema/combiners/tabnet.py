@@ -16,10 +16,10 @@ class TabNetCombinerConfig(BaseCombinerConfig):
     type: str = schema_utils.ProtectedString(
         "tabnet",
         description="The tabnet combiner implements the TabNet model, which uses attention and sparsity to achieve "
-                    "high performance on tabular data. It assumes all outputs from encoders are tensors of size b x h "
-                    "where b is the batch size and h is the hidden dimension, which can be different for each input. "
-                    "If the input tensors have a different shape, it automatically flattens them. It returns the "
-                    "final b x h' tensor where h' is the user-specified output size.",
+        "high performance on tabular data. It assumes all outputs from encoders are tensors of size b x h "
+        "where b is the batch size and h is the hidden dimension, which can be different for each input. "
+        "If the input tensors have a different shape, it automatically flattens them. It returns the "
+        "final b x h' tensor where h' is the user-specified output size.",
     )
 
     size: int = schema_utils.PositiveInteger(
