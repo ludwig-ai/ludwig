@@ -623,7 +623,6 @@ class LightGBMTrainer(BaseTrainer):
             batch_size=-1,
             learning_rate=self.base_learning_rate,
             best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-            best_reduce_learning_rate_eval_metric=float("inf"),
             best_increase_batch_size_eval_metric=float("inf"),
             output_features=output_features,
         )

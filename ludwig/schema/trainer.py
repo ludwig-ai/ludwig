@@ -6,6 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
@@ -175,6 +176,11 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
     )
 
+    learning_rate_scheduler: LRSchedulerConfig = LRSchedulerDataclassField(
+        description="Parameter values for learning rate scheduler.",
+        default=None,
+    )
+
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
         default="l2",
         description="Type of regularization.",
@@ -193,41 +199,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=True,
         description="Whether to shuffle batches during training when true.",
         parameter_metadata=TRAINER_METADATA["should_shuffle"],
-    )
-
-    reduce_learning_rate_on_plateau: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=(
-            "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the"
-            "training set does not improve"
-        ),
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau"],
-    )
-
-    reduce_learning_rate_on_plateau_patience: int = schema_utils.NonNegativeInteger(
-        default=5,
-        description="How many epochs have to pass before the learning rate reduces.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau_patience"],
-    )
-
-    reduce_learning_rate_on_plateau_rate: float = schema_utils.FloatRange(
-        default=0.5,
-        min=0,
-        max=1,
-        description="Rate at which we reduce the learning rate.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau_rate"],
-    )
-
-    reduce_learning_rate_eval_metric: str = schema_utils.String(
-        default=LOSS,
-        description="Rate at which we reduce the learning rate.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_metric"],
-    )
-
-    reduce_learning_rate_eval_split: str = schema_utils.String(
-        default=TRAINING,
-        description="Which dataset split to listen on for reducing the learning rate.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_split"],
     )
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
@@ -260,41 +231,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["increase_batch_size_eval_split"],
     )
 
-    decay: bool = schema_utils.Boolean(
-        default=False,
-        description="Turn on exponential decay of the learning rate.",
-        parameter_metadata=TRAINER_METADATA["decay"],
-    )
-
-    decay_steps: int = schema_utils.PositiveInteger(
-        default=10000,
-        description="The number of steps to take in the exponential learning rate decay.",
-        parameter_metadata=TRAINER_METADATA["decay_steps"],
-    )
-
-    decay_rate: float = schema_utils.FloatRange(
-        default=0.96,
-        min=0,
-        max=1,
-        description="Decay per epoch (%): Factor to decrease the Learning rate.",
-        parameter_metadata=TRAINER_METADATA["decay_steps"],
-    )
-
-    staircase: bool = schema_utils.Boolean(
-        default=False,
-        description="Decays the learning rate at discrete intervals.",
-        parameter_metadata=TRAINER_METADATA["staircase"],
-    )
-
     gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
         description="Parameter values for gradient clipping.",
         default={},
-    )
-
-    learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(
-        default=1.0,
-        description="Number of epochs to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_warmup_epochs"],
     )
 
     learning_rate_scaling: str = schema_utils.StringOptions(

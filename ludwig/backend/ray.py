@@ -477,9 +477,6 @@ class RayTrainerV2(BaseTrainer):
     def num_gpus(self) -> int:
         return self.resources_per_worker.get("GPU", 0)
 
-    def set_base_learning_rate(self, learning_rate: float):
-        self.config.learning_rate = learning_rate
-
     def shutdown(self):
         pass
 
