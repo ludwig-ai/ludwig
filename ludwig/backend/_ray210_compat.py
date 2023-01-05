@@ -104,11 +104,6 @@ class TunerRay210(Tuner):
             restart_errored: If True, will re-schedule errored trials but force
                 restarting them from scratch (no checkpoint will be loaded).
         """
-        # TODO(xwjiang): Add some comments to clarify the config behavior across
-        #  retored runs.
-        #  For example, is callbacks supposed to be automatically applied
-        #  when a Tuner is restored and fit again?
-
         resume_config = _ResumeConfig(
             resume_unfinished=resume_unfinished,
             resume_errored=resume_errored,
