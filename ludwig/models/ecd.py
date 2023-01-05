@@ -8,7 +8,7 @@ import torchmetrics
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD
-from ludwig.features.image_feature import AugmentationPipeline
+from ludwig.features.image_feature import AugmentationPipeline, AugmentationPipelines
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig
@@ -162,10 +162,10 @@ class ECD(BaseModel):
             self._random_seed,
         )
 
-    def get_augmentation_pipeline(self):
+    def get_augmentation_pipelines(self) -> AugmentationPipelines:
         """Returns the augmentation pipeline for this model."""
         # dictionary to hold any augmentation pipeline
-        augmentation_pipeline = {}
+        augmentation_pipelines = {}
 
         # loop through all input features and add their augmentation pipeline to the dictionary
         for i_feat_name, i_feat_config in self.config_obj.input_features.to_dict().items():
@@ -173,6 +173,6 @@ class ECD(BaseModel):
             # if augmentation was specified for this input feature, add AugmentationPipeline to dictionary
             if augmentation:
                 # use input feature proc_column as key because that is what is used in the Batcher
-                augmentation_pipeline[i_feat_config.get("proc_column")] = AugmentationPipeline(augmentation)
+                augmentation_pipelines[i_feat_config.get("proc_column")] = AugmentationPipeline(augmentation)
 
-        return augmentation_pipeline
+        return AugmentationPipelines(augmentation_pipelines)

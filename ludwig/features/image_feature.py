@@ -235,6 +235,28 @@ class AugmentationPipeline(torch.nn.Module):
         return imgs
 
 
+class AugmentationPipelines:
+    """Container holding augmentation pipelines defined in the model"""
+
+    def __init__(self, augmentation_pipelines: Dict):
+        self.augmentation_pipelines = augmentation_pipelines
+
+    def __getitem__(self, key):
+        return self.augmentation_pipelines[key]
+
+    def __contains__(self, key):
+        return key in self.augmentation_pipelines
+
+    def __len__(self):
+        return len(self.augmentation_pipelines)
+
+    def __iter__(self):
+        return self.augmentation_pipelines.__iter__()
+
+    def items(self):
+        return self.augmentation_pipelines.items()
+
+
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
