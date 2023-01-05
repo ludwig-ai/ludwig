@@ -22,7 +22,7 @@ def run_test_suite(config, dataset, backend):
     "backend",
     [
         pytest.param("local", id="local"),
-        # pytest.param("ray", id="ray", marks=pytest.mark.distributed),
+        pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
 def test_distilbert_embedding(tmpdir, backend, ray_cluster_2cpu):

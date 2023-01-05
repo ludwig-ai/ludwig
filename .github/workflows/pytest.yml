@@ -58,7 +58,7 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 80
+    timeout-minutes: 90
     steps:
       - name: Setup ludwigai/ludwig-ray container for local testing with act.
         if: ${{ env.ACT }}
