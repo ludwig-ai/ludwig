@@ -133,7 +133,7 @@ class RayTuneExecutor:
         goal: str,
         split: str,
         search_alg: Dict,
-        trial_function_resources: Optional[Dict] = None,
+        trial_driver_resources: Optional[Dict] = None,
         cpu_resources_per_trial: int = None,
         gpu_resources_per_trial: int = None,
         kubernetes_namespace: str = None,
@@ -161,7 +161,7 @@ class RayTuneExecutor:
         self.metric = metric
         self.split = split
         self.trial_id = 0
-        self.trial_function_resources = trial_function_resources
+        self.trial_driver_resources = trial_driver_resources
         self.cpu_resources_per_trial = cpu_resources_per_trial
         self.gpu_resources_per_trial = gpu_resources_per_trial
         self.kubernetes_namespace = kubernetes_namespace
@@ -790,25 +790,26 @@ class RayTuneExecutor:
         run_experiment_trial_params = tune.with_parameters(run_experiment_trial, local_hyperopt_dict=hyperopt_dict)
 
         if _is_ray_backend(backend):
-            # NOTE(geoffrey): as of PR #2709, when we are using a Ray backend, there are two main processes
-            # spawned during a Ray Tune trial.
+            # NOTE(geoffrey): when we are using a Ray backend, the tune driver
+            # process (the process that executes this current bit of code) spawns a `trial_driver` process.
             #
-            # The first process is the `trial_function`, which is the function that is passed to `tune.run`.
-            # The `tuner` object allocates resources for this function using `self.trial_function_resources` below.
-            # Note that `trial_function` is a very lightweight process whose main purpose is to spawn the `trainer`
-            # process and communicate with the `tuner` object.
+            # The `trial_driver` process executes the function passed into `tune.run`, i.e. `run_experiment`. Its
+            # primary responsibility is to spawn the `trainer` process and communicate with the tune driver. The tune
+            # driver allocates the resources for this process using `self.trial_driver_resources`. We need to request
+            # resources for `trial_driver` despite it being very lightweight because the tune driver does not accept
+            # empty resource requests.
             #
-            # The second process is the actual `trainer`, which is spawned by `trial_function`. The `tuner` object
+            # The `trainer` process is a second process spawned by `trial_driver`. The tune driver
             # does not know about this process, so we cannot allocate resources for it ahead of time. Instead, the
             # `trainer` will reserve its own resources downstream based on its config.
             #
-            # In summary, we should only request resources for `trial_function` at this level.
-            # `trainer` will request its own resources.
-            resources = [self.trial_function_resources]
+            # In summary, the tune driver should only request resources for `trial_driver`, since `trainer` will request
+            # its own resources.
+            resources = [self.trial_driver_resources]
         else:
-            # If we are NOT using the Ray backend, the `trial_function` and the `trainer` are executed in the same
-            # process. Since the `trial_function` doesn't really require its own resources, we can just request
-            # resources for the `trainer` here.
+            # If we are NOT using the Ray backend, the `trial_driver` and the `trainer` are the same
+            # process. Since the `trial_driver` doesn't really require its own resources, and the `trainer` is a local
+            # trainer unable to reserve its own resources, we can just request resources for the `trainer` here.
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
             resources = [{"CPU": num_cpus, "GPU": num_gpus}]
 

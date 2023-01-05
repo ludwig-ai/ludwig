@@ -162,13 +162,13 @@ def _ray_start(request, **kwargs):
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
     # HACK(geoffrey): `hyperopt_resources` is a required resource for hyperopt to prevent deadlocks in Ludwig tests.
-    #   For context, if there are 4 hyperopt trials scheduled and 7 CPUs available, then the trial function will require
+    #   For context, if there are 4 hyperopt trials scheduled and 7 CPUs available, then the trial driver will require
     #   some resource to run *in addition* to the resources required by the trainer downstream. If we use 1 CPU
-    #   (default trial function request), then the trial will be scheduled on 1 CPU and the trainer will later request
+    #   (default trial driver request), then the trial will be scheduled on 1 CPU and the trainer will later request
     #   an additional 1 CPU. Across all 4 trials, this will possibly consume >7 CPUs, causing a deadlock since
     #   Ray Datasets will not be able to grab resources for data preprocessing.
     #
-    #   By adding a `hyperopt_resources` resource, we can ensure that the trial function will be scheduled without
+    #   By adding a `hyperopt_resources` resource, we can ensure that the trial driver will be scheduled without
     #   consuming any CPU resources. This allows each trial's trainer to request 1 CPU without starving Ray Datasets.
     # TODO(geoffrey): remove for Ray 2.2
     res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})

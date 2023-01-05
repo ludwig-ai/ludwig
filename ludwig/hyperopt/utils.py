@@ -212,8 +212,8 @@ def update_hyperopt_params_with_defaults(hyperopt_params: HyperoptConfigDict) ->
         {TYPE: RAY, NUM_SAMPLES: 1, MAX_CONCURRENT_TRIALS: AUTO},
     )
 
-    if hyperopt_params[EXECUTOR].get("trial_function_resources") is None:
-        hyperopt_params[EXECUTOR]["trial_function_resources"] = {"CPU": 1, "GPU": 0}
+    if hyperopt_params[EXECUTOR].get("trial_driver_resources") is None:
+        hyperopt_params[EXECUTOR]["trial_driver_resources"] = {"CPU": 1, "GPU": 0}
 
     executor = get_from_registry(hyperopt_params[EXECUTOR][TYPE], executor_registry)
     executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
