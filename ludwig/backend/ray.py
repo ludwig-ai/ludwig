@@ -36,8 +36,8 @@ from ray.train.trainer import Trainer
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
-from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.distributed import get_current_dist_strategy, get_dist_strategy
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
