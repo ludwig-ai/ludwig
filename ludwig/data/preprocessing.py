@@ -1260,7 +1260,8 @@ def embed_fixed_features(dataset, feature_configs, metadata, backend):
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
                     features_to_encode.append(feature_config)
 
-    # if features_to_encode:
+    if features_to_encode:
+        raise RuntimeError(f"Feature to encode: {features_to_encode}")
     #     for feature in features_to_encode:
     #         # Temporarily set to False to ensure proper encoding
     #         metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = False
