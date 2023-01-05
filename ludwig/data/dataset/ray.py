@@ -208,10 +208,13 @@ class RayDatasetShard(Dataset):
 
     def create_epoch_iter(self) -> None:
         if isinstance(self.dataset_shard, DatasetPipeline):
+            # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
+            # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
             self.epoch_iter = self.dataset_shard.iter_epochs()
         else:
-            # Dataset shard is a Ray Dataset object
+            # Dataset shard is a Ray Dataset object during auto batch size tuning or learning rate tuning
             # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
+            # In this scenario, there is no need to worry about windowing, shuffling etc.
             self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager

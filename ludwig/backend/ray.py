@@ -205,6 +205,8 @@ def train_fn(
         ckpt = Checkpoint.from_dict({"state_dict": results})
         torch_ckpt = TorchCheckpoint.from_checkpoint(ckpt)
 
+        # The checkpoint is put in the object store and then retrieved by the Trainable actor to be reported to Tune.
+        # It is also persisted on disk by the Trainable (and synced to cloud, if configured to do so)
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
         # So, make a final call to session.report with the train_results object above.
         session.report(
@@ -537,7 +539,7 @@ class RayPredictor(BasePredictor):
     ):
         self.batch_size = predictor_kwargs["batch_size"]
         self.trainer_kwargs = trainer_kwargs
-        self.data_loader_kwargs = data_loader_kwargs or {}
+        self.data_loader_kwargs = data_loader_kwargs
         self.predictor_kwargs = predictor_kwargs
         self.actor_handles = []
         self.model = model.cpu()

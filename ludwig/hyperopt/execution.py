@@ -725,6 +725,8 @@ class RayTuneExecutor:
 
         mode = "min" if self.goal != MAXIMIZE else "max"
         metric = "metric_score"
+        use_gpu = bool(self._gpu_resources_per_trial_non_none)
+
         # if random seed not set, use Ludwig seed
         self.search_algorithm.check_for_random_seed(random_seed)
         if self.search_algorithm.search_alg_dict is not None:
@@ -807,7 +809,6 @@ class RayTuneExecutor:
             # If we are NOT using the Ray backend, the `trial_function` and the `trainer` are executed in the same
             # process. Since the `trial_function` doesn't really require its own resources, we can just request
             # resources for the `trainer` here.
-            use_gpu = bool(self._gpu_resources_per_trial_non_none)
             num_cpus, num_gpus = _get_num_cpus_gpus(use_gpu)
             resources = [{"CPU": num_cpus, "GPU": num_gpus}]
 
@@ -842,7 +843,11 @@ class RayTuneExecutor:
                         scheduler=self.scheduler,
                         num_samples=self.num_samples,
                         time_budget_s=self.time_budget_s,
-                        reuse_actors=True,
+                        # For GPU training, setting reuse_actors to True can result in GPU memory
+                        # leaks if we're not careful.
+                        # TODO (Arnav): Remove in Ray 2.2 since this was fixed upstream in Ray
+                        # https://github.com/ray-project/ray/issues/29624
+                        reuse_actors=not use_gpu,
                     ),
                     run_config=RunConfig(
                         name=experiment_name,
