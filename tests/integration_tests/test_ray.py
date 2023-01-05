@@ -940,103 +940,103 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
         preds, _ = model.predict(dataset=dataset)
 
 
-# @pytest.mark.distributed
-# class TestDatasetWindowAutosizing:
-#     """Test dataset windowing with different dataset sizes and settings."""
+@pytest.mark.distributed
+class TestDatasetWindowAutosizing:
+    """Test dataset windowing with different dataset sizes and settings."""
 
-#     @property
-#     def object_store_size(self):
-#         """The amount of object store memory available to the cluster fixture."""
-#         return int(ray.available_resources()["object_store_memory"])
+    @property
+    def object_store_size(self):
+        """The amount of object store memory available to the cluster fixture."""
+        return int(ray.available_resources()["object_store_memory"])
 
-#     @property
-#     def auto_window_size(self):
-#         """The heuristic size of the automatic window in bytes."""
-#         return int(self.object_store_size // 5)
+    @property
+    def auto_window_size(self):
+        """The heuristic size of the automatic window in bytes."""
+        return int(self.object_store_size // 5)
 
-#     @property
-#     def num_partitions(self):
-#         """The number of Dask dataframe partitions to create."""
-#         return 100
+    @property
+    def num_partitions(self):
+        """The number of Dask dataframe partitions to create."""
+        return 100
 
-#     def create_dataset(self, size: int, auto_window: bool = True) -> "RayDataset":
-#         """Create a dataset of specified size to test auto-sizing.
+    def create_dataset(self, size: int, auto_window: bool = True) -> "RayDataset":
+        """Create a dataset of specified size to test auto-sizing.
 
-#         Args:
-#             size: Total size of the dataset in bytes
-#             auto_window: Flag determining whether autosizing is enabled
+        Args:
+            size: Total size of the dataset in bytes
+            auto_window: Flag determining whether autosizing is enabled
 
-#         Returns:
-#             A Ludwig RayDataset of the specified size.
-#         """
-#         # Create a dataset of the specified size with 100 partitions.
-#         # This translates to 100 blocks within the `ray.data.Dataset`.
-#         df = pd.DataFrame(
-#             {
-#                 "in_column": np.random.randint(0, 1, size=(size // 2,), dtype=np.uint8),
-#                 "out_column": np.random.randint(0, 1, size=(size // 2,), dtype=np.uint8),
-#             }
-#         )
-#         df = dask.dataframe.from_pandas(df, npartitions=self.num_partitions)
+        Returns:
+            A Ludwig RayDataset of the specified size.
+        """
+        # Create a dataset of the specified size with 100 partitions.
+        # This translates to 100 blocks within the `ray.data.Dataset`.
+        df = pd.DataFrame(
+            {
+                "in_column": np.random.randint(0, 1, size=(size // 2,), dtype=np.uint8),
+                "out_column": np.random.randint(0, 1, size=(size // 2,), dtype=np.uint8),
+            }
+        )
+        df = dask.dataframe.from_pandas(df, npartitions=self.num_partitions)
 
-#         # Create a model with the dataset and
-#         config = {
-#             "input_features": [{"name": "in_column", "type": "binary"}],
-#             "output_features": [{"name": "out_column", "type": "binary"}],
-#             TRAINER: {"epochs": 1, "batch_size": 128},
-#         }
-#         backend_config = {**RAY_BACKEND_CONFIG}
-#         backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
-#         model = LudwigModel(config, backend=backend_config)
+        # Create a model with the dataset and
+        config = {
+            "input_features": [{"name": "in_column", "type": "binary"}],
+            "output_features": [{"name": "out_column", "type": "binary"}],
+            TRAINER: {"epochs": 1, "batch_size": 128},
+        }
+        backend_config = {**RAY_BACKEND_CONFIG}
+        backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
+        model = LudwigModel(config, backend=backend_config)
 
-#         # Create a dataset using the model backend to ensure it
-#         # is initialized correctly.
-#         ds = model.backend.dataset_manager.create(
-#             df, config=model.config, training_set_metadata={}, auto_window=auto_window
-#         )
-#         return ds
+        # Create a dataset using the model backend to ensure it
+        # is initialized correctly.
+        ds = model.backend.dataset_manager.create(
+            df, config=model.config, training_set_metadata={}, auto_window=auto_window
+        )
+        return ds
 
-#     def test_small_dataset(self, ray_cluster_small_object_store):
-#         """A small dataset should not trigger automatic window sizing."""
-#         ds = self.create_dataset(self.object_store_size // 8)
-#         pipe = ds.pipeline()
-#         rep = next(iter(pipe._base_iterable))()
+    def test_small_dataset(self, ray_cluster_small_object_store):
+        """A small dataset should not trigger automatic window sizing."""
+        ds = self.create_dataset(self.object_store_size // 8)
+        pipe = ds.pipeline()
+        rep = next(iter(pipe._base_iterable))()
 
-#         # Without automatic window sizing, the number of blocks in the pipeline
-#         # should match the number of partitions in the Dask dataframe.
-#         assert rep.num_blocks() == self.num_partitions
+        # Without automatic window sizing, the number of blocks in the pipeline
+        # should match the number of partitions in the Dask dataframe.
+        assert rep.num_blocks() == self.num_partitions
 
-#     def test_large_dataset(self, ray_cluster_small_object_store):
-#         """A large dataset should trigger windowing."""
-#         ds = self.create_dataset(self.object_store_size * 8)
-#         pipe = ds.pipeline()
+    def test_large_dataset(self, ray_cluster_small_object_store):
+        """A large dataset should trigger windowing."""
+        ds = self.create_dataset(self.object_store_size * 8)
+        pipe = ds.pipeline()
 
-#         # In the windowed case, each window corresponds to a dataset that has
-#         # at least one and fewer than `self.num_partitions` blocks.
-#         # Because the pipeline is infinitely repeated, check the first 100
-#         # windows to ensure coverage of the whole dataset.
-#         for i, wds in enumerate(pipe._base_iterable):
-#             assert wds().num_blocks() < self.num_partitions
-#             if i > 99:
-#                 break
+        # In the windowed case, each window corresponds to a dataset that has
+        # at least one and fewer than `self.num_partitions` blocks.
+        # Because the pipeline is infinitely repeated, check the first 100
+        # windows to ensure coverage of the whole dataset.
+        for i, wds in enumerate(pipe._base_iterable):
+            assert wds().num_blocks() < self.num_partitions
+            if i > 99:
+                break
 
-#     def test_window_autosizing_disabled(self, ray_cluster_small_object_store):
-#         """If window autosizing is disabled, no datasets should be windowed."""
-#         ds = self.create_dataset(self.object_store_size * 8, auto_window=False)
-#         pipe = ds.pipeline()
-#         rep = next(iter(pipe._base_iterable))()
-#         assert rep.num_blocks() == self.num_partitions
+    def test_window_autosizing_disabled(self, ray_cluster_small_object_store):
+        """If window autosizing is disabled, no datasets should be windowed."""
+        ds = self.create_dataset(self.object_store_size * 8, auto_window=False)
+        pipe = ds.pipeline()
+        rep = next(iter(pipe._base_iterable))()
+        assert rep.num_blocks() == self.num_partitions
 
-#     def test_user_window_size(self, ray_cluster_small_object_store):
-#         """If the user supplies a window size, do not autosize."""
-#         # This pipeline should use the heuristic window size.
-#         ds = self.create_dataset(self.object_store_size * 8)
-#         pipe = ds.pipeline()
-#         rep = next(iter(pipe._base_iterable))()
-#         auto_num_blocks = rep.num_blocks()
+    def test_user_window_size(self, ray_cluster_small_object_store):
+        """If the user supplies a window size, do not autosize."""
+        # This pipeline should use the heuristic window size.
+        ds = self.create_dataset(self.object_store_size * 8)
+        pipe = ds.pipeline()
+        rep = next(iter(pipe._base_iterable))()
+        auto_num_blocks = rep.num_blocks()
 
-#         # This pipeline should have fewer windows but more blocks per window
-#         # than the autosized pipeline.
-#         pipe = ds.pipeline(window_size_bytes=self.auto_window_size * 2)
-#         rep = next(iter(pipe._base_iterable))()
-#         assert auto_num_blocks < rep.num_blocks()
+        # This pipeline should have fewer windows but more blocks per window
+        # than the autosized pipeline.
+        pipe = ds.pipeline(window_size_bytes=self.auto_window_size * 2)
+        rep = next(iter(pipe._base_iterable))()
+        assert auto_num_blocks < rep.num_blocks()
