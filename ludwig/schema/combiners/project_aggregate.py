@@ -13,7 +13,8 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     type: str = schema_utils.ProtectedString(
         "project_aggregate",
-        description="Type of combiner.",
+        description="The project aggregate combiner projects the input vectors to a common size and then aggregates "
+                    "them by taking the average across all the vectors."
     )
 
     projection_size: int = schema_utils.PositiveInteger(
