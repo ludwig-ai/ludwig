@@ -37,6 +37,8 @@ from ray.train.torch import TorchCheckpoint
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
+from ludwig.distributed import get_current_dist_strategy, get_dist_strategy
+
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
@@ -75,18 +77,7 @@ def _num_nodes() -> int:
     return len(node_resources)
 
 
-def initialize_horovod():
-    # Guarded import here to avoid causing import errors when doing hyperopt without
-    # distributed training, where Horovod is an optional dependency.
-    from ludwig.utils.horovod_utils import initialize_horovod as _initialize_horovod
-
-    return _initialize_horovod()
-
-
 def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
-    # Horovod an optional import, so avoid importing at the top.
-    from ray.train.horovod import HorovodConfig
-
     kwargs = copy.deepcopy(kwargs)
 
     # Our goal is to have a worker per resource used for training.
@@ -98,13 +89,14 @@ def get_trainer_kwargs(**kwargs) -> TrainerConfigDict:
     else:
         num_workers = _num_nodes()
 
-    # Explicitly override network interfaces Horovod will attempt to use
-    nics = kwargs.pop("nics", None)
-    if nics is not None:
-        nics = set(nics)
+    strategy = kwargs.pop("strategy", "horovod")
+    backend = get_dist_strategy(strategy).get_ray_trainer_backend(**kwargs)
+
+    # Remove params used by strategy but not the trainer here
+    kwargs.pop("nics", None)
 
     defaults = dict(
-        backend=HorovodConfig(nics=nics),
+        backend=backend,
         num_workers=num_workers,
         use_gpu=use_gpu,
         resources_per_worker={
@@ -155,6 +147,10 @@ def _get_df_engine(processor):
     return engine_cls(**processor_kwargs)
 
 
+def _local_size() -> int:
+    return torch.cuda.device_count() if torch.cuda.is_available() else 1
+
+
 def train_fn(
     executable_kwargs: Dict[str, Any] = None,
     model_ref: ObjectRef = None,  # noqa: F821
@@ -163,11 +159,14 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
+    distributed = get_current_dist_strategy(allow_local=False)()
     try:
-        initialize_pytorch(horovod=hvd)
-
-        train_shard = RayDatasetShard(session.get_dataset_shard("train"), features, training_set_metadata)
+        train_shard = RayDatasetShard(
+            session.get_dataset_shard("train"),
+            features,
+            training_set_metadata,
+        )
 
         try:
             val_shard = session.get_dataset_shard("val")
@@ -189,7 +188,7 @@ def train_fn(
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, horovod=hvd, report_tqdm_to_ray=True, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, distributed=distributed, report_tqdm_to_ray=True, **executable_kwargs)
         results = trainer.train(train_shard, val_shard, test_shard, **kwargs)
 
         if results is not None:
@@ -216,8 +215,13 @@ def train_fn(
             },
             checkpoint=torch_ckpt,
         )
+
+    except Exception:
+        logger.exception("Exception raised during training by one of the workers")
+        raise
+
     finally:
-        hvd.shutdown()
+        distributed.shutdown()
 
 
 @ray.remote(max_calls=1)
@@ -232,20 +236,23 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
+    distributed = get_current_dist_strategy(allow_local=True)()
     try:
-        initialize_pytorch(horovod=hvd)
-
-        train_shard = RayDatasetShard(dataset.ds, features, training_set_metadata)
+        train_shard = RayDatasetShard(
+            dataset.ds,
+            features,
+            training_set_metadata,
+        )
 
         device = get_torch_device()
         model = model.to(device)
 
-        trainer = RemoteTrainer(model=model, horovod=hvd, **executable_kwargs)
+        trainer = RemoteTrainer(model=model, distributed=distributed, **executable_kwargs)
         return trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
     finally:
         torch.cuda.empty_cache()
-        hvd.shutdown()
+        distributed.shutdown()
 
 
 @DeveloperAPI
@@ -500,8 +507,8 @@ class RayTrainerV2(BaseTrainer):
 
 class HorovodRemoteTrainer(RemoteTrainer):
     def __init__(self, **kwargs):
-        horovod = initialize_horovod()
-        super().__init__(horovod=horovod, **kwargs)
+        distributed = get_current_dist_strategy(allow_local=False)()
+        super().__init__(distributed=distributed, **kwargs)
 
 
 def eval_fn(
@@ -512,17 +519,20 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    hvd = initialize_horovod()
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
+    distributed = get_current_dist_strategy(allow_local=False)()
     try:
-        initialize_pytorch(horovod=hvd)
-
-        eval_shard = RayDatasetShard(session.get_dataset_shard("eval"), features, training_set_metadata)
+        eval_shard = RayDatasetShard(
+            session.get_dataset_shard("eval"),
+            features,
+            training_set_metadata,
+        )
 
         model = ray.get(model_ref)
         device = get_torch_device()
         model = model.to(device)
 
-        predictor = RemotePredictor(model=model, horovod=hvd, report_tqdm_to_ray=True, **predictor_kwargs)
+        predictor = RemotePredictor(model=model, distributed=distributed, report_tqdm_to_ray=True, **predictor_kwargs)
         results = predictor.batch_evaluation(eval_shard, **kwargs)
 
         # The result object returned from trainer.fit() contains the metrics from the last session.report() call.
@@ -530,7 +540,7 @@ def eval_fn(
         session.report(metrics={"eval_results": results})
     finally:
         torch.cuda.empty_cache()
-        hvd.shutdown()
+        distributed.shutdown()
 
 
 class RayPredictor(BasePredictor):
