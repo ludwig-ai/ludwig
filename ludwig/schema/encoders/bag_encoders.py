@@ -17,10 +17,10 @@ class BagEmbedWeightedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
         description="The embed weighted encoder first transforms the element frequency vector to sparse integer "
-                    "lists, which are then mapped to either dense or sparse embeddings (one-hot encodings). Lastly, "
-                    "embeddings are aggregated as a weighted sum where each embedding is multiplied by its respective "
-                    "element's frequency. Inputs are of size b while outputs are of size b x h where b is the batch "
-                    "size and h is the dimensionality of the embeddings.",
+        "lists, which are then mapped to either dense or sparse embeddings (one-hot encodings). Lastly, "
+        "embeddings are aggregated as a weighted sum where each embedding is multiplied by its respective "
+        "element's frequency. Inputs are of size b while outputs are of size b x h where b is the batch "
+        "size and h is the dimensionality of the embeddings.",
     )
 
     dropout: float = schema_utils.FloatRange(

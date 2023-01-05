@@ -14,5 +14,5 @@ class BinaryPassthroughEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description="The passthrough encoder passes through raw binary values without any transformations. Inputs of "
-                    "size b are transformed to outputs of size b x 1 where b is the batch size.",
+        "size b are transformed to outputs of size b x 1 where b is the batch size.",
     )

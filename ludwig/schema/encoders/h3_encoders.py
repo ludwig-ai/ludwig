@@ -17,9 +17,9 @@ class H3EmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
         description="The Embed encoder encodes each component of the H3 representation (mode, edge, resolution, "
-                    "base cell and children cells) with embeddings. Children cells with value 0 will be masked out. "
-                    "After the embedding, all embeddings are summed and optionally passed through a stack of fully "
-                    "connected layers.",
+        "base cell and children cells) with embeddings. Children cells with value 0 will be masked out. "
+        "After the embedding, all embeddings are summed and optionally passed through a stack of fully "
+        "connected layers.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -112,9 +112,9 @@ class H3WeightedSumConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "weighted_sum",
         description="The Weighted Sum encoder encodes each component of the H3 representation (mode, edge, "
-                    "resolution, base cell and children cells) with embeddings. Children cells with value 0 will be "
-                    "masked out. After the embedding, all embeddings are summed with a weighted sum (with learned "
-                    "weights) and optionally passed through a stack of fully connected layers.",
+        "resolution, base cell and children cells) with embeddings. Children cells with value 0 will be "
+        "masked out. After the embedding, all embeddings are summed with a weighted sum (with learned "
+        "weights) and optionally passed through a stack of fully connected layers.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -207,10 +207,10 @@ class H3RNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "rnn",
         description="The RNN encoder encodes each component of the H3 representation (mode, edge, resolution, "
-                    "base cell and children cells) with embeddings. Children cells with value 0 will be masked out. "
-                    "After the embedding, all embeddings are passed through an RNN encoder. The intuition behind this "
-                    "is that, starting from the base cell, the sequence of children cells can be seen as a sequence "
-                    "encoding the path in the tree of all H3 hexes.",
+        "base cell and children cells) with embeddings. Children cells with value 0 will be masked out. "
+        "After the embedding, all embeddings are passed through an RNN encoder. The intuition behind this "
+        "is that, starting from the base cell, the sequence of children cells can be seen as a sequence "
+        "encoding the path in the tree of all H3 hexes.",
     )
 
     dropout: float = schema_utils.FloatRange(

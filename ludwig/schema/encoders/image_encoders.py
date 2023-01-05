@@ -18,7 +18,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
         description="Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling pooling "
-                    "layers, followed by an optional stack of fully connected layers.",
+        "layers, followed by an optional stack of fully connected layers.",
     )
 
     conv_dropout: Optional[int] = schema_utils.FloatRange(
@@ -291,8 +291,8 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "resnet",
         description="ResNet - short for residual network is part of a family of extremely deep architectures showing "
-                    "compelling accuracy and nice convergence behaviors for computer vision applications. It is a type"
-                    "of CNN architecture designed to support hundreds or thousands of convolutional layers.",
+        "compelling accuracy and nice convergence behaviors for computer vision applications. It is a type"
+        "of CNN architecture designed to support hundreds or thousands of convolutional layers.",
     )
 
     dropout: Optional[float] = schema_utils.FloatRange(
@@ -464,8 +464,8 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "mlp_mixer",
         description="MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each "
-                    "patch to compute per-patch representations (tokens) and combining the representations with "
-                    "fully-connected mixer layers.",
+        "patch to compute per-patch representations (tokens) and combining the representations with "
+        "fully-connected mixer layers.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -541,8 +541,8 @@ class ViTEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "vit",
         description="ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear "
-                    "transformation to encode each flattened patch, then applies a deep transformer architecture to "
-                    "the sequence of encoded patches.",
+        "transformation to encode each flattened patch, then applies a deep transformer architecture to "
+        "the sequence of encoded patches.",
     )
 
     height: int = schema_utils.NonNegativeInteger(

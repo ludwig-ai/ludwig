@@ -26,8 +26,8 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description="The passthrough encoder simply returns the raw numerical values coming from the input "
-                    "placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is "
-                    "the batch size. ",
+        "placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is "
+        "the batch size. ",
     )
 
 
@@ -40,7 +40,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "dense",
         description="The dense encoder passes the raw numerical values through fully connected layers. In this case "
-                    "the inputs of size `b` are transformed to size `b x h`.",
+        "the inputs of size `b` are transformed to size `b x h`.",
     )
 
     dropout: float = schema_utils.FloatRange(
