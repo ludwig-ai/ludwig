@@ -16,7 +16,9 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class DateEmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
-        description="Type of encoder.",
+        description="The Embed encoder passes the year through a fully connected layer of one neuron and embeds all "
+                    "other elements for the date, concatenates them and passes the concatenated representation "
+                    "through fully connected layers.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -102,7 +104,10 @@ class DateEmbedConfig(BaseEncoderConfig):
 class DateWaveConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "wave",
-        description="Type of encoder.",
+        description="The Wave encoder passes the year through a fully connected layer of one neuron and represents "
+                    "all other elements for the date by taking the cosine of their value with a different period (12 "
+                    "for months, 31 for days, etc.), concatenates them and passes the concatenated representation "
+                    "through fully connected layers.",
     )
 
     dropout: float = schema_utils.FloatRange(

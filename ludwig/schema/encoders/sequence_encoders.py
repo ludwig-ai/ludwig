@@ -16,7 +16,10 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class SequencePassthroughConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description="Type of encoder.",
+        description="The passthrough decoder simply transforms each input value into a float value and adds a "
+                    "dimension to the input tensor, creating a b x s x 1 tensor where b is the batch size and s is "
+                    "the length of the sequence. The tensor is reduced along the s dimension to obtain a single "
+                    "vector of size h for each element of the batch.",
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -45,7 +48,10 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 class SequenceEmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
-        description="Type of encoder.",
+        description="The embed encoder simply maps each integer in the sequence to an embedding, creating a `b x s x h`"
+                    " tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding "
+                    "size. The tensor is reduced along the `s` dimension to obtain a single vector of size `h` for each"
+                    " element of the batch.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -120,7 +126,13 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 class ParallelCNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "parallel_cnn",
-        description="Type of encoder.",
+        description="The Parallel CNN works by first mapping the input integer sequence b x s (where b is the batch "
+                    "size and s is the length of the sequence) into a sequence of embeddings, then it passes the "
+                    "embedding through a number of parallel 1d convolutional layers with different filter size (by "
+                    "default 4 layers with filter size 2, 3, 4 and 5), followed by max pooling and concatenation. "
+                    "This single vector concatenating the outputs of the parallel convolutional layers is then passed "
+                    "through a stack of fully connected layers and returned as a b x h tensor where h is the output "
+                    "size of the last fully connected layer.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -284,7 +296,13 @@ class ParallelCNNConfig(BaseEncoderConfig):
 class StackedCNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
-        description="Type of encoder.",
+        description="The Stacked CNN works by first mapping the input integer sequence b x s (where b is the batch "
+                    "size and s is the length of the sequence) into a sequence of embeddings, then it passes the "
+                    "embedding through a stack of 1d convolutional layers with different filter size (by default 6 "
+                    "layers with filter size 7, 7, 3, 3, 3 and 3), followed by an optional final pool and by a "
+                    "flatten operation. This single flatten vector is then passed through a stack of fully connected "
+                    "layers and returned as a b x h tensor where h is the output size of the last fully connected "
+                    "layer.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -480,7 +498,14 @@ class StackedCNNConfig(BaseEncoderConfig):
 class StackedParallelCNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_parallel_cnn",
-        description="Type of encoder.",
+        description="The stacked parallel cnn encoder is a combination of the Parallel CNN and the Stacked CNN "
+                    "encoders where each layer of the stack is composed of parallel convolutional layers. It works by "
+                    "first mapping the input integer sequence b x s (where b is the batch size and s is the length of "
+                    "the sequence) into a sequence of embeddings, then it passes the embedding through a stack of "
+                    "several parallel 1d convolutional layers with different filter size, followed by an optional "
+                    "final pool and by a flatten operation. This single flattened vector is then passed through a "
+                    "stack of fully connected layers and returned as a b x h tensor where h is the output size of the "
+                    "last fully connected layer.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -662,7 +687,10 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 class StackedRNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "rnn",
-        description="Type of encoder.",
+        description="The rnn encoder works by first mapping the input integer sequence b x s (where b is the batch "
+                    "size and s is the length of the sequence) into a sequence of embeddings, then it passes the "
+                    "embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce "
+                    "operation that by default only returns the last output, but can perform other reduce functions.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -873,7 +901,11 @@ class StackedRNNConfig(BaseEncoderConfig):
 class StackedCNNRNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "cnnrnn",
-        description="Type of encoder.",
+        description="The cnnrnn encoder works by first mapping the input integer sequence b x s (where b is the batch "
+                    "size and s is the length of the sequence) into a sequence of embeddings, then it passes the "
+                    "embedding through a stack of convolutional layers (by default 2), that is followed by a stack of "
+                    "recurrent layers (by default 1), followed by a reduce operation that by default only returns the "
+                    "last output, but can perform other reduce functions.",
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -1165,7 +1197,9 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 class StackedTransformerConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "transformer",
-        description="Type of encoder.",
+        description="The transformer encoder implements a stack of transformer blocks, replicating the architecture "
+                    "introduced in the Attention is all you need paper, and adds am optional stack of fully connected "
+                    "layers at the end.",
     )
 
     dropout: float = schema_utils.FloatRange(

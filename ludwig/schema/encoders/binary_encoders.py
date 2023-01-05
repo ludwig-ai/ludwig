@@ -13,5 +13,6 @@ from ludwig.schema.encoders.utils import register_encoder_config
 class BinaryPassthroughEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description="Type of encoder.",
+        description="The passthrough encoder passes through raw binary values without any transformations. Inputs of "
+                    "size b are transformed to outputs of size b x 1 where b is the batch size.",
     )
