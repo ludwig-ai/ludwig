@@ -186,7 +186,7 @@ class Trainer(BaseTrainer):
         self.optimizer = create_optimizer(
             self.dist_model,
             learning_rate=self.base_learning_rate,
-            horovod=self.distributed,
+            distributed=self.distributed,
             optimizer_config=optimizer_config,
         )
         self.scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
