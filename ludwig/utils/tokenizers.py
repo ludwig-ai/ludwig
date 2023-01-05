@@ -920,7 +920,7 @@ try:
     import torchtext
 
     torchtext_version = torch.torch_version.TorchVersion(torchtext.__version__)
-    torchtext_112 = torchtext_version == (0, 12, 0)
+    torchtext_113 = torchtext_version < (0, 13, 0)
 
     if torchtext_version >= (0, 12, 0):
         """torchtext 0.12.0 tokenizers.
@@ -999,11 +999,13 @@ try:
                 super().__init__(pretrained_model_name_or_path, vocab_file)
 
             def _init_tokenizer(self, pretrained_model_name_or_path: str, vocab_file: str):
-                if torchtext_112:
+                if torchtext_113:
+                    # Uses vbe_path kwarg in torchtext 0.12.0
                     return torchtext.transforms.CLIPTokenizer(
                         encoder_json_path=vocab_file, vocab_bpe_path=pretrained_model_name_or_path
                     )
                 else:
+                    # Uses merges_path in torchtext 0.13.0
                     return torchtext.transforms.CLIPTokenizer(
                         encoder_json_path=vocab_file, merges_path=pretrained_model_name_or_path
                     )
