@@ -72,13 +72,11 @@ from tests.integration_tests.utils import (
 )
 
 try:
-    import dask
     import modin
     import ray
 
     from ludwig.backend.ray import get_trainer_kwargs, RayBackend
     from ludwig.data.dataframe.dask import DaskEngine
-    from ludwig.data.dataset.ray import RayDataset
 
     @ray.remote(num_cpus=1, num_gpus=1)
     def train_gpu(config, dataset, output_directory):
