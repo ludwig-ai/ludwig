@@ -940,6 +940,7 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
         preds, _ = model.predict(dataset=dataset)
 
 
+# TODO(travis): https://github.com/ludwig-ai/ludwig/issues/2903
 # @pytest.mark.distributed
 # class TestDatasetWindowAutosizing:
 #     """Test dataset windowing with different dataset sizes and settings."""
