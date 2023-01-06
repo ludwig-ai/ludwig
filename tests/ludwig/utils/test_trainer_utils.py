@@ -83,7 +83,6 @@ def test_progress_tracker_empty():
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
         best_eval_metric_value=0,
-        best_reduce_learning_rate_eval_metric=0,
         best_increase_batch_size_eval_metric=0,
         learning_rate=0.01,
         output_features=output_features,
@@ -124,7 +123,6 @@ def test_progress_tracker():
     progress_tracker = trainer_utils.get_new_progress_tracker(
         batch_size=5,
         best_eval_metric_value=0,
-        best_reduce_learning_rate_eval_metric=0,
         best_increase_batch_size_eval_metric=0,
         learning_rate=0.01,
         output_features=output_features,
@@ -173,7 +171,6 @@ def test_full_progress_tracker():
                 "combined": {"loss": 4.396},
             },
             "best_increase_batch_size_eval_metric": float("inf"),
-            "best_reduce_learning_rate_eval_metric": float("inf"),
             "checkpoint_number": 12,
             "epoch": 12,
             "last_increase_batch_size": 0,
@@ -181,7 +178,6 @@ def test_full_progress_tracker():
             "last_increase_batch_size_steps": 0,
             "last_learning_rate_reduction": 0,
             "last_learning_rate_reduction_steps": 0,
-            "last_reduce_learning_rate_eval_metric_improvement": 0,
             "learning_rate": 0.001,
             "num_increases_batch_size": 0,
             "num_reductions_learning_rate": 0,

@@ -125,6 +125,7 @@ HIDDEN = "hidden"
 LAST_HIDDEN = "last_hidden"
 ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
+LEARNING_RATE_SCHEDULER = "learning_rate_scheduler"
 
 RANDOM = "random"
 SUM = "sum"
