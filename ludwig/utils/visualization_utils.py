@@ -1074,12 +1074,24 @@ def confusion_matrix_plot(
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
 
-    cax = ax.matshow(confusion_matrix, cmap="viridis")
+    cax = ax.matshow(confusion_matrix, cmap="Pastel1")
+    # Annotate confusion matrix plot
+    for (i, j), z in np.ndenumerate(confusion_matrix):
+        ax.text(
+            j,
+            i,
+            f"{z:.0f}",
+            ha="center",
+            va="center",
+            color="black",
+            fontweight="medium",
+            wrap=True,
+        )
 
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.set_xticklabels([""] + labels, rotation=45, ha="left")
-    ax.set_yticklabels([""] + labels)
+    ax.set_yticklabels([""] + labels, rotation=45, ha="right")
     ax.grid(False)
     ax.tick_params(axis="both", which="both", length=0)
     fig.colorbar(cax, ax=ax, extend="max")
