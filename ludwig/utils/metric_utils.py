@@ -5,8 +5,9 @@ import torch
 from torch import Tensor
 from torchmetrics.metric import Metric
 
-from ludwig.constants import COMBINED, LOSS
-from ludwig.modules.metric_registry import metric_feature_type_registry
+from ludwig.constants import COMBINED, LOSS, TYPE, NAME
+from ludwig.modules.metric_registry import get_metric_feature_type_registry
+from ludwig.types import FeatureConfigDict
 
 
 def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
@@ -94,7 +95,20 @@ def get_metric_names(output_features: Dict[str, "OutputFeature"]) -> Dict[str, L
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {}
     for output_feature_name, output_feature in output_features.items():
-        metrics_names[output_feature_name] = sorted(list(metric_feature_type_registry[output_feature.type()].keys()))
+        metrics_names[output_feature_name] = sorted(
+            list(get_metric_feature_type_registry()[output_feature.type()].keys())
+        )
     # Add combined loss.
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names
+
+
+def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {}
+    for output_feature in output_features:
+        output_feature_name = output_feature[NAME]
+        output_feature_type = output_feature[TYPE]
+        metrics_names[output_feature_name] = get_metric_feature_type_registry()[output_feature_type]
     metrics_names[COMBINED] = [LOSS]
     return metrics_names

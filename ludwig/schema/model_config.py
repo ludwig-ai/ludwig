@@ -13,7 +13,6 @@ from ludwig.constants import (
     BINARY,
     CATEGORY,
     COLUMN,
-    COMBINED,
     COMBINER,
     DECODER,
     DEFAULT_VALIDATION_METRIC,
@@ -39,7 +38,7 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.modules.metric_registry import metric_feature_type_registry
+from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
@@ -600,14 +599,3 @@ class ModelConfig(BaseMarshmallowConfig):
         if self.combiner is not None:
             config_dict["combiner"] = self.combiner.to_dict()
         return convert_submodules(config_dict)
-
-
-def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
-    """Returns a dict of output_feature_name -> list of metric names."""
-    metrics_names = {}
-    for output_feature in output_features:
-        output_feature_name = output_feature[NAME]
-        output_feature_type = output_feature[TYPE]
-        metrics_names[output_feature_name] = metric_feature_type_registry[output_feature_type]
-    metrics_names[COMBINED] = [LOSS]
-    return metrics_names

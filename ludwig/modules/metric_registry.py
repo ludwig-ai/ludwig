@@ -1,5 +1,6 @@
 from typing import List, Union
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry
 
 metric_feature_type_registry = Registry()
@@ -27,3 +28,13 @@ def get_metric_classes(feature_type: str):
 
 def get_metric_cls(feature_type: str, name: str):
     return metric_feature_type_registry[feature_type][name]
+
+
+@DeveloperAPI
+def get_metric_feature_type_registry() -> Registry:
+    return metric_feature_type_registry
+
+
+@DeveloperAPI
+def get_metric_registry() -> Registry:
+    return metric_registry
