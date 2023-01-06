@@ -137,8 +137,7 @@ class PrecisionMetric(AveragePrecision, LudwigMetric):
     """Precision metric."""
 
     def __init__(self, **kwargs):
-        # super().__init__(dist_sync_fn=gather_all_tensors)
-        super().__init__()
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
     def get_objective(cls):
@@ -154,8 +153,7 @@ class RecallMetric(Recall, LudwigMetric):
     """Recall metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
-        # super().__init__()
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
     def get_objective(cls):

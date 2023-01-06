@@ -244,7 +244,7 @@ class LightGBMTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = initialize_printed_table(output_features, metrics_names)
+        printed_table = initialize_printed_table(output_features)
 
         # eval metrics on train
         if self.evaluate_training_set:

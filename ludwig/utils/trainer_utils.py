@@ -21,12 +21,11 @@ logger = logging.getLogger(__name__)
 @DeveloperAPI
 def initialize_printed_table(
     output_features: Dict[str, "OutputFeature"],  # noqa
-    metrics_names: Dict[str, List[str]],
 ) -> Dict:
     """Returns an outline of a table data structure used for tabulation and logging."""
     printed_table = OrderedDict()
     for output_feature_name, output_feature in output_features.items():
-        printed_table[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
+        printed_table[output_feature_name] = [[output_feature_name] + output_feature.metric_names]
     printed_table[COMBINED] = [[COMBINED, LOSS]]
     return printed_table
 
@@ -269,6 +268,10 @@ def add_metrics_to_printed_table(
         # [1:]: Skip the first column as it's just the name of the output feature, not an actual metric name.
         for metric_name in printed_table[output_feature_name][0][1:]:
             printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
+            # if metric_name in output_feature_metrics:
+            #     printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
+            # else:
+            #     printed_metrics.append(float("nan"))
 
         # The printed table.
         #    ╒════════════╤════════════╤══════════════════════════════════════╤═════════════╤══════════╤═══════════╕
