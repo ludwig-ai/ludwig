@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import HIDDEN, LENGTHS, LOGITS, PREDICTIONS, PROBABILITIES, LOSS
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -267,7 +267,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
     def _setup_metrics(self):
         self._metric_functions = {
             # self.loss.type: self.eval_loss_metric,
-            "loss": self.eval_loss_metric,
+            LOSS: self.eval_loss_metric,
             **{
                 name: cls(**self.loss_kwargs(), **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type()).items()
