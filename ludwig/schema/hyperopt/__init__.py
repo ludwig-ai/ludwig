@@ -6,7 +6,6 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.utils import output_config_registry
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
 
@@ -16,12 +15,12 @@ from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, S
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
 
-    def get_hyperopt_metric_options():
-        all_metrics = []
-        for oftype in output_config_registry:
-            ofcls = output_config_registry[oftype]
-            all_metrics += ofcls.get_output_metric_functions().keys()
-        return all_metrics
+    # def get_hyperopt_metric_options():
+    #     print(f"metric_feature_type_registry.keys(): {metric_feature_type_registry.keys()}")
+    #     all_metrics = []
+    #     for oftype in output_config_registry:
+    #         all_metrics += metric_feature_type_registry[oftype].keys()
+    #     return all_metrics
 
     output_feature: str = "combined"  # TODO: make more restrictive
 
@@ -35,8 +34,8 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
-    metric: str = schema_utils.StringOptions(
-        options=get_hyperopt_metric_options(),
+    metric: str = schema_utils.String(
+        # TODO: Enforce validations in auxiliary validations.
         default=LOSS,
         allow_none=False,
         description=(

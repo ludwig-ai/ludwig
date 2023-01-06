@@ -25,7 +25,6 @@ import statistics
 import sys
 import threading
 import time
-from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -34,7 +33,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION, TRAIN
 from ludwig.data.dataset.base import Dataset
 from ludwig.globals import (
     is_progressbar_disabled,
@@ -69,6 +68,8 @@ from ludwig.utils.trainer_utils import (
     get_new_progress_tracker,
     get_total_steps,
     ProgressTracker,
+    add_metrics_to_printed_table,
+    initialize_printed_table,
 )
 
 logger = logging.getLogger(__name__)
@@ -504,25 +505,25 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = initialize_printed_table(output_features, metrics_names)
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
-            self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            train_metrics_log = self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
             # Use metrics accumulated during training
             metrics = self.model.get_metrics()
-            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            train_metrics_log = append_metrics(
+                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
+            )
             self.model.reset_metrics()
+
+        printed_table = add_metrics_to_printed_table(printed_table, train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -534,14 +535,15 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table = add_metrics_to_printed_table(printed_table, validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -555,9 +557,11 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table = add_metrics_to_printed_table(printed_table, test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -571,7 +575,7 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
+            for output_feature, table in printed_table.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # ================ Validation Logic ================
@@ -1018,15 +1022,13 @@ class Trainer(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
-    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+    def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
         predictor = Predictor(
             self.model, batch_size=batch_size, horovod=self.horovod, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     def check_progress_on_validation(
         self,

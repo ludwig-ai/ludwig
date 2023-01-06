@@ -361,8 +361,6 @@ class NumberInputFeature(NumberFeatureMixin, InputFeature):
 
 
 class NumberOutputFeature(NumberFeatureMixin, OutputFeature):
-    metric_functions = NumberOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[NumberOutputFeatureConfig, Dict],

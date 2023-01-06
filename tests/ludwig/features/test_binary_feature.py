@@ -47,7 +47,7 @@ def test_binary_output_feature():
             "input_size": 1,
         },
         "loss": {
-            "type": "binary_weighted_cross_entropy",
+            "type": "binary_weighted_cross_entropy_loss",
             "positive_class_weight": 1,
             "robust_lambda": 0,
             "confidence_penalty": 0,
@@ -75,7 +75,7 @@ def test_binary_output_feature_without_positive_class_weight():
             "input_size": 1,
         },
         "loss": {
-            "type": "binary_weighted_cross_entropy",
+            "type": "binary_weighted_cross_entropy_loss",
             "positive_class_weight": None,
             "robust_lambda": 0,
             "confidence_penalty": 0,

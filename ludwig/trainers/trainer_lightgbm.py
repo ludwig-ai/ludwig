@@ -5,15 +5,26 @@ import signal
 import sys
 import threading
 import time
-from collections import OrderedDict
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    COMBINED,
+    LOSS,
+    MINIMIZE,
+    MODEL_GBM,
+    NUMBER,
+    TEST,
+    TRAINING,
+    VALIDATION,
+    TRAIN,
+)
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
@@ -34,17 +45,12 @@ from ludwig.utils.trainer_utils import (
     append_metrics,
     get_latest_metrics_dict,
     get_new_progress_tracker,
+    add_metrics_to_printed_table,
+    initialize_printed_table,
     ProgressTracker,
 )
 
 logger = logging.getLogger(__name__)
-
-
-def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
-    """Helper for iterating feature names and metric names."""
-    for feature_name, feature in features.items():
-        for metric in feature.metric_functions:
-            yield feature_name, metric
 
 
 @register_trainer(MODEL_GBM)
@@ -87,7 +93,6 @@ class LightGBMTrainer(BaseTrainer):
         try:
             base_learning_rate = float(config.learning_rate)
         except ValueError:
-            # TODO (ASN): Circle back on how we want to set default placeholder value
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
@@ -177,7 +182,6 @@ class LightGBMTrainer(BaseTrainer):
         dataset: "Dataset",  # noqa: F821
         dataset_name: str,
         metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-        tables: Dict[str, List[List[str]]],
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
@@ -186,9 +190,7 @@ class LightGBMTrainer(BaseTrainer):
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     @classmethod
     def write_eval_summary(
@@ -241,16 +243,12 @@ class LightGBMTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = initialize_printed_table(output_features, metrics_names)
 
         # eval metrics on train
         if self.evaluate_training_set:
-            self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            train_metrics_log = self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
 
             self.write_eval_summary(
@@ -267,8 +265,8 @@ class LightGBMTrainer(BaseTrainer):
                 progress_tracker.train_metrics[output_feature_name][LOSS].append(
                     TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
                 )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
+
+        printed_table = add_metrics_to_printed_table(printed_table, train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -280,14 +278,15 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table = add_metrics_to_printed_table(printed_table, validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -301,9 +300,11 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table = add_metrics_to_printed_table(printed_table, test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -317,7 +318,7 @@ class LightGBMTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
+            for output_feature, table in printed_table.items():
                 logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
 
         # ================ Validation Logic ================

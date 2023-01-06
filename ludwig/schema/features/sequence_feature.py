@@ -2,14 +2,9 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
-    EDIT_DISTANCE,
-    LAST_ACCURACY,
     LOSS,
-    PERPLEXITY,
     SEQUENCE,
-    SEQUENCE_ACCURACY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
-    TOKEN_ACCURACY,
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
@@ -105,14 +100,3 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
     )
-
-    @staticmethod
-    def get_output_metric_functions():
-        return {
-            LOSS: None,
-            TOKEN_ACCURACY: None,
-            SEQUENCE_ACCURACY: None,
-            LAST_ACCURACY: None,
-            PERPLEXITY: None,
-            EDIT_DISTANCE: None,
-        }

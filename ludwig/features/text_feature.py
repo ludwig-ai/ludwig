@@ -226,8 +226,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    metric_functions = TextOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[TextInputFeatureConfig, Dict],

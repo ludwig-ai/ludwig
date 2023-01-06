@@ -33,7 +33,6 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import (
     log_warning_if_all_grid_type_parameters,
@@ -43,11 +42,11 @@ from ludwig.hyperopt.utils import (
     update_hyperopt_params_with_defaults,
 )
 from ludwig.schema.model_config import ModelConfig
+from ludwig.modules.metric_registry import metric_feature_type_registry
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
-from ludwig.utils.misc_utils import get_from_registry
 
 try:
     from ray.tune import Callback as TuneCallback
@@ -301,17 +300,11 @@ def hyperopt(
         for of in full_config[OUTPUT_FEATURES]:
             if of[NAME] == output_feature:
                 output_feature_type = of[TYPE]
-        feature_class = get_from_registry(output_feature_type, get_output_type_registry())
-        if metric not in feature_class.metric_functions:
-            # todo v0.4: allow users to specify also metrics from the overall
-            #  and per class metrics from the training stats and in general
-            #  and post-processed metric
+        if metric not in metric_feature_type_registry[output_feature_type]:
             raise ValueError(
-                'The specified metric for hyperopt "{}" is not a valid metric '
-                'for the specified output feature "{}" of type "{}". '
-                "Available metrics are: {}".format(
-                    metric, output_feature, output_feature_type, feature_class.metric_functions.keys()
-                )
+                f"The specified metric for hyperopt '{metric}' is not a valid metric "
+                f"for the specified output feature '{output_feature}' of type '{output_feature_type}'. "
+                f"Available metrics are: {metric_feature_type_registry[output_feature_type].keys()}."
             )
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(

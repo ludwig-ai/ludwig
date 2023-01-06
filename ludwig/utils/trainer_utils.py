@@ -19,13 +19,26 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
+def initialize_printed_table(
+    output_features: Dict[str, "OutputFeature"],  # noqa
+    metrics_names: Dict[str, List[str]],
+) -> Dict:
+    """Returns an outline of a table data structure used for tabulation and logging."""
+    printed_table = OrderedDict()
+    for output_feature_name, output_feature in output_features.items():
+        printed_table[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
+    printed_table[COMBINED] = [[COMBINED, LOSS]]
+    return printed_table
+
+
+@DeveloperAPI
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
     metrics = OrderedDict()
 
     for output_feature_name, output_feature in output_features.items():
         metrics[output_feature_name] = OrderedDict()
-        for metric in output_feature.metric_functions:
+        for metric in output_feature.metric_names:
             metrics[output_feature_name][metric] = []
 
     metrics[COMBINED] = {LOSS: []}
@@ -255,15 +268,37 @@ class ProgressTracker:
         return log_metrics
 
 
+def add_metrics_to_printed_table(
+    printed_table: List,
+    metrics_log: Dict[str, Dict[str, TrainerMetric]],
+    split_name: str,
+):
+    """Add metrics to tables by the order of the table's metric header."""
+    for output_feature_name, output_feature_metrics in metrics_log.items():
+        printed_metrics = []
+        # [0]: The header is the first row, which contains names of metrics.
+        # [1:]: Skip the first column as it's just the name of the output feature, not an actual metric name.
+        for metric_name in printed_table[output_feature_name][0][1:]:
+            printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
+
+        # The printed table.
+        #    ╒════════════╤════════════╤══════════════════════════════════════╤═════════════╤══════════╤═══════════╕
+        #    │ Survived   │   accuracy │   binary_weighted_cross_entropy_loss │   precision │   recall │   roc_auc │
+        #    ╞════════════╪════════════╪══════════════════════════════════════╪═════════════╪══════════╪═══════════╡
+        # -> │ train      │     0.6859 │                               4.0943 │      0.6149 │   0.3033 │    0.6309 │
+        #    ╘════════════╧════════════╧══════════════════════════════════════╧═════════════╧══════════╧═══════════╛
+        printed_table[output_feature_name].append([split_name] + printed_metrics)
+    return printed_table
+
+
 @DeveloperAPI
 def append_metrics(
     model: BaseModel,
     dataset_name: Literal["train", "validation", "test"],
     results: Dict[str, Dict[str, float]],
     metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-    tables: Dict[str, List[List[str]]],
     progress_tracker: ProgressTracker,
-) -> Tuple[Dict[str, Dict[str, List[TrainerMetric]]], Dict[str, List[List[str]]]]:
+) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     epoch = progress_tracker.epoch
     steps = progress_tracker.steps
     for output_feature in model.output_features:
@@ -271,7 +306,7 @@ def append_metrics(
 
         # collect metric names based on output features metrics to
         # ensure consistent order of reporting metrics
-        metric_names = model.output_features[output_feature].metric_functions.keys()
+        metric_names = model.output_features[output_feature].metric_names
 
         for metric in metric_names:
             if metric in results[output_feature]:
@@ -280,12 +315,8 @@ def append_metrics(
                 metrics_log[output_feature][metric].append(TrainerMetric(epoch=epoch, step=steps, value=score))
                 scores.append(score)
 
-        tables[output_feature].append(scores)
-
     metrics_log[COMBINED][LOSS].append(TrainerMetric(epoch=epoch, step=steps, value=results[COMBINED][LOSS]))
-    tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
-
-    return metrics_log, tables
+    return metrics_log
 
 
 @DeveloperAPI

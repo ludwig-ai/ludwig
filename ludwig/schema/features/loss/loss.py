@@ -4,7 +4,7 @@ from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
-    BINARY_WEIGHTED_CROSS_ENTROPY,
+    BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_ERROR,
@@ -86,7 +86,7 @@ class RMSPELossConfig(BaseLossConfig):
 @dataclass(repr=False)
 class BWCEWLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
-        BINARY_WEIGHTED_CROSS_ENTROPY,
+        BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
         description="Type of loss.",
     )
 

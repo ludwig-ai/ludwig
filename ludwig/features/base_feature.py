@@ -19,7 +19,7 @@ from typing import Any, Dict, Optional
 import torch
 from torch import Tensor
 
-from ludwig.constants import HIDDEN, LENGTHS, LOGITS, LOSS, PREDICTIONS, PROBABILITIES
+from ludwig.constants import HIDDEN, LENGTHS, LOGITS, PREDICTIONS, PROBABILITIES
 from ludwig.decoders.registry import get_decoder_cls
 from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_utils import compute_feature_hash, get_input_size_with_dependencies
@@ -181,6 +181,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         super().__init__(feature)
 
+        self.metric_names = []
         self.loss = feature.loss
         self.reduce_input = feature.reduce_input
         self.reduce_dependencies = feature.reduce_dependencies
@@ -235,11 +236,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """Returns the Tensor data type feature outputs."""
         pass
 
-    @property
-    @abstractmethod
-    def metric_functions(self) -> Dict:
-        pass
-
     def initialize_decoder(self, decoder_config):
         # Input to the decoder is the output feature's FC hidden layer.
         decoder_config.input_size = self.fc_stack.output_shape[-1]
@@ -269,15 +265,15 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         self.eval_loss_metric = get_metric_cls(self.type(), self.loss.type)(**loss_kwargs)
 
     def _setup_metrics(self):
-        # needed to shadow class variable
-        self.metric_functions = {
-            LOSS: self.eval_loss_metric,
+        self._metric_functions = {
+            self.loss.type: self.eval_loss_metric,
             **{
                 name: cls(**self.loss_kwargs(), **self.metric_kwargs())
                 for name, cls in get_metric_classes(self.type()).items()
                 if cls.can_report(self)
             },
         }
+        self.metric_names = sorted(list(self._metric_functions.keys()))
 
     def create_calibration_module(self, feature: BaseOutputFeatureConfig) -> CalibrationModule:
         """Creates and returns a CalibrationModule that converts logits to a probability distribution."""
@@ -343,7 +339,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             targets: Tensor with target values for this output feature.
             predictions: Dict of tensors returned by predictions().
         """
-        for _, metric_fn in self.metric_functions.items():
+        for _, metric_fn in self._metric_functions.items():
             metric_class = type(metric_fn)
             prediction_key = metric_class.get_inputs()
             # TODO(shreya): Metrics should ideally just move to the correct device
@@ -354,7 +350,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def get_metrics(self):
         metric_vals = {}
-        for metric_name, metric_fn in self.metric_functions.items():
+        for metric_name, metric_fn in self._metric_functions.items():
             try:
                 metric_vals[metric_name] = get_scalar_from_ludwig_metric(metric_fn)
             except Exception as e:
@@ -362,7 +358,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         return metric_vals
 
     def reset_metrics(self):
-        for _, metric_fn in self.metric_functions.items():
+        for _, metric_fn in self._metric_functions.items():
             if metric_fn is not None:
                 metric_fn.reset()
 

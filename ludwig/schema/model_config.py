@@ -608,6 +608,6 @@ def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) ->
     for output_feature in output_features:
         output_feature_name = output_feature[NAME]
         output_feature_type = output_feature[TYPE]
-        metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
+        metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].keys()
     metrics_names[COMBINED] = [LOSS]
     return metrics_names

@@ -6,6 +6,7 @@ from torch import Tensor
 from torchmetrics.metric import Metric
 
 from ludwig.constants import COMBINED, LOSS
+from ludwig.modules.metric_registry import metric_feature_type_registry
 
 
 def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
@@ -89,13 +90,11 @@ def reduce_trainer_metrics_dict(
     return {k: dict(v) for k, v in flattened_dict.items()}
 
 
-def get_metric_names(output_features: Dict[str, Dict]) -> Dict[str, List[str]]:
+def get_metric_names(output_features: Dict[str, "OutputFeature"]) -> Dict[str, List[str]]:  # noqa
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {}
     for output_feature_name, output_feature in output_features.items():
-        for metric in output_feature.metric_functions:
-            metrics = metrics_names.get(output_feature_name, [])
-            metrics.append(metric)
-            metrics_names[output_feature_name] = metrics
+        metrics_names[output_feature_name] = sorted(list(metric_feature_type_registry[output_feature.type()].keys()))
+    # Add combined loss.
     metrics_names[COMBINED] = [LOSS]
     return metrics_names

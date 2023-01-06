@@ -21,7 +21,7 @@ import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor, tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import MeanAbsoluteError
+from torchmetrics import MeanAbsoluteError, AveragePrecision, Recall
 from torchmetrics import MeanMetric as _MeanMetric
 from torchmetrics import MeanSquaredError, Metric
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
@@ -30,6 +30,8 @@ from torchmetrics.metric import jit_distributed_available
 from ludwig.constants import (
     ACCURACY,
     BINARY,
+    PRECISION,
+    RECALL,
     CATEGORY,
     HITS_AT_K,
     JACCARD,
@@ -50,6 +52,7 @@ from ludwig.constants import (
     SET,
     TEXT,
     TOKEN_ACCURACY,
+    BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
     VECTOR,
 )
 from ludwig.modules.loss_modules import (
@@ -122,6 +125,40 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     @classmethod
     def get_inputs(cls):
         return PREDICTIONS
+
+
+@register_metric(PRECISION, [BINARY])
+class PrecisionMetric(AveragePrecision, LudwigMetric):
+    """Precision metric."""
+
+    def __init__(self, **kwargs):
+        # super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__()
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
+
+
+@register_metric(RECALL, [BINARY])
+class RecallMetric(Recall, LudwigMetric):
+    """Recall metric."""
+
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=gather_all_tensors)
+        # super().__init__()
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
 
 
 @register_metric(ROC_AUC, [BINARY])
@@ -335,7 +372,7 @@ class LossMetric(MeanMetric, ABC):
         return False
 
 
-@register_metric("binary_weighted_cross_entropy", [BINARY])
+@register_metric(BINARY_WEIGHTED_CROSS_ENTROPY_LOSS, [BINARY])
 class BWCEWLMetric(LossMetric):
     """Binary Weighted Cross Entropy Weighted Logits Score Metric."""
 
