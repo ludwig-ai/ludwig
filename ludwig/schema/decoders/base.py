@@ -65,7 +65,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description="The passthrough decoder simply returns the raw numerical values coming from the combiner as "
-                    "outputs"
+        "outputs",
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -83,7 +83,7 @@ class RegressorConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "regressor",
         description="The regressor decoder is a (potentially empty) stack of fully connected layers, followed by a "
-                    "projection to a single number.",
+        "projection to a single number.",
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -119,8 +119,8 @@ class ProjectorConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "projector",
         description="The projected decoder is a (potentially empty) stack of fully connected layers, followed by a "
-                    "projection into a tensor of the vector size (optionally followed by a softmax in the case of "
-                    "multi-class classification).",
+        "projection into a tensor of the vector size (optionally followed by a softmax in the case of "
+        "multi-class classification).",
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -176,7 +176,7 @@ class ClassifierConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "classifier",
         description="The classifier decoder is a (potentially empty) stack of fully connected layers, followed by a "
-                    "projection into a vector of size of the number of available classes, followed by a sigmoid.",
+        "projection into a vector of size of the number of available classes, followed by a sigmoid.",
     )
 
     input_size: int = schema_utils.PositiveInteger(
