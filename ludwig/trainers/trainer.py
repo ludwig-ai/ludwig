@@ -636,16 +636,6 @@ class Trainer(BaseTrainer):
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
             )
 
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
-            )
-
         # ====== Setup file names =======
         model_hyperparameters_path = None
         tensorboard_log_dir = None

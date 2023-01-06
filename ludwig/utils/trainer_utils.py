@@ -52,8 +52,8 @@ def get_latest_metrics_dict(
     for feature_name, metrics_dict in progress_tracker_metrics.items():
         for metric_name, metrics in metrics_dict.items():
             if metrics:
-                # Metrics may be missing if computing metrics was excepted, or if the metrics are entirely empty
-                # due to a missing subset.
+                # Metrics may be missing if computing metrics was excepted, if the metrics are entirely empty
+                # due to a missing subset, or if should_evaluate_train is False.
                 latest_metrics_dict[feature_name][metric_name] = metrics[-1][-1]
     return latest_metrics_dict
 
@@ -267,11 +267,11 @@ def add_metrics_to_printed_table(
         # [0]: The header is the first row, which contains names of metrics.
         # [1:]: Skip the first column as it's just the name of the output feature, not an actual metric name.
         for metric_name in printed_table[output_feature_name][0][1:]:
-            printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
-            # if metric_name in output_feature_metrics:
-            #     printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
-            # else:
-            #     printed_metrics.append(float("nan"))
+            # Metrics may be missing if should_evaluate_train is False.
+            if metric_name in output_feature_metrics and output_feature_metrics[metric_name]:
+                printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
+            else:
+                printed_metrics.append("")
 
         # The printed table.
         #    ╒════════════╤════════════╤══════════════════════════════════════╤═════════════╤══════════╤═══════════╕

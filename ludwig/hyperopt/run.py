@@ -296,17 +296,6 @@ def hyperopt(
                 'Available ones are: {} and "combined"'.format(output_feature, output_feature_names)
             )
 
-        output_feature_type = None
-        for of in full_config[OUTPUT_FEATURES]:
-            if of[NAME] == output_feature:
-                output_feature_type = of[TYPE]
-        if metric not in metric_feature_type_registry[output_feature_type]:
-            raise ValueError(
-                f"The specified metric for hyperopt '{metric}' is not a valid metric "
-                f"for the specified output feature '{output_feature}' of type '{output_feature_type}'. "
-                f"Available metrics are: {metric_feature_type_registry[output_feature_type].keys()}."
-            )
-
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(
         parameters, output_feature, metric, goal, split, search_alg=search_alg, **executor
     )

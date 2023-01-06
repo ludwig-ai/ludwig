@@ -248,7 +248,8 @@ class LightGBMTrainer(BaseTrainer):
 
         # eval metrics on train
         if self.evaluate_training_set:
-            train_metrics_log = self.evaluation(
+            # Appends results to progress_tracker.train_metrics.
+            self.evaluation(
                 training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
 
@@ -267,7 +268,7 @@ class LightGBMTrainer(BaseTrainer):
                     TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
                 )
 
-        printed_table = add_metrics_to_printed_table(printed_table, train_metrics_log, TRAIN)
+        printed_table = add_metrics_to_printed_table(printed_table, progress_tracker.train_metrics, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -580,16 +581,6 @@ class LightGBMTrainer(BaseTrainer):
             raise ValueError(
                 "The specified validation_field {} is not valid."
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
-
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
             )
 
         # ====== Setup file names =======
