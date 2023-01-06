@@ -15,13 +15,6 @@ from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, S
 class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Basic hyperopt settings."""
 
-    # def get_hyperopt_metric_options():
-    #     print(f"metric_feature_type_registry.keys(): {metric_feature_type_registry.keys()}")
-    #     all_metrics = []
-    #     for oftype in output_config_registry:
-    #         all_metrics += metric_feature_type_registry[oftype].keys()
-    #     return all_metrics
-
     output_feature: str = "combined"  # TODO: make more restrictive
 
     goal: str = schema_utils.StringOptions(
