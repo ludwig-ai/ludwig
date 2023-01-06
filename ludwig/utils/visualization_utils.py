@@ -1084,7 +1084,7 @@ def confusion_matrix_plot(
             ha="center",
             va="center",
             color="black",
-            fontweight="bold",
+            fontweight="medium",
             wrap=True,
         )
 
