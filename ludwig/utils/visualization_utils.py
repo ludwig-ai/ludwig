@@ -1113,7 +1113,7 @@ def double_axis_line_plot(
 
     # Dynamically adjust figure size based on number of labels
     _, height = plt.rcParams.get("figure.figsize")
-    fig, ax1 = plt.subplots(layout="constrained", figsize=(len(labels) / 2, height))
+    fig, ax1 = plt.subplots(layout="constrained", figsize=(len(labels) / 3, height))
 
     if title is not None:
         ax1.set_title(title)
