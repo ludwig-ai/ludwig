@@ -8,6 +8,8 @@ from ludwig.constants import LOSS, TEST, TRAIN, VALIDATION
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.hyperopt.executor import ExecutorConfig, ExecutorDataclassField
 from ludwig.schema.hyperopt.search_algorithm import BaseSearchAlgorithmConfig, SearchAlgorithmDataclassField
+from ludwig.modules import metric_modules  # noqa: Needed to ensure that the metric registry is populated.
+from ludwig.modules.metric_registry import metric_registry
 
 
 @DeveloperAPI
@@ -27,8 +29,8 @@ class HyperoptConfig(schema_utils.BaseMarshmallowConfig, ABC):
         ),
     )
 
-    metric: str = schema_utils.String(
-        # TODO: Enforce validations in auxiliary validations.
+    metric: str = schema_utils.StringOptions(
+        options=metric_registry.keys(),
         default=LOSS,
         allow_none=False,
         description=(
