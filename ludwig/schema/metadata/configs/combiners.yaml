@@ -1,4 +1,16 @@
 ComparatorCombiner:
+    type:
+        short_description:
+            Compares the representation of two defined entities.
+        long_description:
+            The comparator combiner compares the hidden representation of two entities defined by lists of "
+            features. It assumes all outputs from encoders are tensors of size `b x h` where `b` is the batch 
+            size and `h` is the hidden dimension, which can be different for each input. If the input tensors 
+            have a different shape, it automatically flattens them. It then concatenates the representations 
+            of each entity and projects them both to vectors of size `output_size`. Finally, it compares the 
+            two entity representations by dot product, element-wise multiplication, absolute difference and 
+            bilinear product. It returns the final `b x h` tensor where `h` is the size of the concatenation 
+            of the four comparisons.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -236,6 +248,18 @@ ComparatorCombiner:
             most tasks.
         ui_display_name: Layer Weights Initializer
 ConcatCombiner:
+    type:
+        short_description:
+            Concatenates the outputs of all the encoders.
+        long_description:
+            The concat combiner assumes all outputs from encoders are tensors of size `b x h` where `b` is
+            the batch size and `h` is the hidden dimension, which can differ for each input. It 
+            concatenates along the `h` dimension, and then (optionally) passes the concatenated tensor 
+            through a stack of fully connected layers. It returns the final `b x h` tensor where `h` is the 
+            size of the last fully connected layer or the sum of the sizes of the `h` of all inputs in the 
+            case there are no fully connected layers. If there is only a single input feature and no fully 
+            connected layers, the output of the input feature encoder is passed through the combiner 
+            unchanged.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -469,6 +493,12 @@ ConcatCombiner:
             most tasks.
         ui_display_name: Layer Weights Initializer
 ProjectAggregateCombiner:
+    type:
+        short_description:
+            Projects the encoder outputs to a common size then takes the average.
+        long_description:
+            The project aggregate combiner projects the input vectors to a common size 
+            and then aggregates them by taking the average across all the vectors.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -702,6 +732,17 @@ ProjectAggregateCombiner:
             most tasks.
         ui_display_name: Layer Weights Initializer
 SequenceCombiner:
+    type:
+        short_description:
+            Stacks a sequence concat combiner with a sequence encoder.
+        long_description:
+            The sequence combiner stacks a sequence concat combiner with a sequence encoder. All the 
+            considerations about input tensor ranks described for the sequence concat combiner apply also in 
+            this case, but the main difference is that this combiner uses the `b x s x h` output of the 
+            sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h` is the 
+            sum of the hidden dimensions of all input features, as input for any of the sequence encoders 
+            described in the sequence features encoders section. All considerations on the shape of 
+            the outputs for the sequence encoders also apply to the sequence combiner.
     encoder:
         ui_display_name: null
     main_sequence_feature:
@@ -709,11 +750,44 @@ SequenceCombiner:
     reduce_output:
         ui_display_name: null
 SequenceConcatCombiner:
+    type:
+        short_description:
+            Concatenates the outputs of multiple sequence features.
+        long_description:
+            The sequence_concat combiner assumes at least one output from the encoders is a tensor of size 
+            `b x s x h` where `b` is the batch size, `s` is the length of the sequence and `h` is the hidden 
+            dimension. A sequence-like (sequence, text or time series) input feature can be specified with 
+            the `main_sequence_feature` parameter which takes the name of sequence-like input feature as its 
+            value. If no `main_sequence_feature` is specified, the combiner will look through all the 
+            features in the order they are defined in the configuration and will look for a feature with a 
+            rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an 
+            exception, otherwise the output of that feature will be used for concatenating the other features 
+            along the sequence `s` dimension.
+            
+            If there are other input features with a rank 3 output tensor, the combiner will concatenate 
+            them alongside the s dimension, which means that all of them must have identical s dimension, 
+            otherwise a dimension mismatch error will be returned thrown during training when a datapoint 
+            with two sequential features of different lengths are provided. 
+            
+            Other features that have a b x h rank 2 tensor output will be replicated s times and 
+            concatenated to the s dimension. The final output is a b x s x h' tensor where h' is the size of 
+            the concatenation of the h dimensions of all input features.
     main_sequence_feature:
         ui_display_name: null
     reduce_output:
         ui_display_name: null
 TabNetCombiner:
+    type:
+        short_description:
+            Tabnet is specifically tailored for high performance on tabular data.
+        long_description:
+            The tabnet combiner implements the TabNet model, which uses attention and sparsity to achieve "
+            "high performance on tabular data. It assumes all outputs from encoders are tensors of size b x h "
+            "where b is the batch size and h is the hidden dimension, which can be different for each input. "
+            "If the input tensors have a different shape, it automatically flattens them. It returns the "
+            "final b x h' tensor where h' is the user-specified output size.
+        literature_references:
+            - https://arxiv.org/abs/1908.07442
     bn_epsilon:
         default_value_reasoning:
             Default value found in popular ML packages like Keras
@@ -837,6 +911,26 @@ TabNetCombiner:
     sparsity:
         ui_display_name: null
 TabTransformerCombiner:
+    type:
+        short_description:
+            Projects and concatenates features, then passes them through a transformer.
+        long_description:
+            The tabtransformer combiner combines input features in the following sequence of operations. 
+            Except for binary and number features, the combiner projects features to an embedding size. 
+            These features are concatenated as if they were a sequence and passed through a transformer. 
+            After the transformer, the number and binary features are concatenated (which are of size 1) and 
+            then concatenated with the output of the transformer and is passed to a stack of fully connected 
+            layers (from TabTransformer Tabular Data Modeling Using Contextual Embeddings). It assumes all 
+            outputs from encoders are tensors of size `b x h` where `b` is the batch size and `h` is the 
+            hidden dimension, which can be different for each input. If the input tensors have a different 
+            shape, it automatically flattens them. It then projects each input tensor to the same hidden / 
+            embedding size and encodes them with a stack of Transformer layers. Finally, the transformer 
+            combiner applies a reduction to the outputs of the Transformer stack, followed by the above 
+            concatenation and optional fully connected layers. The output is a `b x h` tensor where `h` is the
+            size of the last fully connected layer or the hidden / embedding size, or a `b x n x h` where `n`
+            is the number of input features and `h` is the hidden / embedding size if no reduction is applied.
+        literature_references:
+            - https://arxiv.org/abs/2012.06678
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -1191,6 +1285,22 @@ TabTransformerCombiner:
             most tasks.
         ui_display_name: Layer Weights Initializer
 TransformerCombiner:
+    type:
+        short_description:
+            The transformer combiner combines input features using a stack of Transformer blocks.
+        long_description:
+            The transformer combiner combines input features using a stack of Transformer blocks (from 
+            Attention Is All You Need). It assumes all outputs from encoders are tensors of size `b x h` 
+            where `b` is the batch size and `h` is the hidden dimension, which can be different for each 
+            input. If the input tensors have a different shape, it automatically flattens them. It then 
+            projects each input tensor to the same hidden / embedding size and encodes them with a stack of 
+            Transformer layers. Finally, the transformer combiner applies a reduction to the outputs of the 
+            Transformer stack, followed by optional fully connected layers. The output is a `b x h` tensor 
+            where `h` is the size of the last fully connected layer or the hidden / embedding size, or a 
+            `b x n x h` where `n` is the number of input features and `h` is the hidden / embedding size if 
+            no reduction is applied.
+        literature_references:
+            - https://arxiv.org/abs/1706.03762
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases

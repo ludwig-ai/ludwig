@@ -15,14 +15,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     type: str = schema_utils.ProtectedString(
         "concat",
-        description="The concat combiner assumes all outputs from encoders are tensors of size `b x h` where `b` is "
-        "the batch size and `h` is the hidden dimension, which can differ for each input. It "
-        "concatenates along the `h` dimension, and then (optionally) passes the concatenated tensor "
-        "through a stack of fully connected layers. It returns the final `b x h` tensor where `h` is the "
-        "size of the last fully connected layer or the sum of the sizes of the `h` of all inputs in the "
-        "case there are no fully connected layers. If there is only a single input feature and no fully "
-        "connected layers, the output of the input feature encoder is passed through the combiner "
-        "unchanged.",
+        description=COMBINER_METADATA["ConcatCombiner"]["type"]["long_description"],
     )
 
     dropout: float = schema_utils.FloatRange(
