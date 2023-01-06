@@ -266,7 +266,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 
     def _setup_metrics(self):
         self._metric_functions = {
-            # self.loss.type: self.eval_loss_metric,
             LOSS: self.eval_loss_metric,
             **{
                 name: cls(**self.loss_kwargs(), **self.metric_kwargs())
