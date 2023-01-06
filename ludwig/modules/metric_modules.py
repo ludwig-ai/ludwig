@@ -21,17 +21,16 @@ import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor, tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import MeanAbsoluteError, AveragePrecision, Recall
+from torchmetrics import AveragePrecision, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric
+from torchmetrics import MeanSquaredError, Metric, Recall
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
 
 from ludwig.constants import (
     ACCURACY,
     BINARY,
-    PRECISION,
-    RECALL,
+    BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
     CATEGORY,
     HITS_AT_K,
     JACCARD,
@@ -42,9 +41,11 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     MINIMIZE,
     NUMBER,
+    PRECISION,
     PREDICTIONS,
     PROBABILITIES,
     R2,
+    RECALL,
     ROC_AUC,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -52,7 +53,6 @@ from ludwig.constants import (
     SET,
     TEXT,
     TOKEN_ACCURACY,
-    BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
     VECTOR,
 )
 from ludwig.distributed import get_current_dist_strategy

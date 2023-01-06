@@ -21,9 +21,9 @@ from ludwig.constants import (
     MODEL_GBM,
     NUMBER,
     TEST,
+    TRAIN,
     TRAINING,
     VALIDATION,
-    TRAIN,
 )
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
@@ -43,10 +43,10 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import (
+    add_metrics_to_printed_table,
     append_metrics,
     get_latest_metrics_dict,
     get_new_progress_tracker,
-    add_metrics_to_printed_table,
     initialize_printed_table,
     ProgressTracker,
 )
