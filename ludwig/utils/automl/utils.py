@@ -21,7 +21,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import get_output_type_registry
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 
 logger = logging.getLogger(__name__)
