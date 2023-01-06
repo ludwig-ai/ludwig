@@ -28,10 +28,19 @@ def prune_gbm_features(schema: Dict):
     """
     gbm_feature_types = ["binary", "category", "number"]
     pruned_all_of = []
+
     for cond in schema["items"]["allOf"]:
         if_type = cond["if"]["properties"]["type"]["const"]
         if if_type in gbm_feature_types:
+            pruned_then_properties = {
+                k: v
+                for k, v in cond["then"]["properties"].items()
+                if k not in ["encoder", "decoder", "tied", "input_size", "num_classes", "top_k"]
+            }
+            cond["then"]["properties"] = pruned_then_properties
+
             pruned_all_of += [cond]
+
     schema["items"]["allOf"] = pruned_all_of
 
 
