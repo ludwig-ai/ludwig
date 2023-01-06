@@ -33,7 +33,7 @@ import torch
 from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION, TRAIN
+from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -62,14 +62,14 @@ from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
+    add_metrics_to_printed_table,
     append_metrics,
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
     get_total_steps,
-    ProgressTracker,
-    add_metrics_to_printed_table,
     initialize_printed_table,
+    ProgressTracker,
 )
 
 logger = logging.getLogger(__name__)
