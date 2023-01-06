@@ -16,7 +16,7 @@ class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
 
     type: str = schema_utils.ProtectedString(
         "tabtransformer",
-        description=COMBINER_METADATA["TabTransformerCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["TabTransformerCombiner"]["type"].long_description,
     )
 
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(

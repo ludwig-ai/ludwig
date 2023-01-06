@@ -87,7 +87,12 @@ def EncoderDataclassField(feature_type: str, default: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": encoder_classes, "default": default},
+                    "type": {
+                        "type": "string",
+                        "enum": encoder_classes,
+                        # "enum_descriptions": get_encoder_descriptions(),
+                        "default": default
+                    },
                 },
                 "title": "encoder_options",
                 "allOf": get_encoder_conds(feature_type),

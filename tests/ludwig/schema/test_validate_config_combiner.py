@@ -3,6 +3,7 @@ from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import TRAINER
 from ludwig.schema import validate_config
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature
 
 
@@ -167,3 +168,9 @@ def test_config_bad_combiner_types_enums():
     # Test reduce_output = None:
     config2["combiner"]["reduce_output"] = None
     validate_config(config2)
+
+
+def test_get_combiner_jsonschema():
+    combiner_json_schema = get_combiner_jsonschema()
+
+    assert combiner_json_schema["properties"]["type"]["enum_descriptions"] is not None

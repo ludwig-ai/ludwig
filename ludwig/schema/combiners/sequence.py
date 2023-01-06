@@ -18,7 +18,7 @@ class SequenceCombinerConfig(BaseCombinerConfig):
 
     type: str = schema_utils.ProtectedString(
         "sequence",
-        description=COMBINER_METADATA["SequenceCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["SequenceCombiner"]["type"].long_description,
     )
 
     main_sequence_feature: Optional[str] = schema_utils.String(

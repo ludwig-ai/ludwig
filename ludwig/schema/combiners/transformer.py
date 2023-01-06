@@ -16,7 +16,7 @@ class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
 
     type: str = schema_utils.ProtectedString(
         "transformer",
-        description=COMBINER_METADATA["TransformerCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["TransformerCombiner"]["type"].long_description,
     )
 
     reduce_output: Optional[str] = schema_utils.ReductionOptions(

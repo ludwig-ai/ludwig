@@ -15,7 +15,7 @@ class TabNetCombinerConfig(BaseCombinerConfig):
 
     type: str = schema_utils.ProtectedString(
         "tabnet",
-        description=COMBINER_METADATA["TabNetCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["TabNetCombiner"]["type"].long_description,
     )
 
     size: int = schema_utils.PositiveInteger(

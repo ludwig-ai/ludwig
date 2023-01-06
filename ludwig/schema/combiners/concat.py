@@ -15,7 +15,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     type: str = schema_utils.ProtectedString(
         "concat",
-        description=COMBINER_METADATA["ConcatCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["ConcatCombiner"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

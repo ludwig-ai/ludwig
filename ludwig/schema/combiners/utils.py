@@ -2,7 +2,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.registry import Registry
 
 combiner_registry = Registry()
@@ -29,6 +29,7 @@ def get_combiner_jsonschema():
             "type": {
                 "type": "string",
                 "enum": combiner_types,
+                "enum_descriptions": get_combiner_descriptions(),
                 "default": "concat",
                 "title": "combiner_options",
                 "description": "Select the combiner type.",
@@ -38,6 +39,15 @@ def get_combiner_jsonschema():
         "allOf": get_combiner_conds(),
         "required": ["type"],
     }
+
+
+@DeveloperAPI
+def get_combiner_descriptions():
+    """
+    Returns a dictionary of combiner descriptions available at the type selection.
+    """
+    return {k: convert_metadata_to_json(v[TYPE]) if not isinstance(v, ParameterMetadata) else None
+            for k, v in COMBINER_METADATA.items()}
 
 
 @DeveloperAPI

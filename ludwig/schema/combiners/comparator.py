@@ -15,7 +15,7 @@ class ComparatorCombinerConfig(BaseCombinerConfig):
 
     type: str = schema_utils.ProtectedString(
         "comparator",
-        description=COMBINER_METADATA["ComparatorCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["ComparatorCombiner"]["type"].long_description,
     )
 
     entity_1: List[str] = schema_utils.List(

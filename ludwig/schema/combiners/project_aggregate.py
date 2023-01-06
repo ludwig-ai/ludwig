@@ -13,7 +13,7 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     type: str = schema_utils.ProtectedString(
         "project_aggregate",
-        description=COMBINER_METADATA["ProjectAggregateCombiner"]["type"]["long_description"],
+        description=COMBINER_METADATA["ProjectAggregateCombiner"]["type"].long_description,
     )
 
     projection_size: int = schema_utils.PositiveInteger(
