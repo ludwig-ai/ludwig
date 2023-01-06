@@ -53,7 +53,7 @@ def get_latest_metrics_dict(
         for metric_name, metrics in metrics_dict.items():
             if metrics:
                 # Metrics may be missing if computing metrics was excepted, if the metrics are entirely empty
-                # due to a missing subset, or if should_evaluate_train is False.
+                # due to a missing subset, or if evaluate_training_set is False.
                 latest_metrics_dict[feature_name][metric_name] = metrics[-1][-1]
     return latest_metrics_dict
 
