@@ -820,9 +820,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        if input_feature_config.augmentation:
-            self.augmentation_pipeline = AugmentationPipeline(input_feature_config.augmentation)
-
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.float32]
