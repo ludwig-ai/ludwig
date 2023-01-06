@@ -38,7 +38,6 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema import validate_config
@@ -63,6 +62,7 @@ from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTraine
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}

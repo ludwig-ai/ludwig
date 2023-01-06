@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 from torchmetrics.metric import Metric
 
-from ludwig.constants import COMBINED, LOSS, TYPE, NAME
+from ludwig.constants import COMBINED, LOSS, NAME, TYPE
 from ludwig.modules.metric_registry import get_metric_feature_type_registry
 from ludwig.types import FeatureConfigDict
 
