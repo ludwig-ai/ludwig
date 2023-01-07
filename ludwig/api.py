@@ -524,7 +524,12 @@ class LudwigModel:
                         logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
                         print_boxed("LUDWIG CONFIG")
-                        logger.info(pformat(self.config_obj.to_dict(), indent=4))
+                        logger.info("User-specified config (with upgrades):\n")
+                        logger.info(pformat(self.config_obj.get_user_config(), indent=4))
+                        logger.info(
+                            "\nFull config saved to:\n"
+                            f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
+                        )
 
                 preprocessed_data = self.preprocess(
                     dataset=dataset,

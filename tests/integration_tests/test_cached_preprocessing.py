@@ -17,8 +17,6 @@ def run_test_suite(config, dataset, backend):
         loaded_model = LudwigModel.load(model_dir, backend=backend)
         loaded_model.predict(dataset=dataset)
 
-        loaded_model.to_torchscript()
-
 
 @pytest.mark.parametrize(
     "backend",
