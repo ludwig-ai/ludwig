@@ -3,8 +3,8 @@ ALBERTEncoder:
         short_description:
             Similar to BERT with lower memory footprint and faster training.
         long_description:
-            The albert encoder loads a pretrained ALBERT (default albert-base-v2) model using the Hugging 
-            Face transformers package. Albert is similar to BERT, with significantly lower memory usage and 
+            The albert encoder loads a pretrained ALBERT (default albert-base-v2) model using the Hugging
+            Face transformers package. Albert is similar to BERT, with significantly lower memory usage and
             somewhat faster training time.
     attention_probs_dropout_prob:
         default_value_reasoning:
@@ -284,8 +284,8 @@ AutoTransformerEncoder:
         short_description:
             Automatically retrieves the architecture from the provided model name/path.
         long_description:
-            The auto_transformer encoder automatically instantiates the model architecture for the specified 
-            pretrained_model_name_or_path. Unlike the other HF encoders available, auto_transformer does not 
+            The auto_transformer encoder automatically instantiates the model architecture for the specified
+            pretrained_model_name_or_path. Unlike the other HF encoders available, auto_transformer does not
             provide a default value for pretrained_model_name_or_path, this is its only mandatory parameter.
             See the Hugging Face AutoModels documentation for more details.
         literature_references:
@@ -324,9 +324,9 @@ BERTEncoder:
         short_description:
             Bidirectional transformer great for language modeling.
         long_description:
-            The bert encoder loads a pretrained BERT (default bert-base-uncased) model using the Hugging 
-            Face transformers package. BERT is a bidirectional transformer pretrained using a combination of 
-            masked language modeling objective and next sentence prediction on a large corpus comprising the 
+            The bert encoder loads a pretrained BERT (default bert-base-uncased) model using the Hugging
+            Face transformers package. BERT is a bidirectional transformer pretrained using a combination of
+            masked language modeling objective and next sentence prediction on a large corpus comprising the
             Toronto Book Corpus and Wikipedia.
         literature_references:
             - https://arxiv.org/abs/1810.04805
@@ -530,10 +530,10 @@ BagEmbedWeightedEncoder:
         short_description:
             Transforms feature to vector, maps to sparse or dense embeddings, then aggregates.
         long_description:
-            The embed weighted encoder first transforms the element frequency vector to sparse integer 
-            lists, which are then mapped to either dense or sparse embeddings (one-hot encodings). Lastly, 
-            embeddings are aggregated as a weighted sum where each embedding is multiplied by its respective 
-            element's frequency. Inputs are of size b while outputs are of size b x h where b is the batch 
+            The embed weighted encoder first transforms the element frequency vector to sparse integer
+            lists, which are then mapped to either dense or sparse embeddings (one-hot encodings). Lastly,
+            embeddings are aggregated as a weighted sum where each embedding is multiplied by its respective
+            element's frequency. Inputs are of size b while outputs are of size b x h where b is the batch
             size and h is the dimensionality of the embeddings.
     activation:
         default_value_reasoning:
@@ -914,9 +914,9 @@ CTRLEncoder:
         short_description:
             Language model trained to condition on control codes that govern style, content and task-specific behavior.
         long_description:
-            The ctrl encoder loads a pretrained CTRL (default ctrl) model using the Hugging Face 
-            transformers package. CTRL is a causal (unidirectional) transformer pre-trained using language 
-            modeling on a very large corpus of ~140 GB of text data with the first token reserved as a 
+            The ctrl encoder loads a pretrained CTRL (default ctrl) model using the Hugging Face
+            transformers package. CTRL is a causal (unidirectional) transformer pre-trained using language
+            modeling on a very large corpus of ~140 GB of text data with the first token reserved as a
             control code (such as Links, Books, Wikipedia etc.).
         literature_references:
             - https://arxiv.org/abs/1909.05858
@@ -1008,7 +1008,7 @@ CamemBERTEncoder:
         short_description:
             Language model trained on large French text corpus.
         long_description:
-            The camembert encoder loads a pretrained CamemBERT (default jplu/tf-camembert-base) model using 
+            The camembert encoder loads a pretrained CamemBERT (default jplu/tf-camembert-base) model using
             the Hugging Face transformers package. CamemBERT is pre-trained on 138GB of French text.
         literature_references:
             - https://arxiv.org/abs/1911.03894
@@ -1211,7 +1211,7 @@ CategoricalEmbedEncoder:
         short_description:
             Maps the categorical feature to a dense embedding.
         long_description:
-            The dense encoder maps to a dense embedding and is returned as outputs of size `b x h`, 
+            The dense encoder maps to a dense embedding and is returned as outputs of size `b x h`,
             where `b` is the batch size and `h` is the dimensionality of the embeddings.
     dropout:
         default_value_reasoning:
@@ -1323,7 +1323,7 @@ CategoricalSparseEncoder:
         short_description:
             Maps the categorical feature to a sparse embedding.
         long_description:
-            The sparse encoder maps to a sparse embedding (one-hot encodings) and is returned as outputs of 
+            The sparse encoder maps to a sparse embedding (one-hot encodings) and is returned as outputs of
             size `b x h`, where `b` is the batch size and `h` is the dimensionality of the embeddings.
     dropout:
         default_value_reasoning:
@@ -1435,8 +1435,8 @@ DateEmbed:
         short_description:
             Embeds the date elements passes them through fully connected layers.
         long_description:
-            The Embed encoder passes the year through a fully connected layer of one neuron and embeds all 
-            other elements for the date, concatenates them and passes the concatenated representation 
+            The Embed encoder passes the year through a fully connected layer of one neuron and embeds all
+            other elements for the date, concatenates them and passes the concatenated representation
             through fully connected layers.
     activation:
         default_value_reasoning:
@@ -1749,9 +1749,9 @@ DateWave:
         short_description:
             Embeds the date elements by taking the cosine of their value before passing through fully connected layers.
         long_description:
-            The Wave encoder passes the year through a fully connected layer of one neuron and represents 
-            all other elements for the date by taking the cosine of their value with a different period (12 
-            for months, 31 for days, etc.), concatenates them and passes the concatenated representation 
+            The Wave encoder passes the year through a fully connected layer of one neuron and represents
+            all other elements for the date by taking the cosine of their value with a different period (12
+            for months, 31 for days, etc.), concatenates them and passes the concatenated representation
             through fully connected layers.
     activation:
         default_value_reasoning:
@@ -2015,7 +2015,7 @@ DenseEncoder:
         short_description:
             Passes the raw numerical values through fully connected layers.
         long_description:
-            The dense encoder passes the raw numerical values through fully connected layers. In this case 
+            The dense encoder passes the raw numerical values through fully connected layers. In this case
             the inputs of size `b` are transformed to size `b x h`.
     activation:
         default_value_reasoning:
@@ -2230,10 +2230,10 @@ DistilBERTEncoder:
         short_description:
             A distilled version of BERT base that is 40% smaller and 60% faster with 95% of performance preserved.
         long_description:
-            The distilbert encoder loads a pretrained DistilBERT (default distilbert-base-uncased) model 
-            using the Hugging Face transformers package. DistilBERT is a small, fast, cheap and light 
-            Transformer model trained by distilling BERT base. It has 40% less parameters than 
-            bert-base-uncased, runs 60% faster while preserving over 95% of BERT’s performances as measured 
+            The distilbert encoder loads a pretrained DistilBERT (default distilbert-base-uncased) model
+            using the Hugging Face transformers package. DistilBERT is a small, fast, cheap and light
+            Transformer model trained by distilling BERT base. It has 40% less parameters than
+            bert-base-uncased, runs 60% faster while preserving over 95% of BERT’s performances as measured
             on the GLUE language understanding benchmark.
     activation:
         default_value_reasoning:
@@ -2445,10 +2445,10 @@ ELECTRAEncoder:
         short_description:
                 Transformer encoder that can be used to encode a sequence of tokens with little compute
         long_description:
-              The electra encoder loads a pretrained ELECTRA model using the Hugging Face transformers package. 
-              ELECTRA is a new pretraining approach which trains two transformer models the generator and the 
-              discriminator. The generator’s role is to replace tokens in a sequence, and is therefore trained 
-              as a masked language model. The discriminator, which is the model we’re interested in, tries to 
+              The electra encoder loads a pretrained ELECTRA model using the Hugging Face transformers package.
+              ELECTRA is a new pretraining approach which trains two transformer models the generator and the
+              discriminator. The generator’s role is to replace tokens in a sequence, and is therefore trained
+              as a masked language model. The discriminator, which is the model we’re interested in, tries to
               identify which tokens were replaced by the generator in the sequence.
         literature_references:
             - https://openreview.net/pdf?id=r1xMH1BtvB
@@ -2681,8 +2681,8 @@ FlauBERTEncoder:
         short_description:
             Language model with BERT related architecture trained on large French text corpus.
         long_description:
-            The flaubert encoder loads a pretrained FlauBERT (default jplu/tf-flaubert-base-uncased) model 
-            using the Hugging Face transformers package. FlauBERT has an architecture similar to BERT and is 
+            The flaubert encoder loads a pretrained FlauBERT (default jplu/tf-flaubert-base-uncased) model
+            using the Hugging Face transformers package. FlauBERT has an architecture similar to BERT and is
             pre-trained on a large French language corpus.
         literature_references:
             - https://arxiv.org/abs/1912.05372
@@ -2851,8 +2851,8 @@ GPT2Encoder:
         short_description:
             GPT-2 is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
         long_description:
-            The gpt2 encoder loads a pretrained GPT-2 (default gpt2) model using the Hugging Face 
-            transformers package. GPT-2 is a causal (unidirectional) transformer pretrained using language 
+            The gpt2 encoder loads a pretrained GPT-2 (default gpt2) model using the Hugging Face
+            transformers package. GPT-2 is a causal (unidirectional) transformer pretrained using language
             modeling on a very large corpus of ~40 GB of text data.
         literature_references:
             - https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
@@ -3024,9 +3024,9 @@ H3Embed:
         short_description:
             Encodes each H3 component with embeddings then takes a sum and passes them through fully connected layers.
         long_description:
-            The Embed encoder encodes each component of the H3 representation (mode, edge, resolution, 
-            base cell and children cells) with embeddings. Children cells with value 0 will be masked out. 
-            After the embedding, all embeddings are summed and optionally passed through a stack of fully 
+            The Embed encoder encodes each component of the H3 representation (mode, edge, resolution,
+            base cell and children cells) with embeddings. Children cells with value 0 will be masked out.
+            After the embedding, all embeddings are summed and optionally passed through a stack of fully
             connected layers.
     activation:
         default_value_reasoning:
@@ -3340,10 +3340,10 @@ H3RNN:
         short_description:
             Encodes each H3 component with embeddings then passes them through an RNN encoder.
         long_description:
-            The RNN encoder encodes each component of the H3 representation (mode, edge, resolution, 
-            base cell and children cells) with embeddings. Children cells with value 0 will be masked out. 
-            After the embedding, all embeddings are passed through an RNN encoder. The intuition behind this 
-            is that, starting from the base cell, the sequence of children cells can be seen as a sequence 
+            The RNN encoder encodes each component of the H3 representation (mode, edge, resolution,
+            base cell and children cells) with embeddings. Children cells with value 0 will be masked out.
+            After the embedding, all embeddings are passed through an RNN encoder. The intuition behind this
+            is that, starting from the base cell, the sequence of children cells can be seen as a sequence
             encoding the path in the tree of all H3 hexes.
     activation:
         ui_display_name: null
@@ -3603,9 +3603,9 @@ H3WeightedSum:
         short_description:
             Encodes each H3 component with embeddings then takes a weighted sum.
         long_description:
-            The Weighted Sum encoder encodes each component of the H3 representation (mode, edge, 
-            resolution, base cell and children cells) with embeddings. Children cells with value 0 will be 
-            masked out. After the embedding, all embeddings are summed with a weighted sum (with learned 
+            The Weighted Sum encoder encodes each component of the H3 representation (mode, edge,
+            resolution, base cell and children cells) with embeddings. Children cells with value 0 will be
+            masked out. After the embedding, all embeddings are summed with a weighted sum (with learned
             weights) and optionally passed through a stack of fully connected layers.
     activation:
         default_value_reasoning:
@@ -3896,8 +3896,8 @@ LongformerEncoder:
         short_description:
             Transformer optimized for longer text inputs.
         long_description:
-            The longformer encoder loads a pretrained Longformer (default allenai/longformer-base-4096) 
-            model using the Hugging Face transformers package. Longformer is a good choice for longer text, 
+            The longformer encoder loads a pretrained Longformer (default allenai/longformer-base-4096)
+            model using the Hugging Face transformers package. Longformer is a good choice for longer text,
             as it supports sequences up to 4096 tokens long.
         literature_references:
             - https://arxiv.org/pdf/2004.05150.pdf
@@ -3960,8 +3960,8 @@ MLPMixerEncoder:
         short_description:
             Image encoder which applies fully connected layers to different patches of the image.
         long_description:
-            MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each 
-            patch to compute per-patch representations (tokens) and combining the representations with 
+            MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each
+            patch to compute per-patch representations (tokens) and combining the representations with
             fully-connected mixer layers.
     avg_pool:
         ui_display_name: null
@@ -4051,7 +4051,7 @@ MT5Encoder:
         short_description:
             MT5 is a multilingual variant of T5 useful for multilingual NLP use cases.
         long_description:
-            The mt5 encoder loads a pretrained MT5 (default google/mt5-base) model using the Hugging Face 
+            The mt5 encoder loads a pretrained MT5 (default google/mt5-base) model using the Hugging Face
             transformers package. MT5 is a multilingual variant of T5 trained on a dataset of 101 languages.
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
@@ -4212,12 +4212,12 @@ ParallelCNN:
         short_description:
             Default option for processing sequence, audio, and text data types.
         long_description:
-            The Parallel CNN works by first mapping the input integer sequence b x s (where b is the batch 
-            size and s is the length of the sequence) into a sequence of embeddings, then it passes the 
-            embedding through a number of parallel 1d convolutional layers with different filter size (by 
-            default 4 layers with filter size 2, 3, 4 and 5), followed by max pooling and concatenation. 
-            This single vector concatenating the outputs of the parallel convolutional layers is then passed 
-            through a stack of fully connected layers and returned as a b x h tensor where h is the output 
+            The Parallel CNN works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a number of parallel 1d convolutional layers with different filter size (by
+            default 4 layers with filter size 2, 3, 4 and 5), followed by max pooling and concatenation.
+            This single vector concatenating the outputs of the parallel convolutional layers is then passed
+            through a stack of fully connected layers and returned as a b x h tensor where h is the output
             size of the last fully connected layer.
     activation:
         default_value_reasoning:
@@ -4593,8 +4593,8 @@ PassthroughEncoder:
         short_description:
             Passes the raw input through to the combiner.
         long_description:
-            The passthrough encoder simply returns the raw numerical values coming from the input 
-            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is 
+            The passthrough encoder simply returns the raw numerical values coming from the input
+            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
             the batch size.
     input_size:
         other_information: Internal Only
@@ -4606,7 +4606,7 @@ ResNetEncoder:
         short_description:
             Residual network achieving very high performance on computer vision tasks.
         long_description:
-            ResNet - short for residual network is part of a family of extremely deep architectures showing 
+            ResNet - short for residual network is part of a family of extremely deep architectures showing
             compelling accuracy and nice convergence behaviors for computer vision applications. It is a type
             of CNN architecture designed to support hundreds or thousands of convolutional layers.
     activation:
@@ -4871,9 +4871,9 @@ RoBERTaEncoder:
         short_description:
             BERT based model that has higher accuracy and is easier parallelize due to larger mini-batches.
         long_description:
-            The roberta encoder loads a pretrained RoBERTa (default roberta-base) model using the Hugging 
-            Face transformers package. RoBERTa builds on BERT and modifies key hyperparameters, removing the 
-            next-sentence pretraining objective and training with much larger mini-batches and learning 
+            The roberta encoder loads a pretrained RoBERTa (default roberta-base) model using the Hugging
+            Face transformers package. RoBERTa builds on BERT and modifies key hyperparameters, removing the
+            next-sentence pretraining objective and training with much larger mini-batches and learning
             rates.
         literature_references:
             - https://arxiv.org/abs/1907.11692
@@ -4941,9 +4941,9 @@ SequenceEmbedEncoder:
         short_description:
             Maps each element of the sequence to an embedding.
         long_description:
-            The embed encoder simply maps each integer in the sequence to an embedding, creating a `b x s x h` 
-            tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding 
-            size. The tensor is reduced along the `s` dimension to obtain a single vector of size `h` for each 
+            The embed encoder simply maps each integer in the sequence to an embedding, creating a `b x s x h`
+            tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding
+            size. The tensor is reduced along the `s` dimension to obtain a single vector of size `h` for each
             element of the batch.
     dropout:
         default_value_reasoning:
@@ -5077,9 +5077,9 @@ SequencePassthroughEncoder:
         short_description:
             Transforms sequence values to a floats then reduces to obtain a vector for each element.
         long_description:
-            The passthrough encoder simply transforms each input value into a float value and adds a 
-            dimension to the input tensor, creating a b x s x 1 tensor where b is the batch size and s is 
-            the length of the sequence. The tensor is reduced along the s dimension to obtain a single 
+            The passthrough encoder simply transforms each input value into a float value and adds a
+            dimension to the input tensor, creating a b x s x 1 tensor where b is the batch size and s is
+            the length of the sequence. The tensor is reduced along the s dimension to obtain a single
             vector of size h for each element of the batch.
     encoding_size:
         default_value_reasoning:
@@ -5108,10 +5108,10 @@ SetSparseEncoder:
         short_description:
             Maps raw values to sparse integer lists, then maps to dense/sparse embeddings, then reduces to final vector.
         long_description:
-            The Embed encoder takes the raw binary values coming from the input placeholders and transforms 
-            them to sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot 
-            encodings), finally they are reduced on the sequence dimension and returned as an aggregated 
-            embedding vector. Inputs are of size b while outputs are of size b x h where b is the batch size 
+            The Embed encoder takes the raw binary values coming from the input placeholders and transforms
+            them to sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot
+            encodings), finally they are reduced on the sequence dimension and returned as an aggregated
+            embedding vector. Inputs are of size b while outputs are of size b x h where b is the batch size
             and h is the dimensionality of the embeddings.
     activation:
         default_value_reasoning:
@@ -5441,7 +5441,7 @@ Stacked2DCNN:
         short_description:
             Stack of 2D convolutional layers followed by an optional stack of fully connected layers.
         long_description:
-            Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling 
+            Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling
             pooling layers, followed by an optional stack of fully connected layers.
     conv_activation:
         expected_impact: 1
@@ -5804,12 +5804,12 @@ StackedCNN:
         short_description:
             Maps inputs to embeddings then passes them through a stack of 1d convolutional layers.
         long_description:
-            The Stacked CNN works by first mapping the input integer sequence b x s (where b is the batch 
-            size and s is the length of the sequence) into a sequence of embeddings, then it passes the 
-            embedding through a stack of 1d convolutional layers with different filter size (by default 6 
-            layers with filter size 7, 7, 3, 3, 3 and 3), followed by an optional final pool and by a 
-            flatten operation. This single flatten vector is then passed through a stack of fully connected 
-            layers and returned as a b x h tensor where h is the output size of the last fully connected 
+            The Stacked CNN works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a stack of 1d convolutional layers with different filter size (by default 6
+            layers with filter size 7, 7, 3, 3, 3 and 3), followed by an optional final pool and by a
+            flatten operation. This single flatten vector is then passed through a stack of fully connected
+            layers and returned as a b x h tensor where h is the output size of the last fully connected
             layer.
     activation:
         default_value_reasoning:
@@ -6221,10 +6221,10 @@ StackedCNNRNN:
         short_description:
             Maps inputs to embeddings, passes them through convolutional layer stack, then recurrent layer stack.
         long_description:
-            The cnnrnn encoder works by first mapping the input integer sequence b x s (where b is the batch 
-            size and s is the length of the sequence) into a sequence of embeddings, then it passes the 
-            embedding through a stack of convolutional layers (by default 2), that is followed by a stack of 
-            recurrent layers (by default 1), followed by a reduce operation that by default only returns the 
+            The cnnrnn encoder works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a stack of convolutional layers (by default 2), that is followed by a stack of
+            recurrent layers (by default 1), followed by a reduce operation that by default only returns the
             last output, but can perform other reduce functions.
     activation:
         ui_display_name: null
@@ -6796,13 +6796,13 @@ StackedParallelCNN:
         short_description:
             Combination of Parallel CNN and Stacked CNN encoders utilizing a stack of parallel convolutional layers.
         long_description:
-            The stacked parallel cnn encoder is a combination of the Parallel CNN and the Stacked CNN 
-            encoders where each layer of the stack is composed of parallel convolutional layers. It works by 
-            first mapping the input integer sequence b x s (where b is the batch size and s is the length of 
-            the sequence) into a sequence of embeddings, then it passes the embedding through a stack of 
-            several parallel 1d convolutional layers with different filter size, followed by an optional 
-            final pool and by a flatten operation. This single flattened vector is then passed through a 
-            stack of fully connected layers and returned as a b x h tensor where h is the output size of the 
+            The stacked parallel cnn encoder is a combination of the Parallel CNN and the Stacked CNN
+            encoders where each layer of the stack is composed of parallel convolutional layers. It works by
+            first mapping the input integer sequence b x s (where b is the batch size and s is the length of
+            the sequence) into a sequence of embeddings, then it passes the embedding through a stack of
+            several parallel 1d convolutional layers with different filter size, followed by an optional
+            final pool and by a flatten operation. This single flattened vector is then passed through a
+            stack of fully connected layers and returned as a b x h tensor where h is the output size of the
             last fully connected layer.
     activation:
         default_value_reasoning:
@@ -7163,9 +7163,9 @@ StackedRNN:
         short_description:
             Utilizes a stack of recurrent layers followed by a reduce operation.
         long_description:
-            The rnn encoder works by first mapping the input integer sequence b x s (where b is the batch 
-            size and s is the length of the sequence) into a sequence of embeddings, then it passes the 
-            embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce 
+            The rnn encoder works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce
             operation that by default only returns the last output, but can perform other reduce functions.
     activation:
         ui_display_name: null
@@ -7612,8 +7612,8 @@ StackedTransformer:
         short_description:
             Stack of transformer blocks with optional stack of fully connected layers.
         long_description:
-            The transformer encoder implements a stack of transformer blocks, replicating the architecture 
-            introduced in the Attention is all you need paper, and adds am optional stack of fully connected 
+            The transformer encoder implements a stack of transformer blocks, replicating the architecture
+            introduced in the Attention is all you need paper, and adds am optional stack of fully connected
             layers at the end.
         literature_references:
             - https://arxiv.org/abs/1706.03762
@@ -8047,8 +8047,8 @@ T5Encoder:
         short_description:
             Text-to-text approach transformer with good transfer performance on multiple tasks.
         long_description:
-            The T5 encoder loads a pretrained T5 (default t5-small) model using the Hugging Face transformers 
-            package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled 
+            The T5 encoder loads a pretrained T5 (default t5-small) model using the Hugging Face transformers
+            package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled
             from the web and shows good transfer performance on multiple tasks.
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
@@ -8169,10 +8169,10 @@ TransformerXLEncoder:
         short_description:
             Transformer architecture that introduces the notion of recurrence to the deep self-attention network.
         long_description:
-            The transformer_xl encoder loads a pretrained Transformer-XL (default transfo-xl-wt103) model 
-            using the Hugging Face transformers package. Transformer-XL is a causal (uni-directional) 
-            transformer with relative positioning (sinusoïdal) embeddings which can reuse previously 
-            computed hidden-states to attend to longer context (memory). This model also uses adaptive 
+            The transformer_xl encoder loads a pretrained Transformer-XL (default transfo-xl-wt103) model
+            using the Hugging Face transformers package. Transformer-XL is a causal (uni-directional)
+            transformer with relative positioning (sinusoïdal) embeddings which can reuse previously
+            computed hidden-states to attend to longer context (memory). This model also uses adaptive
             softmax inputs and outputs (tied).
     adaptive:
         default_value_reasoning: Huggingface default.
@@ -8305,8 +8305,8 @@ ViTEncoder:
         short_description:
             ViT encoder divides images into patches, performs a linear transformation, and then applies a transformer.
         long_description:
-            ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear 
-            transformation to encode each flattened patch, then applies a deep transformer architecture to 
+            ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear
+            transformation to encode each flattened patch, then applies a deep transformer architecture to
             the sequence of encoded patches.
     attention_probs_dropout_prob:
         default_value_reasoning: Taken from literature (https://arxiv.org/abs/2010.11929).
@@ -8539,7 +8539,7 @@ XLMEncoder:
         short_description:
             XLM is pre-trained by cross-language modeling.
         long_description:
-            The xlm encoder loads a pretrained XLM (default xlm-mlm-en-2048) model using the Hugging Face 
+            The xlm encoder loads a pretrained XLM (default xlm-mlm-en-2048) model using the Hugging Face
             transformers package. XLM is pre-trained by cross-language modeling.
     asm:
         ui_display_name: null
@@ -8711,9 +8711,9 @@ XLMRoBERTaEncoder:
         short_description:
             XLM-RoBERTa a large multi-lingual language model trained on 2.5TB of filtered CommonCrawl data.
         long_description:
-            The xlmroberta encoder loads a pretrained XLM-RoBERTa (default jplu/tf-xlm-reoberta-base) model 
-            using the Hugging Face transformers package. XLM-RoBERTa is based on Facebook’s RoBERTa model 
-            released in 2019. It is a large multi-lingual language model, trained on 2.5TB of filtered 
+            The xlmroberta encoder loads a pretrained XLM-RoBERTa (default jplu/tf-xlm-reoberta-base) model
+            using the Hugging Face transformers package. XLM-RoBERTa is based on Facebook’s RoBERTa model
+            released in 2019. It is a large multi-lingual language model, trained on 2.5TB of filtered
             CommonCrawl data.
     add_pooling_layer:
         ui_display_name: null
@@ -8778,10 +8778,10 @@ XLNetEncoder:
         short_description:
             XLNet is a transformer that outperforms BERT on a variety of benchmarks.
         long_description:
-            The xlnet encoder loads a pretrained XLNet (default xlnet-base-cased) model using the Hugging 
-            Face transformers package. XLnet is an extension of the Transformer-XL model pre-trained using 
-            an autoregressive method to learn bidirectional contexts by maximizing the expected likelihood 
-            over all permutations of the input sequence factorization order. XLNet outperforms BERT on a 
+            The xlnet encoder loads a pretrained XLNet (default xlnet-base-cased) model using the Hugging
+            Face transformers package. XLnet is an extension of the Transformer-XL model pre-trained using
+            an autoregressive method to learn bidirectional contexts by maximizing the expected likelihood
+            over all permutations of the input sequence factorization order. XLNet outperforms BERT on a
             variety of benchmarks.
     attn_type:
         ui_display_name: null

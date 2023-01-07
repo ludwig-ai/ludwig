@@ -43,13 +43,9 @@ def get_combiner_jsonschema():
 
 @DeveloperAPI
 def get_combiner_descriptions():
-    """
-    Returns a dictionary of combiner descriptions available at the type selection.
-    """
+    """Returns a dictionary of combiner descriptions available at the type selection."""
     return {
-        k: convert_metadata_to_json(v[TYPE])
-        if not isinstance(v, ParameterMetadata)
-        else None
+        k: convert_metadata_to_json(v[TYPE]) if not isinstance(v, ParameterMetadata) else None
         for k, v in COMBINER_METADATA.items()
     }
 
