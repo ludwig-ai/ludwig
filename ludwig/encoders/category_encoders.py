@@ -62,6 +62,10 @@ class CategoricalPassthroughEncoder(Encoder):
     def output_shape(self) -> torch.Size:
         return self.input_shape
 
+    @classmethod
+    def get_supported_model_types(cls, encoder_params: Dict[str, Any]) -> Set[str]:
+        return {MODEL_ECD, MODEL_GBM}
+
 
 @DeveloperAPI
 @register_encoder("dense", CATEGORY)
