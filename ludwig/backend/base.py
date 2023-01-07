@@ -165,8 +165,11 @@ class LocalPreprocessingMixin:
         return pd.Series(result, index=column.index, name=column.name)
 
     def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
-        batches = to_batches(df, batch_size)
         transform = transform_fn()
+        if not batch_size:
+            return transform(df)
+
+        batches = to_batches(df, batch_size)
         out_batches = [transform(batch.reset_index(drop=True)) for batch in batches]
         out_df = from_batches(out_batches).reset_index(drop=True)
         return out_df
