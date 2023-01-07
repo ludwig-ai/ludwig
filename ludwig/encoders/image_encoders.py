@@ -22,10 +22,16 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, TRAINABLE, USE_PRETRAINED, WIDTH
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
-from ludwig.modules.convolutional_modules import Conv2DStack
+from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import MLPMixerEncoderConfig, Stacked2DCNNEncoderConfig
+from ludwig.schema.encoders.image_encoders import (
+    MLPMixerEncoderConfig,
+    ResNetEncoderConfig,
+    Stacked2DCNNEncoderConfig,
+    ViTEncoderConfig,
+)
+from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +192,98 @@ class Stacked2DCNN(ImageEncoder):
         return torch.Size(self._input_shape)
 
 
+@DeveloperAPI
+@register_encoder("resnet", IMAGE)
+class ResNetEncoder(ImageEncoder):
+    def __init__(
+        self,
+        height: int,
+        width: int,
+        resnet_size: int = 50,
+        num_channels: int = 3,
+        out_channels: int = 16,
+        kernel_size: Union[int, Tuple[int]] = 3,
+        conv_stride: Union[int, Tuple[int]] = 1,
+        first_pool_kernel_size: Union[int, Tuple[int]] = None,
+        first_pool_stride: Union[int, Tuple[int]] = None,
+        batch_norm_momentum: float = 0.1,
+        batch_norm_epsilon: float = 0.001,
+        fc_layers: Optional[List[Dict]] = None,
+        num_fc_layers: Optional[int] = 1,
+        output_size: int = 256,
+        use_bias: bool = True,
+        weights_initializer: str = "xavier_uniform",
+        bias_initializer: str = "zeros",
+        norm: Optional[str] = None,
+        norm_params: Optional[Dict[str, Any]] = None,
+        activation: str = "relu",
+        dropout: float = 0,
+        encoder_config=None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.config = encoder_config
+
+        logger.debug(f" {self.name}")
+        # map parameter input feature config names to internal names
+        img_height = height
+        img_width = width
+        first_in_channels = num_channels
+
+        self._input_shape = (first_in_channels, img_height, img_width)
+
+        logger.debug("  ResNet")
+        self.resnet = ResNet(
+            img_height=img_height,
+            img_width=img_width,
+            first_in_channels=first_in_channels,
+            out_channels=out_channels,
+            resnet_size=resnet_size,
+            kernel_size=kernel_size,
+            conv_stride=conv_stride,
+            first_pool_kernel_size=first_pool_kernel_size,
+            first_pool_stride=first_pool_stride,
+            batch_norm_momentum=batch_norm_momentum,
+            batch_norm_epsilon=batch_norm_epsilon,
+        )
+        first_fc_layer_input_size = self.resnet.output_shape[0]
+
+        logger.debug("  FCStack")
+        self.fc_stack = FCStack(
+            first_layer_input_size=first_fc_layer_input_size,
+            layers=fc_layers,
+            num_layers=num_fc_layers,
+            default_output_size=output_size,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_norm=norm,
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout=dropout,
+        )
+
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+        hidden = self.resnet(inputs)
+        axes = [2, 3]
+        hidden = torch.mean(hidden, axes)
+        hidden = self.fc_stack(hidden)
+        return {"encoder_output": hidden}
+
+    @staticmethod
+    def get_schema_cls():
+        return ResNetEncoderConfig
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return self.fc_stack.output_shape
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+
+@DeveloperAPI
 @register_encoder("mlp_mixer", IMAGE)
 class MLPMixerEncoder(ImageEncoder):
     def __init__(
@@ -250,123 +348,119 @@ class MLPMixerEncoder(ImageEncoder):
         return self._output_shape
 
 
-# TODO: Temporarily comment out, may be re-enabled later date as HF encoder
-# @DeveloperAPI
-# @register_encoder("vit", IMAGE)
-# class ViTEncoder(Encoder):
-#     def __init__(
-#         self,
-#         height: int,
-#         width: int,
-#         num_channels: int = 3,
-#         use_pretrained: bool = True,
-#         pretrained_model: str = "google/vit-base-patch16-224",
-#         saved_weights_in_checkpoint: bool = False,
-#         hidden_size: int = 768,
-#         num_hidden_layers: int = 12,
-#         num_attention_heads: int = 12,
-#         intermediate_size: int = 3072,
-#         hidden_act: str = "gelu",
-#         hidden_dropout_prob: float = 0.1,
-#         attention_probs_dropout_prob: float = 0.1,
-#         initializer_range: float = 0.02,
-#         layer_norm_eps: float = 1e-12,
-#         gradient_checkpointing: bool = False,
-#         patch_size: int = 16,
-#         trainable: bool = True,
-#         output_attentions: bool = False,
-#         encoder_config=None,
-#         **kwargs,
-#     ):
-#         """Creates a ViT encoder using transformers.ViTModel.
-#
-#         use_pretrained: If True, uses a pretrained transformer based on the
-#             pretrained_model argument.
-#         pretrained: If str, expects the path to a pretrained model or the id of
-#             a model on huggingface.co, and ignores the configuration provided in
-#             the arguments.
-#         """
-#         super().__init__()
-#         self.config = encoder_config
-#
-#         try:
-#             from transformers import ViTConfig, ViTModel
-#         except ModuleNotFoundError:
-#             raise RuntimeError(
-#                 " transformers is not installed. "
-#                 "In order to install all image feature dependencies run "
-#                 "pip install ludwig[image]"
-#             )
-#
-#         # map parameter input feature config names to internal names
-#         img_height = height
-#         img_width = width
-#         in_channels = num_channels
-#
-#         img_width = img_width or img_height
-#         if img_width != img_height:
-#             raise ValueError("img_height and img_width should be identical.")
-#         self._input_shape = (in_channels, img_height, img_width)
-#
-#         if use_pretrained and not saved_weights_in_checkpoint:
-#             self.transformer = ViTModel.from_pretrained(pretrained_model)
-#         else:
-#             config = ViTConfig(
-#                 image_size=img_height,
-#                 num_channels=in_channels,
-#                 patch_size=patch_size,
-#                 hidden_size=hidden_size,
-#                 num_hidden_layers=num_hidden_layers,
-#                 num_attention_heads=num_attention_heads,
-#                 intermediate_size=intermediate_size,
-#                 hidden_act=hidden_act,
-#                 hidden_dropout_prob=hidden_dropout_prob,
-#                 attention_probs_dropout_prob=attention_probs_dropout_prob,
-#                 initializer_range=initializer_range,
-#                 layer_norm_eps=layer_norm_eps,
-#                 gradient_checkpointing=gradient_checkpointing,
-#             )
-#             self.transformer = ViTModel(config)
-#
-#         if trainable:
-#             self.transformer.train()
-#         else:
-#             freeze_parameters(self.transformer)
-#
-#         self._output_shape = (self.transformer.config.hidden_size,)
-#         self.output_attentions = output_attentions
-#
-#     def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
-#         output = self.transformer(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
-#         return_dict = {"encoder_output": output.pooler_output}
-#         if self.output_attentions:
-#             return_dict["attentions"] = output.attentions
-#         return return_dict
-#
-#     @staticmethod
-#     def get_schema_cls():
-#         return ViTEncoderConfig
-#
-#     @property
-#     def input_shape(self) -> torch.Size:
-#         return torch.Size(self._input_shape)
-#
-#     @property
-#     def output_shape(self) -> torch.Size:
-#         return torch.Size(self._output_shape)
-#
-#     @classmethod
-#     def requires_equal_dimensions(cls) -> bool:
-#         return True
-#
-#     @classmethod
-#     def required_width(cls) -> Optional[int]:
-#         return 224
-#
-#     @classmethod
-#     def required_height(cls) -> Optional[int]:
-#         return 224
-#
-#     @classmethod
-#     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-#         return encoder_params.get("use_pretrained", True)
+@DeveloperAPI
+@register_encoder("vit", IMAGE)
+class ViTEncoder(ImageEncoder):
+    def __init__(
+        self,
+        height: int,
+        width: int,
+        num_channels: int = 3,
+        use_pretrained: bool = True,
+        pretrained_model: str = "google/vit-base-patch16-224",
+        saved_weights_in_checkpoint: bool = False,
+        hidden_size: int = 768,
+        num_hidden_layers: int = 12,
+        num_attention_heads: int = 12,
+        intermediate_size: int = 3072,
+        hidden_act: str = "gelu",
+        hidden_dropout_prob: float = 0.1,
+        attention_probs_dropout_prob: float = 0.1,
+        initializer_range: float = 0.02,
+        layer_norm_eps: float = 1e-12,
+        gradient_checkpointing: bool = False,
+        patch_size: int = 16,
+        trainable: bool = True,
+        output_attentions: bool = False,
+        encoder_config=None,
+        **kwargs,
+    ):
+        """Creates a ViT encoder using transformers.ViTModel.
+
+        use_pretrained: If True, uses a pretrained transformer based on the
+            pretrained_model argument.
+        pretrained: If str, expects the path to a pretrained model or the id of
+            a model on huggingface.co, and ignores the configuration provided in
+            the arguments.
+        """
+        super().__init__()
+        self.config = encoder_config
+
+        try:
+            from transformers import ViTConfig, ViTModel
+        except ModuleNotFoundError:
+            raise RuntimeError(
+                " transformers is not installed. "
+                "In order to install all image feature dependencies run "
+                "pip install ludwig[image]"
+            )
+
+        # map parameter input feature config names to internal names
+        img_height = height
+        img_width = width
+        in_channels = num_channels
+
+        img_width = img_width or img_height
+        if img_width != img_height:
+            raise ValueError("img_height and img_width should be identical.")
+        self._input_shape = (in_channels, img_height, img_width)
+
+        if use_pretrained and not saved_weights_in_checkpoint:
+            transformer = ViTModel.from_pretrained(pretrained_model)
+        else:
+            config = ViTConfig(
+                image_size=img_height,
+                num_channels=in_channels,
+                patch_size=patch_size,
+                hidden_size=hidden_size,
+                num_hidden_layers=num_hidden_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                hidden_act=hidden_act,
+                hidden_dropout_prob=hidden_dropout_prob,
+                attention_probs_dropout_prob=attention_probs_dropout_prob,
+                initializer_range=initializer_range,
+                layer_norm_eps=layer_norm_eps,
+                gradient_checkpointing=gradient_checkpointing,
+            )
+            transformer = ViTModel(config)
+
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+
+        self._output_shape = (transformer.config.hidden_size,)
+        self.output_attentions = output_attentions
+
+    def forward(self, inputs: torch.Tensor, head_mask: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+        output = self.transformer.module(inputs, head_mask=head_mask, output_attentions=self.output_attentions)
+        return_dict = {"encoder_output": output.pooler_output}
+        if self.output_attentions:
+            return_dict["attentions"] = output.attentions
+        return return_dict
+
+    @staticmethod
+    def get_schema_cls():
+        return ViTEncoderConfig
+
+    @property
+    def input_shape(self) -> torch.Size:
+        return torch.Size(self._input_shape)
+
+    @property
+    def output_shape(self) -> torch.Size:
+        return torch.Size(self._output_shape)
+
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return True
+
+    @classmethod
+    def required_width(cls) -> Optional[int]:
+        return 224
+
+    @classmethod
+    def required_height(cls) -> Optional[int]:
+        return 224
+
+    @classmethod
+    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
+        return encoder_params.get("use_pretrained", True)
