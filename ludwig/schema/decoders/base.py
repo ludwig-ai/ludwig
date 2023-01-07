@@ -82,8 +82,7 @@ class RegressorConfig(BaseDecoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "regressor",
-        description="The regressor decoder is a (potentially empty) stack of fully connected layers, followed by a "
-        "projection to a single number.",
+        description=DECODER_METADATA["Regressor"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -118,9 +117,7 @@ class ProjectorConfig(BaseDecoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "projector",
-        description="The projected decoder is a (potentially empty) stack of fully connected layers, followed by a "
-        "projection into a tensor of the vector size (optionally followed by a softmax in the case of "
-        "multi-class classification).",
+        description=DECODER_METADATA["Projector"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -175,8 +172,7 @@ class ProjectorConfig(BaseDecoderConfig):
 class ClassifierConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "classifier",
-        description="The classifier decoder is a (potentially empty) stack of fully connected layers, followed by a "
-        "projection into a vector of size of the number of available classes, followed by a sigmoid.",
+        description=DECODER_METADATA["Classifier"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(

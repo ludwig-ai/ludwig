@@ -14,20 +14,7 @@ from ludwig.schema.metadata import DECODER_METADATA
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "generator",
-        description="The generator decoder is a (potentially empty) stack of fully connected layers, followed by an "
-        "RNN that generates outputs feeding on its own previous predictions and generates a tensor of "
-        "size `b x s' x c`, where `b` is the batch size, `s'` is the length of the generated sequence and "
-        "`c` is the number of classes, followed by a softmax_cross_entropy. During training teacher "
-        "forcing is adopted, meaning the list of targets is provided as both inputs and outputs (shifted "
-        "by 1), while at evaluation time greedy decoding (generating one token at a time and feeding it "
-        "as input for the next step) is performed by beam search, using a beam of 1 by default. In "
-        "general a generator expects a `b x h` shaped input tensor, where `h` is a hidden dimension. The "
-        "`h` vectors are (after an optional stack of fully connected layers) fed into the rnn generator. "
-        "One exception is when the generator uses attention, as in that case the expected size of the "
-        "input tensor is `b x s x h`, which is the output of a sequence, text or time series input "
-        "feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input "
-        "is provided to a generator decoder using an RNN with attention instead, an error will be raised "
-        "during model building.",
+        description=DECODER_METADATA["SequenceGeneratorDecoder"]["type"].long_description,
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -76,13 +63,7 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
     type: str = schema_utils.ProtectedString(
         "tagger",
-        description="The tagger decoder is a (potentially empty) stack of fully connected layers, "
-        "followed by a projection into a tensor of size `b x s x c`, where `b` is the batch size, "
-        "`s` is the length of the sequence and `c` is the number of classes, followed by a "
-        "softmax_cross_entropy. This decoder requires its input to be shaped as `b x s x h`, where `h` is "
-        "a hidden dimension, which is the output of a sequence, text or time series input feature without "
-        "reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided "
-        "instead, an error will be raised during model building.",
+        description=DECODER_METADATA["SequenceTaggerDecoder"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
