@@ -7,6 +7,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata import ENCODER_METADATA
 
 
 @DeveloperAPI
@@ -25,9 +26,7 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description="The passthrough encoder simply returns the raw numerical values coming from the input "
-        "placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is "
-        "the batch size. ",
+        description=ENCODER_METADATA["PassthroughEncoder"]["type"].long_description,
     )
 
 
@@ -39,8 +38,7 @@ class DenseEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "dense",
-        description="The dense encoder passes the raw numerical values through fully connected layers. In this case "
-        "the inputs of size `b` are transformed to size `b x h`.",
+        description=ENCODER_METADATA["DenseEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

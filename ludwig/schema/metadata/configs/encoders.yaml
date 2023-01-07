@@ -5439,7 +5439,10 @@ SetSparseEncoder:
 Stacked2DCNN:
     type:
         short_description:
+            Stack of 2D convolutional layers followed by an optional stack of fully connected layers.
         long_description:
+            Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling 
+            pooling layers, followed by an optional stack of fully connected layers.
     conv_activation:
         expected_impact: 1
         ui_display_name: Convolutional Activation

@@ -19,9 +19,7 @@ class ALBERTConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "albert",
-        description="The albert encoder loads a pretrained ALBERT (default albert-base-v2) model using the Hugging "
-        "Face transformers package. Albert is similar to BERT, with significantly lower memory usage and "
-        "somewhat faster training time.",
+        description=ENCODER_METADATA["ALBERTEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -213,8 +211,7 @@ class MT5Config(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "mt5",
-        description="The mt5 encoder loads a pretrained MT5 (default google/mt5-base) model using the Hugging Face "
-        "transformers package. MT5 is a multilingual variant of T5 trained on a dataset of 101 languages.",
+        description=ENCODER_METADATA["MT5Encoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -397,10 +394,7 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "xlmroberta",
-        description="The xlmroberta encoder loads a pretrained XLM-RoBERTa (default jplu/tf-xlm-reoberta-base) model "
-        "using the Hugging Face transformers package. XLM-RoBERTa is based on Facebook’s RoBERTa model "
-        "released in 2019. It is a large multi-lingual language model, trained on 2.5TB of filtered "
-        "CommonCrawl data.",
+        description=ENCODER_METADATA["XLMRoBERTaEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -491,10 +485,7 @@ class BERTConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "bert",
-        description="The bert encoder loads a pretrained BERT (default bert-base-uncased) model using the Hugging "
-        "Face transformers package. BERT is a bidirectional transformer pretrained using a combination of "
-        "masked language modeling objective and next sentence prediction on a large corpus comprising the "
-        "Toronto Book Corpus and Wikipedia.",
+        description=ENCODER_METADATA["BERTEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -661,8 +652,7 @@ class XLMConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "xlm",
-        description="The xlm encoder loads a pretrained XLM (default xlm-mlm-en-2048) model using the Hugging Face "
-        "transformers package. XLM is pre-trained by cross-language modeling.",
+        description=ENCODER_METADATA["XLMEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -905,9 +895,7 @@ class GPTConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "gpt",
-        description="The gpt encoder loads a pretrained GPT (default openai-gpt) model using the Hugging Face "
-        "transformers package. GPT is a causal (unidirectional) transformer pre-trained using language "
-        "modeling on a large corpus with long range dependencies, the Toronto Book Corpus.",
+        description=ENCODER_METADATA["GPTEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1043,9 +1031,7 @@ class GPT2Config(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "gpt2",
-        description="The gpt2 encoder loads a pretrained GPT-2 (default gpt2) model using the Hugging Face "
-        "transformers package. GPT-2 is a causal (unidirectional) transformer pretrained using language "
-        "modeling on a very large corpus of ~40 GB of text data.",
+        description=ENCODER_METADATA["GPT2Encoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1192,10 +1178,7 @@ class RoBERTaConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "roberta",
-        description="The roberta encoder loads a pretrained RoBERTa (default roberta-base) model using the Hugging "
-        "Face transformers package. RoBERTa builds on BERT and modifies key hyperparameters, removing the "
-        "next-sentence pretraining objective and training with much larger mini-batches and learning "
-        "rates.",
+        description=ENCODER_METADATA["RoBERTaEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1280,11 +1263,7 @@ class TransformerXLConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "transformer_xl",
-        description="The transformer_xl encoder loads a pretrained Transformer-XL (default transfo-xl-wt103) model "
-        "using the Hugging Face transformers package. Transformer-XL is a causal (uni-directional) "
-        "transformer with relative positioning (sinusoïdal) embeddings which can reuse previously "
-        "computed hidden-states to attend to longer context (memory). This model also uses adaptive "
-        "softmax inputs and outputs (tied).",
+        description=ENCODER_METADATA["TransformerXLEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1507,11 +1486,7 @@ class XLNetConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "xlnet",
-        description="The xlnet encoder loads a pretrained XLNet (default xlnet-base-cased) model using the Hugging "
-        "Face transformers package. XLnet is an extension of the Transformer-XL model pre-trained using "
-        "an autoregressive method to learn bidirectional contexts by maximizing the expected likelihood "
-        "over all permutations of the input sequence factorization order. XLNet outperforms BERT on a "
-        "variety of benchmarks.",
+        description=ENCODER_METADATA["XLNetEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1744,11 +1719,7 @@ class DistilBERTConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "distilbert",
-        description="The distilbert encoder loads a pretrained DistilBERT (default distilbert-base-uncased) model "
-        "using the Hugging Face transformers package. DistilBERT is a small, fast, cheap and light "
-        "Transformer model trained by distilling BERT base. It has 40% less parameters than "
-        "bert-base-uncased, runs 60% faster while preserving over 95% of BERT’s performances as measured "
-        "on the GLUE language understanding benchmark.",
+        description=ENCODER_METADATA["DistilBERTEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -1898,10 +1869,7 @@ class CTRLConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "ctrl",
-        description="The ctrl encoder loads a pretrained CTRL (default ctrl) model using the Hugging Face "
-        "transformers package. CTRL is a causal (unidirectional) transformer pre-trained using language "
-        "modeling on a very large corpus of ~140 GB of text data with the first token reserved as a "
-        "control code (such as Links, Books, Wikipedia etc.).",
+        description=ENCODER_METADATA["CTRLEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2038,8 +2006,7 @@ class CamemBERTConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "camembert",
-        description="The camembert encoder loads a pretrained CamemBERT (default jplu/tf-camembert-base) model using "
-        "the Hugging Face transformers package. CamemBERT is pre-trained on 138GB of French text.",
+        description=ENCODER_METADATA["CamemBERTEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2205,9 +2172,7 @@ class T5Config(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "t5",
-        description="The T5 encoder loads a pretrained T5 (default t5-small) model using the Hugging Face transformers "
-        "package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled "
-        "from the web and shows good transfer performance on multiple tasks.",
+        description=ENCODER_METADATA["T5Encoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2348,9 +2313,7 @@ class FlauBERTConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "flaubert",
-        description="The flaubert encoder loads a pretrained FlauBERT (default jplu/tf-flaubert-base-uncased) model "
-        "using the Hugging Face transformers package. FlauBERT has an architecture similar to BERT and is "
-        "pre-trained on a large French language corpus.",
+        description=ENCODER_METADATA["FlauBERTEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2585,11 +2548,7 @@ class ELECTRAConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "electra",
-        description="The electra encoder loads a pretrained ELECTRA model using the Hugging Face transformers package. "
-        "ELECTRA is a new pretraining approach which trains two transformer models: the generator and the "
-        "discriminator. The generator’s role is to replace tokens in a sequence, and is therefore trained "
-        "as a masked language model. The discriminator, which is the model we’re interested in, tries to "
-        "identify which tokens were replaced by the generator in the sequence.",
+        description=ENCODER_METADATA["ELECTRAEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2750,9 +2709,7 @@ class LongformerConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "longformer",
-        description="The longformer encoder loads a pretrained Longformer (default allenai/longformer-base-4096) "
-        "model using the Hugging Face transformers package. Longformer is a good choice for longer text, "
-        "as it supports sequences up to 4096 tokens long.",
+        description=ENCODER_METADATA["LongformerEncoder"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
@@ -2843,9 +2800,7 @@ class AutoTransformerConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "auto_transformer",
-        description="The auto_transformer encoder automatically instantiates the model architecture for the specified "
-        "pretrained_model_name_or_path. Unlike the other HF encoders available, auto_transformer does not "
-        "provide a default value for pretrained_model_name_or_path, this is its only mandatory parameter.",
+        description=ENCODER_METADATA["AutoTransformerEncoder"]["type"].long_description,
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(

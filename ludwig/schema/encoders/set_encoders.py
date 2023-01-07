@@ -16,11 +16,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class SetSparseEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
-        description="The Embed encoder takes the raw binary values coming from the input placeholders and transforms "
-        "them to sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot "
-        "encodings), finally they are reduced on the sequence dimension and returned as an aggregated "
-        "embedding vector. Inputs are of size b while outputs are of size b x h where b is the batch size "
-        "and h is the dimensionality of the embeddings.",
+        description=ENCODER_METADATA["SetSparseEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

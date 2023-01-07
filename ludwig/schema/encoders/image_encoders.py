@@ -17,8 +17,7 @@ from ludwig.utils.torch_utils import initializer_registry
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
-        description="Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling pooling "
-        "layers, followed by an optional stack of fully connected layers.",
+        description=ENCODER_METADATA["Stacked2DCNNEncoder"]["type"].long_description,
     )
 
     conv_dropout: Optional[int] = schema_utils.FloatRange(
@@ -290,9 +289,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 class ResNetEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "resnet",
-        description="ResNet - short for residual network is part of a family of extremely deep architectures showing "
-        "compelling accuracy and nice convergence behaviors for computer vision applications. It is a type"
-        "of CNN architecture designed to support hundreds or thousands of convolutional layers.",
+        description=ENCODER_METADATA["ResNetEncoder"]["type"].long_description,
     )
 
     dropout: Optional[float] = schema_utils.FloatRange(
@@ -463,9 +460,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
 class MLPMixerEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "mlp_mixer",
-        description="MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each "
-        "patch to compute per-patch representations (tokens) and combining the representations with "
-        "fully-connected mixer layers.",
+        description=ENCODER_METADATA["MLPMixerEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -540,9 +535,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 class ViTEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "vit",
-        description="ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear "
-        "transformation to encode each flattened patch, then applies a deep transformer architecture to "
-        "the sequence of encoded patches.",
+        description=ENCODER_METADATA["ViTEncoder"]["type"].long_description,
     )
 
     height: int = schema_utils.NonNegativeInteger(

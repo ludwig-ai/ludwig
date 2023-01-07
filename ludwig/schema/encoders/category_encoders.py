@@ -19,8 +19,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description="The passthrough encoder passes the raw integer values coming from the input placeholders to "
-        "outputs of size `b x 1`.",
+        description=ENCODER_METADATA["CategoricalPassthroughEncoder"]["type"].long_description,
     )
 
 
@@ -30,8 +29,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 class CategoricalEmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "dense",
-        description="The dense encoder maps to a dense embedding and is returned as outputs of size `b x h`, "
-        "where `b` is the batch size and `h` is the dimensionality of the embeddings.",
+        description=ENCODER_METADATA["CategoricalEmbedEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -118,8 +116,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 class CategoricalSparseConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "sparse",
-        description="The sparse encoder maps to a sparse embedding (one-hot encodings) and is returned as outputs of "
-        "size `b x h`, where `b` is the batch size and `h` is the dimensionality of the embeddings.",
+        description=ENCODER_METADATA["CategoricalSparseEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
