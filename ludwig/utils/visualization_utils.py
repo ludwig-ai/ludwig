@@ -1068,28 +1068,43 @@ def confusion_matrix_plot(
     callbacks=None,
 ):
     mpl.rcParams.update({"figure.autolayout": True})
-    fig, ax = plt.subplots()
+
+    # Dynamically set the size of the plot based on the number of labels
+    fig, ax = plt.subplots(figsize=(len(labels) / 2, len(labels) / 2))
 
     ax.invert_yaxis()
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
 
-    cax = ax.matshow(confusion_matrix, cmap="viridis")
+    cax = ax.matshow(confusion_matrix, cmap="Pastel1")
+    # Annotate confusion matrix plot
+    for (i, j), z in np.ndenumerate(confusion_matrix):
+        ax.text(
+            j,
+            i,
+            f"{z:.0f}",
+            ha="center",
+            va="center",
+            color="black",
+            fontweight="medium",
+            wrap=True,
+        )
 
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.set_xticklabels([""] + labels, rotation=45, ha="left")
-    ax.set_yticklabels([""] + labels)
+    ax.set_yticklabels([""] + labels, rotation=45, ha="right")
     ax.grid(False)
     ax.tick_params(axis="both", which="both", length=0)
-    fig.colorbar(cax, ax=ax, extend="max")
+    # https://stackoverflow.com/a/26720422/10102370 works nicely for square plots
+    fig.colorbar(cax, ax=ax, extend="max", fraction=0.046, pad=0.04)
     ax.set_xlabel(f"Predicted {output_feature_name}")
     ax.set_ylabel(f"Actual {output_feature_name}")
 
     plt.tight_layout()
     visualize_callbacks(callbacks, plt.gcf())
     if filename:
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches="tight")
     else:
         plt.show()
 
@@ -1108,7 +1123,9 @@ def double_axis_line_plot(
 
     colors = plt.get_cmap("tab10").colors
 
-    fig, ax1 = plt.subplots()
+    # Dynamically adjust figure size based on number of labels
+    _, height = plt.rcParams.get("figure.figsize")
+    fig, ax1 = plt.subplots(layout="constrained", figsize=(len(labels) / 3, height))
 
     if title is not None:
         ax1.set_title(title)

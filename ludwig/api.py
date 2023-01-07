@@ -524,7 +524,12 @@ class LudwigModel:
                         logger.info(tabulate(experiment_description, tablefmt="fancy_grid"))
 
                         print_boxed("LUDWIG CONFIG")
-                        logger.info(pformat(self.config_obj.to_dict(), indent=4))
+                        logger.info("User-specified config (with upgrades):\n")
+                        logger.info(pformat(self.config_obj.get_user_config(), indent=4))
+                        logger.info(
+                            "\nFull config saved to:\n"
+                            f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
+                        )
 
                 preprocessed_data = self.preprocess(
                     dataset=dataset,
@@ -582,6 +587,11 @@ class LudwigModel:
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
                 set_saved_weights_in_checkpoint_flag(self.config_obj)
 
+            # auto tune learning rate
+            if self.config_obj.trainer.learning_rate == AUTO:
+                detected_learning_rate = get_auto_learning_rate(self.config_obj)
+                self.config_obj.trainer.learning_rate = detected_learning_rate
+
             with self.backend.create_trainer(
                 model=self.model,
                 config=self.config_obj.trainer,
@@ -612,12 +622,6 @@ class LudwigModel:
                     if self.config_obj.trainer.eval_batch_size in {AUTO, None}:
                         self.config_obj.trainer.eval_batch_size = tuned_batch_size
                         trainer.eval_batch_size = tuned_batch_size
-
-                # auto tune learning rate
-                if self.config_obj.trainer.learning_rate == AUTO:
-                    detected_learning_rate = get_auto_learning_rate(self.config_obj)
-                    self.config_obj.trainer.learning_rate = detected_learning_rate
-                    trainer.set_base_learning_rate(detected_learning_rate)
 
                 # train model
                 if self.backend.is_coordinator():
