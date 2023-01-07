@@ -16,7 +16,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class SequencePassthroughConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description="The passthrough decoder simply transforms each input value into a float value and adds a "
+        description="The passthrough encoder simply transforms each input value into a float value and adds a "
         "dimension to the input tensor, creating a b x s x 1 tensor where b is the batch size and s is "
         "the length of the sequence. The tensor is reduced along the s dimension to obtain a single "
         "vector of size h for each element of the batch.",

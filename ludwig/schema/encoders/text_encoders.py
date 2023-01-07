@@ -2746,7 +2746,7 @@ class ELECTRAConfig(BaseEncoderConfig):
 @register_encoder_config("longformer", TEXT)
 @dataclass(repr=False)
 class LongformerConfig(BaseEncoderConfig):
-    """This dataclass configures the schema used for an Longformer encoder."""
+    """This dataclass configures the schema used for a Longformer encoder."""
 
     type: str = schema_utils.ProtectedString(
         "longformer",

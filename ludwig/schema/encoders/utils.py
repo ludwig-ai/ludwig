@@ -6,6 +6,8 @@ from marshmallow import fields, ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.utils.registry import Registry
 
 encoder_config_registry = Registry()
@@ -34,6 +36,19 @@ def get_encoder_cls(feature: str, name: str):
 @DeveloperAPI
 def get_encoder_classes(feature: str):
     return encoder_config_registry[feature]
+
+
+@DeveloperAPI
+def get_encoder_descriptions(feature_type: str):
+    """
+    Returns a dictionary of encoder descriptions available at the type selection.
+    """
+    return {
+        k: convert_metadata_to_json(v[TYPE])
+        if k in get_encoder_classes(feature_type).keys() and not isinstance(v, ParameterMetadata)
+        else None
+        for k, v in ENCODER_METADATA.items()
+    }
 
 
 @DeveloperAPI
@@ -90,7 +105,7 @@ def EncoderDataclassField(feature_type: str, default: str):
                     "type": {
                         "type": "string",
                         "enum": encoder_classes,
-                        # "enum_descriptions": get_encoder_descriptions(),
+                        "enum_descriptions": get_encoder_descriptions(feature_type),
                         "default": default
                     },
                 },
