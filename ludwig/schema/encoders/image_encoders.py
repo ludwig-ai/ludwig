@@ -274,11 +274,11 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-                    "of the list determines the number of stacked fully connected layers and the content of each "
-                    "dictionary determines the parameters for a specific layer. The available parameters for each "
-                    "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-                    "weights_initializer. If any of those values is missing from the dictionary, the default one "
-                    "specified as a parameter of the encoder will be used instead. ",
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
         parameter_metadata=ENCODER_METADATA["Stacked2DCNN"]["fc_layers"],
     )
 
@@ -302,7 +302,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
 
     activation: Optional[str] = schema_utils.ActivationOptions(
         description="if an activation is not already specified in fc_layers this is the default activation that will "
-                    "be used for each layer. It indicates the activation function applied to the output.",
+        "be used for each layer. It indicates the activation function applied to the output.",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["activation"],
     )
 
@@ -333,17 +333,17 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     out_channels: Optional[int] = schema_utils.NonNegativeInteger(
         default=32,
         description="Indicates the number of filters, and by consequence the output channels of the 2d convolution. "
-                    "If out_channels is not already specified in conv_layers this is the default out_channels that "
-                    "will be used for each layer. ",
+        "If out_channels is not already specified in conv_layers this is the default out_channels that "
+        "will be used for each layer. ",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["out_channels"],
     )
 
     kernel_size: Optional[Union[int, Tuple[int]]] = schema_utils.OneOfOptionsField(
         default=3,
         description="An integer or pair of integers specifying the kernel size. A single integer specifies a square "
-                    "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
-                    "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
-                    "each layer.",
+        "kernel, while a pair of integers specifies the height and width of the kernel in that order (h, "
+        "w). If a kernel_size is not specified in conv_layers this kernel_size that will be used for "
+        "each layer.",
         field_options=[
             schema_utils.PositiveInteger(allow_none=False, description="", default=None),
             schema_utils.List(list_type=int, allow_none=False),
@@ -416,7 +416,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     output_size: Optional[int] = schema_utils.PositiveInteger(
         default=128,
         description="if output_size is not already specified in fc_layers this is the default output_size that will "
-                    "be used for each layer. It indicates the size of the output of a fully connected layer. ",
+        "be used for each layer. It indicates the size of the output of a fully connected layer. ",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["output_size"],
     )
 
@@ -424,15 +424,15 @@ class ResNetEncoderConfig(BaseEncoderConfig):
         ["batch", "layer"],
         default=None,
         description="if a norm is not already specified in fc_layers this is the default norm that will be used for "
-                    "each layer. It indicates the norm of the output and can be null, batch or layer.",
+        "each layer. It indicates the norm of the output and can be null, batch or layer.",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["norm"],
     )
 
     norm_params: Optional[Dict[str, Any]] = schema_utils.Dict(
         default=None,
         description="parameters used if norm is either batch or layer. For information on parameters used with batch "
-                    "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
-                    "normalization.",
+        "see Torch's documentation on batch normalization or for layer see Torch's documentation on layer "
+        "normalization.",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["norm_params"],
     )
 
@@ -445,11 +445,11 @@ class ResNetEncoderConfig(BaseEncoderConfig):
     fc_layers: Optional[Optional[List[Dict]]] = schema_utils.DictList(
         default=None,
         description="A list of dictionaries containing the parameters of all the fully connected layers. The length "
-                    "of the list determines the number of stacked fully connected layers and the content of each "
-                    "dictionary determines the parameters for a specific layer. The available parameters for each "
-                    "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
-                    "weights_initializer. If any of those values is missing from the dictionary, the default one "
-                    "specified as a parameter of the encoder will be used instead. ",
+        "of the list determines the number of stacked fully connected layers and the content of each "
+        "dictionary determines the parameters for a specific layer. The available parameters for each "
+        "layer are: activation, dropout, norm, norm_params, output_size, use_bias, bias_initializer and "
+        "weights_initializer. If any of those values is missing from the dictionary, the default one "
+        "specified as a parameter of the encoder will be used instead. ",
         parameter_metadata=ENCODER_METADATA["ResNetEncoder"]["fc_layers"],
     )
 
@@ -614,14 +614,14 @@ class ViTEncoderConfig(BaseEncoderConfig):
     patch_size: int = schema_utils.PositiveInteger(
         default=16,
         description="The image patch size. Each patch is patch_size² pixels. Must evenly divide the image width and "
-                    "height.",
+        "height.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["patch_size"],
     )
 
     saved_weights_in_checkpoint: bool = schema_utils.Boolean(
         default=False,
         description="Are the pretrained encoder weights saved in this model's checkpoint? Automatically set to"
-                    "True for trained models to prevent loading pretrained encoder weights from model hub.",
+        "True for trained models to prevent loading pretrained encoder weights from model hub.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["saved_weights_in_checkpoint"],
     )
 
