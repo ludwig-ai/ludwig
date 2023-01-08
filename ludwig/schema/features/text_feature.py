@@ -5,6 +5,7 @@ from ludwig.constants import (
     EDIT_DISTANCE,
     LAST_ACCURACY,
     LOSS,
+    MODEL_ECD,
     PERPLEXITY,
     SEQUENCE_SOFTMAX_CROSS_ENTROPY,
     TEXT,
@@ -40,6 +41,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TEXT)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=TEXT,
         default="parallel_cnn",
     )

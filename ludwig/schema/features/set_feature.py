@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import JACCARD, LOSS, SET, SIGMOID_CROSS_ENTROPY
+from ludwig.constants import JACCARD, LOSS, MODEL_ECD, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -32,6 +32,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SET)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=SET,
         default="embed",
     )

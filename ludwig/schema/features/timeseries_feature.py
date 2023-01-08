@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TIMESERIES
+from ludwig.constants import MODEL_ECD, TIMESERIES
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
@@ -21,6 +21,7 @@ class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=TIMESERIES)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=TIMESERIES,
         default="parallel_cnn",
     )

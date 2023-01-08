@@ -5,6 +5,7 @@ from ludwig.constants import (
     EDIT_DISTANCE,
     LAST_ACCURACY,
     LOSS,
+    MODEL_ECD,
     PERPLEXITY,
     SEQUENCE,
     SEQUENCE_ACCURACY,
@@ -41,6 +42,7 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=SEQUENCE)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=SEQUENCE,
         default="embed",
     )

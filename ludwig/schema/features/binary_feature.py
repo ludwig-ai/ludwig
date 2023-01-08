@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACCURACY, BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, LOSS, ROC_AUC
+from ludwig.constants import ACCURACY, BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, LOSS, MODEL_ECD, MODEL_GBM, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -40,6 +40,7 @@ class ECDBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConf
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=BINARY,
         default="passthrough",
     )
@@ -52,6 +53,7 @@ class GBMBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConf
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
         feature_type=BINARY,
         default="passthrough",
     )

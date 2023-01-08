@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ACCURACY, CATEGORY, HITS_AT_K, LOSS, SOFTMAX_CROSS_ENTROPY
+from ludwig.constants import ACCURACY, CATEGORY, HITS_AT_K, LOSS, MODEL_ECD, MODEL_GBM, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -41,6 +41,7 @@ class ECDCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeature
     feature."""
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=CATEGORY,
         default="dense",
     )
@@ -54,6 +55,7 @@ class GBMCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeature
     feature."""
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
         feature_type=CATEGORY,
         default="passthrough",
     )

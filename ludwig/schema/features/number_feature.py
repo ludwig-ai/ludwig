@@ -7,6 +7,8 @@ from ludwig.constants import (
     LOSS,
     MEAN_ABSOLUTE_ERROR,
     MEAN_SQUARED_ERROR,
+    MODEL_ECD,
+    MODEL_GBM,
     NUMBER,
     R2,
     ROOT_MEAN_SQUARED_ERROR,
@@ -50,6 +52,7 @@ class ECDNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConf
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=NUMBER,
         default="passthrough",
     )
@@ -62,6 +65,7 @@ class GBMNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConf
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_GBM,
         feature_type=NUMBER,
         default="passthrough",
     )

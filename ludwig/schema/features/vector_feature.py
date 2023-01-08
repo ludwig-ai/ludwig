@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ERROR, LOSS, MEAN_ABSOLUTE_ERROR, MEAN_SQUARED_ERROR, R2, VECTOR
+from ludwig.constants import ERROR, LOSS, MEAN_ABSOLUTE_ERROR, MEAN_SQUARED_ERROR, MODEL_ECD, R2, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -32,6 +32,7 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=VECTOR)
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=VECTOR,
         default="dense",
     )

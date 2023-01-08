@@ -3,7 +3,7 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import SEQUENCE
+from ludwig.constants import MODEL_ECD, SEQUENCE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -28,6 +28,7 @@ class SequenceCombinerConfig(BaseCombinerConfig):
     )
 
     encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
         feature_type=SEQUENCE,
         default="parallel_cnn",
     )
