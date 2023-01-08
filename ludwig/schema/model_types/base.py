@@ -1,9 +1,12 @@
 from abc import ABC
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
+from marshmallow import ValidationError
 
 from marshmallow_dataclass import dataclass
+import marshmallow_dataclass
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import MODEL_ECD
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
@@ -26,7 +29,18 @@ class BaseModelTypeConfig(schema_utils.BaseMarshmallowConfig, ABC):
     trainer: BaseTrainerConfig
     preprocessing: PreprocessingConfig
     defaults: DefaultsConfig
-    # hyperopt: Optional[HyperoptConfig] = None
+    hyperopt: Optional[HyperoptConfig] = None
+
+    @staticmethod
+    def from_dict(config: Dict[str, Any]) -> "BaseModelTypeConfig":
+        model_type = config.get("model_type", MODEL_ECD)
+        if model_type not in model_type_schema_registry:
+            raise ValidationError(
+                f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
+            )
+        cls = model_type_schema_registry[model_type]
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return schema.load(config)
 
 
 @DeveloperAPI

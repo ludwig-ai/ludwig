@@ -1085,7 +1085,7 @@ class TypeSelection(fields.Field):
                     return cls.Schema().load(value)
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
-            raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}.")
+            raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}")
         raise ValidationError(f"Invalud param {value}, expected `None` or `dict`")
 
     def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
