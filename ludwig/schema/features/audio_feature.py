@@ -7,7 +7,7 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, input_mixin_registry
+from ludwig.schema.features.utils import ecd_input_config_registry, input_mixin_registry
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -27,7 +27,7 @@ class AudioInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(AUDIO)
+@ecd_input_config_registry.register(AUDIO)
 @dataclass(repr=False)
 class AudioInputFeatureConfig(BaseInputFeatureConfig, AudioInputFeatureConfigMixin):
     """AudioInputFeatureConfig is a dataclass that configures the parameters used for an audio input feature."""

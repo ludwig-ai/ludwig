@@ -7,7 +7,7 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, input_mixin_registry
+from ludwig.schema.features.utils import ecd_input_config_registry, input_mixin_registry
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -27,7 +27,7 @@ class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(DATE)
+@ecd_input_config_registry.register(DATE)
 @dataclass(repr=False)
 class DateInputFeatureConfig(BaseInputFeatureConfig, DateInputFeatureConfigMixin):
     """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""

@@ -21,7 +21,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -46,7 +46,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(TEXT)
+@ecd_input_config_registry.register(TEXT)
 @dataclass(repr=False)
 class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""

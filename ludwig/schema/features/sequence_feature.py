@@ -22,7 +22,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -47,7 +47,7 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(SEQUENCE)
+@ecd_input_config_registry.register(SEQUENCE)
 @dataclass(repr=False)
 class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input

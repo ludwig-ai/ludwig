@@ -23,7 +23,8 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -41,6 +42,13 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=NUMBER)
 
+
+@DeveloperAPI
+@ecd_input_config_registry.register(NUMBER)
+@dataclass(repr=False)
+class ECDNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
+
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=NUMBER,
         default="passthrough",
@@ -48,12 +56,15 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(NUMBER)
+@gbm_input_config_registry.register(NUMBER)
 @dataclass(repr=False)
-class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+class GBMNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
-    pass
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=NUMBER,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI

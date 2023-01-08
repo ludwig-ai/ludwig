@@ -15,6 +15,7 @@ from ludwig.constants import (
     H3,
     IMAGE,
     MODEL_ECD,
+    MODEL_GBM,
     NUMBER,
     SEQUENCE,
     SET,
@@ -26,7 +27,8 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import (
     get_input_feature_jsonschema,
     get_output_feature_jsonschema,
-    input_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     output_config_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
@@ -168,11 +170,20 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 
 class ECDInputFeatureSelection(schema_utils.TypeSelection):
     def __init__(self):
-        super().__init__(registry=input_config_registry, description="Type of the input feature")
+        super().__init__(registry=ecd_input_config_registry, description="Type of the input feature")
 
     @staticmethod
     def _jsonschema_type_mapping():
         return get_input_feature_jsonschema(MODEL_ECD)
+
+
+class GBMInputFeatureSelection(schema_utils.TypeSelection):
+    def __init__(self):
+        super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_input_feature_jsonschema(MODEL_GBM)
 
 
 class ECDOutputFeatureSelection(schema_utils.TypeSelection):

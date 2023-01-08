@@ -13,7 +13,8 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -31,6 +32,13 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=BINARY)
 
+
+@DeveloperAPI
+@ecd_input_config_registry.register(BINARY)
+@dataclass(repr=False)
+class ECDBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+    """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
+
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=BINARY,
         default="passthrough",
@@ -38,12 +46,15 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(BINARY)
+@gbm_input_config_registry.register(BINARY)
 @dataclass(repr=False)
-class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+class GBMBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
-    pass
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=BINARY,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI

@@ -13,7 +13,8 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
-    input_config_registry,
+    ecd_input_config_registry,
+    gbm_input_config_registry,
     input_mixin_registry,
     output_config_registry,
     output_mixin_registry,
@@ -31,6 +32,14 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type=CATEGORY)
 
+
+@DeveloperAPI
+@ecd_input_config_registry.register(CATEGORY)
+@dataclass(repr=False)
+class ECDCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
+    feature."""
+
     encoder: BaseEncoderConfig = EncoderDataclassField(
         feature_type=CATEGORY,
         default="dense",
@@ -38,13 +47,16 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(CATEGORY)
+@gbm_input_config_registry.register(CATEGORY)
 @dataclass(repr=False)
-class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+class GBMCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
 
-    pass
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        feature_type=CATEGORY,
+        default="passthrough",
+    )
 
 
 @DeveloperAPI

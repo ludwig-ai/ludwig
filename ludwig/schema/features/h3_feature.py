@@ -7,7 +7,7 @@ from ludwig.schema.encoders.utils import EncoderDataclassField
 from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
-from ludwig.schema.features.utils import input_config_registry, input_mixin_registry
+from ludwig.schema.features.utils import ecd_input_config_registry, input_mixin_registry
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -27,7 +27,7 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@input_config_registry.register(H3)
+@ecd_input_config_registry.register(H3)
 @dataclass(repr=False)
 class H3InputFeatureConfig(BaseInputFeatureConfig, H3InputFeatureConfigMixin):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
