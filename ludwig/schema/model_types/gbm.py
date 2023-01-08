@@ -8,8 +8,8 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
-    ECDInputFeatureSelection,
-    ECDOutputFeatureSelection,
+    GBMInputFeatureSelection,
+    GBMOutputFeatureSelection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.base import BaseModelTypeConfig, register_model_type
@@ -25,8 +25,8 @@ class GBMModelConfig(BaseModelTypeConfig):
 
     model_type: str = schema_utils.ProtectedString("gbm")
 
-    input_features: List[BaseInputFeatureConfig] = ECDInputFeatureSelection().get_list_field()
-    output_features: List[BaseOutputFeatureConfig] = ECDOutputFeatureSelection().get_list_field()
+    input_features: List[BaseInputFeatureConfig] = GBMInputFeatureSelection().get_list_field()
+    output_features: List[BaseOutputFeatureConfig] = GBMOutputFeatureSelection().get_list_field()
 
     trainer: GBMTrainerConfig = field(default_factory=GBMTrainerConfig)
     preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)

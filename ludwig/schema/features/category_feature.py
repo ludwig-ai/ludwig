@@ -35,7 +35,7 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @ecd_input_config_registry.register(CATEGORY)
-@dataclass(repr=False)
+@dataclass
 class ECDCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -48,7 +48,7 @@ class ECDCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeature
 
 @DeveloperAPI
 @gbm_input_config_registry.register(CATEGORY)
-@dataclass(repr=False)
+@dataclass
 class GBMCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""

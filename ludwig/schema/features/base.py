@@ -193,3 +193,12 @@ class ECDOutputFeatureSelection(schema_utils.TypeSelection):
     @staticmethod
     def _jsonschema_type_mapping():
         return get_output_feature_jsonschema(MODEL_ECD)
+
+
+class GBMOutputFeatureSelection(schema_utils.TypeSelection):
+    def __init__(self):
+        super().__init__(registry=output_config_registry, description="Type of the output feature")
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_output_feature_jsonschema(MODEL_GBM)
