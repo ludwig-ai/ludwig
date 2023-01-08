@@ -1,11 +1,12 @@
 import copy
 from abc import ABC
-from dataclasses import field, Field
+from dataclasses import MISSING, field, Field
 from typing import Any, Set
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Optional, Tuple, Type, Union
 import marshmallow_dataclass
+from marshmallow.utils import missing
 
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
@@ -1049,16 +1050,21 @@ def OneOfOptionsField(
 
 
 class TypeSelection(fields.Field):
-    def __init__(self, registry: Registry, default_value: str, key: str = "type", description: str = ""):
+    def __init__(
+        self, registry: Registry, default_value: Optional[str] = None, key: str = "type", description: str = ""
+    ):
         self.registry = registry
         self.default_value = default_value
         self.key = key
-        default_obj = {key: default_value}
 
-        opt = self.registry[self.default_value.lower()].get_schema_cls()
-        load_default = opt.Schema()
-        load_default = load_default.load(default_obj)
-        dump_default = opt.Schema().dump(default_obj)
+        dump_default = missing
+        load_default = missing
+        if self.default_value is not None:
+            default_obj = {key: default_value}
+            cls = self.get_schema_from_registry(self.default_value.lower())
+            load_default = cls.Schema()
+            load_default = load_default.load(default_obj)
+            dump_default = cls.Schema().dump(default_obj)
 
         super().__init__(
             allow_none=False,
@@ -1074,16 +1080,28 @@ class TypeSelection(fields.Field):
             cls_type = value.get(self.key)
             cls_type = cls_type.lower() if cls_type else cls_type
             if cls_type in self.registry:
-                cls = self.registry[cls_type].get_schema_cls()
+                cls = self.get_schema_from_registry(cls_type)
                 try:
                     return cls.Schema().load(value)
                 except (TypeError, ValidationError) as e:
                     raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
             raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}.")
-        raise ValidationError(f"Invalud optimizer param {value}, expected `None` or `dict`")
+        raise ValidationError(f"Invalud param {value}, expected `None` or `dict`")
+
+    def get_schema_from_registry(self, key: str) -> Type[BaseMarshmallowConfig]:
+        return self.registry[key]
 
     def get_default_field(self) -> Field:
+        default_factory = MISSING
+        if self.load_default is not missing:
+            default_factory = lambda: self.load_default
+
         return field(
             metadata={"marshmallow_field": self},
-            default_factory=lambda: self.load_default,
+            default_factory=default_factory,
+        )
+
+    def get_list_field(self) -> Field:
+        return field(
+            metadata={"marshmallow_field": fields.List(self)},
         )

@@ -1,3 +1,4 @@
+from typing import Type
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
@@ -66,6 +67,9 @@ class CombinerSelection(schema_utils.TypeSelection):
         import ludwig.combiners.combiners  # noqa
 
         super().__init__(registry=combiner_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
+
+    def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+        return self.registry[key].get_schema_cls()
 
     @staticmethod
     def _jsonschema_type_mapping():

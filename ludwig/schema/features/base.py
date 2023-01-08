@@ -14,6 +14,7 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
+    MODEL_ECD,
     NUMBER,
     SEQUENCE,
     SET,
@@ -22,6 +23,12 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.utils import (
+    get_input_feature_jsonschema,
+    get_output_feature_jsonschema,
+    input_config_registry,
+    output_config_registry,
+)
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata
 
 logger = logging.getLogger(__name__)
@@ -157,3 +164,21 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
     @abstractmethod
     def get_output_metric_functions():
         pass
+
+
+class ECDInputFeatureSelection(schema_utils.TypeSelection):
+    def __init__(self):
+        super().__init__(registry=input_config_registry, description="Type of the input feature")
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_input_feature_jsonschema(MODEL_ECD)
+
+
+class ECDOutputFeatureSelection(schema_utils.TypeSelection):
+    def __init__(self):
+        super().__init__(registry=output_config_registry, description="Type of the output feature")
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_output_feature_jsonschema(MODEL_ECD)
