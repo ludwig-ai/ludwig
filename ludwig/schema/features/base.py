@@ -104,6 +104,18 @@ class BaseInputFeatureConfig(BaseFeatureConfig):
 
 @DeveloperAPI
 @dataclass(repr=False)
+class ECDInputFeatureConfig(BaseFeatureConfig):
+    pass
+
+
+@DeveloperAPI
+@dataclass(repr=False)
+class GBMInputFeatureConfig(BaseFeatureConfig):
+    pass
+
+
+@DeveloperAPI
+@dataclass(repr=False)
 class BaseOutputFeatureConfig(BaseFeatureConfig):
     """Base output feature config class."""
 

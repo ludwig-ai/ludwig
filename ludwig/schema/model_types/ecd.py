@@ -5,7 +5,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.combiners.concat import ConcatCombinerConfig
+from ludwig.schema.combiners.utils import CombinerSelection
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig
 from ludwig.schema.hyperopt import HyperoptConfig
@@ -25,7 +25,8 @@ class ECDModelConfig(BaseModelTypeConfig):
     input_features: List[BaseInputFeatureConfig] = field(default_factory=list)
     output_features: List[BaseOutputFeatureConfig] = field(default_factory=list)
 
-    combiner: BaseCombinerConfig = ConcatCombinerConfig()
+    combiner: BaseCombinerConfig = CombinerSelection().get_default_field()
+
     trainer: ECDTrainerConfig = ECDTrainerConfig()
     preprocessing: PreprocessingConfig = PreprocessingConfig()
     defaults: DefaultsConfig = DefaultsConfig()

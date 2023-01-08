@@ -5,6 +5,9 @@ from ludwig.schema.metadata import COMBINER_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 from ludwig.utils.registry import Registry
 
+DEFAULT_VALUE = "concat"
+DESCRIPTION = "Select the combiner type."
+
 combiner_registry = Registry()
 
 
@@ -29,9 +32,9 @@ def get_combiner_jsonschema():
             "type": {
                 "type": "string",
                 "enum": combiner_types,
-                "default": "concat",
+                "default": DEFAULT_VALUE,
                 "title": "combiner_options",
-                "description": "Select the combiner type.",
+                "description": DESCRIPTION,
                 "parameter_metadata": parameter_metadata,
             },
         },
@@ -55,3 +58,15 @@ def get_combiner_conds():
         combiner_cond = schema_utils.create_cond({"type": combiner_type}, combiner_props)
         conds.append(combiner_cond)
     return conds
+
+
+class CombinerSelection(schema_utils.TypeSelection):
+    def __init__(self):
+        # For registration of all combiners
+        import ludwig.combiners.combiners  # noqa
+
+        super().__init__(registry=combiner_registry, default_value=DEFAULT_VALUE, description=DESCRIPTION)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_combiner_jsonschema()

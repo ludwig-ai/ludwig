@@ -1,6 +1,6 @@
 import copy
 from abc import ABC
-from dataclasses import field
+from dataclasses import field, Field
 from typing import Any, Set
 from typing import Dict as TDict
 from typing import List as TList
@@ -16,6 +16,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.utils.registry import Registry
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
@@ -1045,3 +1046,44 @@ def OneOfOptionsField(
         },
         **default_kwarg,
     )
+
+
+class TypeSelection(fields.Field):
+    def __init__(self, registry: Registry, default_value: str, key: str = "type", description: str = ""):
+        self.registry = registry
+        self.default_value = default_value
+        self.key = key
+        default_obj = {key: default_value}
+
+        opt = self.registry[self.default_value.lower()].get_schema_cls()
+        load_default = opt.Schema()
+        load_default = load_default.load(default_obj)
+        dump_default = opt.Schema().dump(default_obj)
+
+        super().__init__(
+            allow_none=False,
+            dump_default=dump_default,
+            load_default=load_default,
+            metadata={"description": description},
+        )
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            cls_type = value.get(self.key)
+            cls_type = cls_type.lower() if cls_type else cls_type
+            if cls_type in self.registry:
+                cls = self.registry[cls_type].get_schema_cls()
+                try:
+                    return cls.Schema().load(value)
+                except (TypeError, ValidationError) as e:
+                    raise ValidationError(f"Invalid params: {value}, see `{cls}` definition") from e
+            raise ValidationError(f"Invalid type: '{cls_type}', expected one of: {list(self.registry.keys())}.")
+        raise ValidationError(f"Invalud optimizer param {value}, expected `None` or `dict`")
+
+    def get_default_field(self) -> Field:
+        return field(
+            metadata={"marshmallow_field": self},
+            default_factory=lambda: self.load_default,
+        )
