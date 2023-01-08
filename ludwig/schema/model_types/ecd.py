@@ -27,7 +27,7 @@ class ECDModelConfig(BaseModelTypeConfig):
 
     combiner: BaseCombinerConfig = CombinerSelection().get_default_field()
 
-    trainer: ECDTrainerConfig = ECDTrainerConfig()
-    preprocessing: PreprocessingConfig = PreprocessingConfig()
-    defaults: DefaultsConfig = DefaultsConfig()
+    trainer: ECDTrainerConfig = field(default_factory=ECDTrainerConfig)
+    preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
+    defaults: DefaultsConfig = field(default_factory=DefaultsConfig)
     hyperopt: Optional[HyperoptConfig] = None
