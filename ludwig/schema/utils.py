@@ -1,10 +1,11 @@
 import copy
 from abc import ABC
 from dataclasses import field
-from typing import Any
+from typing import Any, Set
 from typing import Dict as TDict
 from typing import List as TList
 from typing import Optional, Tuple, Type, Union
+import marshmallow_dataclass
 
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
@@ -146,6 +147,16 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    @classmethod
+    def from_dict(cls, d: TDict[str, Any]):
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return schema.load(d)
+
+    @classmethod
+    def get_valid_field_names(cls) -> Set[str]:
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return set(schema.fields.keys())
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
