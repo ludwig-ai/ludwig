@@ -1,7 +1,7 @@
 from dataclasses import Field, field
 import logging
 from abc import abstractmethod
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Generic, Iterable, List, Optional, Tuple, TypeVar
 
 from marshmallow import fields
 from marshmallow_dataclass import dataclass
@@ -182,6 +182,12 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
 
     def to_list(self) -> List[T]:
         return self._features
+
+    def items(self) -> Iterable[Tuple[str, T]]:
+        return self._name_to_feature.items()
+
+    def __iter__(self):
+        return iter(self._features)
 
     def __len__(self):
         return len(self._features)
