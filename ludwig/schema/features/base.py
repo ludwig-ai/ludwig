@@ -1,7 +1,7 @@
 from dataclasses import Field, field
 import logging
 from abc import abstractmethod
-from typing import Any, Generic, Iterable, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
 
 from marshmallow import fields
 from marshmallow_dataclass import dataclass
@@ -180,8 +180,11 @@ class FeatureCollection(Generic[T], schema_utils.ListSerializable):
         for k, v in self._name_to_feature.items():
             setattr(self, k, v)
 
-    def to_list(self) -> List[T]:
-        return self._features
+    def to_list(self) -> List[Dict[str, Any]]:
+        out_list = []
+        for feature in self._features:
+            out_list.append(feature.to_dict())
+        return out_list
 
     def items(self) -> Iterable[Tuple[str, T]]:
         return self._name_to_feature.items()

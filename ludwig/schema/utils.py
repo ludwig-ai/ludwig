@@ -91,10 +91,7 @@ def convert_submodules(config_dict: dict) -> TDict[str, any]:
             convert_submodules(output_dict[k])
 
         elif isinstance(v, ListSerializable):
-            lst = v.to_list()
-            for i in range(len(lst)):
-                lst[i] = convert_submodules(lst[i].to_dict())
-            output_dict[k] = lst
+            output_dict[k] = v.to_list()
 
         else:
             continue

@@ -12,7 +12,11 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
-from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params, merge_with_defaults
+from ludwig.schema.model_types.utils import (
+    merge_fixed_preprocessing_params,
+    merge_with_defaults,
+    set_validation_parameters,
+)
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
@@ -60,7 +64,11 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
             )
         cls = model_type_schema_registry[model_type]
         schema = marshmallow_dataclass.class_schema(cls)()
-        return schema.load(config)
+
+        config_obj = schema.load(config)
+        set_validation_parameters(config_obj)
+
+        return config_obj
 
 
 @DeveloperAPI
