@@ -507,6 +507,7 @@ class LudwigModel:
                     )
 
                     if not skip_save_training_description:
+                        print("!!! DESCRIPTION", description)
                         save_json(description_fn, description)
 
                     # print description

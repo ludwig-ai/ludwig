@@ -173,7 +173,7 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
 T = TypeVar("T", bound=BaseFeatureConfig)
 
 
-class FeatureCollection(Generic[T]):
+class FeatureCollection(Generic[T], schema_utils.ListSerializable):
     def __init__(self, features: List[T]):
         self._features = features
         self._name_to_feature = {f.name: f for f in features}

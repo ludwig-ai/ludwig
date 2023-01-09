@@ -1,5 +1,5 @@
 import copy
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import MISSING, field, Field
 from typing import Any, Set
 from typing import Dict as TDict
@@ -90,6 +90,12 @@ def convert_submodules(config_dict: dict) -> TDict[str, any]:
             output_dict[k] = v.to_dict()
             convert_submodules(output_dict[k])
 
+        elif isinstance(v, ListSerializable):
+            lst = v.to_list()
+            for i in range(len(lst)):
+                lst[i] = convert_submodules(lst[i].to_dict())
+            output_dict[k] = lst
+
         else:
             continue
 
@@ -121,6 +127,13 @@ def remove_duplicate_fields(properties: dict, fields: Optional[TList[str]] = Non
     for key in duplicate_fields:  # TODO: Remove col/proc_col once train metadata decoupled
         if key in properties:
             del properties[key]
+
+
+@DeveloperAPI
+class ListSerializable(ABC):
+    @abstractmethod
+    def to_list(self) -> TList:
+        pass
 
 
 @DeveloperAPI
