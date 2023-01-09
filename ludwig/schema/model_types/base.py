@@ -12,10 +12,10 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
+from ludwig.schema.model_types.utils import merge_with_defaults
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
-from ludwig.utils.config_utils import merge_with_defaults
 from ludwig.utils.registry import Registry
 
 model_type_schema_registry = Registry()
@@ -23,7 +23,7 @@ model_type_schema_registry = Registry()
 
 @DeveloperAPI
 @dataclass(repr=False)
-class BaseModelTypeConfig(schema_utils.BaseMarshmallowConfig, ABC):
+class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
     input_features: FeatureCollection[BaseInputFeatureConfig]
     output_features: FeatureCollection[BaseOutputFeatureConfig]
 
@@ -35,7 +35,7 @@ class BaseModelTypeConfig(schema_utils.BaseMarshmallowConfig, ABC):
     hyperopt: Optional[HyperoptConfig] = None
 
     @staticmethod
-    def from_dict(config: Dict[str, Any]) -> "BaseModelTypeConfig":
+    def from_dict(config: Dict[str, Any]) -> "ModelConfig":
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
         config = merge_with_defaults(config)
@@ -52,7 +52,7 @@ class BaseModelTypeConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 def register_model_type(name: str):
-    def wrap(model_type_config: BaseModelTypeConfig) -> BaseModelTypeConfig:
+    def wrap(model_type_config: ModelConfig) -> ModelConfig:
         model_type_schema_registry[name] = model_type_config
         return model_type_config
 

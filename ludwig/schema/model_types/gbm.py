@@ -13,7 +13,7 @@ from ludwig.schema.features.base import (
     GBMOutputFeatureSelection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig
-from ludwig.schema.model_types.base import BaseModelTypeConfig, register_model_type
+from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import GBMTrainerConfig
 
@@ -21,7 +21,7 @@ from ludwig.schema.trainer import GBMTrainerConfig
 @DeveloperAPI
 @register_model_type(name="gbm")
 @dataclass(repr=False)
-class GBMModelConfig(BaseModelTypeConfig):
+class GBMModelConfig(ModelConfig):
     """Parameters for GBM."""
 
     model_type: str = schema_utils.ProtectedString("gbm")

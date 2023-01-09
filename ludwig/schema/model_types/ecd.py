@@ -15,7 +15,7 @@ from ludwig.schema.features.base import (
     FeatureCollection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig
-from ludwig.schema.model_types.base import BaseModelTypeConfig, register_model_type
+from ludwig.schema.model_types.base import ModelConfig, register_model_type
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 
@@ -23,7 +23,7 @@ from ludwig.schema.trainer import ECDTrainerConfig
 @DeveloperAPI
 @register_model_type(name="ecd")
 @dataclass(repr=False)
-class ECDModelConfig(BaseModelTypeConfig):
+class ECDModelConfig(ModelConfig):
     """Parameters for ECD."""
 
     model_type: str = schema_utils.ProtectedString("ecd")
