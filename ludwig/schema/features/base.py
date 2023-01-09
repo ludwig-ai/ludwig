@@ -1,7 +1,9 @@
+from dataclasses import Field, field
 import logging
 from abc import abstractmethod
-from typing import List
+from typing import Any, Generic, List, Optional, TypeVar
 
+from marshmallow import fields
 from marshmallow_dataclass import dataclass
 from rich.console import Console
 
@@ -168,7 +170,50 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         pass
 
 
-class ECDInputFeatureSelection(schema_utils.TypeSelection):
+T = TypeVar("T", bound=BaseFeatureConfig)
+
+
+class FeatureCollection(Generic[T]):
+    def __init__(self, features: List[T]):
+        self._features = features
+        self._name_to_feature = {f.name: f for f in features}
+        for k, v in self._name_to_feature.items():
+            setattr(self, k, v)
+
+    def to_list(self) -> List[T]:
+        return self._features
+
+    def __len__(self):
+        return len(self._features)
+
+    def __getitem__(self, i):
+        if isinstance(i, str):
+            return self._name_to_features[i]
+        else:
+            return self._features[i]
+
+
+class FeatureList(fields.List):
+    def _serialize(self, value, attr, obj, **kwargs) -> Optional[List[Any]]:
+        if value is None:
+            return None
+
+        value_list = value.to_list()
+        return super()._serialize(value_list, attr, obj, **kwargs)
+
+    def _deserialize(self, value, attr, data, **kwargs) -> FeatureCollection:
+        feature_list = super()._deserialize(value, attr, data, **kwargs)
+        return FeatureCollection(feature_list)
+
+
+class FeaturesTypeSelection(schema_utils.TypeSelection):
+    def get_list_field(self) -> Field:
+        return field(
+            metadata={"marshmallow_field": FeatureList(self)},
+        )
+
+
+class ECDInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=ecd_input_config_registry, description="Type of the input feature")
 
@@ -177,7 +222,7 @@ class ECDInputFeatureSelection(schema_utils.TypeSelection):
         return get_input_feature_jsonschema(MODEL_ECD)
 
 
-class GBMInputFeatureSelection(schema_utils.TypeSelection):
+class GBMInputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=gbm_input_config_registry, description="Type of the input feature")
 
@@ -186,7 +231,7 @@ class GBMInputFeatureSelection(schema_utils.TypeSelection):
         return get_input_feature_jsonschema(MODEL_GBM)
 
 
-class ECDOutputFeatureSelection(schema_utils.TypeSelection):
+class ECDOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=output_config_registry, description="Type of the output feature")
 
@@ -195,7 +240,7 @@ class ECDOutputFeatureSelection(schema_utils.TypeSelection):
         return get_output_feature_jsonschema(MODEL_ECD)
 
 
-class GBMOutputFeatureSelection(schema_utils.TypeSelection):
+class GBMOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
         super().__init__(registry=output_config_registry, description="Type of the output feature")
 

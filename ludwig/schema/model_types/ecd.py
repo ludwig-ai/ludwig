@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import List, Optional
+from typing import Optional
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
@@ -12,6 +12,7 @@ from ludwig.schema.features.base import (
     BaseOutputFeatureConfig,
     ECDInputFeatureSelection,
     ECDOutputFeatureSelection,
+    FeatureCollection,
 )
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.base import BaseModelTypeConfig, register_model_type
@@ -27,8 +28,8 @@ class ECDModelConfig(BaseModelTypeConfig):
 
     model_type: str = schema_utils.ProtectedString("ecd")
 
-    input_features: List[BaseInputFeatureConfig] = ECDInputFeatureSelection().get_list_field()
-    output_features: List[BaseOutputFeatureConfig] = ECDOutputFeatureSelection().get_list_field()
+    input_features: FeatureCollection[BaseInputFeatureConfig] = ECDInputFeatureSelection().get_list_field()
+    output_features: FeatureCollection[BaseOutputFeatureConfig] = ECDOutputFeatureSelection().get_list_field()
 
     combiner: BaseCombinerConfig = CombinerSelection().get_default_field()
 

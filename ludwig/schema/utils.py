@@ -1100,8 +1100,3 @@ class TypeSelection(fields.Field):
             metadata={"marshmallow_field": self},
             default_factory=default_factory,
         )
-
-    def get_list_field(self) -> Field:
-        return field(
-            metadata={"marshmallow_field": fields.List(self)},
-        )
