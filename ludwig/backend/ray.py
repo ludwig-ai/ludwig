@@ -778,7 +778,6 @@ class RayBackend(RemoteTrainingMixin, Backend):
 
         trainer_cls = get_from_registry(model.type(), ray_trainers_registry)
 
-        # Deep copy to workaround https://github.com/ray-project/ray/issues/24139
         all_kwargs = {
             "model": model,
             "trainer_kwargs": self._horovod_kwargs,

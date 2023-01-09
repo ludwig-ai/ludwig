@@ -81,7 +81,7 @@ class RayDataset(Dataset):
         self._processed_data_fp = df if isinstance(df, str) else None
         self.auto_window = auto_window
 
-    def get_window_size_bytes(self, window_size_bytes: Optional[int] = None):
+    def get_window_size_bytes(self, window_size_bytes: Optional[int] = None) -> int:
         # If user has specified a window size, use it as is
         if window_size_bytes:
             return window_size_bytes
