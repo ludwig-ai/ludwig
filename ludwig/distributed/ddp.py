@@ -79,15 +79,7 @@ class DDPStrategy(DistributedStrategy):
     def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
         from ray.train.torch import TorchConfig
 
-        backend = kwargs.get("backend", None)
-        init_method = kwargs.get("init_method", "env")
-
-        if backend not in ("gloo", "nccl", "mpi", None):
-            raise ValueError("torch distributed backend must be one of 'gloo', 'nccl', 'mpi' or None")
-        if init_method not in ("env", "tcp"):
-            raise ValueError("torch distributed init_method must be one of 'env' or 'tcp'")
-
-        return TorchConfig(backend=backend, init_method=init_method)
+        return TorchConfig()
 
     def shutdown(self):
         # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers raises an
