@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT, TYPE
+from ludwig.constants import TEXT
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
@@ -56,19 +56,6 @@ def _cls_pooled_error_message(encoder: str):
 
 class HFTextEncoder(Encoder):
     DEFAULT_MODEL_NAME: str
-
-    @classmethod
-    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
-        model_name = encoder_params.get("pretrained_model_name_or_path", cls.DEFAULT_MODEL_NAME)
-        if model_name is None:
-            # no default model name, so model name is required by the subclass
-            raise ValueError(
-                f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
-            )
-        return {
-            "tokenizer": "hf_tokenizer",
-            "pretrained_model_name_or_path": model_name,
-        }
 
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:

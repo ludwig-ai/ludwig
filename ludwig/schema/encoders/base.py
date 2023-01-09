@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Union
+from typing import Any, Dict, List, Union
 
 from marshmallow_dataclass import dataclass
 
@@ -15,6 +15,10 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for encoders."""
 
     type: str
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        """Returns a dict of fixed preprocessing parameters for the encoder if required."""
+        return {}
 
 
 @DeveloperAPI

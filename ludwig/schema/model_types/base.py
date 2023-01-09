@@ -7,12 +7,12 @@ from marshmallow_dataclass import dataclass
 import marshmallow_dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD
+from ludwig.constants import ENCODER, INPUT_FEATURES, MODEL_ECD, PREPROCESSING, TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.hyperopt import HyperoptConfig
-from ludwig.schema.model_types.utils import merge_with_defaults
+from ludwig.schema.model_types.utils import merge_fixed_preprocessing_params, merge_with_defaults
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
@@ -41,6 +41,19 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config = merge_with_defaults(config)
 
         model_type = config.get("model_type", MODEL_ECD)
+
+        # TODO(travis): move this into helper function
+        # Update preprocessing parameters if encoders require fixed preprocessing parameters
+        for feature_config in config.get(INPUT_FEATURES, []):
+            if TYPE not in feature_config:
+                continue
+
+            preprocessing_parameters = feature_config.get(PREPROCESSING, {})
+            preprocessing_parameters = merge_fixed_preprocessing_params(
+                model_type, feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
+            )
+            feature_config[PREPROCESSING] = preprocessing_parameters
+
         if model_type not in model_type_schema_registry:
             raise ValidationError(
                 f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"

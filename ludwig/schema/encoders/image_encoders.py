@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE
+from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, WIDTH
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
@@ -11,10 +11,19 @@ from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.utils.torch_utils import initializer_registry
 
 
+class ImageEncoderConfig(BaseEncoderConfig):
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        return {
+            REQUIRES_EQUAL_DIMENSIONS: False,
+            HEIGHT: None,
+            WIDTH: None,
+        }
+
+
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", IMAGE)
 @dataclass(repr=False)
-class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
+class Stacked2DCNNEncoderConfig(ImageEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
         description="Type of encoder.",
@@ -286,7 +295,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("resnet", IMAGE)
 @dataclass(repr=False)
-class ResNetEncoderConfig(BaseEncoderConfig):
+class ResNetEncoderConfig(ImageEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "resnet",
         description="Type of encoder.",
@@ -457,7 +466,7 @@ class ResNetEncoderConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
-class MLPMixerEncoderConfig(BaseEncoderConfig):
+class MLPMixerEncoderConfig(ImageEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "mlp_mixer",
         description="Type of encoder.",
@@ -532,7 +541,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 @DeveloperAPI
 @register_encoder_config("vit", IMAGE)
 @dataclass(repr=False)
-class ViTEncoderConfig(BaseEncoderConfig):
+class ViTEncoderConfig(ImageEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "vit",
         description="Type of encoder.",
@@ -642,3 +651,28 @@ class ViTEncoderConfig(BaseEncoderConfig):
         description="The name of the pre-trained model to use.",
         parameter_metadata=ENCODER_METADATA["ViTEncoder"]["pretrained_model"],
     )
+
+    def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
+        """If the encoder is not in trainable mode, override the image width and height to be compatible with the
+        pretrained encoder image dimension requirements."""
+        if self.requires_equal_dimensions() and self.required_width() != self.required_height():
+            raise ValueError("Invalid definition. required_width and required_height are not equal")
+
+        preprocessing_parameters = {REQUIRES_EQUAL_DIMENSIONS: self.requires_equal_dimensions()}
+        if not self.trainable or self.use_pretrained:
+            preprocessing_parameters[HEIGHT] = self.required_height()
+            preprocessing_parameters[WIDTH] = self.required_width()
+            return preprocessing_parameters
+        return preprocessing_parameters
+
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return True
+
+    @classmethod
+    def required_width(cls) -> Optional[int]:
+        return 224
+
+    @classmethod
+    def required_height(cls) -> Optional[int]:
+        return 224

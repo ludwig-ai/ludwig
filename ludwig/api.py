@@ -75,6 +75,7 @@ from ludwig.models.registry import model_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils import metric_utils
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.config_utils import get_preprocessing_params
 from ludwig.utils.data_utils import (
     figure_data_format,
@@ -301,7 +302,7 @@ class LudwigModel:
             config_dict = copy.deepcopy(config)
             self.config_fp = None
 
-        self._user_config = config_dict
+        self._user_config = upgrade_config_dict_to_latest_version(config_dict)
 
         # Initialize the config object
         self.config_obj = ModelConfig.from_dict(self._user_config)
@@ -507,7 +508,6 @@ class LudwigModel:
                     )
 
                     if not skip_save_training_description:
-                        print("!!! DESCRIPTION", description)
                         save_json(description_fn, description)
 
                     # print description
@@ -526,7 +526,7 @@ class LudwigModel:
 
                         print_boxed("LUDWIG CONFIG")
                         logger.info("User-specified config (with upgrades):\n")
-                        logger.info(pformat(self.config_obj.get_user_config(), indent=4))
+                        logger.info(pformat(self._user_config, indent=4))
                         logger.info(
                             "\nFull config saved to:\n"
                             f"{output_directory}/{experiment_name}/model/model_hyperparameters.json"
@@ -1414,7 +1414,7 @@ class LudwigModel:
 
             return PreprocessedDataset(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)
         except Exception as e:
-            raise RuntimeError(f"Caught exception during model preprocessing: {e}")
+            raise RuntimeError(f"Caught exception during model preprocessing") from e
         finally:
             for callback in self.callbacks:
                 callback.on_preprocess_end(proc_training_set, proc_validation_set, proc_test_set, training_set_metadata)

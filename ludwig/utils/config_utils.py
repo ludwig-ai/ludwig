@@ -1,4 +1,4 @@
-from typing import Any, Dict, Set
+from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -16,7 +16,7 @@ from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
-from ludwig.utils.misc_utils import get_from_registry, merge_dict
+from ludwig.utils.misc_utils import get_from_registry
 
 
 @DeveloperAPI
@@ -76,16 +76,6 @@ def merge_config_preprocessing_with_feature_specific_defaults(
     for feature_type in config_defaults:
         preprocessing_params[feature_type] = config_defaults[feature_type].get(PREPROCESSING, {})
     return preprocessing_params
-
-
-@DeveloperAPI
-def merge_fixed_preprocessing_params(
-    feature_type: str, preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Update preprocessing parameters if encoders require fixed preprocessing parameters."""
-    encoder_type = encoder_params.get(TYPE, get_default_encoder_type(feature_type))
-    encoder_class = get_encoder_cls(feature_type, encoder_type)
-    return merge_dict(preprocessing_params, encoder_class.get_fixed_preprocessing_params(encoder_params))
 
 
 @DeveloperAPI

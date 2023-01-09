@@ -32,7 +32,6 @@ from ludwig.constants import (
     COLUMN,
     DEFAULTS,
     DROP_ROW,
-    ENCODER,
     FFILL,
     FILL_WITH_CONST,
     FILL_WITH_FALSE,
@@ -61,10 +60,7 @@ from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils import data_utils, strings_utils
 from ludwig.utils.backward_compatibility import upgrade_metadata
-from ludwig.utils.config_utils import (
-    merge_config_preprocessing_with_feature_specific_defaults,
-    merge_fixed_preprocessing_params,
-)
+from ludwig.utils.config_utils import merge_config_preprocessing_with_feature_specific_defaults
 from ludwig.utils.data_utils import (
     CACHEABLE_FORMATS,
     CSV_FORMATS,
@@ -1288,15 +1284,8 @@ def build_preprocessing_parameters(
             feature_name_to_preprocessing_parameters[feature_name] = metadata[feature_name][PREPROCESSING]
             continue
 
-        preprocessing_parameters = merge_preprocessing(feature_config, global_preprocessing_parameters)
-
-        # Update preprocessing parameters if encoders require fixed preprocessing parameters
-        preprocessing_parameters = merge_fixed_preprocessing_params(
-            feature_config[TYPE], preprocessing_parameters, feature_config.get(ENCODER, {})
-        )
-
+        preprocessing_parameters = feature_config[PREPROCESSING]
         fill_value = precompute_fill_value(dataset_cols, feature_config, preprocessing_parameters, backend)
-
         if fill_value is not None:
             preprocessing_parameters.update({"computed_fill_value": fill_value})
 
