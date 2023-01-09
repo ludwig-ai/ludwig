@@ -948,6 +948,9 @@ class Trainer(BaseTrainer):
                     f"{psutil.Process(os.getpid()).memory_info()[0] / 1e6:0.2f}MB"
                 )
 
+            print("ASDFASDF BATCH END BEFORE EVAL")
+            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+
             if progress_tracker.steps % final_steps_per_checkpoint == 0:
                 # Checkpoint the model.
                 if self.is_coordinator() and not self.skip_save_progress:
@@ -973,7 +976,7 @@ class Trainer(BaseTrainer):
                 if should_break:
                     return should_break
 
-            self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
+            # self.callback(lambda c: c.on_batch_end(self, progress_tracker, save_path))
 
         return False
 
