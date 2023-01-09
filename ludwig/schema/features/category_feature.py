@@ -34,12 +34,18 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_input_config_registry.register(CATEGORY)
 @dataclass
-class ECDCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
+class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
 
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(CATEGORY)
+@dataclass
+class ECDCategoryInputFeatureConfig(CategoryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
         feature_type=CATEGORY,
@@ -50,10 +56,7 @@ class ECDCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeature
 @DeveloperAPI
 @gbm_input_config_registry.register(CATEGORY)
 @dataclass
-class GBMCategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
-    """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
-    feature."""
-
+class GBMCategoryInputFeatureConfig(CategoryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=CATEGORY,

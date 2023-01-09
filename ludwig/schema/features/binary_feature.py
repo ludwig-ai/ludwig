@@ -34,11 +34,17 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_input_config_registry.register(BINARY)
-@dataclass(repr=False)
-class ECDBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
+@dataclass
+class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(BINARY)
+@dataclass(repr=False)
+class ECDBinaryInputFeatureConfig(BinaryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
         feature_type=BINARY,
@@ -49,9 +55,7 @@ class ECDBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConf
 @DeveloperAPI
 @gbm_input_config_registry.register(BINARY)
 @dataclass(repr=False)
-class GBMBinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
-    """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
-
+class GBMBinaryInputFeatureConfig(BinaryInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=BINARY,

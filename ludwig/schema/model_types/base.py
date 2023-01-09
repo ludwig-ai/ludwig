@@ -1,4 +1,5 @@
 from abc import ABC
+import copy
 from typing import Any, Dict, List, Optional
 from marshmallow import ValidationError
 
@@ -13,6 +14,8 @@ from ludwig.schema.features.base import BaseInputFeatureConfig, BaseOutputFeatur
 from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
+from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.config_utils import merge_with_defaults
 from ludwig.utils.registry import Registry
 
 model_type_schema_registry = Registry()
@@ -33,6 +36,10 @@ class BaseModelTypeConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     @staticmethod
     def from_dict(config: Dict[str, Any]) -> "BaseModelTypeConfig":
+        config = copy.deepcopy(config)
+        config = upgrade_config_dict_to_latest_version(config)
+        config = merge_with_defaults(config)
+
         model_type = config.get("model_type", MODEL_ECD)
         if model_type not in model_type_schema_registry:
             raise ValidationError(

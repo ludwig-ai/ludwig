@@ -46,11 +46,17 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@ecd_input_config_registry.register(NUMBER)
-@dataclass(repr=False)
-class ECDNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
+@dataclass
+class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
+    encoder: BaseEncoderConfig = None
+
+
+@DeveloperAPI
+@ecd_input_config_registry.register(NUMBER)
+@dataclass(repr=False)
+class ECDNumberInputFeatureConfig(NumberInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_ECD,
         feature_type=NUMBER,
@@ -61,9 +67,7 @@ class ECDNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConf
 @DeveloperAPI
 @gbm_input_config_registry.register(NUMBER)
 @dataclass(repr=False)
-class GBMNumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
-    """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
-
+class GBMNumberInputFeatureConfig(NumberInputFeatureConfig):
     encoder: BaseEncoderConfig = EncoderDataclassField(
         MODEL_GBM,
         feature_type=NUMBER,
