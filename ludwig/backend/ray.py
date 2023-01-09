@@ -297,6 +297,10 @@ class RayAirRunner:
         trainer_kwargs = copy.copy(trainer_kwargs)
         self.backend_config = trainer_kwargs.pop("backend", None)
 
+        if "max_retries" in trainer_kwargs:
+            logger.warning("`max_retries` is no longer supported as a trainer argument in Ray backend. Ignoring it.")
+            del trainer_kwargs["max_retries"]
+
         # When training on GPU, you want to pack workers together to limit network latency during
         # allreduce. Conversely, for CPU training you want to spread out the workers to limit
         # CPU and memory contention and avoid too many workers on a single machine.
