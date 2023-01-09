@@ -1,9 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
-from ludwig.constants import MODEL_ECD
 from ludwig.schema import validate_config
-from ludwig.schema.features.utils import get_input_feature_jsonschema
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
 
@@ -67,11 +65,3 @@ def test_incorrect_output_features_config():
     # Invalid decoder for binary output feature
     with pytest.raises(ValidationError):
         validate_config(config)
-
-
-def test_get_input_feature_jsonschema():
-    schema = get_input_feature_jsonschema(MODEL_ECD)
-
-    for feature_schema in schema["items"]["allOf"]:
-        type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
-        assert set(type_data['enum']) == set(type_data['enum_descriptions'].keys())

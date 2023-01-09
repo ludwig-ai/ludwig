@@ -39,14 +39,34 @@ def get_decoder_classes(feature: str):
 
 
 @DeveloperAPI
-def get_encoder_descriptions(feature_type: str):
-    """Returns a dictionary of encoder descriptions available at the type selection."""
-    return {
-        k: convert_metadata_to_json(v[TYPE])
-        if k in get_decoder_classes(feature_type).keys() and not isinstance(v, ParameterMetadata)
-        else None
-        for k, v in DECODER_METADATA.items()
+def get_decoder_descriptions(feature_type: str):
+    """
+    This function returns a dictionary of decoder descriptions available at the type selection.
+    The process works as follows - 1) Get a dictionary of valid decoders from the decoder config registry,
+    but inverse the key/value pairs since we need to index `valid_decoders` later with an altered version
+    of the decoder config class name. 2) Loop through Decoder Metadata entries, if a metadata entry has a
+    decoder name that matches a valid decoder, add the description metadata to the output dictionary.
+
+    :param feature_type: The feature type to get decoder descriptions for
+    :return: A dictionary of decoder descriptions
+    """
+    output = {}
+
+    # Get valid decoder dictionary with following structure:
+    #       key - name of decoder config class altered to match metadata class names,
+    #       value - registered name of decoder
+    valid_decoders = {
+        class_name.__name__.replace("Config", ""): registered_name
+        for registered_name, class_name
+        in get_decoder_classes(feature_type).items()
     }
+
+    # Get decoder metadata entries for the valid decoders
+    for k, v in DECODER_METADATA.items():
+        if any([k == name for name in valid_decoders]) and not isinstance(v, ParameterMetadata):
+            output[valid_decoders[k]] = convert_metadata_to_json(v[TYPE])
+
+    return output
 
 
 @DeveloperAPI
@@ -100,7 +120,12 @@ def DecoderDataclassField(feature_type: str, default: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": decoder_classes, "default": default},
+                    "type": {
+                        "type": "string",
+                        "enum": decoder_classes,
+                        "enum_descriptions": get_decoder_descriptions(feature_type),
+                        "default": default
+                    },
                 },
                 "title": "decoder_options",
                 "allOf": get_decoder_conds(feature_type),

@@ -20,6 +20,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema import get_schema, validate_config
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
@@ -34,6 +35,7 @@ from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
+from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
@@ -51,6 +53,7 @@ from tests.integration_tests.utils import (
     timeseries_feature,
     vector_feature,
 )
+
 
 
 def test_config_features():
@@ -390,3 +393,25 @@ def test_ludwig_schema_serialization(model_type):
         raise TypeError(
             f"Ludwig schema of type `{model_type}` cannot be represented by valid JSON. See further details: {e}"
         )
+
+
+def test_encoder_descriptions():
+    schema = get_input_feature_jsonschema(MODEL_ECD)
+
+    for feature_schema in schema["items"]["allOf"]:
+        type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
+        assert set(type_data['enum_descriptions'].keys()) == set(type_data['enum'])
+
+
+def test_combiner_descriptions():
+    combiner_json_schema = get_combiner_jsonschema()
+    type_data = combiner_json_schema["properties"]["type"]
+    assert set(type_data['enum_descriptions'].keys()) == set(type_data['enum'])
+
+
+def test_decoder_descriptions():
+    schema = get_output_feature_jsonschema(MODEL_ECD)
+
+    for feature_schema in schema["items"]["allOf"]:
+        type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
+        assert set(type_data['enum_descriptions'].keys()) == set(type_data['enum'])

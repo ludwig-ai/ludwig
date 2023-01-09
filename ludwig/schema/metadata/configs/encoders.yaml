@@ -4601,6 +4601,32 @@ PassthroughEncoder:
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
+BinaryPassthroughEncoder:
+    type:
+        short_description:
+            Passes the raw input through to the combiner.
+        long_description:
+            The passthrough encoder simply returns the raw numerical values coming from the input
+            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
+            the batch size.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+CategoricalPassthroughEncoder:
+    type:
+        short_description:
+            Passes the raw input through to the combiner.
+        long_description:
+            The passthrough encoder simply returns the raw numerical values coming from the input
+            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
+            the batch size.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
 ResNet:
     type:
         short_description:

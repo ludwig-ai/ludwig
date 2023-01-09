@@ -47,10 +47,6 @@ def get_encoder_descriptions(feature_type: str):
     of the encoder config class name. 2) Loop through Encoder Metadata entries, if a metadata entry has an
     encoder name that matches a valid encoder, add the description metadata to the output dictionary.
 
-    NOTE: We need to check if the metadata entry is in the valid encoder key name instead of checking for a
-    match because sometimes there is a 1:many match on encoder metadata to encoder config class names. For
-    example, the encoder metadata entry for "PassthroughEncoder" has a class name of "BinaryPassthroughEncoderConfig"
-
     :param feature_type: The feature type to get encoder descriptions for
     :return: A dictionary of encoder descriptions
     """
@@ -67,13 +63,9 @@ def get_encoder_descriptions(feature_type: str):
 
     # Get encoder metadata entries for the valid encoders
     for k, v in ENCODER_METADATA.items():
-        for name in valid_encoders:
-            # Check if the metadata class name is in the valid encoder key name since the metadata class names sometimes
-            # map one to many (i.e. BinaryPassthroughEncoder is PassthroughEncoder in metadata)
-            if k in name and not isinstance(v, ParameterMetadata):
-                # Set key to class name to index valid encoders correctly
-                k = name
-                output[valid_encoders[k]] = convert_metadata_to_json(v[TYPE])
+        if any([k == name for name in valid_encoders]) and not isinstance(v, ParameterMetadata):
+            output[valid_encoders[k]] = convert_metadata_to_json(v[TYPE])
+
     return output
 
 
