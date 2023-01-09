@@ -40,13 +40,41 @@ def get_encoder_classes(feature: str):
 
 @DeveloperAPI
 def get_encoder_descriptions(feature_type: str):
-    """Returns a dictionary of encoder descriptions available at the type selection."""
-    return {
-        k: convert_metadata_to_json(v[TYPE])
-        if k in get_encoder_classes(feature_type).keys() and not isinstance(v, ParameterMetadata)
-        else None
-        for k, v in ENCODER_METADATA.items()
+    """
+    This function returns a dictionary of encoder descriptions available at the type selection.
+    The process works as follows - 1) Get a dictionary of valid encoders from the encoder config registry,
+    but inverse the key/value pairs since we need to index `valid_encoders` later with an altered version
+    of the encoder config class name. 2) Loop through Encoder Metadata entries, if a metadata entry has an
+    encoder name that matches a valid encoder, add the description metadata to the output dictionary.
+
+    NOTE: We need to check if the metadata entry is in the valid encoder key name instead of checking for a
+    match because sometimes there is a 1:many match on encoder metadata to encoder config class names. For
+    example, the encoder metadata entry for "PassthroughEncoder" has a class name of "BinaryPassthroughEncoderConfig"
+
+    :param feature_type: The feature type to get encoder descriptions for
+    :return: A dictionary of encoder descriptions
+    """
+    output = {}
+
+    # Get valid encoder dictionary with following structure:
+    #       key - name of encoder config class altered to match metadata class names,
+    #       value - registered name of encoder
+    valid_encoders = {
+        class_name.__name__.replace("Config", ""): registered_name
+        for registered_name, class_name
+        in get_encoder_classes(feature_type).items()
     }
+
+    # Get encoder metadata entries for the valid encoders
+    for k, v in ENCODER_METADATA.items():
+        for name in valid_encoders:
+            # Check if the metadata class name is in the valid encoder key name since the metadata class names sometimes
+            # map one to many (i.e. BinaryPassthroughEncoder is PassthroughEncoder in metadata)
+            if k in name and not isinstance(v, ParameterMetadata):
+                # Set key to class name to index valid encoders correctly
+                k = name
+                output[valid_encoders[k]] = convert_metadata_to_json(v[TYPE])
+    return output
 
 
 @DeveloperAPI

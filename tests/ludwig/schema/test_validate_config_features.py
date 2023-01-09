@@ -72,4 +72,6 @@ def test_incorrect_output_features_config():
 def test_get_input_feature_jsonschema():
     schema = get_input_feature_jsonschema(MODEL_ECD)
 
-    assert schema is not None
+    for feature_schema in schema["items"]["allOf"]:
+        type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
+        assert set(type_data['enum']) == set(type_data['enum_descriptions'].keys())

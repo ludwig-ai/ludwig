@@ -16,26 +16,26 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class SequencePassthroughConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description=ENCODER_METADATA["SequencePassthroughEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["SequencePassthrough"]["type"].long_description,
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=256,
         description="The maximum length of a sequence.",
-        parameter_metadata=ENCODER_METADATA["SequencePassthroughEncoder"]["max_sequence_length"],
+        parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["max_sequence_length"],
     )
 
     encoding_size: int = schema_utils.PositiveInteger(
         default=None,
         description="The size of the encoding vector, or None if sequence elements are scalars.",
-        parameter_metadata=ENCODER_METADATA["SequencePassthroughEncoder"]["encoding_size"],
+        parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["encoding_size"],
     )
 
     reduce_output: str = schema_utils.ReductionOptions(
         default=None,
         description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
         "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["SequencePassthroughEncoder"]["reduce_output"],
+        parameter_metadata=ENCODER_METADATA["SequencePassthrough"]["reduce_output"],
     )
 
 
@@ -45,7 +45,7 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 class SequenceEmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
-        description=ENCODER_METADATA["SequenceEmbedEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["SequenceEmbed"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -53,64 +53,64 @@ class SequenceEmbedConfig(BaseEncoderConfig):
         min=0,
         max=1,
         description="Dropout probability for the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["dropout"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["dropout"],
     )
 
     max_sequence_length: int = schema_utils.PositiveInteger(
         default=None,
         description="The maximum length of a sequence.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["max_sequence_length"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["max_sequence_length"],
     )
 
     representation: str = schema_utils.StringOptions(
         ["dense", "sparse"],
         default="dense",
         description="Representation of the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["representation"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["representation"],
     )
 
     vocab: list = schema_utils.List(
         default=None,
         description="Vocabulary for the encoder",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["vocab"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["vocab"],
     )
 
     weights_initializer: str = schema_utils.InitializerOptions(
         default="uniform",
         description="Initializer to use for the weights matrix.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["weights_initializer"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["weights_initializer"],
     )
 
     reduce_output: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the output tensor along the `s` sequence length dimension if the rank of the "
         "tensor is greater than 2.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["reduce_output"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["reduce_output"],
     )
 
     embedding_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Size of the embedding.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["embedding_size"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embedding_size"],
     )
 
     embeddings_on_cpu: bool = schema_utils.Boolean(
         default=False,
         description="Whether to force the placement of the embedding matrix in regular memory and have the CPU "
         "resolve them.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["embeddings_on_cpu"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embeddings_on_cpu"],
     )
 
     embeddings_trainable: bool = schema_utils.Boolean(
         default=True,
         description="Whether the embedding is trainable.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["embeddings_trainable"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["embeddings_trainable"],
     )
 
     pretrained_embeddings: str = schema_utils.String(
         default=None,
         description="Path to a file containing pretrained embeddings.",
-        parameter_metadata=ENCODER_METADATA["SequenceEmbedEncoder"]["pretrained_embeddings"],
+        parameter_metadata=ENCODER_METADATA["SequenceEmbed"]["pretrained_embeddings"],
     )
 
 

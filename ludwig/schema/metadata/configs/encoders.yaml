@@ -1,4 +1,4 @@
-ALBERTEncoder:
+ALBERT:
     type:
         short_description:
             Similar to BERT with lower memory footprint and faster training.
@@ -279,7 +279,7 @@ ALBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-AutoTransformerEncoder:
+AutoTransformer:
     type:
         short_description:
             Automatically retrieves the architecture from the provided model name/path.
@@ -319,7 +319,7 @@ AutoTransformerEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-BERTEncoder:
+BERT:
     type:
         short_description:
             Bidirectional transformer great for language modeling.
@@ -525,7 +525,7 @@ BERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-BagEmbedWeightedEncoder:
+BagEmbedWeighted:
     type:
         short_description:
             Transforms feature to vector, maps to sparse or dense embeddings, then aggregates.
@@ -909,7 +909,7 @@ BagEmbedWeightedEncoder:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-CTRLEncoder:
+CTRL:
     type:
         short_description:
             Language model trained to condition on control codes that govern style, content and task-specific behavior.
@@ -1003,7 +1003,7 @@ CTRLEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-CamemBERTEncoder:
+CamemBERT:
     type:
         short_description:
             Language model trained on large French text corpus.
@@ -1206,7 +1206,7 @@ CamemBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-CategoricalEmbedEncoder:
+CategoricalEmbed:
     type:
         short_description:
             Maps the categorical feature to a dense embedding.
@@ -1318,7 +1318,7 @@ CategoricalEmbedEncoder:
         expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
-CategoricalSparseEncoder:
+CategoricalSparse:
     type:
         short_description:
             Maps the categorical feature to a sparse embedding.
@@ -2225,7 +2225,7 @@ DenseEncoder:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-DistilBERTEncoder:
+DistilBERT:
     type:
         short_description:
             A distilled version of BERT base that is 40% smaller and 60% faster with 95% of performance preserved.
@@ -2440,7 +2440,7 @@ DistilBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-ELECTRAEncoder:
+ELECTRA:
     type:
         short_description:
                 Transformer encoder that can be used to encode a sequence of tokens with little compute
@@ -2676,7 +2676,7 @@ ELECTRAEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-FlauBERTEncoder:
+FlauBERT:
     type:
         short_description:
             Language model with BERT related architecture trained on large French text corpus.
@@ -2846,7 +2846,7 @@ FlauBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-GPT2Encoder:
+GPT2:
     type:
         short_description:
             GPT-2 is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
@@ -2926,7 +2926,7 @@ GPT2Encoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-GPTEncoder:
+GPT:
     type:
         short_description:
             GPT is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
@@ -3891,7 +3891,7 @@ H3WeightedSum:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-LongformerEncoder:
+Longformer:
     type:
         short_description:
             Transformer optimized for longer text inputs.
@@ -3955,7 +3955,7 @@ LongformerEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-MLPMixerEncoder:
+MLPMixer:
     type:
         short_description:
             Image encoder which applies fully connected layers to different patches of the image.
@@ -4046,7 +4046,7 @@ MLPMixerEncoder:
     width:
         internal_only: true
         ui_display_name: null
-MT5Encoder:
+MT5:
     type:
         short_description:
             MT5 is a multilingual variant of T5 useful for multilingual NLP use cases.
@@ -4601,7 +4601,7 @@ PassthroughEncoder:
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
-ResNetEncoder:
+ResNet:
     type:
         short_description:
             Residual network achieving very high performance on computer vision tasks.
@@ -4866,7 +4866,7 @@ ResNetEncoder:
     width:
         internal_only: true
         ui_display_name: null
-RoBERTaEncoder:
+RoBERTa:
     type:
         short_description:
             BERT based model that has higher accuracy and is easier parallelize due to larger mini-batches.
@@ -4936,7 +4936,7 @@ RoBERTaEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-SequenceEmbedEncoder:
+SequenceEmbed:
     type:
         short_description:
             Maps each element of the sequence to an embedding.
@@ -5072,7 +5072,7 @@ SequenceEmbedEncoder:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-SequencePassthroughEncoder:
+SequencePassthrough:
     type:
         short_description:
             Transforms sequence values to a floats then reduces to obtain a vector for each element.
@@ -8042,7 +8042,7 @@ StackedTransformer:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-T5Encoder:
+T5:
     type:
         short_description:
             Text-to-text approach transformer with good transfer performance on multiple tasks.
@@ -8164,7 +8164,7 @@ T5Encoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-TransformerXLEncoder:
+TransformerXL:
     type:
         short_description:
             Transformer architecture that introduces the notion of recurrence to the deep self-attention network.
@@ -8300,7 +8300,7 @@ TransformerXLEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-ViTEncoder:
+ViT:
     type:
         short_description:
             ViT encoder divides images into patches, performs a linear transformation, and then applies a transformer.
@@ -8534,7 +8534,7 @@ ViTEncoder:
     width:
         internal_only: true
         ui_display_name: null
-XLMEncoder:
+XLM:
     type:
         short_description:
             XLM is pre-trained by cross-language modeling.
@@ -8706,7 +8706,7 @@ XLMEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-XLMRoBERTaEncoder:
+XLMRoBERTa:
     type:
         short_description:
             XLM-RoBERTa a large multi-lingual language model trained on 2.5TB of filtered CommonCrawl data.
@@ -8773,7 +8773,7 @@ XLMRoBERTaEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-XLNetEncoder:
+XLNet:
     type:
         short_description:
             XLNet is a transformer that outperforms BERT on a variety of benchmarks.
