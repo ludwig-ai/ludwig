@@ -22,6 +22,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
+    defaults_config_registry,
     ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -115,3 +116,10 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
     @staticmethod
     def get_output_metric_functions():
         return {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None, PERPLEXITY: None, EDIT_DISTANCE: None}
+
+
+@DeveloperAPI
+@defaults_config_registry.register(TEXT)
+@dataclass
+class TextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
+    pass

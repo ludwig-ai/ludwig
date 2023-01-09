@@ -14,6 +14,8 @@ input_mixin_registry = Registry()
 output_config_registry = Registry()
 output_mixin_registry = Registry()
 
+defaults_config_registry = Registry()
+
 
 def input_config_registry(model_type: str) -> Registry:
     return input_config_registries[model_type]

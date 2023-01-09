@@ -66,6 +66,8 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         schema = marshmallow_dataclass.class_schema(cls)()
 
         config_obj = schema.load(config)
+
+        # TODO(travis): do this post-processing stuff at the dict level before we load
         set_validation_parameters(config_obj)
 
         return config_obj

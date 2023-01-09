@@ -77,6 +77,8 @@ def merge_fixed_preprocessing_params(
 
 def set_validation_parameters(config: "ModelConfig"):
     """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
+    if not config.output_features:
+        return
 
     # The user has explicitly set validation_field. Don't override any validation parameters.
     if config.trainer.validation_field:

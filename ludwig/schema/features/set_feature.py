@@ -13,6 +13,7 @@ from ludwig.schema.features.loss.utils import LossDataclassField
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import (
+    defaults_config_registry,
     ecd_input_config_registry,
     input_mixin_registry,
     output_config_registry,
@@ -107,3 +108,10 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     @staticmethod
     def get_output_metric_functions():
         return {LOSS: None, JACCARD: None}
+
+
+@DeveloperAPI
+@defaults_config_registry.register(SET)
+@dataclass
+class SetDefaultsConfig(SetInputFeatureConfigMixin, SetOutputFeatureConfigMixin):
+    pass

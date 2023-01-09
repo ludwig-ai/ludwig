@@ -177,7 +177,7 @@ def SplitDataclassField(default: str):
                 if TYPE in value and value[TYPE] in split_config_registry.data:
                     split_class = split_config_registry.data[value[TYPE]]
                     try:
-                        return split_class.get_schema_cls().Schema().load(value)
+                        return split_class.Schema().load(value)
                     except (TypeError, ValidationError) as error:
                         raise ValidationError(
                             f"Invalid split params: {value}, see `{split_class}` definition. Error: {error}"
