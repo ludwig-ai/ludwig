@@ -14,5 +14,5 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class BinaryPassthroughEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description=ENCODER_METADATA["BinaryPassthroughEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["PassthroughEncoder"]["type"].long_description,
     )

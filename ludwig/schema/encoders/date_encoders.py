@@ -16,7 +16,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class DateEmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
-        description=ENCODER_METADATA["DateEmbedEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["DateEmbed"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -102,7 +102,7 @@ class DateEmbedConfig(BaseEncoderConfig):
 class DateWaveConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "wave",
-        description=ENCODER_METADATA["DateWaveEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["DateWave"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

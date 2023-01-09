@@ -16,7 +16,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 class H3EmbedConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "embed",
-        description=ENCODER_METADATA["H3EmbedEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["H3Embed"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -108,7 +108,7 @@ class H3EmbedConfig(BaseEncoderConfig):
 class H3WeightedSumConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "weighted_sum",
-        description=ENCODER_METADATA["H3WeightedSumEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["H3WeightedSum"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -200,7 +200,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 class H3RNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "rnn",
-        description=ENCODER_METADATA["H3RNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["H3RNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

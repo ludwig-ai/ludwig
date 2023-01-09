@@ -17,7 +17,7 @@ from ludwig.utils.torch_utils import initializer_registry
 class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
-        description=ENCODER_METADATA["Stacked2DCNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["Stacked2DCNN"]["type"].long_description,
     )
 
     conv_dropout: Optional[int] = schema_utils.FloatRange(

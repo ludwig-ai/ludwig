@@ -19,7 +19,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description=ENCODER_METADATA["CategoricalPassthroughEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["PassthroughEncoder"]["type"].long_description,
     )
 
 

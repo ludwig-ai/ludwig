@@ -120,7 +120,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 class ParallelCNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "parallel_cnn",
-        description=ENCODER_METADATA["ParallelCNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["ParallelCNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -284,7 +284,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
 class StackedCNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
-        description=ENCODER_METADATA["StackedCNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["StackedCNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -480,7 +480,7 @@ class StackedCNNConfig(BaseEncoderConfig):
 class StackedParallelCNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "stacked_parallel_cnn",
-        description=ENCODER_METADATA["StackedParallelCNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["StackedParallelCNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -662,7 +662,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 class StackedRNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "rnn",
-        description=ENCODER_METADATA["StackedRNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["StackedRNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -873,7 +873,7 @@ class StackedRNNConfig(BaseEncoderConfig):
 class StackedCNNRNNConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "cnnrnn",
-        description=ENCODER_METADATA["StackedCNNRNNEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["StackedCNNRNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -1165,7 +1165,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 class StackedTransformerConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
         "transformer",
-        description=ENCODER_METADATA["StackedTransformerEncoder"]["type"].long_description,
+        description=ENCODER_METADATA["StackedTransformer"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
