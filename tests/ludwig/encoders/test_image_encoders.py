@@ -122,7 +122,7 @@ def test_vit_encoder(image_size: int, num_channels: int, use_pretrained: bool):
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["alexnet_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["alexnet"].values()])
 def test_tv_alexnet_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -151,7 +151,7 @@ def test_tv_alexnet_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["convnext_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["convnext"].values()])
 def test_tv_convnext_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -180,7 +180,7 @@ def test_tv_convnext_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["densenet_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["densenet"].values()])
 def test_tv_densenet_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -202,7 +202,7 @@ def test_tv_densenet_encoder(
 
 
 # test only model variants that do not require large amount of memory
-LOW_MEMORY_EFFICIENTNET_VARIANTS = set(torchvision_model_registry["efficientnet_torch"].keys()) - {"b6", "b7"}
+LOW_MEMORY_EFFICIENTNET_VARIANTS = set(torchvision_model_registry["efficientnet"].keys()) - {"b6", "b7"}
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -243,7 +243,7 @@ def test_tv_efficientnet_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["googlenet_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["googlenet"].values()]
 )
 def test_tv_googlenet_encoder(
     model_variant: int,
@@ -274,7 +274,7 @@ def test_tv_googlenet_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["inceptionv3_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["inceptionv3"].values()]
 )
 def test_tv_inceptionv3_encoder(
     model_variant: int,
@@ -304,7 +304,7 @@ def test_tv_inceptionv3_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["maxvit_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["maxvit"].values()])
 def test_tv_maxvit_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -333,7 +333,7 @@ def test_tv_maxvit_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mnasnet_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["mnasnet"].values()])
 def test_tv_mnasnet_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -363,7 +363,7 @@ def test_tv_mnasnet_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv2_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv2"].values()]
 )
 def test_tv_mobilenetv2_encoder(
     model_variant: int,
@@ -394,7 +394,7 @@ def test_tv_mobilenetv2_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv3_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["mobilenetv3"].values()]
 )
 def test_tv_mobilenetv3_encoder(
     model_variant: int,
@@ -417,7 +417,7 @@ def test_tv_mobilenetv3_encoder(
 
 
 # test only model variants that do not require large amount of memory
-LOW_MEMORY_REGNET_VARIANTS = set(torchvision_model_registry["regnet_torch"].keys()) - {"y_128gf"}
+LOW_MEMORY_REGNET_VARIANTS = set(torchvision_model_registry["regnet"].keys()) - {"y_128gf"}
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -457,7 +457,7 @@ def test_tv_regnet_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnet_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnet"].values()])
 def test_tv_resnet_torch_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -486,7 +486,7 @@ def test_tv_resnet_torch_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnext_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["resnext"].values()])
 def test_tv_resnext_encoder(
     model_variant: int,
     use_pretrained: bool,
@@ -516,7 +516,7 @@ def test_tv_resnext_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["shufflenet_v2_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["shufflenet_v2"].values()]
 )
 def test_tv_shufflenet_v2_encoder(
     model_variant: str,
@@ -547,7 +547,7 @@ def test_tv_shufflenet_v2_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["squeezenet_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["squeezenet"].values()]
 )
 def test_tv_squeezenet_encoder(
     model_variant: str,
@@ -578,7 +578,7 @@ def test_tv_squeezenet_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["swin_transformer_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["swin_transformer"].values()]
 )
 def test_tv_swin_transformer_encoder(
     model_variant: str,
@@ -608,7 +608,7 @@ def test_tv_swin_transformer_encoder(
         False,
     ],
 )
-@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["vgg_torch"].values()])
+@pytest.mark.parametrize("model_variant", [v.variant_id for v in torchvision_model_registry["vgg"].values()])
 def test_tv_vgg_encoder(
     model_variant: Union[int, str],
     use_pretrained: bool,
@@ -630,7 +630,7 @@ def test_tv_vgg_encoder(
 
 
 # test only VIT model variants that do not require large amount of memory
-LOW_MEMORY_VIT_VARIANTS = set(torchvision_model_registry["vit_torch"].keys()) - {"h_14"}
+LOW_MEMORY_VIT_VARIANTS = set(torchvision_model_registry["vit"].keys()) - {"h_14"}
 
 
 @pytest.mark.parametrize("trainable", [True, False])
@@ -671,7 +671,7 @@ def test_tv_vit_encoder(
     ],
 )
 @pytest.mark.parametrize(
-    "model_variant", [v.variant_id for v in torchvision_model_registry["wide_resnet_torch"].values()]
+    "model_variant", [v.variant_id for v in torchvision_model_registry["wide_resnet"].values()]
 )
 def test_tv_wide_resnet_encoder(
     model_variant: str,
