@@ -1,6 +1,6 @@
 import copy
 import sys
-from typing import Any, Dict, List, Mapping, TYPE_CHECKING
+from typing import Any, Dict, List, Mapping, TYPE_CHECKING, Set
 import warnings
 
 from marshmallow import ValidationError
@@ -9,13 +9,16 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     COLUMN,
     COMBINED,
+    DECODER,
     DEFAULTS,
+    ENCODER,
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
     LOSS,
     NAME,
     OUTPUT_FEATURES,
+    PREPROCESSING,
     PROC_COLUMN,
     RAY,
     TRAINER,
@@ -41,23 +44,29 @@ def merge_with_defaults(config_dict: ModelConfigDict) -> ModelConfigDict:
         return config_dict
 
     config_dict = copy.deepcopy(config_dict)
-    for feature in config_dict.get(INPUT_FEATURES, []) + config_dict.get(OUTPUT_FEATURES, []):
+    _merge_features_(config_dict.get(INPUT_FEATURES, []), defaults, {DECODER, LOSS})
+    _merge_features_(config_dict.get(OUTPUT_FEATURES, []), defaults, {ENCODER, PREPROCESSING})
+    return config_dict
+
+
+def _merge_features_(features: List[Dict[str, Any]], defaults: Dict[str, Any], exclude_keys: Set[str]):
+    for feature in features:
         ftype = feature.get(TYPE)
         if not ftype:
             continue
 
         default_feature = defaults.get(ftype, {})
-        merged_feature = _merge_dict_with_types(default_feature, feature)
+        merged_feature = _merge_dict_with_types(default_feature, feature, exclude_keys)
 
         # In-place replacement of the old feature with the new
         feature.clear()
         feature.update(merged_feature)
 
-    return config_dict
 
-
-def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any]) -> Dict[str, Any]:
+def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any], exclude_keys: Set[str]) -> Dict[str, Any]:
     dct = copy.deepcopy(dct)
+    dct = {k: v for k, v in dct.items() if k not in exclude_keys}
+
     for k, v in merge_dct.items():
         # TODO(travis): below type comparison is not perfect, as it doesn't consider the case where the default type
         # is omitted while the encoder type is explicitly set to the default type, in which case they
@@ -68,7 +77,7 @@ def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any]) -> Di
             and isinstance(v, Mapping)
             and dct[k].get(TYPE) == v.get(TYPE, dct[k].get(TYPE))
         ):
-            dct[k] = _merge_dict_with_types(dct[k], v)
+            dct[k] = _merge_dict_with_types(dct[k], v, exclude_keys)
         else:
             dct[k] = v
     return dct
