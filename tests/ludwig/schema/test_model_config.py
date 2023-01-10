@@ -96,9 +96,8 @@ def test_config_object():
             "batch_size": "auto",
             "optimizer": {
                 "type": "adam",
-                "beta1": 0.8,
-                "beta2": 0.999,
-                "epsilon": 5e-09,
+                "betas": [0.8, 0.999],
+                "eps": 5e-09,
             },
         },
     }
@@ -122,9 +121,9 @@ def test_config_object():
     assert config_object.trainer.batch_size == "auto"
 
     assert config_object.trainer.optimizer.type == "adam"
-    assert config_object.trainer.optimizer.beta1 == 0.8
-    assert config_object.trainer.optimizer.beta2 == 0.999
-    assert config_object.trainer.optimizer.epsilon == 5e-09
+    assert config_object.trainer.optimizer.betas[0] == 0.8
+    assert config_object.trainer.optimizer.betas[1] == 0.999
+    assert config_object.trainer.optimizer.eps == 5e-09
 
 
 def test_config_object_defaults():
