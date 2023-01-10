@@ -137,6 +137,7 @@ class LightGBMTrainer(BaseTrainer):
         self.path_smooth = config.path_smooth
         self.verbose = config.verbose
         self.max_bin = config.max_bin
+        self.feature_pre_filter = config.feature_pre_filter
 
         self.device = device
         if self.device is None:
@@ -813,6 +814,7 @@ class LightGBMTrainer(BaseTrainer):
             "tree_learner": self.tree_learner,
             "min_data_in_leaf": self.min_data_in_leaf,
             "min_sum_hessian_in_leaf": self.min_sum_hessian_in_leaf,
+            "feature_pre_filter": self.feature_pre_filter,
             "seed": self.random_seed,
             **output_params,
         }
