@@ -28,15 +28,15 @@ jobs:
           - python-version: 3.7
             pytorch-version: 1.11.0
             torchscript-version: 1.10.2
-            ray-version: 2.0.0
+            ray-version: 2.2.0
           - python-version: 3.8
             pytorch-version: 1.12.1
             torchscript-version: 1.10.2
-            ray-version: 2.1.0
+            ray-version: 2.2.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 2.1.0  # TODO: Upgrade to nightly.
+            ray-version: 2.2.0  # TODO: Upgrade to nightly.
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
