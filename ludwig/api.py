@@ -97,7 +97,7 @@ from ludwig.utils.misc_utils import (
 )
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.torch_utils import DEVICE
-from ludwig.utils.trainer_utils import get_training_report
+from ludwig.utils.trainer_utils import get_training_report, WalltimeEarlyStopCallback
 from ludwig.utils.types import TorchDevice
 
 logger = logging.getLogger(__name__)
@@ -469,8 +469,16 @@ class LudwigModel:
         )
 
         output_url = output_directory
+        train_callbacks = self.callbacks
+
+        if self.config_obj.trainer.early_stop_timeout_s > -1:
+            train_callbacks = train_callbacks + [
+                WalltimeEarlyStopCallback(
+                    self.config_obj.trainer.early_stop_timeout_s,
+                    self.config_obj.trainer.early_stop_timeout_steps,
+                )
+            ]
         with upload_output_directory(output_directory) as (output_directory, upload_fn):
-            train_callbacks = self.callbacks
             if upload_fn is not None:
                 # Upload output files (checkpoints, etc.) to remote storage at the end of
                 # each epoch and evaluation, in case of failure in the middle of training.

@@ -256,12 +256,13 @@ class ProgressTracker:
 class WalltimeEarlyStopCallback(Callback):
     """Callback that stops training when a timeout is reached and no improvement has been made."""
 
-    def __init__(self, timeout_s: float, early_stopping_steps: int = sys.maxsize) -> None:
+    def __init__(self, timeout_s: float, early_stopping_steps: int = -1) -> None:
         """Initializes the callback.
 
         Args:
             timeout_s: The timeout in seconds. Can be a float to allow for sub-second timeouts.
-            early_stopping_steps: The number of steps to wait before stopping.
+            early_stopping_steps: The number of steps to wait before stopping. If -1, the timeout is the only
+                condition for stopping.
         """
         super().__init__()
         self.timeout_delta = timedelta(seconds=timeout_s)
@@ -278,7 +279,7 @@ class WalltimeEarlyStopCallback(Callback):
         )
 
         # Steps since last improvement >= early stopping steps
-        steps_threshold_met = (
+        steps_threshold_met = (self.early_stopping_steps > -1) and (
             progress_tracker.steps - progress_tracker.last_improvement_steps >= self.early_stopping_steps
         )
 

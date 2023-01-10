@@ -83,6 +83,23 @@ early_stop:
         train, but so many consecutive rounds of no improvement is usually a good
         indicator that there's not much more to learn.
     ui_display_name: Early Stop
+early_stop_timeout_s:
+    default_value_reasoning:
+        By default, there is no limit to how long the training can go on before early stopping.
+        This allows for the model to train for as long as it needs to, but it can be useful
+        to set a timeout to ensure that the training does not go on for too long.
+    description_implications:
+        Setting a timeout (in seconds) can be useful to ensure that the training does
+        not go on for too long.
+    expected_impact: 2
+    related_parameters:
+        - early_stop_timeout_steps
+        - early_stop
+    suggested_values: -1 (no timeout), or 1800 (0.5 hour)
+    suggested_values_reasoning:
+        There's potentially a lot of randomness in how models
+        train, but so much time of no improvement is usually a good
+        indicator that there's not much more to learn.
 epochs:
     default_value_reasoning:
         A very high training length ceiling. Models will almost
