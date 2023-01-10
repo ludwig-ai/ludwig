@@ -9,7 +9,7 @@ import torchmetrics
 from hummingbird.ml import convert
 from hummingbird.ml.operator_converters import constants as hb_constants
 
-from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel

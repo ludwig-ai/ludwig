@@ -740,6 +740,8 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
                 if old_key == "decay" and isinstance(value, bool):
                     # Decay has changed from a bool to an optional enum
                     lr_scheduler[new_key] = "exponential" if value else None
+                elif old_key == "reduce_learning_rate_on_plateau":
+                    lr_scheduler[new_key] = int(value)
                 else:
                     lr_scheduler[new_key] = value
             del trainer[old_key]
