@@ -70,7 +70,7 @@ def get_input_feature_jsonschema(model_type: str):
                 "column": {"type": "string", "title": "column", "description": "Name of the column."},
             },
             "additionalProperties": True,
-            "allOf": get_input_feature_conds(),
+            "allOf": get_input_feature_conds(model_type),
             "required": ["name", "type"],
             "title": "input_features",
         },
