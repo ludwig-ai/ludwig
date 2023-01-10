@@ -1,7 +1,7 @@
 import copy
 import sys
 import warnings
-from typing import Any, Dict, List, Mapping, TYPE_CHECKING, Set
+from typing import Any, Dict, List, Mapping, Set, TYPE_CHECKING
 
 from marshmallow import ValidationError
 
