@@ -1,16 +1,7 @@
 from typing import Set
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    DECODER,
-    ENCODER,
-    IMAGE,
-    PREPROCESSING,
-    SEQUENCE,
-    TEXT,
-    TIMESERIES,
-    TYPE,
-)
+from ludwig.constants import DECODER, ENCODER, IMAGE, PREPROCESSING, SEQUENCE, TEXT, TIMESERIES, TYPE
 from ludwig.features.feature_registries import get_input_type_registry, get_output_type_registry
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import FeatureConfigDict, FeatureTypeDefaultsDict, PreprocessingConfigDict
