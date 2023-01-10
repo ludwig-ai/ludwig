@@ -77,7 +77,6 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str):
                 value_type = value.get(TYPE)
                 if value_type:
                     encoder_classes = get_encoder_classes(model_type, feature_type)
-                    print(value_type, list(encoder_classes.keys()))
                     if value_type in encoder_classes:
                         enc = encoder_classes[value_type]
                         try:
