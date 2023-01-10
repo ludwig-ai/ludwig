@@ -265,7 +265,7 @@ def test_model_weights_match_training(tmpdir, csv_filename):
     )
 
 
-@pytest.mark.parametrize("torch_encoder, variant", [("resnet_torch", 18), ("googlenet_torch", "base")])
+@pytest.mark.parametrize("torch_encoder, variant", [("resnet", 18), ("googlenet", "base")])
 def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename, tmp_path):
     torch.manual_seed(1)
     random.seed(1)
