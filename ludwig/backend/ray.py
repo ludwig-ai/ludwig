@@ -24,7 +24,6 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
-import ray.train as rt
 import torch
 import tqdm
 from packaging import version
@@ -160,7 +159,7 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
         train_shard = RayDatasetShard(
@@ -237,7 +236,7 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=True)()
     try:
         train_shard = RayDatasetShard(
@@ -524,7 +523,7 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
         eval_shard = RayDatasetShard(
