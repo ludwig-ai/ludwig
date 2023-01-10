@@ -152,7 +152,9 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
         "model_type": "gbm",
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"num_boost_round": 2},
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
     }
 
     data_df = read_csv(data_csv_path)
