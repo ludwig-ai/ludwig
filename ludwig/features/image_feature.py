@@ -518,25 +518,30 @@ class ImageFeatureMixin(BaseFeatureMixin):
         )
 
         # determine if specified encoder is a torchvision model
-        torchvision_model_id = f"{feature_config[ENCODER].get(TYPE)}-{feature_config[ENCODER].get('model_variant')}"
-        torchvision_parameters = torchvision_model_registry.get(torchvision_model_id)
+        model_type = feature_config[ENCODER].get("type", None)
+        model_variant = feature_config[ENCODER].get('model_variant')
+        if model_variant:
+            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+        else:
+            torchvision_parameters = None
 
         if torchvision_parameters:
             # torchvision_parameters is not None
             # perform torchvision model transformations
             read_image_if_bytes_obj_and_resize = partial(
                 ImageFeatureMixin._read_image_with_pretrained_transform,
-                transform_fn=torchvision_parameters.weights_class.DEFAULT.transforms(),
+                transform_fn=torchvision_parameters.model_weights.DEFAULT.transforms(),
             )
             average_file_size = None
 
             # save weight specification in preprocessing section
             preprocessing_parameters[
                 "torchvision_model_default_weights"
-            ] = f"{torchvision_parameters.weights_class.DEFAULT}"
+            ] = f"{torchvision_parameters.model_weights.DEFAULT}"
 
             # add torchvision model id to preprocessing section for torchscript
-            preprocessing_parameters["torchvision_model_id"] = torchvision_model_id
+            preprocessing_parameters["torchvision_model_type"] = model_type
+            preprocessing_parameters["torchvision_model_variant"] = model_variant
         else:
             # torchvision_parameters is None
             # perform Ludwig specified transformations
@@ -663,7 +668,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
         torchvision_model_id = metadata["preprocessing"].get("torchvision_model_id")
         if torchvision_model_id:
-            tv_transforms = torchvision_model_registry[torchvision_model_id].weights_class.DEFAULT.transforms()
+            tv_transforms = torchvision_model_registry[torchvision_model_id].model_weights.DEFAULT.transforms()
         else:
             tv_transforms = None
 
