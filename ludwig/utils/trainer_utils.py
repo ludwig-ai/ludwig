@@ -1,5 +1,4 @@
 import logging
-import sys
 from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
