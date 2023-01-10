@@ -5,7 +5,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
-
 decoder_config_registry = Registry()
 
 
