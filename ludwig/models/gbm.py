@@ -9,13 +9,14 @@ import torchmetrics
 from hummingbird.ml import convert
 from hummingbird.ml.operator_converters import constants as hb_constants
 
-from ludwig.constants import BINARY, CATEGORY, LOGITS, MODEL_GBM, NAME, NUMBER
+from ludwig.constants import BINARY, LOGITS, MODEL_GBM, NAME, NUMBER
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig, OutputFeaturesContainer
 from ludwig.utils import output_feature_utils
 from ludwig.utils.fs_utils import path_exists
+from ludwig.utils.gbm_utils import reshape_logits
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.types import TorchDevice
 
@@ -125,11 +126,7 @@ class GBM(BaseModel):
             # Input: 2D eval_batch_size x n_features array
             # Output: 1D eval_batch_size array if regression, else 2D eval_batch_size x n_classes array
             logits = torch.from_numpy(self.lgbm_model.predict(in_array, raw_score=True))
-
-            if output_feature.type() == CATEGORY and logits.ndim == 1:
-                # add logits for the negative class (LightGBM classifier only returns logits for the positive class)
-                logits = logits.view(-1, 1)
-                logits = torch.cat([-logits, logits], dim=1)
+            logits = reshape_logits(output_feature, logits)
 
         else:
             if isinstance(inputs, tuple):
