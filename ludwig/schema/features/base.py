@@ -1,6 +1,6 @@
-from dataclasses import Field, field
 import logging
 from abc import abstractmethod
+from dataclasses import Field, field
 from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
 
 from marshmallow import fields
@@ -27,10 +27,10 @@ from ludwig.constants import (
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.utils import (
-    get_input_feature_jsonschema,
-    get_output_feature_jsonschema,
     ecd_input_config_registry,
     gbm_input_config_registry,
+    get_input_feature_jsonschema,
+    get_output_feature_jsonschema,
     output_config_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY, ParameterMetadata

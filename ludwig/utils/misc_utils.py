@@ -18,10 +18,10 @@ import functools
 import os
 import random
 import subprocess
-from typing import TYPE_CHECKING
 import weakref
 from collections import OrderedDict
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import numpy
 import torch

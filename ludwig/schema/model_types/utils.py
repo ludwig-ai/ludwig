@@ -1,16 +1,10 @@
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, TYPE_CHECKING
 
 from marshmallow import ValidationError
+
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    COMBINED,
-    DEFAULTS,
-    INPUT_FEATURES,
-    LOSS,
-    OUTPUT_FEATURES,
-    TYPE,
-)
+from ludwig.constants import COMBINED, DEFAULTS, INPUT_FEATURES, LOSS, OUTPUT_FEATURES, TYPE
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
