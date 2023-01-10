@@ -1,6 +1,6 @@
-from dataclasses import field
+from dataclasses import Field
+from typing import Type
 
-from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
@@ -159,33 +159,19 @@ def get_split_conds():
 
 
 @DeveloperAPI
-def SplitDataclassField(default: str):
+def SplitDataclassField(default: str) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify a nested split
     config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to a split config.
     """
 
-    class SplitMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid split config from the split_registry and
-        creates a corresponding JSON schema for external usage."""
+    class SplitSelection(schema_utils.TypeSelection):
+        def __init__(self):
+            super().__init__(registry=split_config_registry.data, default_value=default)
 
-        def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
-            if isinstance(value, dict):
-                if TYPE in value and value[TYPE] in split_config_registry.data:
-                    split_class = split_config_registry.data[value[TYPE]]
-                    try:
-                        return split_class.Schema().load(value)
-                    except (TypeError, ValidationError) as error:
-                        raise ValidationError(
-                            f"Invalid split params: {value}, see `{split_class}` definition. Error: {error}"
-                        )
-                raise ValidationError(
-                    f"Invalid params for splitter: {value}, expected dict with at least a valid `type` attribute."
-                )
-            raise ValidationError("Field should be None or dict")
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return split_config_registry.data[key]
 
         @staticmethod
         def _jsonschema_type_mapping():
@@ -198,20 +184,4 @@ def SplitDataclassField(default: str):
                 "allOf": get_split_conds(),
             }
 
-    try:
-        splitter = split_config_registry.data[default]
-        load_default = splitter.Schema().load({"type": default})
-        dump_default = splitter.Schema().dump({"type": default})
-
-        return field(
-            metadata={
-                "marshmallow_field": SplitMarshmallowField(
-                    allow_none=False,
-                    dump_default=dump_default,
-                    load_default=load_default,
-                )
-            },
-            default_factory=lambda: load_default,
-        )
-    except Exception as e:
-        raise ValidationError(f"Unsupported splitter type: {default}. See split_registry. " f"Details: {e}")
+    return SplitSelection().get_default_field()
