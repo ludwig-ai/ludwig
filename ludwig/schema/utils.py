@@ -1088,7 +1088,7 @@ class TypeSelection(fields.Field):
             return None
         if isinstance(value, dict):
             cls_type = value.get(self.key)
-            cls_type = cls_type.lower() if cls_type else cls_type
+            cls_type = cls_type.lower() if cls_type else self.default_value
             if cls_type in self.registry:
                 cls = self.get_schema_from_registry(cls_type)
                 try:

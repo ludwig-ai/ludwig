@@ -122,4 +122,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
 @defaults_config_registry.register(TEXT)
 @dataclass
 class TextDefaultsConfig(TextInputFeatureConfigMixin, TextOutputFeatureConfigMixin):
-    pass
+    loss: BaseLossConfig = LossDataclassField(
+        feature_type=TEXT,
+        default=SEQUENCE_SOFTMAX_CROSS_ENTROPY,
+    )
