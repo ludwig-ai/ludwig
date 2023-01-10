@@ -12,6 +12,7 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 
 class HFEncoderConfig(BaseEncoderConfig):
+    use_pretrained: bool
     pretrained_model_name_or_path: str
 
     def get_fixed_preprocessing_params(self) -> Dict[str, Any]:
@@ -23,6 +24,9 @@ class HFEncoderConfig(BaseEncoderConfig):
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
         }
+
+    def is_pretrained(self) -> bool:
+        return self.use_pretrained
 
 
 @DeveloperAPI

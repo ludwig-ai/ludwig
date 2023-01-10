@@ -676,3 +676,6 @@ class ViTEncoderConfig(ImageEncoderConfig):
     @classmethod
     def required_height(cls) -> Optional[int]:
         return 224
+
+    def is_pretrained(self) -> bool:
+        return self.use_pretrained

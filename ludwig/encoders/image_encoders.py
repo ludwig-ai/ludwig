@@ -422,7 +422,3 @@ class ViTEncoder(ImageEncoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
-
-    @classmethod
-    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
-        return encoder_params.get("use_pretrained", True)

@@ -20,6 +20,9 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         """Returns a dict of fixed preprocessing parameters for the encoder if required."""
         return {}
 
+    def is_pretrained(self) -> bool:
+        return False
+
 
 @DeveloperAPI
 @register_encoder_config("passthrough", [NUMBER, VECTOR], model_types=[MODEL_ECD, MODEL_GBM])
