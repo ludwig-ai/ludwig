@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Mapping, TYPE_CHECKING
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import COMBINED, DEFAULTS, INPUT_FEATURES, LOSS, OUTPUT_FEATURES, TYPE
+from ludwig.constants import COLUMN, COMBINED, DEFAULTS, INPUT_FEATURES, LOSS, NAME, OUTPUT_FEATURES, PROC_COLUMN, TYPE
+from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
@@ -126,3 +127,11 @@ def get_feature_to_metric_names_map(
         metrics_names[output_feature_name] = get_output_type_registry()[output_feature_type].metric_functions
     metrics_names[COMBINED] = [LOSS]
     return metrics_names
+
+
+def set_derived_feature_columns_(config: ModelConfigDict):
+    for feature in config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, []):
+        if COLUMN not in feature:
+            feature[COLUMN] = feature[NAME]
+        if PROC_COLUMN not in feature:
+            feature[PROC_COLUMN] = compute_feature_hash(feature)

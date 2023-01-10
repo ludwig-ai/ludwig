@@ -15,6 +15,7 @@ from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_types.utils import (
     merge_fixed_preprocessing_params,
     merge_with_defaults,
+    set_derived_feature_columns_,
     set_validation_parameters,
 )
 from ludwig.schema.preprocessing import PreprocessingConfig
@@ -43,6 +44,7 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config = copy.deepcopy(config)
         config = upgrade_config_dict_to_latest_version(config)
         config = merge_with_defaults(config)
+        set_derived_feature_columns_(config)
 
         model_type = config.get("model_type", MODEL_ECD)
 
