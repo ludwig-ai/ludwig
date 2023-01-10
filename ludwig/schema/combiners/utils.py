@@ -29,7 +29,7 @@ def get_combiner_jsonschema():
             "type": {
                 "type": "string",
                 "enum": combiner_types,
-                "enum_descriptions": get_combiner_descriptions(),
+                "enumDescriptions": get_combiner_descriptions(),
                 "default": "concat",
                 "title": "combiner_options",
                 "description": "Select the combiner type.",

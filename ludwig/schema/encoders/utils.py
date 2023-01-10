@@ -122,7 +122,7 @@ def EncoderDataclassField(feature_type: str, default: str):
                     "type": {
                         "type": "string",
                         "enum": encoder_classes,
-                        "enum_descriptions": get_encoder_descriptions(feature_type),
+                        "enumDescriptions": get_encoder_descriptions(feature_type),
                         "default": default,
                     },
                 },
