@@ -40,8 +40,8 @@ def get_encoder_classes(feature: str):
 
 @DeveloperAPI
 def get_encoder_descriptions(feature_type: str):
-    """
-    This function returns a dictionary of encoder descriptions available at the type selection.
+    """This function returns a dictionary of encoder descriptions available at the type selection.
+
     The process works as follows - 1) Get a dictionary of valid encoders from the encoder config registry,
     but inverse the key/value pairs since we need to index `valid_encoders` later with an altered version
     of the encoder config class name. 2) Loop through Encoder Metadata entries, if a metadata entry has an
@@ -57,8 +57,7 @@ def get_encoder_descriptions(feature_type: str):
     #       value - registered name of encoder
     valid_encoders = {
         class_name.__name__.replace("Config", ""): registered_name
-        for registered_name, class_name
-        in get_encoder_classes(feature_type).items()
+        for registered_name, class_name in get_encoder_classes(feature_type).items()
     }
 
     # Get encoder metadata entries for the valid encoders

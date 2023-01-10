@@ -55,7 +55,6 @@ from tests.integration_tests.utils import (
 )
 
 
-
 def test_config_features():
     all_input_features = [
         audio_feature("/tmp/destination_folder", encoder={"type": "parallel_cnn"}),
@@ -400,13 +399,13 @@ def test_encoder_descriptions():
 
     for feature_schema in schema["items"]["allOf"]:
         type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
-        assert set(type_data['enum_descriptions'].keys()) == set(type_data['enum'])
+        assert set(type_data["enum_descriptions"].keys()) == set(type_data["enum"])
 
 
 def test_combiner_descriptions():
     combiner_json_schema = get_combiner_jsonschema()
     type_data = combiner_json_schema["properties"]["type"]
-    assert set(type_data['enum_descriptions'].keys()) == set(type_data['enum'])
+    assert set(type_data["enum_descriptions"].keys()) == set(type_data["enum"])
 
 
 def test_decoder_descriptions():
@@ -414,4 +413,4 @@ def test_decoder_descriptions():
 
     for feature_schema in schema["items"]["allOf"]:
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
-        assert set(type_data['enum_descriptions'].keys()) == set(type_data['enum'])
+        assert set(type_data["enum_descriptions"].keys()) == set(type_data["enum"])

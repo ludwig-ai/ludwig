@@ -40,8 +40,8 @@ def get_decoder_classes(feature: str):
 
 @DeveloperAPI
 def get_decoder_descriptions(feature_type: str):
-    """
-    This function returns a dictionary of decoder descriptions available at the type selection.
+    """This function returns a dictionary of decoder descriptions available at the type selection.
+
     The process works as follows - 1) Get a dictionary of valid decoders from the decoder config registry,
     but inverse the key/value pairs since we need to index `valid_decoders` later with an altered version
     of the decoder config class name. 2) Loop through Decoder Metadata entries, if a metadata entry has a
@@ -57,8 +57,7 @@ def get_decoder_descriptions(feature_type: str):
     #       value - registered name of decoder
     valid_decoders = {
         class_name.__name__.replace("Config", ""): registered_name
-        for registered_name, class_name
-        in get_decoder_classes(feature_type).items()
+        for registered_name, class_name in get_decoder_classes(feature_type).items()
     }
 
     # Get decoder metadata entries for the valid decoders
@@ -124,7 +123,7 @@ def DecoderDataclassField(feature_type: str, default: str):
                         "type": "string",
                         "enum": decoder_classes,
                         "enum_descriptions": get_decoder_descriptions(feature_type),
-                        "default": default
+                        "default": default,
                     },
                 },
                 "title": "decoder_options",
