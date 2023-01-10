@@ -177,7 +177,7 @@ def logits_to_predictions(model: BaseModel, train_logits: torch.Tensor) -> Dict[
     return model.outputs_to_predictions({f"{output_feature.feature_name}::logits": train_logits})
 
 
-def get_targets(lgb_train: lgb.Dataset, output_feature: BaseFeatureMixin) -> Dict[str, torch.Tensor]:
+def get_targets(lgb_train: lgb.Dataset, output_feature: BaseFeatureMixin, device: str) -> Dict[str, torch.Tensor]:
     """Get the targets of the training data.
 
     # Inputs
@@ -191,4 +191,4 @@ def get_targets(lgb_train: lgb.Dataset, output_feature: BaseFeatureMixin) -> Dic
     """
     is_regression = output_feature.type() == NUMBER
     targets = lgb_train.get_label().copy() if is_regression else lgb_train.get_label().copy().astype(int)
-    return {output_feature.feature_name: torch.from_numpy(targets)}
+    return {output_feature.feature_name: torch.from_numpy(targets).to(device)}

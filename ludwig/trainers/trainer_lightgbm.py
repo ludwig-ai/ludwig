@@ -1018,7 +1018,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
             # Update evaluation metrics with current model params:
             # noisy but fast way to get metrics on the training set
             predictions = logits_to_predictions(self.model, train_logits)
-            targets = get_targets(lgb_train, output_feature).to(self.device)
+            targets = get_targets(lgb_train, output_feature, self.device)
             self.model.update_metrics(targets, predictions)
 
         return gbm.to_local()
