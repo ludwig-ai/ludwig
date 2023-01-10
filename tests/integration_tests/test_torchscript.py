@@ -335,7 +335,7 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     "kwargs",
     [
         {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
-        {"encoder": {"type": "resnet_torch", "use_pretrained": False}},  # TorchVisio pretrained model encoder
+        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVisio pretrained model encoder
     ],
 )
 def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):

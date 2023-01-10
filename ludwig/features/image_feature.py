@@ -666,9 +666,15 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @staticmethod
     def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
-        torchvision_model_id = metadata["preprocessing"].get("torchvision_model_id")
-        if torchvision_model_id:
-            tv_transforms = torchvision_model_registry[torchvision_model_id].model_weights.DEFAULT.transforms()
+        model_type = metadata["preprocessing"].get("torchvision_model_type")
+        model_variant = metadata["preprocessing"].get("torchvision_model_variant")
+        if model_variant:
+            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+        else:
+            torchvision_parameters = None
+
+        if torchvision_parameters:
+            tv_transforms = torchvision_parameters.model_weights.DEFAULT.transforms()
         else:
             tv_transforms = None
 
