@@ -150,6 +150,7 @@ def store_predictions(train_logits_buffer: torch.Tensor) -> Callable:
 
 def reshape_logits(output_feature: OutputFeature, logits: torch.Tensor) -> torch.Tensor:
     """Add logits for the oposite class if the output feature is category with two classes.
+
     This is needed because LightGBM classifier only returns logits for one class.
     """
     if isinstance(output_feature, CategoryOutputFeature) and output_feature.num_classes == 2:
