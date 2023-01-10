@@ -50,12 +50,13 @@ def get_combiner_descriptions():
     of the combiner config class name. 2) Loop through Combiner Metadata entries, if a metadata entry has a
     combiner name that matches a valid combiner, add the description metadata to the output dictionary.
 
-    :return: A dictionary of combiner descriptions
+    Returns:
+        dict: A dictionary of combiner descriptions.
     """
     output = {}
     combiners = {
-        class_name.__name__.replace("Config", ""): registered_name
-        for registered_name, class_name in combiner_registry.items()
+        cls.__name__.replace("Config", ""): registered_name
+        for registered_name, cls in combiner_registry.items()
     }
 
     for k, v in COMBINER_METADATA.items():

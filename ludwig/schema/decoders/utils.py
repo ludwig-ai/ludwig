@@ -47,8 +47,10 @@ def get_decoder_descriptions(feature_type: str):
     of the decoder config class name. 2) Loop through Decoder Metadata entries, if a metadata entry has a
     decoder name that matches a valid decoder, add the description metadata to the output dictionary.
 
-    :param feature_type: The feature type to get decoder descriptions for
-    :return: A dictionary of decoder descriptions
+    Args:
+        feature_type (str): The feature type to get decoder descriptions for
+    Returns:
+        dict: A dictionary of decoder descriptions
     """
     output = {}
 
@@ -56,8 +58,8 @@ def get_decoder_descriptions(feature_type: str):
     #       key - name of decoder config class altered to match metadata class names,
     #       value - registered name of decoder
     valid_decoders = {
-        class_name.__name__.replace("Config", ""): registered_name
-        for registered_name, class_name in get_decoder_classes(feature_type).items()
+        cls.__name__.replace("Config", ""): registered_name
+        for registered_name, cls in get_decoder_classes(feature_type).items()
     }
 
     # Get decoder metadata entries for the valid decoders
