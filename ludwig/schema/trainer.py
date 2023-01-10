@@ -365,7 +365,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=82, description="Number of leaves to use in the tree with GBM trainer."
     )
 
-    min_data_in_leaf: int = schema_utils.PositiveInteger(
+    min_data_in_leaf: int = schema_utils.NonNegativeInteger(
         default=20, description="Minimum number of data points in a leaf with GBM trainer."
     )
 

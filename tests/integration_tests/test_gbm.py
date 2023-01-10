@@ -49,9 +49,7 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         MODEL_TYPE: "gbm",
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        # Disable feature filtering to avoid having no features due to small test dataset,
-        # see https://stackoverflow.com/a/66405983/5222402
-        TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
+        TRAINER: {"num_boost_round": 2},
     }
 
     model = LudwigModel(config, backend=backend_config)
@@ -221,16 +219,13 @@ def test_hummingbird_conversion_binary(tmpdir, local_backend):
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
     probs_lgbm = preds_lgbm[output_feature]
 
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
-
     # Predict using the Hummingbird compiled model
     with model.model.compile():
-        preds_hb, _ = model.predict(dataset=test_inputs)
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
         probs_hb = preds_hb[output_feature]
 
     # sanity check Hummingbird probabilities equal to LightGBM probabilities
-    assert np.allclose(np.stack(probs_hb.values), np.stack(probs_lgbm.values), atol=1e-8)
+    assert np.allclose(np.stack(probs_hb.values), np.stack(probs_lgbm.values), rtol=1e-6, atol=1e-6)
 
 
 def test_hummingbird_conversion_regression(tmpdir, local_backend):
@@ -240,15 +235,13 @@ def test_hummingbird_conversion_regression(tmpdir, local_backend):
 
     # Train a model and predict using the LightGBM interface
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
 
     # Predict using the Hummingbird compiled model
     with model.model.compile():
-        preds_hb, _ = model.predict(dataset=test_inputs)
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
     # sanity check Hummingbird prediction equal to LightGBM prediction
-    assert np.allclose(preds_hb.values, preds_lgbm)
+    assert np.allclose(preds_hb, preds_lgbm, rtol=1e-6, atol=1e-6)
 
 
 @pytest.mark.parametrize("vocab_size", [2, 3])
@@ -263,16 +256,13 @@ def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
     output_feature_name = f"{output_feature.column}_probabilities"
     probs_lgbm = np.stack(preds_lgbm[output_feature_name].to_numpy())
 
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
-
     # Predict using the Hummingbird compiled model
     with model.model.compile():
-        preds_hb, _ = model.predict(dataset=test_inputs)
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
         probs_hb = np.stack(preds_hb[output_feature_name].to_numpy())
 
     # sanity check Hummingbird probabilities equal to LightGBM probabilities
-    assert np.allclose(probs_hb, probs_lgbm, atol=1e-4)
+    assert np.allclose(probs_hb, probs_lgbm, rtol=1e-6, atol=1e-6)
 
 
 def test_loss_decreases(tmpdir, local_backend):

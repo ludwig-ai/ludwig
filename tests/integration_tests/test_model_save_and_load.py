@@ -196,10 +196,10 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
         tree2 = ludwig_model2.model
 
         with tree1.compile():
-            tree1_params = tree1.compiled_model.model.parameters()
+            tree1_params = tree1.compiled_model.parameters()
 
         with tree2.compile():
-            tree2_params = tree2.compiled_model.model.parameters()
+            tree2_params = tree2.compiled_model.parameters()
 
         for t1_w, t2_w in zip(tree1_params, tree2_params):
             assert torch.allclose(t1_w, t2_w)
