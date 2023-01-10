@@ -55,8 +55,7 @@ def get_combiner_descriptions():
     """
     output = {}
     combiners = {
-        cls.__name__.replace("Config", ""): registered_name
-        for registered_name, cls in combiner_registry.items()
+        cls.__name__.replace("Config", ""): registered_name for registered_name, cls in combiner_registry.items()
     }
 
     for k, v in COMBINER_METADATA.items():
