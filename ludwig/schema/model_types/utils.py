@@ -1,7 +1,7 @@
 import copy
 import sys
-from typing import Any, Dict, List, Mapping, TYPE_CHECKING, Set
 import warnings
+from typing import Any, Dict, List, Mapping, TYPE_CHECKING, Set
 
 from marshmallow import ValidationError
 
@@ -163,8 +163,8 @@ def set_derived_feature_columns_(config: ModelConfigDict):
 
 
 def set_hyperopt_defaults_(config: ModelConfigDict):
-    """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
-    the hyperopt section of the config object is not fully complete.
+    """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while the
+    hyperopt section of the config object is not fully complete.
 
     Returns:
         None -> modifies trainer and hyperopt sections
