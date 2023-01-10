@@ -519,7 +519,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         # determine if specified encoder is a torchvision model
         model_type = feature_config[ENCODER].get("type", None)
-        model_variant = feature_config[ENCODER].get('model_variant')
+        model_variant = feature_config[ENCODER].get("model_variant")
         if model_variant:
             torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
         else:
