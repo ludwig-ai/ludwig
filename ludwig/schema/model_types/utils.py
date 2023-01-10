@@ -1,16 +1,32 @@
 import copy
+import sys
 from typing import Any, Dict, List, Mapping, TYPE_CHECKING
+import warnings
 
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import COLUMN, COMBINED, DEFAULTS, INPUT_FEATURES, LOSS, NAME, OUTPUT_FEATURES, PROC_COLUMN, TYPE
+from ludwig.constants import (
+    COLUMN,
+    COMBINED,
+    DEFAULTS,
+    EXECUTOR,
+    HYPEROPT,
+    INPUT_FEATURES,
+    LOSS,
+    NAME,
+    OUTPUT_FEATURES,
+    PROC_COLUMN,
+    RAY,
+    TRAINER,
+    TYPE,
+)
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.base import BaseOutputFeatureConfig, FeatureCollection
 from ludwig.schema.features.utils import input_config_registry, output_config_registry
 from ludwig.types import ModelConfigDict
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import merge_dict, set_default_value
 
 if TYPE_CHECKING:
     from ludwig.schema.model_types.base import ModelConfig
@@ -135,3 +151,53 @@ def set_derived_feature_columns_(config: ModelConfigDict):
             feature[COLUMN] = feature[NAME]
         if PROC_COLUMN not in feature:
             feature[PROC_COLUMN] = compute_feature_hash(feature)
+
+
+def set_hyperopt_defaults_(config: ModelConfigDict):
+    """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
+    the hyperopt section of the config object is not fully complete.
+
+    Returns:
+        None -> modifies trainer and hyperopt sections
+    """
+    hyperopt = config.get(HYPEROPT)
+    if not hyperopt:
+        return
+
+    scheduler = hyperopt.get("executor", {}).get("scheduler")
+    if not scheduler:
+        return
+
+    if EXECUTOR in hyperopt:
+        set_default_value(hyperopt[EXECUTOR], TYPE, RAY)
+
+    trainer = config.get(TRAINER, {})
+
+    # Disable early stopping when using a scheduler. We achieve this by setting the parameter
+    # to -1, which ensures the condition to apply early stopping is never met.
+    early_stop = trainer.get("early_stop")
+    if early_stop is not None and early_stop != -1:
+        warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
+    trainer["early_stop"] = -1
+
+    max_t = scheduler.get("max_t")
+    time_attr = scheduler.get("time_attr")
+    epochs = trainer.get("epochs")
+    if max_t is not None:
+        if time_attr == "time_total_s":
+            if epochs is None:
+                # Continue training until time limit hit
+                trainer["epochs"] = sys.maxsize
+            # else continue training until either time or trainer epochs limit hit
+        elif epochs is not None and epochs != max_t:
+            raise ValueError(
+                "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                "Unset one of these parameters in your config or make sure their values match."
+            )
+        else:
+            # Run trainer until scheduler epochs limit hit
+            trainer["epochs"] = max_t
+    elif epochs is not None:
+        scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
+
+    config[TRAINER] = trainer
