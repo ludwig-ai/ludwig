@@ -49,7 +49,9 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         MODEL_TYPE: "gbm",
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {"num_boost_round": 2},
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
     }
 
     model = LudwigModel(config, backend=backend_config)
