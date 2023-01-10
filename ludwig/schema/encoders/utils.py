@@ -1,15 +1,14 @@
-from dataclasses import field
+from dataclasses import Field
 from typing import Dict, List, Optional, Type, TYPE_CHECKING, Union
 
-from marshmallow import fields, ValidationError
-
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_ECD, TYPE
+from ludwig.constants import MODEL_ECD
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
 if TYPE_CHECKING:
     from ludwig.schema.encoders.base import BaseEncoderConfig
+
 
 encoder_config_registry = Registry()
 
@@ -60,66 +59,29 @@ def get_encoder_conds(encoder_classes: Dict[str, Type["BaseEncoderConfig"]]):
 
 
 @DeveloperAPI
-def EncoderDataclassField(model_type: str, feature_type: str, default: str):
+def EncoderDataclassField(model_type: str, feature_type: str, default: str) -> Field:
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an encoder config.
 
     Returns: Initialized dataclass field that converts an untyped dict with params to an encoder config.
     """
+    encoder_registry = get_encoder_classes(model_type, feature_type)
 
-    class EncoderMarshmallowField(fields.Field):
-        """Custom marshmallow field that deserializes a dict for a valid encoder config from the encoder_registry
-        and creates a corresponding `oneOf` JSON schema for external usage."""
+    class EncoderSelection(schema_utils.TypeSelection):
+        def __init__(self):
+            super().__init__(registry=encoder_registry, default_value=default)
 
-        def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
-            if isinstance(value, dict):
-                value_type = value.get(TYPE)
-                if value_type:
-                    encoder_classes = get_encoder_classes(model_type, feature_type)
-                    if value_type in encoder_classes:
-                        enc = encoder_classes[value_type]
-                        try:
-                            return enc.Schema().load(value)
-                        except (TypeError, ValidationError) as e:
-                            raise ValidationError(f"Invalid encoder params: {value}, see `{enc}` definition") from e
-                    else:
-                        # TODO(travis): why is Marshmallow swallowing this error?
-                        raise ValidationError(
-                            f"Invalid encoder type (model_type={model_type}, feature={feature_type}): "
-                            f"'{value_type}', expected one of: {list(encoder_classes.keys())}"
-                        )
-                raise ValidationError(
-                    f"Invalid params for encoder: {value}, expect dict with at least a valid `type` attribute."
-                )
-            raise ValidationError("Field should be None or dict")
+        def get_schema_from_registry(self, key: str) -> Type[schema_utils.BaseMarshmallowConfig]:
+            return encoder_registry[key]
 
         @staticmethod
         def _jsonschema_type_mapping():
-            encoder_classes = get_encoder_classes(model_type, feature_type)
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(encoder_classes.keys()), "default": default},
+                    "type": {"type": "string", "enum": list(encoder_registry.keys()), "default": default},
                 },
                 "title": "encoder_options",
-                "allOf": get_encoder_conds(encoder_classes),
+                "allOf": get_encoder_conds(encoder_registry),
             }
 
-    try:
-        encoder = get_encoder_cls(model_type, feature_type, default)
-        load_default = encoder.Schema().load({"type": default})
-        dump_default = encoder.Schema().dump({"type": default})
-
-        return field(
-            metadata={
-                "marshmallow_field": EncoderMarshmallowField(
-                    allow_none=False,
-                    dump_default=dump_default,
-                    load_default=load_default,
-                )
-            },
-            default_factory=lambda: load_default,
-        )
-    except Exception as e:
-        raise ValidationError(f"Unsupported encoder type: {default}. See encoder_registry. " f"Details: {e}")
+    return EncoderSelection().get_default_field()

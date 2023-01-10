@@ -66,7 +66,7 @@ def test_run_experiment_with_global_default_parameters(csv_filename):
     run_experiment(config=config, dataset=dataset)
 
 
-def test_global_defaults_with_encoder_dependencies(csv_filename):
+def test_global_defaults_with_encoder_dependencies():
     input_features = [text_feature(name="title", reduce_output="sum")]
     output_features = [category_feature(name="article", embedding_size=3, output_feature=True)]
     del input_features[0][ENCODER]
