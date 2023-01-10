@@ -64,8 +64,6 @@ class TVBaseEncoder(ImageEncoder):
         if self.model_cache_dir is not None:
             os.environ["TORCH_HOME"] = self.model_cache_dir
 
-        # model_id = f"{self.torchvision_model_type}-{self.model_variant}"
-
         # retrieve function to create requested model
         self.create_model = torchvision_model_registry[self.torchvision_model_type][
             self.model_variant
@@ -151,10 +149,10 @@ class TVBaseEncoder(ImageEncoder):
         TVModelVariant(variant_id="base", create_model_function=tvm.alexnet, model_weights=tvm.AlexNet_Weights),
     ]
 )
-@register_encoder("alexnet_torch", IMAGE)
+@register_encoder("alexnet", IMAGE)
 class TVAlexNetEncoder(TVBaseEncoder):
     # specify base model type
-    torchvision_model_type: str = "alexnet_torch"
+    torchvision_model_type: str = "alexnet"
 
     def __init__(
         self,
@@ -166,7 +164,7 @@ class TVAlexNetEncoder(TVBaseEncoder):
     # TODO: discussion w/ justin
     # @property
     # def get_torchvision_model_type(self):
-    #     return "alexnet_torch"
+    #     return "alexnet"
 
     def _remove_softmax_layer(self):
         self.model.classifier[-1] = torch.nn.Identity()
@@ -193,10 +191,10 @@ class TVAlexNetEncoder(TVBaseEncoder):
         ),
     ]
 )
-@register_encoder("convnext_torch", IMAGE)
+@register_encoder("convnext", IMAGE)
 class TVConvNeXtEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "convnext_torch"
+    torchvision_model_type: str = "convnext"
 
     def __init__(
         self,
@@ -222,10 +220,10 @@ class TVConvNeXtEncoder(TVBaseEncoder):
         TVModelVariant(201, tvm.densenet201, tvm.DenseNet201_Weights),
     ]
 )
-@register_encoder("densenet_torch", IMAGE)
+@register_encoder("densenet", IMAGE)
 class TVDenseNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "densenet_torch"
+    torchvision_model_type: str = "densenet"
 
     def __init__(
         self,
@@ -258,10 +256,10 @@ class TVDenseNetEncoder(TVBaseEncoder):
         TVModelVariant("v2_l", tvm.efficientnet_v2_l, tvm.EfficientNet_V2_L_Weights),
     ]
 )
-@register_encoder("efficientnet_torch", IMAGE)
+@register_encoder("efficientnet", IMAGE)
 class TVEfficientNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "efficientnet_torch"
+    torchvision_model_type: str = "efficientnet"
 
     def __init__(
         self,
@@ -284,10 +282,10 @@ class TVEfficientNetEncoder(TVBaseEncoder):
         TVModelVariant("base", tvm.googlenet, tvm.GoogLeNet_Weights),
     ]
 )
-@register_encoder("googlenet_torch", IMAGE)
+@register_encoder("googlenet", IMAGE)
 class TVGoogLeNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "googlenet_torch"
+    torchvision_model_type: str = "googlenet"
 
     def __init__(
         self,
@@ -318,10 +316,10 @@ class TVGoogLeNetEncoder(TVBaseEncoder):
         TVModelVariant("base", tvm.inception_v3, tvm.Inception_V3_Weights),
     ]
 )
-@register_encoder("inceptionv3_torch", IMAGE)
+@register_encoder("inceptionv3", IMAGE)
 class TVInceptionV3Encoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "inceptionv3_torch"
+    torchvision_model_type: str = "inceptionv3"
 
     def __init__(
         self,
@@ -351,10 +349,10 @@ class TVInceptionV3Encoder(TVBaseEncoder):
         TVModelVariant("t", tvm.maxvit_t, tvm.MaxVit_T_Weights),
     ]
 )
-@register_encoder("maxvit_torch", IMAGE)
+@register_encoder("maxvit", IMAGE)
 class TVMaxVitEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "maxvit_torch"
+    torchvision_model_type: str = "maxvit"
 
     def __init__(
         self,
@@ -380,10 +378,10 @@ class TVMaxVitEncoder(TVBaseEncoder):
         TVModelVariant("1_3", tvm.mnasnet1_3, tvm.mnasnet.MNASNet1_3_Weights),
     ]
 )
-@register_encoder("mnasnet_torch", IMAGE)
+@register_encoder("mnasnet", IMAGE)
 class TVMNASNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "mnasnet_torch"
+    torchvision_model_type: str = "mnasnet"
 
     def __init__(
         self,
@@ -406,10 +404,10 @@ class TVMNASNetEncoder(TVBaseEncoder):
         TVModelVariant("base", tvm.mobilenet_v2, tvm.MobileNet_V2_Weights),
     ]
 )
-@register_encoder("mobilenetv2_torch", IMAGE)
+@register_encoder("mobilenetv2", IMAGE)
 class TVMobileNetV2Encoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "mobilenetv2_torch"
+    torchvision_model_type: str = "mobilenetv2"
 
     def __init__(
         self,
@@ -433,10 +431,10 @@ class TVMobileNetV2Encoder(TVBaseEncoder):
         TVModelVariant("large", tvm.mobilenet_v3_large, tvm.MobileNet_V3_Large_Weights),
     ]
 )
-@register_encoder("mobilenetv3_torch", IMAGE)
+@register_encoder("mobilenetv3", IMAGE)
 class TVMobileNetV3Encoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "mobilenetv3_torch"
+    torchvision_model_type: str = "mobilenetv3"
 
     def __init__(
         self,
@@ -473,10 +471,10 @@ class TVMobileNetV3Encoder(TVBaseEncoder):
         TVModelVariant("y_8gf", tvm.regnet_y_8gf, tvm.RegNet_Y_8GF_Weights),
     ]
 )
-@register_encoder("regnet_torch", IMAGE)
+@register_encoder("regnet", IMAGE)
 class TVRegNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "regnet_torch"
+    torchvision_model_type: str = "regnet"
 
     def __init__(
         self,
@@ -503,10 +501,10 @@ class TVRegNetEncoder(TVBaseEncoder):
         TVModelVariant(152, tvm.resnet152, tvm.ResNet152_Weights),
     ]
 )
-@register_encoder("resnet_torch", IMAGE)
+@register_encoder("resnet", IMAGE)
 class TVResNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "resnet_torch"
+    torchvision_model_type: str = "resnet"
 
     def __init__(
         self,
@@ -531,10 +529,10 @@ class TVResNetEncoder(TVBaseEncoder):
         TVModelVariant("101_64x4d", tvm.resnext101_64x4d, tvm.ResNeXt101_64X4D_Weights),
     ]
 )
-@register_encoder("resnext_torch", IMAGE)
+@register_encoder("resnext", IMAGE)
 class TVResNeXtEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "resnext_torch"
+    torchvision_model_type: str = "resnext"
 
     def __init__(
         self,
@@ -560,10 +558,10 @@ class TVResNeXtEncoder(TVBaseEncoder):
         TVModelVariant("x2_0", tvm.shufflenet_v2_x2_0, tvm.ShuffleNet_V2_X2_0_Weights),
     ]
 )
-@register_encoder("shufflenet_v2_torch", IMAGE)
+@register_encoder("shufflenet_v2", IMAGE)
 class TVShuffleNetV2Encoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "shufflenet_v2_torch"
+    torchvision_model_type: str = "shufflenet_v2"
 
     def __init__(
         self,
@@ -587,10 +585,10 @@ class TVShuffleNetV2Encoder(TVBaseEncoder):
         TVModelVariant("1_1", tvm.squeezenet1_1, tvm.SqueezeNet1_1_Weights),
     ]
 )
-@register_encoder("squeezenet_torch", IMAGE)
+@register_encoder("squeezenet", IMAGE)
 class TVSqueezeNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "squeezenet_torch"
+    torchvision_model_type: str = "squeezenet"
 
     def __init__(
         self,
@@ -618,10 +616,10 @@ class TVSqueezeNetEncoder(TVBaseEncoder):
         TVModelVariant("b", tvm.swin_b, tvm.Swin_B_Weights),
     ]
 )
-@register_encoder("swin_transformer_torch", IMAGE)
+@register_encoder("swin_transformer", IMAGE)
 class TVSwinTransformerEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "swin_transformer_torch"
+    torchvision_model_type: str = "swin_transformer"
 
     def __init__(
         self,
@@ -651,10 +649,10 @@ class TVSwinTransformerEncoder(TVBaseEncoder):
         TVModelVariant("19_bn", tvm.vgg19_bn, tvm.VGG19_BN_Weights),
     ]
 )
-@register_encoder("vgg_torch", IMAGE)
+@register_encoder("vgg", IMAGE)
 class TVVGGEncoder(TVBaseEncoder):
     # specify base torchvison model
-    torchvision_model_type: str = "vgg_torch"
+    torchvision_model_type: str = "vgg"
 
     def __init__(
         self,
@@ -681,10 +679,10 @@ class TVVGGEncoder(TVBaseEncoder):
         TVModelVariant("h_14", tvm.vit_h_14, tvm.ViT_H_14_Weights),
     ]
 )
-@register_encoder("vit_torch", IMAGE)
+@register_encoder("vit", IMAGE)
 class TVViTEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "vit_torch"
+    torchvision_model_type: str = "vit"
 
     def __init__(
         self,
@@ -720,10 +718,10 @@ class TVViTEncoder(TVBaseEncoder):
         TVModelVariant("101_2", tvm.wide_resnet101_2, tvm.Wide_ResNet101_2_Weights),
     ]
 )
-@register_encoder("wide_resnet_torch", IMAGE)
+@register_encoder("wide_resnet", IMAGE)
 class TVWideResNetEncoder(TVBaseEncoder):
     # specify base torchvision model
-    torchvision_model_type: str = "wide_resnet_torch"
+    torchvision_model_type: str = "wide_resnet"
 
     def __init__(
         self,
