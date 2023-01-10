@@ -312,6 +312,17 @@ Regressor:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
+PassthroughDecoder:
+    type:
+        short_description:
+            Provides the raw input from the combiner.
+        long_description:
+            The passthrough decoder simply returns the raw output coming from the combiner.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
 SequenceGeneratorDecoder:
     type:
         short_description:

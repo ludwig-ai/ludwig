@@ -43,11 +43,27 @@ def get_combiner_jsonschema():
 
 @DeveloperAPI
 def get_combiner_descriptions():
-    """Returns a dictionary of combiner descriptions available at the type selection."""
-    return {
-        k: convert_metadata_to_json(v[TYPE]) if not isinstance(v, ParameterMetadata) else None
-        for k, v in COMBINER_METADATA.items()
+    """
+    This function returns a dictionary of combiner descriptions available at the type selection.
+    The process works as follows - 1) Get a dictionary of valid combiners from the combiner config registry,
+    but inverse the key/value pairs since we need to index `valid_combiners` later with an altered version
+    of the combiner config class name. 2) Loop through Combiner Metadata entries, if a metadata entry has a
+    combiner name that matches a valid combiner, add the description metadata to the output dictionary.
+
+    :return: A dictionary of combiner descriptions
+    """
+    output = {}
+    combiners = {
+        class_name.__name__.replace("Config", ""): registered_name
+        for registered_name, class_name
+        in combiner_registry.items()
     }
+
+    for k, v in COMBINER_METADATA.items():
+        if any([k == name for name in combiners]) and not isinstance(v, ParameterMetadata):
+            output[combiners[k]] = convert_metadata_to_json(v[TYPE])
+
+    return output
 
 
 @DeveloperAPI
