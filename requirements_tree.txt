@@ -1,5 +1,4 @@
 onnxconverter-common<1.12
-# Install hummingbird-ml directly once https://github.com/microsoft/hummingbird/pull/674 lands
-hummingbird-ml @ git+https://github.com/jppgks/hummingbird.git@disable-post-transform
+hummingbird-ml @ git+https://github.com/microsoft/hummingbird.git
 lightgbm
 lightgbm-ray
