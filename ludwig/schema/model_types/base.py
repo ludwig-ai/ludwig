@@ -45,7 +45,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         config = upgrade_config_dict_to_latest_version(config)
         config = merge_with_defaults(config)
         set_derived_feature_columns_(config)
-        print(config["input_features"])
 
         model_type = config.get("model_type", MODEL_ECD)
 

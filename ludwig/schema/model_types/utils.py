@@ -43,18 +43,18 @@ def merge_with_defaults(config_dict: ModelConfigDict) -> ModelConfigDict:
 def _merge_dict_with_types(dct: Dict[str, Any], merge_dct: Dict[str, Any]) -> Dict[str, Any]:
     dct = copy.deepcopy(dct)
     for k, v in merge_dct.items():
-        # TODO(travis): below type comparison is not perfect, as it doesn't consider the case where one of the types
-        # is omitted and the other is the default, in which case they should resolve to equal, but will be considered
-        # different.
+        # TODO(travis): below type comparison is not perfect, as it doesn't consider the case where the default type
+        # is omitted while the encoder type is explicitly set to the default type, in which case they
+        # should resolve to equal, but will be considered different.
         if (
             k in dct
             and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], Mapping)
-            and dct[k].get(TYPE) == merge_dct[k].get(TYPE)
+            and isinstance(v, Mapping)
+            and dct[k].get(TYPE) == v.get(TYPE, dct[k].get(TYPE))
         ):
-            dct[k] = _merge_dict_with_types(dct[k], merge_dct[k])
+            dct[k] = _merge_dict_with_types(dct[k], v)
         else:
-            dct[k] = merge_dct[k]
+            dct[k] = v
     return dct
 
 
