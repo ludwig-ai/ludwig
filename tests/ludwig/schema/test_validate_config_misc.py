@@ -55,7 +55,6 @@ from tests.integration_tests.utils import (
 )
 
 
-
 def test_config_features():
     all_input_features = [
         audio_feature("/tmp/destination_folder", encoder={"type": "parallel_cnn"}),

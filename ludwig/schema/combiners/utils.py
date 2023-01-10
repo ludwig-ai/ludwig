@@ -43,8 +43,8 @@ def get_combiner_jsonschema():
 
 @DeveloperAPI
 def get_combiner_descriptions():
-    """
-    This function returns a dictionary of combiner descriptions available at the type selection.
+    """This function returns a dictionary of combiner descriptions available at the type selection.
+
     The process works as follows - 1) Get a dictionary of valid combiners from the combiner config registry,
     but inverse the key/value pairs since we need to index `valid_combiners` later with an altered version
     of the combiner config class name. 2) Loop through Combiner Metadata entries, if a metadata entry has a
@@ -55,8 +55,7 @@ def get_combiner_descriptions():
     output = {}
     combiners = {
         class_name.__name__.replace("Config", ""): registered_name
-        for registered_name, class_name
-        in combiner_registry.items()
+        for registered_name, class_name in combiner_registry.items()
     }
 
     for k, v in COMBINER_METADATA.items():
