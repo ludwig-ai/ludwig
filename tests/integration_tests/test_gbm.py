@@ -13,7 +13,13 @@ from jsonschema.exceptions import ValidationError
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from tests.integration_tests import synthetic_test_data
-from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
+from tests.integration_tests.utils import (
+    binary_feature,
+    category_feature as _category_feature,
+    generate_data,
+    number_feature,
+    text_feature,
+)
 
 
 @pytest.fixture(scope="module")
@@ -39,6 +45,13 @@ def ray_backend():
             },
         },
     }
+
+
+def category_feature(**kwargs):
+    encoder = kwargs.get("encoder", {})
+    encoder = {**{"type": "passthrough"}, **encoder}
+    kwargs["encoder"] = encoder
+    return _category_feature(**kwargs)
 
 
 def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config):

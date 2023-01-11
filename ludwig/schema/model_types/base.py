@@ -50,6 +50,10 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         set_hyperopt_defaults_(config)
 
         model_type = config.get("model_type", MODEL_ECD)
+        if model_type not in model_type_schema_registry:
+            raise ValidationError(
+                f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
+            )
 
         # TODO(travis): move this into helper function
         # Update preprocessing parameters if encoders require fixed preprocessing parameters
@@ -63,10 +67,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
             )
             feature_config[PREPROCESSING] = preprocessing_parameters
 
-        if model_type not in model_type_schema_registry:
-            raise ValidationError(
-                f"Invalid model type: '{model_type}', expected one of: {list(model_type_schema_registry.keys())}"
-            )
         cls = model_type_schema_registry[model_type]
         schema = marshmallow_dataclass.class_schema(cls)()
         config_obj = schema.load(config)
