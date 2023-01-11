@@ -54,7 +54,10 @@ def get_decoder_descriptions(feature_type: str):
     """
     output = {}
     valid_decoders = {
-        cls.module_name(): registered_name for registered_name, cls in get_decoder_classes(feature_type).items()
+        cls.module_name(): registered_name
+        if hasattr(cls, "module_name")
+        else None
+        for registered_name, cls in get_decoder_classes(feature_type).items()
     }
 
     for k, v in DECODER_METADATA.items():
