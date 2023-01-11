@@ -50,7 +50,7 @@ def get_encoder_descriptions(feature_type: str):
     Args:
         feature_type (str): The feature type to get encoder descriptions for
     Returns:
-         dict: A dictionary of encoder descriptions
+         dict: A dictionary mapping encoder registered names to their respective description metadata.
     """
     output = {}
     valid_encoders = {
