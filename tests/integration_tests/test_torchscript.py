@@ -331,11 +331,18 @@ def test_torchscript_e2e_audio(csv_filename, tmpdir):
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path, tolerance=1e-6)
 
 
-def test_torchscript_e2e_image(tmpdir, csv_filename):
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"encoder": {"type": "stacked_cnn"}},  # Ludwig custom encoder
+        {"encoder": {"type": "alexnet", "use_pretrained": False}},  # TorchVisio pretrained model encoder
+    ],
+)
+def test_torchscript_e2e_image(tmpdir, csv_filename, kwargs):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     image_dest_folder = os.path.join(tmpdir, "generated_images")
     input_features = [
-        image_feature(image_dest_folder),
+        image_feature(image_dest_folder, **kwargs),
     ]
     output_features = [
         binary_feature(),

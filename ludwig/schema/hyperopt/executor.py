@@ -29,6 +29,15 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
         default=3600, description="The number of seconds for the entire hyperopt run."
     )
 
+    trial_driver_resources: Dict[str, float] = schema_utils.Dict(
+        default=None,
+        description=(
+            "The resources reserved by each trial driver. This differs from cpu_resources_per_trial and "
+            "gpu_resources_per_trial because these resources are reserved for the driver, not its subsequent "
+            "workers. Only used when the trials themselves are on the Ray backend. Defaults to 1 CPU."
+        ),
+    )
+
     cpu_resources_per_trial: int = schema_utils.PositiveInteger(
         default=1, description="The number of CPU cores allocated to each trial"
     )

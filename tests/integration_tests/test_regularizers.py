@@ -36,7 +36,7 @@ IMAGE_DIR = tempfile.mkdtemp()
             [number_feature()],
         ),
         ([image_feature(IMAGE_DIR, encoder={"type": "stacked_cnn"})], [number_feature()]),
-        ([image_feature(IMAGE_DIR, encoder={"type": "resnet"})], [category_feature(output_feature=True)]),
+        ([image_feature(IMAGE_DIR, encoder={"type": "stacked_cnn"})], [category_feature(output_feature=True)]),
         (
             [category_feature(encoder={"representation": "dense"})],
             [number_feature(decoder={"type": "regressor", "num_fc_layers": 5}, loss={"type": "mean_squared_error"})],
