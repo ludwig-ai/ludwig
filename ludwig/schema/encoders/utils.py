@@ -54,10 +54,7 @@ def get_encoder_descriptions(feature_type: str):
     """
     output = {}
     valid_encoders = {
-        cls.module_name()
-        if hasattr(cls, "module_name")
-        else None
-        : registered_name
+        cls.module_name() if hasattr(cls, "module_name") else None: registered_name
         for registered_name, cls in get_encoder_classes(feature_type).items()
     }
 
