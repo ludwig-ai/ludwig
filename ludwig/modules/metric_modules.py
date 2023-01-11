@@ -62,7 +62,7 @@ from ludwig.modules.loss_modules import (
     SigmoidCrossEntropyLoss,
     SoftmaxCrossEntropyLoss,
 )
-from ludwig.modules.metric_registry import metric_registry, register_metric
+from ludwig.modules.metric_registry import get_metric_registry, register_metric
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
@@ -503,25 +503,25 @@ class JaccardMetric(MeanMetric):
 
 
 def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:
-    return metric_registry[metric_name]
+    return get_metric_registry()[metric_name]
 
 
 def get_improved_fn(metric: str) -> Callable:
-    if metric_registry[metric].get_objective() == MINIMIZE:
+    if get_metric_registry()[metric].get_objective() == MINIMIZE:
         return lambda x, y: x < y
     else:
         return lambda x, y: x > y
 
 
 def get_initial_validation_value(metric: str) -> float:
-    if metric_registry[metric].get_objective() == MINIMIZE:
+    if get_metric_registry()[metric].get_objective() == MINIMIZE:
         return float("inf")
     else:
         return float("-inf")
 
 
 def get_best_function(metric: str) -> Callable:
-    if metric_registry[metric].get_objective() == MINIMIZE:
+    if get_metric_registry()[metric].get_objective() == MINIMIZE:
         return min
     else:
         return max

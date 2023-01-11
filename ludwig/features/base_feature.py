@@ -181,6 +181,7 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
         """
         super().__init__(feature)
 
+        # List of names of metrics that this OutputFeature computes.
         self.metric_names = []
         self.loss = feature.loss
         self.reduce_input = feature.reduce_input
