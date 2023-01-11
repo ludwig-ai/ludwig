@@ -6,24 +6,21 @@ from jsonschema.validators import extend
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
-    COMBINER,
-    DEFAULTS,
-    HYPEROPT,
-    INPUT_FEATURES,
-    LUDWIG_VERSION,
     MODEL_ECD,
     MODEL_TYPE,
-    OUTPUT_FEATURES,
     PREPROCESSING,
     SPLIT,
-    TRAINER,
 )
-from ludwig.schema.combiners.utils import get_combiner_jsonschema
-from ludwig.schema.defaults.defaults import get_defaults_jsonschema
-from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
-from ludwig.schema.hyperopt import get_hyperopt_jsonschema
-from ludwig.schema.preprocessing import get_preprocessing_jsonschema
-from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
+from ludwig.schema import utils as schema_utils
+
+# TODO(travis): figure out why we need these imports to avoid circular import error
+from ludwig.schema.combiners.utils import get_combiner_jsonschema  # noqa
+from ludwig.schema.defaults.defaults import get_defaults_jsonschema  # noqa
+from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema  # noqa
+from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa
+from ludwig.schema.preprocessing import get_preprocessing_jsonschema  # noqa
+from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema  # noqa
+
 
 VALIDATION_LOCK = Lock()
 
@@ -39,27 +36,16 @@ def get_ludwig_version_jsonschema():
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
-    schema = {
+    from ludwig.schema.model_types.base import model_type_schema_registry
+
+    cls = model_type_schema_registry[model_type]
+    props = schema_utils.unload_jsonschema_from_marshmallow_class(cls)["properties"]
+    return {
         "type": "object",
-        "properties": {
-            MODEL_TYPE: get_model_type_jsonschema(model_type),
-            INPUT_FEATURES: get_input_feature_jsonschema(model_type),
-            OUTPUT_FEATURES: get_output_feature_jsonschema(model_type),
-            TRAINER: get_trainer_jsonschema(model_type),
-            PREPROCESSING: get_preprocessing_jsonschema(),
-            HYPEROPT: get_hyperopt_jsonschema(),
-            DEFAULTS: get_defaults_jsonschema(),
-            LUDWIG_VERSION: get_ludwig_version_jsonschema(),
-        },
-        "definitions": {},
-        "required": [INPUT_FEATURES, OUTPUT_FEATURES],
-        "additionalProperties": False,
+        "properties": props,
+        "title": "model_options",
+        "description": "Settings for Ludwig configuration",
     }
-
-    if model_type == MODEL_ECD:
-        schema["properties"][COMBINER] = get_combiner_jsonschema()
-
-    return schema
 
 
 @DeveloperAPI

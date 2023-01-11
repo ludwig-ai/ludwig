@@ -537,3 +537,23 @@ def get_trainer_jsonschema(model_type: str):
         "additionalProperties": False,
         "description": "Schema for trainer determined by Model Type",
     }
+
+
+@DeveloperAPI
+class ECDTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(ECDTrainerConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_trainer_jsonschema(MODEL_ECD)
+
+
+@DeveloperAPI
+class GBMTrainerField(schema_utils.DictMarshmallowField):
+    def __init__(self):
+        super().__init__(GBMTrainerConfig)
+
+    @staticmethod
+    def _jsonschema_type_mapping():
+        return get_trainer_jsonschema(MODEL_GBM)

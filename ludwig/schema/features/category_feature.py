@@ -135,5 +135,5 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
 @DeveloperAPI
 @defaults_config_registry.register(CATEGORY)
 @dataclass
-class CategoryDefaultsConfig(CategoryInputFeatureConfig, CategoryOutputFeatureConfigMixin):
+class CategoryDefaultsConfig(ECDCategoryInputFeatureConfig, CategoryOutputFeatureConfigMixin):
     pass

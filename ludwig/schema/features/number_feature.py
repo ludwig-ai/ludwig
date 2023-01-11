@@ -150,5 +150,5 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
 @DeveloperAPI
 @defaults_config_registry.register(NUMBER)
 @dataclass
-class NumberDefaultsConfig(NumberInputFeatureConfig, NumberOutputFeatureConfigMixin):
+class NumberDefaultsConfig(ECDNumberInputFeatureConfig, NumberOutputFeatureConfigMixin):
     pass

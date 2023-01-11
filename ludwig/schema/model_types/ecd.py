@@ -1,4 +1,3 @@
-from dataclasses import field
 from typing import Optional
 
 from marshmallow_dataclass import dataclass
@@ -7,7 +6,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.utils import CombinerSelection
-from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.defaults.defaults import DefaultsConfig, DefaultsField
 from ludwig.schema.features.base import (
     BaseInputFeatureConfig,
     BaseOutputFeatureConfig,
@@ -15,10 +14,10 @@ from ludwig.schema.features.base import (
     ECDOutputFeatureSelection,
     FeatureCollection,
 )
-from ludwig.schema.hyperopt import HyperoptConfig
+from ludwig.schema.hyperopt import HyperoptConfig, HyperoptField
 from ludwig.schema.model_types.base import ModelConfig, register_model_type
-from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.schema.trainer import ECDTrainerConfig
+from ludwig.schema.preprocessing import PreprocessingConfig, PreprocessingField
+from ludwig.schema.trainer import ECDTrainerConfig, ECDTrainerField
 
 
 @DeveloperAPI
@@ -34,7 +33,7 @@ class ECDModelConfig(ModelConfig):
 
     combiner: BaseCombinerConfig = CombinerSelection().get_default_field()
 
-    trainer: ECDTrainerConfig = field(default_factory=ECDTrainerConfig)
-    preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
-    defaults: DefaultsConfig = field(default_factory=DefaultsConfig)
-    hyperopt: Optional[HyperoptConfig] = None
+    trainer: ECDTrainerConfig = ECDTrainerField().get_default_field()
+    preprocessing: PreprocessingConfig = PreprocessingField().get_default_field()
+    defaults: DefaultsConfig = DefaultsField().get_default_field()
+    hyperopt: Optional[HyperoptConfig] = HyperoptField().get_default_field()

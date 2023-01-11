@@ -1110,3 +1110,47 @@ class TypeSelection(fields.Field):
             metadata={"marshmallow_field": self},
             default_factory=default_factory,
         )
+
+
+@DeveloperAPI
+class DictMarshmallowField(fields.Field):
+    def __init__(
+        self,
+        cls: Type[BaseMarshmallowConfig],
+        allow_none: bool = True,
+        default_missing: bool = False,
+        description: str = "",
+    ):
+        self.cls = cls
+
+        dump_default = missing
+        load_default = missing
+        if not default_missing:
+            default_obj = {}
+            load_default = cls.Schema()
+            load_default = load_default.load(default_obj)
+            dump_default = cls.Schema().dump(default_obj)
+
+        super().__init__(
+            allow_none=allow_none,
+            dump_default=dump_default,
+            load_default=load_default,
+            metadata={"description": description},
+        )
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return value
+        if isinstance(value, dict):
+            try:
+                return self.cls.Schema().load(value)
+            except (TypeError, ValidationError) as e:
+                # TODO(travis): this seems much too verbose, does the validation error not show the specific error?
+                raise ValidationError(f"Invalid params: {value}, see `{self.cls}` definition. Error: {e}")
+        raise ValidationError(f"Invalud param {value}, expected `None` or `dict`")
+
+    def get_default_field(self) -> Field:
+        return field(
+            metadata={"marshmallow_field": self},
+            default_factory=lambda: self.load_default,
+        )
