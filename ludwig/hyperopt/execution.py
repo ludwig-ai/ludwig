@@ -523,7 +523,7 @@ class RayTuneExecutor:
                     # The resume checkpoint is not None, so we are resuming from a previous state, and the
                     # node of the trainer worker is not the same as the trial driver, otherwise the files would
                     # not need to be synced as they would share the same local filesystem.
-                    trainer_ckpt = Checkpoint.from_object_ref(self.resume_ckpt_ref)
+                    trainer_ckpt = Checkpoint(obj_ref=self.resume_ckpt_ref)
                     with trainer_ckpt.as_directory() as ckpt_path:
                         # Attempt an atomic move from the ckpt_path to the save_path
                         # This may first require removing the existing save_path
@@ -614,7 +614,7 @@ class RayTuneExecutor:
                 if qsize:
                     results = ray_queue.get_nowait_batch(qsize)
                     for progress_tracker, ckpt_ref in results:
-                        trainer_ckpt = Checkpoint.from_object_ref(ckpt_ref)
+                        trainer_ckpt = Checkpoint(obj_ref=ckpt_ref)
                         with trainer_ckpt.as_directory() as save_path:
                             checkpoint(progress_tracker, save_path)
                         report(progress_tracker)
