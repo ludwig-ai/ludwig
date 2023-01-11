@@ -1,5 +1,5 @@
 import pytest
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from ludwig.constants import (
     ACTIVE,
