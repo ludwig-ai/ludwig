@@ -275,7 +275,7 @@ def add_metrics_to_printed_table(
 
         # The printed table.
         #    ╒════════════╤════════════╤══════════════════════════════════════╤═════════════╤══════════╤═══════════╕
-        #    │ Survived   │   accuracy │   binary_weighted_cross_entropy_loss │   precision │   recall │   roc_auc │
+        #    │ Survived   │   accuracy │   binary_weighted_cross_entropy │   precision │   recall │   roc_auc │
         #    ╞════════════╪════════════╪══════════════════════════════════════╪═════════════╪══════════╪═══════════╡
         # -> │ train      │     0.6859 │                               4.0943 │      0.6149 │   0.3033 │    0.6309 │
         #    ╘════════════╧════════════╧══════════════════════════════════════╧═════════════╧══════════╧═══════════╛

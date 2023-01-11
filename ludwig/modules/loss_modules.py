@@ -24,7 +24,7 @@ from torch.nn import MSELoss as _MSELoss
 import ludwig.utils.loss_utils as utils
 from ludwig.constants import (
     BINARY,
-    BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
+    BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     LOGITS,
     NUMBER,
@@ -141,7 +141,7 @@ class RMSPELoss(nn.Module, LogitsInputsMixin):
         return RMSPELossConfig
 
 
-@register_loss(BINARY_WEIGHTED_CROSS_ENTROPY_LOSS, [BINARY])
+@register_loss(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
 class BWCEWLoss(nn.Module, LogitsInputsMixin):
     """Binary weighted cross entropy loss."""
 

@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY_LOSS, ROC_AUC
+from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -60,7 +60,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
     loss: BaseLossConfig = LossDataclassField(
         feature_type=BINARY,
-        default=BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
+        default=BINARY_WEIGHTED_CROSS_ENTROPY,
     )
 
 

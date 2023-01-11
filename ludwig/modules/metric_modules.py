@@ -30,7 +30,7 @@ from torchmetrics.metric import jit_distributed_available
 from ludwig.constants import (
     ACCURACY,
     BINARY,
-    BINARY_WEIGHTED_CROSS_ENTROPY_LOSS,
+    BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     HITS_AT_K,
     JACCARD,
@@ -312,7 +312,7 @@ class LossMetric(MeanMetric, ABC):
         return False
 
 
-@register_metric(BINARY_WEIGHTED_CROSS_ENTROPY_LOSS, [BINARY])
+@register_metric(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
 class BWCEWLMetric(LossMetric):
     """Binary Weighted Cross Entropy Weighted Logits Score Metric."""
 
