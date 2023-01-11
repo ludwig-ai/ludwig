@@ -395,9 +395,7 @@ def test_ludwig_schema_serialization(model_type):
 
 
 def test_encoder_descriptions():
-    """
-    This test tests that each encoder in the enum for each feature type has a description.
-    """
+    """This test tests that each encoder in the enum for each feature type has a description."""
     schema = get_input_feature_jsonschema(MODEL_ECD)
 
     for feature_schema in schema["items"]["allOf"]:
@@ -407,9 +405,7 @@ def test_encoder_descriptions():
 
 
 def test_combiner_descriptions():
-    """
-    This test tests that each combiner in the enum for available combiners has a description.
-    """
+    """This test tests that each combiner in the enum for available combiners has a description."""
     combiner_json_schema = get_combiner_jsonschema()
     type_data = combiner_json_schema["properties"]["type"]
     assert len(set(type_data["enumDescriptions"].keys())) > 0
@@ -417,9 +413,7 @@ def test_combiner_descriptions():
 
 
 def test_decoder_descriptions():
-    """
-    This test tests that each decoder in the enum for each feature type has a description.
-    """
+    """This test tests that each decoder in the enum for each feature type has a description."""
     schema = get_output_feature_jsonschema(MODEL_ECD)
 
     for feature_schema in schema["items"]["allOf"]:
