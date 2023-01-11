@@ -97,7 +97,7 @@ Projector:
         short_description:
             Projects combiner output into an output vector.
         long_description:
-            The projected decoder is a (potentially empty) stack of fully connected layers, followed by a
+            The Projector decoder is a (potentially empty) stack of fully connected layers, followed by a
             projection into a tensor of the vector size (optionally followed by a softmax in the case of
             multi-class classification).
     activation:
