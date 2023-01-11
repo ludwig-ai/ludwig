@@ -86,10 +86,10 @@ class PandasDataset(Dataset):
         should_shuffle=True,
         seed=0,
         ignore_last=False,
-        horovod=None,
+        distributed=None,
         augmentation_pipeline=None,
     ):
-        sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, horovod=horovod)
+        sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, distributed=distributed)
         batcher = RandomAccessBatcher(
             self,
             sampler,
