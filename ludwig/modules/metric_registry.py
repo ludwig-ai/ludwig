@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Dict
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.registry import Registry
