@@ -14,7 +14,6 @@ from ludwig.schema.metadata import ENCODER_METADATA
 @register_encoder_config("embed", BAG)
 @dataclass(repr=False, order=True)
 class BagEmbedWeightedConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "BagEmbedWeighted"

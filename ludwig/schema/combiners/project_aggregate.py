@@ -11,7 +11,6 @@ from ludwig.schema.metadata import COMBINER_METADATA
 @DeveloperAPI
 @dataclass(order=True, repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
-
     @staticmethod
     def module_name():
         return "ProjectAggregateCombiner"

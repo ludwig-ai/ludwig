@@ -22,11 +22,15 @@ def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
     combiner_types = sorted(list(combiner_registry.keys()))
-    parameter_metadata = convert_metadata_to_json(ParameterMetadata.from_dict({
-                    "commonly_used": True,
-                    "expected_impact": 3,
-                    "ui_display_name": "Combiner Type",
-                }))
+    parameter_metadata = convert_metadata_to_json(
+        ParameterMetadata.from_dict(
+            {
+                "commonly_used": True,
+                "expected_impact": 3,
+                "ui_display_name": "Combiner Type",
+            }
+        )
+    )
     return {
         "type": "object",
         "properties": {
@@ -58,10 +62,7 @@ def get_combiner_descriptions():
         dict: A dictionary of combiner descriptions.
     """
     output = {}
-    combiners = {
-        cls.__name__: registered_name
-        for registered_name, cls in combiner_registry.items()
-    }
+    combiners = {cls.__name__: registered_name for registered_name, cls in combiner_registry.items()}
 
     for k, v in COMBINER_METADATA.items():
         if k in combiners.keys():

@@ -31,7 +31,6 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 @register_encoder_config("dense", CATEGORY)
 @dataclass(repr=False, order=True)
 class CategoricalEmbedConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "CategoricalEmbed"
@@ -123,7 +122,6 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 @register_encoder_config("sparse", CATEGORY)
 @dataclass(repr=False, order=True)
 class CategoricalSparseConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "CategorySparse"

@@ -15,7 +15,6 @@ from ludwig.utils.torch_utils import initializer_registry
 @register_encoder_config("stacked_cnn", IMAGE)
 @dataclass(repr=False)
 class Stacked2DCNNConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "Stacked2DCNN"
@@ -292,7 +291,6 @@ class Stacked2DCNNConfig(BaseEncoderConfig):
 @register_encoder_config("resnet", IMAGE)
 @dataclass(repr=False)
 class ResNetConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "ResNet"
@@ -468,7 +466,6 @@ class ResNetConfig(BaseEncoderConfig):
 @register_encoder_config("mlp_mixer", IMAGE)
 @dataclass(repr=False)
 class MLPMixerConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "MLPMixer"
@@ -548,7 +545,6 @@ class MLPMixerConfig(BaseEncoderConfig):
 @register_encoder_config("vit", IMAGE)
 @dataclass(repr=False)
 class ViTConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "ViT"
