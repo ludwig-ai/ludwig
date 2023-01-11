@@ -166,7 +166,7 @@ class RecallMetric(Recall, LudwigMetric):
 
 @register_metric(ROC_AUC, [BINARY, CATEGORY])
 class AUROCMetric(AUROC, LudwigMetric):
-    """Recall metric."""
+    """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
