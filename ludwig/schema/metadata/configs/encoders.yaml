@@ -8326,6 +8326,164 @@ TransformerXL:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
+TVAlexNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVBaseEncoder:
+    model_cache_dir:
+        ui_display_name: Model Cache Directory
+    saved_weights_in_checkpoint:
+        default_value_reasoning:
+            The weights of the encoder are not necessarily saved
+            in the checkpoint. The user has to save them first.
+        description_implications:
+            The memory footprint for some of these encoders
+            can be large.
+        expected_impact: 1
+        related_parameters:
+            - skip_save_model
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            Some of these encoders are large, so it might
+            be better to load them as needed, especially if 1. they're not used frequently
+            2. the user doesn't have a lot of storage.
+        ui_display_name: Saved Weights in Checkpoint
+    trainable:
+        default_value_reasoning: By default, model components are trainable.
+        description_implications:
+            The tradeoff when using `trainable` is between speed
+            and flexibility. If False, less weights are subject to change and the
+            model will therefore train faster. However, the representations output
+            by this component are fixed for each input.
+        expected_impact: 2
+        literature_references:
+            - "https://www.ibm.com/cloud/learn/overfitting
+
+
+              http://d2l.ai/chapter_computer-vision/fine-tuning.html"
+        related_parameters:
+            - use_pretrained, pretrained_model, saved_weights_in_checkpoint
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            Freezing the weights (i.e. `trainable = False`)
+            is only worth trying if you are loading in pretrained weights. In that
+            case, check to see if your model is overfitting. If so, freezing the weights
+            (and therefore reducing model complexity) may be beneficial.
+        ui_display_name: Trainable
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use pretrained model
+TVConvNeXtEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVDenseNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVEfficientNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVGoogLeNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVInceptionV3Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMaxVitEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMNASNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMobileNetV2Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMobileNetV3Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVRegNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVResNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVResNeXtEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVShuffleNetV2Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVSqueezeNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVSwinTransformerEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVViTEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVVGGEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVWideResNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
 ViT:
     type:
         short_description:

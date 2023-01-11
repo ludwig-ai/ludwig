@@ -50,7 +50,6 @@ def get_latest_metrics_dict(
 def get_new_progress_tracker(
     batch_size: int,
     best_eval_metric_value: float,
-    best_reduce_learning_rate_eval_metric: float,
     best_increase_batch_size_eval_metric: float,
     learning_rate: float,
     output_features: Dict[str, OutputFeature],
@@ -69,8 +68,6 @@ def get_new_progress_tracker(
         last_increase_batch_size_steps=0,
         last_improvement_steps=0,
         best_eval_metric_value=best_eval_metric_value,
-        best_reduce_learning_rate_eval_metric=best_reduce_learning_rate_eval_metric,
-        last_reduce_learning_rate_eval_metric_improvement=0,
         best_increase_batch_size_eval_metric=best_increase_batch_size_eval_metric,
         last_increase_batch_size_eval_metric_improvement=0,
         learning_rate=learning_rate,
@@ -103,8 +100,6 @@ class ProgressTracker:
         last_learning_rate_reduction_steps: int,
         last_increase_batch_size_steps: int,
         best_eval_metric_value: float,
-        best_reduce_learning_rate_eval_metric: float,
-        last_reduce_learning_rate_eval_metric_improvement: int,
         best_increase_batch_size_eval_metric: float,
         last_increase_batch_size_eval_metric_improvement: int,
         learning_rate: float,
@@ -143,16 +138,12 @@ class ProgressTracker:
             last_increase_batch_size_steps: The training_step of the the last batch size increase.
 
             best_eval_metric_value: The metric value of the best evaluation so far.
-            best_reduce_learning_rate_eval_metric:
-                The metric value of the best evaluation so far, for reducing the learning rate.
             best_increase_batch_size_eval_metric:
                 The metric value of the best evaluation so far, for increasing the batch size.
 
             last_learning_rate_reduction: The number of steps since the last learning rate reduction.
             last_increase_batch_size: The number of steps since the last batch size increase.
 
-            last_reduce_learning_rate_eval_metric_improvement:
-                The number of checkpoints since the last learning rate reduction.
             last_increase_batch_size_eval_metric_improvement:
                 The number of checkpoints since the last batch size increase.
 
@@ -185,8 +176,6 @@ class ProgressTracker:
         self.last_increase_batch_size = last_increase_batch_size
         self.learning_rate = learning_rate
         self.best_eval_metric_value = best_eval_metric_value
-        self.best_reduce_learning_rate_eval_metric = best_reduce_learning_rate_eval_metric
-        self.last_reduce_learning_rate_eval_metric_improvement = last_reduce_learning_rate_eval_metric_improvement
         self.best_increase_batch_size_eval_metric = best_increase_batch_size_eval_metric
         self.last_increase_batch_size_eval_metric_improvement = last_increase_batch_size_eval_metric_improvement
         self.num_reductions_learning_rate = num_reductions_learning_rate
@@ -290,10 +279,7 @@ def append_metrics(
 
 @DeveloperAPI
 def get_total_steps(epochs: int, steps_per_epoch: int, train_steps: int):
-    """Returns train_steps if non-negative.
-
-    Otherwise, returns the number of epochs.
-    """
+    """Returns train_steps if provided, otherwise epochs * steps_per_epoch."""
     if train_steps:
         return train_steps
     return epochs * steps_per_epoch

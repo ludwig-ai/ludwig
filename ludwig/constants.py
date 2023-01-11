@@ -123,6 +123,7 @@ HIDDEN = "hidden"
 LAST_HIDDEN = "last_hidden"
 ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
+LEARNING_RATE_SCHEDULER = "learning_rate_scheduler"
 
 RANDOM = "random"
 SUM = "sum"
@@ -263,9 +264,11 @@ CACHE = "cache"
 # retrieve torch ops for the tagged code blocks/functions.
 LUDWIG_TAG = "[ludwig]"
 
-
 # Retry constants
 TRIES = 5
 DELAY = 1
 BACKOFF = 2
 JITTER = (0, 1)
+
+# image support constants
+IMAGENET1K = "imagenet1k"

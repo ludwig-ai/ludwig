@@ -288,7 +288,7 @@ class Stacked2DCNNConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("resnet", IMAGE)
+@register_encoder_config("resnet_legacy", IMAGE)
 @dataclass(repr=False)
 class ResNetConfig(BaseEncoderConfig):
     @staticmethod
@@ -542,7 +542,7 @@ class MLPMixerConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("vit", IMAGE)
+@register_encoder_config("vit_legacy", IMAGE)
 @dataclass(repr=False)
 class ViTConfig(BaseEncoderConfig):
     @staticmethod

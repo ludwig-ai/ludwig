@@ -15,7 +15,7 @@
 import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Optional
+from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 import torchmetrics.functional as metrics_F
@@ -528,6 +528,10 @@ class JaccardMetric(MeanMetric):
     @classmethod
     def get_inputs(cls):
         return PROBABILITIES
+
+
+def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:
+    return metric_registry[metric_name]
 
 
 def get_improved_fn(metric: str) -> Callable:

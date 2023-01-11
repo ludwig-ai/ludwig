@@ -321,7 +321,6 @@ ImageParams = namedtuple("ImageTestParams", "image_encoder in_memory_flag skip_s
 @pytest.mark.parametrize(
     "image_params",
     [
-        ImageParams("resnet", True, True),
         ImageParams("stacked_cnn", True, True),
         ImageParams("stacked_cnn", False, False),
     ],
@@ -748,8 +747,10 @@ def test_visual_question_answering(tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
-            encoder={"type": "resnet", "output_size": 8, "num_filters": 8},
+            preprocessing={"in_memory": True, "height": 32, "width": 32, "num_channels": 3, "num_processes": 5},
+            encoder={
+                "type": "stacked_cnn",
+            },
         ),
         text_feature(encoder={"type": "embed", "min_len": 1}),
     ]
@@ -773,8 +774,10 @@ def test_image_resizing_num_channel_handling(tmpdir):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3, "num_processes": 5},
-            encoder={"type": "resnet", "output_size": 8, "num_filters": 8},
+            preprocessing={"in_memory": True, "height": 32, "width": 32, "num_channels": 3, "num_processes": 5},
+            encoder={
+                "type": "stacked_cnn",
+            },
         ),
         text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="minmax"),

@@ -188,7 +188,7 @@ class Stacked2DCNN(ImageEncoder):
 
 
 @DeveloperAPI
-@register_encoder("resnet", IMAGE)
+@register_encoder("resnet_legacy", IMAGE)
 class ResNetEncoder(ImageEncoder):
     def __init__(
         self,
@@ -344,7 +344,7 @@ class MLPMixerEncoder(ImageEncoder):
 
 
 @DeveloperAPI
-@register_encoder("vit", IMAGE)
+@register_encoder("vit_legacy", IMAGE)
 class ViTEncoder(ImageEncoder):
     def __init__(
         self,

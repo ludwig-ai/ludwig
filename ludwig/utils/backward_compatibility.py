@@ -184,6 +184,13 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     if "last_improvement" in ret:
         del ret["last_improvement"]
 
+    # Delete learning-rate related fields removed in https://github.com/ludwig-ai/ludwig/pull/2877.
+    if "best_reduce_learning_rate_eval_metric" in ret:
+        del ret["best_reduce_learning_rate_eval_metric"]
+
+    if "last_reduce_learning_rate_eval_metric_improvement" in ret:
+        del ret["last_reduce_learning_rate_eval_metric_improvement"]
+
     return ret
 
 
@@ -697,6 +704,48 @@ def remove_trainer_type(trainer: TrainerConfigDict) -> TrainerConfigDict:
             DeprecationWarning,
         )
         del trainer[TYPE]
+
+    return trainer
+
+
+@register_config_transformation("0.7", ["trainer"])
+def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
+    key_mapping = {
+        "reduce_learning_rate_on_plateau": "reduce_on_plateau",
+        "reduce_learning_rate_on_plateau_patience": "reduce_on_plateau_patience",
+        "reduce_learning_rate_on_plateau_rate": "reduce_on_plateau_rate",
+        "reduce_learning_rate_eval_metric": "reduce_eval_metric",
+        "reduce_learning_rate_eval_split": "reduce_eval_split",
+        "decay": "decay",
+        "decay_steps": "decay_steps",
+        "decay_rate": "decay_rate",
+        "staircase": "staircase",
+        "learning_rate_warmup_epochs": "warmup_evaluations",
+    }
+
+    lr_scheduler = trainer.get("learning_rate_scheduler", {})
+    for old_key, new_key in key_mapping.items():
+        if old_key in trainer:
+            warnings.warn(
+                f"Config param `trainer.{old_key}` has been moved to `trainer.learning_rate_scheduler.{new_key}`.",
+                DeprecationWarning,
+            )
+            if new_key in lr_scheduler:
+                warnings.warn(
+                    f"`trainer.learning_rate_scheduler.{new_key}` config param already set. "
+                    f"Discarding `trainer.{old_key}`."
+                )
+            else:
+                value = trainer[old_key]
+                if old_key == "decay" and isinstance(value, bool):
+                    # Decay has changed from a bool to an optional enum
+                    lr_scheduler[new_key] = "exponential" if value else None
+                else:
+                    lr_scheduler[new_key] = value
+            del trainer[old_key]
+
+    if lr_scheduler:
+        trainer["learning_rate_scheduler"] = lr_scheduler
 
     return trainer
 
