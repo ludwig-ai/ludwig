@@ -17,6 +17,10 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 class ALBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
+    @staticmethod
+    def module_name():
+        return "ALBERT"
+
     type: str = schema_utils.ProtectedString(
         "albert",
         description=ENCODER_METADATA["ALBERT"]["type"].long_description,
@@ -209,6 +213,10 @@ class ALBERTConfig(BaseEncoderConfig):
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
+    @staticmethod
+    def module_name():
+        return "MT5"
+
     type: str = schema_utils.ProtectedString(
         "mt5",
         description=ENCODER_METADATA["MT5"]["type"].long_description,
@@ -392,6 +400,10 @@ class MT5Config(BaseEncoderConfig):
 class XLMRoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
+    @staticmethod
+    def module_name():
+        return "XLMRoBERTa"
+
     type: str = schema_utils.ProtectedString(
         "xlmroberta",
         description=ENCODER_METADATA["XLMRoBERTa"]["type"].long_description,
@@ -482,6 +494,10 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class BERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
+
+    @staticmethod
+    def module_name():
+        return "BERT"
 
     type: str = schema_utils.ProtectedString(
         "bert",
@@ -649,6 +665,10 @@ class BERTConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class XLMConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
+
+    @staticmethod
+    def module_name():
+        return "XLM"
 
     type: str = schema_utils.ProtectedString(
         "xlm",
@@ -893,6 +913,10 @@ class XLMConfig(BaseEncoderConfig):
 class GPTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
+    @staticmethod
+    def module_name():
+        return "GPT"
+
     type: str = schema_utils.ProtectedString(
         "gpt",
         description=ENCODER_METADATA["GPT"]["type"].long_description,
@@ -1028,6 +1052,10 @@ class GPTConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class GPT2Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
+
+    @staticmethod
+    def module_name():
+        return "GPT2"
 
     type: str = schema_utils.ProtectedString(
         "gpt2",
@@ -1176,6 +1204,10 @@ class GPT2Config(BaseEncoderConfig):
 class RoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
+    @staticmethod
+    def module_name():
+        return "RoBERTa"
+
     type: str = schema_utils.ProtectedString(
         "roberta",
         description=ENCODER_METADATA["RoBERTa"]["type"].long_description,
@@ -1260,6 +1292,10 @@ class RoBERTaConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class TransformerXLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
+
+    @staticmethod
+    def module_name():
+        return "TransformerXL"
 
     type: str = schema_utils.ProtectedString(
         "transformer_xl",
@@ -1483,6 +1519,10 @@ class TransformerXLConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class XLNetConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
+
+    @staticmethod
+    def module_name():
+        return "XLNet"
 
     type: str = schema_utils.ProtectedString(
         "xlnet",
@@ -1717,6 +1757,10 @@ class XLNetConfig(BaseEncoderConfig):
 class DistilBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
+    @staticmethod
+    def module_name():
+        return "DistilBERT"
+
     type: str = schema_utils.ProtectedString(
         "distilbert",
         description=ENCODER_METADATA["DistilBERT"]["type"].long_description,
@@ -1867,6 +1911,10 @@ class DistilBERTConfig(BaseEncoderConfig):
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
+    @staticmethod
+    def module_name():
+        return "CTRL"
+
     type: str = schema_utils.ProtectedString(
         "ctrl",
         description=ENCODER_METADATA["CTRL"]["type"].long_description,
@@ -2003,6 +2051,10 @@ class CTRLConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class CamemBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
+
+    @staticmethod
+    def module_name():
+        return "CamemBERT"
 
     type: str = schema_utils.ProtectedString(
         "camembert",
@@ -2170,6 +2222,10 @@ class CamemBERTConfig(BaseEncoderConfig):
 class T5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
+    @staticmethod
+    def module_name():
+        return "T5"
+
     type: str = schema_utils.ProtectedString(
         "t5",
         description=ENCODER_METADATA["T5"]["type"].long_description,
@@ -2310,6 +2366,10 @@ class T5Config(BaseEncoderConfig):
 @dataclass(repr=False)
 class FlauBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
+
+    @staticmethod
+    def module_name():
+        return "FlauBERT"
 
     type: str = schema_utils.ProtectedString(
         "flaubert",
@@ -2546,6 +2606,10 @@ class FlauBERTConfig(BaseEncoderConfig):
 class ELECTRAConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
+    @staticmethod
+    def module_name():
+        return "ELECTRA"
+
     type: str = schema_utils.ProtectedString(
         "electra",
         description=ENCODER_METADATA["ELECTRA"]["type"].long_description,
@@ -2707,6 +2771,10 @@ class ELECTRAConfig(BaseEncoderConfig):
 class LongformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
+    @staticmethod
+    def module_name():
+        return "Longformer"
+
     type: str = schema_utils.ProtectedString(
         "longformer",
         description=ENCODER_METADATA["Longformer"]["type"].long_description,
@@ -2797,6 +2865,10 @@ class LongformerConfig(BaseEncoderConfig):
 @dataclass(repr=False)
 class AutoTransformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
+
+    @staticmethod
+    def module_name():
+        return "AutoTransformer"
 
     type: str = schema_utils.ProtectedString(
         "auto_transformer",

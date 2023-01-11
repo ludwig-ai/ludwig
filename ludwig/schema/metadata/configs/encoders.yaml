@@ -8967,38 +8967,3 @@ XLNet:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-encoder:
-    fc_layers:
-        default_value_reasoning:
-            By default the stack is built by using num_fc_layers,
-            output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
-            activation, dropout. When a list of dictionaries is provided, the stack
-            is built following the parameters of each dict for building each layer.
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a big anough amount of data is provided,
-            but also makes the model more computationally expensive and potentially
-            more prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - output_size
-            - use_bias
-            - weights_initializer
-            - bias_initializer
-            - norm
-            - norm_params
-            - activation
-            - dropout
-        suggested_values_reasoning:
-            It is easier to define a stack of fully connected
-            layers by just specifying num_fc_layers, output_size and the other individual
-            parameters. It will create a stack of layers with identical properties.
-            Use this parameter only if you need a fine grained level of control of
-            each individual layer in the stack.
-        ui_display_name: Fully Connected Layers

@@ -24,6 +24,10 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
+    @staticmethod
+    def module_name():
+        return "PassthroughEncoder"
+
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description=ENCODER_METADATA["PassthroughEncoder"]["type"].long_description,
@@ -35,6 +39,10 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 @dataclass(repr=False, order=True)
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
+
+    @staticmethod
+    def module_name():
+        return "DenseEncoder"
 
     type: str = schema_utils.ProtectedString(
         "dense",

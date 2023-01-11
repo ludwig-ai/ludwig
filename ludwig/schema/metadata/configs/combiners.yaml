@@ -1612,7 +1612,3 @@ TransformerCombiner:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-type:
-    commonly_used: true
-    expected_impact: 3
-    ui_display_name: Combiner Type

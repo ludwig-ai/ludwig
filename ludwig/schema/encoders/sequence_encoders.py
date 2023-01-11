@@ -14,6 +14,11 @@ from ludwig.schema.metadata import ENCODER_METADATA
 @register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class SequencePassthroughConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "SequencePassthrough"
+
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description=ENCODER_METADATA["SequencePassthrough"]["type"].long_description,
@@ -43,6 +48,11 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 @register_encoder_config("embed", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceEmbedConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "SequenceEmbed"
+
     type: str = schema_utils.ProtectedString(
         "embed",
         description=ENCODER_METADATA["SequenceEmbed"]["type"].long_description,
@@ -118,6 +128,11 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class ParallelCNNConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "ParallelCNN"
+
     type: str = schema_utils.ProtectedString(
         "parallel_cnn",
         description=ENCODER_METADATA["ParallelCNN"]["type"].long_description,
@@ -282,6 +297,11 @@ class ParallelCNNConfig(BaseEncoderConfig):
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedCNNConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "StackedCNN"
+
     type: str = schema_utils.ProtectedString(
         "stacked_cnn",
         description=ENCODER_METADATA["StackedCNN"]["type"].long_description,
@@ -478,6 +498,11 @@ class StackedCNNConfig(BaseEncoderConfig):
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedParallelCNNConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "StackedParallelCNN"
+
     type: str = schema_utils.ProtectedString(
         "stacked_parallel_cnn",
         description=ENCODER_METADATA["StackedParallelCNN"]["type"].long_description,
@@ -660,6 +685,11 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedRNNConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "StackedRNN"
+
     type: str = schema_utils.ProtectedString(
         "rnn",
         description=ENCODER_METADATA["StackedRNN"]["type"].long_description,
@@ -871,6 +901,11 @@ class StackedRNNConfig(BaseEncoderConfig):
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedCNNRNNConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "StackedCNNRNN"
+
     type: str = schema_utils.ProtectedString(
         "cnnrnn",
         description=ENCODER_METADATA["StackedCNNRNN"]["type"].long_description,
@@ -1163,6 +1198,11 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
 @dataclass(repr=False)
 class StackedTransformerConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "StackedTransformer"
+
     type: str = schema_utils.ProtectedString(
         "transformer",
         description=ENCODER_METADATA["StackedTransformer"]["type"].long_description,

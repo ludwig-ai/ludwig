@@ -14,6 +14,11 @@ from ludwig.schema.metadata import ENCODER_METADATA
 @register_encoder_config("embed", H3)
 @dataclass(repr=False)
 class H3EmbedConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "H3Embed"
+
     type: str = schema_utils.ProtectedString(
         "embed",
         description=ENCODER_METADATA["H3Embed"]["type"].long_description,
@@ -106,6 +111,11 @@ class H3EmbedConfig(BaseEncoderConfig):
 @register_encoder_config("weighted_sum", H3)
 @dataclass(repr=False)
 class H3WeightedSumConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "H3WeightedSum"
+
     type: str = schema_utils.ProtectedString(
         "weighted_sum",
         description=ENCODER_METADATA["H3WeightedSum"]["type"].long_description,
@@ -198,6 +208,11 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 @register_encoder_config("rnn", H3)
 @dataclass(repr=False)
 class H3RNNConfig(BaseEncoderConfig):
+
+    @staticmethod
+    def module_name():
+        return "H3RNN"
+
     type: str = schema_utils.ProtectedString(
         "rnn",
         description=ENCODER_METADATA["H3RNN"]["type"].long_description,

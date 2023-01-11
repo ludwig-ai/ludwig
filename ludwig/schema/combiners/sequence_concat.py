@@ -13,6 +13,10 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class SequenceConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence concat combiner."""
 
+    @staticmethod
+    def module_name():
+        return "SequenceConcatCombiner"
+
     type: str = schema_utils.ProtectedString(
         "sequence_concat",
         description=COMBINER_METADATA["SequenceConcatCombiner"]["type"].long_description,

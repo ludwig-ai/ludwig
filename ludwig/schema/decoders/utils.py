@@ -53,18 +53,13 @@ def get_decoder_descriptions(feature_type: str):
         dict: A dictionary of decoder descriptions
     """
     output = {}
-
-    # Get valid decoder dictionary with following structure:
-    #       key - name of decoder config class altered to match metadata class names,
-    #       value - registered name of decoder
     valid_decoders = {
-        cls.__name__.replace("Config", ""): registered_name
+        cls.module_name(): registered_name
         for registered_name, cls in get_decoder_classes(feature_type).items()
     }
 
-    # Get decoder metadata entries for the valid decoders
     for k, v in DECODER_METADATA.items():
-        if any([k == name for name in valid_decoders]) and not isinstance(v, ParameterMetadata):
+        if k in valid_decoders.keys():
             output[valid_decoders[k]] = convert_metadata_to_json(v[TYPE])
 
     return output

@@ -11,6 +11,11 @@ from ludwig.schema.metadata import COMBINER_METADATA
 @DeveloperAPI
 @dataclass(order=True, repr=False)
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
+
+    @staticmethod
+    def module_name():
+        return "ProjectAggregateCombiner"
+
     type: str = schema_utils.ProtectedString(
         "project_aggregate",
         description=COMBINER_METADATA["ProjectAggregateCombiner"]["type"].long_description,

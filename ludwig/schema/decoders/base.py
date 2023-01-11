@@ -62,6 +62,10 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
+    @classmethod
+    def module_name(cls):
+        return "PassthroughDecoder"
+
     type: str = schema_utils.ProtectedString(
         "passthrough",
         description="The passthrough decoder simply returns the raw numerical values coming from the combiner as "
@@ -79,6 +83,10 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 @dataclass(repr=False)
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
+
+    @classmethod
+    def module_name(cls):
+        return "Regressor"
 
     type: str = schema_utils.ProtectedString(
         "regressor",
@@ -114,6 +122,10 @@ class RegressorConfig(BaseDecoderConfig):
 @dataclass(repr=False)
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
+
+    @classmethod
+    def module_name(cls):
+        return "Projector"
 
     type: str = schema_utils.ProtectedString(
         "projector",
@@ -170,6 +182,11 @@ class ProjectorConfig(BaseDecoderConfig):
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
+
+    @classmethod
+    def module_name(cls):
+        return "Classifier"
+
     type: str = schema_utils.ProtectedString(
         "classifier",
         description=DECODER_METADATA["Classifier"]["type"].long_description,

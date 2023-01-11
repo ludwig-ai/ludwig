@@ -53,18 +53,13 @@ def get_encoder_descriptions(feature_type: str):
          dict: A dictionary of encoder descriptions
     """
     output = {}
-
-    # Get valid encoder dictionary with following structure:
-    #       key - name of encoder config class altered to match metadata class names,
-    #       value - registered name of encoder
     valid_encoders = {
-        cls.__name__.replace("Config", ""): registered_name
+        cls.module_name(): registered_name
         for registered_name, cls in get_encoder_classes(feature_type).items()
     }
 
-    # Get encoder metadata entries for the valid encoders
     for k, v in ENCODER_METADATA.items():
-        if any([k == name for name in valid_encoders]) and not isinstance(v, ParameterMetadata):
+        if k in valid_encoders.keys():
             output[valid_encoders[k]] = convert_metadata_to_json(v[TYPE])
 
     return output

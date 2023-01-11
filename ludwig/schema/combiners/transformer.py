@@ -14,6 +14,10 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class TransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for transformer combiner."""
 
+    @staticmethod
+    def module_name():
+        return "TransformerCombiner"
+
     type: str = schema_utils.ProtectedString(
         "transformer",
         description=COMBINER_METADATA["TransformerCombiner"]["type"].long_description,

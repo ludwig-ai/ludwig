@@ -13,6 +13,10 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
 
+    @staticmethod
+    def module_name():
+        return "TabNetCombiner"
+
     type: str = schema_utils.ProtectedString(
         "tabnet",
         description=COMBINER_METADATA["TabNetCombiner"]["type"].long_description,

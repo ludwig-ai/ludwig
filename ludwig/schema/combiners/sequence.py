@@ -16,6 +16,10 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
+    @staticmethod
+    def module_name():
+        return "SequenceCombiner"
+
     type: str = schema_utils.ProtectedString(
         "sequence",
         description=COMBINER_METADATA["SequenceCombiner"]["type"].long_description,

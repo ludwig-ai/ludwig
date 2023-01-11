@@ -399,12 +399,14 @@ def test_encoder_descriptions():
 
     for feature_schema in schema["items"]["allOf"]:
         type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
+        assert len(set(type_data["enumDescriptions"].keys())) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
 
 
 def test_combiner_descriptions():
     combiner_json_schema = get_combiner_jsonschema()
     type_data = combiner_json_schema["properties"]["type"]
+    assert len(set(type_data["enumDescriptions"].keys())) > 0
     assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
 
 
@@ -413,4 +415,5 @@ def test_decoder_descriptions():
 
     for feature_schema in schema["items"]["allOf"]:
         type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
+        assert len(type_data["enumDescriptions"].keys()) > 0
         assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))

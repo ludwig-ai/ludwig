@@ -13,6 +13,10 @@ from ludwig.schema.metadata import COMBINER_METADATA
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
+    @staticmethod
+    def module_name():
+        return "ComparatorCombiner"
+
     type: str = schema_utils.ProtectedString(
         "comparator",
         description=COMBINER_METADATA["ComparatorCombiner"]["type"].long_description,
