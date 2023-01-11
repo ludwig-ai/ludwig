@@ -150,5 +150,9 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
 @DeveloperAPI
 @defaults_config_registry.register(NUMBER)
 @dataclass
-class NumberDefaultsConfig(ECDNumberInputFeatureConfig, NumberOutputFeatureConfigMixin):
-    pass
+class NumberDefaultsConfig(NumberInputFeatureConfigMixin, NumberOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=NUMBER,
+        default="passthrough",
+    )

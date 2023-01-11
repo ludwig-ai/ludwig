@@ -55,26 +55,21 @@ def get_input_feature_jsonschema(model_type: str):
     """
     input_feature_types = sorted(list(input_config_registry(model_type).keys()))
     schema = {
-        "type": "array",
-        "minItems": 1,
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "title": "name", "description": "Name of the input feature."},
-                "type": {
-                    "type": "string",
-                    "enum": input_feature_types,
-                    "title": "type",
-                    "description": "Type of the input feature",
-                },
-                "column": {"type": "string", "title": "column", "description": "Name of the column."},
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "title": "name", "description": "Name of the input feature."},
+            "type": {
+                "type": "string",
+                "enum": input_feature_types,
+                "title": "type",
+                "description": "Type of the input feature",
             },
-            "additionalProperties": True,
-            "allOf": get_input_feature_conds(model_type),
-            "required": ["name", "type"],
-            "title": "input_features",
+            "column": {"type": "string", "title": "column", "description": "Name of the column."},
         },
-        "uniqueItemProperties": ["name"],
+        "additionalProperties": True,
+        "allOf": get_input_feature_conds(model_type),
+        "required": ["name", "type"],
+        "title": "input_feature",
     }
 
     return schema
@@ -108,30 +103,22 @@ def get_output_feature_jsonschema(model_type: str):
     """
     output_feature_types = sorted(list(output_config_registry.keys()))
     schema = {
-        "type": "array",
-        "minItems": 1,
-        "items": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "title": "name", "description": "Name of the output feature."},
-                "type": {
-                    "type": "string",
-                    "enum": output_feature_types,
-                    "title": "type",
-                    "description": "Type of the output feature",
-                },
-                "column": {"type": "string", "title": "column", "description": "Name of the column."},
+        "type": "object",
+        "properties": {
+            "name": {"type": "string", "title": "name", "description": "Name of the output feature."},
+            "type": {
+                "type": "string",
+                "enum": output_feature_types,
+                "title": "type",
+                "description": "Type of the output feature",
             },
-            "additionalProperties": True,
-            "allOf": get_output_feature_conds(),
-            "required": ["name", "type"],
-            "title": "output_features",
+            "column": {"type": "string", "title": "column", "description": "Name of the column."},
         },
+        "additionalProperties": True,
+        "allOf": get_output_feature_conds(),
+        "required": ["name", "type"],
+        "title": "output_feature",
     }
-
-    if model_type == MODEL_GBM:
-        prune_gbm_features(schema)
-        schema["maxItems"] = 1
 
     return schema
 

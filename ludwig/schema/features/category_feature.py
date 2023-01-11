@@ -135,5 +135,9 @@ class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeature
 @DeveloperAPI
 @defaults_config_registry.register(CATEGORY)
 @dataclass
-class CategoryDefaultsConfig(ECDCategoryInputFeatureConfig, CategoryOutputFeatureConfigMixin):
-    pass
+class CategoryDefaultsConfig(CategoryInputFeatureConfigMixin, CategoryOutputFeatureConfigMixin):
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=CATEGORY,
+        default="dense",
+    )

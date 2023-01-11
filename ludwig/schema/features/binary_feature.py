@@ -134,6 +134,10 @@ class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConf
 @DeveloperAPI
 @defaults_config_registry.register(BINARY)
 @dataclass
-class BinaryDefaultsConfig(ECDBinaryInputFeatureConfig, BinaryOutputFeatureConfigMixin):
+class BinaryDefaultsConfig(BinaryInputFeatureConfigMixin, BinaryOutputFeatureConfigMixin):
     # NOTE(travis): defaults use ECD input feature as it contains all the encoders
-    pass
+    encoder: BaseEncoderConfig = EncoderDataclassField(
+        MODEL_ECD,
+        feature_type=BINARY,
+        default="passthrough",
+    )
