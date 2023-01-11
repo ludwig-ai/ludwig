@@ -218,7 +218,7 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
     model = LudwigModel(config, backend=backend_config)
-    lgbm_model = GBM(ModelConfig(config))
+    lgbm_model = GBM(ModelConfig.from_dict(config))
     trainer = LightGBMRayTrainer(GBMTrainerConfig(), lgbm_model)
 
     def create_dataset(model: LudwigModel, size: int) -> RayDataset:
