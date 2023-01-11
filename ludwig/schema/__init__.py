@@ -7,12 +7,7 @@ from jsonschema.validators import extend
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    MODEL_ECD,
-    MODEL_TYPE,
-    PREPROCESSING,
-    SPLIT,
-)
+from ludwig.constants import MODEL_ECD, MODEL_TYPE, PREPROCESSING, SPLIT
 from ludwig.schema import utils as schema_utils
 
 # TODO(travis): figure out why we need these imports to avoid circular import error
@@ -22,7 +17,6 @@ from ludwig.schema.features.utils import get_input_feature_jsonschema, get_outpu
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema  # noqa
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema  # noqa
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema  # noqa
-
 
 VALIDATION_LOCK = Lock()
 
