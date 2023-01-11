@@ -12,7 +12,6 @@ from ludwig.schema.metadata import ENCODER_METADATA
 @register_encoder_config("passthrough", BINARY)
 @dataclass(repr=False)
 class BinaryPassthroughEncoderConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "BinaryPassthroughEncoder"

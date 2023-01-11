@@ -14,7 +14,6 @@ from ludwig.schema.metadata import ENCODER_METADATA
 @register_encoder_config("embed", SET)
 @dataclass(repr=False)
 class SetSparseEncoderConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "SetSparseEncoder"

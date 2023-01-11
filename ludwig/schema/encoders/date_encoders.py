@@ -14,7 +14,6 @@ from ludwig.schema.metadata import ENCODER_METADATA
 @register_encoder_config("embed", DATE)
 @dataclass(repr=False)
 class DateEmbedConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "DateEmbed"
@@ -105,7 +104,6 @@ class DateEmbedConfig(BaseEncoderConfig):
 @register_encoder_config("wave", DATE)
 @dataclass(repr=False)
 class DateWaveConfig(BaseEncoderConfig):
-
     @staticmethod
     def module_name():
         return "DateWave"

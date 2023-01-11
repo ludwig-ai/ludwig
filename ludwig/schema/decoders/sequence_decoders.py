@@ -12,7 +12,6 @@ from ludwig.schema.metadata import DECODER_METADATA
 @register_decoder_config("generator", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
-
     @staticmethod
     def module_name():
         return "SequenceGeneratorDecoder"
@@ -66,7 +65,6 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 @register_decoder_config("tagger", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
-
     @classmethod
     def module_name(cls):
         return "SequenceTaggerDecoder"

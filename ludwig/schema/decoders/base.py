@@ -182,7 +182,6 @@ class ProjectorConfig(BaseDecoderConfig):
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
-
     @classmethod
     def module_name(cls):
         return "Classifier"
