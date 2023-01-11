@@ -2,7 +2,7 @@ from functools import lru_cache
 from threading import Lock
 
 import jsonschema.exceptions
-from jsonschema import Draft7Validator, validate, _utils
+from jsonschema import _utils, Draft7Validator, validate
 from jsonschema.validators import extend
 from marshmallow import ValidationError
 
