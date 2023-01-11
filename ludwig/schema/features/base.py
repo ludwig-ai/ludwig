@@ -3,7 +3,7 @@ from abc import abstractmethod
 from dataclasses import Field, field
 from typing import Any, Dict, Generic, Iterable, List, Optional, Tuple, TypeVar
 
-from marshmallow import fields
+from marshmallow import fields, validate
 from marshmallow_dataclass import dataclass
 from rich.console import Console
 
@@ -216,9 +216,31 @@ class FeatureList(fields.List):
 
 
 class FeaturesTypeSelection(schema_utils.TypeSelection):
+    def __init__(self, *args, min_length: Optional[int] = 1, max_length: Optional[int] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.min_length = min_length
+        self.max_length = max_length
+
     def get_list_field(self) -> Field:
+        min_length = self.min_length
+        max_length = self.max_length
+        equal = None
+        if min_length == max_length:
+            min_length = None
+            max_length = None
+            equal = self.max_length
+
         return field(
-            metadata={"marshmallow_field": FeatureList(self)},
+            metadata={
+                "marshmallow_field": FeatureList(
+                    self,
+                    validate=validate.Length(
+                        min=min_length,
+                        max=max_length,
+                        equal=equal,
+                    ),
+                )
+            },
         )
 
 
@@ -251,7 +273,7 @@ class ECDOutputFeatureSelection(FeaturesTypeSelection):
 
 class GBMOutputFeatureSelection(FeaturesTypeSelection):
     def __init__(self):
-        super().__init__(registry=output_config_registry, description="Type of the output feature")
+        super().__init__(max_length=1, registry=output_config_registry, description="Type of the output feature")
 
     @staticmethod
     def _jsonschema_type_mapping():

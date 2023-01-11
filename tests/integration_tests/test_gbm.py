@@ -8,7 +8,7 @@ try:
     import ray as _ray
 except ImportError:
     _ray = None
-from jsonschema.exceptions import ValidationError
+from marshmallow import ValidationError
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
