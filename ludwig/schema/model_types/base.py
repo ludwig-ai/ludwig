@@ -22,6 +22,7 @@ from ludwig.schema.model_types.utils import (
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.trainer import BaseTrainerConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.data_utils import load_yaml
 from ludwig.utils.registry import Registry
 
 model_type_schema_registry = Registry()
@@ -74,6 +75,10 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
         set_validation_parameters(config_obj)
 
         return config_obj
+
+    @staticmethod
+    def from_yaml(config_path: str) -> "ModelConfig":
+        return ModelConfig.from_dict(load_yaml(config_path))
 
 
 @DeveloperAPI

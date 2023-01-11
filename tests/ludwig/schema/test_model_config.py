@@ -549,7 +549,7 @@ def test_convert_submodules():
 
     config_obj = ModelConfig.from_dict(config)
     trainer = convert_submodules(config_obj.trainer.__dict__)
-    input_features = list(convert_submodules(config_obj.input_features.__dict__).values())
+    input_features = config_obj.input_features.to_list()
 
     assert not isinstance(trainer[OPTIMIZER], BaseMarshmallowConfig)
     assert not isinstance(input_features[0][PREPROCESSING], BaseMarshmallowConfig)
@@ -606,6 +606,6 @@ def test_initializer_recursion():
         "combiner": {"type": "concat", "weights_initializer": {"type": "normal", "stddev": 0}},
     }
 
-    config_obj = ModelConfig(config)
+    config_obj = ModelConfig.from_dict(config)
 
     assert isinstance(config_obj.combiner.weights_initializer, dict)
