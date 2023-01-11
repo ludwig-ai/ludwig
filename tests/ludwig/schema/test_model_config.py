@@ -254,7 +254,7 @@ def test_update_config_object():
         ],
     }
 
-    config_object.update_with_dict(temp_config)
+    config_object = ModelConfig.from_dict(temp_config)
 
     assert config_object.input_features.text_feature.encoder.max_sequence_length == 10
 
@@ -299,6 +299,16 @@ def test_config_object_validation_parameters_multiple_output_features():
 
     assert config_object.trainer.validation_field == "text_output_feature"
     assert config_object.trainer.validation_metric == TextOutputFeatureConfig.default_validation_metric
+
+    # swap features
+    tmp = config["output_features"][0]
+    config["output_features"][0] = config["output_features"][1]
+    config["output_features"][1] = tmp
+
+    config_object = ModelConfig.from_dict(config)
+
+    assert config_object.trainer.validation_field == "number_output_feature"
+    assert config_object.trainer.validation_metric == NumberOutputFeatureConfig.default_validation_metric
 
 
 def test_config_object_validation_parameters_explicitly_set_validation_field():

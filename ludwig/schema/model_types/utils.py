@@ -100,43 +100,55 @@ def set_validation_parameters(config: "ModelConfig"):
     if not config.output_features:
         return
 
-    # The user has explicitly set validation_field. Don't override any validation parameters.
-    if config.trainer.validation_field:
-        # TODO(Justin): Validate that validation_field is valid.
+    # First set the validation field so we know what feature we're validating on
+    if not config.trainer.validation_field:
+        if config.trainer.validation_metric is None or config.trainer.validation_metric == LOSS:
+            # Loss is valid for all features.
+            config.trainer.validation_field = config.output_features[0].name
+        else:
+            # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
+            # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
+            feature_to_metric_names_map = get_feature_to_metric_names_map(config.output_features)
+            validation_field = None
+            for feature_name, metric_names in feature_to_metric_names_map.items():
+                if config.trainer.validation_metric in metric_names:
+                    if validation_field is None:
+                        validation_field = feature_name
+                    else:
+                        raise ValidationError(
+                            f"The validation_metric: '{config.trainer.validation_metric}' corresponds to multiple "
+                            f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
+                            "specify the validation_field that should be used with the validation_metric "
+                            f"'{config.trainer.validation_metric}'."
+                        )
+            if validation_field is None:
+                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
+
+            config.trainer.validation_field = validation_field
+
+    # If the field is combined, then make sure the metric is loss and then return
+    if config.trainer.validation_field == COMBINED:
+        # Only loss is supported for combined
+        if not config.trainer.validation_metric:
+            config.trainer.validation_metric = LOSS
+        elif config.trainer.validation_metric != LOSS:
+            raise ValidationError(
+                f"Must set validation_metric=loss when validation_field=combined, "
+                f"found validation_metric={config.trainer.validation_metric}"
+            )
         return
 
-    # The user has not explicitly set the validation_metric.
+    # Field is not combined, so use the default validation metric for the single feature
+    validation_features = [f for f in config.output_features if f.name == config.trainer.validation_field]
+    if len(validation_features) != 1:
+        raise ValidationError(f"No output feature found matching validation field: {config.trainer.validation_field}")
+
+    validation_feature = validation_features[0]
     if not config.trainer.validation_metric:
         # The user has not explicitly set any validation fields.
         # Default to using the first output feature's default validation metric.
-        config.trainer.validation_field = config.output_features[0].name
-        out_type = config.output_features[0].type
+        out_type = validation_feature.type
         config.trainer.validation_metric = output_config_registry[out_type].default_validation_metric
-
-    # The user has explicitly set the validation_metric.
-    # Loss is valid for all features.
-    if config.trainer.validation_metric == LOSS:
-        return
-
-    # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
-    # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
-    feature_to_metric_names_map = get_feature_to_metric_names_map(config.output_features)
-    validation_field = None
-    for feature_name, metric_names in feature_to_metric_names_map.items():
-        if config.trainer.validation_metric in metric_names:
-            if validation_field is None:
-                validation_field = feature_name
-            else:
-                raise ValidationError(
-                    f"The validation_metric: '{config.trainer.validation_metric}' corresponds to multiple "
-                    f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
-                    "specify the validation_field that should be used with the validation_metric "
-                    f"'{config.trainer.validation_metric}'."
-                )
-    if validation_field is None:
-        raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
-
-    config.trainer.validation_field = validation_field
 
 
 def get_feature_to_metric_names_map(

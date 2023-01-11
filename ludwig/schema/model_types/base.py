@@ -68,7 +68,6 @@ class ModelConfig(schema_utils.BaseMarshmallowConfig, ABC):
             )
         cls = model_type_schema_registry[model_type]
         schema = marshmallow_dataclass.class_schema(cls)()
-
         config_obj = schema.load(config)
 
         # TODO(travis): do this post-processing stuff at the dict level before we load

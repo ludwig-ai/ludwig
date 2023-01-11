@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from dataclasses import field, Field, MISSING
+from dataclasses import field, Field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
@@ -1069,11 +1069,12 @@ class TypeSelection(fields.Field):
 
         dump_default = missing
         load_default = missing
+        self.default_factory = None
         if self.default_value is not None:
             default_obj = {key: default_value}
             cls = self.get_schema_from_registry(self.default_value.lower())
-            load_default = cls.Schema()
-            load_default = load_default.load(default_obj)
+            self.default_factory = lambda: cls.Schema().load(default_obj)
+            load_default = self.default_factory
             dump_default = cls.Schema().dump(default_obj)
 
         super().__init__(
@@ -1102,9 +1103,9 @@ class TypeSelection(fields.Field):
         return self.registry[key]
 
     def get_default_field(self) -> Field:
-        default_factory = MISSING
-        if self.load_default is not missing:
-            default_factory = lambda: self.load_default
+        default_factory = lambda: None
+        if self.default_factory is not None:
+            default_factory = self.default_factory
 
         return field(
             metadata={"marshmallow_field": self},
@@ -1125,10 +1126,11 @@ class DictMarshmallowField(fields.Field):
 
         dump_default = missing
         load_default = missing
+        self.default_factory = None
         if not default_missing:
             default_obj = {}
-            load_default = cls.Schema()
-            load_default = load_default.load(default_obj)
+            self.default_factory = lambda: cls.Schema().load(default_obj)
+            load_default = self.default_factory
             dump_default = cls.Schema().dump(default_obj)
 
         super().__init__(
@@ -1151,8 +1153,8 @@ class DictMarshmallowField(fields.Field):
 
     def get_default_field(self) -> Field:
         default_factory = lambda: None
-        if self.load_default is not missing:
-            default_factory = lambda: self.load_default
+        if self.default_factory is not None:
+            default_factory = self.default_factory
 
         return field(
             metadata={"marshmallow_field": self},
