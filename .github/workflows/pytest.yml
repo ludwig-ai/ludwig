@@ -32,11 +32,11 @@ jobs:
           - python-version: 3.8
             pytorch-version: 1.12.1
             torchscript-version: 1.10.2
-            ray-version: 2.0.0 # TODO: Upgrade to 2.1.0.
+            ray-version: 2.1.0
           - python-version: 3.9
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 2.0.0 # TODO: Upgrade to nightly.
+            ray-version: 2.1.0  # TODO: Upgrade to nightly.
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -126,10 +126,9 @@ jobs:
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
               pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
-
-              # NOTE: Pinned Ray nightly version to September 20, 2022 to get tests to pass
-              # pip install https://s3-us-west-2.amazonaws.com/ray-wheels/master/fa182d3c9e478ef4c169ccf7459764768996110f/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
             else
+              # installing `six` early resolves ModuleNotFound error in ray==2.1.0
+              pip install six
               pip install ray==$RAY_VERSION
             fi
             ray_expected=$(python -c "import ray; print(ray.__version__)")

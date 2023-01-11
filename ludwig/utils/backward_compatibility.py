@@ -184,6 +184,13 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
     if "last_improvement" in ret:
         del ret["last_improvement"]
 
+    # Delete learning-rate related fields removed in https://github.com/ludwig-ai/ludwig/pull/2877.
+    if "best_reduce_learning_rate_eval_metric" in ret:
+        del ret["best_reduce_learning_rate_eval_metric"]
+
+    if "last_reduce_learning_rate_eval_metric_improvement" in ret:
+        del ret["last_reduce_learning_rate_eval_metric_improvement"]
+
     return ret
 
 
