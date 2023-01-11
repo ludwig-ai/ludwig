@@ -257,7 +257,7 @@ class ProgressTracker:
 
 
 def add_metrics_to_printed_table(
-    printed_table: List,
+    printed_table: Dict[str, List],
     metrics_log: Dict[str, Dict[str, TrainerMetric]],
     split_name: str,
 ):
