@@ -7,7 +7,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import DECODER_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 from ludwig.utils.registry import Registry
 
 decoder_config_registry = Registry()
