@@ -41,12 +41,12 @@ def get_metric_registry() -> Registry:
 
 
 @DeveloperAPI
-def get_metric(metric_name: str) -> "LudwigMetric": # noqa
+def get_metric(metric_name: str) -> "LudwigMetric":  # noqa
     return get_metric_registry()[metric_name]
 
 
 @DeveloperAPI
-def get_metrics_for_type(feature_type: str) -> Dict[str, "LudwigMetric"]: # noqa
+def get_metrics_for_type(feature_type: str) -> Dict[str, "LudwigMetric"]:  # noqa
     return get_metric_feature_type_registry()[feature_type]
 
 

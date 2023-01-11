@@ -95,9 +95,7 @@ def get_metric_names(output_features: Dict[str, "OutputFeature"]) -> Dict[str, L
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {}
     for output_feature_name, output_feature in output_features.items():
-        metrics_names[output_feature_name] = sorted(
-            list(get_metric_names_for_type(output_feature.type()))
-        )
+        metrics_names[output_feature_name] = sorted(list(get_metric_names_for_type(output_feature.type())))
     # Add combined loss.
     metrics_names[COMBINED] = [LOSS]
     return metrics_names
