@@ -2,7 +2,7 @@ from functools import lru_cache
 from threading import Lock
 
 import jsonschema.exceptions
-from jsonschema import Draft7Validator, validate
+from jsonschema import Draft7Validator, validate, _utils
 from jsonschema.validators import extend
 from marshmallow import ValidationError
 
@@ -87,4 +87,8 @@ def validate_config(config):
             error = e
 
     if error is not None:
-        raise ValidationError(f"Failed to validate JSON schema for config. Error: {error.message}")
+        instance_path = _utils.format_as_index(
+            container=error._word_for_instance_in_error_message,
+            indices=error.relative_path,
+        )
+        raise ValidationError(f"Failed to validate schema for config at {instance_path}. Error: {error.message}")

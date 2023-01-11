@@ -102,7 +102,7 @@ def test_config_features():
         }
 
         dtype = input_feature["type"]
-        with pytest.raises(ValidationError, match=rf"^'{dtype}' is not one of .*"):
+        with pytest.raises(ValidationError, match=rf"'{dtype}' is not one of .*"):
             validate_config(config)
 
 
@@ -163,7 +163,7 @@ def test_config_bad_feature_type():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
         validate_config(config)
 
 
@@ -174,7 +174,7 @@ def test_config_bad_encoder_name():
         "combiner": {"type": "concat", "output_size": 14},
     }
 
-    with pytest.raises(ValidationError, match=r"^'fake' is not one of .*"):
+    with pytest.raises(ValidationError, match=r"'fake' is not one of .*"):
         validate_config(config)
 
 

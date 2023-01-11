@@ -79,7 +79,7 @@ def get_hyperopt_jsonschema():
     props = schema_utils.unload_jsonschema_from_marshmallow_class(HyperoptConfig)["properties"]
 
     return {
-        "type": "object",
+        "type": ["object", "null"],
         "properties": props,
         "title": "hyperopt_options",
         "description": "Settings for hyperopt",

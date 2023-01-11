@@ -1150,7 +1150,11 @@ class DictMarshmallowField(fields.Field):
         raise ValidationError(f"Invalud param {value}, expected `None` or `dict`")
 
     def get_default_field(self) -> Field:
+        default_factory = lambda: None
+        if self.load_default is not missing:
+            default_factory = lambda: self.load_default
+
         return field(
             metadata={"marshmallow_field": self},
-            default_factory=lambda: self.load_default,
+            default_factory=default_factory,
         )
