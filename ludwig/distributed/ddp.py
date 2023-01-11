@@ -77,7 +77,9 @@ class DDPStrategy(DistributedStrategy):
 
     @classmethod
     def get_ray_trainer_backend(cls, **kwargs) -> Optional[Any]:
-        return "torch"
+        from ray.train.torch import TorchConfig
+
+        return TorchConfig()
 
     def shutdown(self):
         # TODO(travis): currently Ray handles this for us, but is subject to hangs if one of the workers raises an
