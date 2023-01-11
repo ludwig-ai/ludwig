@@ -146,7 +146,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = LRSchedulerConfig.Schema().load(default)
+    load_default = lambda: LRSchedulerConfig.Schema().load(default)
     dump_default = LRSchedulerConfig.Schema().dump(default)
 
     return field(
@@ -160,5 +160,5 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
                 },
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

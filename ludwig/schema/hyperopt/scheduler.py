@@ -507,7 +507,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = scheduler_config_registry[default["type"].lower()]
-        load_default = opt.Schema().load(default)
+        load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(
@@ -519,7 +519,7 @@ def SchedulerDataclassField(default={"type": "fifo"}, description="Hyperopt sche
                     metadata={"description": description},
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(

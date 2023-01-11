@@ -86,7 +86,7 @@ def ExecutorDataclassField(description: str, default: Dict = {}):
     if not isinstance(default, dict):
         raise ValidationError(f"Invalid default: `{default}`")
 
-    load_default = ExecutorConfig.Schema().load(default)
+    load_default = lambda: ExecutorConfig.Schema().load(default)
     dump_default = ExecutorConfig.Schema().dump(default)
 
     return field(
@@ -98,5 +98,5 @@ def ExecutorDataclassField(description: str, default: Dict = {}):
                 metadata={"description": description, "parameter_metadata": None},
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

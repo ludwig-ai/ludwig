@@ -397,8 +397,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
         raise ValidationError(f"Invalid default: `{default}`")
     try:
         opt = optimizer_registry[default["type"].lower()][1]
-        load_default = opt.Schema()
-        load_default = load_default.load(default)
+        load_default = lambda: opt.Schema().load(default)
         dump_default = opt.Schema().dump(default)
 
         return field(
@@ -410,7 +409,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
                     metadata={"description": description},
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(f"Unsupported optimizer type: {default['type']}. See optimizer_registry. Details: {e}")
@@ -489,5 +488,5 @@ def GradientClippingDataclassField(description: str, default: Dict = {}):
                 },
             )
         },
-        default_factory=lambda: load_default,
+        default_factory=load_default,
     )

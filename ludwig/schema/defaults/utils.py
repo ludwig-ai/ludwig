@@ -44,7 +44,7 @@ def DefaultsDataclassField(feature_type: str):
     try:
         defaults_cls = defaults_config_registry[feature_type]
         dump_default = defaults_cls.Schema().dump({"type": feature_type})
-        load_default = defaults_cls.Schema().load({"type": feature_type})
+        load_default = lambda: defaults_cls.Schema().load({"type": feature_type})
 
         return field(
             metadata={
@@ -54,7 +54,7 @@ def DefaultsDataclassField(feature_type: str):
                     load_default=load_default,
                 )
             },
-            default_factory=lambda: load_default,
+            default_factory=load_default,
         )
     except Exception as e:
         raise ValidationError(f"Unsupported feature type: {feature_type}. See input_type_registry. " f"Details: {e}")
