@@ -150,7 +150,7 @@ def test_server_integration_with_images(tmpdir):
         image_feature(
             folder=image_dest_folder,
             encoder={"output_size": 16, "num_filters": 8},
-            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
+            preprocessing={"in_memory": True, "height": 32, "width": 32, "num_channels": 3},
         ),
         text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),

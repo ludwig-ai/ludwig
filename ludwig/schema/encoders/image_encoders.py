@@ -284,7 +284,7 @@ class Stacked2DCNNEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("resnet", IMAGE)
+@register_encoder_config("resnet_legacy", IMAGE)
 @dataclass(repr=False)
 class ResNetEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
@@ -530,7 +530,7 @@ class MLPMixerEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("vit", IMAGE)
+@register_encoder_config("vit_legacy", IMAGE)
 @dataclass(repr=False)
 class ViTEncoderConfig(BaseEncoderConfig):
     type: str = schema_utils.ProtectedString(
