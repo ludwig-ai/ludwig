@@ -1,7 +1,7 @@
 ComparatorCombiner:
     type:
         short_description:
-            Compares the representation of two defined entities.
+            Used for recommendation problems, features associated with distinct entities, output depends on entity-level comparison.
         long_description:
             The comparator combiner compares the hidden representation of two entities defined by lists of "
             features. It assumes all outputs from encoders are tensors of size `b x h` where `b` is the batch
@@ -250,7 +250,7 @@ ComparatorCombiner:
 ConcatCombiner:
     type:
         short_description:
-            Concatenates the outputs of all the encoders.
+            Concatenates outputs of all encoders and passes concatenated representation through stack of fully connected layers.
         long_description:
             The concat combiner assumes all outputs from encoders are tensors of size `b x h` where `b` is
             the batch size and `h` is the hidden dimension, which can differ for each input. It
