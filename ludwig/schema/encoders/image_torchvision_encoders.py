@@ -37,10 +37,10 @@ class TVBaseEncoderConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("alexnet_torch", IMAGE)
+@register_encoder_config("alexnet", IMAGE)
 @dataclass
 class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("alexnet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("alexnet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["base"],
@@ -52,10 +52,10 @@ class TVAlexNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("convnext_torch", IMAGE)
+@register_encoder_config("convnext", IMAGE)
 @dataclass
 class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("convnext_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("convnext", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["tiny", "small", "base", "large"],
@@ -67,10 +67,10 @@ class TVConvNeXtEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("densenet_torch", IMAGE)
+@register_encoder_config("densenet", IMAGE)
 @dataclass
 class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("densenet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("densenet", description="Type of encoder.")
 
     model_variant: int = schema_utils.IntegerOptions(
         [121, 161, 169, 201],
@@ -82,10 +82,10 @@ class TVDenseNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("efficientnet_torch", IMAGE)
+@register_encoder_config("efficientnet", IMAGE)
 @dataclass
 class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("efficientnet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("efficientnet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -109,10 +109,10 @@ class TVEfficientNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("googlenet_torch", IMAGE)
+@register_encoder_config("googlenet", IMAGE)
 @dataclass
 class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("googlenet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("googlenet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["base"],
@@ -124,10 +124,10 @@ class TVGoogLeNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("inceptionv3_torch", IMAGE)
+@register_encoder_config("inceptionv3", IMAGE)
 @dataclass
 class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("inceptionv3_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("inceptionv3", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["base"],
@@ -139,10 +139,10 @@ class TVInceptionV3EncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("maxvit_torch", IMAGE)
+@register_encoder_config("maxvit", IMAGE)
 @dataclass
 class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("maxvit_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("maxvit", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["t"],
@@ -154,10 +154,10 @@ class TVMaxVitEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("mnasnet_torch", IMAGE)
+@register_encoder_config("mnasnet", IMAGE)
 @dataclass
 class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("mnasnet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("mnasnet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["0_5", "0_75", "1_0", "1_3"],
@@ -169,10 +169,10 @@ class TVMNASNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("mobilenetv2_torch", IMAGE)
+@register_encoder_config("mobilenetv2", IMAGE)
 @dataclass
 class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("mobilenetv2_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("mobilenetv2", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["base"],
@@ -184,10 +184,10 @@ class TVMobileNetV2EncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("mobilenetv3_torch", IMAGE)
+@register_encoder_config("mobilenetv3", IMAGE)
 @dataclass
 class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("mobilenetv3_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("mobilenetv3", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -202,10 +202,10 @@ class TVMobileNetV3EncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("regnet_torch", IMAGE)
+@register_encoder_config("regnet", IMAGE)
 @dataclass
 class TVRegNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("regnet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("regnet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -233,10 +233,10 @@ class TVRegNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("resnet_torch", IMAGE)
+@register_encoder_config("resnet", IMAGE)
 @dataclass
 class TVResNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("resnet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("resnet", description="Type of encoder.")
 
     model_variant: int = schema_utils.IntegerOptions(
         [18, 34, 50, 101, 152],
@@ -248,10 +248,10 @@ class TVResNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("resnext_torch", IMAGE)
+@register_encoder_config("resnext", IMAGE)
 @dataclass
 class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("resnext_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("resnext", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         ["50_32x4d", "101_32x8d", "101_64x4d"],
@@ -263,10 +263,10 @@ class TVResNeXtEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("shufflenet_v2_torch", IMAGE)
+@register_encoder_config("shufflenet_v2", IMAGE)
 @dataclass
 class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("shufflenet_v2_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("shufflenet_v2", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -283,10 +283,10 @@ class TVShuffleNetV2EncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("squeezenet_torch", IMAGE)
+@register_encoder_config("squeezenet", IMAGE)
 @dataclass
 class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("squeezenet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("squeezenet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -301,10 +301,10 @@ class TVSqueezeNetEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("swin_transformer_torch", IMAGE)
+@register_encoder_config("swin_transformer", IMAGE)
 @dataclass
 class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("swin_transformer_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("swin_transformer", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -320,10 +320,10 @@ class TVSwinTransformerEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("vit_torch", IMAGE)
+@register_encoder_config("vit", IMAGE)
 @dataclass
 class TVViTEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("vit_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("vit", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [
@@ -341,10 +341,10 @@ class TVViTEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("vgg_torch", IMAGE)
+@register_encoder_config("vgg", IMAGE)
 @dataclass
 class TVVGGEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("vgg_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("vgg", description="Type of encoder.")
 
     model_variant: Union[int, str] = schema_utils.OneOfOptionsField(
         default=11,
@@ -377,10 +377,10 @@ class TVVGGEncoderConfig(TVBaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("wide_resnet_torch", IMAGE)
+@register_encoder_config("wide_resnet", IMAGE)
 @dataclass
 class TVWideResNetEncoderConfig(TVBaseEncoderConfig):
-    type: str = schema_utils.ProtectedString("wide_resnet_torch", description="Type of encoder.")
+    type: str = schema_utils.ProtectedString("wide_resnet", description="Type of encoder.")
 
     model_variant: str = schema_utils.StringOptions(
         [

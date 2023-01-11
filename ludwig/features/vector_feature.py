@@ -118,14 +118,18 @@ class VectorFeatureMixin:
 
         # Determine vector size
         vector_size = backend.df_engine.compute(proc_df[feature_config[PROC_COLUMN]].map(len).max())
-        if "vector_size" in preprocessing_parameters:
-            if vector_size != preprocessing_parameters["vector_size"]:
+        vector_size_param = preprocessing_parameters.get("vector_size")
+        if vector_size_param is not None:
+            # TODO(travis): do we even need a user param for vector size if we're going to auto-infer it in all
+            # cases? Is this only useful as a sanity check for the user to make sure their data conforms to
+            # expectations?
+            if vector_size != vector_size_param:
                 raise ValueError(
                     "The user provided value for vector size ({}) does not "
                     "match the value observed in the data: {}".format(preprocessing_parameters, vector_size)
                 )
         else:
-            logger.debug(f"Observed vector size: {vector_size}")
+            logger.debug(f"Detected vector size: {vector_size}")
 
         metadata[feature_config[NAME]]["vector_size"] = vector_size
         return proc_df

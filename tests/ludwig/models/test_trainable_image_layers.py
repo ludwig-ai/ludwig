@@ -47,7 +47,7 @@ def test_trainable_torchvision_layers(setup_data, trainable):
                 "name": "image",
                 "type": "image",
                 "encoder": {
-                    "type": "resnet_torch",
+                    "type": "resnet",
                     "model_variant": 18,
                     "model_cache_dir": tv_cache,
                     "trainable": trainable,

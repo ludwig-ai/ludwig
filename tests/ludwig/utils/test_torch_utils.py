@@ -1,7 +1,7 @@
 import contextlib
 import os
 from typing import List
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 import torch
@@ -110,12 +110,8 @@ def test_initialize_pytorch_with_horovod(mock_torch):
     mock_torch.cuda.is_available.return_value = True
     mock_torch.cuda.device_count.return_value = 4
 
-    mock_hvd = Mock()
-    mock_hvd.local_rank.return_value = 1
-    mock_hvd.local_size.return_value = 4
-
     with clean_params():
-        initialize_pytorch(horovod=mock_hvd)
+        initialize_pytorch(local_rank=1, local_size=4)
 
     mock_torch.cuda.set_device.assert_called_with(1)
     assert "CUDA_VISIBLE_DEVICES" not in os.environ
@@ -128,12 +124,8 @@ def test_initialize_pytorch_with_horovod_bad_local_rank(mock_torch, mock_warning
     mock_torch.cuda.is_available.return_value = True
     mock_torch.cuda.device_count.return_value = 4
 
-    mock_hvd = Mock()
-    mock_hvd.local_rank.return_value = 1
-    mock_hvd.local_size.return_value = 5
-
     with clean_params():
-        initialize_pytorch(horovod=mock_hvd)
+        initialize_pytorch(local_rank=1, local_size=5)
 
     assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
     mock_warnings.warn.assert_called()
@@ -144,11 +136,7 @@ def test_initialize_pytorch_with_horovod_explicit_gpus(mock_torch):
     mock_torch.cuda.is_available.return_value = True
     mock_torch.cuda.device_count.return_value = 4
 
-    mock_hvd = Mock()
-    mock_hvd.local_rank.return_value = 1
-    mock_hvd.local_size.return_value = 4
-
     with clean_params():
-        initialize_pytorch(gpus="-1", horovod=mock_hvd)
+        initialize_pytorch(gpus="-1", local_rank=1, local_size=4)
 
     assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
