@@ -4,8 +4,8 @@ from ludwig.utils.state_dict_backward_compatibility import update_state_dict
 def test_update_transformer_module_keys():
     state_dict_with_old_keys = {
         "input_features.module_dict.sentence__ludwig.encoder_obj.transformer.embeddings.LayerNorm.bias": 0.0,
-        "module_dict.sentence__ludwig.encoder_obj.transformer.encoder.layer.0.attention.output.LayerNorm.weight": 0.0,
-        "input_features.module_dict.sentence__ludwig.encoder_obj.transformer.embeddings.word_embeddings.weight": 0.0,
+        "sentence__ludwig.encoder_obj.transformer.encoder.layer.0.attention.output.LayerNorm.weight": 0.0,
+        "module_dict.sentence__ludwig.encoder_obj.transformer.embeddings.word_embeddings.weight": 0.0,
     }
 
     expected_state_dict = {
