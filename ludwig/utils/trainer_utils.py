@@ -19,18 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-def initialize_printed_table(
-    output_features: Dict[str, "OutputFeature"],  # noqa
-) -> Dict:
-    """Returns an outline of a table data structure used for tabulation and logging."""
-    printed_table = OrderedDict()
-    for output_feature_name, output_feature in output_features.items():
-        printed_table[output_feature_name] = [[output_feature_name] + output_feature.metric_names]
-    printed_table[COMBINED] = [[COMBINED, LOSS]]
-    return printed_table
-
-
-@DeveloperAPI
 def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     """Returns a dict of dict of metrics, output_feature_name -> metric_name -> List[TrainerMetric]."""
     metrics = OrderedDict()
@@ -254,33 +242,6 @@ class ProgressTracker:
                 log_metrics[f"best.test_metrics.{feature_name}.{metric_name}"] = metric_value
 
         return log_metrics
-
-
-def add_metrics_to_printed_table(
-    printed_table: Dict[str, List],
-    metrics_log: Dict[str, Dict[str, TrainerMetric]],
-    split_name: str,
-):
-    """Add metrics to tables by the order of the table's metric header."""
-    for output_feature_name, output_feature_metrics in metrics_log.items():
-        printed_metrics = []
-        # [0]: The header is the first row, which contains names of metrics.
-        # [1:]: Skip the first column as it's just the name of the output feature, not an actual metric name.
-        for metric_name in printed_table[output_feature_name][0][1:]:
-            # Metrics may be missing if should_evaluate_train is False.
-            if metric_name in output_feature_metrics and output_feature_metrics[metric_name]:
-                printed_metrics.append(output_feature_metrics[metric_name][-1][-1])
-            else:
-                printed_metrics.append("")
-
-        # The printed table.
-        #    ╒════════════╤════════════╤══════════════════════════════════════╤═════════════╤══════════╤═══════════╕
-        #    │ Survived   │   accuracy │   binary_weighted_cross_entropy │   precision │   recall │   roc_auc │
-        #    ╞════════════╪════════════╪══════════════════════════════════════╪═════════════╪══════════╪═══════════╡
-        # -> │ train      │     0.6859 │                               4.0943 │      0.6149 │   0.3033 │    0.6309 │
-        #    ╘════════════╧════════════╧══════════════════════════════════════╧═════════════╧══════════╧═══════════╛
-        printed_table[output_feature_name].append([split_name] + printed_metrics)
-    return printed_table
 
 
 @DeveloperAPI

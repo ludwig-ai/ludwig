@@ -346,8 +346,6 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
             # TODO(shreya): Metrics should ideally just move to the correct device
             #  and not require the user to do this. This is a temporary fix. See
             #  if this can be removed before merging the PR.
-            print(f"Computing metrics for metric_fn: {metric_fn}")
-            print(f"predictions[prediction_key]: {predictions[prediction_key]}")
             metric_fn = metric_fn.to(predictions[prediction_key].device)
             metric_fn.update(predictions[prediction_key].detach(), targets)
 

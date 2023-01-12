@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import (
@@ -42,12 +41,11 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.trainer_utils import (
-    add_metrics_to_printed_table,
     append_metrics,
     get_latest_metrics_dict,
     get_new_progress_tracker,
-    initialize_printed_table,
     ProgressTracker,
 )
 
@@ -244,7 +242,7 @@ class LightGBMTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = initialize_printed_table(output_features)
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         if self.evaluate_training_set:
@@ -268,7 +266,7 @@ class LightGBMTrainer(BaseTrainer):
                     TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
                 )
 
-        printed_table = add_metrics_to_printed_table(printed_table, progress_tracker.train_metrics, TRAIN)
+        printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -288,7 +286,7 @@ class LightGBMTrainer(BaseTrainer):
                 progress_tracker,
             )
 
-            printed_table = add_metrics_to_printed_table(printed_table, validation_metrics_log, VALIDATION)
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -306,7 +304,7 @@ class LightGBMTrainer(BaseTrainer):
                 test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
 
-            printed_table = add_metrics_to_printed_table(printed_table, test_metrics_log, TEST)
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -320,8 +318,7 @@ class LightGBMTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in printed_table.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False

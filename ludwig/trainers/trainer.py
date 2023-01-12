@@ -30,7 +30,6 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import psutil
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
@@ -61,14 +60,13 @@ from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.trainer_utils import (
-    add_metrics_to_printed_table,
     append_metrics,
     get_final_steps_per_checkpoint,
     get_latest_metrics_dict,
     get_new_progress_tracker,
     get_total_steps,
-    initialize_printed_table,
     ProgressTracker,
 )
 
@@ -490,7 +488,7 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        printed_table = initialize_printed_table(output_features)
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
@@ -508,7 +506,7 @@ class Trainer(BaseTrainer):
             )
             self.model.reset_metrics()
 
-        printed_table = add_metrics_to_printed_table(printed_table, train_metrics_log, TRAIN)
+        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -528,7 +526,7 @@ class Trainer(BaseTrainer):
                 progress_tracker,
             )
 
-            printed_table = add_metrics_to_printed_table(printed_table, validation_metrics_log, VALIDATION)
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -546,7 +544,7 @@ class Trainer(BaseTrainer):
                 test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
 
-            printed_table = add_metrics_to_printed_table(printed_table, test_metrics_log, TEST)
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -560,8 +558,7 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in printed_table.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False
