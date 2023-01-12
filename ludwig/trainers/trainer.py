@@ -58,9 +58,9 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
-from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.trainer_utils import (
     append_metrics,
     get_final_steps_per_checkpoint,

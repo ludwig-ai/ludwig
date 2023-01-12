@@ -40,8 +40,8 @@ from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
-from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.metrics_printed_table import MetricsPrintedTable
+from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import (
     append_metrics,
     get_latest_metrics_dict,
