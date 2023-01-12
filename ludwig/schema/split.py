@@ -192,7 +192,12 @@ def SplitDataclassField(default: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(split_config_registry.data.keys()), "default": default},
+                    "type": {
+                        "type": "string",
+                        "description": "Type of splitting to use during preprocessing.",
+                        "enum": list(split_config_registry.data.keys()),
+                        "default": default,
+                    },
                 },
                 "title": "split_options",
                 "allOf": get_split_conds(),
