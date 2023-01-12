@@ -140,7 +140,11 @@ def set_validation_parameters(config: "ModelConfig"):
 
     # Field is not combined, so use the default validation metric for the single feature
     validation_features = [f for f in config.output_features if f.name == config.trainer.validation_field]
-    if len(validation_features) != 1:
+    if len(validation_features) > 1:
+        raise ValidationError(
+            f"Found more than one feature matching validation field: {config.trainer.validation_field}"
+        )
+    if len(validation_features) == 0:
         raise ValidationError(f"No output feature found matching validation field: {config.trainer.validation_field}")
 
     validation_feature = validation_features[0]

@@ -108,7 +108,7 @@ def test_experiment_seq_seq_generator(csv_filename, encoder):
 @pytest.mark.parametrize("encoder", ["embed", "rnn", "parallel_cnn", "stacked_parallel_cnn", "transformer"])
 def test_experiment_seq_seq_tagger(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "tagger"})]
+    output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     run_experiment(input_features, output_features, dataset=rel_path)
@@ -117,7 +117,7 @@ def test_experiment_seq_seq_tagger(csv_filename, encoder):
 @pytest.mark.parametrize("encoder", ["cnnrnn", "stacked_cnn"])
 def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_filename, encoder):
     input_features = [text_feature(encoder={"type": encoder, "reduce_output": None})]
-    output_features = [text_feature(decoder={"type": "tagger"})]
+    output_features = [text_feature(decoder={"type": "tagger"}, reduce_input=None)]
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     with pytest.raises(ValueError):
@@ -473,15 +473,16 @@ def test_experiment_dataset_formats(data_format, csv_filename):
 
     training_set_metadata = None
 
+    # define Ludwig model
+    model = LudwigModel(config=config)
+
     if data_format == "hdf5":
         # hdf5 format
-        training_set, _, _, training_set_metadata = preprocess_for_training(config, dataset=raw_data)
+        training_set, _, _, training_set_metadata = preprocess_for_training(model.config, dataset=raw_data)
         dataset_to_use = training_set.data_hdf5_fp
     else:
         dataset_to_use = create_data_set_to_use(data_format, raw_data)
 
-    # define Ludwig model
-    model = LudwigModel(config=config)
     model.train(dataset=dataset_to_use, training_set_metadata=training_set_metadata, random_seed=default_random_seed)
 
     # # run functions with the specified data format

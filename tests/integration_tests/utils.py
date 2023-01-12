@@ -576,8 +576,8 @@ def generate_output_features_with_dependencies_complex():
     )
 
     # The correct order ids[tf, sf, nf, vf, set_f, cf]
-    # # shuffling it to test the robustness of the topological sort
-    output_features = [nf, tf, set_f, vf, cf, sf, nf]
+    # shuffling it to test the robustness of the topological sort
+    output_features = [nf, tf, set_f, vf, cf, sf]
 
     return output_features
 
