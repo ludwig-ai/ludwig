@@ -9,7 +9,7 @@ tqdm
 torch>=1.13.1
 torchaudio
 torchtext
-torchvision>=0.14.0
+torchvision
 transformers>=4.10.1,<4.22
 spacy>=2.3
 PyYAML>=3.12
