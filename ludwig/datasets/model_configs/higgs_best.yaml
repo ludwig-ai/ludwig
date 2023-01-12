@@ -83,6 +83,7 @@ training:
   early_stop: 30
   optimizer:
     type: adam
-  decay: true
+  learning_rate_scheduler:
+    decay: exponential
   regularization_lambda: 1
   validation_field: label

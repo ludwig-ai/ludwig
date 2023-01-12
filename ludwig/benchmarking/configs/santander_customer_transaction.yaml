@@ -1,407 +1,407 @@
 output_features:
-- name: target
-  type: binary
+  - name: target
+    type: binary
 input_features:
-- name: var_0
-  type: number
-- name: var_1
-  type: number
-- name: var_2
-  type: number
-- name: var_3
-  type: number
-- name: var_4
-  type: number
-- name: var_5
-  type: number
-- name: var_6
-  type: number
-- name: var_7
-  type: number
-- name: var_8
-  type: number
-- name: var_9
-  type: number
-- name: var_10
-  type: number
-- name: var_11
-  type: number
-- name: var_12
-  type: number
-- name: var_13
-  type: number
-- name: var_14
-  type: number
-- name: var_15
-  type: number
-- name: var_16
-  type: number
-- name: var_17
-  type: number
-- name: var_18
-  type: number
-- name: var_19
-  type: number
-- name: var_20
-  type: number
-- name: var_21
-  type: number
-- name: var_22
-  type: number
-- name: var_23
-  type: number
-- name: var_24
-  type: number
-- name: var_25
-  type: number
-- name: var_26
-  type: number
-- name: var_27
-  type: number
-- name: var_28
-  type: number
-- name: var_29
-  type: number
-- name: var_30
-  type: number
-- name: var_31
-  type: number
-- name: var_32
-  type: number
-- name: var_33
-  type: number
-- name: var_34
-  type: number
-- name: var_35
-  type: number
-- name: var_36
-  type: number
-- name: var_37
-  type: number
-- name: var_38
-  type: number
-- name: var_39
-  type: number
-- name: var_40
-  type: number
-- name: var_41
-  type: number
-- name: var_42
-  type: number
-- name: var_43
-  type: number
-- name: var_44
-  type: number
-- name: var_45
-  type: number
-- name: var_46
-  type: number
-- name: var_47
-  type: number
-- name: var_48
-  type: number
-- name: var_49
-  type: number
-- name: var_50
-  type: number
-- name: var_51
-  type: number
-- name: var_52
-  type: number
-- name: var_53
-  type: number
-- name: var_54
-  type: number
-- name: var_55
-  type: number
-- name: var_56
-  type: number
-- name: var_57
-  type: number
-- name: var_58
-  type: number
-- name: var_59
-  type: number
-- name: var_60
-  type: number
-- name: var_61
-  type: number
-- name: var_62
-  type: number
-- name: var_63
-  type: number
-- name: var_64
-  type: number
-- name: var_65
-  type: number
-- name: var_66
-  type: number
-- name: var_67
-  type: number
-- name: var_68
-  type: number
-- name: var_69
-  type: number
-- name: var_70
-  type: number
-- name: var_71
-  type: number
-- name: var_72
-  type: number
-- name: var_73
-  type: number
-- name: var_74
-  type: number
-- name: var_75
-  type: number
-- name: var_76
-  type: number
-- name: var_77
-  type: number
-- name: var_78
-  type: number
-- name: var_79
-  type: number
-- name: var_80
-  type: number
-- name: var_81
-  type: number
-- name: var_82
-  type: number
-- name: var_83
-  type: number
-- name: var_84
-  type: number
-- name: var_85
-  type: number
-- name: var_86
-  type: number
-- name: var_87
-  type: number
-- name: var_88
-  type: number
-- name: var_89
-  type: number
-- name: var_90
-  type: number
-- name: var_91
-  type: number
-- name: var_92
-  type: number
-- name: var_93
-  type: number
-- name: var_94
-  type: number
-- name: var_95
-  type: number
-- name: var_96
-  type: number
-- name: var_97
-  type: number
-- name: var_98
-  type: number
-- name: var_99
-  type: number
-- name: var_100
-  type: number
-- name: var_101
-  type: number
-- name: var_102
-  type: number
-- name: var_103
-  type: number
-- name: var_104
-  type: number
-- name: var_105
-  type: number
-- name: var_106
-  type: number
-- name: var_107
-  type: number
-- name: var_108
-  type: number
-- name: var_109
-  type: number
-- name: var_110
-  type: number
-- name: var_111
-  type: number
-- name: var_112
-  type: number
-- name: var_113
-  type: number
-- name: var_114
-  type: number
-- name: var_115
-  type: number
-- name: var_116
-  type: number
-- name: var_117
-  type: number
-- name: var_118
-  type: number
-- name: var_119
-  type: number
-- name: var_120
-  type: number
-- name: var_121
-  type: number
-- name: var_122
-  type: number
-- name: var_123
-  type: number
-- name: var_124
-  type: number
-- name: var_125
-  type: number
-- name: var_126
-  type: number
-- name: var_127
-  type: number
-- name: var_128
-  type: number
-- name: var_129
-  type: number
-- name: var_130
-  type: number
-- name: var_131
-  type: number
-- name: var_132
-  type: number
-- name: var_133
-  type: number
-- name: var_134
-  type: number
-- name: var_135
-  type: number
-- name: var_136
-  type: number
-- name: var_137
-  type: number
-- name: var_138
-  type: number
-- name: var_139
-  type: number
-- name: var_140
-  type: number
-- name: var_141
-  type: number
-- name: var_142
-  type: number
-- name: var_143
-  type: number
-- name: var_144
-  type: number
-- name: var_145
-  type: number
-- name: var_146
-  type: number
-- name: var_147
-  type: number
-- name: var_148
-  type: number
-- name: var_149
-  type: number
-- name: var_150
-  type: number
-- name: var_151
-  type: number
-- name: var_152
-  type: number
-- name: var_153
-  type: number
-- name: var_154
-  type: number
-- name: var_155
-  type: number
-- name: var_156
-  type: number
-- name: var_157
-  type: number
-- name: var_158
-  type: number
-- name: var_159
-  type: number
-- name: var_160
-  type: number
-- name: var_161
-  type: number
-- name: var_162
-  type: number
-- name: var_163
-  type: number
-- name: var_164
-  type: number
-- name: var_165
-  type: number
-- name: var_166
-  type: number
-- name: var_167
-  type: number
-- name: var_168
-  type: number
-- name: var_169
-  type: number
-- name: var_170
-  type: number
-- name: var_171
-  type: number
-- name: var_172
-  type: number
-- name: var_173
-  type: number
-- name: var_174
-  type: number
-- name: var_175
-  type: number
-- name: var_176
-  type: number
-- name: var_177
-  type: number
-- name: var_178
-  type: number
-- name: var_179
-  type: number
-- name: var_180
-  type: number
-- name: var_181
-  type: number
-- name: var_182
-  type: number
-- name: var_183
-  type: number
-- name: var_184
-  type: number
-- name: var_185
-  type: number
-- name: var_186
-  type: number
-- name: var_187
-  type: number
-- name: var_188
-  type: number
-- name: var_189
-  type: number
-- name: var_190
-  type: number
-- name: var_191
-  type: number
-- name: var_192
-  type: number
-- name: var_193
-  type: number
-- name: var_194
-  type: number
-- name: var_195
-  type: number
-- name: var_196
-  type: number
-- name: var_197
-  type: number
-- name: var_198
-  type: number
-- name: var_199
-  type: number
+  - name: var_0
+    type: number
+  - name: var_1
+    type: number
+  - name: var_2
+    type: number
+  - name: var_3
+    type: number
+  - name: var_4
+    type: number
+  - name: var_5
+    type: number
+  - name: var_6
+    type: number
+  - name: var_7
+    type: number
+  - name: var_8
+    type: number
+  - name: var_9
+    type: number
+  - name: var_10
+    type: number
+  - name: var_11
+    type: number
+  - name: var_12
+    type: number
+  - name: var_13
+    type: number
+  - name: var_14
+    type: number
+  - name: var_15
+    type: number
+  - name: var_16
+    type: number
+  - name: var_17
+    type: number
+  - name: var_18
+    type: number
+  - name: var_19
+    type: number
+  - name: var_20
+    type: number
+  - name: var_21
+    type: number
+  - name: var_22
+    type: number
+  - name: var_23
+    type: number
+  - name: var_24
+    type: number
+  - name: var_25
+    type: number
+  - name: var_26
+    type: number
+  - name: var_27
+    type: number
+  - name: var_28
+    type: number
+  - name: var_29
+    type: number
+  - name: var_30
+    type: number
+  - name: var_31
+    type: number
+  - name: var_32
+    type: number
+  - name: var_33
+    type: number
+  - name: var_34
+    type: number
+  - name: var_35
+    type: number
+  - name: var_36
+    type: number
+  - name: var_37
+    type: number
+  - name: var_38
+    type: number
+  - name: var_39
+    type: number
+  - name: var_40
+    type: number
+  - name: var_41
+    type: number
+  - name: var_42
+    type: number
+  - name: var_43
+    type: number
+  - name: var_44
+    type: number
+  - name: var_45
+    type: number
+  - name: var_46
+    type: number
+  - name: var_47
+    type: number
+  - name: var_48
+    type: number
+  - name: var_49
+    type: number
+  - name: var_50
+    type: number
+  - name: var_51
+    type: number
+  - name: var_52
+    type: number
+  - name: var_53
+    type: number
+  - name: var_54
+    type: number
+  - name: var_55
+    type: number
+  - name: var_56
+    type: number
+  - name: var_57
+    type: number
+  - name: var_58
+    type: number
+  - name: var_59
+    type: number
+  - name: var_60
+    type: number
+  - name: var_61
+    type: number
+  - name: var_62
+    type: number
+  - name: var_63
+    type: number
+  - name: var_64
+    type: number
+  - name: var_65
+    type: number
+  - name: var_66
+    type: number
+  - name: var_67
+    type: number
+  - name: var_68
+    type: number
+  - name: var_69
+    type: number
+  - name: var_70
+    type: number
+  - name: var_71
+    type: number
+  - name: var_72
+    type: number
+  - name: var_73
+    type: number
+  - name: var_74
+    type: number
+  - name: var_75
+    type: number
+  - name: var_76
+    type: number
+  - name: var_77
+    type: number
+  - name: var_78
+    type: number
+  - name: var_79
+    type: number
+  - name: var_80
+    type: number
+  - name: var_81
+    type: number
+  - name: var_82
+    type: number
+  - name: var_83
+    type: number
+  - name: var_84
+    type: number
+  - name: var_85
+    type: number
+  - name: var_86
+    type: number
+  - name: var_87
+    type: number
+  - name: var_88
+    type: number
+  - name: var_89
+    type: number
+  - name: var_90
+    type: number
+  - name: var_91
+    type: number
+  - name: var_92
+    type: number
+  - name: var_93
+    type: number
+  - name: var_94
+    type: number
+  - name: var_95
+    type: number
+  - name: var_96
+    type: number
+  - name: var_97
+    type: number
+  - name: var_98
+    type: number
+  - name: var_99
+    type: number
+  - name: var_100
+    type: number
+  - name: var_101
+    type: number
+  - name: var_102
+    type: number
+  - name: var_103
+    type: number
+  - name: var_104
+    type: number
+  - name: var_105
+    type: number
+  - name: var_106
+    type: number
+  - name: var_107
+    type: number
+  - name: var_108
+    type: number
+  - name: var_109
+    type: number
+  - name: var_110
+    type: number
+  - name: var_111
+    type: number
+  - name: var_112
+    type: number
+  - name: var_113
+    type: number
+  - name: var_114
+    type: number
+  - name: var_115
+    type: number
+  - name: var_116
+    type: number
+  - name: var_117
+    type: number
+  - name: var_118
+    type: number
+  - name: var_119
+    type: number
+  - name: var_120
+    type: number
+  - name: var_121
+    type: number
+  - name: var_122
+    type: number
+  - name: var_123
+    type: number
+  - name: var_124
+    type: number
+  - name: var_125
+    type: number
+  - name: var_126
+    type: number
+  - name: var_127
+    type: number
+  - name: var_128
+    type: number
+  - name: var_129
+    type: number
+  - name: var_130
+    type: number
+  - name: var_131
+    type: number
+  - name: var_132
+    type: number
+  - name: var_133
+    type: number
+  - name: var_134
+    type: number
+  - name: var_135
+    type: number
+  - name: var_136
+    type: number
+  - name: var_137
+    type: number
+  - name: var_138
+    type: number
+  - name: var_139
+    type: number
+  - name: var_140
+    type: number
+  - name: var_141
+    type: number
+  - name: var_142
+    type: number
+  - name: var_143
+    type: number
+  - name: var_144
+    type: number
+  - name: var_145
+    type: number
+  - name: var_146
+    type: number
+  - name: var_147
+    type: number
+  - name: var_148
+    type: number
+  - name: var_149
+    type: number
+  - name: var_150
+    type: number
+  - name: var_151
+    type: number
+  - name: var_152
+    type: number
+  - name: var_153
+    type: number
+  - name: var_154
+    type: number
+  - name: var_155
+    type: number
+  - name: var_156
+    type: number
+  - name: var_157
+    type: number
+  - name: var_158
+    type: number
+  - name: var_159
+    type: number
+  - name: var_160
+    type: number
+  - name: var_161
+    type: number
+  - name: var_162
+    type: number
+  - name: var_163
+    type: number
+  - name: var_164
+    type: number
+  - name: var_165
+    type: number
+  - name: var_166
+    type: number
+  - name: var_167
+    type: number
+  - name: var_168
+    type: number
+  - name: var_169
+    type: number
+  - name: var_170
+    type: number
+  - name: var_171
+    type: number
+  - name: var_172
+    type: number
+  - name: var_173
+    type: number
+  - name: var_174
+    type: number
+  - name: var_175
+    type: number
+  - name: var_176
+    type: number
+  - name: var_177
+    type: number
+  - name: var_178
+    type: number
+  - name: var_179
+    type: number
+  - name: var_180
+    type: number
+  - name: var_181
+    type: number
+  - name: var_182
+    type: number
+  - name: var_183
+    type: number
+  - name: var_184
+    type: number
+  - name: var_185
+    type: number
+  - name: var_186
+    type: number
+  - name: var_187
+    type: number
+  - name: var_188
+    type: number
+  - name: var_189
+    type: number
+  - name: var_190
+    type: number
+  - name: var_191
+    type: number
+  - name: var_192
+    type: number
+  - name: var_193
+    type: number
+  - name: var_194
+    type: number
+  - name: var_195
+    type: number
+  - name: var_196
+    type: number
+  - name: var_197
+    type: number
+  - name: var_198
+    type: number
+  - name: var_199
+    type: number
 combiner:
   type: tabnet
   size: 8
@@ -419,9 +419,10 @@ trainer:
   learning_rate: 0.005
   optimizer:
     type: adam
-  decay: true
-  decay_steps: 20000
-  decay_rate: 0.95
+  learning_rate_scheduler:
+    decay: exponential
+    decay_steps: 20000
+    decay_rate: 0.95
   validation_metric: accuracy
 preprocessing:
   split:
