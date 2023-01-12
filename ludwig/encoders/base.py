@@ -15,7 +15,6 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.utils.torch_utils import LudwigModule
