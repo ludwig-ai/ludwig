@@ -1,4 +1,10 @@
 Classifier:
+    type:
+        short_description:
+            Projects combiner output to a vector the size of the number of available classes.
+        long_description:
+            The classifier decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection into a vector of size of the number of available classes, followed by a sigmoid.
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -87,6 +93,13 @@ Classifier:
             most tasks.
         ui_display_name: Layer Weights Initializer
 Projector:
+    type:
+        short_description:
+            Projects combiner output into an output vector.
+        long_description:
+            The Projector decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection into a tensor of the vector size (optionally followed by a softmax in the case of
+            multi-class classification).
     activation:
         description_implications:
             Changing the activation functions has an impact
@@ -207,6 +220,12 @@ Projector:
             most tasks.
         ui_display_name: Layer Weights Initializer
 Regressor:
+    type:
+        short_description:
+            Projects combiner output to a single number.
+        long_description:
+            The regressor decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection to a single number.
     activation:
         ui_display_name: null
     bias_initializer:
@@ -293,7 +312,36 @@ Regressor:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
+PassthroughDecoder:
+    type:
+        short_description:
+            Provides the raw input from the combiner.
+        long_description:
+            The passthrough decoder simply returns the raw output coming from the combiner.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
 SequenceGeneratorDecoder:
+    type:
+        short_description:
+            Generates a sequence by sampling from the model.
+        long_description:
+            The generator decoder is a (potentially empty) stack of fully connected layers, followed by an
+            RNN that generates outputs feeding on its own previous predictions and generates a tensor of
+            size `b x s' x c`, where `b` is the batch size, `s'` is the length of the generated sequence and
+            `c` is the number of classes, followed by a softmax_cross_entropy. During training teacher
+            forcing is adopted, meaning the list of targets is provided as both inputs and outputs (shifted
+            by 1), while at evaluation time greedy decoding (generating one token at a time and feeding it
+            as input for the next step) is performed by beam search, using a beam of 1 by default. In
+            general a generator expects a `b x h` shaped input tensor, where `h` is a hidden dimension. The
+            `h` vectors are (after an optional stack of fully connected layers) fed into the rnn generator.
+            One exception is when the generator uses attention, as in that case the expected size of the
+            input tensor is `b x s x h`, which is the output of a sequence, text or time series input
+            feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input
+            is provided to a generator decoder using an RNN with attention instead, an error will be raised
+            during model building.
     cell_type:
         ui_display_name: null
     input_size:
@@ -337,6 +385,17 @@ SequenceGeneratorDecoder:
     vocab_size:
         ui_display_name: Not displayed
 SequenceTaggerDecoder:
+    type:
+        short_description:
+            Used for classifying each element of an input sequence.
+        long_description:
+            The tagger decoder is a (potentially empty) stack of fully connected layers,
+            followed by a projection into a tensor of size `b x s x c`, where `b` is the batch size,
+            `s` is the length of the sequence and `c` is the number of classes, followed by a
+            softmax_cross_entropy. This decoder requires its input to be shaped as `b x s x h`, where `h` is
+            a hidden dimension, which is the output of a sequence, text or time series input feature without
+            reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided
+            instead, an error will be raised during model building.
     attention_embedding_size:
         default_value_reasoning: Not too big, not too small.
         description_implications:

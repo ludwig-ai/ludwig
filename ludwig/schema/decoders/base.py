@@ -62,7 +62,15 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
-    type: str = schema_utils.ProtectedString("passthrough", description="Type of decoder.")
+    @classmethod
+    def module_name(cls):
+        return "PassthroughDecoder"
+
+    type: str = schema_utils.ProtectedString(
+        "passthrough",
+        description="The passthrough decoder simply returns the raw numerical values coming from the combiner as "
+        "outputs",
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=1,
@@ -76,9 +84,13 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
+    @classmethod
+    def module_name(cls):
+        return "Regressor"
+
     type: str = schema_utils.ProtectedString(
         "regressor",
-        description="Type of decoder.",
+        description=DECODER_METADATA["Regressor"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -111,9 +123,13 @@ class RegressorConfig(BaseDecoderConfig):
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
+    @classmethod
+    def module_name(cls):
+        return "Projector"
+
     type: str = schema_utils.ProtectedString(
         "projector",
-        description="Type of decoder.",
+        description=DECODER_METADATA["Projector"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -166,9 +182,13 @@ class ProjectorConfig(BaseDecoderConfig):
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
+    @classmethod
+    def module_name(cls):
+        return "Classifier"
+
     type: str = schema_utils.ProtectedString(
         "classifier",
-        description="Type of decoder.",
+        description=DECODER_METADATA["Classifier"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(

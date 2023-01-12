@@ -29,6 +29,12 @@ class ExpectedImpact(int, Enum):
 class ParameterMetadata:
     """Contains descriptive information that pertains to a Ludwig configuration parameter."""
 
+    # Quick description generally for UI display
+    short_description: str = ""
+
+    # In depth description generally for documentation purposes.
+    long_description: str = ""
+
     # How this parameter can be displayed in a human-readable form.
     ui_display_name: Union[str, None] = ""
 

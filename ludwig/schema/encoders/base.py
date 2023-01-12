@@ -7,6 +7,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, MODEL_ECD, MODEL_GBM, NUMBER, VECTOR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.utils import register_encoder_config
+from ludwig.schema.metadata import ENCODER_METADATA
 
 
 @DeveloperAPI
@@ -30,9 +31,13 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""
 
+    @staticmethod
+    def module_name():
+        return "PassthroughEncoder"
+
     type: str = schema_utils.ProtectedString(
         "passthrough",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["PassthroughEncoder"]["type"].long_description,
     )
 
 
@@ -42,9 +47,13 @@ class PassthroughEncoderConfig(BaseEncoderConfig):
 class DenseEncoderConfig(BaseEncoderConfig):
     """DenseEncoderConfig is a dataclass that configures the parameters used for a dense encoder."""
 
+    @staticmethod
+    def module_name():
+        return "DenseEncoder"
+
     type: str = schema_utils.ProtectedString(
         "dense",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["DenseEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
