@@ -31,7 +31,6 @@ from ludwig.constants import (
     PROC_COLUMN,
     PROJECTION_INPUT,
 )
-from ludwig.error import InputDataError
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature, OutputFeature, PredictModule
 from ludwig.schema.features.category_feature import CategoryInputFeatureConfig, CategoryOutputFeatureConfig
 from ludwig.types import (
@@ -128,10 +127,11 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
         vocab_size = len(str2idx)
-        if vocab_size <= 1:
-            raise InputDataError(
-                column.name, CATEGORY, f"At least 2 distinct values are required, column only contains {str(idx2str)}"
-            )
+        # We permit vocab_size = 1.
+        # if vocab_size <= 1:
+        #     raise InputDataError(
+        #         column.name, CATEGORY, f"At least 2 distinct values are required, column only contains {str(idx2str)}"
+        #     )
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 
     @staticmethod
