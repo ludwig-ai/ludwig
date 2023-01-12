@@ -391,11 +391,17 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     config["input_features"][0]["preprocessing"]["in_memory"] = train_in_memory
     training_set_metadata = None
 
+    # define Ludwig model
     backend = LocalTestBackend()
+    model = LudwigModel(
+        config=config,
+        backend=backend,
+    )
+
     if train_format == "hdf5":
         # hdf5 format
         train_set, _, _, training_set_metadata = preprocess_for_training(
-            config,
+            model.config,
             dataset=train_data,
             backend=backend,
         )
@@ -403,11 +409,6 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
     else:
         train_dataset_to_use = create_data_set_to_use(train_format, train_data)
 
-    # define Ludwig model
-    model = LudwigModel(
-        config=config,
-        backend=backend,
-    )
     model.train(dataset=train_dataset_to_use, training_set_metadata=training_set_metadata)
 
     model.config_obj.input_features.to_list()[0]["preprocessing"]["in_memory"] = test_in_memory
