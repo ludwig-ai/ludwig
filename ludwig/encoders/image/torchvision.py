@@ -8,9 +8,9 @@ import torchvision.models as tvm
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
-from ludwig.encoders.image_encoders import ImageEncoder
+from ludwig.encoders.image.base import ImageEncoder
 from ludwig.encoders.registry import register_encoder
-from ludwig.schema.encoders.image_torchvision_encoders import (
+from ludwig.schema.encoders.image.torchvision import (
     TVAlexNetEncoderConfig,
     TVConvNeXtEncoderConfig,
     TVDenseNetEncoderConfig,
