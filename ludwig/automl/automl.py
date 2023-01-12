@@ -23,7 +23,7 @@ from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import (
     _create_default_config,
-    _get_reference_configs,
+    get_reference_configs,
     allocate_experiment_resources,
     DatasetInfo,
     get_dataset_info,
@@ -406,7 +406,7 @@ def _model_select(
     # add as initial trial in the automl search the hyperparameter settings from
     # the best model for a similar dataset and matching model type, if any.
     if use_reference_config:
-        ref_configs = _get_reference_configs()
+        ref_configs = get_reference_configs()
         base_config = _add_transfer_config(base_config, ref_configs)
 
     return base_config, model_category, dataset_info.row_count
