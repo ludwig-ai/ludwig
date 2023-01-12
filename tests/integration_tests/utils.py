@@ -261,7 +261,7 @@ def category_feature(output_feature=False, **kwargs):
     else:
         feature.update(
             {
-                ENCODER: {"type": "dense", "vocab_size": 10, "embedding_size": 5},
+                ENCODER: {"vocab_size": 10, "embedding_size": 5},
             }
         )
     recursive_update(feature, kwargs)

@@ -139,7 +139,11 @@ def test_gbm_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     random.seed(1)
     np.random.seed(1)
 
-    input_features = [binary_feature(), number_feature(), category_feature(encoder={"vocab_size": 3})]
+    input_features = [
+        binary_feature(),
+        number_feature(),
+        category_feature(encoder={"type": "passthrough", "vocab_size": 3}),
+    ]
     output_features = [category_feature(decoder={"vocab_size": 3}, output_feature=True)]
 
     # Generate test data

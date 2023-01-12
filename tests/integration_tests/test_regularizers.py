@@ -70,7 +70,7 @@ def test_regularizers(
 
         backend = LocalTestBackend()
         model = LudwigModel(config, backend=backend)
-        processed_data_df, _, _, _ = preprocess_for_training(config, data_df, backend=backend)
+        processed_data_df, _, _, _ = preprocess_for_training(model.config, data_df, backend=backend)
         with processed_data_df.initialize_batcher(batch_size=BATCH_SIZE) as batcher:
             batch = batcher.next_batch()
 
