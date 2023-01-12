@@ -135,6 +135,15 @@ class TrainLogits:
 
 
 def store_predictions_ray(boost_rounds_per_train_step: int) -> Callable:
+    """Create a callback that records the predictions of the model on the training data in ``additional_results``
+    returned from a LightGBM on Ray model. Only the predictions of the last iteration are stored.
+
+    Args:
+        boost_rounds_per_train_step: number of boosting rounds per train step, used to compute last iteration.
+
+    Returns:
+        A callback that records the predictions of the model in ``additional_results``.
+    """
     def _callback(env: CallbackEnv) -> None:
         if env.iteration < boost_rounds_per_train_step - 1:
             # only store last iteration
