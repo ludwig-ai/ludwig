@@ -9,8 +9,8 @@
 2. Install the go protocol buffers plugin.
 
 ```
-> go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-> go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
 Useful reference: https://developers.google.com/protocol-buffers/docs/gotutorial

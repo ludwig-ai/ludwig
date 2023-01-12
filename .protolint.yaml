@@ -7,8 +7,6 @@ lint:
   files:
     # The specific files to exclude.
     exclude:
-      # NOTE: UNIX paths will be properly accepted by both UNIX and Windows.
-      - ludwig/profiling/proto/whylogs_messages.proto
 
   # Linter rules.
   # Run `protolint list` to see all available rules.
@@ -16,6 +14,7 @@ lint:
     # Set the default to all linters. This option works the other way around as no_default does.
     # If you want to enable this option, delete the comment out below and no_default.
     # all_default: true
+    no_default: true
 
     # The specific linters to add.
     add:
