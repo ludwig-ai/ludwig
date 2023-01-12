@@ -160,6 +160,7 @@ def test_full_progress_tracker():
             "best_eval_metric_steps": 35,
             "best_eval_metric_value": 0.719,
             "last_improvement_steps": 35,
+            "last_improvement_timestamp": 1673550147.491569,
             "best_eval_test_metrics": {
                 "Survived": {"accuracy": 0.634, "loss": 3.820, "roc_auc": 0.598},
                 "combined": {"loss": 3.820},
@@ -275,6 +276,7 @@ def test_full_progress_tracker():
         "checkpoint_number": 12,
         "epoch": 12,
         "last_improvement_steps": 35,
+        "last_improvement_timestamp": 1673550147.491569,
         "learning_rate": 0.001,
         "num_increases_bs": 0,
         "num_reductions_lr": 0,
