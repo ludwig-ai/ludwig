@@ -23,11 +23,11 @@ from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import (
     _create_default_config,
-    get_reference_configs,
     allocate_experiment_resources,
     DatasetInfo,
     get_dataset_info,
     get_default_automl_hyperopt,
+    get_reference_configs,
     get_resource_aware_hyperopt_config,
 )
 from ludwig.backend import Backend, initialize_backend
