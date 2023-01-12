@@ -787,8 +787,8 @@ def test_cache_credentials_backward_compatibility():
     [
         ({"type": "resnet"}, "resnet"),
         ({"type": "vit"}, "vit"),
-        ({"type": "resnet", "resnet_size": 50}, "resnet_legacy"),
-        ({"type": "vit", "num_hidden_layers": 12}, "vit_legacy"),
+        ({"type": "resnet", "resnet_size": 50}, "_resnet_legacy"),
+        ({"type": "vit", "num_hidden_layers": 12}, "_vit_legacy"),
     ],
     ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
 )

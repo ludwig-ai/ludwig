@@ -758,8 +758,8 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
         return feature
 
     encoder_mapping = {
-        "resnet": "resnet_legacy",
-        "vit": "vit_legacy",
+        "resnet": "_resnet_legacy",
+        "vit": "_vit_legacy",
     }
 
     encoder = feature.get(ENCODER, {})
@@ -789,6 +789,13 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
                 f"legacy encoder {encoder_mapping[encoder_type]} ({user_legacy_fields}). "
                 f"Please remove features unique to one of these encoder types from your configuration."
             )
+
+        warnings.warn(
+            f"Encoder '{encoder_type}' with params '{user_legacy_fields}' has been renamed to "
+            f"'{encoder_mapping[encoder_type]}'. Please upgrade your config to use the new '{encoder_type}' as "
+            f"support for '{encoder_mapping[encoder_type]}' is not guaranteed past v0.8.",
+            DeprecationWarning,
+        )
 
         # User provided legacy fields and no new fields, so we assume they intended to use the legacy encoder
         encoder[TYPE] = encoder_mapping[encoder_type]
