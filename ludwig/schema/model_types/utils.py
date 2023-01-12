@@ -88,7 +88,6 @@ def merge_fixed_preprocessing_params(
     model_type: str, feature_type: str, preprocessing_params: Dict[str, Any], encoder_params: Dict[str, Any]
 ) -> Dict[str, Any]:
     """Update preprocessing parameters if encoders require fixed preprocessing parameters."""
-    print(model_type, feature_type, encoder_params)
     feature_cls = input_config_registry(model_type)[feature_type]
     encoder_type = encoder_params.get(TYPE, feature_cls().encoder.type)
     encoder_class = get_encoder_cls(model_type, feature_type, encoder_type)
