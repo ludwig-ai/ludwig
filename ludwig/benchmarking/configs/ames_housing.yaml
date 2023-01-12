@@ -175,7 +175,7 @@ trainer:
   learning_rate_scheduler:
     decay_rate: 0.95
     decay_steps: 20000
-    decay: exponential
+    decay: linear
 preprocessing:
   split:
     type: fixed

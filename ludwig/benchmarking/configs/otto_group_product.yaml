@@ -209,7 +209,7 @@ trainer:
   learning_rate_scheduler:
     decay_rate: 0.4
     decay_steps: 20000
-    decay: exponential
+    decay: linear
   validation_metric: accuracy
 preprocessing:
   split:
