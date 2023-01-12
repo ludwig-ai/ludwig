@@ -46,7 +46,7 @@ def get_encoder_classes(model_type: str, feature: str) -> Dict[str, Type["BaseEn
 
 
 @DeveloperAPI
-def get_encoder_descriptions(feature_type: str) -> Dict[str, Any]:
+def get_encoder_descriptions(model_type: str, feature_type: str) -> Dict[str, Any]:
     """This function returns a dictionary of encoder descriptions available at the type selection.
 
     The process works as follows - 1) Get a dictionary of valid encoders from the encoder config registry,
@@ -62,7 +62,7 @@ def get_encoder_descriptions(feature_type: str) -> Dict[str, Any]:
     output = {}
     valid_encoders = {
         cls.module_name() if hasattr(cls, "module_name") else None: registered_name
-        for registered_name, cls in get_encoder_classes(feature_type).items()
+        for registered_name, cls in get_encoder_classes(model_type, feature_type).items()
     }
 
     for k, v in ENCODER_METADATA.items():
@@ -110,7 +110,7 @@ def EncoderDataclassField(model_type: str, feature_type: str, default: str) -> F
                     "type": {
                         "type": "string",
                         "enum": list(encoder_registry.keys()),
-                        "enumDescriptions": get_encoder_descriptions(feature_type),
+                        "enumDescriptions": get_encoder_descriptions(model_type, feature_type),
                         "default": default,
                     },
                 },
