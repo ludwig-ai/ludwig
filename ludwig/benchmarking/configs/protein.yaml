@@ -34,8 +34,10 @@ combiner:
 trainer:
   batch_size: 256 # B
   learning_rate: 0.005
-  decay_steps: 20000
-  decay_rate: 0.4
+  learning_rate_scheduler:
+    decay_rate: 0.4
+    decay_steps: 20000
+    decay: exponential
 preprocessing:
   split:
     type: fixed
