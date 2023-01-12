@@ -127,7 +127,7 @@ def test_experiment_seq_seq_tagger_fails_for_non_length_preserving_encoders(csv_
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
     # seq-to-seq test to use config file instead of dictionary
     input_features = [text_feature(encoder={"reduce_output": None, "type": "embed"})]
-    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
+    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
 
     # Save the config to a yaml file
     config = {
@@ -146,7 +146,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 def test_experiment_seq_seq_train_test_valid(tmpdir):
     # seq-to-seq test to use train, test, validation files
     input_features = [text_feature(encoder={"reduce_output": None, "type": "rnn"})]
-    output_features = [text_feature(decoder={"reduce_input": None, "vocab_size": 3, "type": "tagger"})]
+    output_features = [text_feature(decoder={"vocab_size": 3, "type": "tagger"}, reduce_input=None)]
 
     train_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "train.csv"))
     test_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "test.csv"), 20)
@@ -224,7 +224,7 @@ def test_experiment_multilabel_with_class_weights(csv_filename):
         # Generator decoder and reduce_input = None
         [
             category_feature(decoder={"vocab_size": 2, "reduce_input": "sum"}),
-            sequence_feature(decoder={"max_len": 5, "reduce_input": None, "type": "generator"}),
+            sequence_feature(decoder={"max_len": 5, "type": "generator"}, reduce_input=None),
             number_feature(normalization="minmax"),
         ],
         # output features with dependencies single dependency
@@ -526,7 +526,7 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
         sequence_feature(encoder={"max_len": 10, "type": "rnn", "cell_type": enc_cell_type, "reduce_output": None})
     ]
     output_features = [
-        sequence_feature(decoder={"max_len": 10, "type": "tagger", "reduce_input": None, "attention": attention})
+        sequence_feature(decoder={"max_len": 10, "type": "tagger", "attention": attention}, reduce_input=None)
     ]
 
     # Generate test data
@@ -539,7 +539,12 @@ def test_sequence_tagger(enc_cell_type, attention, csv_filename):
 def test_sequence_tagger_text(csv_filename):
     # Define input and output features
     input_features = [text_feature(encoder={"max_len": 10, "type": "rnn", "reduce_output": None})]
-    output_features = [sequence_feature(decoder={"max_len": 10, "reduce_input": None, "type": "tagger"})]
+    output_features = [
+        sequence_feature(
+            decoder={"max_len": 10, "type": "tagger"},
+            reduce_input=None,
+        )
+    ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
