@@ -754,7 +754,7 @@ def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
 
 @register_config_transformation("0.7", ["input_features"])
 def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigDict:
-    if feature[TYPE] != IMAGE:
+    if feature.get(TYPE) != IMAGE:
         return feature
 
     encoder_mapping = {
@@ -785,8 +785,8 @@ def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigD
         if len(user_new_fields) > 0:
             raise ValueError(
                 f"Intended encoder type is ambiguous. "
-                f"Provided encoder fields matching encoder {encoder_type} ({user_new_fields}) and "
-                f"legacy encoder {encoder_mapping[encoder_type]} ({user_legacy_fields}). "
+                f"Provided encoder fields matching encoder '{encoder_type}' {user_new_fields} and "
+                f"legacy encoder '{encoder_mapping[encoder_type]}' {user_legacy_fields}. "
                 f"Please remove features unique to one of these encoder types from your configuration."
             )
 
