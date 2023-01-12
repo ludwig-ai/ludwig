@@ -203,6 +203,10 @@ class ProgressTracker:
         from ludwig.utils.backward_compatibility import upgrade_model_progress
 
         loaded = upgrade_model_progress(progress_tracking_dict)
+
+        # Explicitly reset the improvement timestamp to re-initialize the early stopping timer.
+        loaded["last_improvement_timestamp"] = 0.0
+
         return ProgressTracker(**loaded)
 
     def log_metrics(self):
