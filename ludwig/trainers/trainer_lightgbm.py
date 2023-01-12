@@ -46,6 +46,8 @@ from ludwig.utils.gbm_utils import (
     logits_to_predictions,
     multiclass_objective,
     store_predictions,
+    store_predictions_ray,
+    TrainLogits,
 )
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
 from ludwig.utils.metrics_printed_table import MetricsPrintedTable
@@ -533,8 +535,6 @@ class LightGBMTrainer(BaseTrainer):
             eval_names=eval_names,
             # add early stopping callback to populate best_iteration
             callbacks=[lgb.early_stopping(boost_rounds_per_train_step), store_predictions(train_logits)],
-            # NOTE: hummingbird does not support categorical features
-            # categorical_feature=categorical_features,
         )
         evals_result.update(gbm.evals_result_)
 
@@ -993,32 +993,35 @@ class LightGBMRayTrainer(LightGBMTrainer):
         output_feature = get_single_output_feature(self.model)
         gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
 
-        # Prepare buffer for storing predictions on training data.
-        train_logits = torch.zeros(
-            (lgb_train.label.size, output_feature.num_classes)
-            if output_feature.type() == CATEGORY and output_feature.num_classes > 2
-            else (lgb_train.label.size,)
-        )
-
+        additional_results = {}
         gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
             X=lgb_train,
             y=None,
             init_model=init_model,
             eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
             eval_names=eval_names,
-            # add early stopping callback to populate best_iteration
-            callbacks=[lgb.early_stopping(boost_rounds_per_train_step), store_predictions(train_logits)],
+            callbacks=[
+                # add early stopping callback to populate best_iteration
+                lgb.early_stopping(boost_rounds_per_train_step),
+                store_predictions_ray(boost_rounds_per_train_step),
+            ],
+            additional_results=additional_results,
             ray_params=self.ray_params,
-            # NOTE: hummingbird does not support categorical features
-            # categorical_feature=categorical_features,
         )
         evals_result.update(gbm.evals_result_)
 
         if not self.evaluate_training_set:
             # Update evaluation metrics with current model params:
             # noisy but fast way to get metrics on the training set
-            predictions = logits_to_predictions(self.model, train_logits)
-            targets = get_targets(lgb_train, output_feature, self.device)
+
+            # Only use the first actor's predictions.
+            actor_callback_return = next(iter(additional_results["callback_returns"]))
+            # Only a single TrainLogits is expected (final iteration).
+            train_logits: TrainLogits = next(iter(actor_callback_return))
+            predictions = logits_to_predictions(self.model, train_logits.preds)
+
+            targets = get_targets(lgb_train, output_feature, self.device, actor_rank=0)
+
             self.model.update_metrics(targets, predictions)
 
         return gbm.to_local()

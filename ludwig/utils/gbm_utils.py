@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Tuple
+from dataclasses import dataclass
+from typing import Callable, Dict, Tuple, Union
 
 import lightgbm as lgb
 import numpy as np
@@ -128,6 +129,34 @@ def store_predictions(train_logits_buffer: torch.Tensor) -> Callable:
     return _callback
 
 
+@dataclass
+class TrainLogits:
+    preds: torch.Tensor
+
+
+def store_predictions_ray(boost_rounds_per_train_step: int) -> Callable:
+    def _callback(env: CallbackEnv) -> None:
+        if env.iteration < boost_rounds_per_train_step - 1:
+            # only store last iteration
+            return
+
+        from xgboost_ray.session import put_queue
+
+        # NOTE: have to copy because the buffer is reused in each iteration
+        # NOTE: buffer contains raw logits because we use custom objective functions for binary/multiclass.
+        preds = env.model._Booster__inner_predict(data_idx=0).copy()
+
+        batch_size = preds.size // env.model._Booster__num_class
+        if env.model._Booster__num_class > 1:
+            preds = preds.reshape(batch_size, env.model._Booster__num_class, order="F")
+        preds = torch.from_numpy(preds)
+
+        # put the predictions into the actor's queue
+        put_queue(TrainLogits(preds))
+
+    return _callback
+
+
 def reshape_logits(output_feature: OutputFeature, logits: torch.Tensor) -> torch.Tensor:
     """Add logits for the oposite class if the output feature is category with two classes.
 
@@ -156,16 +185,27 @@ def logits_to_predictions(model: BaseModel, train_logits: torch.Tensor) -> Dict[
     return model.outputs_to_predictions({f"{output_feature.feature_name}::logits": train_logits})
 
 
-def get_targets(lgb_train: lgb.Dataset, output_feature: BaseFeatureMixin, device: str) -> Dict[str, torch.Tensor]:
+def get_targets(
+    lgb_train: Union[lgb.Dataset, "RayDMatrix"],  # noqa: F821
+    output_feature: BaseFeatureMixin,
+    device: str,
+    actor_rank: int = 0,
+) -> Dict[str, torch.Tensor]:
     """Get the targets of the training data.
 
     Args:
         lgb_train: the training data.
         output_feature: the output feature.
+        device: the device to store the targets on.
+        actor_rank: (optional, only used for RayDMatrix) the rank of the actor to get the targets for.
 
     Returns:
         A dictionary mapping the output feature name to the targets.
     """
     is_regression = output_feature.type() == NUMBER
-    targets = lgb_train.get_label().copy() if is_regression else lgb_train.get_label().copy().astype(int)
+    if isinstance(lgb_train, lgb.Dataset):
+        targets = lgb_train.get_label()
+    else:
+        targets = lgb_train.get_data(actor_rank, 1)["label"].to_numpy()
+    targets = targets.copy() if is_regression else targets.copy().astype(int)
     return {output_feature.feature_name: torch.from_numpy(targets).to(device)}
