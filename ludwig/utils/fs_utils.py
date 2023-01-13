@@ -195,7 +195,7 @@ def safe_move_directory(src, dst):
             tmp_dst = f"{dst}.{copy_id}.tmp"
             shutil.copytree(src, tmp_dst)
 
-            # Atomic replace file onto the new name, and clean up original source file.
+            # Atomic replace directory name onto the new name, and clean up original source directory.
             os.replace(tmp_dst, dst)
             os.unlink(src)
         else:
