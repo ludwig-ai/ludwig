@@ -2,6 +2,7 @@ trainer:
   epochs: 10
   learning_rate_scheduler:
     warmup_fraction: 0.1
+    decay: linear
   optimizer:
     type: adamw
   use_mixed_precision: true
