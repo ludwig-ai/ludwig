@@ -29,6 +29,9 @@ from ludwig.constants import (
     HYPEROPT,
     INPUT_FEATURES,
     MAX_CONCURRENT_TRIALS,
+    MODEL_ECD,
+    MODEL_GBM,
+    MODEL_TYPE,
     NAME,
     OUTPUT_FEATURES,
     RAY,
@@ -100,17 +103,27 @@ SCHEDULERS_FOR_TESTING = [
 ]
 
 
-def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
+def _setup_ludwig_config(dataset_fp: str, model_type: str = MODEL_ECD) -> Tuple[Dict, str]:
     input_features = [category_feature(encoder={"vocab_size": 3})]
     output_features = [category_feature(decoder={"vocab_size": 3})]
 
     rel_path = generate_data(input_features, output_features, dataset_fp)
 
+    trainer_cfg = {"learning_rate": 0.001}
+    if model_type == MODEL_ECD:
+        trainer_cfg["epochs"] = 2
+    else:
+        trainer_cfg["num_boost_round"] = 2
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        trainer_cfg["feature_pre_filter"] = False
+
     config = {
+        MODEL_TYPE: model_type,
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: trainer_cfg,
     }
 
     config = ModelConfig.from_dict(config).to_dict()
@@ -119,10 +132,17 @@ def _setup_ludwig_config(dataset_fp: str) -> Tuple[Dict, str]:
 
 
 @pytest.mark.parametrize("search_alg", SEARCH_ALGS_FOR_TESTING)
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_hyperopt_search_alg(
-    search_alg, csv_filename, tmpdir, ray_cluster_7cpu, validate_output_feature=False, validation_metric=None
+    search_alg,
+    model_type,
+    csv_filename,
+    tmpdir,
+    ray_cluster_7cpu,
+    validate_output_feature=False,
+    validation_metric=None,
 ):
-    config, rel_path = _setup_ludwig_config(csv_filename)
+    config, rel_path = _setup_ludwig_config(csv_filename, model_type)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
 
@@ -172,9 +192,11 @@ def test_hyperopt_search_alg(
         assert isinstance(path, str)
 
 
-def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster_7cpu):
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
+def test_hyperopt_executor_with_metric(model_type, csv_filename, tmpdir, ray_cluster_7cpu):
     test_hyperopt_search_alg(
         "variant_generator",
+        model_type,
         csv_filename,
         tmpdir,
         ray_cluster_7cpu,
@@ -184,10 +206,11 @@ def test_hyperopt_executor_with_metric(csv_filename, tmpdir, ray_cluster_7cpu):
 
 
 @pytest.mark.parametrize("scheduler", SCHEDULERS_FOR_TESTING)
+@pytest.mark.parametrize("model_type", [MODEL_ECD, MODEL_GBM])
 def test_hyperopt_scheduler(
-    scheduler, csv_filename, tmpdir, ray_cluster_7cpu, validate_output_feature=False, validation_metric=None
+    scheduler, model_type, csv_filename, tmpdir, ray_cluster_7cpu, validate_output_feature=False, validation_metric=None
 ):
-    config, rel_path = _setup_ludwig_config(csv_filename)
+    config, rel_path = _setup_ludwig_config(csv_filename, model_type)
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
 
