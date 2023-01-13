@@ -35,10 +35,13 @@ from ludwig.constants import (
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
     AUTOML_DEFAULT_TEXT_ENCODER,
+    BINARY,
+    CATEGORY,
     ENCODER,
     HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
+    NUMBER,
     OUTPUT_FEATURES,
     TABULAR,
     TEXT,
@@ -74,6 +77,7 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = "."
+TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
 
 
 class AutoTrainResults:
@@ -350,8 +354,10 @@ def _model_select(
     base_config = copy.deepcopy(default_configs["base_config"])
     model_category = None
 
+    input_features = default_configs["base_config"]["input_features"]
+
     # tabular dataset heuristics
-    if len(fields) > 3:
+    if len(fields) > 3 and all(f[TYPE] in TABULAR_TYPES for f in input_features):
         model_category = TABULAR
         base_config = merge_dict(base_config, default_configs["combiner"][AUTOML_DEFAULT_TABULAR_MODEL])
 
@@ -362,7 +368,6 @@ def _model_select(
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
-        input_features = default_configs["base_config"]["input_features"]
         for i, input_feature in enumerate(input_features):
             base_config_input_feature = base_config["input_features"][i]
             # default text encoder is bert

@@ -6,6 +6,12 @@ trainer:
     type: adamw
   use_mixed_precision: true
 
+defaults:
+  text:
+    encoder:
+      type: bert
+      trainable: true
+
 hyperopt:
   # goal: maximize
   parameters:

@@ -125,6 +125,9 @@ def test_data_multimodal():
         input_features = [
             image_feature(folder=image_dest_folder),
             text_feature(preprocessing={"tokenizer": "space"}),
+            number_feature(),
+            category_feature(encoder={"vocab_size": 3}),
+            category_feature(encoder={"vocab_size": 5}),
         ]
         output_features = [binary_feature()]
         dataset_csv = generate_data(
@@ -137,9 +140,9 @@ def test_data_multimodal():
 @pytest.mark.parametrize(
     "test_data,expectations",
     [
-        ("test_data_tabular_large", {}),
-        ("test_data_tabular_small", {}),
-        ("test_data_image", {}),
+        ("test_data_tabular_large", {"combiner": {"type": "tabnet"}}),
+        ("test_data_tabular_small", {"combiner": {"type": "concat"}}),
+        ("test_data_image", {"combiner": {"type": "concat"}}),
         (
             "test_data_text",
             {
@@ -153,9 +156,17 @@ def test_data_multimodal():
                     "learning_rate_scheduler": {"warmup_fraction": 0.1},
                     "use_mixed_precision": True,
                 },
+                "defaults": {
+                    "text": {
+                        "encoder": {
+                            "type": "bert",
+                            "trainable": True,
+                        }
+                    }
+                },
             },
         ),
-        ("test_data_multimodal", {}),
+        ("test_data_multimodal", {"combiner": {"type": "concat"}}),
     ],
     ids=["tabular_large", "tabular_small", "image", "text", "multimodal"],
 )
@@ -173,8 +184,6 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
     expected = merge_dict_with_features(config, expectations)
-    print(config["combiner"])
-    print(config["trainer"])
     assert config == expected
 
 
