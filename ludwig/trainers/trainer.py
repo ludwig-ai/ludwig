@@ -192,10 +192,13 @@ class Trainer(BaseTrainer):
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision
-        self.use_amp = True
         self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
         if self.use_amp:
-            logger.info("Enabling automatic mixed precision (AMP)")
+            if torch.cuda.is_available():
+                logger.info("Enabling automatic mixed precision (AMP)")
+            else:
+                logger.info("`trainer.use_mixed_precision=True`, but no GPU device found. Setting to `False`")
+                self.use_amp = False
 
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
