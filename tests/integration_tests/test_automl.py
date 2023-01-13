@@ -12,7 +12,6 @@ from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATU
 from ludwig.schema import validate_upgraded_config
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
-
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
