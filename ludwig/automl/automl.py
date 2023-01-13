@@ -32,16 +32,21 @@ from ludwig.automl.base_config import (
 )
 from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import (
+    AUTO,
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
     AUTOML_DEFAULT_TEXT_ENCODER,
+    BINARY,
+    CATEGORY,
     ENCODER,
     HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
+    NUMBER,
     OUTPUT_FEATURES,
     TABULAR,
     TEXT,
+    TRAINER,
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
@@ -54,11 +59,13 @@ from ludwig.profiling.dataset_profile import (
     get_dataset_profile_view,
 )
 from ludwig.profiling.type_inference import get_ludwig_type_map_from_column_profile_summaries
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import _add_transfer_config, get_model_type, set_output_feature_metric
 from ludwig.utils.data_utils import load_dataset, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file
+from ludwig.utils.heuristics import get_auto_learning_rate
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.types import DataFrame
@@ -74,6 +81,7 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = "."
+TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
 
 
 class AutoTrainResults:
@@ -280,6 +288,7 @@ def create_auto_config(
                 "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
                 "If out-of-memory occurs, consider setting AutoML user_config to reduce model memory footprint. "
             )
+
     return model_config
 
 
@@ -350,8 +359,10 @@ def _model_select(
     base_config = copy.deepcopy(default_configs["base_config"])
     model_category = None
 
+    input_features = default_configs["base_config"]["input_features"]
+
     # tabular dataset heuristics
-    if len(fields) > 3:
+    if len(fields) > 3 and all(f[TYPE] in TABULAR_TYPES for f in input_features):
         model_category = TABULAR
         base_config = merge_dict(base_config, default_configs["combiner"][AUTOML_DEFAULT_TABULAR_MODEL])
 
@@ -362,7 +373,6 @@ def _model_select(
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
-        input_features = default_configs["base_config"]["input_features"]
         for i, input_feature in enumerate(input_features):
             base_config_input_feature = base_config["input_features"][i]
             # default text encoder is bert
@@ -386,6 +396,17 @@ def _model_select(
 
         # Merge combiner config
         base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
+
+    # Adjust learning rate based on other config settings
+    if base_config[TRAINER]["learning_rate"] == AUTO:
+        # Add a fake output feature to ensure we can load the ModelConfig, as we expect there to be at least
+        # one output feature in all cases
+        # TODO(travis): less hacky way to do this, we should probably allow ModelConfig to be created without output
+        # features
+        load_config = copy.deepcopy(base_config)
+        if not load_config.get(OUTPUT_FEATURES):
+            load_config[OUTPUT_FEATURES] = [{"name": "fake", "type": "binary"}]
+        base_config[TRAINER]["learning_rate"] = get_auto_learning_rate(ModelConfig.from_dict(load_config))
 
     # override and constrain automl config based on user specified values
     if user_config is not None:

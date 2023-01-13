@@ -26,6 +26,7 @@ from ludwig.backend import Backend
 from ludwig.constants import (
     COLUMN,
     COMBINER,
+    ENCODER,
     EXECUTOR,
     HYPEROPT,
     PREPROCESSING,
@@ -356,10 +357,10 @@ def get_features_config(
     targets = set(targets)
 
     metadata = get_field_metadata(fields, row_count, resources, targets)
-    return get_config_from_metadata(metadata, targets), metadata
+    return get_config_from_metadata(metadata, resources, targets), metadata
 
 
-def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
+def get_config_from_metadata(metadata: List[FieldMetadata], resources: Resources, targets: Set[str] = None) -> dict:
     """Builds input/output feature sections of auto-train config using field metadata.
 
     # Inputs
@@ -378,7 +379,12 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
         if field_meta.name in targets:
             config["output_features"].append(field_meta.config.to_dict())
         elif not field_meta.excluded and field_meta.mode == "input":
-            config["input_features"].append(field_meta.config.to_dict())
+            ifeature = field_meta.config.to_dict()
+            if resources.gpus == 0:
+                if field_meta.config.type == TEXT:
+                    # When no GPUs are available, default to the embed encoder, which is fast enough for CPU
+                    ifeature[ENCODER] = {"type": "embed"}
+            config["input_features"].append(ifeature)
 
     return config
 
@@ -416,16 +422,6 @@ def get_field_metadata(
                 imbalance_ratio=field.distinct_values_balance,
             )
         )
-
-    # Count of number of initial non-text input features in the config, -1 for output
-    input_count = sum(not meta.excluded and meta.mode == "input" and meta.config.type != TEXT for meta in metadata) - 1
-
-    # Exclude text fields if no GPUs are available
-    if resources.gpus == 0:
-        for meta in metadata:
-            if input_count > 2 and meta.config.type == TEXT:
-                # By default, exclude text inputs when there are other candidate inputs
-                meta.excluded = True
 
     return metadata
 

@@ -10,7 +10,8 @@ import pytest
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
 from ludwig.schema import validate_upgraded_config
-from ludwig.types import FeatureConfigDict
+from ludwig.types import FeatureConfigDict, ModelConfigDict
+from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -36,6 +37,27 @@ pytestmark = pytest.mark.distributed
 def to_name_set(features: List[FeatureConfigDict]) -> Set[str]:
     """Returns the list of feature names."""
     return {feature[NAME] for feature in features}
+
+
+def merge_lists(a_features: List, b_features: List):
+    for idx in range(max(len(a_features), len(b_features))):
+        if idx >= len(a_features):
+            a_features.append(b_features[idx])
+        elif idx < len(b_features):
+            a_features[idx] = merge_dict(a_features[idx], b_features[idx])
+
+
+def merge_dict_with_features(a: ModelConfigDict, b: ModelConfigDict) -> ModelConfigDict:
+    merge_lists(a[INPUT_FEATURES], b.get(INPUT_FEATURES, []))
+    merge_lists(a[OUTPUT_FEATURES], b.get(OUTPUT_FEATURES, []))
+
+    b = b.copy()
+    if INPUT_FEATURES in b:
+        del b[INPUT_FEATURES]
+    if OUTPUT_FEATURES in b:
+        del b[OUTPUT_FEATURES]
+
+    return merge_dict(a, b)
 
 
 @pytest.fixture(scope="module")
@@ -102,6 +124,9 @@ def test_data_multimodal():
         input_features = [
             image_feature(folder=image_dest_folder),
             text_feature(preprocessing={"tokenizer": "space"}),
+            number_feature(),
+            category_feature(encoder={"vocab_size": 3}),
+            category_feature(encoder={"vocab_size": 5}),
         ]
         output_features = [binary_feature()]
         dataset_csv = generate_data(
@@ -112,10 +137,45 @@ def test_data_multimodal():
 
 @pytest.mark.distributed
 @pytest.mark.parametrize(
-    "test_data",
-    ["test_data_tabular_large", "test_data_tabular_small", "test_data_image", "test_data_text", "test_data_multimodal"],
+    "test_data,expectations",
+    [
+        ("test_data_tabular_large", {"combiner": {"type": "tabnet"}}),
+        ("test_data_tabular_small", {"combiner": {"type": "concat"}}),
+        ("test_data_image", {"combiner": {"type": "concat"}}),
+        (
+            "test_data_text",
+            {
+                "input_features": [{"type": "text", "encoder": {"type": "bert"}}],
+                "combiner": {"type": "concat"},
+                "trainer": {
+                    "batch_size": "auto",
+                    "learning_rate": 1e-05,
+                    "epochs": 10,
+                    "optimizer": {"type": "adamw"},
+                    "learning_rate_scheduler": {"warmup_fraction": 0.1},
+                    "use_mixed_precision": True,
+                },
+                "defaults": {
+                    "text": {
+                        "encoder": {
+                            "type": "bert",
+                            "trainable": True,
+                        }
+                    }
+                },
+            },
+        ),
+        (
+            "test_data_multimodal",
+            {
+                "input_features": [{"type": "image"}, {"type": "text", "encoder": {"type": "embed"}}],
+                "combiner": {"type": "concat"},
+            },
+        ),
+    ],
+    ids=["tabular_large", "tabular_small", "image", "text", "multimodal"],
 )
-def test_create_auto_config(test_data, ray_cluster_2cpu, request):
+def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
     test_data = request.getfixturevalue(test_data)
     input_features, output_features, dataset_csv = test_data
     targets = [feature[NAME] for feature in output_features]
@@ -127,6 +187,9 @@ def test_create_auto_config(test_data, ray_cluster_2cpu, request):
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+
+    expected = merge_dict_with_features(config, expectations)
+    assert config == expected
 
 
 @pytest.mark.distributed
