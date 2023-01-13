@@ -68,7 +68,6 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
-
 logger = logging.getLogger(__name__)
 
 _augmentation_op_registry = Registry()
@@ -119,7 +118,9 @@ def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.
 
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
 class RandomVFlip(torch.nn.Module):
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
 
     def forward(self, imgs):
@@ -131,7 +132,9 @@ class RandomVFlip(torch.nn.Module):
 
 @register_augmentation_op(name="random_horizontal_flip", features=IMAGE)
 class RandomHFlip(torch.nn.Module):
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
 
     def forward(self, imgs):
@@ -236,7 +239,7 @@ class AugmentationPipeline(torch.nn.Module):
 
 
 class AugmentationPipelines:
-    """Container holding augmentation pipelines defined in the model"""
+    """Container holding augmentation pipelines defined in the model."""
 
     def __init__(self, augmentation_pipelines: Dict):
         self.augmentation_pipelines = augmentation_pipelines

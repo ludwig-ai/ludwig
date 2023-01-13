@@ -28,7 +28,7 @@ def test_image():
             {"type": "random_blur", "kernel_size": 9},
             {"type": "random_contrast"},
         ],
-    ]
+    ],
 )
 # test image augmentation pipeline
 def test_augmentation_pipeline(test_image, augmentation_pipeline_ops):

@@ -1,5 +1,4 @@
 import pytest
-
 import torch
 
 from ludwig.constants import IMAGE
@@ -22,7 +21,7 @@ def test_image():
         ("random_blur", {"kernel_size": 15}),
         ("random_contrast", {"min_contrast": 0.5, "max_contrast": 1.5}),
         ("random_brightness", {"min_brightness": 0.5, "max_brightness": 1.5}),
-    ]
+    ],
 )
 def test_image_augmentation(test_image, augmentation_type, augmentation_params):
     augmentation_op_cls = get_augmentation_op(IMAGE, augmentation_type)

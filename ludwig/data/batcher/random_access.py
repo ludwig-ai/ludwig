@@ -53,10 +53,7 @@ class RandomAccessBatcher(Batcher):
             except StopIteration:
                 break
 
-        sub_batch = {
-            feature_name: self.dataset.get(feature_name, indices)
-            for feature_name in self.dataset.features
-        }
+        sub_batch = {feature_name: self.dataset.get(feature_name, indices) for feature_name in self.dataset.features}
 
         if self.augmentation_pipeline:
             for feature_name, augmentations in self.augmentation_pipeline.items():

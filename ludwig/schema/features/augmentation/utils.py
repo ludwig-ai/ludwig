@@ -7,7 +7,6 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.augmentation.base import BaseAugmentationContainerConfig
-
 from ludwig.utils.registry import Registry
 
 
@@ -105,9 +104,7 @@ def AugmentationContainerDataclassField():
             default_factory=lambda: load_default,
         )
     except Exception as e:
-        raise ValidationError(
-            f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}"
-        )
+        raise ValidationError(f"Unsupported augmentation type. See augmentation_registry. " f"Details: {e}")
 
 
 @DeveloperAPI

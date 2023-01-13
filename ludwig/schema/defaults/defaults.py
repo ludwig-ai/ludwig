@@ -18,8 +18,9 @@ from ludwig.constants import (
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.utils import DefaultsDataclassField
-from ludwig.schema.features.base import BaseFeatureConfig
 from ludwig.schema.features.augmentation.utils import get_augmentation_jsonschema
+from ludwig.schema.features.base import BaseFeatureConfig
+
 
 @DeveloperAPI
 @dataclass
