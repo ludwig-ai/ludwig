@@ -497,13 +497,13 @@ def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
         input_feature = output_feature
         output_feature = [category_feature(decoder={"vocab_size": 1})]
 
-    config = {"input_features": input_feature, "output_features": output_feature}
+    config = {"input_features": input_feature, "output_features": output_feature, "training": {"epochs": 1}}
 
     training_data_csv_path = generate_data(config["input_features"], config["output_features"], data_csv_path)
 
     ludwig_model = LudwigModel(config)
     with pytest.raises(RuntimeError) if feature_type == "output_feature" else contextlib.nullcontext():
-        _, _, _, _ = ludwig_model.preprocess(dataset=training_data_csv_path)
+        ludwig_model.train(dataset=training_data_csv_path)
 
 
 @pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
