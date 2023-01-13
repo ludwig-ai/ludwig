@@ -149,7 +149,7 @@ def test_data_multimodal():
                 "combiner": {"type": "concat"},
                 "trainer": {
                     "batch_size": "auto",
-                    "learning_rate": "auto",
+                    "learning_rate": 1e-05,
                     "epochs": 10,
                     "optimizer": {"type": "adamw"},
                     "learning_rate_scheduler": {"warmup_fraction": 0.1},
