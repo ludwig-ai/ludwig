@@ -145,7 +145,14 @@ def test_data_multimodal():
             {
                 "input_features": [{"type": "text", "encoder": {"type": "bert"}}],
                 "combiner": {"type": "concat"},
-                "trainer": {"batch_size": "auto", "learning_rate": "auto", "optimizer": {"type": "adamw"}},
+                "trainer": {
+                    "batch_size": "auto",
+                    "learning_rate": "auto",
+                    "epochs": 10,
+                    "optimizer": {"type": "adamw"},
+                    "learning_rate_scheduler": {"warmup_fraction": 0.1},
+                    "use_mixed_precision": True,
+                },
             },
         ),
         ("test_data_multimodal", {}),

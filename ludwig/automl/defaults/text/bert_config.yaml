@@ -1,9 +1,10 @@
 trainer:
-  epochs: 5
+  epochs: 10
   learning_rate_scheduler:
-    warmup_evaluations: 0
+    warmup_fraction: 0.1
   optimizer:
     type: adamw
+  use_mixed_precision: true
 
 hyperopt:
   # goal: maximize
