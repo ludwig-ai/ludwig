@@ -248,8 +248,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    metric_functions = BinaryOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[BinaryOutputFeatureConfig, Dict],

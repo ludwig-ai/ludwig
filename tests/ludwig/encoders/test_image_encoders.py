@@ -3,8 +3,8 @@ from typing import Union
 import pytest
 import torch
 
-from ludwig.encoders.image_encoders import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder
-from ludwig.encoders.image_torchvision_encoders import (
+from ludwig.encoders.image.base import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN, ViTEncoder
+from ludwig.encoders.image.torchvision import (
     TVAlexNetEncoder,
     TVConvNeXtEncoder,
     TVDenseNetEncoder,

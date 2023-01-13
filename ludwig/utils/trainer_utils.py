@@ -25,7 +25,7 @@ def initialize_trainer_metric_dict(output_features) -> Dict[str, Dict[str, List[
 
     for output_feature_name, output_feature in output_features.items():
         metrics[output_feature_name] = OrderedDict()
-        for metric in output_feature.metric_functions:
+        for metric in output_feature.metric_names:
             metrics[output_feature_name][metric] = []
 
     metrics[COMBINED] = {LOSS: []}
@@ -40,8 +40,8 @@ def get_latest_metrics_dict(
     for feature_name, metrics_dict in progress_tracker_metrics.items():
         for metric_name, metrics in metrics_dict.items():
             if metrics:
-                # Metrics may be missing if computing metrics was excepted, or if the metrics are entirely empty
-                # due to a missing subset.
+                # Metrics may be missing if computing metrics was excepted, if the metrics are entirely empty
+                # due to a missing subset, or if evaluate_training_set is False.
                 latest_metrics_dict[feature_name][metric_name] = metrics[-1][-1]
     return latest_metrics_dict
 
@@ -250,9 +250,8 @@ def append_metrics(
     dataset_name: Literal["train", "validation", "test"],
     results: Dict[str, Dict[str, float]],
     metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-    tables: Dict[str, List[List[str]]],
     progress_tracker: ProgressTracker,
-) -> Tuple[Dict[str, Dict[str, List[TrainerMetric]]], Dict[str, List[List[str]]]]:
+) -> Dict[str, Dict[str, List[TrainerMetric]]]:
     epoch = progress_tracker.epoch
     steps = progress_tracker.steps
     for output_feature in model.output_features:
@@ -260,7 +259,7 @@ def append_metrics(
 
         # collect metric names based on output features metrics to
         # ensure consistent order of reporting metrics
-        metric_names = model.output_features[output_feature].metric_functions.keys()
+        metric_names = model.output_features[output_feature].metric_names
 
         for metric in metric_names:
             if metric in results[output_feature]:
@@ -269,12 +268,8 @@ def append_metrics(
                 metrics_log[output_feature][metric].append(TrainerMetric(epoch=epoch, step=steps, value=score))
                 scores.append(score)
 
-        tables[output_feature].append(scores)
-
     metrics_log[COMBINED][LOSS].append(TrainerMetric(epoch=epoch, step=steps, value=results[COMBINED][LOSS]))
-    tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
-
-    return metrics_log, tables
+    return metrics_log
 
 
 @DeveloperAPI
