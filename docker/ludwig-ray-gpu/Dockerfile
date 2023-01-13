@@ -19,7 +19,7 @@ RUN sudo apt-key del 7fa2af80 && \
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC F60F4B3D7FA2AF80
 
 # https://github.com/kubernetes/release/issues/1982
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+RUN sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 8B57C5C2836F4BEB
 
 # Upgrade to GCC-9 from GCC-7.5
 # Required for libgcc-s1 which is a dependency for libnccl2
