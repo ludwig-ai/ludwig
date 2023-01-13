@@ -11,6 +11,9 @@
 
 FROM rayproject/ray:2.0.0-py38
 
+# https://github.com/kubernetes/release/issues/1982
+RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
 	wget \
