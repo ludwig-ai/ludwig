@@ -163,7 +163,7 @@ def test_export_mlflow_local(tmpdir):
 
     exp_name = "mlflow_test"
     output_dir = os.path.join(tmpdir, "output")
-    model = LudwigModel(config, callbacks=[MlflowCallback()], backend="ray")
+    model = LudwigModel(config, backend=FakeRemoteBackend())
     _, _, output_directory = model.train(training_set=data_csv, experiment_name=exp_name, output_directory=output_dir)
 
     model_path = os.path.join(output_directory, "model")
