@@ -193,7 +193,7 @@ def safe_move_directory(src, dst):
             # random UUID so if different processes are copying into `<dst>`, they don't overlap in their tmp copies.
             copy_id = uuid.uuid4()
             tmp_dst = f"{dst}.{copy_id}.tmp"
-            shutil.copyfile(src, tmp_dst)
+            shutil.copytree(src, tmp_dst)
 
             # Atomic replace file onto the new name, and clean up original source file.
             os.replace(tmp_dst, dst)
