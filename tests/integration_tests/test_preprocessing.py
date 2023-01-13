@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import random
@@ -483,6 +484,26 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
 
     # Check that a warning is logged.
     assert "unconventional boolean value" in caplog.text
+
+
+@pytest.mark.parametrize("feature_type", ["input_feature", "output_feature"], ids=["input_feature", "output_feature"])
+def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+
+    input_feature = [category_feature(encoder={"vocab_size": 1})]
+    output_feature = [binary_feature()]
+
+    if feature_type == "output_feature":
+        input_feature = output_feature
+        output_feature = [category_feature(decoder={"vocab_size": 1})]
+
+    config = {"input_features": input_feature, "output_features": output_feature}
+
+    training_data_csv_path = generate_data(config["input_features"], config["output_features"], data_csv_path)
+
+    ludwig_model = LudwigModel(config)
+    with pytest.raises(RuntimeError) if feature_type == "output_feature" else contextlib.nullcontext():
+        _, _, _, _ = ludwig_model.preprocess(dataset=training_data_csv_path)
 
 
 # TODO: (jimthompson5802) discuss with tgaddair

@@ -142,7 +142,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend
+        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
     ) -> FeatureMetadataDict:
         if column.dtype != object:
             return {}

@@ -24,7 +24,7 @@ from dateutil.parser import parse
 from ludwig.constants import COLUMN, DATE, PROC_COLUMN
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.date_feature import DateInputFeatureConfig
-from ludwig.types import FeatureConfigDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureConfigDict, FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.date_utils import create_vector_from_datetime_obj
 from ludwig.utils.types import DataFrame, TorchscriptPreprocessingInput
 
@@ -57,7 +57,9 @@ class DateFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
+    ) -> FeatureMetadataDict:
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod

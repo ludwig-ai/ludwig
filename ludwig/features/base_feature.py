@@ -62,7 +62,7 @@ class BaseFeatureMixin(ABC):
 
     @abstractstaticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend
+        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
     ) -> FeatureMetadataDict:
         """Returns a dictionary of feature metadata.
 

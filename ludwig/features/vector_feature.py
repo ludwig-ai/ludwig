@@ -84,7 +84,9 @@ class VectorFeatureMixin:
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
+    ) -> FeatureMetadataDict:
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
