@@ -165,7 +165,13 @@ def test_data_multimodal():
                 },
             },
         ),
-        ("test_data_multimodal", {"combiner": {"type": "concat"}}),
+        (
+            "test_data_multimodal",
+            {
+                "input_features": [{"type": "image"}, {"type": "text", "encoder": {"type": "embed"}}],
+                "combiner": {"type": "concat"},
+            },
+        ),
     ],
     ids=["tabular_large", "tabular_small", "image", "text", "multimodal"],
 )
