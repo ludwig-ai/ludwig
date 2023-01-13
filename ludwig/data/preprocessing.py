@@ -1308,9 +1308,7 @@ def build_preprocessing_parameters(
 def is_input_feature(feature_config: FeatureConfigDict) -> bool:
     """Utility function to check for the presence of encoder in the feature config to determine if the feature is
     an input feature or output feature."""
-    if ENCODER in feature_config:
-        return True
-    return False
+    return ENCODER in feature_config
 
 
 def build_metadata(
@@ -1329,7 +1327,7 @@ def build_metadata(
 
         column = dataset_cols[feature_config[COLUMN]]
         metadata[feature_name] = get_from_registry(feature_config[TYPE], get_base_type_registry()).get_feature_meta(
-            column, preprocessing_parameters, backend, is_input_feature=is_input_feature(feature_config)
+            column, preprocessing_parameters, backend, is_input_feature(feature_config)
         )
 
         metadata[feature_name][PREPROCESSING] = preprocessing_parameters

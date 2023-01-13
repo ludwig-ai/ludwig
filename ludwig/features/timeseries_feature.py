@@ -111,7 +111,7 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         column = column.astype(str)
         tokenizer = get_tokenizer_from_registry(preprocessing_parameters["tokenizer"])()

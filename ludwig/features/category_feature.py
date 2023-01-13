@@ -122,7 +122,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
@@ -130,7 +130,6 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
         vocab_size = len(str2idx)
-        is_input_feature = kwargs.get("is_input_feature")
         if not is_input_feature and vocab_size <= 1:
             # Category output feature with vocab size 1
             raise InputDataError(
@@ -141,7 +140,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
                 only contains {str(idx2str)}.
                 """,
             )
-        elif vocab_size <= 1:
+        if vocab_size <= 1:
             # Category input feature with vocab size 1
             logger.info(
                 f"Input feature '{column.name}' contains only 1 distinct value {str(idx2str)}. This is not useful"

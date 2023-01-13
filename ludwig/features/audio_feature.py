@@ -93,7 +93,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         first_audio_file_path = column.head(1)[0]
         _, sampling_rate_in_hz = torchaudio.load(first_audio_file_path)

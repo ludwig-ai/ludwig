@@ -151,7 +151,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column, preprocessing_parameters: PreprocessingConfigDict, backend, **kwargs
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             column,
