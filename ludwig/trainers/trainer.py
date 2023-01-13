@@ -25,16 +25,14 @@ import statistics
 import sys
 import threading
 import time
-from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -47,7 +45,7 @@ from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
 from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -60,6 +58,7 @@ from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
@@ -489,25 +488,25 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
-            self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            train_metrics_log = self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
             # Use metrics accumulated during training
             metrics = self.model.get_metrics()
-            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            train_metrics_log = append_metrics(
+                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
+            )
             self.model.reset_metrics()
+
+        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -519,14 +518,15 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -540,9 +540,11 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -556,8 +558,7 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False
@@ -630,16 +631,6 @@ class Trainer(BaseTrainer):
             raise ValueError(
                 "The specified validation_field {} is not valid."
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
-
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
             )
 
         # ====== Setup file names =======
@@ -975,15 +966,13 @@ class Trainer(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
-    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+    def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
         predictor = Predictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     def check_progress_on_validation(
         self,
@@ -1047,7 +1036,7 @@ class Trainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."

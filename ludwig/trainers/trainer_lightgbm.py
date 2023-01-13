@@ -5,22 +5,32 @@ import signal
 import sys
 import threading
 import time
-from collections import OrderedDict
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
+from ludwig.constants import (
+    BINARY,
+    CATEGORY,
+    COMBINED,
+    LOSS,
+    MINIMIZE,
+    MODEL_GBM,
+    NUMBER,
+    TEST,
+    TRAIN,
+    TRAINING,
+    VALIDATION,
+)
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -30,6 +40,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import (
     append_metrics,
@@ -39,13 +50,6 @@ from ludwig.utils.trainer_utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
-    """Helper for iterating feature names and metric names."""
-    for feature_name, feature in features.items():
-        for metric in feature.metric_functions:
-            yield feature_name, metric
 
 
 @register_trainer(MODEL_GBM)
@@ -88,7 +92,6 @@ class LightGBMTrainer(BaseTrainer):
         try:
             base_learning_rate = float(config.learning_rate)
         except ValueError:
-            # TODO (ASN): Circle back on how we want to set default placeholder value
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
@@ -178,7 +181,6 @@ class LightGBMTrainer(BaseTrainer):
         dataset: "Dataset",  # noqa: F821
         dataset_name: str,
         metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-        tables: Dict[str, List[List[str]]],
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
@@ -187,9 +189,7 @@ class LightGBMTrainer(BaseTrainer):
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     @classmethod
     def write_eval_summary(
@@ -242,16 +242,13 @@ class LightGBMTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         if self.evaluate_training_set:
+            # Appends results to progress_tracker.train_metrics.
             self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
 
             self.write_eval_summary(
@@ -268,8 +265,8 @@ class LightGBMTrainer(BaseTrainer):
                 progress_tracker.train_metrics[output_feature_name][LOSS].append(
                     TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
                 )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
+
+        printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -281,14 +278,15 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -302,9 +300,11 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -318,8 +318,7 @@ class LightGBMTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False
@@ -449,7 +448,7 @@ class LightGBMTrainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."
@@ -579,16 +578,6 @@ class LightGBMTrainer(BaseTrainer):
             raise ValueError(
                 "The specified validation_field {} is not valid."
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
-            )
-
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
             )
 
         # ====== Setup file names =======

@@ -240,8 +240,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    metric_functions = SetOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[SetOutputFeatureConfig, Dict],

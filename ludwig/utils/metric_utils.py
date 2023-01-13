@@ -5,7 +5,9 @@ import torch
 from torch import Tensor
 from torchmetrics.metric import Metric
 
-from ludwig.constants import COMBINED, LOSS
+from ludwig.constants import COMBINED, LOSS, NAME, TYPE
+from ludwig.modules.metric_registry import get_metric_names_for_type
+from ludwig.types import FeatureConfigDict
 
 
 def sequence_mask(lengths: Tensor, maxlen: Optional[int] = None, dtype=torch.bool) -> Tensor:
@@ -89,13 +91,22 @@ def reduce_trainer_metrics_dict(
     return {k: dict(v) for k, v in flattened_dict.items()}
 
 
-def get_metric_names(output_features: Dict[str, Dict]) -> Dict[str, List[str]]:
+def get_metric_names(output_features: Dict[str, "OutputFeature"]) -> Dict[str, List[str]]:  # noqa
     """Returns a dict of output_feature_name -> list of metric names."""
     metrics_names = {}
     for output_feature_name, output_feature in output_features.items():
-        for metric in output_feature.metric_functions:
-            metrics = metrics_names.get(output_feature_name, [])
-            metrics.append(metric)
-            metrics_names[output_feature_name] = metrics
+        metrics_names[output_feature_name] = sorted(list(get_metric_names_for_type(output_feature.type())))
+    # Add combined loss.
+    metrics_names[COMBINED] = [LOSS]
+    return metrics_names
+
+
+def get_feature_to_metric_names_map(output_features: List[FeatureConfigDict]) -> Dict[str, List[str]]:
+    """Returns a dict of output_feature_name -> list of metric names."""
+    metrics_names = {}
+    for output_feature in output_features:
+        output_feature_name = output_feature[NAME]
+        output_feature_type = output_feature[TYPE]
+        metrics_names[output_feature_name] = get_metric_names_for_type(output_feature_type)
     metrics_names[COMBINED] = [LOSS]
     return metrics_names

@@ -21,7 +21,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import get_output_type_registry
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ def set_output_feature_metric(base_config):
     output_name = base_config["output_features"][0][NAME]
     output_type = base_config["output_features"][0][TYPE]
     output_metric = get_output_type_registry()[output_type].get_schema_cls().default_validation_metric
-    output_goal = metric_registry[output_metric].get_objective()
+    output_goal = get_metric_registry()[output_metric].get_objective()
     if "validation_field" not in base_config[TRAINER] and "validation_metric" not in base_config[TRAINER]:
         base_config[TRAINER]["validation_field"] = output_name
         base_config[TRAINER]["validation_metric"] = output_metric

@@ -176,8 +176,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    metric_functions = VectorOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[VectorOutputFeatureConfig, Dict],

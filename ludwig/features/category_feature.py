@@ -249,8 +249,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    metric_functions = CategoryOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[CategoryOutputFeatureConfig, Dict],

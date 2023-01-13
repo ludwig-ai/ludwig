@@ -16,7 +16,6 @@
 
 import collections
 import logging
-import os
 from contextlib import contextmanager
 from typing import Any, Dict, Iterable, Tuple, Union
 
@@ -28,7 +27,6 @@ import pandas as pd
 import pyarrow as pa
 import ray
 from dask.diagnostics import ProgressBar
-from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import Dataset, read_parquet
 from ray.data.block import Block, BlockAccessor
@@ -37,12 +35,9 @@ from ray.util.client.common import ClientObjectRef
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.data.dataframe.base import DataFrameEngine
-from ludwig.globals import PREDICTIONS_SHAPES_FILE_NAME
-from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, load_json, save_json, split_by_slices
-from ludwig.utils.dataframe_utils import flatten_df, set_index_name, unflatten_df
+from ludwig.utils.data_utils import get_pa_schema, get_parquet_filename, split_by_slices
+from ludwig.utils.dataframe_utils import set_index_name
 from ludwig.utils.fs_utils import get_fs_and_path
-
-_ray200 = version.parse(ray.__version__) >= version.parse("2.0")
 
 TMP_COLUMN = "__TMP_COLUMN__"
 
@@ -230,13 +225,6 @@ class DaskEngine(DataFrameEngine):
             )
 
     def write_predictions(self, df: dd.DataFrame, path: str):
-        if not _ray200:
-            # fallback to slow flatten_df
-            df, column_shapes = flatten_df(df, self)
-            self.to_parquet(df, path)
-            save_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME), column_shapes)
-            return
-
         ds = self.to_ray_dataset(df)
         # We disable tensor extension casting here because we are writing out to Parquet and there is no need
         # to cast to the ray Tensor dtype extension before doing so (they will be written out as object dtype as if
@@ -246,12 +234,6 @@ class DaskEngine(DataFrameEngine):
             ds.write_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
 
     def read_predictions(self, path: str) -> dd.DataFrame:
-        if not _ray200:
-            # fallback to slow unflatten_df
-            pred_df = dd.read_parquet(path)
-            column_shapes = load_json(os.path.join(os.path.dirname(path), PREDICTIONS_SHAPES_FILE_NAME))
-            return unflatten_df(pred_df, column_shapes, self)
-
         fs, path = get_fs_and_path(path)
         ds = read_parquet(path, filesystem=PyFileSystem(FSSpecHandler(fs)))
         return self.from_ray_dataset(ds)
