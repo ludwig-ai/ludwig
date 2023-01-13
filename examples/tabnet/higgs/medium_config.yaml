@@ -77,9 +77,9 @@ trainer:
   learning_rate: 0.025
   optimizer:
     type: adam
-  decay: true
-  decay_steps: 10000
-  decay_rate: 0.9
-  staircase: true
+  learning_rate_scheduler:
+    decay: exponential
+    decay_steps: 10000
+    decay_rate: 0.9
+    staircase: true
   validation_field: label
-  shuffle_buffer_size: 1500000

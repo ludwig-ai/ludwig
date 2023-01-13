@@ -73,8 +73,6 @@ combiner:
   sparsity: 0.0001
 training:
   batch_size: 8192
-  decay_rate: 0.8
-  decay_steps: 20000
   learning_rate: 0.01
   shuffle_buffer_size: 1000000
   should_shuffle: true
@@ -83,6 +81,9 @@ training:
   early_stop: 30
   optimizer:
     type: adam
-  decay: true
+  learning_rate_scheduler:
+    decay: exponential
+    decay_rate: 0.8
+    decay_steps: 20000
   regularization_lambda: 1
   validation_field: label

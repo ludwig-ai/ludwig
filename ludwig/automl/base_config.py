@@ -239,7 +239,7 @@ def _create_default_config(
 
 
 # Read in the score and configuration of a reference model trained by Ludwig for each dataset in a list.
-def _get_reference_configs() -> dict:
+def get_reference_configs() -> dict:
     reference_configs = load_yaml(REFERENCE_CONFIGS)
     return reference_configs
 
