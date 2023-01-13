@@ -91,6 +91,7 @@ def test_grid_search_more_than_one_sample():
 
 def test_hyperopt_config_gbm():
     """This test was added due to a schema validation error when hyperopting GBMs:
+
     ```jsonschema.exceptions.ValidationError: Additional properties are not allowed ('epochs' was unexpected)```
     """
     config = {
