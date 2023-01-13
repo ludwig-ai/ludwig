@@ -6,95 +6,96 @@ defaults:
       missing_value_strategy: fill_with_const
       normalization: null
 input_features:
-- column: position_1
-  name: position_1
-  type: number
-- column: position_2
-  name: position_2
-  type: number
-- column: position_3
-  name: position_3
-  type: number
-- column: position_4
-  name: position_4
-  type: number
-- column: position_5
-  name: position_5
-  type: number
-- column: position_6
-  name: position_6
-  type: number
-- column: position_7
-  name: position_7
-  type: number
-- column: velocity_1
-  name: velocity_1
-  type: number
-- column: velocity_2
-  name: velocity_2
-  type: number
-- column: velocity_3
-  name: velocity_3
-  type: number
-- column: velocity_4
-  name: velocity_4
-  type: number
-- column: velocity_5
-  name: velocity_5
-  type: number
-- column: velocity_6
-  name: velocity_6
-  type: number
-- column: velocity_7
-  name: velocity_7
-  type: number
-- column: acceleration_1
-  name: acceleration_1
-  type: number
-- column: acceleration_2
-  name: acceleration_2
-  type: number
-- column: acceleration_3
-  name: acceleration_3
-  type: number
-- column: acceleration_4
-  name: acceleration_4
-  type: number
-- column: acceleration_5
-  name: acceleration_5
-  type: number
-- column: acceleration_6
-  name: acceleration_6
-  type: number
-- column: acceleration_7
-  name: acceleration_7
-  type: number
-- column: torque_2
-  name: torque_2
-  type: number
-- column: torque_3
-  name: torque_3
-  type: number
-- column: torque_4
-  name: torque_4
-  type: number
-- column: torque_5
-  name: torque_5
-  type: number
-- column: torque_6
-  name: torque_6
-  type: number
-- column: torque_7
-  name: torque_7
-  type: number
+  - column: position_1
+    name: position_1
+    type: number
+  - column: position_2
+    name: position_2
+    type: number
+  - column: position_3
+    name: position_3
+    type: number
+  - column: position_4
+    name: position_4
+    type: number
+  - column: position_5
+    name: position_5
+    type: number
+  - column: position_6
+    name: position_6
+    type: number
+  - column: position_7
+    name: position_7
+    type: number
+  - column: velocity_1
+    name: velocity_1
+    type: number
+  - column: velocity_2
+    name: velocity_2
+    type: number
+  - column: velocity_3
+    name: velocity_3
+    type: number
+  - column: velocity_4
+    name: velocity_4
+    type: number
+  - column: velocity_5
+    name: velocity_5
+    type: number
+  - column: velocity_6
+    name: velocity_6
+    type: number
+  - column: velocity_7
+    name: velocity_7
+    type: number
+  - column: acceleration_1
+    name: acceleration_1
+    type: number
+  - column: acceleration_2
+    name: acceleration_2
+    type: number
+  - column: acceleration_3
+    name: acceleration_3
+    type: number
+  - column: acceleration_4
+    name: acceleration_4
+    type: number
+  - column: acceleration_5
+    name: acceleration_5
+    type: number
+  - column: acceleration_6
+    name: acceleration_6
+    type: number
+  - column: acceleration_7
+    name: acceleration_7
+    type: number
+  - column: torque_2
+    name: torque_2
+    type: number
+  - column: torque_3
+    name: torque_3
+    type: number
+  - column: torque_4
+    name: torque_4
+    type: number
+  - column: torque_5
+    name: torque_5
+    type: number
+  - column: torque_6
+    name: torque_6
+    type: number
+  - column: torque_7
+    name: torque_7
+    type: number
 output_features:
-- column: torque_1
-  name: torque_1
-  type: number
+  - column: torque_1
+    name: torque_1
+    type: number
 trainer:
   batch_size: 118
-  decay: true
-  decay_rate: 0.5371397744663506
+  learning_rate_scheduler:
+    decay: exponential
+    decay_rate: 0.5371397744663506
   eval_batch_size: 16384
   evaluate_training_set: false
   learning_rate: 0.001004563044919135

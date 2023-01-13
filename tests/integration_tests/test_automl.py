@@ -9,8 +9,10 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
+from ludwig.schema import validate_upgraded_config
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
+
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -157,6 +159,9 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
     df = dd.read_csv(dataset_csv)
     config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=False, backend="ray")
 
+    # Ensure our configs are using the latest Ludwig schema
+    validate_upgraded_config(config)
+
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
@@ -174,6 +179,9 @@ def test_create_auto_config_tune_for_mem(tune_for_memory, test_data_tabular_larg
     df = dd.read_csv(dataset_csv)
     config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=True, backend="ray")
 
+    # Ensure our configs are using the latest Ludwig schema
+    validate_upgraded_config(config)
+
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
@@ -184,6 +192,9 @@ def test_create_auto_config_with_dataset_profile(test_data_tabular_large, ray_cl
     targets = [feature[NAME] for feature in output_features]
     df = dd.read_csv(dataset_csv)
     config = create_auto_config_with_dataset_profile(dataset=df, target=targets[0], backend="ray")
+
+    # Ensure our configs are using the latest Ludwig schema
+    validate_upgraded_config(config)
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set([output_features[0]])
@@ -212,6 +223,9 @@ def test_autoconfig_preprocessing_balanced():
 
     config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
 
+    # Ensure our configs are using the latest Ludwig schema
+    validate_upgraded_config(config)
+
     assert PREPROCESSING not in config
 
 
@@ -220,6 +234,9 @@ def test_autoconfig_preprocessing_imbalanced():
     df = _get_sample_df(np.array([0.6, 0.2, 0.2]))
 
     config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+
+    # Ensure our configs are using the latest Ludwig schema
+    validate_upgraded_config(config)
 
     assert PREPROCESSING in config
     assert SPLIT in config[PREPROCESSING]
@@ -239,6 +256,9 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
     target = df.columns[-1]
 
     config = create_auto_config(dataset=df, target=target, time_limit_s=1, tune_for_memory=False)
+
+    # Ensure our configs are using the latest Ludwig schema
+    validate_upgraded_config(config)
 
     # Check no features shuffled around
     assert len(input_features) == 2
