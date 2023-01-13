@@ -1034,3 +1034,44 @@ def OneOfOptionsField(
         },
         **default_kwarg,
     )
+
+
+@DeveloperAPI
+class BaseAugmentationContainer:
+    """Base Augmentation container for input features."""
+
+    # TODO: Do we need this method?
+    # def to_dict(self):
+    #     """Method for getting a dictionary representation of the augmentation operations.
+    #
+    #     Returns:
+    #         Dictionary of input features specified.
+    #     """
+    #     return convert_submodules(self.__dict__)
+
+    def to_list(self):
+        """Method for getting a list representation of the augmentation operation.
+
+        Returns:
+            List of input features specified.
+        """
+        return list(convert_submodules(self.__dict__).values())
+
+    # TODO: Do we need this method?
+    # def filter_features(self):
+    #     """This function is intended to filter out the parameters on input/output features that we want to show in
+    #     the config object repr."""
+    #     return {
+    #         key: {k: v for k, v in value.items() if k in {NAME, TYPE, ACTIVE}} for key, value in self.to_dict().items()
+    #     }
+
+    def __repr__(self):
+        filtered_repr = self.filter_features()
+        return yaml.dump(filtered_repr, sort_keys=True)
+
+
+@DeveloperAPI
+class InputAugmentationContainer(BaseAugmentationContainer):
+    """InputFeatures is a container for all input features."""
+
+    pass

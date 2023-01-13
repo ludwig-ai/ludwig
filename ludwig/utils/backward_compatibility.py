@@ -364,6 +364,7 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         "type",
         "encoder",
         "tied",
+        "augmentation",  # TODO: is this the correct way to introduce this new parameter?
         # Internal-only parameters.
         "column",
         "proc_column",

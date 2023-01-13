@@ -80,9 +80,23 @@ class PandasDataset(Dataset):
         return df.memory_usage(deep=True).sum() if df is not None else 0
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
+    def initialize_batcher(
+        self,
+        batch_size=128,
+        should_shuffle=True,
+        seed=0,
+        ignore_last=False,
+        distributed=None,
+        augmentation_pipeline=None,
+    ):
         sampler = DistributedSampler(len(self), shuffle=should_shuffle, seed=seed, distributed=distributed)
-        batcher = RandomAccessBatcher(self, sampler, batch_size=batch_size, ignore_last=ignore_last)
+        batcher = RandomAccessBatcher(
+            self,
+            sampler,
+            batch_size=batch_size,
+            ignore_last=ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
+        )
         yield batcher
 
 

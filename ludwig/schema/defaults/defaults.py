@@ -18,6 +18,7 @@ from ludwig.constants import (
 )
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.defaults.utils import DefaultsDataclassField
+from ludwig.schema.features.augmentation.utils import get_augmentation_jsonschema
 from ludwig.schema.features.base import BaseFeatureConfig
 
 
@@ -57,6 +58,11 @@ def get_defaults_jsonschema():
     combiner's field constraints."""
     preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
     props = preproc_schema["properties"]
+
+    # TODO:  Is this the best approach?  Discuss with ksbrar
+    # Special handling for image augmentation, overwrite default with list version
+    props[IMAGE]["properties"]["augmentation"] = get_augmentation_jsonschema()
+
     return {
         "type": "object",
         "properties": props,

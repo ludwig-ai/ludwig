@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 import os
 import warnings
@@ -22,8 +23,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     CHECKSUM,
     COLUMN,
@@ -62,9 +65,199 @@ from ludwig.utils.image_utils import (
     torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.registry import Registry
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
+
+_augmentation_op_registry = Registry()
+
+
+@DeveloperAPI
+def get_augmentation_op_registry() -> Registry:
+    return _augmentation_op_registry
+
+
+def register_augmentation_op(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
+    def wrap(cls):
+        for feature in features:
+            augmentation_op_registry = get_augmentation_op_registry().get(feature, {})
+            augmentation_op_registry[name] = cls
+            get_augmentation_op_registry()[feature] = augmentation_op_registry
+        return cls
+
+    return wrap
+
+
+def get_augmentation_op(feature_type: str, op_name: str):
+    return get_augmentation_op_registry()[feature_type][op_name]
+
+
+# function to partially undo the TorchVision ImageClassification transformation.
+#  back out the normalization step and convert from float32 to uint8 dtype
+#  to make the tensor displayable as an image
+#  crop size remains the same
+def _convert_back_to_uint8(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
+    std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
+    return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
+
+
+# function to redo part of the TorchVision ImageClassification transformation.
+#  convert uint8 to float32
+#  apply the imagenet1k normalization
+def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
+    std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
+    img = images.type(torch.float32).div(255.0)
+    return img.sub(mean).div(std)
+
+
+@register_augmentation_op(name="random_vertical_flip", features=IMAGE)
+class RandomVFlip(torch.nn.Module):
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            imgs = F.vflip(imgs)
+
+        return imgs
+
+
+@register_augmentation_op(name="random_horizontal_flip", features=IMAGE)
+class RandomHFlip(torch.nn.Module):
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            imgs = F.hflip(imgs)
+
+        return imgs
+
+
+@register_augmentation_op(name="random_rotate", features=IMAGE)
+class RandomRotate(torch.nn.Module):
+    def __init__(self, degree=15):
+        super().__init__()
+        self.degree = degree
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            # map angle to interval (-degree, +degree)
+            angle = (torch.rand(1) * 2 * self.degree - self.degree).item()
+            return F.rotate(imgs, angle)
+        else:
+            return imgs
+
+
+@register_augmentation_op(name="random_contrast", features=IMAGE)
+class RandomContrast(torch.nn.Module):
+    def __init__(self, min_contrast=0.1, max_contrast=3.0):
+        super().__init__()
+        self.min_contrast = min_contrast
+        self.contrast_adjustment_range = max_contrast - min_contrast
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            # random contrast adjustment
+            adjust_factor = (torch.rand(1) * self.contrast_adjustment_range + self.min_contrast).item()
+            return F.adjust_contrast(imgs, adjust_factor)
+        else:
+            return imgs
+
+
+@register_augmentation_op(name="random_brightness", features=IMAGE)
+class RandomBrightness(torch.nn.Module):
+    def __init__(self, min_brightness=0.1, max_brightness=3.0):
+        super().__init__()
+        self.min_brightness = min_brightness
+        self.brightness_adjustment_range = max_brightness - min_brightness
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            # random contrast adjustment
+            adjust_factor = (torch.rand(1) * self.brightness_adjustment_range + self.min_brightness).item()
+            return F.adjust_brightness(imgs, adjust_factor)
+        else:
+            return imgs
+
+
+@register_augmentation_op(name="random_blur", features=IMAGE)
+class RandomBlur(torch.nn.Module):
+    def __init__(self, kernel_size=5):
+        super().__init__()
+        self.kernel_size = [kernel_size, kernel_size]
+
+    def forward(self, imgs):
+        if torch.rand(1) < 0.5:
+            imgs = F.gaussian_blur(imgs, self.kernel_size)
+
+        return imgs
+
+
+# TODO: move to feature independent module?
+class AugmentationPipeline(torch.nn.Module):
+    def __init__(self, augmentation_list: List[Dict]):
+        super().__init__()
+
+        if self.training:
+            self.augmentation_steps = torch.nn.Sequential()
+            for aug in augmentation_list:
+                try:
+                    aug_copy = copy.deepcopy(aug)
+                    aug_op = get_augmentation_op(IMAGE, aug_copy.pop(TYPE))
+                    self.augmentation_steps.append(aug_op(**aug_copy))
+                except KeyError:
+                    # TODO: this try/except maybe be redundant with schema validation
+                    raise ValueError(f"Invalid augmentation operation specification: {aug}")
+        else:
+            # TODO: should this raise an exception if not in training mode?
+            self.augmentation_steps = None
+
+    def forward(self, imgs):
+        # TODO: determine if we can avoid this step by refactoring image preprocessing
+        # convert from float to uint8 values
+        imgs = _convert_back_to_uint8(imgs)
+
+        if self.augmentation_steps:
+            imgs = self.augmentation_steps(imgs)
+
+        # TODO: determine if we can avoid this step by refactoring image preprocessing
+        # convert back to float32 values
+        imgs = _renormalize_image(imgs)
+
+        return imgs
+
+
+class AugmentationPipelines:
+    """Container holding augmentation pipelines defined in the model."""
+
+    def __init__(self, augmentation_pipelines: Dict):
+        self.augmentation_pipelines = augmentation_pipelines
+
+    def __getitem__(self, key):
+        return self.augmentation_pipelines[key]
+
+    def __contains__(self, key):
+        return key in self.augmentation_pipelines
+
+    def __len__(self):
+        return len(self.augmentation_pipelines)
+
+    def __iter__(self):
+        return self.augmentation_pipelines.__iter__()
+
+    def items(self):
+        return self.augmentation_pipelines.items()
 
 
 class _ImagePreprocessing(torch.nn.Module):

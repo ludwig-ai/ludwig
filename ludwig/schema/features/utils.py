@@ -1,8 +1,9 @@
 from typing import Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MODEL_GBM
+from ludwig.constants import IMAGE, MODEL_GBM
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.augmentation.utils import get_augmentation_jsonschema
 from ludwig.utils.registry import Registry
 
 input_config_registry = Registry()
@@ -86,6 +87,13 @@ def get_input_feature_conds():
         feature_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)
+
+        # TODO: Is this the best way?  Discuss with ksbrar
+        # special handling for image augmentation
+        if feature_type == IMAGE:
+            # overwrite the default schema definition with list version
+            feature_props["augmentation"] = get_augmentation_jsonschema()
+
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds
