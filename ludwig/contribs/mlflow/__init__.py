@@ -117,6 +117,7 @@ class MlflowCallback(Callback):
                 run_name = os.path.basename(output_directory)
                 self.run = mlflow.start_run(experiment_id=self.experiment_id, run_name=run_name)
 
+        print("!!! ON TRAIN INIT !!!", mlflow.get_tracking_uri(), mlflow.active_run())
         self.log_config(base_config)
 
     def log_config(self, config):
@@ -192,6 +193,7 @@ class MlflowCallback(Callback):
         self.__dict__ = d
         if self.tracking_uri:
             mlflow.set_tracking_uri(self.tracking_uri)
+        print("!!! SET STATE !!!", mlflow.get_tracking_uri(), mlflow.active_run())
         if self.run and not self.run_ended:
             # Run has already been set, but may not be active due to training workers running in a separate
             # process, so resume the run

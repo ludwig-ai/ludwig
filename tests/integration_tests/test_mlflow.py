@@ -163,10 +163,36 @@ def test_export_mlflow_local(tmpdir):
 
     exp_name = "mlflow_test"
     output_dir = os.path.join(tmpdir, "output")
-    model = LudwigModel(config, backend=FakeRemoteBackend())
+    model = LudwigModel(config, callbacks=[MlflowCallback()], backend="ray")
     _, _, output_directory = model.train(training_set=data_csv, experiment_name=exp_name, output_directory=output_dir)
 
     model_path = os.path.join(output_directory, "model")
     output_path = os.path.join(tmpdir, "data/results/mlflow")
     export_mlflow(model_path, output_path)
     assert set(os.listdir(output_path)) == {"MLmodel", "model", "conda.yaml"}
+
+
+@pytest.mark.distributed
+def test_mlflow_ray(tmpdir, ray_cluster_2cpu):
+    epochs = 2
+    batch_size = 8
+    num_examples = 32
+
+    input_features = [sequence_feature(reduce_output="sum")]
+    output_features = [category_feature(vocab_size=2, reduce_input="sum", output_feature=True)]
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {"epochs": epochs, "batch_size": batch_size},
+    }
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, "train.csv"), num_examples=num_examples
+    )
+
+    exp_name = "mlflow_test"
+    output_dir = os.path.join(tmpdir, "output")
+    model = LudwigModel(config, callbacks=[MlflowCallback()], backend="ray")
+    _, _, output_directory = model.train(training_set=data_csv, experiment_name=exp_name, output_directory=output_dir)
