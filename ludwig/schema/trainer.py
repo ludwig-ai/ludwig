@@ -527,6 +527,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=255, description="Maximum number of bins to use for discretizing features with GBM trainer."
     )
 
+    feature_pre_filter: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to ignore features that are unsplittable based on min_data_in_leaf in the GBM trainer.",
+    )
+
 
 @DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
