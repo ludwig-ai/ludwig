@@ -399,7 +399,14 @@ def _model_select(
 
     # Adjust learning rate based on other config settings
     if base_config[TRAINER]["learning_rate"] == AUTO:
-        base_config[TRAINER]["learning_rate"] = get_auto_learning_rate(ModelConfig.from_dict(base_config))
+        # Add a fake output feature to ensure we can load the ModelConfig, as we expect there to be at least
+        # one output feature in all cases
+        # TODO(travis): less hacky way to do this, we should probably allow ModelConfig to be created without output
+        # features
+        load_config = copy.deepcopy(base_config)
+        if not load_config.get(OUTPUT_FEATURES):
+            load_config[OUTPUT_FEATURES] = [{"name": "fake", "type": "binary"}]
+        base_config[TRAINER]["learning_rate"] = get_auto_learning_rate(ModelConfig.from_dict(load_config))
 
     # override and constrain automl config based on user specified values
     if user_config is not None:
