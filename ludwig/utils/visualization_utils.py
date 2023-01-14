@@ -1124,15 +1124,13 @@ def double_axis_line_plot(
     colors = plt.get_cmap("tab10").colors
 
     # Dynamically adjust figure size based on number of labels
-    _, height = plt.rcParams.get("figure.figsize")
-    fig, ax1 = plt.subplots(layout="constrained", figsize=(len(labels) / 3, height))
+    default_width, default_height = plt.rcParams.get("figure.figsize")
+    width = max(default_width, len(labels) / 3)
+    height = max(default_height, len(labels) / 3)
+    fig, ax1 = plt.subplots(layout="constrained", figsize=(width, height))
 
     if title is not None:
         ax1.set_title(title)
-
-    # ax1.grid(which='both')
-    # ax1.grid(which='minor', alpha=0.5)
-    # ax1.grid(which='major', alpha=0.75)
 
     ax1.set_xlabel(f"class (sorted by {y1_name})")
     ax1.set_xlim(0, len(y1_sorted) - 1)
