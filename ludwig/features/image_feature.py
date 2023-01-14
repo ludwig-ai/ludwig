@@ -232,8 +232,7 @@ class AugmentationPipeline(torch.nn.Module):
         imgs = _convert_back_to_uint8(imgs)
 
         if self.augmentation_steps:
-            # TODO: change to debug level before merging
-            logger.info(f"Executing augmentation pipeline steps: {self.augmentation_steps}")
+            logger.debug(f"Executing augmentation pipeline steps: {self.augmentation_steps}")
             imgs = self.augmentation_steps(imgs)
 
         # TODO: determine if we can avoid this step by refactoring image preprocessing

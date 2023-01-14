@@ -353,7 +353,6 @@ class RayDatasetBatcher(Batcher):
 
         if self.augmentation_pipeline:
             for c, augmentations in self.augmentation_pipeline.items():
-                # TODO: change to debug level once verified
                 logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
                 res[c] = augmentations(torch.tensor(res[c]))
 

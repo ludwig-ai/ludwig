@@ -56,8 +56,7 @@ class RandomAccessBatcher(Batcher):
 
         if self.augmentation_pipeline:
             for feature_name, augmentations in self.augmentation_pipeline.items():
-                # TODO: change to debug level
-                logger.info(f"RandomAccessBatcher applying augmentation pipeline to batch for feature {feature_name}")
+                logger.debug(f"RandomAccessBatcher applying augmentation pipeline to batch for feature {feature_name}")
                 sub_batch[feature_name] = augmentations(torch.tensor(sub_batch[feature_name]))
 
         self.step += 1
