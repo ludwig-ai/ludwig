@@ -194,18 +194,13 @@ def create_default_config(
     combiner types
     """
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
-
-    resources = backend.get_available_resources()
-
-    targets = convert_targets(target_name)
-    features_metadata = get_field_metadata(dataset_info.fields, dataset_info.row_count, resources, targets)
-
-    # input_and_output_feature_config, features_metadata = get_features_config(
-    #     dataset_info.fields, dataset_info.row_count, resources, target_name
-    # )
     base_automl_config.update(features_config)
 
+    targets = convert_targets(target_name)
+    features_metadata = get_field_metadata(dataset_info.fields, dataset_info.row_count, targets)
+
     # Handle expensive features for CPU
+    resources = backend.get_available_resources()
     for ifeature in base_automl_config[INPUT_FEATURES]:
         if resources.gpus == 0:
             if ifeature[TYPE] == TEXT:
