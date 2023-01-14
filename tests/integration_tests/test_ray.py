@@ -818,12 +818,11 @@ def test_tune_batch_size_lr_cpu(
     }
 
     backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
-    backend_config["trainer"]["num_workers"] = 2
 
     csv_filename = os.path.join(tmpdir, "dataset.csv")
     dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
-    model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
+    model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config, evaluate=False)
     assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
