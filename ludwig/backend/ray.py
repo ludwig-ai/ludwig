@@ -34,10 +34,10 @@ from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
 from ray.air.result import Result
+from ray.train.base_trainer import TrainingFailedError
 from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
 from ray.train.trainer import BaseTrainer as RayBaseTrainer
-from ray.train.base_trainer import TrainingFailedError
 from ray.tune.tuner import Tuner
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
