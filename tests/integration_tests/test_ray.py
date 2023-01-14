@@ -49,6 +49,7 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.data.preprocessing import balance_data
+from ludwig.features.feature_registries import update_config_with_metadata
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
@@ -114,6 +115,7 @@ def run_api_experiment(
     dataset,
     backend_config,
     predict=False,
+    evaluate=True,
     skip_save_processed_input=True,
     skip_save_predictions=True,
     required_metrics=None,
@@ -132,7 +134,7 @@ def run_api_experiment(
         backend_config,
         config,
         dataset=dataset,
-        evaluate=True,
+        evaluate=evaluate,
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
@@ -812,7 +814,8 @@ def test_tune_batch_size_lr_cpu(
         },
     }
 
-    backend_config = {**RAY_BACKEND_CONFIG}
+    backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
+    backend_config["trainer"]["num_workers"] = 2
 
     csv_filename = os.path.join(tmpdir, "dataset.csv")
     dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
@@ -1068,3 +1071,54 @@ class TestDatasetWindowAutosizing:
             assert auto_window.num_blocks() < user_window.num_blocks()
             if i > 100:
                 break
+
+
+@pytest.mark.distributed
+def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
+    max_batch_size = 256
+    expected_final_batch_size = 128
+
+    config = {
+        "input_features": [
+            number_feature(normalization="zscore"),
+            set_feature(),
+            binary_feature(),
+        ],
+        "output_features": [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")],
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: {
+            "epochs": 2,
+            "batch_size": "auto",
+            "learning_rate": 0.001,
+            "max_batch_size": max_batch_size,
+        },
+    }
+
+    backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
+    backend_config["trainer"]["num_workers"] = 2
+
+    csv_filename = os.path.join(tmpdir, "dataset.csv")
+    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
+    dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
+
+    backend = initialize_backend(backend_config)
+    model = LudwigModel(config, backend=backend)
+    train_set, _, _, training_set_metadata = model.preprocess(dataset_parquet)
+
+    # TODO(travis): move this into LudwigModel API
+    update_config_with_metadata(model.config_obj, training_set_metadata)
+    model_ecd = LudwigModel.create_model(model.config_obj, random_seed=42)
+
+    with backend.create_trainer(
+        model=model_ecd,
+        config=model.config_obj.trainer,
+        resume=False,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        callbacks=[],
+        random_seed=42,
+    ) as trainer:
+        best_batch_size = trainer.tune_batch_size(model.config, train_set)
+
+    assert best_batch_size == expected_final_batch_size

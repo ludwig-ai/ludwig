@@ -25,7 +25,7 @@ import statistics
 import sys
 import threading
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
@@ -389,6 +389,7 @@ class Trainer(BaseTrainer):
         random_seed: int = default_random_seed,
         max_trials: int = 20,
         halving_limit: int = 3,
+        on_best_batch_size_updated: Optional[Callable[[int, float, int], None]] = None,
     ) -> int:
         logger.info("Tuning batch size...")
 
@@ -436,6 +437,13 @@ class Trainer(BaseTrainer):
                     best_samples_per_sec = samples_per_sec
                     best_batch_size = batch_size
                     count += 1
+
+                    if on_best_batch_size_updated is not None:
+                        on_best_batch_size_updated(best_batch_size, best_samples_per_sec, count)
+
+                    logger.info(f"{batch_size} and {self.distributed.local_rank()}")
+                    if batch_size == 32 and self.distributed.local_rank() == 0:
+                        sys.exit(1)
 
                     # double batch size
                     batch_size *= 2

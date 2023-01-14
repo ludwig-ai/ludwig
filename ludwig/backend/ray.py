@@ -247,8 +247,15 @@ def tune_batch_size_fn(
         device = get_torch_device()
         model = model.to(device)
 
+        def on_best_batch_size_updated(best_batch_size: int, best_samples_per_sec: float, count: int):
+            session.report(
+                metrics=dict(best_batch_size=best_batch_size),
+            )
+
         trainer = RemoteTrainer(model=model, distributed=distributed, **executable_kwargs)
-        best_batch_size = trainer.tune_batch_size(ludwig_config, train_shard, **kwargs)
+        best_batch_size = trainer.tune_batch_size(
+            ludwig_config, train_shard, on_best_batch_size_updated=on_best_batch_size_updated, **kwargs
+        )
         session.report(
             metrics=dict(best_batch_size=best_batch_size),
         )
