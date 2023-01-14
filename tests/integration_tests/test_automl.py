@@ -180,7 +180,7 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
     input_features, output_features, dataset_csv = test_data
     targets = [feature[NAME] for feature in output_features]
     df = dd.read_csv(dataset_csv)
-    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=False, backend="ray")
+    config = create_auto_config(df, targets, time_limit_s=600, backend="ray")
 
     # Ensure our configs are using the latest Ludwig schema
     validate_upgraded_config(config)
@@ -190,21 +190,6 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
 
     expected = merge_dict_with_features(config, expectations)
     assert config == expected
-
-
-@pytest.mark.distributed
-@pytest.mark.parametrize("tune_for_memory", [True, False])
-def test_create_auto_config_tune_for_mem(tune_for_memory, test_data_tabular_large, ray_cluster_2cpu):
-    input_features, output_features, dataset_csv = test_data_tabular_large
-    targets = [feature[NAME] for feature in output_features]
-    df = dd.read_csv(dataset_csv)
-    config = create_auto_config(df, targets, time_limit_s=600, tune_for_memory=True, backend="ray")
-
-    # Ensure our configs are using the latest Ludwig schema
-    validate_upgraded_config(config)
-
-    assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
-    assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
 
 
 @pytest.mark.distributed
@@ -242,7 +227,7 @@ def _get_sample_df(class_probs):
 def test_autoconfig_preprocessing_balanced():
     df = _get_sample_df(np.array([0.33, 0.33, 0.34]))
 
-    config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+    config = create_auto_config(dataset=df, target="category", time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
     validate_upgraded_config(config)
@@ -254,7 +239,7 @@ def test_autoconfig_preprocessing_balanced():
 def test_autoconfig_preprocessing_imbalanced():
     df = _get_sample_df(np.array([0.6, 0.2, 0.2]))
 
-    config = create_auto_config(dataset=df, target="category", time_limit_s=1, tune_for_memory=False)
+    config = create_auto_config(dataset=df, target="category", time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
     validate_upgraded_config(config)
@@ -276,7 +261,7 @@ def test_autoconfig_preprocessing_text_image(tmpdir):
     df = pd.read_csv(rel_path)
     target = df.columns[-1]
 
-    config = create_auto_config(dataset=df, target=target, time_limit_s=1, tune_for_memory=False)
+    config = create_auto_config(dataset=df, target=target, time_limit_s=1)
 
     # Ensure our configs are using the latest Ludwig schema
     validate_upgraded_config(config)
