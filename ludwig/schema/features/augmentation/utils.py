@@ -8,7 +8,6 @@ from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
-
 _augmentation_config_registry = Registry()
 
 
