@@ -209,6 +209,9 @@ class AugmentationPipeline(torch.nn.Module):
     def __init__(self, augmentation_list: List[Dict]):
         super().__init__()
 
+        # TODO: change to debug level before merging
+        logger.info(f"Creating Augmentation pipline: {augmentation_list}")
+
         if self.training:
             self.augmentation_steps = torch.nn.Sequential()
             for aug in augmentation_list:
@@ -229,6 +232,8 @@ class AugmentationPipeline(torch.nn.Module):
         imgs = _convert_back_to_uint8(imgs)
 
         if self.augmentation_steps:
+            # TODO: change to debug level before merging
+            logger.info("Applying augmentation pipeline")
             imgs = self.augmentation_steps(imgs)
 
         # TODO: determine if we can avoid this step by refactoring image preprocessing

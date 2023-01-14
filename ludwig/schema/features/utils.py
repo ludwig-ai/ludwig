@@ -88,12 +88,6 @@ def get_input_feature_conds():
         feature_props = feature_schema["properties"]
         schema_utils.remove_duplicate_fields(feature_props)
 
-        # TODO: Is this the best way?  Discuss with ksbrar
-        # special handling for image augmentation
-        if feature_type == IMAGE:
-            # overwrite the default schema definition with list version
-            feature_props["augmentation"] = get_augmentation_jsonschema()
-
         feature_cond = schema_utils.create_cond({"type": feature_type}, feature_props)
         conds.append(feature_cond)
     return conds

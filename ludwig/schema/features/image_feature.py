@@ -1,3 +1,5 @@
+from typing import List
+
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
@@ -27,7 +29,7 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: BaseAugmentationConfig = AugmentationContainerDataclassField(default=[])
+    augmentation: List[BaseAugmentationConfig] = AugmentationContainerDataclassField(default=[])
 
 
 @DeveloperAPI

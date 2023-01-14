@@ -6,29 +6,8 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.augmentation.base import BaseAugmentationContainerConfig
 from ludwig.utils.registry import Registry
 
-
-@DeveloperAPI
-@dataclass(repr=False)
-class ImageAugmentationContainerConfig(BaseAugmentationContainerConfig):
-    """Augmentation container for image features."""
-
-    pass
-
-
-# TODO: Is all of this needed?
-# augmentation_registry = Registry()
-#
-#
-# @DeveloperAPI
-# def register_augmentation(name: str):
-#     def wrap(augmentation_config: BaseAugmentationConfig):
-#         augmentation_registry[name] = augmentation_config
-#         return augmentation_config
-#
-#     return wrap
 
 _augmentation_config_registry = Registry()
 
@@ -51,7 +30,7 @@ def get_augmentation_cls(name: str):
 
 
 @DeveloperAPI
-def AugmentationContainerDataclassField(default=None, description=""):
+def AugmentationContainerDataclassField(default=[], description=""):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
@@ -67,8 +46,8 @@ def AugmentationContainerDataclassField(default=None, description=""):
         augmentation_registry and creates a corresponding JSON schema for external usage."""
 
         def _deserialize(self, value, attr, data, **kwargs):
-            if value is None:
-                return None
+            assert isinstance(value, list), "Augmentation config must be a list."
+
             augmentation_list = []
             for augmentation in value:
                 augmentation_op = augmentation[TYPE]
@@ -87,9 +66,21 @@ def AugmentationContainerDataclassField(default=None, description=""):
             return get_augmentation_jsonschema()
 
     try:
-        augmentation_container = ImageAugmentationContainerConfig
-        load_default = augmentation_container.Schema().load({})
-        dump_default = augmentation_container.Schema().dump({})
+        if default:
+            augmentation_list = []
+            for augmentation in default:
+                augmentation_op = augmentation[TYPE]
+                augmentation_cls = get_augmentation_cls(augmentation_op)
+                pre = augmentation_cls()
+                try:
+                    augmentation_list.append(pre.Schema().load(augmentation))
+                except (TypeError, ValidationError) as error:
+                    raise ValidationError(
+                        f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
+                    )
+            load_default = dump_default = augmentation_list
+        else:
+            load_default = dump_default = default
 
         return field(
             metadata={
@@ -146,7 +137,6 @@ def get_augmentation_conds():
     # input_feature_types = sorted(list(input_config_registry.keys()))
     augmentation_types = sorted(list(get_augmentation_config_registry().keys()))
     conds = []
-    # for feature_type in input_feature_types:  # TODO: placeholder for future use
     for augmentation_type in augmentation_types:
         schema_cls = get_augmentation_cls(augmentation_type)
         augmentation_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
