@@ -21,8 +21,8 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
 from ludwig.automl.base_config import (
-    create_default_config,
     allocate_experiment_resources,
+    create_default_config,
     DatasetInfo,
     get_dataset_info,
     get_default_automl_hyperopt,
