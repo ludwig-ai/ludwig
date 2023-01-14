@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import contextlib
 import copy
 import os
-import sys
 import tempfile
 from typing import Optional
 
@@ -78,6 +78,7 @@ try:
     import dask
     import modin
     import ray
+    import ray.exceptions
     from ray.air.config import DatasetConfig
     from ray.data import Dataset, DatasetPipeline
     from ray.train._internal.dataset_spec import DataParallelIngestSpec
@@ -1076,9 +1077,10 @@ class TestDatasetWindowAutosizing:
 
 
 @pytest.mark.distributed
-def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
+@pytest.mark.parametrize("error_batch_size", [64, 2, 2048])
+def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_cluster_2cpu):
     max_batch_size = 256
-    expected_final_batch_size = 128
+    expected_final_batch_size = min(error_batch_size, 128)
 
     config = {
         "input_features": [
@@ -1107,7 +1109,7 @@ def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
     model = LudwigModel(config, backend=backend)
     train_set, _, _, training_set_metadata = model.preprocess(dataset_parquet)
 
-    # TODO(travis): move this into LudwigModel API
+    # TODO(travis): move this into LudwigModel.create_model()
     update_config_with_metadata(model.config_obj, training_set_metadata)
     model_ecd = LudwigModel.create_model(model.config_obj, random_seed=42)
 
@@ -1117,8 +1119,8 @@ def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
             batch_size: int,
             total_steps: int = 5,
         ) -> float:
-            if batch_size == 64 and self.distributed.local_rank() == 0:
-                sys.exit(1)
+            if batch_size == error_batch_size and self.distributed.local_rank() == 0:
+                raise RuntimeError("Expected failure")
             return super().train_for_tuning(batch_size, total_steps)
 
     with backend.create_trainer(
@@ -1131,6 +1133,8 @@ def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
         callbacks=[],
         random_seed=42,
     ) as trainer:
-        best_batch_size = trainer.tune_batch_size(model.config, train_set, trainer_cls=ErrorRemoteTrainer)
+        with pytest.raises(ray.exceptions.RayTaskError) if error_batch_size == 2 else contextlib.nullcontext():
+            best_batch_size = trainer.tune_batch_size(model.config, train_set, trainer_cls=ErrorRemoteTrainer)
 
-    assert best_batch_size == expected_final_batch_size
+    if error_batch_size > 2:
+        assert best_batch_size == expected_final_batch_size
