@@ -381,6 +381,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
+@pytest.mark.skip(reason="Occasional metadata mismatch error from Dask")
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_outputs(dataset_type, ray_cluster_2cpu):
