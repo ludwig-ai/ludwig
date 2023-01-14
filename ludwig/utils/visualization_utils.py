@@ -61,11 +61,6 @@ RAY_TUNE_CATEGORY_SPACES = {"choice", "grid_search"}
 _matplotlib_34 = version.parse(mpl.__version__) >= version.parse("3.4")
 
 
-# plt.rc('xtick', labelsize='x-large')
-# plt.rc('ytick', labelsize='x-large')
-# plt.rc('axes', labelsize='x-large')
-
-
 def visualize_callbacks(callbacks, fig):
     if callbacks is None:
         return
@@ -1070,13 +1065,18 @@ def confusion_matrix_plot(
     mpl.rcParams.update({"figure.autolayout": True})
 
     # Dynamically set the size of the plot based on the number of labels
-    fig, ax = plt.subplots(figsize=(len(labels) / 2, len(labels) / 2))
+    # Use minimum size to prevent plot from being too small
+    default_width, default_height = plt.rcParams.get("figure.figsize")
+    width = max(default_width, len(labels) / 2)
+    height = max(default_height, len(labels) / 2)
+    fig, ax = plt.subplots(figsize=(width, height))
 
     ax.invert_yaxis()
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
 
-    cax = ax.matshow(confusion_matrix, cmap="Pastel1")
+    # Set alpha value to prevent blue hues from being too dark
+    cax = ax.matshow(confusion_matrix, cmap="Blues", alpha=0.6)
     # Annotate confusion matrix plot
     for (i, j), z in np.ndenumerate(confusion_matrix):
         ax.text(
@@ -1266,7 +1266,11 @@ def bar_plot(
 
     sns.set_style("whitegrid")
 
-    fig, ax = plt.subplots()
+    # Dynamically set the size of the plot based on the number of labels
+    # Use minimum size to prevent plot from being too small
+    default_width, default_height = plt.rcParams.get("figure.figsize")
+    width = max(default_width, len(labels) / 2)
+    _, ax = plt.subplots(figsize=(width, default_height))
 
     ax.grid(which="both")
     ax.grid(which="minor", alpha=0.5)
