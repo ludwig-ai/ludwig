@@ -121,16 +121,31 @@ class CategoryFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             column,
             num_most_frequent=preprocessing_parameters["most_common"],
             processor=backend.df_engine,
         )
         vocab_size = len(str2idx)
-        if vocab_size <= 1:
+        if not is_input_feature and vocab_size <= 1:
+            # Category output feature with vocab size 1
             raise InputDataError(
-                column.name, CATEGORY, f"At least 2 distinct values are required, column only contains {str(idx2str)}"
+                column.name,
+                CATEGORY,
+                f"""
+                At least 2 distinct values are required for category output features, but column
+                only contains {str(idx2str)}.
+                """,
+            )
+        if vocab_size <= 1:
+            # Category input feature with vocab size 1
+            logger.info(
+                f"Input feature '{column.name}' contains only 1 distinct value {str(idx2str)}. This is not useful"
+                " for machine learning models because this feature has zero variance. Consider removing this feature"
+                " from your input features."
             )
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 

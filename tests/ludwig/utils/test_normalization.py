@@ -33,9 +33,9 @@ proc_df = pd.DataFrame(columns=["x"])
 
 
 def test_norm():
-    feature_1_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "zscore"}, LOCAL_BACKEND)
-    feature_2_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "minmax"}, LOCAL_BACKEND)
-    feature_3_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "iq"}, LOCAL_BACKEND)
+    feature_1_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "zscore"}, LOCAL_BACKEND, True)
+    feature_2_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "minmax"}, LOCAL_BACKEND, True)
+    feature_3_meta = NumberFeatureMixin.get_feature_meta(data_df["x"], {"normalization": "iq"}, LOCAL_BACKEND, True)
 
     assert feature_1_meta["mean"] == 6
     assert feature_2_meta["min"] == 2
