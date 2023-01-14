@@ -5,7 +5,7 @@ name: benchmark
 
 on:
   push:
-    branches: ["master", "release-*"]
+    branches: ["master", "release-*", "benchmarks-fix"]
 
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
