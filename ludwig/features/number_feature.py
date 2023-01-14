@@ -263,7 +263,9 @@ class NumberFeatureMixin(BaseFeatureMixin):
         return backend.df_engine.df_lib.to_numeric(column, errors="coerce").astype(np.float32)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         numeric_transformer = get_from_registry(
             preprocessing_parameters.get("normalization", None),
             numeric_transformation_registry,

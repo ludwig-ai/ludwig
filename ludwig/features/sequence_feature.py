@@ -198,7 +198,9 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         return column.astype(str)
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_length, _, _, _, _ = create_vocabulary(
             column,
             preprocessing_parameters["tokenizer"],
