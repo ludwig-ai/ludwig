@@ -87,6 +87,7 @@ def test_augmentation_pipeline(test_image, augmentation_pipeline_ops):
     augmentation_pipeline(test_image)
 
 
+@pytest.mark.distributed
 @pytest.mark.parametrize(
     "augmentation_pipeline_ops",
     [
