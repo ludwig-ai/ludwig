@@ -171,7 +171,6 @@ class HorovodTrainerRay210(HorovodTrainer):
         assert len(result_grid) == 1
         try:
             result = result_grid[0]
-            print("!!! METRICS", result.metrics)
             if result.error:
                 raise result.error
         except TuneError as e:
