@@ -1080,7 +1080,7 @@ class TestDatasetWindowAutosizing:
 @pytest.mark.parametrize("error_batch_size", [64, 2, 2048])
 def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_cluster_2cpu):
     max_batch_size = 256
-    expected_final_batch_size = min(error_batch_size, 128)
+    expected_final_batch_size = min(error_batch_size, max_batch_size) / 2
 
     config = {
         "input_features": [

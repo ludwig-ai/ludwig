@@ -33,8 +33,12 @@ from ray import ObjectRef
 from ray.air import session
 from ray.air.checkpoint import Checkpoint
 from ray.air.config import DatasetConfig, RunConfig, ScalingConfig
+from ray.air.result import Result
 from ray.train.horovod import HorovodTrainer
 from ray.train.torch import TorchCheckpoint
+from ray.train.trainer import BaseTrainer as RayBaseTrainer
+from ray.train.base_trainer import TrainingFailedError
+from ray.tune.tuner import Tuner
 from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
@@ -44,7 +48,7 @@ if TYPE_CHECKING:
     from ludwig.api import LudwigModel
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.backend._ray210_compat import HorovodTrainerRay210
+from ludwig.backend._ray210_compat import HorovodTrainerRay210, TunerRay210
 from ludwig.backend.base import Backend, RemoteTrainingMixin
 from ludwig.backend.datasource import BinaryIgnoreNoneTypeDatasource
 from ludwig.constants import CPU_RESOURCES_PER_TRIAL, EXECUTOR, MODEL_ECD, NAME, PREPROCESSING, PROC_COLUMN, TYPE
@@ -301,6 +305,27 @@ def create_runner(**kwargs):
     yield RayAirRunner(trainer_kwargs)
 
 
+def fit_no_exception(trainer: RayBaseTrainer) -> Result:
+    trainable = trainer.as_trainable()
+
+    kwargs = dict(trainable=trainable, run_config=trainer.run_config)
+    tuner = Tuner(**kwargs) if _ray220 else TunerRay210(**kwargs)
+    result_grid = tuner.fit()
+    assert len(result_grid) == 1
+
+    result = result_grid[0]
+    return result
+
+
+def raise_result_error(result: Result):
+    from ray.tune.error import TuneError
+
+    try:
+        raise result.error
+    except TuneError as e:
+        raise TrainingFailedError from e
+
+
 class RayAirRunner:
     def __init__(self, trainer_kwargs: Dict[str, Any]) -> None:
         trainer_kwargs = copy.copy(trainer_kwargs)
@@ -353,7 +378,8 @@ class RayAirRunner:
         data_loader_kwargs: Dict[str, Any] = None,
         stream_window_size: Dict[str, Union[None, float]] = None,
         callbacks: List[Any] = None,
-    ) -> Tuple[Dict, TorchCheckpoint]:
+        exception_on_error: bool = True,
+    ) -> Result:
         dataset_config = None
         if dataset is not None:
             data_loader_kwargs = data_loader_kwargs or {}
@@ -371,7 +397,11 @@ class RayAirRunner:
             dataset_config=dataset_config,
             run_config=RunConfig(callbacks=callbacks),
         )
-        return trainer.fit()
+
+        if exception_on_error:
+            return trainer.fit()
+        else:
+            return fit_no_exception(trainer)
 
 
 @register_ray_trainer(MODEL_ECD, default=True)
@@ -467,7 +497,7 @@ class RayTrainerV2(BaseTrainer):
         **kwargs,
     ) -> int:
         with create_runner(**self.trainer_kwargs) as runner:
-            results = runner.run(
+            result = runner.run(
                 lambda config: tune_batch_size_fn(**config),
                 config=dict(
                     dataset=training_set,
@@ -479,8 +509,13 @@ class RayTrainerV2(BaseTrainer):
                     trainer_cls=trainer_cls,
                     **kwargs,
                 ),
+                exception_on_error=False,
             )
-        return results.metrics["best_batch_size"]
+
+        if "best_batch_size" in result.metrics:
+            return result.metrics["best_batch_size"]
+        else:
+            raise_result_error(result)
 
     @property
     def validation_field(self):
