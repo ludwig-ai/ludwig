@@ -184,6 +184,10 @@ def safe_move_file(src, dst):
 
 @DeveloperAPI
 def safe_move_directory(src, dst):
+    """Recursively moves files from src directory to dst directory and removes src directory.
+
+    If dst directory does not exist, it will be created.
+    """
     try:
         os.replace(src, dst)
     except OSError as err:
