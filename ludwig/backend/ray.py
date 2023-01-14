@@ -515,6 +515,8 @@ class RayTrainerV2(BaseTrainer):
         best_batch_size = result.metrics.get("best_batch_size")
         if best_batch_size is None:
             raise_result_error(result)
+        elif result.error:
+            logger.warning(f"Exception raised during batch size tuning. Error: {str(result.error)}")
         return best_batch_size
 
     @property
