@@ -6,7 +6,6 @@ pyarrow==6.0.1 # https://github.com/ray-project/ray/issues/22310
 horovod[pytorch]>=0.24.0,!=0.26.0
 # requirements for ray
 ray[default,data,serve,tune]>=2.0.0
-pickle5; python_version <= '3.7'
 tensorboardX<2.3
 GPUtil
 tblib
