@@ -29,11 +29,14 @@ from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
 
+import torch
+
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
+from ludwig.features.image_feature import AugmentationPipeline
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.error_handling_utils import default_retry
@@ -120,6 +123,7 @@ class RayDataset(Dataset):
             batch_size,
             self.size,
             ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
         )
 
     def __len__(self):
@@ -235,6 +239,7 @@ class RayDatasetShard(Dataset):
             batch_size,
             self.size,
             ignore_last,
+            augmentation_pipeline=augmentation_pipeline,
         )
 
     @lru_cache(1)
@@ -257,12 +262,14 @@ class RayDatasetBatcher(Batcher):
         batch_size: int,
         samples_per_epoch: int,
         ignore_last: bool = False,
+        augmentation_pipeline: Optional[AugmentationPipeline] = None,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
         self.samples_per_epoch = samples_per_epoch
         self.training_set_metadata = training_set_metadata
         self.ignore_last = ignore_last
+        self.augmentation_pipeline = augmentation_pipeline
 
         self.features = features
         self.columns = list(features.keys())
@@ -344,6 +351,12 @@ class RayDatasetBatcher(Batcher):
                 res[c] = np.stack(batch[c].values)
             else:
                 res[c] = batch[c].to_numpy()
+
+        if self.augmentation_pipeline:
+            for c, augmentations in self.augmentation_pipeline.items():
+                # TODO: change to debug level once verified
+                logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
+                res[c] = augmentations(torch.tensor(res[c]))
 
         for c in self.columns:
             reshape = self.reshape_map.get(c)

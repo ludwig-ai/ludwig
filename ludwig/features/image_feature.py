@@ -233,7 +233,7 @@ class AugmentationPipeline(torch.nn.Module):
 
         if self.augmentation_steps:
             # TODO: change to debug level before merging
-            logger.info("Applying augmentation pipeline")
+            logger.info(f"Executing augmentation pipeline steps: {self.augmentation_steps}")
             imgs = self.augmentation_steps(imgs)
 
         # TODO: determine if we can avoid this step by refactoring image preprocessing
