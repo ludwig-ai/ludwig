@@ -19,7 +19,6 @@ import math
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import NAME
 from ludwig.data.batcher.base import Batcher
 
 logger = logging.getLogger(__name__)
