@@ -24,12 +24,11 @@ from typing import Dict, Iterator, Optional, Union
 import numpy as np
 import pandas as pd
 import ray
+import torch
 from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
-
-import torch
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
