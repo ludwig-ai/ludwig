@@ -12,7 +12,8 @@
 FROM rayproject/ray:2.0.0-py38
 
 # https://github.com/kubernetes/release/issues/1982
-RUN sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 8B57C5C2836F4BEB
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+	sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
 
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
