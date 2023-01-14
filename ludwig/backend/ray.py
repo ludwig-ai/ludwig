@@ -512,10 +512,10 @@ class RayTrainerV2(BaseTrainer):
                 exception_on_error=False,
             )
 
-        if "best_batch_size" in result.metrics:
-            return result.metrics["best_batch_size"]
-        else:
+        best_batch_size = result.metrics.get("best_batch_size")
+        if best_batch_size is None:
             raise_result_error(result)
+        return best_batch_size
 
     @property
     def validation_field(self):
