@@ -1,9 +1,8 @@
 from typing import Dict
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE, MODEL_GBM
+from ludwig.constants import MODEL_GBM
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.augmentation.utils import get_augmentation_jsonschema
 from ludwig.utils.registry import Registry
 
 input_config_registry = Registry()
