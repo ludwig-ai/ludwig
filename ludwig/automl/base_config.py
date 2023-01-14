@@ -358,7 +358,7 @@ def get_features_config(
     """
     targets = convert_targets(target_name)
     metadata = get_field_metadata(fields, row_count, targets)
-    return get_config_from_metadata(metadata, targets), metadata
+    return get_config_from_metadata(metadata, targets)
 
 
 def convert_targets(target_name: Union[str, List[str]] = None) -> Set[str]:

@@ -310,8 +310,7 @@ def create_features_config(
     dataset_info: DatasetInfo,
     target_name: Union[str, List[str]] = None,
 ) -> ModelConfigDict:
-    features_config, _ = get_features_config(dataset_info.fields, dataset_info.row_count, target_name)
-    return features_config
+    return get_features_config(dataset_info.fields, dataset_info.row_count, target_name)
 
 
 @PublicAPI
