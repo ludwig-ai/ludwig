@@ -21,8 +21,6 @@ def test_image():
 @pytest.fixture(scope="module")
 def train_data():
     with tempfile.TemporaryDirectory() as tmp_dir:
-        print(f">>>>>>>>>>> ENTERING TRAIN DATA {tmp_dir} <<<<<<<<<<<")
-
         # setup basic data description for training
         output_features = [
             {
@@ -96,7 +94,12 @@ def test_augmentation_pipeline(test_image, augmentation_pipeline_ops):
     ],
 )
 @pytest.mark.parametrize("backend", ["local", "ray"])
-def test_model_training_with_augmentation_pipeline(train_data, backend, augmentation_pipeline_ops):
+def test_model_training_with_augmentation_pipeline(
+    train_data,
+    backend,
+    augmentation_pipeline_ops,
+    ray_cluster_2cpu,
+):
     # unpack training data
     train_fp, input_features, output_features = train_data
 
