@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 10 * * *" # everyday at 10am
   push:
-    branches: ["master", "release-*", "fix-signing-key"]
+    branches: ["master", "release-*"]
     tags: ["v*.*.*"]
 
 jobs:
@@ -61,8 +61,8 @@ jobs:
       fail-fast: false
       matrix:
         docker-image:
-          # - ludwig
-          # - ludwig-gpu
+          - ludwig
+          - ludwig-gpu
           - ludwig-ray
           - ludwig-ray-gpu
 
