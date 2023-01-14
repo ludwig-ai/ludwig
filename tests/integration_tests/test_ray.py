@@ -14,6 +14,7 @@
 # ==============================================================================
 import copy
 import os
+import sys
 import tempfile
 from typing import Optional
 
@@ -50,6 +51,7 @@ from ludwig.constants import (
 )
 from ludwig.data.preprocessing import balance_data
 from ludwig.features.feature_registries import update_config_with_metadata
+from ludwig.trainers.trainer import RemoteTrainer
 from ludwig.utils.data_utils import read_parquet
 from tests.integration_tests.utils import (
     audio_feature,
@@ -1109,6 +1111,16 @@ def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
     update_config_with_metadata(model.config_obj, training_set_metadata)
     model_ecd = LudwigModel.create_model(model.config_obj, random_seed=42)
 
+    class ErrorRemoteTrainer(RemoteTrainer):
+        def train_for_tuning(
+            self,
+            batch_size: int,
+            total_steps: int = 5,
+        ) -> float:
+            if batch_size == 64 and self.distributed.local_rank() == 0:
+                sys.exit(1)
+            return super().train_for_tuning(batch_size, total_steps)
+
     with backend.create_trainer(
         model=model_ecd,
         config=model.config_obj.trainer,
@@ -1119,6 +1131,6 @@ def test_tune_batch_size_error_handling(tmpdir, ray_cluster_2cpu):
         callbacks=[],
         random_seed=42,
     ) as trainer:
-        best_batch_size = trainer.tune_batch_size(model.config, train_set)
+        best_batch_size = trainer.tune_batch_size(model.config, train_set, trainer_cls=ErrorRemoteTrainer)
 
     assert best_batch_size == expected_final_batch_size

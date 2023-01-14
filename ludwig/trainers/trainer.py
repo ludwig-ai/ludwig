@@ -441,10 +441,6 @@ class Trainer(BaseTrainer):
                     if on_best_batch_size_updated is not None:
                         on_best_batch_size_updated(best_batch_size, best_samples_per_sec, count)
 
-                    logger.info(f"{batch_size} and {self.distributed.local_rank()}")
-                    if batch_size == 32 and self.distributed.local_rank() == 0:
-                        sys.exit(1)
-
                     # double batch size
                     batch_size *= 2
                 except RuntimeError as e:
