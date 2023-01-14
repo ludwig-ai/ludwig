@@ -395,7 +395,7 @@ class RayAirRunner:
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=dataset_config,
-            run_config=RunConfig(callbacks=callbacks),
+            run_config=RunConfig(callbacks=callbacks, verbose=1),
         )
 
         if exception_on_error:
