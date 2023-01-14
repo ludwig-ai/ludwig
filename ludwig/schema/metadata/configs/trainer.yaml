@@ -115,7 +115,7 @@ eval_batch_size:
     description_implications:
         By increasing the `eval_batch_size` past the `batch_size`
         parameter set value, you allow for more parallelism in the batch evaluation
-        step adn speed up evaluation. For example, if you have to evaluate the model
+        step and speed up evaluation. For example, if you have to evaluate the model
         on a test set of size 1000, it is faster to evaluate two times with two batches
         of size 500 as opposed to ten times with ten batches of 100.
         Setting this parameter higher without getting past out memory limits
