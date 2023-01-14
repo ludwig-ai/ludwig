@@ -971,9 +971,14 @@ def brier_plot(
     filename=None,
     callbacks=None,
 ):
-
-    fig, ax = plt.subplots()
     sns.set_style("whitegrid")
+
+    # Dynamically set the size of the plot based on the number of labels
+    # Use minimum size to prevent plot from being too small
+    default_width, default_height = plt.rcParams.get("figure.figsize")
+    width = max(default_width, len(class_names) / 2)
+    height = max(default_height, len(class_names) / 2)
+    fig, ax = plt.subplots(figsize=(width, height))
 
     if title is not None:
         plt.title(title)
