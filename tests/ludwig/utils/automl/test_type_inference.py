@@ -82,7 +82,7 @@ def test_infer_type_explicit_date():
 )
 def test_should_exclude(idx, num_distinct_values, dtype, name, expected):
     column_count = 10
-    field = FieldInfo(name=name, dtype=dtype, num_distinct_values=num_distinct_values)
+    field = FieldInfo(name=name, dtype=dtype, num_distinct_values=num_distinct_values, avg_words=10)
     assert should_exclude(idx, field, dtype, column_count, ROW_COUNT, {TARGET_NAME}) == expected
 
 
@@ -94,3 +94,17 @@ def test_auto_type_inference_single_value_binary_feature():
     assert should_exclude(
         idx=3, field=field, dtype="object", column_count=10, row_count=ROW_COUNT, targets={TARGET_NAME}
     )
+
+
+@pytest.mark.parametrize(
+    "column_count,avg_words,expected",
+    [
+        (1, 10, False),
+        (1, 2, False),
+        (5, 2, True),
+        (5, 10, False),
+    ],
+)
+def test_should_exclude_text(column_count, avg_words, expected):
+    field = FieldInfo(name="sentence", dtype=TEXT, avg_words=avg_words, num_distinct_values=ROW_COUNT)
+    assert should_exclude(0, field, TEXT, column_count, ROW_COUNT, {TARGET_NAME}) == expected

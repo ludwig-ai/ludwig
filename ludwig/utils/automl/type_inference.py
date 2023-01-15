@@ -86,7 +86,7 @@ def should_exclude(
 
     # For TEXT fields, we only want to use them if they appear "interesting", otherwise we would rather exclude
     # them and treat the problem as a tabular problem
-    if column_count > 3 and dtype == TEXT and field.avg_words < 5:
-        return False
+    if column_count > 3 and dtype == TEXT and (field.avg_words or 0) < 5:
+        return True
 
     return False
