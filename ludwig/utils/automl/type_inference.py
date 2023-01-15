@@ -47,15 +47,13 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
     if field.audio_values >= 3:
         return AUDIO
 
-    if field.avg_words and field.avg_words >= TEXT_AVG_WORDS_CUTOFF:
-        return TEXT
-
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.
     # - The distinct values are not all numbers.
     # - The distinct values are all numbers but comprise of a perfectly sequential list of integers that suggests the
     #   values represent categories.
-    if num_distinct_values < row_count * CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF and (
+    valid_row_count = row_count * (1.0 - missing_value_percent)
+    if num_distinct_values < valid_row_count * CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF and (
         (not strings_utils.are_all_numbers(distinct_values)) or strings_utils.are_sequential_integers(distinct_values)
     ):
         return CATEGORY

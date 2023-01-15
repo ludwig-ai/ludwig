@@ -42,9 +42,9 @@ TARGET_NAME = "target"
         (ROW_COUNT, [], ROW_COUNT, 0, None, 0.0, IMAGE),
         # Audio.
         (ROW_COUNT, [], 0, ROW_COUNT, None, 0.0, AUDIO),
-        # String with low distinct value percent / high missing value percent: text or category based on average words
+        # Text with low distinct value percent / high missing value percent
         (ROW_COUNT // 4, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0, 5, 0.75, TEXT),
-        (ROW_COUNT // 4, [generate_string(3) for _ in range(ROW_COUNT)], 0, 0, 3, 0.75, CATEGORY),
+        (ROW_COUNT // 4, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0, 5, 0.25, CATEGORY),
     ],
 )
 def test_infer_type(num_distinct_values, distinct_values, img_values, audio_values, avg_words, missing_vals, expected):
