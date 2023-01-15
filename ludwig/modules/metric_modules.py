@@ -169,7 +169,11 @@ class AUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+        # if `num_classes` is not specified, assume it is a binary output feature and
+        # return None, torchmetrics function will handle this case
+        num_classes = kwargs.pop("num_classes", None)
+
+        super().__init__(num_classes=num_classes, dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
     def get_objective(cls):

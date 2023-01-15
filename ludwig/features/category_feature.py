@@ -317,7 +317,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         return torch.Size([1])
 
     def metric_kwargs(self):
-        return dict(top_k=self.top_k)
+        return dict(top_k=self.top_k, num_classes=self.decoder_obj.num_classes)
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
