@@ -1120,7 +1120,11 @@ def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_
         ) -> float:
             if batch_size == error_batch_size and self.distributed.local_rank() == 0:
                 raise RuntimeError("Expected failure")
-            return super().train_for_tuning(batch_size, total_steps)
+
+            super().train_for_tuning(batch_size, total_steps)
+
+            # Trick to ensure that we never early-stop due to throughput decrease
+            return batch_size
 
     with backend.create_trainer(
         model=model_ecd,
