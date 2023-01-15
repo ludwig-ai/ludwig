@@ -60,6 +60,19 @@ def merge_dict_with_features(a: ModelConfigDict, b: ModelConfigDict) -> ModelCon
     return merge_dict(a, b)
 
 
+def check_types(
+    config: ModelConfigDict, input_features: List[FeatureConfigDict], output_features: List[FeatureConfigDict]
+):
+    actual_features = config.get(INPUT_FEATURES, []) + config.get(OUTPUT_FEATURES, [])
+    expected_features = {f[NAME]: f for f in input_features + output_features}
+    assert len(actual_features) == len(expected_features)
+    for actual_feature in actual_features:
+        expected_feature = expected_features[actual_feature[NAME]]
+        assert (
+            actual_feature[TYPE] == expected_feature[TYPE]
+        ), f"{actual_feature[NAME]}: actual type {actual_feature[TYPE]} != {expected_feature[TYPE]}"
+
+
 @pytest.fixture(scope="module")
 def test_data_tabular_large():
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -130,7 +143,7 @@ def test_data_multimodal():
         ]
         output_features = [binary_feature()]
         dataset_csv = generate_data(
-            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=10
+            input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=20
         )
         yield input_features, output_features, dataset_csv
 
@@ -187,6 +200,7 @@ def test_create_auto_config(test_data, expectations, ray_cluster_2cpu, request):
 
     assert to_name_set(config[INPUT_FEATURES]) == to_name_set(input_features)
     assert to_name_set(config[OUTPUT_FEATURES]) == to_name_set(output_features)
+    check_types(config, input_features, output_features)
 
     expected = merge_dict_with_features(config, expectations)
     assert config == expected
