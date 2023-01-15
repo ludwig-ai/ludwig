@@ -1116,7 +1116,7 @@ def test_tune_batch_size_error_handling(tmpdir: str, error_batch_size: int, ray_
         def train_for_tuning(
             self,
             batch_size: int,
-            total_steps: int = 5,
+            total_steps: int = 3,
         ) -> float:
             if batch_size == error_batch_size and self.distributed.local_rank() == 0:
                 raise RuntimeError("Expected failure")

@@ -354,7 +354,7 @@ class Trainer(BaseTrainer):
     def train_for_tuning(
         self,
         batch_size: int,
-        total_steps: int = 5,
+        total_steps: int = 11,
     ) -> float:
         """Function to be used by tune_batch_size.
 
@@ -427,7 +427,7 @@ class Trainer(BaseTrainer):
                 gc.collect()
 
                 try:
-                    samples_per_sec = self.train_for_tuning(batch_size, total_steps=5)
+                    samples_per_sec = self.train_for_tuning(batch_size)
                     logger.info(f"Throughput at batch_size={batch_size}: {samples_per_sec:.5f} samples/s")
                     if samples_per_sec < best_samples_per_sec:
                         # We assume that once the throughput starts degrading, it won't go up again
