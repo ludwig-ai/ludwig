@@ -62,7 +62,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
 
 @DeveloperAPI
-def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targets: Set[str]) -> bool:
+def should_exclude(
+    idx: int, field: FieldInfo, dtype: str, column_count: int, row_count: int, targets: Set[str]
+) -> bool:
     if field.key == "PRI":
         return True
 
@@ -81,5 +83,10 @@ def should_exclude(idx: int, field: FieldInfo, dtype: str, row_count: int, targe
             or upper_name.startswith("ID")
         ):
             return True
+
+    # For TEXT fields, we only want to use them if they appear "interesting", otherwise we would rather exclude
+    # them and treat the problem as a tabular problem
+    if column_count > 3 and dtype == TEXT and field.avg_words < 5:
+        return False
 
     return False
