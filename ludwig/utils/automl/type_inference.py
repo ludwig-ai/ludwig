@@ -10,6 +10,10 @@ from ludwig.utils.automl.field_info import FieldInfo
 # assign the CATEGORY type.
 CATEGORY_TYPE_DISTINCT_VALUE_PERCENTAGE_CUTOFF = 0.5
 
+# Consider the field a valid text field if it has at least 5 average words. Fewer than this and it may be a cateogry
+# or an ID field (like a name or place) of some kind.
+TEXT_AVG_WORDS_CUTOFF = 5
+
 
 @DeveloperAPI
 def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -> str:
@@ -42,6 +46,9 @@ def infer_type(field: FieldInfo, missing_value_percent: float, row_count: int) -
 
     if field.audio_values >= 3:
         return AUDIO
+
+    if field.avg_words and field.avg_words >= TEXT_AVG_WORDS_CUTOFF:
+        return TEXT
 
     # Use CATEGORY if:
     # - The number of distinct values is significantly less than the total number of examples.
@@ -90,7 +97,7 @@ def should_exclude(
 
     # For TEXT fields, we only want to use them if they appear "interesting", otherwise we would rather exclude
     # them and treat the problem as a tabular problem
-    if column_count > 3 and dtype == TEXT and (field.avg_words or 0) < 5:
+    if column_count > 3 and dtype == TEXT and (field.avg_words or 0) < TEXT_AVG_WORDS_CUTOFF:
         logging.info(f"Exclude {field.name} ({dtype}): too few average words")
         return True
 

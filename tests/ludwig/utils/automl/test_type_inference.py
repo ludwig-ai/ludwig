@@ -12,39 +12,42 @@ TARGET_NAME = "target"
 
 
 @pytest.mark.parametrize(
-    "num_distinct_values,distinct_values,img_values,audio_values,missing_vals,expected",
+    "num_distinct_values,distinct_values,img_values,audio_values,avg_words,missing_vals,expected",
     [
         # Random numbers.
-        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT)], 0, 0, 0.0, NUMBER),
+        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT)], 0, 0, None, 0.0, NUMBER),
         # Random numbers with NaNs.
-        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT - 1)] + ["NaN"], 0, 0, 0.0, NUMBER),
+        (ROW_COUNT, [str(random.random()) for _ in range(ROW_COUNT - 1)] + ["NaN"], 0, 0, None, 0.0, NUMBER),
         # Finite list of numbers.
-        (10, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], 0, 0, 0.0, CATEGORY),
-        (2, ["1.5", "3.7"], 0, 0, 0.1, NUMBER),
-        (2, ["1.5", "3.7", "nan"], 0, 0, 0.1, NUMBER),
+        (10, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], 0, 0, None, 0.0, CATEGORY),
+        (2, ["1.5", "3.7"], 0, 0, None, 0.1, NUMBER),
+        (2, ["1.5", "3.7", "nan"], 0, 0, None, 0.1, NUMBER),
         # Bool-like values.
-        (2, ["0", "1"], 0, 0, 0.0, BINARY),
+        (2, ["0", "1"], 0, 0, None, 0.0, BINARY),
         # Mostly bool-like values.
-        (3, ["0", "1", "True"], 0, 0, 0.0, CATEGORY),
+        (3, ["0", "1", "True"], 0, 0, None, 0.0, CATEGORY),
         # Non-conventional booleans are treated as categories since we cannot infer true/false labels.
-        pytest.param(2, ["<=50K", ">50K"], 0, 0, 0.0, CATEGORY, id="non-conventional-bools"),
+        pytest.param(2, ["<=50K", ">50K"], 0, 0, None, 0.0, CATEGORY, id="non-conventional-bools"),
         # Finite list of strings.
-        (2, ["human", "bot"], 0, 0, 0.0, CATEGORY),
-        (10, [generate_string(5) for _ in range(10)], 0, 0, 0.0, CATEGORY),
-        (40, [generate_string(5) for _ in range(40)], 0, 0, 0.0, CATEGORY),
+        (2, ["human", "bot"], 0, 0, None, 0.0, CATEGORY),
+        (10, [generate_string(5) for _ in range(10)], 0, 0, None, 0.0, CATEGORY),
+        (40, [generate_string(5) for _ in range(40)], 0, 0, None, 0.0, CATEGORY),
         # Mostly random strings.
-        (90, [generate_string(5) for _ in range(90)], 0, 0, 0.0, TEXT),
+        (90, [generate_string(5) for _ in range(90)], 0, 0, None, 0.0, TEXT),
         # Mostly random strings with capped distinct values.
-        (90, [generate_string(5) for _ in range(10)], 0, 0, 0.0, TEXT),
+        (90, [generate_string(5) for _ in range(10)], 0, 0, None, 0.0, TEXT),
         # All random strings.
-        (ROW_COUNT, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0, 0.0, TEXT),
+        (ROW_COUNT, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0, None, 0.0, TEXT),
         # Images.
-        (ROW_COUNT, [], ROW_COUNT, 0, 0.0, IMAGE),
+        (ROW_COUNT, [], ROW_COUNT, 0, None, 0.0, IMAGE),
         # Audio.
-        (ROW_COUNT, [], 0, ROW_COUNT, 0.0, AUDIO),
+        (ROW_COUNT, [], 0, ROW_COUNT, None, 0.0, AUDIO),
+        # String with low distinct value percent / high missing value percent: text or category based on average words
+        (ROW_COUNT // 4, [generate_string(5) for _ in range(ROW_COUNT)], 0, 0, 5, 0.75, TEXT),
+        (ROW_COUNT // 4, [generate_string(3) for _ in range(ROW_COUNT)], 0, 0, 3, 0.75, CATEGORY),
     ],
 )
-def test_infer_type(num_distinct_values, distinct_values, img_values, audio_values, missing_vals, expected):
+def test_infer_type(num_distinct_values, distinct_values, img_values, audio_values, avg_words, missing_vals, expected):
     field = FieldInfo(
         name="foo",
         dtype="object",
@@ -52,6 +55,7 @@ def test_infer_type(num_distinct_values, distinct_values, img_values, audio_valu
         distinct_values=distinct_values,
         image_values=img_values,
         audio_values=audio_values,
+        avg_words=avg_words,
     )
     assert infer_type(field, missing_vals, ROW_COUNT) == expected
 
