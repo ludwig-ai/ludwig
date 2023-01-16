@@ -66,10 +66,15 @@ class HFTextEncoder(Encoder):
                 f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
             )
 
-        return {
+        params = {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
         }
+
+        if not cls.can_cache_embeddings(encoder_params):
+            params["cache_encoder_embeddings"] = False
+
+        return params
 
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
