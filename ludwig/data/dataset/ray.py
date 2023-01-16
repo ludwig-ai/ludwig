@@ -351,16 +351,33 @@ class RayDatasetBatcher(Batcher):
             else:
                 res[c] = batch[c].to_numpy()
 
-        if self.augmentation_pipeline:
-            for c, augmentations in self.augmentation_pipeline.items():
-                logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
-                res[c] = augmentations(torch.tensor(res[c]))
-
         for c in self.columns:
             reshape = self.reshape_map.get(c)
             if reshape is not None:
                 res[c] = res[c].reshape((-1, *reshape))
         return res
+
+    def _augment_batch_fn(self):
+        augmentation_pipeline = self.augmentation_pipeline
+
+        def augment_batch(df: pd.DataFrame) -> pd.DataFrame:
+            if augmentation_pipeline:
+                for c, augmentations in augmentation_pipeline.items():
+                    # df[c] is a pd.Series, so we need to convert it to a np.array
+                    # consolidate the individual np.array into a single np.array for the batch
+                    data_to_augment = np.stack(df[c].values, axis=0)
+
+                    # apply augmentation pipeline operations to the batch of np.array
+                    augmented_data = augmentations(torch.tensor(data_to_augment)).numpy()
+
+                    # convert the batch of augmented np.array back to a pd.Series,
+                    # split single batch to list of augmented arrays and then sequeeze out the batch dimension
+                    # that is no longer needed
+                    augmented_data = np.split(augmented_data, augmented_data.shape[0], axis=0)
+                    df[c] = [np.squeeze(x, axis=0) for x in augmented_data]
+            return df
+
+        return augment_batch
 
     def _create_sync_reader(self, pipeline: DatasetPipeline):
         def sync_read():
@@ -372,9 +389,12 @@ class RayDatasetBatcher(Batcher):
     def _create_async_reader(self, pipeline: DatasetPipeline):
         q = queue.Queue(maxsize=100)
         batch_size = self.batch_size
+        augment_batch = self._augment_batch_fn()
 
         def producer():
-            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
+            for batch in pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas").iter_batches(
+                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
+            ):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
