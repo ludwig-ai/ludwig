@@ -374,7 +374,7 @@ class RayDatasetBatcher(Batcher):
                     augmented_data = augmentations(torch.tensor(data_to_augment)).numpy()
 
                     # convert the batch of augmented np.array back to a pd.Series,
-                    # split single batch to list of augmented arrays and then sequeeze out the batch dimension
+                    # split single batch to list of augmented arrays and then squeeze out the batch dimension
                     # that is no longer needed
                     augmented_data = np.split(augmented_data, augmented_data.shape[0], axis=0)
                     df[c] = [np.squeeze(x, axis=0) for x in augmented_data]
