@@ -25,10 +25,16 @@ def run_test_suite(config, dataset, backend):
         pytest.param("ray", id="ray", marks=pytest.mark.distributed),
     ],
 )
-def test_distilbert_embedding(tmpdir, backend, ray_cluster_2cpu):
+def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
     input_features = [
         number_feature(),
-        text_feature(encoder={"type": "distilbert"}, preprocessing={"cache_encoder_embeddings": True}),
+        text_feature(
+            encoder={
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+            },
+            preprocessing={"cache_encoder_embeddings": True},
+        ),
     ]
     output_features = [binary_feature()]
 
