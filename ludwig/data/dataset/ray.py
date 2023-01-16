@@ -363,6 +363,9 @@ class RayDatasetBatcher(Batcher):
         def augment_batch(df: pd.DataFrame) -> pd.DataFrame:
             if augmentation_pipeline:
                 for c, augmentations in augmentation_pipeline.items():
+                    # TODO: convert to debug message when done with development
+                    logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
+
                     # df[c] is a pd.Series, so we need to convert it to a np.array
                     # consolidate the individual np.array into a single np.array for the batch
                     data_to_augment = np.stack(df[c].values, axis=0)
