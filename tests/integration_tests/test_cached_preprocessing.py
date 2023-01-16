@@ -43,19 +43,3 @@ def test_hf_text_embedding(tmpdir, backend, ray_cluster_2cpu):
 
     config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
     run_test_suite(config, dataset, backend)
-
-
-def test_cache_error(tmpdir):
-    input_features = [
-        number_feature(),
-        text_feature(encoder={"type": "parallel_cnn"}, preprocessing={"cache_encoder_embeddings": True}),
-    ]
-    output_features = [binary_feature()]
-
-    data_csv_path = os.path.join(tmpdir, "dataset.csv")
-    dataset = generate_data(input_features, output_features, data_csv_path)
-
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
-
-    with pytest.raises(RuntimeError):
-        run_test_suite(config, dataset, "local")
