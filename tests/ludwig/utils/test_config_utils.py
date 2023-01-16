@@ -26,5 +26,4 @@ def test_merge_fixed_preprocessing_params(pretrained_model_name_or_path: str):
         "tokenizer": "hf_tokenizer",
         "lowercase": True,
         "pretrained_model_name_or_path": expected_model_name,
-        "cache_encoder_embeddings": True,
     }

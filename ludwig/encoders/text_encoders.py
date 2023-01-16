@@ -66,16 +66,19 @@ class HFTextEncoder(Encoder):
                 f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
             )
 
-        is_fixed = not encoder_params.get("trainable", False) and encoder_params.get("reduce_output") != "attention"
         return {
             "tokenizer": "hf_tokenizer",
             "pretrained_model_name_or_path": model_name,
-            "cache_encoder_embeddings": is_fixed,
         }
 
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
         return encoder_params.get("use_pretrained", True)
+
+    @classmethod
+    def can_cache_embeddings(cls, encoder_params: Dict[str, Any]) -> bool:
+        """Returns true if the encoder's output embeddings will not change during training."""
+        return not encoder_params.get("trainable", False) and encoder_params.get("reduce_output") != "attention"
 
 
 @DeveloperAPI

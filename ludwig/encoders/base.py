@@ -39,3 +39,8 @@ class Encoder(LudwigModule, ABC):
     @classmethod
     def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
         return False
+
+    @classmethod
+    def can_cache_embeddings(cls, encoder_params: Dict[str, Any]) -> bool:
+        """Returns true if the encoder's output embeddings will not change during training."""
+        return False

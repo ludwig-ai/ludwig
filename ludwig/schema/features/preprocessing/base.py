@@ -1,5 +1,6 @@
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import PREPROCESSING_METADATA
 
 
 @DeveloperAPI
@@ -11,4 +12,8 @@ class BasePreprocessingConfig(schema_utils.BaseMarshmallowConfig):
     from the preprocessing of each feature.
     """
 
-    pass
+    cache_encoder_embeddings: bool = schema_utils.Boolean(
+        default=False,
+        description="Compute encoder embeddings in preprocessing, speeding up training time considerably.",
+        parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
+    )

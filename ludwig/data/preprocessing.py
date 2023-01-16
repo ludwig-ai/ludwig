@@ -56,6 +56,7 @@ from ludwig.data.concatenate_datasets import concatenate_df, concatenate_files, 
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.split import get_splitter, split_dataset
 from ludwig.data.utils import set_fixed_split
+from ludwig.encoders.registry import get_encoder_cls
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.models.embedder import create_embed_batch_size_evaluator, create_embed_transform_fn
@@ -1254,9 +1255,17 @@ def embed_fixed_features(dataset, feature_configs, metadata, backend):
     for feature_config in feature_configs:
         # deal with encoders that have fixed preprocessing
         if ENCODER in feature_config:
-            if TYPE in feature_config[ENCODER]:
+            encoder = feature_config[ENCODER]
+            if TYPE in encoder:
                 preprocessing = metadata[feature_config[NAME]][PREPROCESSING]
                 if preprocessing.get("cache_encoder_embeddings"):
+                    encoder_class = get_encoder_cls(feature_config[TYPE], encoder[TYPE])
+                    if not encoder_class.can_cache_embeddings(encoder):
+                        raise ValueError(
+                            f"Set `cache_encoder_embeddings=True` for feature {feature_config[NAME]} with "
+                            f"encoder {encoder[TYPE]}, but encoder embeddings are not static."
+                        )
+
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
                     features_to_encode.append(feature_config)
 
