@@ -408,6 +408,7 @@ def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str
     """
 
     metadata = []
+    column_count = len(fields)
     for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
         dtype = infer_type(field, missing_value_percent, row_count)
@@ -419,7 +420,7 @@ def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(idx, field, dtype, row_count, targets),
+                excluded=should_exclude(idx, field, dtype, column_count, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
                 imbalance_ratio=field.distinct_values_balance,

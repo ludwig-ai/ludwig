@@ -6,6 +6,7 @@ from jsonschema.validators import extend
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    BACKEND,
     COMBINER,
     DEFAULTS,
     HYPEROPT,
@@ -36,6 +37,16 @@ def get_ludwig_version_jsonschema():
     }
 
 
+def get_backend_jsonschema():
+    # TODO(travis): implement full backend schema
+    return {
+        "type": "object",
+        "title": "backend",
+        "description": "Backend configuration.",
+        "additionalProperties": True,
+    }
+
+
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
@@ -50,6 +61,7 @@ def get_schema(model_type: str = MODEL_ECD):
             HYPEROPT: get_hyperopt_jsonschema(),
             DEFAULTS: get_defaults_jsonschema(),
             LUDWIG_VERSION: get_ludwig_version_jsonschema(),
+            BACKEND: get_backend_jsonschema(),
         },
         "definitions": {},
         "required": [INPUT_FEATURES, OUTPUT_FEATURES],
