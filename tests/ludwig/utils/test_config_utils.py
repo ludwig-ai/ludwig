@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+
 import pytest
 
 from ludwig.utils.config_utils import merge_fixed_preprocessing_params
