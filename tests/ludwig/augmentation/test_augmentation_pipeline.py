@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 import tempfile
@@ -118,11 +119,12 @@ def test_model_training_with_augmentation_pipeline(
         }
     )
     # add augmentation pipeline to input feature if specified
+    test_input_features = copy.deepcopy(input_features)
     if augmentation_pipeline_ops:
-        input_features[0].update({"augmentation": augmentation_pipeline_ops})
+        test_input_features[0].update({"augmentation": augmentation_pipeline_ops})
 
     config = {
-        "input_features": input_features,
+        "input_features": test_input_features,
         "output_features": output_features,
         "trainer": {"epochs": 2, "batch_size": 16},
         "backend": {"type": backend},
