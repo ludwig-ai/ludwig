@@ -76,7 +76,7 @@ def test_get_fs_and_path_invalid_windows():
 
 
 @pytest.mark.filesystem
-def test_safe_move_directory(tmpdir):
+def test_safe_move_directory_empty_dst(tmpdir):
     src_dir = os.path.join(tmpdir, "src")
     dst_dir = os.path.join(tmpdir, "dst")
 
@@ -92,3 +92,35 @@ def test_safe_move_directory(tmpdir):
     assert os.path.exists(os.path.join(dst_dir, "file.txt"))
     with open(os.path.join(dst_dir, "file.txt")) as f:
         assert f.read() == "test"
+
+
+@pytest.mark.filesystem
+def test_safe_move_directory_non_empty_dst(tmpdir):
+    src_dir = os.path.join(tmpdir, "src")
+    dst_dir = os.path.join(tmpdir, "dst")
+
+    os.mkdir(src_dir)
+    os.mkdir(dst_dir)
+
+    # Create file and directory in src directory
+    with open(os.path.join(src_dir, "file1.txt"), "w") as f:
+        f.write("file1")
+    os.makedirs(os.path.join(src_dir, "dir1"))
+    with open(os.path.join(src_dir, "dir1", "file1.txt"), "w") as f:
+        f.write("dir1_file1")
+
+    # Create file and directory in dst directory
+    with open(os.path.join(dst_dir, "file2.txt"), "w") as f:
+        f.write("file2")
+    os.makedirs(os.path.join(dst_dir, "dir1"))  # Test that existing directories are overwritten
+    os.makedirs(os.path.join(dst_dir, "dir2"))
+
+    safe_move_directory(src_dir, dst_dir)
+
+    assert not os.path.exists(src_dir)
+    assert os.path.exists(os.path.join(dst_dir, "file1.txt"))
+    assert os.path.exists(os.path.join(dst_dir, "dir1"))
+    assert os.path.exists(os.path.join(dst_dir, "file2.txt"))
+    assert os.path.exists(os.path.join(dst_dir, "dir2"))
+    with open(os.path.join(dst_dir, "dir1", "file1.txt")) as f:
+        assert f.read() == "dir1_file1"
