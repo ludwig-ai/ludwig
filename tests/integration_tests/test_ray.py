@@ -73,6 +73,7 @@ from tests.integration_tests.utils import (
 )
 
 try:
+    import dask
     import modin
     import ray
     from ray.air.config import DatasetConfig
