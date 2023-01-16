@@ -23,7 +23,7 @@ from ludwig.constants import COLUMN, NAME, PROC_COLUMN, TIMESERIES
 from ludwig.features.base_feature import BaseFeatureMixin
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.schema.features.timeseries_feature import TimeseriesInputFeatureConfig
-from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
 from ludwig.utils.types import TorchscriptPreprocessingInput
 
@@ -110,7 +110,9 @@ class TimeseriesFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         column = column.astype(str)
         tokenizer = get_tokenizer_from_registry(preprocessing_parameters["tokenizer"])()
         max_length = 0

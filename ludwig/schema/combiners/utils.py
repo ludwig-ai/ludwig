@@ -2,7 +2,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.metadata import COMBINER_METADATA
-from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
 from ludwig.utils.registry import Registry
 
 combiner_registry = Registry()
@@ -22,13 +22,22 @@ def get_combiner_jsonschema():
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
     combiner_types = sorted(list(combiner_registry.keys()))
-    parameter_metadata = convert_metadata_to_json(COMBINER_METADATA[TYPE])
+    parameter_metadata = convert_metadata_to_json(
+        ParameterMetadata.from_dict(
+            {
+                "commonly_used": True,
+                "expected_impact": 3,
+                "ui_display_name": "Combiner Type",
+            }
+        )
+    )
     return {
         "type": "object",
         "properties": {
             "type": {
                 "type": "string",
                 "enum": combiner_types,
+                "enumDescriptions": get_combiner_descriptions(),
                 "default": "concat",
                 "title": "combiner_options",
                 "description": "Select the combiner type.",
@@ -38,6 +47,28 @@ def get_combiner_jsonschema():
         "allOf": get_combiner_conds(),
         "required": ["type"],
     }
+
+
+@DeveloperAPI
+def get_combiner_descriptions():
+    """This function returns a dictionary of combiner descriptions available at the type selection.
+
+    The process works as follows - 1) Get a dictionary of valid combiners from the combiner config registry,
+    but inverse the key/value pairs since we need to index `valid_combiners` later with an altered version
+    of the combiner config class name. 2) Loop through Combiner Metadata entries, if a metadata entry has a
+    combiner name that matches a valid combiner, add the description metadata to the output dictionary.
+
+    Returns:
+        dict: A dictionary of combiner descriptions.
+    """
+    output = {}
+    combiners = {cls.__name__: registered_name for registered_name, cls in combiner_registry.items()}
+
+    for k, v in COMBINER_METADATA.items():
+        if k in combiners.keys():
+            output[combiners[k]] = convert_metadata_to_json(v[TYPE])
+
+    return output
 
 
 @DeveloperAPI

@@ -40,7 +40,7 @@ from ludwig.features.sequence_feature import (
     SequenceOutputFeature,
 )
 from ludwig.schema.features.text_feature import TextInputFeatureConfig, TextOutputFeatureConfig
-from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.strings_utils import build_sequence_matrix, create_vocabulary, SpecialSymbol, UNKNOWN_SYMBOL
 from ludwig.utils.types import DataFrame
@@ -92,7 +92,9 @@ class TextFeatureMixin(BaseFeatureMixin):
         )
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         tf_meta = TextFeatureMixin.feature_meta(column, preprocessing_parameters, backend)
         (
             idx2str,
@@ -228,8 +230,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    metric_functions = TextOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[TextInputFeatureConfig, Dict],

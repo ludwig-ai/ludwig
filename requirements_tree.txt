@@ -1,4 +1,3 @@
-onnxconverter-common<1.12
-hummingbird-ml
+hummingbird-ml @ git+https://github.com/microsoft/hummingbird.git
 lightgbm
 lightgbm-ray

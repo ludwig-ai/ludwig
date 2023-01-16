@@ -34,6 +34,7 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
+    IMAGE,
     INPUT_FEATURES,
     LOSS,
     MISSING_VALUE_STRATEGY,
@@ -62,6 +63,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
     FeatureConfigDict,
     HyperoptConfigDict,
@@ -184,6 +186,13 @@ def upgrade_model_progress(model_progress: Dict) -> Dict:
 
     if "last_improvement" in ret:
         del ret["last_improvement"]
+
+    # Delete learning-rate related fields removed in https://github.com/ludwig-ai/ludwig/pull/2877.
+    if "best_reduce_learning_rate_eval_metric" in ret:
+        del ret["best_reduce_learning_rate_eval_metric"]
+
+    if "last_reduce_learning_rate_eval_metric_improvement" in ret:
+        del ret["last_reduce_learning_rate_eval_metric_improvement"]
 
     return ret
 
@@ -674,6 +683,99 @@ def remove_trainer_type(trainer: TrainerConfigDict) -> TrainerConfigDict:
         del trainer[TYPE]
 
     return trainer
+
+
+@register_config_transformation("0.7", ["trainer"])
+def learning_rate_scheduler(trainer: TrainerConfigDict) -> TrainerConfigDict:
+    key_mapping = {
+        "reduce_learning_rate_on_plateau": "reduce_on_plateau",
+        "reduce_learning_rate_on_plateau_patience": "reduce_on_plateau_patience",
+        "reduce_learning_rate_on_plateau_rate": "reduce_on_plateau_rate",
+        "reduce_learning_rate_eval_metric": "reduce_eval_metric",
+        "reduce_learning_rate_eval_split": "reduce_eval_split",
+        "decay": "decay",
+        "decay_steps": "decay_steps",
+        "decay_rate": "decay_rate",
+        "staircase": "staircase",
+        "learning_rate_warmup_epochs": "warmup_evaluations",
+    }
+
+    lr_scheduler = trainer.get("learning_rate_scheduler", {})
+    for old_key, new_key in key_mapping.items():
+        if old_key in trainer:
+            warnings.warn(
+                f"Config param `trainer.{old_key}` has been moved to `trainer.learning_rate_scheduler.{new_key}`.",
+                DeprecationWarning,
+            )
+            if new_key in lr_scheduler:
+                warnings.warn(
+                    f"`trainer.learning_rate_scheduler.{new_key}` config param already set. "
+                    f"Discarding `trainer.{old_key}`."
+                )
+            else:
+                value = trainer[old_key]
+                if old_key == "decay" and isinstance(value, bool):
+                    # Decay has changed from a bool to an optional enum
+                    lr_scheduler[new_key] = "exponential" if value else None
+                else:
+                    lr_scheduler[new_key] = value
+            del trainer[old_key]
+
+    if lr_scheduler:
+        trainer["learning_rate_scheduler"] = lr_scheduler
+
+    return trainer
+
+
+@register_config_transformation("0.7", ["input_features"])
+def _upgrade_legacy_image_encoders(feature: FeatureConfigDict) -> FeatureConfigDict:
+    if feature.get(TYPE) != IMAGE:
+        return feature
+
+    encoder_mapping = {
+        "resnet": "_resnet_legacy",
+        "vit": "_vit_legacy",
+    }
+
+    encoder = feature.get(ENCODER, {})
+    encoder_type = encoder.get(TYPE)
+    if encoder_type not in encoder_mapping:
+        return feature
+
+    new_encoder_cls = get_encoder_cls(feature[TYPE], encoder_type)
+    new_encoder_fields = new_encoder_cls.get_valid_field_names()
+
+    legacy_encoder_cls = get_encoder_cls(feature[TYPE], encoder_mapping[encoder_type])
+    legacy_encoder_fields = legacy_encoder_cls.get_valid_field_names()
+
+    user_fields = set(encoder.keys())
+    user_fields.remove(TYPE)
+
+    removed_fields = legacy_encoder_fields.difference(new_encoder_fields)
+    added_fields = new_encoder_fields.difference(legacy_encoder_fields)
+
+    user_legacy_fields = user_fields.intersection(removed_fields)
+    user_new_fields = user_fields.intersection(added_fields)
+    if len(user_legacy_fields) > 0:
+        if len(user_new_fields) > 0:
+            raise ValueError(
+                f"Intended encoder type is ambiguous. "
+                f"Provided encoder fields matching encoder '{encoder_type}' {user_new_fields} and "
+                f"legacy encoder '{encoder_mapping[encoder_type]}' {user_legacy_fields}. "
+                f"Please remove features unique to one of these encoder types from your configuration."
+            )
+
+        warnings.warn(
+            f"Encoder '{encoder_type}' with params '{user_legacy_fields}' has been renamed to "
+            f"'{encoder_mapping[encoder_type]}'. Please upgrade your config to use the new '{encoder_type}' as "
+            f"support for '{encoder_mapping[encoder_type]}' is not guaranteed past v0.8.",
+            DeprecationWarning,
+        )
+
+        # User provided legacy fields and no new fields, so we assume they intended to use the legacy encoder
+        encoder[TYPE] = encoder_mapping[encoder_type]
+
+    return feature
 
 
 def upgrade_metadata(metadata: TrainingSetMetadataDict) -> TrainingSetMetadataDict:

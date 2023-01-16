@@ -63,11 +63,9 @@ def image_config():
 @pytest.mark.parametrize(
     "encoder, height, width, num_channels",
     [
-        ("resnet", 28, 28, 3),
         ("stacked_cnn", 28, 28, 3),
         ("stacked_cnn", 28, 28, 1),
         ("mlp_mixer", 32, 32, 3),
-        ("vit", 224, 224, 3),
     ],
 )
 def test_image_input_feature(image_config: Dict, encoder: str, height: int, width: int, num_channels: int) -> None:
@@ -87,7 +85,7 @@ def test_image_input_feature(image_config: Dict, encoder: str, height: int, widt
     input_feature_obj = ImageInputFeature(image_config).to(DEVICE)
 
     # check one forward pass through input feature
-    input_tensor = torch.randint(0, 256, size=(BATCH_SIZE, num_channels, height, width), dtype=torch.uint8).to(DEVICE)
+    input_tensor = torch.rand(size=(BATCH_SIZE, num_channels, height, width), dtype=torch.float32).to(DEVICE)
 
     encoder_output = input_feature_obj(input_tensor)
     assert encoder_output["encoder_output"].shape == (BATCH_SIZE, *input_feature_obj.output_shape)

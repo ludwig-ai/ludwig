@@ -149,7 +149,7 @@ def get_split_conds():
     for splitter in split_config_registry.data:
         splitter_cls = split_config_registry.data[splitter]
         other_props = schema_utils.unload_jsonschema_from_marshmallow_class(splitter_cls)["properties"]
-        schema_utils.remove_duplicate_fields(other_props, TYPE)
+        schema_utils.remove_duplicate_fields(other_props, [TYPE])
         splitter_cond = schema_utils.create_cond(
             {"type": splitter},
             other_props,
@@ -192,7 +192,12 @@ def SplitDataclassField(default: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": list(split_config_registry.data.keys()), "default": default},
+                    "type": {
+                        "type": "string",
+                        "description": "Type of splitting to use during preprocessing.",
+                        "enum": list(split_config_registry.data.keys()),
+                        "default": default,
+                    },
                 },
                 "title": "split_options",
                 "allOf": get_split_conds(),

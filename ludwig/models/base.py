@@ -171,7 +171,7 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         outputs = self(inputs)
         return self.outputs_to_predictions(outputs)
 
-    def outputs_to_predictions(self, outputs):
+    def outputs_to_predictions(self, outputs: Dict[str, torch.Tensor]) -> Dict[str, Dict[str, torch.Tensor]]:
         """Returns the model's predictions given the raw model outputs."""
         predictions = {}
         for of_name in self.output_features:

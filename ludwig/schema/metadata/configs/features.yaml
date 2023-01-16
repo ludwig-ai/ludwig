@@ -356,7 +356,7 @@ image:
             related_parameters:
                 - height, width
             ui_display_name: Resize Method
-        scaling:
+        standardize_image:
             ui_display_name: null
         width:
             ui_display_name: null

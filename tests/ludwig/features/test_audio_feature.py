@@ -78,7 +78,7 @@ def test_add_feature_data(feature_type, tmpdir):
     data_df = pd.read_csv(data_df_path)
     metadata = {
         audio_feature_config["name"]: AudioFeatureMixin.get_feature_meta(
-            data_df[audio_feature_config["name"]], preprocessing_params, LOCAL_BACKEND
+            data_df[audio_feature_config["name"]], preprocessing_params, LOCAL_BACKEND, True
         )
     }
 

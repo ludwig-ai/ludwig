@@ -58,15 +58,14 @@ def test_config_object():
                 "name": "image_feature_1",
                 "type": "image",
                 "preprocessing": {
-                    "height": 7,
-                    "width": 7,
+                    "height": 32,
+                    "width": 32,
                     "num_channels": 4,
                 },
                 "encoder": {
-                    "type": "resnet",
+                    "type": "stacked_cnn",
                     "num_channels": 4,
                     "dropout": 0.1,
-                    "resnet_size": 100,
                 },
             },
         ],

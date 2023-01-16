@@ -5,22 +5,20 @@ import signal
 import sys
 import threading
 import time
-from collections import OrderedDict
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightgbm as lgb
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import BINARY, CATEGORY, COMBINED, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAINING, VALIDATION
+from ludwig.constants import BINARY, CATEGORY, LOSS, MINIMIZE, MODEL_GBM, NUMBER, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.globals import is_progressbar_disabled, TRAINING_CHECKPOINTS_DIR_PATH, TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.models.gbm import GBM
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import BaseTrainerConfig, GBMTrainerConfig
 from ludwig.trainers.base import BaseTrainer
@@ -29,7 +27,18 @@ from ludwig.types import ModelConfigDict
 from ludwig.utils import time_utils
 from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.gbm_utils import (
+    get_single_output_feature,
+    get_targets,
+    log_loss_objective,
+    logits_to_predictions,
+    multiclass_objective,
+    store_predictions,
+    store_predictions_ray,
+    TrainLogits,
+)
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.trainer_utils import (
     append_metrics,
@@ -39,13 +48,6 @@ from ludwig.utils.trainer_utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def iter_feature_metrics(features: LudwigFeatureDict) -> Iterable[Tuple[str, str]]:
-    """Helper for iterating feature names and metric names."""
-    for feature_name, feature in features.items():
-        for metric in feature.metric_functions:
-            yield feature_name, metric
 
 
 @register_trainer(MODEL_GBM)
@@ -88,7 +90,6 @@ class LightGBMTrainer(BaseTrainer):
         try:
             base_learning_rate = float(config.learning_rate)
         except ValueError:
-            # TODO (ASN): Circle back on how we want to set default placeholder value
             base_learning_rate = 0.001  # Default initial learning rate for autoML.
         self.base_learning_rate = base_learning_rate
         self.early_stop = config.early_stop
@@ -134,6 +135,7 @@ class LightGBMTrainer(BaseTrainer):
         self.path_smooth = config.path_smooth
         self.verbose = config.verbose
         self.max_bin = config.max_bin
+        self.feature_pre_filter = config.feature_pre_filter
 
         self.device = device
         if self.device is None:
@@ -178,7 +180,6 @@ class LightGBMTrainer(BaseTrainer):
         dataset: "Dataset",  # noqa: F821
         dataset_name: str,
         metrics_log: Dict[str, Dict[str, List[TrainerMetric]]],
-        tables: Dict[str, List[List[str]]],
         batch_size: int,
         progress_tracker: ProgressTracker,
     ):
@@ -187,9 +188,7 @@ class LightGBMTrainer(BaseTrainer):
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     @classmethod
     def write_eval_summary(
@@ -242,34 +241,22 @@ class LightGBMTrainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         if self.evaluate_training_set:
+            # Run a separate pass over the training data to compute metrics
+            # Appends results to progress_tracker.train_metrics.
             self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
-            )
-
-            self.write_eval_summary(
-                summary_writer=train_summary_writer,
-                metrics=progress_tracker.train_metrics,
-                step=progress_tracker.steps,
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
-            # Training set is not evaluated. Add loss to the progress tracker.
-            progress_tracker.train_metrics[COMBINED][LOSS].append(
-                TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss.item())
-            )
-            for output_feature_name, loss_tensor in all_losses.items():
-                progress_tracker.train_metrics[output_feature_name][LOSS].append(
-                    TrainerMetric(epoch=progress_tracker.epoch, step=progress_tracker.steps, value=loss_tensor.item())
-                )
-                tables[output_feature_name].append(["train", loss_tensor.item()])
-            tables[COMBINED].append(["train", loss.item()])
+            # Use metrics accumulated during training
+            metrics = self.model.get_metrics()
+            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker)
+            self.model.reset_metrics()
+
+        printed_table.add_metrics_to_printed_table(progress_tracker.train_metrics, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -281,14 +268,15 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -302,9 +290,11 @@ class LightGBMTrainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -318,8 +308,7 @@ class LightGBMTrainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False
@@ -449,7 +438,7 @@ class LightGBMTrainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."
@@ -515,8 +504,16 @@ class LightGBMTrainer(BaseTrainer):
         Returns:
             LightGBM Booster model
         """
-        output_feature = next(iter(self.model.output_features.values()))
-        gbm_sklearn_cls = lgb.LGBMRegressor if output_feature.type() == NUMBER else lgb.LGBMClassifier
+        output_feature = get_single_output_feature(self.model)
+        is_regression = output_feature.type() == NUMBER
+        gbm_sklearn_cls = lgb.LGBMRegressor if is_regression else lgb.LGBMClassifier
+
+        # Prepare buffer for storing predictions on training data.
+        train_logits = torch.zeros(
+            (lgb_train.label.size, output_feature.num_classes)
+            if output_feature.type() == CATEGORY and output_feature.num_classes > 2
+            else (lgb_train.label.size,)
+        )
 
         gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
             X=lgb_train.get_data(),
@@ -525,11 +522,16 @@ class LightGBMTrainer(BaseTrainer):
             eval_set=[(ds.get_data(), ds.get_label()) for ds in eval_sets],
             eval_names=eval_names,
             # add early stopping callback to populate best_iteration
-            callbacks=[lgb.early_stopping(boost_rounds_per_train_step)],
-            # NOTE: hummingbird does not support categorical features
-            # categorical_feature=categorical_features,
+            callbacks=[lgb.early_stopping(boost_rounds_per_train_step), store_predictions(train_logits)],
         )
         evals_result.update(gbm.evals_result_)
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+            predictions = logits_to_predictions(self.model, train_logits)
+            targets = get_targets(lgb_train, output_feature, self.device)
+            self.model.update_metrics(targets, predictions)
 
         return gbm
 
@@ -581,16 +583,6 @@ class LightGBMTrainer(BaseTrainer):
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
             )
 
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
-            )
-
         # ====== Setup file names =======
         training_checkpoints_path = None
         tensorboard_log_dir = None
@@ -623,7 +615,6 @@ class LightGBMTrainer(BaseTrainer):
             batch_size=-1,
             learning_rate=self.base_learning_rate,
             best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-            best_reduce_learning_rate_eval_metric=float("inf"),
             best_increase_batch_size_eval_metric=float("inf"),
             output_features=output_features,
         )
@@ -760,19 +751,23 @@ class LightGBMTrainer(BaseTrainer):
 
     def _construct_lgb_params(self) -> Tuple[dict, dict]:
         output_params = {}
-        feature = next(iter(self.model.output_features.values()))
+        feature = get_single_output_feature(self.model)
+
         if feature.type() == BINARY or (hasattr(feature, "num_classes") and feature.num_classes == 2):
+            # To retrieve raw logit values during training, we need to use custom objective function.
             output_params = {
-                "objective": "binary",
+                "objective": log_loss_objective,
                 "metric": ["binary_logloss"],
             }
         elif feature.type() == CATEGORY:
+            # To retrieve raw logit values during training, we need to use custom objective function.
             output_params = {
-                "objective": "multiclass",
+                "objective": multiclass_objective,
                 "metric": ["multi_logloss"],
                 "num_class": feature.num_classes,
             }
         elif feature.type() == NUMBER:
+            # Logits are not transformed by LightGBM, so no need to use custom objective function.
             output_params = {
                 "objective": "regression",
                 "metric": ["l2", "l1"],
@@ -825,6 +820,7 @@ class LightGBMTrainer(BaseTrainer):
             "tree_learner": self.tree_learner,
             "min_data_in_leaf": self.min_data_in_leaf,
             "min_sum_hessian_in_leaf": self.min_sum_hessian_in_leaf,
+            "feature_pre_filter": self.feature_pre_filter,
             "seed": self.random_seed,
             **output_params,
         }
@@ -982,22 +978,39 @@ class LightGBMRayTrainer(LightGBMTrainer):
         """
         from lightgbm_ray import RayLGBMClassifier, RayLGBMRegressor
 
-        output_feature = next(iter(self.model.output_features.values()))
+        output_feature = get_single_output_feature(self.model)
         gbm_sklearn_cls = RayLGBMRegressor if output_feature.type() == NUMBER else RayLGBMClassifier
 
+        additional_results = {}
         gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
             X=lgb_train,
             y=None,
             init_model=init_model,
             eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
             eval_names=eval_names,
-            # add early stopping callback to populate best_iteration
-            callbacks=[lgb.early_stopping(boost_rounds_per_train_step)],
+            callbacks=[
+                # add early stopping callback to populate best_iteration
+                lgb.early_stopping(boost_rounds_per_train_step),
+                store_predictions_ray(boost_rounds_per_train_step),
+            ],
+            additional_results=additional_results,
             ray_params=self.ray_params,
-            # NOTE: hummingbird does not support categorical features
-            # categorical_feature=categorical_features,
         )
         evals_result.update(gbm.evals_result_)
+
+        if not self.evaluate_training_set:
+            # Update evaluation metrics with current model params:
+            # noisy but fast way to get metrics on the training set
+
+            # Only use the first actor's predictions.
+            actor_callback_return = next(iter(additional_results["callback_returns"]))
+            # Only a single TrainLogits is expected (final iteration).
+            train_logits: TrainLogits = next(iter(actor_callback_return))
+            predictions = logits_to_predictions(self.model, train_logits.preds)
+
+            targets = get_targets(lgb_train, output_feature, self.device, actor_rank=0)
+
+            self.model.update_metrics(targets, predictions)
 
         return gbm.to_local()
 
@@ -1011,7 +1024,7 @@ class LightGBMRayTrainer(LightGBMTrainer):
 
         from lightgbm_ray import RayDMatrix
 
-        output_feature = next(iter(self.model.output_features.values()))
+        output_feature = get_single_output_feature(self.model)
         label_col = output_feature.proc_column
 
         in_feat = [f.proc_column for f in self.model.input_features.values()]

@@ -23,16 +23,14 @@ import signal
 import sys
 import threading
 import time
-from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import psutil
 import torch
-from tabulate import tabulate
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import COMBINED, LOSS, MINIMIZE, MODEL_ECD, TEST, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -43,8 +41,9 @@ from ludwig.globals import (
 )
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor
+from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.modules.metric_modules import get_improved_fn, get_initial_validation_value
-from ludwig.modules.metric_registry import metric_registry
+from ludwig.modules.metric_registry import get_metric_registry
 from ludwig.modules.optimization_modules import create_clipper, create_optimizer
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.schema.trainer import ECDTrainerConfig
@@ -57,8 +56,8 @@ from ludwig.utils.checkpoint_utils import Checkpoint, CheckpointManager
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import path_exists
-from ludwig.utils.math_utils import exponential_decay, learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.metric_utils import get_metric_names, TrainerMetric
+from ludwig.utils.metrics_printed_table import MetricsPrintedTable
 from ludwig.utils.misc_utils import set_random_seed
 from ludwig.utils.torch_utils import get_torch_device
 from ludwig.utils.trainer_utils import (
@@ -136,18 +135,6 @@ class Trainer(BaseTrainer):
 
         self.regularization_lambda = config.regularization_lambda
         self.regularization_type = config.regularization_type
-        self.learning_rate = config.learning_rate
-        try:
-            base_learning_rate = float(config.learning_rate)
-        except ValueError:
-            # TODO (ASN): Circle back on how we want to set default placeholder value
-            base_learning_rate = 0.001  # Default initial learning rate for autoML.
-
-        self.base_learning_rate = base_learning_rate
-        self.decay = config.decay
-        self.decay_rate = config.decay_rate
-        self.decay_steps = config.decay_steps
-        self.staircase = config.staircase
         self.batch_size = config.batch_size
         self.max_batch_size = config.max_batch_size
         self.eval_batch_size = config.batch_size if config.eval_batch_size is None else config.eval_batch_size
@@ -158,17 +145,11 @@ class Trainer(BaseTrainer):
         self.steps_per_checkpoint = config.steps_per_checkpoint
         self.checkpoints_per_epoch = config.checkpoints_per_epoch
         self.evaluate_training_set = config.evaluate_training_set
-        self.reduce_learning_rate_on_plateau = config.reduce_learning_rate_on_plateau
-        self.reduce_learning_rate_on_plateau_patience = config.reduce_learning_rate_on_plateau_patience
-        self.reduce_learning_rate_on_plateau_rate = config.reduce_learning_rate_on_plateau_rate
-        self.reduce_learning_rate_eval_metric = config.reduce_learning_rate_eval_metric
-        self.reduce_learning_rate_eval_split = config.reduce_learning_rate_eval_split
         self.increase_batch_size_on_plateau = config.increase_batch_size_on_plateau
         self.increase_batch_size_on_plateau_patience = config.increase_batch_size_on_plateau_patience
         self.increase_batch_size_on_plateau_rate = config.increase_batch_size_on_plateau_rate
         self.increase_batch_size_eval_metric = config.increase_batch_size_eval_metric
         self.increase_batch_size_eval_split = config.increase_batch_size_eval_split
-        self.learning_rate_warmup_epochs = config.learning_rate_warmup_epochs
         self.resume = resume
         self.skip_save_model = skip_save_model
         self.skip_save_progress = skip_save_progress
@@ -182,6 +163,12 @@ class Trainer(BaseTrainer):
         if self.device is None:
             self.device = get_torch_device()
 
+        base_learning_rate = config.learning_rate
+        if self.distributed:
+            lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
+            base_learning_rate *= lr_scale_fn(self.distributed.size())
+        self.base_learning_rate = base_learning_rate
+
         self.model = model
         self.model = self.model.to(self.device)
 
@@ -193,19 +180,24 @@ class Trainer(BaseTrainer):
 
         # ================ Optimizer tuning ================
         optimizer_config = config.optimizer
-        # Most optimizers require 'lr' parameter.  set_optimizer_learning_rate will update this during training:
-        optimizer_config.lr = base_learning_rate
         self.gradient_clipping_config = create_clipper(config.gradient_clipping)
         self.optimizer = create_optimizer(
-            self.dist_model, distributed=self.distributed, optimizer_config=optimizer_config
+            self.dist_model,
+            learning_rate=self.base_learning_rate,
+            distributed=self.distributed,
+            optimizer_config=optimizer_config,
         )
-        self.lr_scale_fn = learning_rate_scale_fns[config.learning_rate_scaling]
+        self.scheduler = LRScheduler(config.learning_rate_scheduler, self.optimizer)
 
         # Setup for automatic mixed precision (AMP)
         self.use_amp = config.use_mixed_precision
-        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
         if self.use_amp:
-            logger.info("Enabling automatic mixed precision (AMP)")
+            if torch.cuda.is_available():
+                logger.info("Enabling automatic mixed precision (AMP)")
+            else:
+                logger.info("`trainer.use_mixed_precision=True`, but no GPU device found. Setting to `False`")
+                self.use_amp = False
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
 
         # when training starts the sigint handler will be replaced with
         # set_steps_to_1_or_quit so this is needed to remember
@@ -321,17 +313,6 @@ class Trainer(BaseTrainer):
             torch.nn.utils.clip_grad_norm_(variables, self.gradient_clipping_config.clipglobalnorm)
         if self.gradient_clipping_config.clipvalue:
             torch.nn.utils.clip_grad_value_(variables, self.gradient_clipping_config.clipvalue)
-
-    def set_base_learning_rate(self, base_learning_rate):
-        """Sets the target learning rate, and updates the optimizer learning rate."""
-        base_learning_rate *= self.lr_scale_fn(self.distributed.size())
-        self.base_learning_rate = base_learning_rate  # The LR target for warmup and initial value for decay.
-        self.set_optimizer_learning_rate(base_learning_rate)
-
-    def set_optimizer_learning_rate(self, learning_rate):
-        """Sets the learning rate of the optimizer."""
-        for g in self.optimizer.param_groups:
-            g["lr"] = learning_rate
 
     @classmethod
     def write_eval_summary(
@@ -456,25 +437,25 @@ class Trainer(BaseTrainer):
             logger.info(f"\nRunning evaluation for step: {progress_tracker.steps}, epoch: {progress_tracker.epoch}")
 
         # ================ Eval ================
-        # init tables
-        tables = OrderedDict()
-        for output_feature_name, output_feature in output_features.items():
-            tables[output_feature_name] = [[output_feature_name] + metrics_names[output_feature_name]]
-        tables[COMBINED] = [[COMBINED, LOSS]]
+        printed_table = MetricsPrintedTable(output_features)
 
         # eval metrics on train
         self.eval_batch_size = max(self.eval_batch_size, progress_tracker.batch_size)
 
         if self.evaluate_training_set:
             # Run a separate pass over the training data to compute metrics
-            self.evaluation(
-                training_set, "train", progress_tracker.train_metrics, tables, self.eval_batch_size, progress_tracker
+            train_metrics_log = self.evaluation(
+                training_set, "train", progress_tracker.train_metrics, self.eval_batch_size, progress_tracker
             )
         else:
             # Use metrics accumulated during training
             metrics = self.model.get_metrics()
-            append_metrics(self.model, "train", metrics, progress_tracker.train_metrics, tables, progress_tracker)
+            train_metrics_log = append_metrics(
+                self.model, "train", metrics, progress_tracker.train_metrics, progress_tracker
+            )
             self.model.reset_metrics()
+
+        printed_table.add_metrics_to_printed_table(train_metrics_log, TRAIN)
 
         self.write_eval_summary(
             summary_writer=train_summary_writer,
@@ -486,14 +467,15 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_validation_start(self, progress_tracker, save_path))
 
             # eval metrics on validation set
-            self.evaluation(
+            validation_metrics_log = self.evaluation(
                 validation_set,
                 VALIDATION,
                 progress_tracker.validation_metrics,
-                tables,
                 self.eval_batch_size,
                 progress_tracker,
             )
+
+            printed_table.add_metrics_to_printed_table(validation_metrics_log, VALIDATION)
 
             self.write_eval_summary(
                 summary_writer=validation_summary_writer,
@@ -507,9 +489,11 @@ class Trainer(BaseTrainer):
             self.callback(lambda c: c.on_test_start(self, progress_tracker, save_path))
 
             # eval metrics on test set
-            self.evaluation(
-                test_set, TEST, progress_tracker.test_metrics, tables, self.eval_batch_size, progress_tracker
+            test_metrics_log = self.evaluation(
+                test_set, TEST, progress_tracker.test_metrics, self.eval_batch_size, progress_tracker
             )
+
+            printed_table.add_metrics_to_printed_table(test_metrics_log, TEST)
 
             self.write_eval_summary(
                 summary_writer=test_summary_writer,
@@ -523,8 +507,7 @@ class Trainer(BaseTrainer):
 
         if self.is_coordinator():
             logger.info(f"Evaluation took {time_utils.strdelta(elapsed_time)}\n")
-            for output_feature, table in tables.items():
-                logger.info(tabulate(table, headers="firstrow", tablefmt="fancy_grid", floatfmt=".4f"))
+            printed_table.log_info()
 
         # ================ Validation Logic ================
         should_break = False
@@ -535,11 +518,6 @@ class Trainer(BaseTrainer):
                 self.validation_metric,
                 save_path,
                 model_hyperparameters_path,
-                self.reduce_learning_rate_on_plateau,
-                self.reduce_learning_rate_on_plateau_patience,
-                self.reduce_learning_rate_on_plateau_rate,
-                self.reduce_learning_rate_eval_metric,
-                self.reduce_learning_rate_eval_split,
                 self.increase_batch_size_on_plateau,
                 self.increase_batch_size_on_plateau_patience,
                 self.increase_batch_size_on_plateau_rate,
@@ -604,16 +582,6 @@ class Trainer(BaseTrainer):
                 "Available ones are: {}".format(self.validation_field, list(output_features.keys()) + ["combined"])
             )
 
-        # check if validation_metric is valid
-        valid_validation_metric = self.validation_metric in metrics_names[self.validation_field]
-        if not valid_validation_metric:
-            raise ValueError(
-                "The specified metric {} is not valid. "
-                "Available metrics for {} output feature are: {}".format(
-                    self.validation_metric, self.validation_field, metrics_names[self.validation_field]
-                )
-            )
-
         # ====== Setup file names =======
         model_hyperparameters_path = None
         tensorboard_log_dir = None
@@ -634,7 +602,7 @@ class Trainer(BaseTrainer):
 
         # ====== Setup session =======
         checkpoint_manager = None
-        checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer)
+        checkpoint = Checkpoint(model=self.dist_model, optimizer=self.optimizer, scheduler=self.scheduler)
         if self.is_coordinator() and not self.skip_save_progress:
             checkpoint_manager = CheckpointManager(checkpoint, training_checkpoints_path, device=self.device)
 
@@ -660,18 +628,16 @@ class Trainer(BaseTrainer):
                 batch_size=self.batch_size,
                 learning_rate=self.base_learning_rate,
                 best_eval_metric_value=get_initial_validation_value(self.validation_metric),
-                best_reduce_learning_rate_eval_metric=get_initial_validation_value(
-                    self.reduce_learning_rate_eval_metric
-                ),
                 best_increase_batch_size_eval_metric=get_initial_validation_value(self.increase_batch_size_eval_metric),
                 output_features=output_features,
             )
 
-        # Horovod: broadcast initial variable states from rank 0 to all other processes.
+        # Distributed: broadcast initial variable states from rank 0 to all other processes.
         # This is necessary to ensure consistent initialization of all workers when
         # training is started with random weights or restored from a checkpoint.
         self.distributed.sync_model(self.dist_model)
         self.distributed.sync_optimizer(self.optimizer)
+        self.scheduler.load_state_dict(self.distributed.broadcast_object(self.scheduler.state_dict()))
 
         set_random_seed(self.random_seed)
 
@@ -694,8 +660,10 @@ class Trainer(BaseTrainer):
                     self.is_coordinator(),
                 )
                 final_steps_per_checkpoint = min(final_steps_per_checkpoint, self.total_steps)
-
                 early_stopping_steps = final_steps_per_checkpoint * self.early_stop
+
+                # Update learning rate scheduler which depends on number of steps
+                self.scheduler.reset(final_steps_per_checkpoint, self.total_steps)
 
                 if self.is_coordinator():
                     logger.info(
@@ -825,38 +793,8 @@ class Trainer(BaseTrainer):
     ) -> bool:
         """Completes up to one epoch through the data."""
         while not batcher.last_batch() and progress_tracker.steps < self.total_steps:
+            progress_tracker.learning_rate = self.optimizer.param_groups[0]["lr"]
             self.callback(lambda c: c.on_batch_start(self, progress_tracker, save_path))
-
-            # Set learning rate for this batch
-            current_learning_rate = progress_tracker.learning_rate
-
-            if self.decay:
-                current_learning_rate = exponential_decay(
-                    current_learning_rate,
-                    self.decay_rate,
-                    self.decay_steps,
-                    progress_tracker.steps,
-                    self.staircase,
-                )
-
-            if self.distributed:
-                current_learning_rate = learning_rate_warmup_distributed(
-                    current_learning_rate,
-                    progress_tracker.epoch,
-                    self.learning_rate_warmup_epochs,
-                    self.distributed.size(),
-                    batcher.step,
-                    batcher.steps_per_epoch,
-                ) * self.lr_scale_fn(self.distributed.size())
-            else:
-                current_learning_rate = learning_rate_warmup(
-                    current_learning_rate,
-                    progress_tracker.epoch,
-                    self.learning_rate_warmup_epochs,
-                    batcher.step,
-                    batcher.steps_per_epoch,
-                )
-            self.set_optimizer_learning_rate(current_learning_rate)
 
             # obtain batch
             batch = batcher.next_batch()
@@ -876,13 +814,16 @@ class Trainer(BaseTrainer):
                 targets,
             )
 
+            # Update LR schduler here to avoid having it updated during batch size tuning, etc.
+            self.scheduler.step()
+
             if self.is_coordinator() and not self.skip_save_log:
                 self.write_step_summary(
                     train_summary_writer=train_summary_writer,
                     combined_loss=loss,
                     all_losses=all_losses,
                     step=progress_tracker.steps,
-                    learning_rate=current_learning_rate,
+                    learning_rate=progress_tracker.learning_rate,
                 )
 
             progress_tracker.steps += 1
@@ -973,15 +914,13 @@ class Trainer(BaseTrainer):
     def validation_metric(self):
         return self._validation_metric
 
-    def evaluation(self, dataset, dataset_name, metrics_log, tables, batch_size, progress_tracker):
+    def evaluation(self, dataset, dataset_name, metrics_log, batch_size, progress_tracker):
         predictor = Predictor(
             self.model, batch_size=batch_size, distributed=self.distributed, report_tqdm_to_ray=self.report_tqdm_to_ray
         )
         metrics, _ = predictor.batch_evaluation(dataset, collect_predictions=False, dataset_name=dataset_name)
 
-        append_metrics(self.model, dataset_name, metrics, metrics_log, tables, progress_tracker)
-
-        return metrics_log, tables
+        return append_metrics(self.model, dataset_name, metrics, metrics_log, progress_tracker)
 
     def check_progress_on_validation(
         self,
@@ -990,11 +929,6 @@ class Trainer(BaseTrainer):
         validation_metric: str,
         save_path,
         model_hyperparameters_path,
-        reduce_learning_rate_on_plateau,
-        reduce_learning_rate_on_plateau_patience,
-        reduce_learning_rate_on_plateau_rate,
-        reduce_learning_rate_eval_metric,
-        reduce_learning_rate_eval_split,
         increase_batch_size_on_plateau,
         increase_batch_size_on_plateau_patience,
         increase_batch_size_on_plateau_rate,
@@ -1050,7 +984,7 @@ class Trainer(BaseTrainer):
                 absolute_eval_metric_value_change = round(
                     abs(previous_best_eval_metric_value - progress_tracker.best_eval_metric_value), 3
                 )
-                if metric_registry[validation_metric].get_objective() == MINIMIZE:
+                if get_metric_registry()[validation_metric].get_objective() == MINIMIZE:
                     logger.info(
                         f"'{validation_output_feature_name}' '{validation_metric}' decreased by "
                         f"{absolute_eval_metric_value_change}."
@@ -1074,31 +1008,8 @@ class Trainer(BaseTrainer):
                 + f"{last_improvement_in_steps} step(s) ago.\n"
             )
 
-        # ========== Reduce Learning Rate Plateau logic ========
-        if reduce_learning_rate_on_plateau > 0:
-            self.reduce_learning_rate(
-                progress_tracker,
-                validation_output_feature_name,
-                reduce_learning_rate_on_plateau,
-                reduce_learning_rate_on_plateau_patience,
-                reduce_learning_rate_on_plateau_rate,
-                reduce_learning_rate_eval_metric,
-                reduce_learning_rate_eval_split,
-            )
-            progress_tracker.last_learning_rate_reduction = (
-                progress_tracker.steps - progress_tracker.last_learning_rate_reduction_steps
-            )
-            if (
-                progress_tracker.last_learning_rate_reduction > 0
-                and progress_tracker.last_reduce_learning_rate_eval_metric_improvement > 0
-                and not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
-            ):
-                logger.info(
-                    f"Last learning rate reduction happened {progress_tracker.last_learning_rate_reduction} step(s) "
-                    f"ago, improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
-                    f"{reduce_learning_rate_eval_metric} happened "
-                    f"{progress_tracker.last_reduce_learning_rate_eval_metric_improvement} step(s) ago."
-                )
+        # ========== Learning Rate Schedule evaluation updates ========
+        self.scheduler.eval_step(progress_tracker, validation_output_feature_name)
 
         # ========== Increase Batch Size Plateau logic =========
         if increase_batch_size_on_plateau > 0:
@@ -1205,66 +1116,6 @@ class Trainer(BaseTrainer):
         checkpoint: Checkpoint,
     ):
         CheckpointManager.load_latest_checkpoint(checkpoint, model_weights_progress_path, self.device)
-
-    def reduce_learning_rate(
-        self,
-        progress_tracker: ProgressTracker,
-        validation_output_feature_name: str,
-        reduce_learning_rate_on_plateau: int,
-        reduce_learning_rate_on_plateau_patience: int,
-        reduce_learning_rate_on_plateau_rate: float,
-        reduce_learning_rate_eval_metric: str = LOSS,
-        reduce_learning_rate_eval_split: str = TRAINING,
-    ):
-        """Uses the progress tracker to determine if the learning rate should be reduced."""
-        if not (progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau):
-
-            if reduce_learning_rate_eval_split == TRAINING:
-                split_metrics = progress_tracker.train_metrics
-            elif reduce_learning_rate_eval_split == VALIDATION:
-                split_metrics = progress_tracker.validation_metrics
-            else:  # if reduce_learning_rate_eval_split == TEST:
-                split_metrics = progress_tracker.test_metrics
-
-            validation_metric = reduce_learning_rate_eval_metric
-            last_metric: TrainerMetric = split_metrics[validation_output_feature_name][validation_metric][-1]
-            last_metric_value = last_metric[-1]
-
-            improved_fn = get_improved_fn(validation_metric)
-            is_improved = improved_fn(last_metric_value, progress_tracker.best_reduce_learning_rate_eval_metric)
-            if is_improved:
-                # we update the best metric value and set it to the current one
-                # and reset last improvement step count
-                progress_tracker.best_reduce_learning_rate_eval_metric = last_metric_value
-                progress_tracker.last_reduce_learning_rate_eval_metric_improvement = 0
-            else:
-                progress_tracker.last_reduce_learning_rate_eval_metric_improvement += 1
-                if not is_improved and (
-                    # learning rate reduction happened more than N steps ago
-                    progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
-                    # No improvement of the evaluation metric since more than N steps ago
-                    and progress_tracker.last_reduce_learning_rate_eval_metric_improvement
-                    >= reduce_learning_rate_on_plateau_patience
-                ):
-                    progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
-
-                    if self.is_coordinator():
-                        logger.info(
-                            f"PLATEAU REACHED, reducing learning rate to {progress_tracker.learning_rate} due to lack "
-                            f"of improvement of {validation_output_feature_name} {reduce_learning_rate_eval_split} "
-                            f"{validation_metric}."
-                        )
-
-                    progress_tracker.last_learning_rate_reduction_steps = progress_tracker.steps
-                    progress_tracker.last_learning_rate_reduction = 0
-                    progress_tracker.num_reductions_learning_rate += 1
-
-                    if progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau:
-                        if self.is_coordinator():
-                            logger.info(
-                                f"Learning rate was already reduced {progress_tracker.num_reductions_learning_rate} "
-                                "time(s), not reducing it anymore."
-                            )
 
     def increase_batch_size(
         self,

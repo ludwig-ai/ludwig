@@ -59,74 +59,6 @@ checkpoints_per_epoch:
         In many large-scale training runs, evaluation is often configured to run on
         a sub-epoch time scale, or every few thousand steps.
     ui_display_name: Checkpoints per epoch
-decay:
-    description_implications:
-        "It\u2019s almost always a good idea to use a schedule.\
-        \ For most models, try the exponential decay schedule first.\n\nThe exponential\
-        \ schedule divides the learning rate by the same factor (%) every epoch. This\
-        \ means that the learning rate will decrease rapidly in the first few epochs,\
-        \ and spend more epochs with a lower value, but never reach exactly zero.\
-        \ As a rule of thumb, compared to training without a schedule, you can use\
-        \ a slightly higher maximum learning rate. Since the learning rate changes\
-        \ over time, the whole training is not so sensitive to the value picked."
-    expected_impact: 2
-    literature_references:
-        - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
-    related_parameters:
-        - decay_rate
-        - decay_steps
-        - learning_rate
-    suggested_values_reasoning:
-        There is no go-to schedule for all models. Changing
-        the learning rate, in general, has shown to make training less sensitive to
-        the learning rate value you pick for it. So using a learning rate schedule
-        can give better training performance and make the model converge faster
-    ui_display_name: Decay
-decay_rate:
-    default_value_reasoning:
-        4-5% decay each step is an empirically useful decary
-        rate to start with.
-    description_implications:
-        Increasing the decay rate will lower the learning rate
-        faster. This could make the model more robust to a bad (too high) initial
-        learning rate, but a decay rate that is too high could prohibit the model
-        from learning anything at all.
-    expected_impact: 2
-    literature_references:
-        - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
-    related_parameters:
-        - decay_rate, decay_steps, learning_rate
-    suggested_values: 0.9 - 0.96
-    suggested_values_reasoning:
-        Since this controls exponential decay, even a small
-        decay rate will still be strongly impactful.
-    ui_display_name: Decay Rate
-decay_steps:
-    default_value_reasoning:
-        This default essentially enables the `learning_rate`
-        to decay by a factor of the `decay_rate` at 10000 training steps.
-    description_implications:
-        By increasing the value of decay steps, you are increasing
-        the number of training steps it takes to decay the learning rate by a factor
-        of `decay_rate`. In other words, the bigger this parameter, the slower the
-        learning rate decays.
-    example_value:
-        - 5000
-    expected_impact: 2
-    related_parameters:
-        - decay_rate
-        - decay_steps
-        - learning_rate
-    suggested_values: 10000 +/- 500 at a time
-    suggested_values_reasoning:
-        The decay in the learning rate is calculated as the
-        training step divided by the `decay_steps` plus one. Then the `decay_rate`
-        is raised to the power of this exponent which is then multiplied to the current
-        learning rate. All this to say that the learning rate is only decayed by a
-        factor of the set `decay_rate` when the training step reaches the `decay_steps`
-        and then subsequently when it reaches any multiple of `decay_steps`. You can
-        think of `decay_steps` as a rate of decay for the `decay_rate`.
-    ui_display_name: Decay Steps
 early_stop:
     default_value_reasoning:
         Deep learning models are prone to overfitting. It's generally
@@ -257,13 +189,13 @@ learning_rate:
         faster model convergence. Decreasing the learning rate can help stabilize
         learning curves at the cost of slower time to convergence.
     expected_impact: 3
-    suggested_values: 0.00001 - 0.1
+    suggested_values: 0.00001 - 0.1 or auto
     suggested_values_reasoning:
         Tabular models trained from scratch typically use
         learning rates around 1e-3 while learning rates for pre-trained models should
         be much smaller, typically around 1e-5, which is important to mitigate catastrophic
         forgetting. To make the model more robust to any specific choice of learning
-        rate, consider turning enabling learning rate exponential decay.
+        rate, consider turning enabling learning rate decay.
     ui_display_name: Learning Rate
 learning_rate_scaling:
     default_value_reasoning:
@@ -287,26 +219,6 @@ learning_rate_scaling:
         is hand-tuned for a given number of workers, setting this value to constant
         can be used to disable scale-up.
     ui_display_name: Learning Rate Scaling
-learning_rate_warmup_epochs:
-    default_value_reasoning:
-        The randomness of how weights are initialized can result
-        in strange, noisy gradient updates during the begining of your training run.
-        Learning rate warmup has the benefit of slowly starting to tune things like
-        attention mechanisms in your network, that may be prone to bad initial conditions.
-    description_implications:
-        Learning rate warmup sets a very low learning rate for
-        a set number of training steps (warmup steps). After your warmup steps you
-        use your "regular" learning rate or learning rate scheduler. You can also
-        gradually increase your learning rate over the number of warmup steps.
-    expected_impact: 1
-    literature_references:
-        - "https://datascience.stackexchange.com/questions/55991/in-the-context-of-deep-learning-what-is-training-warmup-steps "
-    suggested_values: true
-    suggested_values_reasoning:
-        You don't want to warm up for too long, as after the
-        model is starting to hill climb, you want to use the full weight of the learning
-        rate to descend into good loss minima.
-    ui_display_name: Learning Rate Warmup Epochs
 max_batch_size:
     default_value_reasoning: Not typically required.
     description_implications:
@@ -341,21 +253,6 @@ optimizer:
         you are in need of quick results without extensive hypertuning, tend towards
         adaptive gradient methods like adam or adamw."
     ui_display_name: Optimizer
-reduce_learning_rate_eval_metric:
-    expected_impact: 1
-    ui_display_name: Reduce Learning Rate Eval Metric
-reduce_learning_rate_eval_split:
-    expected_impact: 1
-    ui_display_name: Reduce Learning Rate Eval Split
-reduce_learning_rate_on_plateau:
-    expected_impact: 1
-    ui_display_name: Reduce Learning Rate On Plateau
-reduce_learning_rate_on_plateau_patience:
-    expected_impact: 1
-    ui_display_name: Reduce Learning Rate on Plateau Patience
-reduce_learning_rate_on_plateau_rate:
-    expected_impact: 1
-    ui_display_name: Reduce Learning Rate On Plateau Rate
 regularization_lambda:
     default_value_reasoning:
         How to tune the overall impact of the regularization
@@ -427,23 +324,6 @@ should_shuffle:
         the model may use this as a way of reducing the training error, which is a
         sort of overfitting.
     ui_display_name: Should Shuffle
-staircase:
-    default_value_reasoning:
-        Extra knob for decaying the learning rate in a different
-        way.
-    description_implications:
-        An excessively aggressive decay results in optimizers
-        never reaching the minima, whereas a slow decay leads to chaotic updates without
-        significant improvement. Discrete learning rate decay is another knob to help
-        tune a balance.
-    expected_impact: 1
-    literature_references:
-        - https://neptune.ai/blog/how-to-choose-a-learning-rate-scheduler
-    suggested_values: false
-    suggested_values_reasoning:
-        We have not found strong evidence that discretely
-        decaying the learning rate is superior to doing so continuously.
-    ui_display_name: Staircase
 steps_per_checkpoint:
     default_value_reasoning:
         By default, we evaluate once per epoch, which scales
@@ -536,3 +416,153 @@ validation_metric:
         - validation_metric
     suggested_values: default behavior
     ui_display_name: Validation Metric
+learning_rate_scheduler:
+    warmup_evaluations:
+        default_value_reasoning:
+            "Learning rate warmup is most commonly used when training with large batch sizes / distributed
+            training to avoid taking overly large steps at the beginning of training that might result in the
+            process getting stuck in a local optimum. Conventional wisdom when training with large batch sizes is
+            to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learing
+            rate over a few epochs of training in the beginning.
+
+            Even when not training with large batch sizes, the randomness of how weights are initialized can result
+            in strange, noisy gradient updates during the begining of your training run. As such, it's generally
+            recommended to use a small amount of warmup (e.g., 1 epoch / evaluation) even when the batch size is
+            relatively small."
+        description_implications:
+            Learning rate warmup sets a very low learning rate at the beginning of training and gradually
+            (linearly) increases to the base learning rate each step (batch) during training.
+            After your warmup steps you use your "regular" learning rate or learning rate scheduler.
+        expected_impact: 2
+        related_parameters:
+            - warmup_fraction
+            - learning_rate_scaling
+        literature_references:
+            - https://arxiv.org/abs/1711.00489
+            - https://datascience.stackexchange.com/questions/55991/in-the-context-of-deep-learning-what-is-training-warmup-steps
+        suggested_values: 0 - 5
+        suggested_values_reasoning:
+            You don't want to warm up for too long, as after the model is starting to hill climb, you want to use the
+            full weight of the learning rate to descend into good loss minima.
+
+            If you observe your loss curve converging very early into training, within the first few epochs, then
+            increasing learning rate warmup may help to mitigate this effect. Pretrained models can benefit from more
+            warmup to help offset the effects of catastrophic forgetting due to an overly high learning rate.
+        ui_display_name: Warmup Evaluations
+    warmup_fraction:
+        default_value_reasoning:
+            Similar to `warmup_evaluations` but expressed as a fraction of the total number of training steps, rather
+            that a certain number of evaluation phases.
+        description_implications: See `warmup_evaluations`.
+        expected_impact: 2
+        related_parameters:
+            - warmup_evaluations
+            - learning_rate_scaling
+        suggested_values: 0.05 - 0.2
+        suggested_values_reasoning:
+            You don't want to warm up for too long, as after the
+            model is starting to hill climb, you want to use the full weight of the learning
+            rate to descend into good loss minima.
+        ui_display_name: Warmup Fraction
+    decay:
+        description_implications:
+            "It\u2019s almost always a good idea to use a schedule.\
+            \ For most models, try the exponential decay schedule first.\n\nThe exponential\
+            \ schedule divides the learning rate by the same factor (%) every epoch. This\
+            \ means that the learning rate will decrease rapidly in the first few epochs,\
+            \ and spend more epochs with a lower value, but never reach exactly zero.\
+            \ As a rule of thumb, compared to training without a schedule, you can use\
+            \ a slightly higher maximum learning rate. Since the learning rate changes\
+            \ over time, the whole training is not so sensitive to the value picked."
+        expected_impact: 2
+        literature_references:
+            - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
+        related_parameters:
+            - decay_rate
+            - decay_steps
+            - learning_rate
+        suggested_values: exponential
+        suggested_values_reasoning:
+            Starting with exponential decay is a safe place to start, as it is a "softer" decrease in the learning
+            rate over time, as compared with linear, which is more steep after the initial drop. Linear decay is
+            most useful when the risk of catastrophic forgetting is very high (e.g, for fine-tuning pretrained models).
+            If you observe your loss curves shooting up (even on the training set) in later epochs, increasing the
+            decay rate may help mitigate this effect.
+        ui_display_name: Decay
+    decay_rate:
+        default_value_reasoning:
+            4-5% decay each step is an empirically useful decay
+            rate to start with.
+        description_implications:
+            Increasing the decay rate will lower the learning rate
+            faster. This could make the model more robust to a bad (too high) initial
+            learning rate, but a decay rate that is too high could prohibit the model
+            from learning anything at all.
+        expected_impact: 1
+        literature_references:
+            - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
+        related_parameters:
+            - decay_rate, decay_steps, learning_rate
+        suggested_values: 0.9 - 0.96
+        suggested_values_reasoning:
+            Since this controls exponential decay, even a small
+            decay rate will still be strongly impactful.
+        ui_display_name: Decay Rate
+    decay_steps:
+        default_value_reasoning:
+            This default essentially enables the `learning_rate`
+            to decay by a factor of the `decay_rate` at 10000 training steps.
+        description_implications:
+            By increasing the value of decay steps, you are increasing
+            the number of training steps it takes to decay the learning rate by a factor
+            of `decay_rate`. In other words, the bigger this parameter, the slower the
+            learning rate decays.
+        example_value:
+            - 5000
+        expected_impact: 1
+        related_parameters:
+            - decay_rate
+            - decay_steps
+            - learning_rate
+        suggested_values: 10000 +/- 500 at a time
+        suggested_values_reasoning:
+            The decay in the learning rate is calculated as the
+            training step divided by the `decay_steps` plus one. Then the `decay_rate`
+            is raised to the power of this exponent which is then multiplied to the current
+            learning rate. All this to say that the learning rate is only decayed by a
+            factor of the set `decay_rate` when the training step reaches the `decay_steps`
+            and then subsequently when it reaches any multiple of `decay_steps`. You can
+            think of `decay_steps` as a rate of decay for the `decay_rate`.
+        ui_display_name: Decay Steps
+    staircase:
+        default_value_reasoning:
+            Extra knob for decaying the learning rate in a different
+            way.
+        description_implications:
+            An excessively aggressive decay results in optimizers
+            never reaching the minima, whereas a slow decay leads to chaotic updates without
+            significant improvement. Discrete learning rate decay is another knob to help
+            tune a balance.
+        expected_impact: 1
+        literature_references:
+            - https://neptune.ai/blog/how-to-choose-a-learning-rate-scheduler
+        suggested_values: false
+        suggested_values_reasoning:
+            We have not found strong evidence that discretely
+            decaying the learning rate is superior to doing so continuously.
+        ui_display_name: Staircase
+    reduce_on_plateau:
+        expected_impact: 1
+        ui_display_name: Reduce On Plateau
+    reduce_on_plateau_patience:
+        expected_impact: 1
+        ui_display_name: Reduce On Plateau Patience
+    reduce_on_plateau_rate:
+        expected_impact: 1
+        ui_display_name: Reduce On Plateau Rate
+    reduce_eval_metric:
+        expected_impact: 1
+        ui_display_name: Reduce Eval Metric
+    reduce_eval_split:
+        expected_impact: 1
+        ui_display_name: Reduce Eval Split

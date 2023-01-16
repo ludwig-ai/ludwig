@@ -1,5 +1,6 @@
 import copy
 import math
+from typing import Any, Dict
 
 import pytest
 
@@ -11,6 +12,7 @@ from ludwig.constants import (
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
+    LEARNING_RATE_SCHEDULER,
     LOSS,
     NUMBER,
     OUTPUT_FEATURES,
@@ -306,10 +308,6 @@ def test_deprecated_field_aliases():
         "ludwig_version": "0.4",
         INPUT_FEATURES: [{"name": "num_in", "type": "numerical"}],
         OUTPUT_FEATURES: [{"name": "num_out", "type": "numerical"}],
-        "training": {
-            "epochs": 2,
-            "eval_batch_size": 0,
-        },
         HYPEROPT: {
             "parameters": {
                 "training.learning_rate": {
@@ -331,6 +329,14 @@ def test_deprecated_field_aliases():
                 "missing_value_strategy": "fill_with_const",
             },
         },
+        "training": {
+            "epochs": 2,
+            "eval_batch_size": 0,
+            "reduce_learning_rate_on_plateau": 2,
+            "reduce_learning_rate_on_plateau_patience": 5,
+            "decay": True,
+            "learning_rate_warmup_epochs": 2,
+        },
     }
 
     updated_config = upgrade_config_dict_to_latest_version(config)
@@ -345,6 +351,12 @@ def test_deprecated_field_aliases():
     assert "training" not in updated_config
     assert updated_config[TRAINER]["epochs"] == 2
     assert updated_config[TRAINER][EVAL_BATCH_SIZE] is None
+
+    assert LEARNING_RATE_SCHEDULER in updated_config[TRAINER]
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["reduce_on_plateau"] == 2
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["reduce_on_plateau_patience"] == 5
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["decay"] == "exponential"
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["warmup_evaluations"] == 2
 
     hparams = updated_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
@@ -603,7 +615,6 @@ def test_upgrade_model_progress():
         "batch_size": 64,
         "best_eval_metric_value": 0.5,
         "best_increase_batch_size_eval_metric": float("inf"),
-        "best_reduce_learning_rate_eval_metric": float("inf"),
         "epoch": 2,
         "last_improvement_steps": 64,
         "best_eval_metric_steps": 0,
@@ -611,7 +622,6 @@ def test_upgrade_model_progress():
         "last_increase_batch_size": 0,
         "last_increase_batch_size_eval_metric_improvement": 0,
         "last_learning_rate_reduction": 0,
-        "last_reduce_learning_rate_eval_metric_improvement": 0,
         "learning_rate": 0.001,
         "num_increases_batch_size": 0,
         "num_reductions_learning_rate": 0,
@@ -678,7 +688,6 @@ def test_upgrade_model_progress_already_valid():
             "combined": {"loss": 4.396},
         },
         "best_increase_batch_size_eval_metric": float("inf"),
-        "best_reduce_learning_rate_eval_metric": float("inf"),
         "checkpoint_number": 12,
         "epoch": 12,
         "last_increase_batch_size": 0,
@@ -686,7 +695,6 @@ def test_upgrade_model_progress_already_valid():
         "last_increase_batch_size_steps": 0,
         "last_learning_rate_reduction": 0,
         "last_learning_rate_reduction_steps": 0,
-        "last_reduce_learning_rate_eval_metric_improvement": 0,
         "learning_rate": 0.001,
         "num_increases_batch_size": 0,
         "num_reductions_learning_rate": 0,
@@ -772,3 +780,28 @@ def test_cache_credentials_backward_compatibility():
     _update_backend_cache_credentials(backend)
 
     assert backend == {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}
+
+
+@pytest.mark.parametrize(
+    "encoder,upgraded_type",
+    [
+        ({"type": "resnet"}, "resnet"),
+        ({"type": "vit"}, "vit"),
+        ({"type": "resnet", "resnet_size": 50}, "_resnet_legacy"),
+        ({"type": "vit", "num_hidden_layers": 12}, "_vit_legacy"),
+    ],
+    ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
+)
+def test_legacy_image_encoders(encoder: Dict[str, Any], upgraded_type: str):
+    config = {
+        "input_features": [{"name": "image1", "type": "image", "encoder": encoder}],
+        "output_features": [{"name": "binary1", "type": "binary"}],
+    }
+
+    updated_config = upgrade_config_dict_to_latest_version(config)
+
+    expected_encoder = {
+        **encoder,
+        **{"type": upgraded_type},
+    }
+    assert updated_config["input_features"][0]["encoder"] == expected_encoder

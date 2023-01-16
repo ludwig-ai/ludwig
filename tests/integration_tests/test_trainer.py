@@ -214,6 +214,9 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
         "input_features": [{"name": "in_column", "type": "binary"}],
         "output_features": [{"name": "out_column", "type": "binary"}],
         "model_type": "gbm",
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"feature_pre_filter": False},
     }
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}

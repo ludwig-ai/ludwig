@@ -371,10 +371,7 @@ def image_feature(folder, **kwargs):
         "type": IMAGE,
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         ENCODER: {
-            "type": "resnet",
-            "resnet_size": 8,
-            "num_filters": 8,
-            "output_size": 8,
+            "type": "stacked_cnn",
         },
         "destination_folder": folder,
     }
