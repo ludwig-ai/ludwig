@@ -310,7 +310,7 @@ def run_test_with_features(
     if preprocessing:
         config[PREPROCESSING] = preprocessing
 
-    backend_kwargs = backend_kwargs or {}
+    backend_kwargs = copy.deepcopy(backend_kwargs or {})
     backend_config = merge_dict(RAY_BACKEND_CONFIG, backend_kwargs)
     if df_engine:
         backend_config["processor"]["type"] = df_engine
