@@ -35,9 +35,7 @@ class BatchSizeEvaluator(ABC):
                 )
             return is_valid
 
-        # TODO (ASN) : Circle back on how we want to set default placeholder value
-        # Currently, since self.batch_size is originally set to auto, we provide a
-        # placeholder starting value
+        # Set 2 as the minimum batch size to account for batch norm.
         batch_size = 2
 
         best_samples_per_sec = 0

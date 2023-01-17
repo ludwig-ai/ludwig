@@ -125,10 +125,16 @@ class Backend(ABC):
 
     @abstractmethod
     def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        """Returns best batch size (measured in samples / s) on the given evaluator.
+
+        The evaluator class will need to be instantiated on each worker in the backend cluster, then
+        call `evaluator.select_best_batch_size(dataset_len)`.
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+        """Applies `transform_fn` to every `batch_size` length batch of `df` and returns the result."""
         raise NotImplementedError()
 
 

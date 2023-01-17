@@ -1249,8 +1249,34 @@ def build_dataset(
     return dataset, metadata
 
 
-def embed_fixed_features(dataset, feature_configs, metadata, backend):
+def embed_fixed_features(
+    dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
+) -> DataFrame:
+    """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates metadata."""
     # Encode features in bulk at the end
+    features_to_encode = get_features_with_cacheable_fixed_embeddings(feature_configs, metadata)
+    if not features_to_encode:
+        return dataset
+
+    for feature in features_to_encode:
+        # Temporarily set to False to ensure proper encoding
+        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = False
+
+    batch_size = backend.tune_batch_size(create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset))
+    transform_fn = create_embed_transform_fn(features_to_encode, metadata)
+    results = backend.batch_transform(dataset, batch_size, transform_fn)
+
+    for feature in features_to_encode:
+        # Set metadata so we know to skip encoding the feature
+        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
+
+    return results
+
+
+def get_features_with_cacheable_fixed_embeddings(
+    feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> List[FeatureConfigDict]:
+    """Returns list of features with `cache_encoder_embeddings=True` set in the preprocessing config."""
     features_to_encode = []
     for feature_config in feature_configs:
         # deal with encoders that have fixed preprocessing
@@ -1268,23 +1294,6 @@ def embed_fixed_features(dataset, feature_configs, metadata, backend):
 
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
                     features_to_encode.append(feature_config)
-
-    if not features_to_encode:
-        return dataset
-
-    for feature in features_to_encode:
-        # Temporarily set to False to ensure proper encoding
-        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = False
-
-    batch_size = backend.tune_batch_size(create_embed_batch_size_evaluator(features_to_encode, metadata), len(dataset))
-    transform_fn = create_embed_transform_fn(features_to_encode, metadata)
-    results = backend.batch_transform(dataset, batch_size, transform_fn)
-
-    for feature in features_to_encode:
-        # Set metadata so we know to skip encoding the feature
-        metadata[feature[NAME]][PREPROCESSING]["cache_encoder_embeddings"] = True
-
-    return results
 
 
 def cast_columns(dataset_cols, features, backend) -> None:

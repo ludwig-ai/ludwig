@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,7 @@ from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import InputFeaturesContainer
+from ludwig.types import FeatureConfigDict, TrainingSetMetadataDict
 from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.dataframe_utils import from_numpy_dataset
 from ludwig.utils.misc_utils import get_from_registry
@@ -20,7 +21,7 @@ _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
 @DeveloperAPI
 class Embedder(LudwigModule):
-    def __init__(self, feature_configs: List[Dict[str, Any]], metadata: Dict[str, Any]):
+    def __init__(self, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict):
         super().__init__()
 
         self.input_features = LudwigFeatureDict()
@@ -56,7 +57,7 @@ class Embedder(LudwigModule):
 
 @DeveloperAPI
 def create_embed_batch_size_evaluator(
-    features_to_encode: List[Dict[str, Any]], metadata: Dict[str, Any]
+    features_to_encode: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
 ) -> BatchSizeEvaluator:
     class _EmbedBatchSizeEvaluator(BatchSizeEvaluator):
         def __init__(self):
@@ -77,7 +78,9 @@ def create_embed_batch_size_evaluator(
 
 
 @DeveloperAPI
-def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata: Dict[str, Any]) -> Callable:
+def create_embed_transform_fn(
+    features_to_encode: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> Callable:
     class EmbedTransformFn:
         def __init__(self):
             embedder = Embedder(features_to_encode, metadata)
@@ -106,7 +109,9 @@ def create_embed_transform_fn(features_to_encode: List[Dict[str, Any]], metadata
     return EmbedTransformFn
 
 
-def _prepare_batch(df: pd.DataFrame, features: List[Dict[str, Any]], metadata: Dict[str, Any]) -> Dict[str, np.ndarray]:
+def _prepare_batch(
+    df: pd.DataFrame, features: List[FeatureConfigDict], metadata: TrainingSetMetadataDict
+) -> Dict[str, np.ndarray]:
     batch = {}
     for feature in features:
         c = feature[PROC_COLUMN]
