@@ -37,11 +37,10 @@ from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.features.image_feature import AugmentationPipeline
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
-from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
+from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
-from ludwig.utils.data_utils import from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
