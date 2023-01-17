@@ -94,7 +94,7 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
                     )
             load_default = dump_default = augmentation_list
         else:
-            load_default = dump_default = default
+            raise ValueError(f"'default' parameter should be a list, found to be {type(default)}.")
 
         return field(
             metadata={
