@@ -1,3 +1,5 @@
+from typing import List, Union
+
 from dataclasses import field
 
 from marshmallow import fields, ValidationError
@@ -15,20 +17,33 @@ def get_augmentation_config_registry() -> Registry:
     return _augmentation_config_registry
 
 
-def register_augmentation_config(name: str):
+@DeveloperAPI
+def register_augmentation_config(name: str, features: Union[str, List[str]]):
+    if isinstance(features, str):
+        features = [features]
+
     def wrap(cls):
-        get_augmentation_config_registry()[name] = cls
+        for feature in features:
+            augmentation_registry = get_augmentation_config_registry().get(feature, {})
+            augmentation_registry[name] = cls
+            get_augmentation_config_registry()[feature] = augmentation_registry
         return cls
 
     return wrap
 
 
-def get_augmentation_cls(name: str):
-    return get_augmentation_config_registry()[name]
+@DeveloperAPI
+def get_augmentation_cls(feature: str, name: str):
+    return get_augmentation_config_registry()[feature][name]
 
 
 @DeveloperAPI
-def AugmentationContainerDataclassField(default=[], description=""):
+def get_augmentation_classes(feature: str):
+    return get_augmentation_config_registry()[feature]
+
+
+@DeveloperAPI
+def AugmentationContainerDataclassField(feature_type: str, default=[], description=""):
     """Custom dataclass field that when used inside a dataclass will allow the user to specify an augmentation
     config.
 
@@ -61,10 +76,11 @@ def AugmentationContainerDataclassField(default=[], description=""):
 
         @staticmethod
         def _jsonschema_type_mapping():
-            return get_augmentation_jsonschema()
+            return get_augmentation_jsonschema(feature_type)
 
     try:
         if default:
+            assert isinstance(default, list), "Augmentation config must be a list."
             augmentation_list = []
             for augmentation in default:
                 augmentation_op = augmentation[TYPE]
@@ -95,12 +111,12 @@ def AugmentationContainerDataclassField(default=[], description=""):
 
 
 @DeveloperAPI
-def get_augmentation_jsonschema():
+def get_augmentation_jsonschema(feature_type: str):
     """This function returns a JSON augmenation schema.
 
     Returns: JSON Schema
     """
-    augmentation_types = sorted(list(get_augmentation_config_registry().keys()))
+    augmentation_types = sorted(list(get_augmentation_config_registry()[feature_type].keys()))
     schema = {
         "type": "array",
         "minItems": 0,
@@ -115,7 +131,7 @@ def get_augmentation_jsonschema():
                 },
             },
             "additionalProperties": True,
-            "allOf": get_augmentation_conds(),
+            "allOf": get_augmentation_conds(feature_type),
             "required": ["type"],
             "title": "augmentation",
         },
@@ -126,20 +142,18 @@ def get_augmentation_jsonschema():
 
 
 @DeveloperAPI
-def get_augmentation_conds():
+def get_augmentation_conds(feature_type: str):
     """This function returns a list of if-then JSON clauses for each augmentation type along with their properties
     and constraints.
 
     Returns: List of JSON clauses
     """
-    # input_feature_types = sorted(list(input_config_registry.keys()))
-    augmentation_types = sorted(list(get_augmentation_config_registry().keys()))
     conds = []
-    for augmentation_type in augmentation_types:
-        schema_cls = get_augmentation_cls(augmentation_type)
+    for augmentation_op in get_augmentation_classes(feature_type):
+        schema_cls = get_augmentation_cls(feature_type, augmentation_op)
         augmentation_schema = schema_utils.unload_jsonschema_from_marshmallow_class(schema_cls)
         augmentation_props = augmentation_schema["properties"]
         schema_utils.remove_duplicate_fields(augmentation_props)
-        augmentation_cond = schema_utils.create_cond({"type": augmentation_type}, augmentation_props)
+        augmentation_cond = schema_utils.create_cond({"type": augmentation_op}, augmentation_props)
         conds.append(augmentation_cond)
     return conds

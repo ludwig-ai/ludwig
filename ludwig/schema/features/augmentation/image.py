@@ -9,7 +9,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 
 
 @DeveloperAPI
-@register_augmentation_config(name="random_horizontal_flip")
+@register_augmentation_config(name="random_horizontal_flip", features=IMAGE)
 @dataclass(repr=False)
 class RandomHorizontalFlipConfig(BaseAugmentationConfig):
     """Random horizontal flip augmentation operation."""
@@ -21,7 +21,7 @@ class RandomHorizontalFlipConfig(BaseAugmentationConfig):
 
 
 @DeveloperAPI
-@register_augmentation_config(name="random_vertical_flip")
+@register_augmentation_config(name="random_vertical_flip", features=IMAGE)
 @dataclass(repr=False)
 class RandomVerticalFlipConfig(BaseAugmentationConfig):
     """Random vertical flip augmentation operation."""
@@ -33,7 +33,7 @@ class RandomVerticalFlipConfig(BaseAugmentationConfig):
 
 
 @DeveloperAPI
-@register_augmentation_config(name="random_rotate")
+@register_augmentation_config(name="random_rotate", features=IMAGE)
 @dataclass(repr=False)
 class RandomRotateConfig(BaseAugmentationConfig):
     """Random rotation augmentation operation."""
@@ -50,7 +50,7 @@ class RandomRotateConfig(BaseAugmentationConfig):
 
 
 @DeveloperAPI
-@register_augmentation_config(name="random_blur")
+@register_augmentation_config(name="random_blur", features=IMAGE)
 @dataclass(repr=False)
 class RandomBlurOperation(BaseAugmentationConfig):
     """Random blur augmentation operation."""
@@ -67,7 +67,7 @@ class RandomBlurOperation(BaseAugmentationConfig):
 
 
 @DeveloperAPI
-@register_augmentation_config(name="random_brightness")
+@register_augmentation_config(name="random_brightness", features=IMAGE)
 @dataclass(repr=False)
 class RandomBrightnessOperation(BaseAugmentationConfig):
     """Random brightness augmentation operation."""
@@ -91,7 +91,7 @@ class RandomBrightnessOperation(BaseAugmentationConfig):
 
 
 @DeveloperAPI
-@register_augmentation_config(name="random_contrast")
+@register_augmentation_config(name="random_contrast", features=IMAGE)
 @dataclass(repr=False)
 class RandomContrastOperation(BaseAugmentationConfig):
     """Random Contrast augmentation operation."""
