@@ -282,8 +282,8 @@ class WalltimeEarlyStopCallback(Callback):
         )
 
         # Steps since last improvement >= early stopping steps
-        steps_threshold_met = (self.early_stopping_steps > -1) and (
-            progress_tracker.steps - progress_tracker.last_improvement_steps >= self.early_stopping_steps
+        steps_threshold_met = (self.early_stopping_steps == -1) or (
+            progress_tracker.last_improvement_steps >= self.early_stopping_steps
         )
 
         return timed_out and steps_threshold_met
