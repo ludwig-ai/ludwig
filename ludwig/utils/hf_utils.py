@@ -7,7 +7,7 @@ from ludwig.utils.error_handling_utils import default_retry
 
 
 @default_retry()
-def load(
+def load_pretrained_hf_model(
     modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
 ) -> PreTrainedTokenizerBase:
     """Download a HuggingFace model.
