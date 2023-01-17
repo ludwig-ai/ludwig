@@ -43,7 +43,7 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA["early_stop"],
     )
 
-    early_stop_timeout_s: int = schema_utils.IntegerRange(
+    early_stop_timeout_s: float = schema_utils.FloatRange(
         default=-1,
         min=-1,
         description=(
