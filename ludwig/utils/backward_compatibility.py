@@ -33,6 +33,7 @@ from ludwig.constants import (
     EVAL_BATCH_SIZE,
     EXECUTOR,
     FORCE_SPLIT,
+    HEIGHT,
     IMAGE,
     INPUT_FEATURES,
     LOSS,
@@ -59,6 +60,7 @@ from ludwig.constants import (
     TRAINING,
     TYPE,
     USE_BIAS,
+    WIDTH,
 )
 from ludwig.features.feature_registries import get_base_type_registry
 from ludwig.globals import LUDWIG_VERSION
@@ -815,6 +817,8 @@ def _upgrade_metadata_missing_values(metadata: TrainingSetMetadataDict):
     for k, v in metadata.items():
         if isinstance(v, dict) and _is_old_missing_value_strategy(v):
             _update_old_missing_value_strategy(v)
+        elif isinstance(v, dict) and _is_image_feature(v):
+            _update_old_image_preprocessing(v)
 
 
 def _update_old_missing_value_strategy(feature_config: FeatureConfigDict):
@@ -836,3 +840,13 @@ def _is_old_missing_value_strategy(feature_config: FeatureConfigDict):
     if not missing_value_strategy or missing_value_strategy not in ("backfill", "pad"):
         return False
     return True
+
+
+def _is_image_feature(feature_config: FeatureConfigDict):
+    preproc = feature_config.get(PREPROCESSING, {})
+    return HEIGHT in preproc and WIDTH in preproc
+
+
+def _update_old_image_preprocessing(feature_config: FeatureConfigDict):
+    standardize_image = feature_config.get(PREPROCESSING, {}).get("standardize_image", None)
+    feature_config[PREPROCESSING].update({"standardize_image": standardize_image})
