@@ -33,7 +33,6 @@ from tests.integration_tests.utils import (
 
 @dataclass
 class CustomTestCombinerConfig(BaseCombinerConfig):
-
     type: str = "custom_combiner"
 
     foo: bool = schema_utils.Boolean(default=False, description="")
@@ -42,7 +41,6 @@ class CustomTestCombinerConfig(BaseCombinerConfig):
 @register_encoder_config("custom_number_encoder", NUMBER)
 @dataclass
 class CustomNumberEncoderConfig(BaseEncoderConfig):
-
     type: str = "custom_number_encoder"
 
     input_size: int = schema_utils.PositiveInteger(default=1, description="")
@@ -51,7 +49,6 @@ class CustomNumberEncoderConfig(BaseEncoderConfig):
 @register_decoder_config("custom_number_decoder", NUMBER)
 @dataclass
 class CustomNumberDecoderConfig(BaseDecoderConfig):
-
     type: str = "custom_number_decoder"
 
     input_size: int = schema_utils.PositiveInteger(default=1, description="")
@@ -59,7 +56,6 @@ class CustomNumberDecoderConfig(BaseDecoderConfig):
 
 @dataclass
 class CustomLossConfig(BaseLossConfig):
-
     type: str = "custom_loss"
 
 

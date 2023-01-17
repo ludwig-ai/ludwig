@@ -53,7 +53,7 @@ class AimCallback(Callback):
 
         if self.aim_run:
             for key, value in progress_tracker.log_metrics().items():
-                if "metrics" in key:
+                if "metrics" in key and "best" not in key:
                     metrics_dict_name, feature_name, metric_name = key.split(".")
 
                     self.aim_run.track(

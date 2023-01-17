@@ -5,7 +5,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
@@ -13,9 +13,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ConcatCombinerConfig(BaseCombinerConfig):
     """Parameters for concat combiner."""
 
+    @staticmethod
+    def module_name():
+        return "ConcatCombiner"
+
     type: str = schema_utils.ProtectedString(
         "concat",
-        description="Type of combiner.",
+        description=COMBINER_METADATA["ConcatCombiner"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

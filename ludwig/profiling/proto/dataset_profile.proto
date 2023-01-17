@@ -1,18 +1,12 @@
-// To generate compiled proto code, run:
-//   (if protoc not installed yet)
-//   > sudo apt install protobuf-compiler
-//   > protoc --proto_path=. --python_out=. \
-//       ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
-//   > protoc --proto_path=. --go_out=.\
-// .     ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
-//
-// Read more on proto compilation: https://developers.google.com/protocol-buffers/docs/reference/python-generated
+// A whylogs-based dataset profile.
 
 syntax = "proto3";
 
 package dataset_profile;
 
 import "ludwig/profiling/proto/whylogs_messages.proto";
+
+option go_package = "github.com/ludwig-ai/ludwig/dataset_profile";
 
 
 // Dataset profile represents a collection of in-memory profiling stats for a

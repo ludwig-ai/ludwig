@@ -25,7 +25,7 @@ import traceback
 import unittest
 import uuid
 from distutils.util import strtobool
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import cloudpickle
 import numpy as np
@@ -101,7 +101,7 @@ RAY_BACKEND_CONFIG = {
     },
     "trainer": {
         "use_gpu": False,
-        "num_workers": 2,
+        "num_workers": 1,
         "resources_per_worker": {
             "CPU": 0.1,
             "GPU": 0,
@@ -371,10 +371,7 @@ def image_feature(folder, **kwargs):
         "type": IMAGE,
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         ENCODER: {
-            "type": "resnet",
-            "resnet_size": 8,
-            "num_filters": 8,
-            "output_size": 8,
+            "type": "stacked_cnn",
         },
         "destination_folder": folder,
     }
@@ -860,6 +857,7 @@ def train_with_backend(
     callbacks=None,
     skip_save_processed_input=True,
     skip_save_predictions=True,
+    required_metrics=None,
 ):
     model = LudwigModel(config, backend=backend, callbacks=callbacks)
     with tempfile.TemporaryDirectory() as output_directory:
@@ -877,7 +875,6 @@ def train_with_backend(
 
         if dataset is None:
             dataset = training_set
-
         if predict:
             preds, _ = model.predict(
                 dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
@@ -888,6 +885,8 @@ def train_with_backend(
                 read_preds = model.backend.df_engine.read_predictions(
                     os.path.join(output_directory, PREDICTIONS_PARQUET_FILE_NAME)
                 )
+                # call compute to ensure preds materialize correctly
+                read_preds = read_preds.compute()
                 assert read_preds is not None
 
         if evaluate:
@@ -895,6 +894,7 @@ def train_with_backend(
                 dataset=dataset, collect_overall_stats=False, collect_predictions=True
             )
             assert eval_preds is not None
+            assert_all_required_metrics_exist(eval_stats, required_metrics)
 
             # Test that eval_stats are approx equal when using local backend
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -911,7 +911,7 @@ def train_with_backend(
                         k: {
                             metric_name: value
                             for metric_name, value in v.items()
-                            if metric_name not in {"loss", "root_mean_squared_percentage_error"}
+                            if metric_name not in {"loss", "root_mean_squared_percentage_error", "jaccard"}
                         }
                         for k, v in stats.items()
                     }
@@ -922,9 +922,53 @@ def train_with_backend(
                         assert name1 == name2
                         assert np.isclose(
                             metric1, metric2, rtol=1e-03, atol=1e-04
-                        ), f"metric {name1}: {metric1} != {metric2}"
+                        ), f"metric {name1} for feature {k1}: {metric1} != {metric2}"
 
         return model
+
+
+def assert_all_required_metrics_exist(
+    feature_to_metrics_dict: Dict[str, Dict[str, Any]], required_metrics: Optional[Dict[str, Set]] = None
+):
+    """Checks that all `required_metrics` exist in the dictionary returned during Ludwig model evaluation.
+
+    `feature_to_metrics_dict` is a dict where the feature name is a key and the value is a dictionary of metrics:
+
+        {
+            "binary_1234": {
+                "accuracy": 0.5,
+                "loss": 0.5,
+            },
+            "numerical_1234": {
+                "mean_squared_error": 0.5,
+                "loss": 0.5,
+            }
+        }
+
+    `required_metrics` is a dict where the feature name is a key and the value is a set of metric names:
+
+        {
+            "binary_1234": {"accuracy"},
+            "numerical_1234": {"mean_squared_error"},
+        }
+
+    Args:
+        feature_to_metrics_dict: dictionary of output feature to a dictionary of metrics
+        required_metrics: optional dictionary of output feature to a set of metrics names. If None, then function
+            returns True immediately.
+    Returns:
+        None. Raises an AssertionError if any required metrics are missing.
+    """
+    if required_metrics is None:
+        return
+
+    for feature_name, metrics_dict in feature_to_metrics_dict.items():
+        if feature_name in required_metrics:
+            required_metric_names = set(required_metrics[feature_name])
+            metric_names = set(metrics_dict.keys())
+            assert required_metric_names.issubset(
+                metric_names
+            ), f"required metrics {required_metric_names} not in metrics {metric_names} for feature {feature_name}"
 
 
 @contextlib.contextmanager

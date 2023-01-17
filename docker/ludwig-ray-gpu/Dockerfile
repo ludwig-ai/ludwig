@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM rayproject/ray:2.0.0-py38-cu113
+FROM rayproject/ray:2.0.0-py38-cu116
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sudo apt-key del 7fa2af80 && \
@@ -18,7 +18,16 @@ RUN sudo apt-key del 7fa2af80 && \
     sudo rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/apt.conf.d/99allow_unauth cuda-keyring_1.0-1_all.deb && \
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC F60F4B3D7FA2AF80
 
-RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
+# https://github.com/kubernetes/release/issues/1982
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
+
+# Upgrade to GCC-9 from GCC-7.5
+# Required for libgcc-s1 which is a dependency for libnccl2
+RUN sudo apt-get update && sudo apt install -y software-properties-common && \
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    sudo apt update && \
+    DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
     wget \
     git \
@@ -27,13 +36,18 @@ RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install
     cmake \
     tzdata \
     rsync \
-    vim
+    vim \
+    gcc-9
 RUN pip install -U pip
 
 WORKDIR /ludwig
 
-# TODO(travis): remove this once we fix CUDA 11.6 NCCL version in base image
-RUN pip install torch==1.12.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+
+# Downgrade NCCL to 2.11.4 to for compatibility with CUDA 11.6
+# https://github.com/horovod/horovod/issues/3625#issuecomment-1309786643
+RUN sudo apt install --allow-change-held-packages --allow-downgrades -y \
+    libnccl2=2.11.4-1+cuda11.6 libnccl-dev=2.11.4-1+cuda11.6
 
 COPY . .
 RUN HOROVOD_GPU_OPERATIONS=NCCL \
@@ -41,6 +55,6 @@ RUN HOROVOD_GPU_OPERATIONS=NCCL \
     HOROVOD_WITHOUT_MPI=1 \
     HOROVOD_WITHOUT_TENSORFLOW=1 \
     HOROVOD_WITHOUT_MXNET=1 \
-    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu113 && \
+    pip install --no-cache-dir '.[full]' --extra-index-url https://download.pytorch.org/whl/cu116 && \
     horovodrun --check-build && \
     python -c "import horovod.torch; horovod.torch.init()"

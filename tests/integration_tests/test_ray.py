@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import os
 import tempfile
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -72,10 +74,12 @@ try:
     import dask
     import modin
     import ray
+    from ray.air.config import DatasetConfig
+    from ray.data import Dataset, DatasetPipeline
+    from ray.train._internal.dataset_spec import DataParallelIngestSpec
 
     from ludwig.backend.ray import get_trainer_kwargs, RayBackend
     from ludwig.data.dataframe.dask import DaskEngine
-    from ludwig.data.dataset.ray import RayDataset
 
     @ray.remote(num_cpus=1, num_gpus=1)
     def train_gpu(config, dataset, output_directory):
@@ -98,13 +102,20 @@ except ImportError:
     dask = None
     modin = None
     ray = None
+    session = None
 
     _ray_nightly = False
     _modin_ray_incompatible = False
 
 
 def run_api_experiment(
-    config, dataset, backend_config, predict=False, skip_save_processed_input=True, skip_save_predictions=True
+    config,
+    dataset,
+    backend_config,
+    predict=False,
+    skip_save_processed_input=True,
+    skip_save_predictions=True,
+    required_metrics=None,
 ):
     # Sanity check that we get 4 slots over 1 host
     kwargs = get_trainer_kwargs()
@@ -124,6 +135,7 @@ def run_api_experiment(
         predict=predict,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_predictions=skip_save_predictions,
+        required_metrics=required_metrics,
     )
 
     assert isinstance(model.backend, RayBackend)
@@ -284,6 +296,7 @@ def run_test_with_features(
     first_row_none=False,
     last_row_none=False,
     nan_cols=None,
+    required_metrics=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -314,6 +327,7 @@ def run_test_with_features(
                     predict=predict,
                     skip_save_processed_input=skip_save_processed_input,
                     skip_save_predictions=skip_save_predictions,
+                    required_metrics=required_metrics,
                 )
         else:
             run_fn(
@@ -323,6 +337,7 @@ def run_test_with_features(
                 predict=predict,
                 skip_save_processed_input=skip_save_processed_input,
                 skip_save_predictions=skip_save_predictions,
+                required_metrics=required_metrics,
             )
 
 
@@ -371,12 +386,20 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
     input_features = [
         binary_feature(),
     ]
+    # The synthetic set feature generator inserts between 0 and `vocab_size` entities per entry. 0 entities creates a
+    # null (NaN) entry. The default behavior for such entries in output features is to DROP_ROWS. This leads to poorly
+    # handled non-determinism when comparing the metrics between the local and Ray backends. We work around this by
+    # setting the `missing_value_strategy` to `fill_with_const` and setting the `fill_value` to the empty string.
+    set_feature_config = set_feature(
+        decoder={"vocab_size": 3},
+        preprocessing={"missing_value_strategy": "fill_with_const", "fill_value": ""},
+    )
     output_features = [
         binary_feature(),
         number_feature(),
         vector_feature(),
+        set_feature_config,
         # TODO: feature type not yet supported
-        # set_feature(decoder={"vocab_size": 3}),  # Probabilities of set_feature are ragged tensors (#2587)
         # text_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
         # sequence_feature(decoder={"vocab_size": 3}),  # Error having to do with a missing key (#2586)
     ]
@@ -389,6 +412,7 @@ def test_ray_outputs(dataset_type, ray_cluster_2cpu):
         dataset_type=dataset_type,
         predict=True,
         skip_save_predictions=False,
+        required_metrics={set_feature_config["name"]: {"jaccard"}},  # ensures that the metric is not omitted.
     )
 
 
@@ -459,7 +483,7 @@ def test_ray_tabular_save_inputs(tmpdir, dataset_type, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
-def test_ray_text_sequence_timeseries(tmpdir, ray_cluster_2cpu, dataset_type):
+def test_ray_text_sequence_timeseries(tmpdir, dataset_type, ray_cluster_2cpu):
     input_features = [
         text_feature(),
         sequence_feature(encoder={"reduce_output": "sum"}),
@@ -597,7 +621,10 @@ def test_ray_image_modin(tmpdir, ray_cluster_2cpu):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder={"type": "resnet", "output_size": 16, "num_filters": 8},
+            encoder={
+                "type": "stacked_cnn",
+                "output_size": 16,
+            },
             preprocessing={"in_memory": True, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
         ),
     ]
@@ -680,7 +707,10 @@ def test_ray_lazy_load_image_error(tmpdir, ray_cluster_2cpu):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder={"type": "resnet", "output_size": 16, "num_filters": 8},
+            encoder={
+                "type": "stacked_cnn",
+                "output_size": 16,
+            },
             preprocessing={"in_memory": False, "height": 12, "width": 12, "num_channels": 3, "num_processes": 5},
         ),
     ]
@@ -758,8 +788,13 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 
 # TODO(geoffrey): add a GPU test for batch size tuning
 @pytest.mark.distributed
-@pytest.mark.parametrize(("max_batch_size", "expected_final_batch_size"), [(256, 128), (64, 64)])
-def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size):
+@pytest.mark.parametrize(
+    ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
+    [(256, 128, 0.001), (64, 64, 0.001)],
+)
+def test_tune_batch_size_lr_cpu(
+    tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
+):
     config = {
         "input_features": [
             number_feature(normalization="zscore"),
@@ -783,7 +818,7 @@ def test_tune_batch_size_lr_cpu(tmpdir, ray_cluster_2cpu, max_batch_size, expect
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
     assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
-    assert model.config[TRAINER]["learning_rate"] != "auto"
+    assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
 @pytest.mark.distributed
@@ -843,14 +878,16 @@ def test_ray_distributed_predict(tmpdir, ray_cluster_2cpu):
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        backend_config = {**RAY_BACKEND_CONFIG}
+        # Deep copy RAY_BACKEND_CONFIG to avoid shallow copy modification
+        backend_config = copy.deepcopy(RAY_BACKEND_CONFIG)
+        # Manually override num workers to 2 for distributed training and distributed predict
+        backend_config["trainer"]["num_workers"] = 2
         csv_filename = os.path.join(tmpdir, "dataset.csv")
         dataset_csv = generate_data(input_features, output_features, csv_filename, num_examples=100)
         dataset = create_data_set_to_use("csv", dataset_csv, nan_percent=0.0)
         model = LudwigModel(config, backend=backend_config)
-        output_dir = None
 
-        _, _, output_dir = model.train(
+        _, _, _ = model.train(
             dataset=dataset,
             training_set=dataset,
             skip_save_processed_input=True,
@@ -911,12 +948,17 @@ def test_ray_preprocessing_placement_group(tmpdir, ray_cluster_2cpu):
 
 @pytest.mark.distributed
 class TestDatasetWindowAutosizing:
-    """Test dataset windowing with different dataset sizes and settings."""
+    """Test dataset windowing with different dataset sizes and settings.
+
+    Note that for these tests to run efficiently, windowing must be triggered while remaining within the object store
+    memory size. The current heuristic is to trigger windowing when the dataset exceeds
+    `ray.cluster_resources()['object_store_memory'] // 5` bytes.
+    """
 
     @property
     def object_store_size(self):
         """The amount of object store memory available to the cluster fixture."""
-        return int(ray.available_resources()["object_store_memory"])
+        return int(ray.cluster_resources()["object_store_memory"])
 
     @property
     def auto_window_size(self):
@@ -928,12 +970,15 @@ class TestDatasetWindowAutosizing:
         """The number of Dask dataframe partitions to create."""
         return 100
 
-    def create_dataset(self, size: int, auto_window: bool = True) -> "RayDataset":
+    def create_dataset_pipeline(
+        self, size: int, auto_window: bool = True, window_size_bytes: Optional[int] = None
+    ) -> "DatasetPipeline":
         """Create a dataset of specified size to test auto-sizing.
 
         Args:
             size: Total size of the dataset in bytes
             auto_window: Flag determining whether autosizing is enabled
+            window_size_bytes: Pass to override the auto_window size
 
         Returns:
             A Ludwig RayDataset of the specified size.
@@ -963,49 +1008,62 @@ class TestDatasetWindowAutosizing:
         ds = model.backend.dataset_manager.create(
             df, config=model.config, training_set_metadata={}, auto_window=auto_window
         )
-        return ds
 
-    def test_small_dataset(self, ray_cluster_small_object_store):
-        """A small dataset should not trigger automatic window sizing."""
-        ds = self.create_dataset(self.object_store_size // 8)
-        pipe = ds.pipeline()
-        rep = next(iter(pipe._base_iterable))()
+        # To window without using a training session, we configure `DataParallelIngestSpec` to use the specified window
+        # size and turn off other features (e.g., shuffle) that may incur computational overhead.
+        dataset_config = DatasetConfig(
+            fit=False,
+            split=False,
+            transform=False,
+            use_stream_api=True,
+            stream_window_size=ds.get_window_size_bytes(window_size_bytes=window_size_bytes),
+            global_shuffle=False,
+        )
+        spec = DataParallelIngestSpec({"train": dataset_config})
 
-        # Without automatic window sizing, the number of blocks in the pipeline
-        # should match the number of partitions in the Dask dataframe.
-        assert rep.num_blocks() == self.num_partitions
+        # These two must be called in sequence so that the dataset is tracked internally. No preprocessing is applied.
+        # The dummy argument `[1]` is used to indicate that the dataset should not be split. Normally, this argument
+        # would correspond with Ray Actor metadata to distribute the preprocessed data.
+        spec.preprocess_datasets(None, {"train": ds.ds})
+        pipe = spec.get_dataset_shards([1])[0]["train"]
+        return pipe
 
-    def test_large_dataset(self, ray_cluster_small_object_store):
+    def window_gen(self, pipe: "DatasetPipeline") -> "Dataset":
+        """Convenient access to individual windows in a dataset pipeline."""
+        for window in pipe._base_iterable:
+            yield window()
+
+    def test_small_dataset(self, ray_cluster_2cpu):
+        """A small dataset should not trigger automatic window sizing.
+
+        Without automatic window sizing, the number of blocks in the pipeline should match the number of partitions in
+        the Dask dataframe.
+        """
+        pipe = self.create_dataset_pipeline(self.auto_window_size // 2)
+        window = next(self.window_gen(pipe))
+        assert window.num_blocks() == self.num_partitions
+
+    def test_large_dataset(self, ray_cluster_2cpu):
         """A large dataset should trigger windowing."""
-        ds = self.create_dataset(self.object_store_size * 8)
-        pipe = ds.pipeline()
-
-        # In the windowed case, each window corresponds to a dataset that has
-        # at least one and fewer than `self.num_partitions` blocks.
-        # Because the pipeline is infinitely repeated, check the first 100
-        # windows to ensure coverage of the whole dataset.
-        for i, wds in enumerate(pipe._base_iterable):
-            assert wds().num_blocks() < self.num_partitions
-            if i > 99:
+        pipe = self.create_dataset_pipeline(self.auto_window_size * 2)
+        for i, window in enumerate(self.window_gen(pipe)):
+            assert window.num_blocks() < self.num_partitions
+            if i > 100:
                 break
 
-    def test_window_autosizing_disabled(self, ray_cluster_small_object_store):
+    def test_window_autosizing_disabled(self, ray_cluster_2cpu):
         """If window autosizing is disabled, no datasets should be windowed."""
-        ds = self.create_dataset(self.object_store_size * 8, auto_window=False)
-        pipe = ds.pipeline()
-        rep = next(iter(pipe._base_iterable))()
-        assert rep.num_blocks() == self.num_partitions
+        pipe = self.create_dataset_pipeline(self.auto_window_size * 2, auto_window=False)
+        window = next(self.window_gen(pipe))
+        assert window.num_blocks() == self.num_partitions
 
-    def test_user_window_size(self, ray_cluster_small_object_store):
+    def test_user_window_size(self, ray_cluster_2cpu):
         """If the user supplies a window size, do not autosize."""
-        # This pipeline should use the heuristic window size.
-        ds = self.create_dataset(self.object_store_size * 8)
-        pipe = ds.pipeline()
-        rep = next(iter(pipe._base_iterable))()
-        auto_num_blocks = rep.num_blocks()
+        auto_pipe = self.create_dataset_pipeline(self.auto_window_size * 2)
+        user_pipe = self.create_dataset_pipeline(self.auto_window_size * 2, window_size_bytes=self.auto_window_size * 4)
+        windows = zip(self.window_gen(auto_pipe), self.window_gen(user_pipe))
 
-        # This pipeline should have fewer windows but more blocks per window
-        # than the autosized pipeline.
-        pipe = ds.pipeline(window_size_bytes=self.auto_window_size * 2)
-        rep = next(iter(pipe._base_iterable))()
-        assert auto_num_blocks < rep.num_blocks()
+        for i, (auto_window, user_window) in enumerate(windows):
+            assert auto_window.num_blocks() < user_window.num_blocks()
+            if i > 100:
+                break

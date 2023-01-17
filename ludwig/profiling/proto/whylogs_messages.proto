@@ -1,20 +1,17 @@
 // A copy of whylogs/proto/src/whylogs_messages.proto from
 // https://github.com/whylabs/whylogs/blob/mainline/proto/src/whylogs_messages.proto
 //
-// To generate compiled proto code, run:
-//   (if protoc not installed yet)
-//   > sudo apt install protobuf-compiler
-//   > protoc --proto_path=. --python_out=. \
-//       ludwig/profiling/proto/whylogs_messages.proto ludwig/profiling/proto/dataset_profile.proto
-//
-// Read more on proto compilation: https://developers.google.com/protocol-buffers/docs/reference/python-generated
+// See dataset_profile.proto to see how to re-generate proto code.
 
 syntax = "proto3";
 
 package dataset_profile;
+
 import "google/protobuf/any.proto";
 
 import "google/protobuf/struct.proto";
+
+option go_package = "github.com/ludwig-ai/ludwig/dataset_profile";
 
 message DataType {
   enum Type {

@@ -186,7 +186,7 @@ def process_text(
     filter_short_tokens=False,
     filter_stopwords=False,
 ):
-    doc = nlp_pipeline.tokenizer(text)
+    doc = nlp_pipeline(text)
     return [
         token.lemma_ if return_lemma else token.text
         for token in doc

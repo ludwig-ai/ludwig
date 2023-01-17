@@ -6,6 +6,7 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
@@ -18,6 +19,7 @@ from tests.integration_tests.utils import (
     number_feature,
     RAY_BACKEND_CONFIG,
     sequence_feature,
+    text_feature,
     vector_feature,
 )
 
@@ -27,6 +29,7 @@ try:
 
     from ludwig.backend.horovod import HorovodBackend
     from ludwig.data.dataset.ray import RayDataset
+    from ludwig.distributed.horovod import HorovodStrategy
     from ludwig.models.gbm import GBM
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
@@ -36,12 +39,9 @@ try:
     def run_scale_lr(config, data_csv, num_workers, outdir):
         class FakeHorovodBackend(HorovodBackend):
             def initialize(self):
-                import horovod.torch as hvd
-
-                hvd.init()
-
-                self._horovod = mock.Mock(wraps=hvd)
-                self._horovod.size.return_value = num_workers
+                distributed = HorovodStrategy()
+                self._distributed = mock.Mock(wraps=distributed)
+                self._distributed.size.return_value = num_workers
 
         class TestCallback(Callback):
             def __init__(self):
@@ -59,6 +59,27 @@ try:
 except ImportError:
     dask = None
     ray = None
+
+
+def test_tune_learning_rate(tmpdir):
+    config = {
+        "input_features": [text_feature(), binary_feature()],
+        "output_features": [binary_feature()],
+        TRAINER: {
+            "train_steps": 1,
+            "learning_rate": "auto",
+        },
+    }
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(config["input_features"], config["output_features"], csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)
+
+    assert model.config_obj.trainer.learning_rate == 0.0001
 
 
 @pytest.mark.parametrize("is_cpu", [True, False])
@@ -123,8 +144,7 @@ def test_tune_batch_size_and_lr(tmpdir, eval_batch_size, is_cpu):
             assert model.config_obj.trainer.eval_batch_size == eval_batch_size
 
         # check learning rate
-        assert model.config_obj.trainer.learning_rate != "auto"
-        assert model.config_obj.trainer.learning_rate > 0
+        assert model.config_obj.trainer.learning_rate == 0.0001  # has sequence feature
 
     check_postconditions(model)
 
@@ -194,6 +214,9 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
         "input_features": [{"name": "in_column", "type": "binary"}],
         "output_features": [{"name": "out_column", "type": "binary"}],
         "model_type": "gbm",
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"feature_pre_filter": False},
     }
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
@@ -239,3 +262,33 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
     assert train_ds.ds.num_blocks() == 2
     assert val_ds.ds.num_blocks() == 2
     assert test_ds.ds.num_blocks() == 2
+
+
+@pytest.mark.skipif(torch.cuda.device_count() == 0, reason="test requires at least 1 gpu")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="test requires gpu support")
+def test_mixed_precision(tmpdir):
+    input_features = [text_feature()]
+    output_features = [category_feature(decoder={"vocab_size": 2}, reduce_input="sum")]
+
+    csv_filename = os.path.join(tmpdir, "training.csv")
+    data_csv = generate_data(input_features, output_features, csv_filename)
+    val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "validation.csv"))
+    test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, "test.csv"))
+
+    trainer = {
+        "epochs": 2,
+        "use_mixed_precision": True,
+    }
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "combiner": {"type": "concat", "output_size": 14},
+        TRAINER: trainer,
+    }
+
+    # Just test that training completes without error.
+    # TODO(travis): We may want to expand upon this in the future to include some checks on model
+    # convergence like gradient magnitudes, etc. Should also add distributed tests.
+    model = LudwigModel(config, backend=LocalTestBackend(), logging_level=logging.INFO)
+    model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv, output_directory=tmpdir)

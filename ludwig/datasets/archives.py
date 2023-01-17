@@ -119,7 +119,6 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
             with tarfile.open(archive_path) as tar_file:
 
                 def is_within_directory(directory, target):
-
                     abs_directory = os.path.abspath(directory)
                     abs_target = os.path.abspath(target)
 
@@ -128,7 +127,6 @@ def extract_archive(archive_path: str, archive_type: Optional[ArchiveType] = Non
                     return prefix == abs_directory
 
                 def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-
                     for member in tar.getmembers():
                         member_path = os.path.join(path, member.name)
                         if not is_within_directory(path, member_path):

@@ -17,6 +17,9 @@ from tests.integration_tests.utils import (
     generate_data,
     LocalTestBackend,
     number_feature,
+    text_feature,
+    timeseries_feature,
+    vector_feature,
 )
 
 
@@ -27,20 +30,20 @@ def test_explanation_dataclass():
     feature_attributions_for_label_2 = np.array([4, 5, 6])
 
     # test add()
-    explanation.add(feature_attributions_for_label_1)
+    explanation.add(["f1", "f2", "f3"], feature_attributions_for_label_1)
 
     with pytest.raises(AssertionError, match="Expected feature attributions of shape"):
         # test add() with wrong shape
-        explanation.add(np.array([1, 2, 3, 4]))
+        explanation.add(["f1", "f2", "f3", "f4"], np.array([1, 2, 3, 4]))
 
-    explanation.add(feature_attributions_for_label_2)
+    explanation.add(["f1", "f2", "f3"], feature_attributions_for_label_2)
 
     # test to_array()
     explanation_array = explanation.to_array()
     assert np.array_equal(explanation_array, [[1, 2, 3], [4, 5, 6]])
 
 
-def test_abstract_explainer_instantiation(tmpdir):
+def test_abstract_explainer_instantiation():
     with pytest.raises(TypeError, match="Can't instantiate abstract class Explainer with abstract method"):
         Explainer(None, inputs_df=None, sample_df=None, target=None)
 
@@ -54,15 +57,19 @@ def test_abstract_explainer_instantiation(tmpdir):
     ],
 )
 @pytest.mark.parametrize(
+    "output_feature",
+    [binary_feature(), number_feature(), category_feature(decoder={"vocab_size": 3})],
+    ids=["binary", "number", "category"],
+)
+@pytest.mark.parametrize(
     "additional_config",
     [
         pytest.param({}, id="default"),
         pytest.param({"preprocessing": {"split": {"type": "fixed", "column": "split"}}}, id="fixed_split"),
     ],
 )
-def test_explainer_api(explainer_class, model_type, additional_config, use_global, tmpdir):
-    output_features = [category_feature(decoder={"vocab_size": 3})]
-    run_test_explainer_api(explainer_class, model_type, output_features, additional_config, use_global, tmpdir)
+def test_explainer_api(explainer_class, model_type, output_feature, additional_config, use_global, tmpdir):
+    run_test_explainer_api(explainer_class, model_type, [output_feature], additional_config, use_global, tmpdir)
 
 
 @pytest.mark.distributed
@@ -90,11 +97,23 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
 def run_test_explainer_api(
     explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
 ):
-    input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+    if model_type == MODEL_ECD:
+        input_features += [
+            text_feature(encoder={"vocab_size": 3}),
+            vector_feature(),
+            timeseries_feature(),
+            # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
+            # sequence_feature(encoder={"vocab_size": 3}),
+            # date_feature(),
+            # h3_feature(),
+            # set_feature(encoder={"vocab_size": 3}),
+            # bag_feature(encoder={"vocab_size": 3}),
+        ]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")
-    generate_data(input_features, output_features, csv_filename, num_examples=100)
+    generate_data(input_features, output_features, csv_filename, num_examples=200)
     df = pd.read_csv(csv_filename)
     if "split" in additional_config.get("preprocessing", {}):
         df["split"] = np.random.randint(0, 3, df.shape[0])
@@ -103,6 +122,10 @@ def run_test_explainer_api(
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
     if model_type == MODEL_ECD:
         config["trainer"] = {"epochs": 2}
+    else:
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        config["trainer"] = {"feature_pre_filter": False}
     config.update(additional_config)
 
     model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())

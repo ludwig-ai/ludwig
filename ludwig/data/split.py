@@ -40,7 +40,6 @@ split_registry = Registry()
 default_random_seed = 42
 logger = logging.getLogger(__name__)
 
-
 TMP_SPLIT_COL = "__SPLIT__"
 DEFAULT_PROBABILITIES = (0.7, 0.1, 0.2)
 
@@ -152,31 +151,36 @@ class FixedSplitter(Splitter):
 
 
 def stratify_split_dataframe(
-    df: DataFrame, column: str, probabilities: List[float], random_seed: float
+    df: DataFrame, column: str, probabilities: List[float], backend: Backend, random_seed: float
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
     """Splits a dataframe into train, validation, and test sets based on the values of a column.
 
     The column must be categorical (including binary). The split is stratified, meaning that the proportion of each
     category in each split is the same as in the original dataset.
     """
+
     frac_train, frac_val, frac_test = probabilities
 
-    # Dataframe of just the column on which to stratify
-    y = df[[column]]
-    try:
-        df_train, df_temp, _, y_temp = train_test_split(
-            df, y, stratify=y, test_size=(1.0 - frac_train), random_state=random_seed
-        )
-        # Split the temp dataframe into val and test dataframes.
-        relative_frac_test = frac_test / (frac_val + frac_test)
-        df_val, df_test, _, _ = train_test_split(
-            df_temp, y_temp, stratify=y_temp, test_size=relative_frac_test, random_state=random_seed
-        )
-    except ValueError:
-        raise ValueError(
-            "Stratified splitting cannot be performed because the least populated class has too few examples. "
-            "Consider adding more data, consolidating rare classes by setting vocab_size, or using a random split."
-        )
+    def _safe_stratify(df, column, test_size):
+        # Get the examples with cardinality of 1
+        df_cadinalities = df.groupby(column)[column].size()
+        low_cardinality_elems = df_cadinalities.loc[lambda x: x == 1]
+        df_low_card = df[df[column].isin(low_cardinality_elems.index)]
+        df = df[~df[column].isin(low_cardinality_elems.index)]
+        y = df[[column]]
+
+        df_train, df_temp, _, _ = train_test_split(df, y, stratify=y, test_size=test_size, random_state=random_seed)
+
+        # concat the examples with cardinality of 1 to the training DF.
+        if len(df_low_card.index) > 0:
+            df_train = backend.df_engine.concat([df_train, df_low_card])
+
+        return df_train, df_temp
+
+    df_train, df_temp = _safe_stratify(df, column, 1.0 - frac_train)
+
+    relative_frac_test = frac_test / (frac_val + frac_test)
+    df_val, df_test = _safe_stratify(df_temp, column, relative_frac_test)
 
     return df_train, df_val, df_test
 
@@ -191,7 +195,7 @@ class StratifySplitter(Splitter):
         self, df: DataFrame, backend: Backend, random_seed: float = default_random_seed
     ) -> Tuple[DataFrame, DataFrame, DataFrame]:
         if not backend.df_engine.partitioned:
-            return stratify_split_dataframe(df, self.column, self.probabilities, random_seed)
+            return stratify_split_dataframe(df, self.column, self.probabilities, backend, random_seed)
 
         # For a partitioned dataset, we can stratify split each partition individually
         # to obtain a global stratified split.
@@ -202,7 +206,7 @@ class StratifySplitter(Splitter):
             Returns a single DataFrame with the split column populated. Assumes that the split column is already present
             in the partition and has a default value of 0 (train).
             """
-            _, val, test = stratify_split_dataframe(partition, self.column, self.probabilities, random_seed)
+            _, val, test = stratify_split_dataframe(partition, self.column, self.probabilities, backend, random_seed)
             # Split column defaults to train, so only need to update val and test
             partition.loc[val.index, TMP_SPLIT_COL] = 1
             partition.loc[test.index, TMP_SPLIT_COL] = 2

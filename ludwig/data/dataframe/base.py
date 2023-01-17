@@ -49,7 +49,7 @@ class DataFrameEngine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def map_batches(self, df, map_fn):
+    def map_batches(self, df, map_fn, enable_tensor_extension_casting=True):
         raise NotImplementedError()
 
     @abstractmethod

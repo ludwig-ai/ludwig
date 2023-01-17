@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy as np
 import pytest
@@ -7,11 +8,10 @@ try:
     import ray as _ray
 except ImportError:
     _ray = None
-import torch
 from jsonschema.exceptions import ValidationError
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
@@ -49,7 +49,9 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         MODEL_TYPE: "gbm",
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {"num_boost_round": 2},
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
     }
 
     model = LudwigModel(config, backend=backend_config)
@@ -210,62 +212,59 @@ def test_ray_gbm_number(tmpdir, ray_backend, ray_cluster_4cpu):
 
 
 def test_hummingbird_conversion_binary(tmpdir, local_backend):
+    """Verify that Hummingbird conversion predictions match LightGBM predictions for binary outputs."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [binary_feature()]
+    output_feature = f'{output_features[0]["name"]}_probabilities'
 
-    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
+    # Train a model and predict using the LightGBM interface
+    preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
+    probs_lgbm = preds_lgbm[output_feature]
 
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
-
-    output_feature = output_features[0]
-
-    probs_hb = preds_hb[f'{output_feature["name"]}_probabilities']
-    probs_lgbm = model.model.lgbm_model.predict_proba(test_inputs)
+    # Predict using the Hummingbird compiled model
+    with model.model.compile():
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
+        probs_hb = preds_hb[output_feature]
 
     # sanity check Hummingbird probabilities equal to LightGBM probabilities
-    assert np.allclose(np.stack(probs_hb.values), probs_lgbm, atol=1e-8)
+    assert np.allclose(np.stack(probs_hb.values), np.stack(probs_lgbm.values), rtol=1e-6, atol=1e-6)
 
 
 def test_hummingbird_conversion_regression(tmpdir, local_backend):
+    """Verify that Hummingbird conversion predictions match LightGBM predictions for numeric outputs."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [number_feature()]
 
-    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
+    # Train a model and predict using the LightGBM interface
+    preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
 
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
+    # Predict using the Hummingbird compiled model
+    with model.model.compile():
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
-    preds_lgbm = model.model.lgbm_model.predict(test_inputs)
-
-    assert np.allclose(preds_hb.values, preds_lgbm)
+    # sanity check Hummingbird prediction equal to LightGBM prediction
+    assert np.allclose(preds_hb, preds_lgbm, rtol=1e-6, atol=1e-6)
 
 
 @pytest.mark.parametrize("vocab_size", [2, 3])
 def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
+    """Verify that Hummingbird conversion predictions match LightGBM predictions for categorical outputs."""
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [category_feature(decoder={"vocab_size": vocab_size})]
 
-    preds_hb, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
-
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
-
+    # Train a model and predict using the LightGBM interface
+    preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
     output_feature = next(iter(model.model.output_features.values()))
+    output_feature_name = f"{output_feature.column}_probabilities"
+    probs_lgbm = np.stack(preds_lgbm[output_feature_name].to_numpy())
 
-    probs_hb = preds_hb[f"{output_feature.column}_probabilities"]
-
-    if output_feature.num_classes == 2:
-        # LightGBM binary classifier transforms logits using sigmoid, so we need to invert the
-        # transformation to get the logits back, and then use softmax to get the probabilities to match
-        # Ludwig's category feature prediction behavior.
-        probs_lgbm = torch.softmax(torch.logit(torch.from_numpy(model.model.lgbm_model.predict_proba(test_inputs))), -1)
-    else:
-        # Otherwise, just compare to the raw probabilities from LightGBM
-        probs_lgbm = model.model.lgbm_model.predict_proba(test_inputs)
+    # Predict using the Hummingbird compiled model
+    with model.model.compile():
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
+        probs_hb = np.stack(preds_hb[output_feature_name].to_numpy())
 
     # sanity check Hummingbird probabilities equal to LightGBM probabilities
-    assert np.allclose(np.stack(probs_hb.values), probs_lgbm, atol=1e-4)
+    assert np.allclose(probs_hb, probs_lgbm, rtol=1e-6, atol=1e-6)
 
 
 def test_loss_decreases(tmpdir, local_backend):
@@ -275,7 +274,9 @@ def test_loss_decreases(tmpdir, local_backend):
         MODEL_TYPE: "gbm",
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1},
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1, "feature_pre_filter": False},
     }
 
     generated_data = synthetic_test_data.get_generated_data_for_optimizer()
@@ -311,3 +312,22 @@ def test_save_load(tmpdir, local_backend):
     preds, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
     assert init_preds.equals(preds)
+
+
+def test_lgbm_dataset_setup(tmpdir, local_backend):
+    """Test that LGBM dataset column name errors are handled."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    # Overwrite the automatically generated feature/column name with an invalid string.
+    input_features[0][NAME] = ",Unnamed: 0"
+    input_features[0][COLUMN] = input_features[0][NAME]
+
+    # Test that the custom error is raised (lightgbm.basic.LightGBMError -> ValueError)
+    with pytest.raises(ValueError):
+        try:
+            _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
+        except ValueError as e:
+            # Check that the intended ValueError was raised
+            assert re.search("Some column names in the training set contain invalid characters", str(e))
+            raise

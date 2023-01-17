@@ -26,7 +26,6 @@ def test_auto_type_inference_regression(dataset_name):
         dataset=dataset,
         target=[],
         time_limit_s=3600,
-        tune_for_memory=False,
     )
 
     assert golden_types == config["input_features"]

@@ -4,8 +4,9 @@ from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Tuple, Type, Union
+from typing import Optional, Set, Tuple, Type, Union
 
+import marshmallow_dataclass
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
@@ -103,7 +104,7 @@ def create_cond(if_pred: TDict, then_pred: TDict):
 
 
 @DeveloperAPI
-def remove_duplicate_fields(properties: dict) -> None:
+def remove_duplicate_fields(properties: dict, fields: Optional[TList[str]] = None) -> None:
     """Util function for removing duplicated schema elements. For example, input feature json schema mapping has a
     type param defined directly on the json schema, but also has a parameter defined on the schema class. We need
     both -
@@ -114,7 +115,8 @@ def remove_duplicate_fields(properties: dict) -> None:
     Args:
         properties: Dictionary of properties generated from a Ludwig schema class
     """
-    for key in [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE]:  # TODO: Remove col/proc_col once train metadata decoupled
+    duplicate_fields = [NAME, TYPE, COLUMN, PROC_COLUMN, ACTIVE] if fields is None else fields
+    for key in duplicate_fields:  # TODO: Remove col/proc_col once train metadata decoupled
         if key in properties:
             del properties[key]
 
@@ -145,6 +147,11 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    @classmethod
+    def get_valid_field_names(cls) -> Set[str]:
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return set(schema.fields.keys())
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
@@ -524,10 +531,11 @@ def NonNegativeFloat(
     default: Union[None, float] = None,
     allow_none=False,
     description: str = "",
+    max: Optional[float] = None,
     parameter_metadata: ParameterMetadata = None,
 ):
     """Returns a dataclass field with marshmallow metadata enforcing numeric inputs must be nonnegative."""
-    val = validate.Range(min=0.0)
+    val = validate.Range(min=0.0, max=max)
     allow_none = allow_none or default is None
 
     if default is not None:
@@ -799,7 +807,7 @@ def InitializerOrDict(
                             "type": {"type": "string", "enum": initializers},
                         },
                         "required": ["type"],
-                        "title": "initializer_custom_option",
+                        "title": f"{self.name}_custom_option",
                         "additionalProperties": True,
                         "description": "Customize an existing initializer.",
                     },
@@ -807,7 +815,7 @@ def InitializerOrDict(
                         "type": "string",
                         "enum": initializers,
                         "default": default,
-                        "title": "initializer_preconfigured_option",
+                        "title": f"{self.name}_preconfigured_option",
                         "description": "Pick a preconfigured initializer.",
                     },
                 ],

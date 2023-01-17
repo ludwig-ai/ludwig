@@ -1,0 +1,450 @@
+Classifier:
+    type:
+        short_description:
+            Projects combiner output to a vector the size of the number of available classes.
+        long_description:
+            The classifier decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection into a vector of size of the number of available classes, followed by a sigmoid.
+    bias_initializer:
+        default_value_reasoning:
+            It is possible and common to initialize the biases
+            to be zero, since the asymmetry breaking is provided by the small random
+            numbers in the weights.
+        description_implications:
+            It's rare to see any performance gains from choosing
+            a different bias initialization. Some practitioners like to use a small
+            constant value such as 0.01 for all biases to ensure that all ReLU units
+            are activated in the beginning and have some effect on the gradient. However,
+            it's still an open question as to whether this provides consistent improvement.
+        expected_impact: 1
+        literature_references:
+            - https://cs231n.github.io/neural-networks-2/
+        related_parameters:
+            - weights_initializer
+        suggested_values: zeros
+        suggested_values_reasoning:
+            It is possible and common to initialize the biases
+            to be zero, since the asymmetry breaking is provided by the small random
+            numbers in the weights. For ReLU non-linearities, some people like to
+            use small constant value such as 0.01 for all biases because this ensures
+            that all ReLU units fire in the beginning and therefore obtain and propagate
+            some gradient. However, it is not clear if this provides a consistent
+            improvement (in fact some results seem to indicate that this performs
+            worse) and it is more common to simply use 0 bias initialization.
+        ui_display_name: Bias Initializer
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    num_classes:
+        other_information: Internal Only
+        ui_display_name: Not Displayed
+    use_bias:
+        default_value_reasoning:
+            "Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to use bias terms.
+
+
+            Batch Normalization, however, adds a trainable shift parameter which is
+            added to the activation. When Batch Normalization is used in a layer,
+            bias terms are redundant and may be removed."
+        description_implications:
+            Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to leave this parameter set to True.
+        example_value:
+            - true
+        expected_impact: 1
+        other_information:
+            If fc_layers is not specified, or use_bias is not specified
+            for individual layers, the value of use_bias will be used as the default
+            for all layers.
+        related_parameters:
+            - bias_initializer, fc_layers
+        suggested_values: true
+        ui_display_name: Use Bias
+    weights_initializer:
+        default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
+        description_implications:
+            The method you choose to initialize layer weights
+            during training can have a big impact on performance as well as the reproducibility
+            of your final model between runs. As an example, if you were to randomly
+            initialize weights you would risk non-reproducibility (and possibly general
+            training performance), but sticking with constant values for initialization
+            might significantly increase the time needed for model convergence. Generally,
+            choosing one of the probabilistic approaches strikes a balance between
+            the two extremes, and the literature kicked off by the landmark [*Xavier
+            et al.* paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
+            provides a few good options. See this nice discussion from [Weights and
+            Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
+            for more information.
+        expected_impact: 3
+        literature_references:
+            - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
+            - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
+        suggested_values: xavier_uniform
+        suggested_values_reasoning:
+            Changing the weights initialization scheme is
+            something to consider if a model is having trouble with convergence, or
+            otherwise it is something to experiment with after other factors are considered.
+            The default choice (`xavier_uniform`) is a suitable starting point for
+            most tasks.
+        ui_display_name: Layer Weights Initializer
+Projector:
+    type:
+        short_description:
+            Projects combiner output into an output vector.
+        long_description:
+            The Projector decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection into a tensor of the vector size (optionally followed by a softmax in the case of
+            multi-class classification).
+    activation:
+        description_implications:
+            Changing the activation functions has an impact
+            on the computational load of the model and might require further hypterparameter
+            tuning
+        expected_impact: 1
+        suggested_values:
+            The default value will work well in the majority of the
+            cases
+        ui_display_name: Activation
+    bias_initializer:
+        default_value_reasoning:
+            It is possible and common to initialize the biases
+            to be zero, since the asymmetry breaking is provided by the small random
+            numbers in the weights.
+        description_implications:
+            It's rare to see any performance gains from choosing
+            a different bias initialization. Some practitioners like to use a small
+            constant value such as 0.01 for all biases to ensure that all ReLU units
+            are activated in the beginning and have some effect on the gradient. However,
+            it's still an open question as to whether this provides consistent improvement.
+        expected_impact: 1
+        literature_references:
+            - https://cs231n.github.io/neural-networks-2/
+        related_parameters:
+            - weights_initializer
+        suggested_values: zeros
+        suggested_values_reasoning:
+            It is possible and common to initialize the biases
+            to be zero, since the asymmetry breaking is provided by the small random
+            numbers in the weights. For ReLU non-linearities, some people like to
+            use small constant value such as 0.01 for all biases because this ensures
+            that all ReLU units fire in the beginning and therefore obtain and propagate
+            some gradient. However, it is not clear if this provides a consistent
+            improvement (in fact some results seem to indicate that this performs
+            worse) and it is more common to simply use 0 bias initialization.
+        ui_display_name: Bias Initializer
+    clip:
+        ui_display_name: null
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    output_size:
+        default_value_reasoning: A modest value, not too small, not too large.
+        description_implications:
+            If there are fully connected layers in this module,
+            increasing the output size of each fully connected layer will increase
+            the capacity of the model. However, the model may be slower to train,
+            and there's a higher risk of overfitting. If it seems like the model could
+            use even more capacity, consider increasing the number of fully connected
+            layers, or explore other architectures.
+        expected_impact: 2
+        other_information:
+            If num_fc_layers=0 and fc_layers=None, and there are no
+            fully connected layers defined on the module, then this parameter may
+            have no effect on the module's final output shape.
+        related_parameters:
+            - num_fc_layers, fc_layers
+        suggested_values: 10 - 1024
+        suggested_values_reasoning:
+            Increasing the output size increases the capacity
+            of the model. If this seems to have a positive effect, then it could be
+            worth increasing the number of layers, or trying a different architecture
+            with a larger capacity.
+        ui_display_name: Output Size
+    use_bias:
+        default_value_reasoning:
+            "Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to use bias terms.
+
+
+            Batch Normalization, however, adds a trainable shift parameter which is
+            added to the activation. When Batch Normalization is used in a layer,
+            bias terms are redundant and may be removed."
+        description_implications:
+            Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to leave this parameter set to True.
+        example_value:
+            - true
+        expected_impact: 1
+        other_information:
+            If fc_layers is not specified, or use_bias is not specified
+            for individual layers, the value of use_bias will be used as the default
+            for all layers.
+        related_parameters:
+            - bias_initializer, fc_layers
+        suggested_values: true
+        ui_display_name: Use Bias
+    weights_initializer:
+        default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
+        description_implications:
+            The method you choose to initialize layer weights
+            during training can have a big impact on performance as well as the reproducibility
+            of your final model between runs. As an example, if you were to randomly
+            initialize weights you would risk non-reproducibility (and possibly general
+            training performance), but sticking with constant values for initialization
+            might significantly increase the time needed for model convergence. Generally,
+            choosing one of the probabilistic approaches strikes a balance between
+            the two extremes, and the literature kicked off by the landmark [*Xavier
+            et al.* paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
+            provides a few good options. See this nice discussion from [Weights and
+            Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
+            for more information.
+        expected_impact: 3
+        literature_references:
+            - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
+            - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
+        suggested_values: xavier_uniform
+        suggested_values_reasoning:
+            Changing the weights initialization scheme is
+            something to consider if a model is having trouble with convergence, or
+            otherwise it is something to experiment with after other factors are considered.
+            The default choice (`xavier_uniform`) is a suitable starting point for
+            most tasks.
+        ui_display_name: Layer Weights Initializer
+Regressor:
+    type:
+        short_description:
+            Projects combiner output to a single number.
+        long_description:
+            The regressor decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection to a single number.
+    activation:
+        ui_display_name: null
+    bias_initializer:
+        default_value_reasoning:
+            It is possible and common to initialize the biases
+            to be zero, since the asymmetry breaking is provided by the small random
+            numbers in the weights.
+        description_implications:
+            It's rare to see any performance gains from choosing
+            a different bias initialization. Some practitioners like to use a small
+            constant value such as 0.01 for all biases to ensure that all ReLU units
+            are activated in the beginning and have some effect on the gradient. However,
+            it's still an open question as to whether this provides consistent improvement.
+        expected_impact: 1
+        literature_references:
+            - https://cs231n.github.io/neural-networks-2/
+        related_parameters:
+            - weights_initializer
+        suggested_values: zeros
+        suggested_values_reasoning:
+            It is possible and common to initialize the biases
+            to be zero, since the asymmetry breaking is provided by the small random
+            numbers in the weights. For ReLU non-linearities, some people like to
+            use small constant value such as 0.01 for all biases because this ensures
+            that all ReLU units fire in the beginning and therefore obtain and propagate
+            some gradient. However, it is not clear if this provides a consistent
+            improvement (in fact some results seem to indicate that this performs
+            worse) and it is more common to simply use 0 bias initialization.
+        ui_display_name: Bias Initializer
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    use_bias:
+        default_value_reasoning:
+            "Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to use bias terms.
+
+
+            Batch Normalization, however, adds a trainable shift parameter which is
+            added to the activation. When Batch Normalization is used in a layer,
+            bias terms are redundant and may be removed."
+        description_implications:
+            Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to leave this parameter set to True.
+        example_value:
+            - true
+        expected_impact: 1
+        other_information:
+            If fc_layers is not specified, or use_bias is not specified
+            for individual layers, the value of use_bias will be used as the default
+            for all layers.
+        related_parameters:
+            - bias_initializer, fc_layers
+        suggested_values: true
+        ui_display_name: Use Bias
+    weights_initializer:
+        default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
+        description_implications:
+            The method you choose to initialize layer weights
+            during training can have a big impact on performance as well as the reproducibility
+            of your final model between runs. As an example, if you were to randomly
+            initialize weights you would risk non-reproducibility (and possibly general
+            training performance), but sticking with constant values for initialization
+            might significantly increase the time needed for model convergence. Generally,
+            choosing one of the probabilistic approaches strikes a balance between
+            the two extremes, and the literature kicked off by the landmark [*Xavier
+            et al.* paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
+            provides a few good options. See this nice discussion from [Weights and
+            Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
+            for more information.
+        expected_impact: 3
+        literature_references:
+            - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
+            - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
+        suggested_values: xavier_uniform
+        suggested_values_reasoning:
+            Changing the weights initialization scheme is
+            something to consider if a model is having trouble with convergence, or
+            otherwise it is something to experiment with after other factors are considered.
+            The default choice (`xavier_uniform`) is a suitable starting point for
+            most tasks.
+        ui_display_name: Layer Weights Initializer
+PassthroughDecoder:
+    type:
+        short_description:
+            Provides the raw input from the combiner.
+        long_description:
+            The passthrough decoder simply returns the raw output coming from the combiner.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+SequenceGeneratorDecoder:
+    type:
+        short_description:
+            Generates a sequence by sampling from the model.
+        long_description:
+            The generator decoder is a (potentially empty) stack of fully connected layers, followed by an
+            RNN that generates outputs feeding on its own previous predictions and generates a tensor of
+            size `b x s' x c`, where `b` is the batch size, `s'` is the length of the generated sequence and
+            `c` is the number of classes, followed by a softmax_cross_entropy. During training teacher
+            forcing is adopted, meaning the list of targets is provided as both inputs and outputs (shifted
+            by 1), while at evaluation time greedy decoding (generating one token at a time and feeding it
+            as input for the next step) is performed by beam search, using a beam of 1 by default. In
+            general a generator expects a `b x h` shaped input tensor, where `h` is a hidden dimension. The
+            `h` vectors are (after an optional stack of fully connected layers) fed into the rnn generator.
+            One exception is when the generator uses attention, as in that case the expected size of the
+            input tensor is `b x s x h`, which is the output of a sequence, text or time series input
+            feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input
+            is provided to a generator decoder using an RNN with attention instead, an error will be raised
+            during model building.
+    cell_type:
+        ui_display_name: null
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    max_sequence_length:
+        expected_impact: 1
+        ui_display_name: null
+    num_layers:
+        default_value_reasoning:
+            The ideal number of layers depends on the data and
+            task. For many data types, one layer is sufficient.
+        description_implications:
+            Increasing the number of layers may improve model
+            performance for longer sequences or more complex tasks.
+        example_value:
+            - 1
+        expected_impact: 1
+        suggested_values: 1-3
+        suggested_values_reasoning:
+            Increasing the number of layers may improve encoder
+            performance.  However, more layers will increase training time and may
+            cause overfitting.  Small numbers of layers usually work best.
+        ui_display_name: Number of Recurrent Layers
+    reduce_input:
+        description_implications:
+            "\u201Clast\u201D: Reduces tensor by taking the\
+            \ last non-zero element per sequence in the sequence dimension.\n\u201C\
+            sum\u201D: Reduces tensor by summing across the sequence dimension.\n\u201C\
+            mean\u201D: Reduces tensor by taking the mean of the sequence dimension.\n\
+            \u201Cavg\u201D: synonym for \u201Cmean\u201D.\n\u201Cmax\u201D: Reduces\
+            \ tensor by taking the maximum value of the last dimension across the\
+            \ sequence dimension.\n\u201Cconcat\u201D: Reduces tensor by concatenating\
+            \ the second and last dimension.\n\u201Cattention\u201D: Reduces tensor\
+            \ by summing across the sequence dimension after applying feedforward\
+            \ attention.\n\u201Cnone\u201D: no reduction."
+        expected_impact: 2
+        ui_display_name: Combiner Reduce Mode
+    vocab_size:
+        ui_display_name: Not displayed
+SequenceTaggerDecoder:
+    type:
+        short_description:
+            Used for classifying each element of an input sequence.
+        long_description:
+            The tagger decoder is a (potentially empty) stack of fully connected layers,
+            followed by a projection into a tensor of size `b x s x c`, where `b` is the batch size,
+            `s` is the length of the sequence and `c` is the number of classes, followed by a
+            softmax_cross_entropy. This decoder requires its input to be shaped as `b x s x h`, where `h` is
+            a hidden dimension, which is the output of a sequence, text or time series input feature without
+            reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided
+            instead, an error will be raised during model building.
+    attention_embedding_size:
+        default_value_reasoning: Not too big, not too small.
+        description_implications:
+            Increasing the embedding size may cause the model
+            to train more slowly, but the higher dimensionality can also improve overall
+            quality.
+        expected_impact: 2
+        suggested_values: 128 - 2048
+        suggested_values_reasoning:
+            Try models with smaller or larger embedding sizes
+            to observe relative impact.
+        ui_display_name: Attention Embedding Size
+    attention_num_heads:
+        ui_display_name: null
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+    max_sequence_length:
+        expected_impact: 1
+        ui_display_name: null
+    use_attention:
+        ui_display_name: null
+    use_bias:
+        default_value_reasoning:
+            "Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to use bias terms.
+
+
+            Batch Normalization, however, adds a trainable shift parameter which is
+            added to the activation. When Batch Normalization is used in a layer,
+            bias terms are redundant and may be removed."
+        description_implications:
+            Bias terms may improve model accuracy, and don't
+            have much impact in terms of memory or training speed. For most models
+            it is reasonable to leave this parameter set to True.
+        example_value:
+            - true
+        expected_impact: 1
+        other_information:
+            If fc_layers is not specified, or use_bias is not specified
+            for individual layers, the value of use_bias will be used as the default
+            for all layers.
+        related_parameters:
+            - bias_initializer, fc_layers
+        suggested_values:
+            - true
+        ui_display_name: Use Bias
+    vocab_size:
+        ui_display_name: Not displayed

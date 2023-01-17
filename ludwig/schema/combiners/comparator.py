@@ -5,7 +5,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
@@ -13,9 +13,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class ComparatorCombinerConfig(BaseCombinerConfig):
     """Parameters for comparator combiner."""
 
+    @staticmethod
+    def module_name():
+        return "ComparatorCombiner"
+
     type: str = schema_utils.ProtectedString(
         "comparator",
-        description="Type of combiner.",
+        description=COMBINER_METADATA["ComparatorCombiner"]["type"].long_description,
     )
 
     entity_1: List[str] = schema_utils.List(

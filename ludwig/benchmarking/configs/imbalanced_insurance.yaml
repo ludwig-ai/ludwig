@@ -24,10 +24,11 @@ output_features:
     type: binary
 trainer:
   learning_rate: 0.0001
-  decay: True
-  decay_rate: 0.9
-  decay_steps: 30000
-  staircase: True
+  learning_rate_scheduler:
+    decay: exponential
+    decay_rate: 0.9
+    decay_steps: 30000
+    staircase: True
   epochs: 50
 preprocessing:
   split:

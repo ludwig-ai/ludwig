@@ -5,17 +5,20 @@ from ludwig.constants import SEQUENCE, TEXT
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import register_decoder_config
-from ludwig.schema.metadata.decoder_metadata import DECODER_METADATA
+from ludwig.schema.metadata import DECODER_METADATA
 
 
 @DeveloperAPI
 @register_decoder_config("generator", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
+    @staticmethod
+    def module_name():
+        return "SequenceGeneratorDecoder"
 
     type: str = schema_utils.ProtectedString(
         "generator",
-        description="Type of decoder.",
+        description=DECODER_METADATA["SequenceGeneratorDecoder"]["type"].long_description,
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
@@ -62,10 +65,13 @@ class SequenceGeneratorDecoderConfig(BaseDecoderConfig):
 @register_decoder_config("tagger", [SEQUENCE, TEXT])
 @dataclass(repr=False)
 class SequenceTaggerDecoderConfig(BaseDecoderConfig):
+    @classmethod
+    def module_name(cls):
+        return "SequenceTaggerDecoder"
 
     type: str = schema_utils.ProtectedString(
         "tagger",
-        description="Type of decoder.",
+        description=DECODER_METADATA["SequenceTaggerDecoder"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(

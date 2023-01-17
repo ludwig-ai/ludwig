@@ -8,7 +8,7 @@ import pytest
 
 from ludwig.api import LudwigModel
 from ludwig.backend import LocalBackend
-from tests.integration_tests.utils import create_data_set_to_use, spawn
+from tests.integration_tests.utils import create_data_set_to_use, RAY_BACKEND_CONFIG, spawn
 
 try:
     import ray
@@ -18,20 +18,6 @@ except ImportError:
     ray = None
 
 rs = np.random.RandomState(42)
-RAY_BACKEND_CONFIG = {
-    "type": "ray",
-    "processor": {
-        "parallelism": 2,
-    },
-    "trainer": {
-        "use_gpu": False,
-        "num_workers": 2,
-        "resources_per_worker": {
-            "CPU": 0.1,
-            "GPU": 0,
-        },
-    },
-}
 
 
 @contextlib.contextmanager

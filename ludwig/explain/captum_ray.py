@@ -10,6 +10,7 @@ from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
 from ludwig.explain.captum import get_baseline, get_input_tensors, get_total_attribution, IntegratedGradientsExplainer
 from ludwig.explain.explanation import Explanation
+from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils.torch_utils import get_torch_device
 
 
@@ -34,6 +35,7 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
             label in the target feature's vocab.
         """
         self.model.model.cpu()
+        input_features: LudwigFeatureDict = self.model.model.input_features
         model_ref = ray.put(self.model)
 
         # Convert input data into embedding tensors from the output of the model encoders.
@@ -46,7 +48,7 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
 
         inputs_encoded = ray.get(inputs_encoded_ref)
         sample_encoded = ray.get(sample_encoded_ref)
-        baseline = get_baseline(sample_encoded)
+        baseline = get_baseline(self.model, sample_encoded)
 
         inputs_encoded_ref = ray.put(inputs_encoded)
         baseline_ref = ray.put(baseline)
@@ -63,9 +65,9 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
             target_splits = [[None]]
 
         # Compute attribution for each possible output feature label separately.
-        total_attribution_refs = []
+        attrs_refs = []
         for target_indices in target_splits:
-            total_attribution_ref = get_total_attribution_task.options(**self.resources_per_task).remote(
+            attrs_ref = get_total_attribution_task.options(**self.resources_per_task).remote(
                 model_ref,
                 self.target_feature_name,
                 target_indices,
@@ -74,16 +76,20 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
                 self.use_global,
                 len(self.inputs_df),
             )
-            total_attribution_refs.append(total_attribution_ref)
+            attrs_refs.append(attrs_ref)
 
         # Await the completion of our Ray tasks, then merge the results.
         expected_values = []
-        for total_attribution_ref in tqdm(total_attribution_refs, desc="Explain"):
-            total_attributions = ray.get(total_attribution_ref)
-            for total_attribution in total_attributions:
-                for feature_attributions, explanation in zip(total_attribution, self.explanations):
+        for attrs_ref in tqdm(attrs_refs, desc="Explain"):
+            attrs = ray.get(attrs_ref)
+            for (total_attribution, feat_to_token_attribution) in attrs:
+                for i, (feature_attributions, explanation) in enumerate(zip(total_attribution, self.explanations)):
                     # Add the feature attributions to the explanation object for this row.
-                    explanation.add(feature_attributions)
+                    explanation.add(
+                        input_features.keys(),
+                        feature_attributions,
+                        {k: v[i] for k, v in feat_to_token_attribution.items()},
+                    )
 
                 # TODO(travis): for force plots, need something similar to SHAP E[X]
                 expected_values.append(0.0)
@@ -92,7 +98,14 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
         if self.is_binary_target:
             for explanation in self.explanations:
                 le_true = explanation.label_explanations[0]
-                explanation.add(le_true.feature_attributions * -1)
+                negated_attributions = le_true.to_array() * -1
+                negated_token_attributions = {
+                    fa.feature_name: [(t, -a) for t, a in fa.token_attributions]
+                    for fa in le_true.feature_attributions
+                    if fa.token_attributions is not None
+                }
+                # Prepend the negative class to the list of label explanations.
+                explanation.add(input_features.keys(), negated_attributions, negated_token_attributions, prepend=True)
 
             # TODO(travis): for force plots, need something similar to SHAP E[X]
             expected_values.append(0.0)
@@ -126,7 +139,7 @@ def get_total_attribution_task(
                 model=model,
                 target_feature_name=target_feature_name,
                 target_idx=target_idx,
-                inputs_encoded=inputs_encoded,
+                feature_inputs=inputs_encoded,
                 baseline=baseline,
                 use_global=use_global,
                 nsamples=nsamples,

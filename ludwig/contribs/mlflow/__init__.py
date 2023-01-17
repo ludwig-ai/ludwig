@@ -38,19 +38,31 @@ _get_or_create_experiment_id = get_or_create_experiment_id
 @PublicAPI
 class MlflowCallback(Callback):
     def __init__(self, tracking_uri=None, log_artifacts: bool = True):
-        self.experiment_id = None
-        self.experiment_name = None
-        self.run = None
+        if tracking_uri:
+            mlflow.set_tracking_uri(tracking_uri)
+        self.tracking_uri = mlflow.get_tracking_uri()
+
+        active_run = mlflow.active_run()
+        if active_run is not None:
+            # Use experiment already set in the current environment
+            self.run = active_run
+            self.experiment_id = self.run.info.experiment_id
+            self.experiment_name = mlflow.get_experiment(self.experiment_id).name
+            self.external_run = True
+        else:
+            # Will create an experiment at training time
+            self.run = None
+            self.experiment_id = None
+            self.experiment_name = None
+            self.external_run = False
+
         self.run_ended = False
-        self.tracking_uri = tracking_uri
         self.training_set_metadata = None
         self.config = None
         self.save_in_background = True
         self.save_fn = None
         self.save_thread = None
         self.log_artifacts = log_artifacts
-        if tracking_uri:
-            mlflow.set_tracking_uri(tracking_uri)
 
     def get_experiment_id(self, experiment_name):
         return get_or_create_experiment_id(experiment_name)
@@ -91,7 +103,7 @@ class MlflowCallback(Callback):
 
         active_run = mlflow.active_run()
         if active_run is not None:
-            # Currently active run started by Ray Tune MLflow mixin.
+            # Currently active run started by Ray Tune MLflow mixin or external run
             self.run = active_run
         else:
             run_id = None
@@ -118,7 +130,8 @@ class MlflowCallback(Callback):
     def on_train_end(self, output_directory):
         if self.log_artifacts:
             _log_artifacts(output_directory)
-        if self.run is not None:
+        if self.run is not None and not self.external_run:
+            # Only end runs managed internally to this callback
             mlflow.end_run()
             self.run_ended = True
 
@@ -180,6 +193,8 @@ class MlflowCallback(Callback):
         if self.tracking_uri:
             mlflow.set_tracking_uri(self.tracking_uri)
         if self.run and not self.run_ended:
+            # Run has already been set, but may not be active due to training workers running in a separate
+            # process, so resume the run
             mlflow.end_run()
             self.run = mlflow.start_run(run_id=self.run.info.run_id, experiment_id=self.run.info.experiment_id)
 

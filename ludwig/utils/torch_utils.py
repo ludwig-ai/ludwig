@@ -219,6 +219,32 @@ class LudwigModule(Module):
             raise ValueError("Unknown output tensor type.")
 
 
+def freeze_parameters(module: nn.Module):
+    """Freezes the parameters of a torch module."""
+    for p in module.parameters():
+        p.requires_grad = False
+
+
+@DeveloperAPI
+class FreezeModule(nn.Module):
+    def __init__(self, module: nn.Module, frozen: bool):
+        super().__init__()
+        if frozen:
+            freeze_parameters(module)
+            module.eval()
+        else:
+            module.train()
+        self.module = module
+        self.frozen = frozen
+
+    def train(self, mode: bool = True):
+        if self.frozen:
+            # Ignores any attempt to set params trainable
+            return self
+
+        return super().train(mode)
+
+
 @DeveloperAPI
 class Dense(LudwigModule):
     def __init__(
@@ -252,10 +278,10 @@ def initialize_pytorch(
     gpus: Optional[Union[int, str, List[int]]] = None,
     gpu_memory_limit: Optional[float] = None,
     allow_parallel_threads: bool = True,
-    horovod=None,  # Optional["horovod.torch"]
+    local_rank: int = 0,
+    local_size: int = 1,
 ):
-    use_horovod = horovod is not None
-    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, local_rank, local_size)
     if _TORCH_INIT_PARAMS is not None:
         if _TORCH_INIT_PARAMS != param_tuple:
             warnings.warn(
@@ -275,17 +301,17 @@ def initialize_pytorch(
             torch.backends.cudnn.benchmark = False
 
     gpu_device_count = torch.cuda.device_count()
-    if horovod is not None and gpus is None:
-        if 0 < gpu_device_count < horovod.local_size():
+    if local_size > 1 and gpus is None:
+        if 0 < gpu_device_count < local_size:
             warnings.warn(
-                f"Horovod: disabling GPU support! This host is running with "
-                f"{horovod.local_size()} worker processes but only {gpu_device_count} "
+                f"Distributed: disabling GPU support! This host is running with "
+                f"{local_size} worker processes but only {gpu_device_count} "
                 f"GPUs. To enable GPU training, reduce the number of worker processes "
                 f"on this host to match the number of GPUs."
             )
             gpus = [-1]
         else:
-            gpus = [horovod.local_rank()]
+            gpus = [local_rank]
 
     if isinstance(gpus, int):
         gpus = [gpus]

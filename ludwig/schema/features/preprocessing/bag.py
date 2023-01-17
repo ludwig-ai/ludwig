@@ -5,7 +5,7 @@ from ludwig.constants import BAG, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
@@ -14,7 +14,6 @@ from ludwig.utils.tokenizers import tokenizer_registry
 @register_preprocessor(BAG)
 @dataclass(repr=False)
 class BagPreprocessingConfig(BasePreprocessingConfig):
-
     tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),
         default="space",

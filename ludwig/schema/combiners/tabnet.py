@@ -5,7 +5,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
-from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
@@ -13,9 +13,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class TabNetCombinerConfig(BaseCombinerConfig):
     """Parameters for tabnet combiner."""
 
+    @staticmethod
+    def module_name():
+        return "TabNetCombiner"
+
     type: str = schema_utils.ProtectedString(
         "tabnet",
-        description="Type of combiner.",
+        description=COMBINER_METADATA["TabNetCombiner"]["type"].long_description,
     )
 
     size: int = schema_utils.PositiveInteger(

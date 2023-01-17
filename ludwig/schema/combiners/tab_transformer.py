@@ -6,7 +6,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.common_transformer_options import CommonTransformerConfig
-from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
@@ -14,9 +14,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class TabTransformerCombinerConfig(BaseCombinerConfig, CommonTransformerConfig):
     """Parameters for tab transformer combiner."""
 
+    @staticmethod
+    def module_name():
+        return "TabTransformerCombiner"
+
     type: str = schema_utils.ProtectedString(
         "tabtransformer",
-        description="Type of combiner.",
+        description=COMBINER_METADATA["TabTransformerCombiner"]["type"].long_description,
     )
 
     embed_input_feature_name: Optional[Union[str, int]] = schema_utils.Embed(

@@ -14,12 +14,12 @@ import torch
 from ludwig.constants import COMBINED, LAST_HIDDEN, LOGITS
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.utils import convert_to_dict
+from ludwig.distributed.base import LocalStrategy
 from ludwig.globals import is_progressbar_disabled, PREDICTIONS_PARQUET_FILE_NAME, TEST_STATISTICS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.progress_bar import LudwigProgressBar
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.dataframe_utils import from_numpy_dataset
-from ludwig.utils.horovod_utils import return_first
 from ludwig.utils.print_utils import repr_ordered_dict
 from ludwig.utils.strings_utils import make_safe_filename
 from ludwig.utils.torch_utils import get_torch_device
@@ -63,9 +63,9 @@ class BasePredictor(ABC):
 class Predictor(BasePredictor):
     """Predictor is a class that uses a model to predict and evaluate."""
 
-    def __init__(self, model: BaseModel, batch_size=128, horovod=None, report_tqdm_to_ray=False, **kwargs):
+    def __init__(self, model: BaseModel, batch_size=128, distributed=None, report_tqdm_to_ray=False, **kwargs):
         self._batch_size = batch_size
-        self._horovod = horovod
+        self._distributed = distributed if distributed is not None else LocalStrategy()
         self.report_tqdm_to_ray = report_tqdm_to_ray
 
         self.device = get_torch_device()
@@ -167,7 +167,9 @@ class Predictor(BasePredictor):
         self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
-            with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
+            with dataset.initialize_batcher(
+                self._batch_size, should_shuffle=False, distributed=self._distributed
+            ) as batcher:
                 progress_bar_config = {
                     "desc": "Evaluation" if dataset_name is None else f"Evaluation {dataset_name: <5.5}",
                     "total": batcher.steps_per_epoch,
@@ -234,7 +236,9 @@ class Predictor(BasePredictor):
         self.model.eval()  # set model to eval mode
 
         with torch.no_grad():
-            with dataset.initialize_batcher(self._batch_size, should_shuffle=False, horovod=self._horovod) as batcher:
+            with dataset.initialize_batcher(
+                self._batch_size, should_shuffle=False, distributed=self._distributed
+            ) as batcher:
                 progress_bar_config = {
                     "desc": "Collecting Tensors",
                     "total": batcher.steps_per_epoch,
@@ -264,9 +268,7 @@ class Predictor(BasePredictor):
         return collected_tensors
 
     def is_coordinator(self):
-        if not self._horovod:
-            return True
-        return self._horovod.rank() == 0
+        return self._distributed.rank() == 0
 
 
 class RemotePredictor(Predictor):
@@ -274,8 +276,8 @@ class RemotePredictor(Predictor):
         super().__init__(model, **kwargs)
 
         # Only return results from rank 0 to reduce network overhead
-        self.batch_predict = return_first(self.batch_predict)
-        self.batch_evaluation = return_first(self.batch_evaluation)
+        self.batch_predict = self._distributed.return_first(self.batch_predict)
+        self.batch_evaluation = self._distributed.return_first(self.batch_evaluation)
 
 
 def calculate_overall_stats(output_features, predictions, dataset, training_set_metadata):
