@@ -41,6 +41,7 @@ from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
+from ludwig.utils.data_utils import from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
@@ -361,23 +362,20 @@ class RayDatasetBatcher(Batcher):
         augmentation_pipeline = self.augmentation_pipeline
 
         def augment_batch(df: pd.DataFrame) -> pd.DataFrame:
+            # df is pandas dataframe, where each column is Series, to use data as arrays
+            # convert dataframe to dict of arrays
+            dict_of_arrays = to_numpy_dataset(df)
+
             if augmentation_pipeline:
                 for c, augmentations in augmentation_pipeline.items():
                     # TODO: convert to debug message when done with development
                     logger.info(f"RayDatasetBatcher applying augmentation pipeline to batch for feature {c}")
 
-                    # df[c] is a pd.Series, so we need to convert it to a np.array
-                    # consolidate the individual np.array into a single np.array for the batch
-                    data_to_augment = np.stack(df[c].values, axis=0)
-
                     # apply augmentation pipeline operations to the batch of np.array
-                    augmented_data = augmentations(torch.tensor(data_to_augment)).numpy()
+                    dict_of_arrays[c] = augmentations(torch.tensor(dict_of_arrays[c])).numpy()
 
-                    # convert the batch of augmented np.array back to a pd.Series,
-                    # split single batch to list of augmented arrays and then squeeze out the batch dimension
-                    # that is no longer needed
-                    augmented_data = np.split(augmented_data, augmented_data.shape[0], axis=0)
-                    df[c] = [np.squeeze(x, axis=0) for x in augmented_data]
+            # convert dict of arrays back to dataframe
+            df = from_numpy_dataset(dict_of_arrays)
             return df
 
         return augment_batch
@@ -395,9 +393,12 @@ class RayDatasetBatcher(Batcher):
         augment_batch = self._augment_batch_fn()
 
         def producer():
-            for batch in pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
-            ):
+            nonlocal pipeline
+            # if augmentation is specified, setup prefetching batch of data
+            if self.augmentation_pipeline:
+                pipeline = pipeline.map_batches(augment_batch, batch_size=batch_size, batch_format="pandas")
+
+            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
