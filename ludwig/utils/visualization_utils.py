@@ -999,9 +999,19 @@ def brier_plot(
     ax.set_xlabel("class")
     ax.set_ylabel("brier score")
     if class_names is not None:
-        ax.set_xticks(x, class_names)
+        ax.set_xticks(
+            x,
+            class_names,
+            rotation=45,
+            ha="center",
+        )
     else:
-        ax.set_xticks(x, [str(i) for i in range(n_classes)])
+        ax.set_xticks(
+            x,
+            [str(i) for i in range(n_classes)],
+            rotation=45,
+            ha="center",
+        )
 
     for i in range(n_algorithms):
         # Plot bar for each class
