@@ -1252,7 +1252,8 @@ def build_dataset(
 def embed_fixed_features(
     dataset: DataFrame, feature_configs: List[FeatureConfigDict], metadata: TrainingSetMetadataDict, backend: Backend
 ) -> DataFrame:
-    """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates metadata."""
+    """Transforms every input feature with cacheable encoder embeddings into its encoded form and updates
+    metadata."""
     # Encode features in bulk at the end
     features_to_encode = get_features_with_cacheable_fixed_embeddings(feature_configs, metadata)
     if not features_to_encode:

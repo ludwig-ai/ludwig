@@ -499,9 +499,9 @@ class OutputFeature(BaseFeature, LudwigModule, ABC):
 class PassthroughPreprocModule(torch.nn.Module):
     """Combines preprocessing and encoding into a single module for TorchScript inference.
 
-    For encoder outputs that were cached during preprocessing, the encoder is simply the identity
-    function in the ECD module. As such, we need this module to apply the encoding that would normally be
-    done during preprocessing for realtime inference.
+    For encoder outputs that were cached during preprocessing, the encoder is simply the identity function in the ECD
+    module. As such, we need this module to apply the encoding that would normally be done during preprocessing for
+    realtime inference.
     """
 
     def __init__(self, preproc: torch.nn.Module, encoder: torch.nn.Module):
@@ -516,9 +516,9 @@ class PassthroughPreprocModule(torch.nn.Module):
 def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureConfig) -> InputFeature:
     """Creates a shim input feature that acts as a transparent identifiy function on the input data.
 
-    Used when the feature's encoder embeddings were cached in preprocessing. This way, we don't need to make
-    any changes to the underlying interface in such cases other than to swap the feature that would normally do
-    the encoding with this one.
+    Used when the feature's encoder embeddings were cached in preprocessing. This way, we don't need to make any changes
+    to the underlying interface in such cases other than to swap the feature that would normally do the encoding with
+    this one.
     """
 
     class _InputPassthroughFeature(InputFeature):
