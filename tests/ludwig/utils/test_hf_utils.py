@@ -40,15 +40,13 @@ from ludwig.encoders.text_encoders import (  # CamemBERTEncoder,
     XLMRoBERTaEncoder,
     XLNetEncoder,
 )
-from ludwig.utils.hf_utils import load
+from ludwig.utils.hf_utils import load_pretrained_hf_model
 
 
 @pytest.mark.parametrize(
     ("model", "name"),
     [
         (AlbertModel, ALBERTEncoder.DEFAULT_MODEL_NAME),
-        # (AutoModel, AutoTransformerEncoder.DEFAULT_MODEL_NAME),
-        # (AutoTokenizer, None),
         (BertModel, BERTEncoder.DEFAULT_MODEL_NAME),
         (BertTokenizer, "bert-base-uncased"),
         # (CamembertModel, CamemBERTEncoder.DEFAULT_MODEL_NAME),
@@ -72,6 +70,6 @@ def test_load_hf_model(model: Type, name: str, tmpdir: os.PathLike):
     """Ensure that the HF models used in ludwig download correctly."""
     cache_dir = os.path.join(tmpdir, name.replace(os.path.sep, "_") if name else str(model.__name__))
     os.makedirs(cache_dir, exist_ok=True)
-    loaded_model = load(model, name, cache_dir=cache_dir, force_download=True)
+    loaded_model = load_pretrained_hf_model(model, name, cache_dir=cache_dir, force_download=True)
     assert isinstance(loaded_model, model)
     assert os.listdir(cache_dir)
