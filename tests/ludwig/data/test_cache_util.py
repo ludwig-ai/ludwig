@@ -22,12 +22,12 @@ def _gen_config(input_features: List[FeatureConfigDict]) -> ModelConfigDict:
                 {
                     "name": "in1",
                     "type": "text",
-                    "encoder": {"type": "bert"},
+                    "encoder": {"type": "parallel_cnn"},
                 }
             ],
             [
                 {
-                    "encoder": {"type": "distilbert"},
+                    "encoder": {"type": "stacked_cnn"},
                 }
             ],
             True,
@@ -43,7 +43,6 @@ def _gen_config(input_features: List[FeatureConfigDict]) -> ModelConfigDict:
             ],
             [
                 {
-                    "preprocessing": {"cache_encoder_embeddings": True},
                     "encoder": {"type": "distilbert"},
                 }
             ],
