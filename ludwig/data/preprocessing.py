@@ -1295,6 +1295,8 @@ def get_features_with_cacheable_fixed_embeddings(
                     # Convert to Ray Datasets, map batches to encode, then convert back to Dask
                     features_to_encode.append(feature_config)
 
+    return features_to_encode
+
 
 def cast_columns(dataset_cols, features, backend) -> None:
     """Casts columns based on their feature type."""
