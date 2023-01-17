@@ -80,6 +80,7 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
     # Ignore sample_ratio from the model config, since we want to explain all the data.
+    sample_ratio_bak = model.config_obj.preprocessing.sample_ratio
     model.config_obj.preprocessing.sample_ratio = 1.0
 
     # Convert raw input data into preprocessed tensor data
@@ -93,6 +94,9 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
         backend=model.backend,
         callbacks=model.callbacks,
     )
+
+    # Restore sample_ratio
+    model.config_obj.preprocessing.sample_ratio = sample_ratio_bak
 
     # Make sure the number of rows in the preprocessed dataset matches the number of rows in the input data
     assert (
