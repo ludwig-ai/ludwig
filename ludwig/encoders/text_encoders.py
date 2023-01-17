@@ -43,6 +43,7 @@ from ludwig.schema.encoders.text_encoders import (
     XLMRoBERTaConfig,
     XLNetConfig,
 )
+from ludwig.utils.hf_utils import load
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -119,7 +120,7 @@ class ALBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = AlbertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = AlbertConfig(
                 vocab_size=vocab_size,
@@ -236,7 +237,7 @@ class MT5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = MT5EncoderModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = MT5Config(
                 vocab_size=vocab_size,
@@ -334,7 +335,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = XLMRobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLMRobertaConfig(
                 pad_token_id=pad_token_id,
@@ -432,7 +433,7 @@ class BERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = BertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(BertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = BertConfig(
                 vocab_size=vocab_size,
@@ -557,7 +558,7 @@ class XLMEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = XLMModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(XLMModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLMConfig(
                 vocab_size=vocab_size,
@@ -673,7 +674,7 @@ class GPTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = OpenAIGPTModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = OpenAIGPTConfig(
                 vocab_size=vocab_size,
@@ -767,7 +768,7 @@ class GPT2Encoder(HFTextEncoder):
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = GPT2Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = GPT2Config(
                 vocab_size=vocab_size,
@@ -854,7 +855,7 @@ class RoBERTaEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = RobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = RobertaConfig(
                 pad_token_id=pad_token_id,
@@ -953,7 +954,7 @@ class TransformerXLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = TransfoXLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = TransfoXLConfig(
                 vocab_size=vocab_size,
@@ -1068,7 +1069,7 @@ class XLNetEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = XLNetModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLNetConfig(
                 vocab_size=vocab_size,
@@ -1177,7 +1178,7 @@ class DistilBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = DistilBertConfig(
                 vocab_size=vocab_size,
@@ -1276,7 +1277,7 @@ class CTRLEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = CTRLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = CTRLConfig(
                 vocab_size=vocab_size,
@@ -1374,7 +1375,7 @@ class CamemBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = CamembertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = CamembertConfig(
                 vocab_size=vocab_size,
@@ -1480,7 +1481,7 @@ class T5Encoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = T5Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(T5Model, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = T5Config(
                 vocab_size=vocab_size,
@@ -1593,7 +1594,7 @@ class FlauBERTEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = FlaubertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = FlaubertConfig(
                 vocab_size=vocab_size,
@@ -1709,7 +1710,7 @@ class ELECTRAEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = ElectraModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load(ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = ElectraConfig(
                 vocab_size=vocab_size,
@@ -1802,7 +1803,7 @@ class LongformerEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = LongformerModel.from_pretrained(pretrained_model_name_or_path, pretrained_kwargs)
+            transformer = load(LongformerModel, pretrained_model_name_or_path, pretrained_kwargs)
         else:
             config = LongformerConfig(attention_window, sep_token_id, **kwargs)
             transformer = LongformerModel(config)
@@ -1875,7 +1876,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         from transformers import AutoModel
 
         pretrained_kwargs = pretrained_kwargs or {}
-        transformer = AutoModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+        transformer = load(AutoModel, pretrained_model_name_or_path, **pretrained_kwargs)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
