@@ -1,8 +1,8 @@
-from typing import List
 import uuid
+from typing import List
+from unittest import mock
 
 import pytest
-from unittest import mock
 
 from ludwig.constants import INPUT_FEATURES, OUTPUT_FEATURES
 from ludwig.data.cache.util import calculate_checksum
