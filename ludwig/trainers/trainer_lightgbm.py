@@ -370,7 +370,6 @@ class LightGBMTrainer(BaseTrainer):
 
         progress_bar.update(self.boosting_rounds_per_checkpoint)
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
-        progress_tracker.best_eval_metric_steps = self.model.lgbm_model.best_iteration_
 
         output_features = self.model.output_features
         metrics_names = get_metric_names(output_features)
@@ -529,8 +528,7 @@ class LightGBMTrainer(BaseTrainer):
             init_model=init_model,
             eval_set=[(ds.get_data(), ds.get_label()) for ds in eval_sets],
             eval_names=eval_names,
-            # add early stopping callback to populate best_iteration
-            callbacks=[lgb.early_stopping(boost_rounds_per_train_step), store_predictions(train_logits)],
+            callbacks=[store_predictions(train_logits)],
         )
         evals_result.update(gbm.evals_result_)
 
@@ -997,8 +995,6 @@ class LightGBMRayTrainer(LightGBMTrainer):
             eval_set=[(s, n) for s, n in zip(eval_sets, eval_names)],
             eval_names=eval_names,
             callbacks=[
-                # add early stopping callback to populate best_iteration
-                lgb.early_stopping(boost_rounds_per_train_step),
                 store_predictions_ray(boost_rounds_per_train_step),
             ],
             additional_results=additional_results,
