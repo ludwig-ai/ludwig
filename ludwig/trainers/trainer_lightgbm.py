@@ -137,6 +137,12 @@ class LightGBMTrainer(BaseTrainer):
         self.max_bin = config.max_bin
         self.feature_pre_filter = config.feature_pre_filter
 
+        if self.boosting_type == "goss" and self.bagging_freq != 0:
+            logger.info(
+                "Bagging is not compatible with the GOSS boosting type. Disabling bagging for this training session."
+            )
+            self.bagging_freq = 0
+
         self.device = device
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
