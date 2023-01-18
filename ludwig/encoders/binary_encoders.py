@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from typing import Dict
 
 import torch
 
@@ -35,7 +36,7 @@ class BinaryPassthroughEncoder(Encoder):
 
         logger.debug(f" {self.name}")
 
-    def forward(self, inputs: torch.Tensor) -> dict:
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type torch.float32
