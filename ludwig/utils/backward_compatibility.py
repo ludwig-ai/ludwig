@@ -848,5 +848,7 @@ def _is_image_feature(feature_config: FeatureConfigDict):
 
 
 def _update_old_image_preprocessing(feature_config: FeatureConfigDict):
-    standardize_image = feature_config.get(PREPROCESSING, {}).get("standardize_image", None)
-    feature_config[PREPROCESSING].update({"standardize_image": standardize_image})
+    preprocessing = feature_config.get(PREPROCESSING)
+    if not preprocessing:
+        return
+    preprocessing["standardize_image"] = preprocessing.get("standardize_image")
