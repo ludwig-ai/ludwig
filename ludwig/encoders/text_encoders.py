@@ -17,6 +17,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
+from torch import nn
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT, TYPE
@@ -56,6 +57,9 @@ def _cls_pooled_error_message(encoder: str):
 
 class HFTextEncoder(Encoder):
     DEFAULT_MODEL_NAME: str
+
+    def get_embedding_layer(self) -> nn.Module:
+        return next(self.transformer.module.children())
 
     @classmethod
     def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
@@ -1887,11 +1891,12 @@ class AutoTransformerEncoder(HFTextEncoder):
 
         pretrained_kwargs = pretrained_kwargs or {}
         transformer = AutoModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+        self.transformer = FreezeModule(transformer, frozen=not trainable)
+        transformer.resize_token_embeddings(vocab_size)
+
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
-        self.transformer = FreezeModule(transformer, frozen=not trainable)
-        transformer.resize_token_embeddings(vocab_size)
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
 

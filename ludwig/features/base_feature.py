@@ -142,6 +142,9 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([batch_size, *self.input_shape]).to(self.input_dtype)
 
+    def unwrap(self):
+        return self
+
     @staticmethod
     @abstractmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
@@ -553,5 +556,12 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
         @staticmethod
         def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
             return PassthroughPreprocModule(feature.create_preproc_module(metadata), feature)
+
+        @staticmethod
+        def type():
+            return feature.type()
+
+        def unwrap(self):
+            return feature
 
     return _InputPassthroughFeature(config)

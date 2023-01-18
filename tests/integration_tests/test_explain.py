@@ -94,22 +94,48 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
     )
 
 
+@pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
+@pytest.mark.parametrize("use_global", [True, False])
+@pytest.mark.parametrize(
+    "explainer_class, model_type",
+    [
+        (IntegratedGradientsExplainer, MODEL_ECD),
+        # TODO(travis): once we support GBM text features
+        # (GBMExplainer, MODEL_GBM),
+    ],
+)
+def test_explainer_text_hf(explainer_class, model_type, use_global, cache_encoder_embeddings, tmpdir):
+    input_features = [
+        text_feature(
+            encoder={
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+            },
+            preprocessing={"cache_encoder_embeddings": cache_encoder_embeddings},
+        )
+    ]
+    run_test_explainer_api(
+        explainer_class, model_type, [binary_feature()], {}, use_global, tmpdir, input_features=input_features
+    )
+
+
 def run_test_explainer_api(
-    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
+    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, input_features=None, **kwargs
 ):
-    input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    if model_type == MODEL_ECD:
-        input_features += [
-            text_feature(encoder={"vocab_size": 3}),
-            vector_feature(),
-            timeseries_feature(),
-            # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
-            # sequence_feature(encoder={"vocab_size": 3}),
-            # date_feature(),
-            # h3_feature(),
-            # set_feature(encoder={"vocab_size": 3}),
-            # bag_feature(encoder={"vocab_size": 3}),
-        ]
+    if input_features is None:
+        input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+        if model_type == MODEL_ECD:
+            input_features += [
+                text_feature(encoder={"vocab_size": 3}),
+                vector_feature(),
+                timeseries_feature(),
+                # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
+                # sequence_feature(encoder={"vocab_size": 3}),
+                # date_feature(),
+                # h3_feature(),
+                # set_feature(encoder={"vocab_size": 3}),
+                # bag_feature(encoder={"vocab_size": 3}),
+            ]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")

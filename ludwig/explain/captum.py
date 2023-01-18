@@ -1,4 +1,5 @@
 from collections import defaultdict
+import copy
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -13,7 +14,7 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, DATE, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import CATEGORY, DATE, INPUT_FEATURES, NAME, PREPROCESSING, TEXT, UNKNOWN_SYMBOL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -35,6 +36,7 @@ class WrapperModule(torch.nn.Module):
     def __init__(self, model: ECD, target: str):
         super().__init__()
         self.model = model
+        self.model.unwrap()
         self.target = target
         self.input_maps = nn.ModuleDict(
             {
@@ -79,11 +81,18 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
 
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
+    config = model.config_obj.to_dict()
+    training_set_metadata = copy.deepcopy(model.training_set_metadata)
+    for feature in config[INPUT_FEATURES]:
+        preprocessing = training_set_metadata[feature[NAME]][PREPROCESSING]
+        if preprocessing.get("cache_encoder_embeddings"):
+            preprocessing["cache_encoder_embeddings"] = False
+
     # Convert raw input data into preprocessed tensor data
     dataset, _ = preprocess_for_prediction(
-        model.config_obj.to_dict(),
+        config,
         dataset=input_set,
-        training_set_metadata=model.training_set_metadata,
+        training_set_metadata=training_set_metadata,
         data_format="auto",
         split="full",
         include_outputs=False,
@@ -259,7 +268,7 @@ def get_total_attribution(
     for feat_name, feat in input_features.items():
         if feat.type() in {TEXT, CATEGORY, DATE}:
             # Get embedding layer from encoder, which is the first child of the encoder.
-            layers.append(next(feat.encoder_obj.children()))
+            layers.append(feat.encoder_obj.get_embedding_layer())
         else:
             # Get the wrapped input layer.
             layers.append(explanation_model.input_maps[feat_name])
