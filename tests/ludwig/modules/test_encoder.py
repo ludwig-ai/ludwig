@@ -20,7 +20,7 @@ import torch
 
 from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.encoders.base import Encoder
-from ludwig.encoders.image_encoders import MLPMixerEncoder, Stacked2DCNN
+from ludwig.encoders.image.base import MLPMixerEncoder, Stacked2DCNN
 from ludwig.encoders.sequence_encoders import (
     ParallelCNN,
     SequenceEmbedEncoder,

@@ -51,7 +51,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -338,7 +338,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         return {PREPROCESSING: preprocessing_parameters}
 
     @staticmethod
@@ -855,7 +857,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         for key in ["height", "width", "num_channels", "standardize_image"]:
-            setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
+            if hasattr(feature_config.encoder, key):
+                setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
 
     @staticmethod
     def get_schema_cls():

@@ -1,5 +1,6 @@
 import copy
 import math
+from typing import Any, Dict
 
 import pytest
 
@@ -779,3 +780,28 @@ def test_cache_credentials_backward_compatibility():
     _update_backend_cache_credentials(backend)
 
     assert backend == {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}
+
+
+@pytest.mark.parametrize(
+    "encoder,upgraded_type",
+    [
+        ({"type": "resnet"}, "resnet"),
+        ({"type": "vit"}, "vit"),
+        ({"type": "resnet", "resnet_size": 50}, "_resnet_legacy"),
+        ({"type": "vit", "num_hidden_layers": 12}, "_vit_legacy"),
+    ],
+    ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
+)
+def test_legacy_image_encoders(encoder: Dict[str, Any], upgraded_type: str):
+    config = {
+        "input_features": [{"name": "image1", "type": "image", "encoder": encoder}],
+        "output_features": [{"name": "binary1", "type": "binary"}],
+    }
+
+    updated_config = upgrade_config_dict_to_latest_version(config)
+
+    expected_encoder = {
+        **encoder,
+        **{"type": upgraded_type},
+    }
+    assert updated_config["input_features"][0]["encoder"] == expected_encoder

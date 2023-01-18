@@ -52,15 +52,16 @@ datasets:
         bn_virtual_bs: 4096 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.01
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 500
-        decay_rate: 0.95
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 500
+          decay_rate: 0.95
         validation_metric: accuracy
   - name: allstate_claims_severity
     goal: minimize
@@ -475,15 +476,16 @@ datasets:
         bn_virtual_bs: 4096 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.01
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 10000
-        decay_rate: 0.9
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 10000
+          decay_rate: 0.9
         validation_metric: root_mean_squared_error
   - name: bnp_claims_management
     goal: maximize
@@ -770,15 +772,16 @@ datasets:
         bn_virtual_bs: 256 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.01
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 2000
-        decay_rate: 0.4
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 2000
+          decay_rate: 0.4
         validation_metric: accuracy
   - name: ieee_fraud
     goal: maximize
@@ -1667,15 +1670,16 @@ datasets:
         bn_virtual_bs: 2048 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.01
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 10000
-        decay_rate: 0.95
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 10000
+          decay_rate: 0.95
         validation_metric: accuracy
   - name: mercedes_benz_greener
     goal: minimize
@@ -2452,15 +2456,16 @@ datasets:
         bn_virtual_bs: 256 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.005
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 500
-        decay_rate: 0.95
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 500
+          decay_rate: 0.95
         validation_metric: root_mean_squared_error
   - name: otto_group_product
     goal: maximize
@@ -2671,15 +2676,16 @@ datasets:
         bn_virtual_bs: 512 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.005
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 20000
-        decay_rate: 0.4
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 20000
+          decay_rate: 0.4
         validation_metric: accuracy
   - name: poker_hand
     goal: maximize
@@ -2724,15 +2730,16 @@ datasets:
         bn_virtual_bs: 512 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.01
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 8000
-        decay_rate: 0.8
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 8000
+          decay_rate: 0.8
         validation_metric: accuracy
   - name: porto_seguro_safe_driver
     goal: maximize
@@ -2871,15 +2878,16 @@ datasets:
         bn_virtual_bs: 1024 # B_v
       trainer:
         batch_size: 1024 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.005
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 10000
-        decay_rate: 0.9
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 10000
+          decay_rate: 0.9
         validation_metric: accuracy
   - name: santander_customer_satisfaction
     goal: maximize
@@ -3642,15 +3650,16 @@ datasets:
         bn_virtual_bs: 256 # B_v
       trainer:
         batch_size: 4096 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.005
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 10000
-        decay_rate: 0.8
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 10000
+          decay_rate: 0.8
         validation_metric: accuracy
   - name: santander_customer_transaction
     goal: maximize
@@ -4075,15 +4084,16 @@ datasets:
         bn_virtual_bs: 256 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.005
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 20000
-        decay_rate: 0.95
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 20000
+          decay_rate: 0.95
         validation_metric: accuracy
   - name: sarcos
     goal: minimize
@@ -4150,15 +4160,16 @@ datasets:
         bn_virtual_bs: 4096 # B_v
       trainer:
         batch_size: 256 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.005
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 20000
-        decay_rate: 0.4
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 20000
+          decay_rate: 0.4
         validation_metric: root_mean_squared_error
   - name: walmart_recruiting
     goal: maximize
@@ -4193,13 +4204,14 @@ datasets:
         bn_virtual_bs: 4096 # B_v
       trainer:
         batch_size: 8192 # B
-        eval_batch_size: 0 # 65536 131072 262144 524288
+        eval_batch_size: null # 65536 131072 262144 524288
         epochs: 300
         early_stop: 30
         learning_rate: 0.01
         optimizer:
           type: adam
-        decay: true
-        decay_steps: 20000
-        decay_rate: 0.9
+        learning_rate_scheduler:
+          decay: exponential
+          decay_steps: 20000
+          decay_rate: 0.9
         validation_metric: accuracy

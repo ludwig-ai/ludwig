@@ -118,7 +118,9 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
     if model_type == "ecd":
         config[TRAINER] = {"epochs": 2}
     else:
-        config[TRAINER] = {"num_boost_round": 2}
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        config[TRAINER] = {"num_boost_round": 2, "feature_pre_filter": False}
     ludwig_model = LudwigModel(config, backend=backend)
     ludwig_model.train(
         dataset=data_csv_path,

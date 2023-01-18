@@ -122,6 +122,10 @@ def run_test_explainer_api(
     config = {"input_features": input_features, "output_features": output_features, "model_type": model_type}
     if model_type == MODEL_ECD:
         config["trainer"] = {"epochs": 2}
+    else:
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        config["trainer"] = {"feature_pre_filter": False}
     config.update(additional_config)
 
     model = LudwigModel(config, logging_level=logging.WARNING, backend=LocalTestBackend())

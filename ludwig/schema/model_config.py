@@ -531,19 +531,21 @@ class ModelConfig(BaseMarshmallowConfig):
 
         max_t = scheduler.get("max_t")
         time_attr = scheduler.get("time_attr")
-        epochs = self.trainer.to_dict().get("epochs", None)
+        epochs_key = "epochs" if self.model_type == MODEL_ECD else "num_boost_round"
+        epochs = self.trainer.to_dict().get(epochs_key, None)
         if max_t is not None:
             if time_attr == "time_total_s":
                 if epochs is None:
-                    setattr(self.trainer, "epochs", sys.maxsize)  # continue training until time limit hit
+                    setattr(self.trainer, epochs_key, sys.maxsize)  # continue training until time limit hit
                 # else continue training until either time or trainer epochs limit hit
             elif epochs is not None and epochs != max_t:
                 raise ValueError(
-                    "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                    f"Cannot set trainer `{epochs_key}` when using hyperopt scheduler w/ "
+                    "different training_iteration `max_t`. "
                     "Unset one of these parameters in your config or make sure their values match."
                 )
             else:
-                setattr(self.trainer, "epochs", max_t)  # run trainer until scheduler epochs limit hit
+                setattr(self.trainer, epochs_key, max_t)  # run trainer until scheduler epochs limit hit
         elif epochs is not None:
             scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 
