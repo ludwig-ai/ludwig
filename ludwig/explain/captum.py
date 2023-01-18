@@ -145,7 +145,7 @@ class IntegratedGradientsExplainer(Explainer):
         """
 
         # TODO(travis): add back skip encoders at the end in finally. Shouldn't be an issue in most cases as we
-        # typically perform explanations on a loaded model and don't use it for predict afterwards.
+        # typically perform explanations on a loaded model and don't use it to predict afterwards.
         self.model.model.unskip()
         self.model.model.to(DEVICE)
 

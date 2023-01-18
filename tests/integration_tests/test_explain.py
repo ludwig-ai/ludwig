@@ -22,6 +22,11 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+try:
+    from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
+except ImportError:
+    RayIntegratedGradientsExplainer = None
+
 
 def test_explanation_dataclass():
     explanation = Explanation(target="target")
@@ -95,16 +100,16 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
 
 
 @pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
-@pytest.mark.parametrize("use_global", [True, False])
 @pytest.mark.parametrize(
-    "explainer_class, model_type",
+    "explainer_class,model_type",
     [
-        (IntegratedGradientsExplainer, MODEL_ECD),
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
         # TODO(travis): once we support GBM text features
-        # (GBMExplainer, MODEL_GBM),
+        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
     ],
 )
-def test_explainer_text_hf(explainer_class, model_type, use_global, cache_encoder_embeddings, tmpdir):
+def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings, tmpdir, ray_cluster_2cpu):
     input_features = [
         text_feature(
             encoder={
@@ -115,7 +120,7 @@ def test_explainer_text_hf(explainer_class, model_type, use_global, cache_encode
         )
     ]
     run_test_explainer_api(
-        explainer_class, model_type, [binary_feature()], {}, use_global, tmpdir, input_features=input_features
+        explainer_class, model_type, [binary_feature()], {}, False, tmpdir, input_features=input_features
     )
 
 

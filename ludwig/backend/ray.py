@@ -354,7 +354,7 @@ class RayAirRunner:
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
-            run_config=RunConfig(callbacks=callbacks),
+            run_config=RunConfig(callbacks=callbacks, verbose=1),
         )
         return trainer.fit()
 
