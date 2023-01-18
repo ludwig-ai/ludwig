@@ -182,11 +182,10 @@ def test_api_train_online(csv_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "trainer": {"batch_size": 128},
     }
     model = LudwigModel(config)
 
-    for i in range(2):
+    for _ in range(2):
         model.train_online(dataset=data_csv)
     model.predict(dataset=data_csv)
 
@@ -222,7 +221,7 @@ def test_api_training_determinism(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        "trainer": {"batch_size": 128},
+        "trainer": {"batch_size": 128},  # batch size must be fixed for determinism
     }
 
     # Train the model 3 times:
