@@ -182,6 +182,7 @@ def test_api_train_online(csv_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
+        "trainer": {"batch_size": 128},
     }
     model = LudwigModel(config)
 
@@ -221,6 +222,7 @@ def test_api_training_determinism(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
+        "trainer": {"batch_size": 128},
     }
 
     # Train the model 3 times:
