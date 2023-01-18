@@ -11,7 +11,8 @@ import torch
 from ludwig import globals as global_vars
 from ludwig.api import LudwigModel
 from ludwig.backend import LOCAL_BACKEND
-from ludwig.constants import (BATCH_SIZE, 
+from ludwig.constants import (
+    BATCH_SIZE,
     CATEGORY,
     DEFAULTS,
     EPOCHS,
