@@ -671,6 +671,7 @@ def test_saved_weights_in_checkpoint(tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
+        TRAINER: {BATCH_SIZE: 128},
     }
     model = LudwigModel(config)
     _, _, output_dir = model.train(

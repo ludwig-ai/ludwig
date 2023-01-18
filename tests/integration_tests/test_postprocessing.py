@@ -23,7 +23,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DECODER, NAME, TRAINER
+from ludwig.constants import BATCH_SIZE, DECODER, NAME, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,

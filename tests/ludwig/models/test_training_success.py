@@ -1,7 +1,7 @@
 from contextlib import nullcontext as no_error_raised
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from tests.integration_tests.utils import category_feature, generate_data
 
 
