@@ -134,7 +134,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
     with open(yaml_filename, "w") as yaml_out:
         yaml.safe_dump(config, yaml_out)
@@ -379,7 +379,7 @@ def test_experiment_image_dataset(train_format, train_in_memory, test_format, te
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     # create temporary name for train and test data sets
@@ -464,7 +464,7 @@ def test_experiment_dataset_formats(data_format, csv_filename):
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
         "preprocessing": {},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     # setup training data format to test
@@ -574,7 +574,7 @@ def test_experiment_sequence_combiner_with_reduction_fails(csv_filename):
             category_feature(encoder={"vocab_size": 5}),
         ],
         "output_features": [category_feature(decoder={"reduce_input": "sum", "vocab_size": 5})],
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
         "combiner": {
             "type": "sequence",
             "encoder": {"type": "rnn"},
@@ -619,7 +619,7 @@ def test_experiment_sequence_combiner(sequence_encoder, csv_filename):
             category_feature(vocab_size=5),
         ],
         "output_features": [category_feature(decoder={"reduce_input": "sum", "vocab_size": 5})],
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
         "combiner": {
             "type": "sequence",
             "encoder": {"type": "rnn"},
@@ -646,7 +646,7 @@ def test_experiment_model_resume(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)
@@ -671,7 +671,7 @@ def test_experiment_model_resume_distributed(tmpdir, dist_strategy, ray_cluster_
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 8},
-        TRAINER: {"epochs": 1},
+        TRAINER: {"epochs": 1, "batch_size": 128},
         "backend": {"type": "ray", "trainer": {"strategy": dist_strategy, "num_workers": 2}},
     }
 
@@ -702,7 +702,7 @@ def test_experiment_model_resume_missing_file(tmpdir, missing_file):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     _, _, _, _, output_dir = experiment_cli(config, dataset=rel_path, output_directory=tmpdir)

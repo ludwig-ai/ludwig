@@ -503,7 +503,7 @@ def run_experiment(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2},
+            TRAINER: {"epochs": 2, "batch_size": 128},
         }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -664,7 +664,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     model = LudwigModel(config)

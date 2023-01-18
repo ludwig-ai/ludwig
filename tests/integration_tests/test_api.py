@@ -51,7 +51,7 @@ def run_api_experiment_separated_datasets(input_features, output_features, data_
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     model = LudwigModel(config)
@@ -287,7 +287,7 @@ def run_api_commands(
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     model = LudwigModel(config)

@@ -65,7 +65,12 @@ def test_regularizers(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "regularization_type": regularization_type, "regularization_lambda": 0.1},
+            TRAINER: {
+                "epochs": 2,
+                "regularization_type": regularization_type,
+                "regularization_lambda": 0.1,
+                "batch_size": BATCH_SIZE,  # fix the batch size to ensure deterministic results
+            },
         }
 
         backend = LocalTestBackend()
