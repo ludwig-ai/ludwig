@@ -199,6 +199,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
+        input_feature_config.encoder.input_size = self.input_shape[-1]
 
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -213,7 +214,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
         encoder_outputs = self.encoder_obj(inputs)
-        return {"encoder_output": encoder_outputs}
+        return encoder_outputs
 
     @property
     def input_dtype(self):

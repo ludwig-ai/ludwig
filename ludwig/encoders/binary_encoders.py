@@ -35,7 +35,7 @@ class BinaryPassthroughEncoder(Encoder):
 
         logger.debug(f" {self.name}")
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor) -> dict:
         """
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type torch.float32
@@ -43,7 +43,7 @@ class BinaryPassthroughEncoder(Encoder):
         if inputs.dtype == torch.bool:
             inputs = inputs.to(torch.float32)
 
-        return inputs
+        return {"encoder_output": inputs}
 
     @staticmethod
     def get_schema_cls():
