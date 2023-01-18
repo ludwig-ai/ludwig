@@ -1,5 +1,5 @@
-from collections import defaultdict
 import copy
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
