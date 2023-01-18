@@ -11,6 +11,7 @@ def load_pretrained_hf_model(
     modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
 ) -> PreTrainedTokenizerBase:
     """Download a HuggingFace model.
+
     Downloads a model from the HuggingFace zoo with retry on failure.
     Args:
         model: Class of the model to download.
