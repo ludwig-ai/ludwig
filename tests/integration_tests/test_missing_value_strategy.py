@@ -83,7 +83,11 @@ def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluste
     output_features = [binary_feature()]
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     # run preprocessing
     ludwig_model = LudwigModel(config, backend=backend)
@@ -109,7 +113,11 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
         vector_feature(**kwargs),
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
     df = read_csv_with_nan(training_data_csv_path, nan_percent=0.1)

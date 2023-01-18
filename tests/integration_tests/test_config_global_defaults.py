@@ -41,7 +41,7 @@ def _prepare_data(csv_filename: str) -> Tuple[Dict, str]:
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 1, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 1, "learning_rate": 0.001, "batch_size": 128},
         DEFAULTS: {
             CATEGORY: {
                 PREPROCESSING: {"missing_value_strategy": FILL_WITH_CONST, "fill_value": "<CUSTOM_TOK>"},

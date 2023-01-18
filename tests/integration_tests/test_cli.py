@@ -64,7 +64,7 @@ def _prepare_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     with open(config_filename, "w") as f:
@@ -86,7 +86,7 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 4},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
         "hyperopt": {
             "parameters": {
                 "trainer.learning_rate": {

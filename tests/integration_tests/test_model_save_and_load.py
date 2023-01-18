@@ -75,7 +75,11 @@ def test_model_save_reload_api(tmpdir, csv_filename, tmp_path):
     #############
     # Train model
     #############
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     data_df = read_csv(data_csv_path)
     splitter = get_splitter("random")
@@ -295,7 +299,11 @@ def test_model_save_reload_tv_model(torch_encoder, variant, tmpdir, csv_filename
     #############
     # Train model
     #############
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     data_df = read_csv(data_csv_path)
     splitter = get_splitter("random")
@@ -383,7 +391,11 @@ def test_model_save_reload_hf_model(tmpdir, csv_filename, tmp_path):
     #############
     # Train model
     #############
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     data_df = read_csv(data_csv_path)
     splitter = get_splitter("random")

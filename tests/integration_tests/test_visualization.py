@@ -55,7 +55,7 @@ def run_experiment_with_visualization(input_features, output_features, dataset):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     args = {

@@ -214,6 +214,6 @@ def _get_sample_config():
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001, "batch_size": 128},
     }
     return config, rel_path

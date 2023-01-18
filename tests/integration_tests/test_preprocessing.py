@@ -211,7 +211,7 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, "batch_size": 128},
     }
 
     data_csv = generate_data(
@@ -438,7 +438,11 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -471,7 +475,11 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)

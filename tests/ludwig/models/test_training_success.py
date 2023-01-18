@@ -11,7 +11,7 @@ def test_category_passthrough_encoder(csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"train_steps": 1},
+        TRAINER: {"train_steps": 1, "batch_size": 128},
         "defaults": {"category": {"encoder": {"type": "passthrough"}}},
     }
 

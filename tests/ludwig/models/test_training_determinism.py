@@ -82,7 +82,11 @@ def train_twice(backend, csv_filename, tmpdir):
         number_feature(),
         category_feature(decoder={"vocab_size": 10}),
     ]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, csv_filename, num_examples=100)

@@ -100,7 +100,7 @@ def test_model_progress_save(skip_save_progress, skip_save_model, tmp_path):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 5},
+        TRAINER: {"epochs": 5, "batch_size": 128},
     }
 
     # create sub-directory to store results
@@ -354,7 +354,7 @@ def test_cache_checksum(csv_filename, tmp_path):
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         DEFAULTS: {CATEGORY: {PREPROCESSING: {"fill_value": "<UNKNOWN>"}}},
-        TRAINER: {EPOCHS: 2},
+        TRAINER: {EPOCHS: 2, "batch_size": 128},
     }
 
     backend = LocalTestBackend()

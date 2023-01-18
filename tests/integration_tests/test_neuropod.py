@@ -74,7 +74,11 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
         # vector_feature()
     ]
     backend = LocalTestBackend()
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, "batch_size": 128},
+    }
 
     # Generate training data
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)

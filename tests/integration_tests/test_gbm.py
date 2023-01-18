@@ -276,7 +276,11 @@ def test_loss_decreases(tmpdir, local_backend):
         "output_features": output_features,
         # Disable feature filtering to avoid having no features due to small test dataset,
         # see https://stackoverflow.com/a/66405983/5222402
-        TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1, "feature_pre_filter": False},
+        TRAINER: {
+            "num_boost_round": 2,
+            "boosting_rounds_per_checkpoint": 1,
+            "feature_pre_filter": False,
+        },
     }
 
     generated_data = synthetic_test_data.get_generated_data_for_optimizer()

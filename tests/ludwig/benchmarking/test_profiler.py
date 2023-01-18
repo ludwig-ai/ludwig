@@ -25,7 +25,7 @@ def test_ludwig_profiler(tmpdir):
         "input_features": [{"name": "input_1", "type": "number"}, {"name": "input_2", "type": "number"}],
         "output_features": [{"name": "output_1", "type": "number"}],
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 1},
+        TRAINER: {"epochs": 1, "batch_size": 128},
     }
 
     model = LudwigModel(config=config, backend="local")

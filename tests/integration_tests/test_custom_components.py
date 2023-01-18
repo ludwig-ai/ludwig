@@ -182,7 +182,7 @@ def _run_test(input_features=None, output_features=None, combiner=None):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": combiner,
-            TRAINER: {"epochs": 2},
+            TRAINER: {"epochs": 2, "batch_size": 128},
         }
 
         model = LudwigModel(config, backend=LocalTestBackend())
