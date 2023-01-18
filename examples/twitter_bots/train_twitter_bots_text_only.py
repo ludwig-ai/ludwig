@@ -1,14 +1,13 @@
 #!/usr/bin/env python
-"""Trains model on Twitter Bots dataset using default settings."""
+"""Trains twitter bots using tabular and text features only, no images."""
 import logging
 import os
 import shutil
 
 import yaml
 
-from ludwig import datasets
 from ludwig.api import LudwigModel
-from ludwig.utils.fs_utils import rename
+from ludwig.datasets import twitter_bots
 from ludwig.visualize import confusion_matrix, learning_curves
 
 if __name__ == "__main__":
@@ -19,51 +18,65 @@ if __name__ == "__main__":
     shutil.rmtree(visualizations_dir, ignore_errors=True)
 
     # Loads the dataset
-    twitter_bots_dataset = datasets.get_dataset("twitter_bots", cache_dir="downloads")
-    training_set, val_set, test_set = twitter_bots_dataset.load(split=True)
-
-    # Moves profile images into local directory, so relative paths in the dataset will be resolved.
-    if not os.path.exists("profile_images"):
-        rename(os.path.join(twitter_bots_dataset.processed_dataset_dir, "profile_images"), "profile_images")
+    training_set, val_set, test_set = twitter_bots.load(split=True)
 
     config = yaml.safe_load(
         """
-    input_features:
-      - name: default_profile
-        type: binary
-      - name: default_profile_image
-        type: binary
-      - name: description
-        type: text
-      - name: favourites_count
-        type: number
-      - name: followers_count
-        type: number
-      - name: friends_count
-        type: number
-      - name: geo_enabled
-        type: binary
-      - name: lang
-        type: category
-      - name: location
-        type: category
-      - name: profile_background_image_path
-        type: category
-      - name: profile_image_path
-        type: image
-        preprocessing:
-          num_channels: 3
-      - name: statuses_count
-        type: number
-      - name: verified
-        type: binary
-      - name: average_tweets_per_day
-        type: number
-      - name: account_age_days
-        type: number
-    output_features:
-      - name: account_type
-        type: binary
+input_features:
+  - name: created_at
+    type: date
+    column: created_at
+  - name: default_profile
+    type: binary
+    column: default_profile
+  - name: description
+    type: text
+    column: description
+  - name: favourites_count
+    type: number
+    column: favourites_count
+  - name: followers_count
+    type: number
+    column: followers_count
+  - name: friends_count
+    type: number
+    column: friends_count
+  - name: geo_enabled
+    type: binary
+    column: geo_enabled
+  - name: lang
+    type: category
+    column: lang
+  - name: location
+    type: text
+    column: location
+  - name: screen_name
+    type: text
+    column: screen_name
+  - name: statuses_count
+    type: number
+    column: statuses_count
+  - name: verified
+    type: binary
+    column: verified
+  - name: average_tweets_per_day
+    type: number
+    column: average_tweets_per_day
+  - name: account_age_days
+    type: number
+    column: account_age_days
+output_features:
+  - name: account_type
+    type: category
+    column: account_type
+trainer:
+  batch_size: 16
+defaults:
+  text:
+    preprocessing:
+      tokenizer: space_punct
+      max_sequence_length: 16
+model_type: ecd
         """
     )
 

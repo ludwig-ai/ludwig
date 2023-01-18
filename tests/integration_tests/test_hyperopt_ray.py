@@ -24,7 +24,7 @@ from mlflow.tracking import MlflowClient
 
 from ludwig.backend import initialize_backend
 from ludwig.callbacks import Callback
-from ludwig.constants import ACCURACY, AUTO, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
+from ludwig.constants import ACCURACY, AUTO, BATCH_SIZE, EXECUTOR, MAX_CONCURRENT_TRIALS, TRAINER
 from ludwig.contribs import MlflowCallback
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.hyperopt.results import HyperoptResults
@@ -102,7 +102,7 @@ def _get_config(search_alg, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001, BATCH_SIZE: 128},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -239,7 +239,7 @@ def test_hyperopt_run_hyperopt(csv_filename, backend, tmpdir, ray_cluster_4cpu):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001, BATCH_SIZE: 128},
         "backend": {
             "type": backend,
         },
