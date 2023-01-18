@@ -5,6 +5,7 @@ from typing import Any, Dict
 import pytest
 
 from ludwig.constants import (
+    BATCH_SIZE,
     BFILL,
     CLASS_WEIGHTS,
     DEFAULTS,
@@ -670,7 +671,7 @@ def test_upgrade_model_progress():
 def test_upgrade_model_progress_already_valid():
     # Verify that we don't make changes to already-valid model progress dicts.
     valid_model_progress = {
-        "batch_size": 128,
+        BATCH_SIZE: 128,
         "best_eval_metric_checkpoint_number": 7,
         "best_eval_metric_epoch": 6,
         "best_eval_metric_steps": 35,

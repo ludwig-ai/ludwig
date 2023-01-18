@@ -10,7 +10,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -67,6 +67,7 @@ def test_tune_learning_rate(tmpdir):
         "output_features": [binary_feature()],
         TRAINER: {
             "train_steps": 1,
+            BATCH_SIZE: 128,
             "learning_rate": "auto",
         },
     }
@@ -174,6 +175,7 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "epochs": 2,
+            BATCH_SIZE: 128,
             "learning_rate": base_lr,
             "learning_rate_scaling": learning_rate_scaling,
         },
@@ -197,6 +199,7 @@ def test_changing_parameters_on_plateau(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "epochs": 2,
+            BATCH_SIZE: 128,
             "learning_rate": 1.0,
             "reduce_learning_rate_on_plateau": 1,
             "increase_batch_size_on_plateau": 1,
