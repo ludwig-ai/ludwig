@@ -41,7 +41,7 @@ def ray_backend():
     }
 
 
-def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config):
+def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config, **trainer_config):
     csv_filename = os.path.join(tmpdir, "training.csv")
     dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
@@ -53,6 +53,9 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         # see https://stackoverflow.com/a/66405983/5222402
         TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
     }
+
+    if trainer_config:
+        config[TRAINER].update(trainer_config)
 
     model = LudwigModel(config, backend=backend_config)
     _, _, output_directory = model.train(
@@ -331,3 +334,16 @@ def test_lgbm_dataset_setup(tmpdir, local_backend):
             # Check that the intended ValueError was raised
             assert re.search("Some column names in the training set contain invalid characters", str(e))
             raise
+
+
+def test_boosting_type_rf_invalid(tmpdir, local_backend):
+    """Test that the Random Forest boosting type is not supported.
+
+    LightGBM does not support model checkpointing for `boosting_type=rf`. This test ensures that a schema validation
+    error is raised when trying to use random forests.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
