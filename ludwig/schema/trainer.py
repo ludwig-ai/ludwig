@@ -348,7 +348,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
-        ["gbdt", "rf", "dart", "goss"],
+        ["gbdt", "dart", "goss"],
         default="gbdt",
         description="Type of boosting algorithm to use with GBM trainer.",
     )
