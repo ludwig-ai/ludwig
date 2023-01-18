@@ -351,3 +351,11 @@ def test_boosting_type_rf_invalid(tmpdir, local_backend):
 
     with pytest.raises(ValidationError):
         _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
+
+
+def test_goss_deactivate_bagging(tmpdir, local_backend):
+    """Test that bagging is disabled for the GOSS boosting type."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)
