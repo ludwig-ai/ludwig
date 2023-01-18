@@ -164,7 +164,11 @@ class RecallMetric(Recall, LudwigMetric):
         return PROBABILITIES
 
 
-@register_metric(ROC_AUC, [BINARY, CATEGORY])
+# TODO(Justin): Re-register metric for CATEGORY features when aggregation using Ray/Horovod is clearer.
+# As is, registering this metric produces the following error:
+# "Argument `num_classes` was set to X in metric `precision_recall_curve` but detected Y number of classes from
+# predictions.", where Y >> X.
+@register_metric(ROC_AUC, [BINARY])
 class AUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
 
