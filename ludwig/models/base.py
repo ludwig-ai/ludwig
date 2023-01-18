@@ -287,6 +287,10 @@ class BaseModel(LudwigModule, metaclass=ABCMeta):
         tensor_set = set(tensor_names)
         return [named_param for named_param in self.named_parameters() if named_param[0] in tensor_set]
 
+    def unskip(self):
+        """Converts all skipped features into their fully encoded versions."""
+        pass
+
     @abstractmethod
     def save(self, save_path: str):
         """Saves the model to the given path."""

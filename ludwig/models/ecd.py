@@ -61,10 +61,6 @@ class ECD(BaseModel):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    def unwrap(self):
-        for k in self.input_features.keys():
-            self.input_features[k] = self.input_features[k].unwrap()
-
     def encode(
         self,
         inputs: Union[
@@ -144,6 +140,10 @@ class ECD(BaseModel):
         encoder_outputs = self.encode(inputs)
         combiner_outputs = self.combine(encoder_outputs)
         return self.decode(combiner_outputs, targets, mask)
+
+    def unskip(self):
+        for k in self.input_features.keys():
+            self.input_features[k] = self.input_features[k].unskip()
 
     def save(self, save_path):
         """Saves the model to the given path."""

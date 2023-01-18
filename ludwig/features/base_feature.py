@@ -142,7 +142,8 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
         # Used by get_model_inputs(), which is used for tracing-based torchscript generation.
         return torch.rand([batch_size, *self.input_shape]).to(self.input_dtype)
 
-    def unwrap(self):
+    def unskip(self) -> "InputFeature":
+        """Convert feature using passthrough wrapper back to full encoder."""
         return self
 
     @staticmethod
@@ -561,7 +562,7 @@ def create_passthrough_input_feature(feature: InputFeature, config: BaseFeatureC
         def type():
             return feature.type()
 
-        def unwrap(self):
+        def unskip(self) -> InputFeature:
             return feature
 
     return _InputPassthroughFeature(config)

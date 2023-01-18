@@ -36,7 +36,6 @@ class WrapperModule(torch.nn.Module):
     def __init__(self, model: ECD, target: str):
         super().__init__()
         self.model = model
-        self.model.unwrap()
         self.target = target
         self.input_maps = nn.ModuleDict(
             {
@@ -144,6 +143,10 @@ class IntegratedGradientsExplainer(Explainer):
             `expected_values`: (List[float]) of length [output feature cardinality] Average convergence delta for each
             label in the target feature's vocab.
         """
+
+        # TODO(travis): add back skip encoders at the end in finally. Shouldn't be an issue in most cases as we
+        # typically perform explanations on a loaded model and don't use it for predict afterwards.
+        self.model.model.unskip()
         self.model.model.to(DEVICE)
 
         input_features: LudwigFeatureDict = self.model.model.input_features
