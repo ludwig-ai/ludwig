@@ -8,7 +8,7 @@ from torch import nn, Tensor
 
 from ludwig.api import LudwigModel
 from ludwig.combiners.combiners import Combiner, register_combiner
-from ludwig.constants import NUMBER, TRAINER
+from ludwig.constants import BATCH_SIZE, NUMBER, TRAINER
 from ludwig.decoders.base import Decoder
 from ludwig.decoders.registry import register_decoder
 from ludwig.encoders.base import Encoder
@@ -182,7 +182,7 @@ def _run_test(input_features=None, output_features=None, combiner=None):
             "input_features": input_features,
             "output_features": output_features,
             "combiner": combiner,
-            TRAINER: {"epochs": 2, "batch_size": 128},
+            TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         }
 
         model = LudwigModel(config, backend=LocalTestBackend())

@@ -85,7 +85,7 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 1, "batch_size": 128},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
     }
 
     patch_args = (
@@ -148,7 +148,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 1, "batch_size": 128},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
     }
 
     patch_args = (
@@ -200,7 +200,7 @@ def test_set_feature_saving(tmpdir, pct_positive):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 1, "batch_size": 128},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
     }
 
     patch_args = (

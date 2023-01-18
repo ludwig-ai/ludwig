@@ -18,7 +18,7 @@ import pandas as pd
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.utils.inference_utils import to_inference_module_input_from_dataframe
 from ludwig.utils.triton_utils import export_triton, get_inference_modules, POSTPROCESSOR, PREDICTOR, PREPROCESSOR
 from tests.integration_tests.utils import (
@@ -65,7 +65,7 @@ def test_triton_torchscript(csv_filename, tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 1, "batch_size": 128},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
     }
 
     # Generate training data

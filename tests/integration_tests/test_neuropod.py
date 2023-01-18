@@ -24,7 +24,7 @@ import torch
 from packaging.version import parse as parse_version
 
 from ludwig.api import LudwigModel
-from ludwig.constants import NAME, PREDICTIONS, TRAINER
+from ludwig.constants import BATCH_SIZE, NAME, PREDICTIONS, TRAINER
 from ludwig.utils.neuropod_utils import export_neuropod
 from tests.integration_tests.utils import (
     binary_feature,
@@ -77,7 +77,7 @@ def test_neuropod_torchscript(csv_filename, tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # Generate training data

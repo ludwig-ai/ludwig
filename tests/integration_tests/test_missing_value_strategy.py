@@ -20,7 +20,7 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DROP_ROW, FILL_WITH_MEAN, PREPROCESSING, TRAINER
+from ludwig.constants import BATCH_SIZE, DROP_ROW, FILL_WITH_MEAN, PREPROCESSING, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -86,7 +86,7 @@ def test_missing_values_fill_with_mean(backend, csv_filename, tmpdir, ray_cluste
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # run preprocessing
@@ -116,7 +116,7 @@ def test_missing_values_drop_rows(csv_filename, tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)

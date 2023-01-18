@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.utils.numerical_test_utils import assert_all_finite
 from tests.integration_tests.utils import (
     audio_feature,
@@ -85,7 +85,7 @@ def train_twice(backend, csv_filename, tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # Generate training data

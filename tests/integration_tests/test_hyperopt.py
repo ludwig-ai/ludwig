@@ -23,6 +23,7 @@ from ludwig.backend import initialize_backend
 from ludwig.constants import (
     ACCURACY,
     AUTO,
+    BATCH_SIZE,
     CATEGORY,
     COMBINER,
     EXECUTOR,
@@ -273,7 +274,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001, "batch_size": 128},
+        TRAINER: {"epochs": 2, "learning_rate": 0.001, BATCH_SIZE: 128},
         "backend": backend,
     }
 
@@ -385,7 +386,7 @@ def test_hyperopt_with_feature_specific_parameters(csv_filename, tmpdir, ray_clu
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {"epochs": 1, "learning_rate": 0.001, "batch_size": 128},
+        TRAINER: {"epochs": 1, "learning_rate": 0.001, BATCH_SIZE: 128},
         HYPEROPT: {
             "parameters": {
                 input_features[0][NAME]
@@ -429,7 +430,7 @@ def test_hyperopt_old_config(csv_filename, tmpdir, ray_cluster_7cpu):
         OUTPUT_FEATURES: [
             {"name": "bin1", TYPE: "binary"},
         ],
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         HYPEROPT: {
             EXECUTOR: {
                 TYPE: "ray",
@@ -481,7 +482,7 @@ def test_hyperopt_nested_parameters(csv_filename, tmpdir, ray_cluster_7cpu):
         OUTPUT_FEATURES: [
             {"name": "bin1", TYPE: "binary"},
         ],
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         HYPEROPT: {
             EXECUTOR: {
                 TYPE: "ray",

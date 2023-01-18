@@ -22,7 +22,7 @@ import pytest
 
 from ludwig import visualize
 from ludwig.api import LudwigModel, TrainingStats
-from ludwig.constants import ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, ENCODER, NAME, PREDICTIONS, PROBABILITIES, PROBABILITY, TRAINER, TYPE
 from ludwig.data.split import get_splitter
 from ludwig.globals import HYPEROPT_STATISTICS_FILE_NAME
 from ludwig.utils.data_utils import read_csv
@@ -50,7 +50,7 @@ def run_api_experiment(input_features, output_features):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2, "batch_size": 128},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)
@@ -108,7 +108,7 @@ class Experiment:
             "input_features": self.input_features,
             "output_features": self.output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "batch_size": 128},
+            TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         }
         return LudwigModel(config, logging_level=logging.WARN)
 

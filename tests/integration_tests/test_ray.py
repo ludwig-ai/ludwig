@@ -29,6 +29,7 @@ from ludwig.constants import (
     AUDIO,
     BAG,
     BALANCE_PERCENTAGE_TOLERANCE,
+    BATCH_SIZE,
     BFILL,
     BINARY,
     CATEGORY,
@@ -997,7 +998,7 @@ class TestDatasetWindowAutosizing:
         config = {
             "input_features": [{"name": "in_column", "type": "binary"}],
             "output_features": [{"name": "out_column", "type": "binary"}],
-            TRAINER: {"epochs": 1, "batch_size": 128},
+            TRAINER: {"epochs": 1, BATCH_SIZE: 128},
         }
         backend_config = {**RAY_BACKEND_CONFIG}
         backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
