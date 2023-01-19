@@ -28,7 +28,7 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
         text_encoders.DistilBERTEncoder,
     ],
 )
-def test_hf_pretrained_default_model(tmpdir, encoder_cls):
+def test_hf_pretrained_default_model(tmpdir, encoder_cls: text_encoders.HFTextEncoder):
     encoder = encoder_cls(
         use_pretrained=True,
         reduce_output="sum",
@@ -43,11 +43,14 @@ def test_hf_pretrained_default_model(tmpdir, encoder_cls):
 @pytest.mark.parametrize("pretrained_model_name_or_path", ["bert-base-uncased"])
 @pytest.mark.parametrize("reduce_output", [None, "sum", "cls_pooled"])
 @pytest.mark.parametrize("max_sequence_length", [20])
-def test_auto_transformer_encoder(pretrained_model_name_or_path: str, reduce_output: str, max_sequence_length: int):
+def test_auto_transformer_encoder(
+    tmpdir, pretrained_model_name_or_path: str, reduce_output: str, max_sequence_length: int
+):
     encoder = text_encoders.AutoTransformerEncoder(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
         reduce_output=reduce_output,
         max_sequence_length=max_sequence_length,
+        pretrained_kwargs=dict(cache_dir=tmpdir),
     )
     inputs = torch.rand((2, max_sequence_length)).type(encoder.input_dtype)
     outputs = encoder(inputs)
