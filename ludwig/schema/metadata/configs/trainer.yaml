@@ -93,7 +93,7 @@ epochs:
     expected_impact: 3
     related_parameters:
         - train_steps
-    suggested_values: 0 (and use train_steps), or 100
+    suggested_values: 100
     suggested_values_reasoning:
         Usually it's sensible to leave this very high and
         rely on a solid early stopping policy to dictate when the model should stop
@@ -353,7 +353,7 @@ train_steps:
     expected_impact: 1
     related_parameters:
         - epochs
-    suggested_values: 0 (and use epochs), or 1000000, 1 for debugging
+    suggested_values: Leave unset, or 1000000, 1 for debugging
     suggested_values_reasoning:
         Usually it's sensible to leave this very high and
         rely on a solid early stopping policy to dictate when the model should stop
