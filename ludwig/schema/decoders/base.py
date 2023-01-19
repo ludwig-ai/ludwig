@@ -16,7 +16,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for decoders."""
 
     type: str = schema_utils.StringOptions(
-        [],
+        ["regressor", "classifier", "projector", "generator", "tagger"],
         description="The type of decoder to use.",
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"]
     )
