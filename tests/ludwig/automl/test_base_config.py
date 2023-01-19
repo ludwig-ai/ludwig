@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from ludwig.schema import validate_upgraded_config
+
 ray = pytest.importorskip("ray")  # noqa
 
-from ludwig.automl.base_config import get_dataset_info, is_field_boolean  # noqa
+from ludwig.automl.base_config import get_dataset_info, get_reference_configs, is_field_boolean  # noqa
 from ludwig.data.dataframe.dask import DaskEngine  # noqa
 from ludwig.data.dataframe.pandas import PandasEngine  # noqa
 from ludwig.utils.automl.data_source import wrap_data_source  # noqa
@@ -94,3 +96,12 @@ def test_object_and_bool_type_inference(col, expected_dtype):
     df = pd.DataFrame({"col1": col})
     info = get_dataset_info(df)
     assert info.fields[0].dtype == expected_dtype
+
+
+def test_reference_configs():
+    ref_configs = get_reference_configs()
+    for dataset in ref_configs["datasets"]:
+        config = dataset["config"]
+
+        # Ensure config is valid with the latest Ludwig schema
+        validate_upgraded_config(config)

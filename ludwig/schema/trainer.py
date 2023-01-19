@@ -6,6 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
     BaseOptimizerConfig,
@@ -109,7 +110,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -155,21 +156,29 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=None,
         description="The field for which the `validation_metric` is used for validation-related mechanics like early "
         "stopping, parameter change plateaus, as well as what hyperparameter optimization uses to determine the best "
-        "trial. If unset (default), the first output feature's default validation is used.",
+        "trial. If unset (default), the first output feature is used. If explicitly specified, neither "
+        "`validation_field` nor `validation_metric` are overwritten.",
         parameter_metadata=TRAINER_METADATA["validation_field"],
     )
 
     validation_metric: str = schema_utils.String(
         default=LOSS,
         description=(
-            "Metric from `validation_field` that is used, set by default to the first output feature type's "
-            "`default_validation_metric`. If explicitly specified, "
+            "Metric from `validation_field` that is used. If validation_field is not explicitly specified, this is "
+            "overwritten to be the first output feature type's `default_validation_metric`, consistent with "
+            "validation_field. If the validation_metric is specified, then we will use the first output feature that "
+            "produces this metric as the `validation_field`."
         ),
         parameter_metadata=TRAINER_METADATA["validation_metric"],
     )
 
     optimizer: BaseOptimizerConfig = OptimizerDataclassField(
         default={"type": "adam"}, description="Parameter values for selected torch optimizer."
+    )
+
+    learning_rate_scheduler: LRSchedulerConfig = LRSchedulerDataclassField(
+        description="Parameter values for learning rate scheduler.",
+        default=None,
     )
 
     regularization_type: Optional[str] = schema_utils.RegularizerOptions(
@@ -190,41 +199,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
         default=True,
         description="Whether to shuffle batches during training when true.",
         parameter_metadata=TRAINER_METADATA["should_shuffle"],
-    )
-
-    reduce_learning_rate_on_plateau: int = schema_utils.NonNegativeInteger(
-        default=0,
-        description=(
-            "How many times to reduce the learning rate when the algorithm hits a plateau (i.e. the performance on the"
-            "training set does not improve"
-        ),
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau"],
-    )
-
-    reduce_learning_rate_on_plateau_patience: int = schema_utils.NonNegativeInteger(
-        default=5,
-        description="How many epochs have to pass before the learning rate reduces.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau_patience"],
-    )
-
-    reduce_learning_rate_on_plateau_rate: float = schema_utils.FloatRange(
-        default=0.5,
-        min=0,
-        max=1,
-        description="Rate at which we reduce the learning rate.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_on_plateau_rate"],
-    )
-
-    reduce_learning_rate_eval_metric: str = schema_utils.String(
-        default=LOSS,
-        description="Rate at which we reduce the learning rate.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_metric"],
-    )
-
-    reduce_learning_rate_eval_split: str = schema_utils.String(
-        default=TRAINING,
-        description="Which dataset split to listen on for reducing the learning rate.",
-        parameter_metadata=TRAINER_METADATA["reduce_learning_rate_eval_split"],
     )
 
     increase_batch_size_on_plateau: int = schema_utils.NonNegativeInteger(
@@ -257,41 +231,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["increase_batch_size_eval_split"],
     )
 
-    decay: bool = schema_utils.Boolean(
-        default=False,
-        description="Turn on exponential decay of the learning rate.",
-        parameter_metadata=TRAINER_METADATA["decay"],
-    )
-
-    decay_steps: int = schema_utils.PositiveInteger(
-        default=10000,
-        description="The number of steps to take in the exponential learning rate decay.",
-        parameter_metadata=TRAINER_METADATA["decay_steps"],
-    )
-
-    decay_rate: float = schema_utils.FloatRange(
-        default=0.96,
-        min=0,
-        max=1,
-        description="Decay per epoch (%): Factor to decrease the Learning rate.",
-        parameter_metadata=TRAINER_METADATA["decay_steps"],
-    )
-
-    staircase: bool = schema_utils.Boolean(
-        default=False,
-        description="Decays the learning rate at discrete intervals.",
-        parameter_metadata=TRAINER_METADATA["staircase"],
-    )
-
     gradient_clipping: Optional[GradientClippingConfig] = GradientClippingDataclassField(
         description="Parameter values for gradient clipping.",
         default={},
-    )
-
-    learning_rate_warmup_epochs: float = schema_utils.NonNegativeFloat(
-        default=1.0,
-        description="Number of epochs to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_warmup_epochs"],
     )
 
     learning_rate_scaling: str = schema_utils.StringOptions(
@@ -406,7 +348,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
-        ["gbdt", "rf", "dart", "goss"],
+        ["gbdt", "dart", "goss"],
         default="gbdt",
         description="Type of boosting algorithm to use with GBM trainer.",
     )
@@ -423,8 +365,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=82, description="Number of leaves to use in the tree with GBM trainer."
     )
 
-    min_data_in_leaf: int = schema_utils.PositiveInteger(
-        default=315, description="Minimum number of data points in a leaf with GBM trainer."
+    min_data_in_leaf: int = schema_utils.NonNegativeInteger(
+        default=20, description="Minimum number of data points in a leaf with GBM trainer."
     )
 
     min_sum_hessian_in_leaf: float = schema_utils.NonNegativeFloat(
@@ -583,6 +525,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
         default=255, description="Maximum number of bins to use for discretizing features with GBM trainer."
+    )
+
+    feature_pre_filter: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to ignore features that are unsplittable based on min_data_in_leaf in the GBM trainer.",
     )
 
 

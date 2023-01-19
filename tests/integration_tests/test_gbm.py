@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy as np
 import pytest
@@ -10,7 +11,7 @@ except ImportError:
 from jsonschema.exceptions import ValidationError
 
 from ludwig.api import LudwigModel
-from ludwig.constants import INPUT_FEATURES, MODEL_TYPE, OUTPUT_FEATURES, TRAINER
+from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FEATURES, TRAINER
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
@@ -40,7 +41,7 @@ def ray_backend():
     }
 
 
-def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config):
+def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config, **trainer_config):
     csv_filename = os.path.join(tmpdir, "training.csv")
     dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
@@ -48,8 +49,13 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         MODEL_TYPE: "gbm",
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
-        TRAINER: {"num_boost_round": 2},
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
     }
+
+    if trainer_config:
+        config[TRAINER].update(trainer_config)
 
     model = LudwigModel(config, backend=backend_config)
     _, _, output_directory = model.train(
@@ -218,16 +224,13 @@ def test_hummingbird_conversion_binary(tmpdir, local_backend):
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
     probs_lgbm = preds_lgbm[output_feature]
 
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
-
     # Predict using the Hummingbird compiled model
     with model.model.compile():
-        preds_hb, _ = model.predict(dataset=test_inputs)
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
         probs_hb = preds_hb[output_feature]
 
     # sanity check Hummingbird probabilities equal to LightGBM probabilities
-    assert np.allclose(np.stack(probs_hb.values), np.stack(probs_lgbm.values), atol=1e-8)
+    assert np.allclose(np.stack(probs_hb.values), np.stack(probs_lgbm.values), rtol=1e-6, atol=1e-6)
 
 
 def test_hummingbird_conversion_regression(tmpdir, local_backend):
@@ -237,15 +240,13 @@ def test_hummingbird_conversion_regression(tmpdir, local_backend):
 
     # Train a model and predict using the LightGBM interface
     preds_lgbm, model = _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
 
     # Predict using the Hummingbird compiled model
     with model.model.compile():
-        preds_hb, _ = model.predict(dataset=test_inputs)
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
     # sanity check Hummingbird prediction equal to LightGBM prediction
-    assert np.allclose(preds_hb.values, preds_lgbm)
+    assert np.allclose(preds_hb, preds_lgbm, rtol=1e-6, atol=1e-6)
 
 
 @pytest.mark.parametrize("vocab_size", [2, 3])
@@ -260,16 +261,13 @@ def test_hummingbird_conversion_category(vocab_size, tmpdir, local_backend):
     output_feature_name = f"{output_feature.column}_probabilities"
     probs_lgbm = np.stack(preds_lgbm[output_feature_name].to_numpy())
 
-    _, _, test, _ = model.preprocess(os.path.join(tmpdir, "training.csv"))
-    test_inputs = test.to_df(model.model.input_features.values())
-
     # Predict using the Hummingbird compiled model
     with model.model.compile():
-        preds_hb, _ = model.predict(dataset=test_inputs)
+        preds_hb, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
         probs_hb = np.stack(preds_hb[output_feature_name].to_numpy())
 
     # sanity check Hummingbird probabilities equal to LightGBM probabilities
-    assert np.allclose(probs_hb, probs_lgbm, atol=1e-4)
+    assert np.allclose(probs_hb, probs_lgbm, rtol=1e-6, atol=1e-6)
 
 
 def test_loss_decreases(tmpdir, local_backend):
@@ -279,7 +277,13 @@ def test_loss_decreases(tmpdir, local_backend):
         MODEL_TYPE: "gbm",
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1},
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {
+            "num_boost_round": 2,
+            "boosting_rounds_per_checkpoint": 1,
+            "feature_pre_filter": False,
+        },
     }
 
     generated_data = synthetic_test_data.get_generated_data_for_optimizer()
@@ -315,3 +319,43 @@ def test_save_load(tmpdir, local_backend):
     preds, _ = model.predict(dataset=os.path.join(tmpdir, "training.csv"), split="test")
 
     assert init_preds.equals(preds)
+
+
+def test_lgbm_dataset_setup(tmpdir, local_backend):
+    """Test that LGBM dataset column name errors are handled."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    # Overwrite the automatically generated feature/column name with an invalid string.
+    input_features[0][NAME] = ",Unnamed: 0"
+    input_features[0][COLUMN] = input_features[0][NAME]
+
+    # Test that the custom error is raised (lightgbm.basic.LightGBMError -> ValueError)
+    with pytest.raises(ValueError):
+        try:
+            _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend)
+        except ValueError as e:
+            # Check that the intended ValueError was raised
+            assert re.search("Some column names in the training set contain invalid characters", str(e))
+            raise
+
+
+def test_boosting_type_rf_invalid(tmpdir, local_backend):
+    """Test that the Random Forest boosting type is not supported.
+
+    LightGBM does not support model checkpointing for `boosting_type=rf`. This test ensures that a schema validation
+    error is raised when trying to use random forests.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
+
+
+def test_goss_deactivate_bagging(tmpdir, local_backend):
+    """Test that bagging is disabled for the GOSS boosting type."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)

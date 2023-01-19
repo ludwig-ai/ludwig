@@ -1,9 +1,11 @@
 import copy
 import math
+from typing import Any, Dict
 
 import pytest
 
 from ludwig.constants import (
+    BATCH_SIZE,
     BFILL,
     CLASS_WEIGHTS,
     DEFAULTS,
@@ -11,6 +13,7 @@ from ludwig.constants import (
     EXECUTOR,
     HYPEROPT,
     INPUT_FEATURES,
+    LEARNING_RATE_SCHEDULER,
     LOSS,
     NUMBER,
     OUTPUT_FEATURES,
@@ -32,6 +35,7 @@ from ludwig.utils.backward_compatibility import (
     upgrade_missing_value_strategy,
     upgrade_model_progress,
 )
+from ludwig.utils.trainer_utils import TrainerMetric
 
 
 def test_preprocessing_backward_compatibility():
@@ -305,10 +309,6 @@ def test_deprecated_field_aliases():
         "ludwig_version": "0.4",
         INPUT_FEATURES: [{"name": "num_in", "type": "numerical"}],
         OUTPUT_FEATURES: [{"name": "num_out", "type": "numerical"}],
-        "training": {
-            "epochs": 2,
-            "eval_batch_size": 0,
-        },
         HYPEROPT: {
             "parameters": {
                 "training.learning_rate": {
@@ -330,6 +330,14 @@ def test_deprecated_field_aliases():
                 "missing_value_strategy": "fill_with_const",
             },
         },
+        "training": {
+            "epochs": 2,
+            "eval_batch_size": 0,
+            "reduce_learning_rate_on_plateau": 2,
+            "reduce_learning_rate_on_plateau_patience": 5,
+            "decay": True,
+            "learning_rate_warmup_epochs": 2,
+        },
     }
 
     updated_config = upgrade_config_dict_to_latest_version(config)
@@ -344,6 +352,12 @@ def test_deprecated_field_aliases():
     assert "training" not in updated_config
     assert updated_config[TRAINER]["epochs"] == 2
     assert updated_config[TRAINER][EVAL_BATCH_SIZE] is None
+
+    assert LEARNING_RATE_SCHEDULER in updated_config[TRAINER]
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["reduce_on_plateau"] == 2
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["reduce_on_plateau_patience"] == 5
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["decay"] == "exponential"
+    assert updated_config[TRAINER][LEARNING_RATE_SCHEDULER]["warmup_evaluations"] == 2
 
     hparams = updated_config[HYPEROPT]["parameters"]
     assert "training.learning_rate" not in hparams
@@ -575,6 +589,7 @@ def test_upgrade_model_progress():
         "epoch": 2,
         "last_improvement": 1,
         "last_improvement_epoch": 1,
+        "best_eval_metric_epoch": 1,
         "last_increase_batch_size": 0,
         "last_increase_batch_size_epoch": 0,
         "last_increase_batch_size_eval_metric_improvement": 0,
@@ -597,22 +612,54 @@ def test_upgrade_model_progress():
 
     new_model_progress = upgrade_model_progress(old_model_progress)
 
-    for stat in ("improvement", "increase_batch_size", "learning_rate_reduction"):
-        assert f"last_{stat}_epoch" not in new_model_progress
-        assert f"last_{stat}_steps" in new_model_progress
-        assert (
-            new_model_progress[f"last_{stat}_steps"]
-            == old_model_progress[f"last_{stat}_epoch"] * old_model_progress["batch_size"]
-        )
-
-    assert "tune_checkpoint_num" in new_model_progress
-
-    assert "vali_metrics" not in new_model_progress
-    assert "validation_metrics" in new_model_progress
-
-    metric = new_model_progress["validation_metrics"]["combined"]["loss"][0]
-    assert len(metric) == 3
-    assert metric[-1] == 0.59
+    assert new_model_progress == {
+        "batch_size": 64,
+        "best_eval_metric_value": 0.5,
+        "best_increase_batch_size_eval_metric": float("inf"),
+        "epoch": 2,
+        "last_improvement_steps": 64,
+        "best_eval_metric_steps": 0,
+        "best_eval_metric_epoch": 1,
+        "last_increase_batch_size": 0,
+        "last_increase_batch_size_eval_metric_improvement": 0,
+        "last_learning_rate_reduction": 0,
+        "learning_rate": 0.001,
+        "num_increases_batch_size": 0,
+        "num_reductions_learning_rate": 0,
+        "steps": 224,
+        "test_metrics": {
+            "combined": {
+                "loss": [TrainerMetric(epoch=1, step=64, value=0.59), TrainerMetric(epoch=2, step=128, value=0.56)]
+            },
+            "delinquent": {
+                "accuracy": [TrainerMetric(epoch=1, step=64, value=0.77), TrainerMetric(epoch=2, step=128, value=0.78)]
+            },
+        },
+        "train_metrics": {
+            "combined": {
+                "loss": [TrainerMetric(epoch=1, step=64, value=0.58), TrainerMetric(epoch=2, step=128, value=0.55)]
+            },
+            "delinquent": {
+                "roc_auc": [TrainerMetric(epoch=1, step=64, value=0.53), TrainerMetric(epoch=2, step=128, value=0.54)]
+            },
+        },
+        "last_learning_rate_reduction_steps": 0,
+        "last_increase_batch_size_steps": 0,
+        "validation_metrics": {
+            "combined": {
+                "loss": [TrainerMetric(epoch=1, step=64, value=0.59), TrainerMetric(epoch=2, step=128, value=0.6)]
+            },
+            "delinquent": {
+                "roc_auc": [TrainerMetric(epoch=1, step=64, value=0.53), TrainerMetric(epoch=2, step=128, value=0.44)]
+            },
+        },
+        "tune_checkpoint_num": 0,
+        "checkpoint_number": 0,
+        "best_eval_metric_checkpoint_number": 0,
+        "best_eval_train_metrics": {},
+        "best_eval_validation_metrics": {},
+        "best_eval_test_metrics": {},
+    }
 
     # Verify that we don't make changes to already-valid model progress dicts.
     # To do so, we modify the batch size value and re-run the upgrade on the otherwise-valid `new_model_progress` dict.
@@ -624,36 +671,102 @@ def test_upgrade_model_progress():
 def test_upgrade_model_progress_already_valid():
     # Verify that we don't make changes to already-valid model progress dicts.
     valid_model_progress = {
-        "batch_size": 128,
-        "best_eval_metric": 5.541325569152832,
-        "best_increase_batch_size_eval_metric": math.inf,
-        "best_reduce_learning_rate_eval_metric": math.inf,
-        "epoch": 5,
-        "last_improvement": 0,
-        "last_improvement_steps": 25,
+        BATCH_SIZE: 128,
+        "best_eval_metric_checkpoint_number": 7,
+        "best_eval_metric_epoch": 6,
+        "best_eval_metric_steps": 35,
+        "best_eval_metric_value": 0.719,
+        "best_eval_test_metrics": {
+            "Survived": {"accuracy": 0.634, "loss": 3.820, "roc_auc": 0.598},
+            "combined": {"loss": 3.820},
+        },
+        "best_eval_train_metrics": {
+            "Survived": {"accuracy": 0.682, "loss": 4.006, "roc_auc": 0.634},
+            "combined": {"loss": 4.006},
+        },
+        "best_eval_validation_metrics": {
+            "Survived": {"accuracy": 0.719, "loss": 4.396, "roc_auc": 0.667},
+            "combined": {"loss": 4.396},
+        },
+        "best_increase_batch_size_eval_metric": float("inf"),
+        "checkpoint_number": 12,
+        "epoch": 12,
         "last_increase_batch_size": 0,
         "last_increase_batch_size_eval_metric_improvement": 0,
         "last_increase_batch_size_steps": 0,
         "last_learning_rate_reduction": 0,
         "last_learning_rate_reduction_steps": 0,
-        "last_reduce_learning_rate_eval_metric_improvement": 0,
         "learning_rate": 0.001,
         "num_increases_batch_size": 0,
         "num_reductions_learning_rate": 0,
-        "steps": 25,
+        "steps": 60,
         "test_metrics": {
-            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.38]], "loss": [[0, 5, 7.35], [1, 10, 7.08]]},
-            "combined": {"loss": [[0, 5, 7.35], [1, 10, 6.24]]},
+            "Survived": {
+                "accuracy": [
+                    [0, 5, 0.651],
+                    [1, 10, 0.651],
+                ],
+                "loss": [
+                    [0, 5, 4.130],
+                    [1, 10, 4.074],
+                ],
+                "roc_auc": [
+                    [0, 5, 0.574],
+                    [1, 10, 0.595],
+                ],
+            },
+            "combined": {
+                "loss": [
+                    [0, 5, 4.130],
+                    [1, 10, 4.074],
+                ]
+            },
         },
         "train_metrics": {
-            "Survived": {"accuracy": [[0, 5, 0.39], [1, 10, 0.40]], "loss": [[0, 5, 7.67], [1, 10, 6.57]]},
-            "combined": {"loss": [[0, 5, 7.67], [1, 10, 6.57]]},
-        },
-        "validation_metrics": {
-            "Survived": {"accuracy": [[0, 5, 0.38], [1, 10, 0.38]], "loss": [[0, 5, 6.56], [1, 10, 5.54]]},
-            "combined": {"loss": [[0, 5, 6.56], [1, 10, 5.54]]},
+            "Survived": {
+                "accuracy": [
+                    [0, 5, 0.6875],
+                    [1, 10, 0.6875],
+                ],
+                "loss": [
+                    [0, 5, 4.417],
+                    [1, 10, 4.344],
+                ],
+                "roc_auc": [
+                    [0, 5, 0.628],
+                    [1, 10, 0.629],
+                ],
+            },
+            "combined": {
+                "loss": [
+                    [0, 5, 4.417],
+                    [1, 10, 4.344],
+                ]
+            },
         },
         "tune_checkpoint_num": 0,
+        "validation_metrics": {
+            "Survived": {
+                "accuracy": [
+                    [0, 5, 0.696],
+                    [1, 10, 0.696],
+                ],
+                "loss": [
+                    [0, 5, 4.494],
+                    [1, 10, 4.473],
+                ],
+                "roc_auc": [
+                    [0, 5, 0.675],
+                    [1, 10, 0.671],
+                ],
+            },
+            "combined": {
+                "loss": [
+                    [0, 5, 4.494],
+                    [1, 10, 4.473],
+                ]
+            },
+        },
     }
 
     unchanged_model_progress = upgrade_model_progress(valid_model_progress)
@@ -668,3 +781,28 @@ def test_cache_credentials_backward_compatibility():
     _update_backend_cache_credentials(backend)
 
     assert backend == {"type": "local", "cache_dir": "/foo/bar", "credentials": {"cache": creds}}
+
+
+@pytest.mark.parametrize(
+    "encoder,upgraded_type",
+    [
+        ({"type": "resnet"}, "resnet"),
+        ({"type": "vit"}, "vit"),
+        ({"type": "resnet", "resnet_size": 50}, "_resnet_legacy"),
+        ({"type": "vit", "num_hidden_layers": 12}, "_vit_legacy"),
+    ],
+    ids=["resnet", "vit", "resnet_legacy", "vit_legacy"],
+)
+def test_legacy_image_encoders(encoder: Dict[str, Any], upgraded_type: str):
+    config = {
+        "input_features": [{"name": "image1", "type": "image", "encoder": encoder}],
+        "output_features": [{"name": "binary1", "type": "binary"}],
+    }
+
+    updated_config = upgrade_config_dict_to_latest_version(config)
+
+    expected_encoder = {
+        **encoder,
+        **{"type": upgraded_type},
+    }
+    assert updated_config["input_features"][0]["encoder"] == expected_encoder

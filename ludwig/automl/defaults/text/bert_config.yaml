@@ -1,8 +1,17 @@
 trainer:
-  epochs: 5
-  learning_rate_warmup_epochs: 0
+  epochs: 10
+  learning_rate_scheduler:
+    warmup_fraction: 0.1
+    decay: linear
   optimizer:
     type: adamw
+  use_mixed_precision: true
+
+defaults:
+  text:
+    encoder:
+      type: bert
+      trainable: true
 
 hyperopt:
   # goal: maximize

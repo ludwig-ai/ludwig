@@ -31,7 +31,7 @@ def get_test_df():
 
 @pytest.mark.distributed
 def test_mixed_csv_data_source(ray_cluster_2cpu):
-    config = create_auto_config(dataset=get_test_df(), target=[], time_limit_s=3600, tune_for_memory=False)
+    config = create_auto_config(dataset=get_test_df(), target=[], time_limit_s=3600)
 
     assert len(config["input_features"]) == 2
     assert config["input_features"][0]["type"] == TEXT

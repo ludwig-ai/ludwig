@@ -22,10 +22,10 @@ import numpy as np
 class DistributedSampler:
     """Adapted from `torch.utils.data.distributed.DistributedSampler`."""
 
-    def __init__(self, dataset_size, shuffle=True, seed=0, horovod=None):
+    def __init__(self, dataset_size, shuffle=True, seed=0, distributed=None):
         self.dataset_size = dataset_size
-        self.num_replicas = horovod.size() if horovod else 1
-        self.rank = horovod.rank() if horovod else 0
+        self.num_replicas = distributed.size() if distributed else 1
+        self.rank = distributed.rank() if distributed else 0
         self.epoch = 0
         self.num_samples = int(math.ceil(self.dataset_size * 1.0 / self.num_replicas))
         self.total_size = self.num_samples * self.num_replicas

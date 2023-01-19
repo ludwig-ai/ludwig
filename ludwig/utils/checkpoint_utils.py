@@ -12,8 +12,11 @@ from glob import glob
 from typing import Any, Dict, Optional
 
 import torch
+from torch.optim import Optimizer
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.models.base import BaseModel
+from ludwig.modules.lr_scheduler import LRScheduler
 from ludwig.utils.fs_utils import safe_move_file
 
 logger = logging.getLogger(__name__)
@@ -65,10 +68,13 @@ def get_latest_checkpoint_path(directory: str) -> str:
 class Checkpoint:
     """Save and restore model and optimizer states."""
 
-    def __init__(self, model, optimizer=None):
+    def __init__(
+        self, model: BaseModel, optimizer: Optional[Optimizer] = None, scheduler: Optional[LRScheduler] = None
+    ):
         """Constructor."""
         self.model = model
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.global_step = 0
 
     def restore(self, save_path: str, device: Optional[torch.device] = None) -> bool:
@@ -90,6 +96,8 @@ class Checkpoint:
                 self.model.load_state_dict(state["model_weights"])
                 if self.optimizer is not None:
                     self.optimizer.load_state_dict(state["optim_state"])
+                if self.scheduler is not None and "scheduler_state" in state:
+                    self.scheduler.load_state_dict(state["scheduler_state"])
                 logger.info(f"Successfully loaded model weights from {save_path}.")
                 return True
             except Exception as e:
@@ -120,6 +128,8 @@ class Checkpoint:
         }
         if self.optimizer is not None:
             state["optim_state"] = self.optimizer.state_dict()
+        if self.scheduler is not None:
+            state["scheduler_state"] = self.scheduler.state_dict()
 
         # ignore ctrl+c while saving
         try:

@@ -10,7 +10,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -29,6 +29,7 @@ try:
 
     from ludwig.backend.horovod import HorovodBackend
     from ludwig.data.dataset.ray import RayDataset
+    from ludwig.distributed.horovod import HorovodStrategy
     from ludwig.models.gbm import GBM
     from ludwig.schema.model_config import ModelConfig
     from ludwig.schema.trainer import GBMTrainerConfig
@@ -38,12 +39,9 @@ try:
     def run_scale_lr(config, data_csv, num_workers, outdir):
         class FakeHorovodBackend(HorovodBackend):
             def initialize(self):
-                import horovod.torch as hvd
-
-                hvd.init()
-
-                self._horovod = mock.Mock(wraps=hvd)
-                self._horovod.size.return_value = num_workers
+                distributed = HorovodStrategy()
+                self._distributed = mock.Mock(wraps=distributed)
+                self._distributed.size.return_value = num_workers
 
         class TestCallback(Callback):
             def __init__(self):
@@ -69,6 +67,7 @@ def test_tune_learning_rate(tmpdir):
         "output_features": [binary_feature()],
         TRAINER: {
             "train_steps": 1,
+            BATCH_SIZE: 128,
             "learning_rate": "auto",
         },
     }
@@ -176,6 +175,7 @@ def test_scale_lr(learning_rate_scaling, expected_lr, tmpdir, ray_cluster_2cpu):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "epochs": 2,
+            BATCH_SIZE: 128,
             "learning_rate": base_lr,
             "learning_rate_scaling": learning_rate_scaling,
         },
@@ -199,6 +199,7 @@ def test_changing_parameters_on_plateau(tmpdir):
         "combiner": {"type": "concat", "output_size": 14},
         TRAINER: {
             "epochs": 2,
+            BATCH_SIZE: 128,
             "learning_rate": 1.0,
             "reduce_learning_rate_on_plateau": 1,
             "increase_batch_size_on_plateau": 1,
@@ -216,6 +217,9 @@ def test_lightgbm_dataset_partition(ray_cluster_2cpu):
         "input_features": [{"name": "in_column", "type": "binary"}],
         "output_features": [{"name": "out_column", "type": "binary"}],
         "model_type": "gbm",
+        # Disable feature filtering to avoid having no features due to small test dataset,
+        # see https://stackoverflow.com/a/66405983/5222402
+        TRAINER: {"feature_pre_filter": False},
     }
     backend_config = {**RAY_BACKEND_CONFIG}
     backend_config["preprocessor_kwargs"] = {"num_cpu": 1}
