@@ -157,7 +157,30 @@ bag:
                 important rare tokens are, 90%, 95% or 99% of the number of tokens
                 will leave out only very rare tokens that should not influence performance
                 substantially
-            ui_display_name: Most common (vocabulary size)
+        most_common_percentile:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 0.9
+            expected_impact: 3
+            other_information: Specifying a vocab_file or most_common overrides this parameter
+            related_parameters:
+                - most_common, vocab_file, pretrained_embeddings
+            suggested_values:
+                0.95 will remove the 5% least common of the tokens in the vocab.
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common percentile of vocabulary size
         tokenizer:
             ui_display_name: null
 binary:
@@ -239,6 +262,30 @@ category:
                 will leave out only very rare tokens that should not influence performance
                 substantially
             ui_display_name: Most common (vocabulary size)
+        most_common_percentile:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 0.9
+            expected_impact: 3
+            other_information: Specifying a vocab_file or most_common overrides this parameter
+            related_parameters:
+                - most_common, vocab_file, pretrained_embeddings
+            suggested_values:
+                0.95 will remove the 5% least common of the tokens in the vocab.
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common percentile of vocabulary size
 date:
     preprocessing:
         computed_fill_value:
@@ -473,6 +520,30 @@ sequence:
                 will leave out only very rare tokens that should not influence performance
                 substantially
             ui_display_name: Most common (vocabulary size)
+        most_common_percentile:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 0.9
+            expected_impact: 3
+            other_information: Specifying a vocab_file or most_common overrides this parameter
+            related_parameters:
+                - most_common, vocab_file, pretrained_embeddings
+            suggested_values:
+                0.95 will remove the 5% least common of the tokens in the vocab.
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common percentile of vocabulary size
         ngram_size:
             default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
             example_value:
@@ -547,6 +618,30 @@ set:
                 will leave out only very rare tokens that should not influence performance
                 substantially
             ui_display_name: Most common (vocabulary size)
+        most_common_percentile:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 0.9
+            expected_impact: 3
+            other_information: Specifying a vocab_file or most_common overrides this parameter
+            related_parameters:
+                - most_common, vocab_file, pretrained_embeddings
+            suggested_values:
+                0.95 will remove the 5% least common of the tokens in the vocab.
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common percentile of vocabulary size
         tokenizer:
             ui_display_name: null
 text:
@@ -637,6 +732,30 @@ text:
                 will leave out only very rare tokens that should not influence performance
                 substantially
             ui_display_name: Most common (vocabulary size)
+        most_common_percentile:
+            default_value_reasoning:
+                If there are more than 10000 unique categories
+                in the data, it is likely that they will follow a long-tailed distribution
+                and the least common ones may not provide a lot of information
+            description_implications:
+                A smaller number will reduce the vocabulary,
+                making the embedding matrix smaller and reduce the memory footprint,
+                but will also collapse more tokens into the rare one, so the model
+                may perform worse when rare tokens appear in the data
+            example_value:
+                - 0.9
+            expected_impact: 3
+            other_information: Specifying a vocab_file or most_common overrides this parameter
+            related_parameters:
+                - most_common, vocab_file, pretrained_embeddings
+            suggested_values:
+                0.95 will remove the 5% least common of the tokens in the vocab.
+            suggested_values_reasoning:
+                Depending on the data distribution and how
+                important rare tokens are, 90%, 95% or 99% of the number of tokens
+                will leave out only very rare tokens that should not influence performance
+                substantially
+            ui_display_name: Most common percentile of vocabulary size
         ngram_size:
             default_value_reasoning: Size of the n-gram when using the `ngram` tokenizer.
             example_value:
