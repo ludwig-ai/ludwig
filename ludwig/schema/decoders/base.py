@@ -51,11 +51,11 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         field_options=[
             schema_utils.InitializerOptions(
                 description="Preconfigured initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"]
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
             ),
             schema_utils.Dict(
                 description="Custom initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"]
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
             ),
         ],
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
@@ -67,11 +67,11 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         field_options=[
             schema_utils.InitializerOptions(
                 description="Preconfigured bias initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"]
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
             ),
             schema_utils.Dict(
                 description="Custom bias initializer to use for the layers in the fc_stack.",
-                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"]
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
             ),
         ],
         parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
