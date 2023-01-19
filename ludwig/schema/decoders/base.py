@@ -18,7 +18,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     type: str = schema_utils.StringOptions(
         ["regressor", "classifier", "projector", "generator", "tagger"],
         description="The type of decoder to use.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
     )
 
     fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
