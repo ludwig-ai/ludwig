@@ -1,3 +1,26 @@
+BaseDecoder:
+    type:
+        expected_impact: 1
+    fc_layers:
+        expected_impact: 1
+    num_fc_layers:
+        expected_impact: 3
+    fc_output_size:
+        expected_impact: 3
+    fc_use_bias:
+        expected_impact: 1
+    fc_weights_initializer:
+        expected_impact: 1
+    fc_bias_initializer:
+        expected_impact: 1
+    fc_norm:
+        expected_impact: 2
+    fc_norm_params:
+        expected_impact: 1
+    fc_activation:
+        expected_impact: 2
+    fc_dropout:
+        expected_impact: 3
 Classifier:
     type:
         short_description:
@@ -5,6 +28,7 @@ Classifier:
         long_description:
             The classifier decoder is a (potentially empty) stack of fully connected layers, followed by a
             projection into a vector of size of the number of available classes, followed by a sigmoid.
+        expected_impact: 0
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -102,6 +126,7 @@ Projector:
             The Projector decoder is a (potentially empty) stack of fully connected layers, followed by a
             projection into a tensor of the vector size (optionally followed by a softmax in the case of
             multi-class classification).
+        expected_impact: 0
     activation:
         description_implications:
             Changing the activation functions has an impact
@@ -230,6 +255,7 @@ Regressor:
         long_description:
             The regressor decoder is a (potentially empty) stack of fully connected layers, followed by a
             projection to a single number.
+        expected_impact: 0
     activation:
         ui_display_name: null
         expected_impact: 2
@@ -324,6 +350,7 @@ PassthroughDecoder:
             Provides the raw input from the combiner.
         long_description:
             The passthrough decoder simply returns the raw output coming from the combiner.
+        expected_impact: 0
     input_size:
         other_information: Internal Only
         internal_only: true
@@ -349,6 +376,7 @@ SequenceGeneratorDecoder:
             feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input
             is provided to a generator decoder using an RNN with attention instead, an error will be raised
             during model building.
+        expected_impact: 0
     cell_type:
         ui_display_name: null
         expected_impact: 3
@@ -405,6 +433,7 @@ SequenceTaggerDecoder:
             a hidden dimension, which is the output of a sequence, text or time series input feature without
             reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided
             instead, an error will be raised during model building.
+        expected_impact: 0
     attention_embedding_size:
         default_value_reasoning: Not too big, not too small.
         description_implications:
