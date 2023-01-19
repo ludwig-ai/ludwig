@@ -16,7 +16,7 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
         text_encoders.GPT2Encoder,
         text_encoders.DistilBERTEncoder,
         text_encoders.TransformerXLEncoder,
-        pytest.param(text_encoders.CTRLEncoder, marks=pytest.mark.skip(reason="Causes exit code 143 in CI")),
+        text_encoders.CTRLEncoder,
         text_encoders.CamemBERTEncoder,
         text_encoders.MT5Encoder,
         text_encoders.XLMRoBERTaEncoder,
@@ -28,16 +28,19 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
         text_encoders.DistilBERTEncoder,
     ],
 )
-def test_hf_pretrained_default_model(tmpdir, encoder_cls: text_encoders.HFTextEncoder):
-    encoder = encoder_cls(
-        use_pretrained=True,
-        reduce_output="sum",
-        max_sequence_length=20,
-        pretrained_kwargs=dict(cache_dir=tmpdir),
-    )
-    inputs = torch.rand((2, 20)).type(encoder.input_dtype)
-    outputs = encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == encoder.output_shape
+def test_hf_pretrained_default_exists(tmpdir, encoder_cls: text_encoders.HFTextEncoder):
+    """Test that the default pretrained model exists on the HuggingFace Hub.
+
+    This test merely checks that the default model name is valid. It does not check
+    the model end-to-end, as that would require downloading the model weights, which
+    can cause problems in the CI due to memory/runtime constraints.
+
+    TODO: add an end-to-end test for pretrained HF encoders.
+    """
+    from huggingface_hub import HfApi
+
+    hf_api = HfApi()
+    hf_api.model_info(encoder_cls.DEFAULT_MODEL_NAME)
 
 
 @pytest.mark.parametrize("pretrained_model_name_or_path", ["bert-base-uncased"])
