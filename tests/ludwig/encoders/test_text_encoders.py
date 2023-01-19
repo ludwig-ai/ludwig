@@ -1,3 +1,5 @@
+import requests
+
 import pytest
 import torch
 
@@ -39,8 +41,13 @@ def test_hf_pretrained_default_exists(tmpdir, encoder_cls: text_encoders.HFTextE
     """
     from huggingface_hub import HfApi
 
-    hf_api = HfApi()
-    hf_api.model_info(encoder_cls.DEFAULT_MODEL_NAME)
+    try:
+        hf_api = HfApi()
+        hf_api.model_info(encoder_cls.DEFAULT_MODEL_NAME)
+    except requests.exceptions.HTTPError:
+        assert (
+            False
+        ), f"Unable to get model info for encoder '{encoder_cls}' with default '{encoder_cls.DEFAULT_MODEL_NAME}'."
 
 
 @pytest.mark.parametrize("pretrained_model_name_or_path", ["bert-base-uncased"])
