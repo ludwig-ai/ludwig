@@ -48,7 +48,7 @@ checkpoints_per_epoch:
 
         It is also more engaging and more valuable to ensure a frequent pulse of evaluation
         metrics, even if they are partial."
-    expected_impact: 3
+    expected_impact: 2
     related_parameters:
         - train_steps
         - steps_per_checkpoint
@@ -73,7 +73,7 @@ early_stop:
         run is quit. This can be efficient for pruning bad models earlier, but since
         the training process is inherently non-deterministic and noisy, sometimes
         improvements happen very gradually over a long period of time.
-    expected_impact: 2
+    expected_impact: 3
     related_parameters:
         - epochs
         - train_steps
@@ -114,7 +114,7 @@ eval_batch_size:
         maxing out memory limits will speed up the model training process overall.
     example_value:
         - 512
-    expected_impact: 2
+    expected_impact: 1
     other_information:
         Should only set the batch_size to a level that you can fit
         in memory
@@ -139,7 +139,7 @@ evaluate_training_set:
         training set is large, can be a huge computational cost. Turning off training
         set evaluation will lead to significant gains in training throughput and efficiency.
         For small datasets that train and evaluate quickly, the choice is trivial.
-    expected_impact: 3
+    expected_impact: 1
     suggested_values: false
     suggested_values_reasoning:
         Running full-scale evaluation on the full training
@@ -148,21 +148,6 @@ evaluate_training_set:
         so it will still be easy to spot signs of overfitting like when the training-validation
         loss curves diverge.
     ui_display_name: Evaluate Training Set
-gradient_clipping:
-    default_value_reasoning:
-        A conservative cap on the maximum gradient size to apply
-        over a single training step.
-    description_implications:
-        Gradient clipping is a technique to prevent exploding
-        gradients in very deep networks. Increasing gradient clipping can help with
-        model training loss curve stability, but it can also make training less efficient
-        as weight at each training step is capped.
-    expected_impact: 2
-    suggested_values_reasoning:
-        It's usually sensible to have some conservative notion
-        of gradient clipping to make modeling robust to a particularly bad or noisy
-        batch of examples.
-    ui_display_name: Gradient Clipping
 increase_batch_size_eval_metric:
     expected_impact: 1
     ui_display_name: "Batch Size Increase: Evaluation Metric"
@@ -209,7 +194,7 @@ learning_rate_scaling:
         can sometimes lead to better model performance. If the learning rate is hand-tuned
         for a given number of workers, setting this value to constant can be used
         to disable scale-up.
-    expected_impact: 2
+    expected_impact: 1
     suggested_values: linear or sqrt
     suggested_values_reasoning:
         Traditionally the learning rate is scaled linearly
@@ -226,7 +211,7 @@ max_batch_size:
         by auto batch size tuning and batch size increasing on plateau.
     example_value:
         - 1024
-    expected_impact: 2
+    expected_impact: 1
     related_parameters:
         - batch_size
         - increase_batch_size_on_plateau
@@ -276,7 +261,7 @@ regularization_lambda:
         is data-dependent, so you'll need to do some tuning. We recommend trying
         a handful of values (0.01, 0.02, ... 0.4) gradually increasing the value until
         training curves get worse"
-    expected_impact: 3
+    expected_impact: 2
     literature_references:
         - "https://developers.google.com/machine-learning/crash-course/regularization-for-simplicity/lambda "
     related_parameters:
@@ -297,7 +282,7 @@ regularization_type:
         \ selection, since weights are only reduced to values near 0 instead of 0.\
         \ L1 regularization has built-in feature selection.\nL1 regularization is\
         \ robust to outliers, L2 regularization is not."
-    expected_impact: 3
+    expected_impact: 2
     literature_references:
         - "https://neptune.ai/blog/fighting-overfitting-with-l1-or-l2-regularization#:~:text=The%20differences%20between%20L1%20and,regularization%20solution%20is%20non%2Dsparse. "
     related_parameters:
@@ -311,7 +296,7 @@ should_shuffle:
     description_implications:
         Turning off mini-batch shuffling can make training faster,
         but it may lead to worse performance overall as shuffling helps mitigate overfitting.
-    expected_impact: 2
+    expected_impact: 1
     literature_references:
         - "https://stats.stackexchange.com/questions/245502/why-should-we-shuffle-data-while-training-a-neural-network#:~:text=it%20helps%20the%20training%20converge,the%20order%20of%20the%20training "
     suggested_values: true
@@ -347,7 +332,7 @@ steps_per_checkpoint:
 
         It is also more engaging and more valuable to ensure a frequent pulse of evaluation
         metrics, even if they are partial."
-    expected_impact: 3
+    expected_impact: 1
     related_parameters:
         - checkpoints_per_epoch
     suggested_values: O(1k) for larger datasets
@@ -365,7 +350,7 @@ train_steps:
     description_implications:
         Decreasing this will shorten the overall runway for
         training the model.
-    expected_impact: 3
+    expected_impact: 1
     related_parameters:
         - epochs
     suggested_values: 0 (and use epochs), or 1000000, 1 for debugging
@@ -399,7 +384,7 @@ validation_field:
         This parameter affects 1) what the early stopping policy
         looks at to determine when to early stop and 2) hyperparameter optimization
         for determining the best trial.
-    expected_impact: 3
+    expected_impact: 1
     related_parameters:
         - validation_field
         - validation_metric
@@ -410,7 +395,7 @@ validation_metric:
         This parameter affects 1) what the early stopping policy
         looks at to determine when to early stop and 2) hyperparameter optimization
         for determining the best trial.
-    expected_impact: 3
+    expected_impact: 1
     related_parameters:
         - validation_field
         - validation_metric
@@ -474,7 +459,7 @@ learning_rate_scheduler:
             \ As a rule of thumb, compared to training without a schedule, you can use\
             \ a slightly higher maximum learning rate. Since the learning rate changes\
             \ over time, the whole training is not so sensitive to the value picked."
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
             - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
         related_parameters:
@@ -498,7 +483,7 @@ learning_rate_scheduler:
             faster. This could make the model more robust to a bad (too high) initial
             learning rate, but a decay rate that is too high could prohibit the model
             from learning anything at all.
-        expected_impact: 1
+        expected_impact: 2
         literature_references:
             - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
         related_parameters:
@@ -519,7 +504,7 @@ learning_rate_scheduler:
             learning rate decays.
         example_value:
             - 5000
-        expected_impact: 1
+        expected_impact: 2
         related_parameters:
             - decay_rate
             - decay_steps
@@ -552,7 +537,7 @@ learning_rate_scheduler:
             decaying the learning rate is superior to doing so continuously.
         ui_display_name: Staircase
     reduce_on_plateau:
-        expected_impact: 1
+        expected_impact: 2
         ui_display_name: Reduce On Plateau
     reduce_on_plateau_patience:
         expected_impact: 1

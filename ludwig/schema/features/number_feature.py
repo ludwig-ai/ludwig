@@ -20,6 +20,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
@@ -80,6 +81,7 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
         min=0,
         max=999999999,
         description="Clip the predicted output to the specified range.",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["clip"],
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -92,17 +94,20 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["dependencies"],
     )
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["reduce_input"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")

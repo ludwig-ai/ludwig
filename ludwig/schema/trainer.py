@@ -64,6 +64,20 @@ class ECDTrainerConfig(BaseTrainerConfig):
         parameter_metadata=TRAINER_METADATA["epochs"],
     )
 
+    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=DEFAULT_BATCH_SIZE,
+        allow_none=False,
+        description=(
+            "The number of training examples utilized in one training step of the model. If ’auto’, the "
+            "biggest batch size (power of 2) that can fit in memory will be used."
+        ),
+        parameter_metadata=TRAINER_METADATA["batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
+    )
+
     checkpoints_per_epoch: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
@@ -99,20 +113,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "triggers training to stop. Can be set to -1, which disables early stopping entirely."
         ),
         parameter_metadata=TRAINER_METADATA["early_stop"],
-    )
-
-    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=DEFAULT_BATCH_SIZE,
-        allow_none=False,
-        description=(
-            "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "biggest batch size (power of 2) that can fit in memory will be used."
-        ),
-        parameter_metadata=TRAINER_METADATA["batch_size"],
-        field_options=[
-            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
-            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
-        ],
     )
 
     max_batch_size: int = schema_utils.PositiveInteger(
