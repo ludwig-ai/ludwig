@@ -16,7 +16,7 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
         text_encoders.GPT2Encoder,
         text_encoders.DistilBERTEncoder,
         text_encoders.TransformerXLEncoder,
-        text_encoders.CTRLEncoder,
+        pytest.param(text_encoders.CTRLEncoder, marks=pytest.mark.skip(reason="Causes exit code 143 in CI")),
         text_encoders.CamemBERTEncoder,
         text_encoders.MT5Encoder,
         text_encoders.XLMRoBERTaEncoder,
