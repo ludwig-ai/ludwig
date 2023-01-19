@@ -2,14 +2,16 @@ audio:
     preprocessing:
         audio_file_length_limit_in_s:
             ui_display_name: null
+            expected_impact: 2
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
             ui_display_name: Fill Value
+            expected_impact: 1
         in_memory:
             ui_display_name: null
+            expected_impact: 1
         missing_value_strategy:
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
@@ -37,7 +39,7 @@ audio:
                 learning rate.
             example_value:
                 - batch
-            expected_impact: 3
+            expected_impact: 2
             literature_references:
                 - https://machinelearningmastery.com/batch-normalization-for-training-of-deep-neural-networks/
             related_parameters:
@@ -53,6 +55,7 @@ audio:
             ui_display_name: Normalization Type
         num_fft_points:
             ui_display_name: null
+            expected_impact: 1
         num_filter_bands:
             literature_references:
                 - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
@@ -61,8 +64,10 @@ audio:
                 - type
                 - window_shift_in_s
             ui_display_name: Type
+            expected_impact: 1
         padding_value:
             ui_display_name: null
+            expected_impact: 1
         type:
             default_value_reasoning:
                 The default type fbank is set based on values
@@ -98,6 +103,7 @@ audio:
                 - type
                 - num_filter_bands
             ui_display_name: Window Length in Seconds
+            expected_impact: 2
         window_shift_in_s:
             literature_references:
                 - "https://medium.com/analytics-vidhya/simplifying-audio-data-fft-stft-mfcc-for-machine-learning-and-deep-learning-443a2f962e0e "
@@ -106,18 +112,21 @@ audio:
                 - type
                 - num_filter_bands
             ui_display_name: Window Shift in Seconds
+            expected_impact: 2
         window_type:
             ui_display_name: null
+            expected_impact: 2
 bag:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
             ui_display_name: Fill Value
+            expected_impact: 1
         lowercase:
             ui_display_name: null
+            expected_impact: 2
         missing_value_strategy:
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
@@ -145,7 +154,7 @@ bag:
                 may perform worse when rare tokens appear in the data
             example_value:
                 - 10000
-            expected_impact: 3
+            expected_impact: 2
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -183,6 +192,7 @@ bag:
             ui_display_name: Most common percentile of vocabulary size
         tokenizer:
             ui_display_name: null
+            expected_impact: 3
 binary:
     preprocessing:
         computed_fill_value:
@@ -197,7 +207,7 @@ binary:
             expected_impact: 2
             ui_display_name: Fallback True Label
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -213,16 +223,28 @@ binary:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
+    calibration:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    threshold:
+        expected_impact: 3
 category:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         lowercase:
             ui_display_name: null
+            expected_impact: 2
         missing_value_strategy:
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
@@ -237,6 +259,7 @@ category:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
         most_common:
             default_value_reasoning:
                 If there are more than 10000 unique categories
@@ -249,7 +272,7 @@ category:
                 may perform worse when rare tokens appear in the data
             example_value:
                 - 10000
-            expected_impact: 3
+            expected_impact: 2
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -286,6 +309,16 @@ category:
                 will leave out only very rare tokens that should not influence performance
                 substantially
             ui_display_name: Most common percentile of vocabulary size
+    calibration:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    top_k:
+        expected_impact: 3
 date:
     preprocessing:
         computed_fill_value:
@@ -305,11 +338,11 @@ date:
                 serves as a truncator.
             example_value:
                 - "%d %b %Y"
-            expected_impact: 1
+            expected_impact: 2
             suggested_values_reasoning: Have Ludwig figure out the date format automatically.
             ui_display_name: Datetime format
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -325,13 +358,14 @@ date:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
 h3:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -347,28 +381,36 @@ h3:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
 image:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         height:
             ui_display_name: null
+            expected_impact: 2
         in_memory:
             ui_display_name: null
+            expected_impact: 1
         infer_image_dimensions:
             ui_display_name: null
+            expected_impact: 1
         infer_image_max_height:
             ui_display_name: null
+            expected_impact: 1
         infer_image_max_width:
             ui_display_name: null
+            expected_impact: 1
         infer_image_num_channels:
             ui_display_name: null
+            expected_impact: 1
         infer_image_sample_size:
             ui_display_name: null
+            expected_impact: 1
         missing_value_strategy:
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
@@ -383,10 +425,13 @@ image:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
         num_channels:
             ui_display_name: null
+            expected_impact: 2
         num_processes:
             ui_display_name: null
+            expected_impact: 2
         resize_method:
             default_value_reasoning:
                 Interpolation may stretch or squish the image,
@@ -405,15 +450,17 @@ image:
             ui_display_name: Resize Method
         standardize_image:
             ui_display_name: null
+            expected_impact: 1
         width:
             ui_display_name: null
+            expected_impact: 2
 number:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -429,6 +476,7 @@ number:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
         normalization:
             default_value_reasoning:
                 It could be valuable to observe how the model
@@ -453,16 +501,25 @@ number:
                 \ std = 1. It\u2019s useful when there are a few outliers, but not\
                 \ so extreme that you need clipping."
             ui_display_name: Normalization
+    clip:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 sequence:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         lowercase:
             ui_display_name: null
+            expected_impact: 2
         max_sequence_length:
             default_value_reasoning:
                 The default value is 256. Every sequence will
@@ -495,6 +552,7 @@ sequence:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
         most_common:
             default_value_reasoning:
                 If there are more than 10000 unique categories
@@ -507,7 +565,7 @@ sequence:
                 may perform worse when rare tokens appear in the data
             example_value:
                 - 10000
-            expected_impact: 3
+            expected_impact: 2
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -549,14 +607,19 @@ sequence:
             example_value:
                 - 3
             ui_display_name: n-gram size
+            expected_impact: 2
         padding:
             ui_display_name: null
+            expected_impact: 1
         padding_symbol:
             ui_display_name: null
+            expected_impact: 1
         tokenizer:
             ui_display_name: null
+            expected_impact: 3
         unknown_symbol:
             ui_display_name: null
+            expected_impact: 1
         vocab_file:
             default_value_reasoning:
                 The vocabulary can be parsed automatically from
@@ -567,18 +630,25 @@ sequence:
                 that fits your data, or if there are several uncommon or infrequently
                 occurring tokens that we want to guarantee to be a part of the vocabulary,
                 rather than treated as an unknown.
-            expected_impact: 2
+            expected_impact: 0
             ui_display_name: Vocab File
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 set:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         lowercase:
             ui_display_name: null
+            expected_impact: 2
         missing_value_strategy:
             default_value_reasoning:
                 The default `fill_with_const` replaces missing
@@ -605,7 +675,7 @@ set:
                 may perform worse when rare tokens appear in the data
             example_value:
                 - 10000
-            expected_impact: 3
+            expected_impact: 2
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -644,6 +714,15 @@ set:
             ui_display_name: Most common percentile of vocabulary size
         tokenizer:
             ui_display_name: null
+            expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    threshold:
+        expected_impact: 3
 text:
     preprocessing:
         computed_fill_value:
@@ -654,7 +733,7 @@ text:
                 - missing_value_strategy, fill_value
             ui_display_name: DOCSTRING ONLY
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         lowercase:
             default_value_reasoning:
@@ -666,7 +745,7 @@ text:
                 words are seen as completely separate entities than lowercase words.
             example_value:
                 - true
-            expected_impact: 1
+            expected_impact: 2
             related_parameters:
                 - vocab_size
             suggested_values: "TRUE"
@@ -707,6 +786,7 @@ text:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
         most_common:
             default_value_reasoning:
                 If there are more than 10000 unique categories
@@ -719,7 +799,7 @@ text:
                 may perform worse when rare tokens appear in the data
             example_value:
                 - 10000
-            expected_impact: 3
+            expected_impact: 2
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -761,6 +841,7 @@ text:
             example_value:
                 - 3
             ui_display_name: n-gram size
+            expected_impact: 2
         padding:
             default_value_reasoning:
                 We usually want to add padding to the end of
@@ -782,8 +863,10 @@ text:
             ui_display_name: Padding
         padding_symbol:
             ui_display_name: null
+            expected_impact: 1
         pretrained_model_name_or_path:
             ui_display_name: null
+            expected_impact: 0
         tokenizer:
             default_value_reasoning:
                 'The default tokenizer is `space_punct`, an abbreviation
@@ -818,6 +901,7 @@ text:
             ui_display_name: Tokenizer
         unknown_symbol:
             ui_display_name: null
+            expected_impact: 1
         vocab_file:
             default_value_reasoning:
                 The vocabulary can be parsed automatically from
@@ -828,15 +912,23 @@ text:
                 that fits your data, or if there are several uncommon or infrequently
                 occurring tokens that we want to guarantee to be a part of the vocabulary,
                 rather than treated as an unknown.
-            expected_impact: 2
+            expected_impact: 0
             ui_display_name: Vocab File
+    class_similarities:
+        expected_impact: 1
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 timeseries:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -852,21 +944,26 @@ timeseries:
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy
+            expected_impact: 3
         padding:
             ui_display_name: null
+            expected_impact: 1
         padding_value:
             ui_display_name: null
+            expected_impact: 1
         timeseries_length_limit:
             ui_display_name: null
+            expected_impact: 2
         tokenizer:
             ui_display_name: null
+            expected_impact: 3
 vector:
     preprocessing:
         computed_fill_value:
             internal_only: true
             ui_display_name: null
         fill_value:
-            expected_impact: 3
+            expected_impact: 1
             ui_display_name: Fill Value
         missing_value_strategy:
             default_value_reasoning:
@@ -885,3 +982,14 @@ vector:
             ui_display_name: Missing Value Strategy
         vector_size:
             ui_display_name: null
+            expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    softmax:
+        expected_impact: 3
+    vector_size:
+        expected_impact: 3
