@@ -421,11 +421,26 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
 class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
-    clipglobalnorm: Optional[float] = schema_utils.FloatRange(default=0.5, allow_none=True, description="")
+    clipglobalnorm: Optional[float] = schema_utils.FloatRange(
+        default=0.5,
+        allow_none=True,
+        description="",
+        parameter_metadata=TRAINER_METADATA["gradient_clipping"]
+    )
 
-    clipnorm: Optional[float] = schema_utils.FloatRange(default=None, allow_none=True, description="")
+    clipnorm: Optional[float] = schema_utils.FloatRange(
+        default=None,
+        allow_none=True,
+        description="",
+        parameter_metadata=TRAINER_METADATA["gradient_clipping"]
+    )
 
-    clipvalue: Optional[float] = schema_utils.FloatRange(default=None, allow_none=True, description="")
+    clipvalue: Optional[float] = schema_utils.FloatRange(
+        default=None,
+        allow_none=True,
+        description="",
+        parameter_metadata=TRAINER_METADATA["gradient_clipping"]
+    )
 
 
 @DeveloperAPI
