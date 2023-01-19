@@ -75,6 +75,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
     input_size: int = schema_utils.PositiveInteger(
         default=1,
         description="Size of the input to the decoder.",
+        parameter_metadata=DECODER_METADATA["PassthroughDecoder"]["input_size"],
     )
 
 
