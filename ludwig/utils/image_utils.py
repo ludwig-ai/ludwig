@@ -16,18 +16,34 @@
 import logging
 import warnings
 from collections.abc import Iterable
+from dataclasses import dataclass
 from io import BytesIO
-from typing import List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
 from torchvision.io import decode_image, ImageReadMode
+from torchvision.models._api import WeightsEnum
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.fs_utils import get_bytes_obj_from_path
+from ludwig.utils.registry import Registry
+
+
+@dataclass
+class TVModelVariant:
+    # Model variant identifier
+    variant_id: Union[str, int]
+
+    # TorchVision function to create model class
+    create_model_function: Callable
+
+    # Torchvision class for model weights
+    model_weights: WeightsEnum
+
 
 logger = logging.getLogger(__name__)
 
@@ -324,3 +340,19 @@ def get_img_output_shape(
     out_shape = np.floor(((shape + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1)
 
     return tuple(out_shape.astype(int))
+
+
+torchvision_model_registry = Registry()
+
+
+def register_torchvision_model_variants(variants: List[TVModelVariant]):
+    def wrap(cls):
+        # prime with empty placeholder
+        torchvision_model_registry[cls.torchvision_model_type] = {}
+
+        # register each variant
+        for variant in variants:
+            torchvision_model_registry[cls.torchvision_model_type][variant.variant_id] = variant
+        return cls
+
+    return wrap

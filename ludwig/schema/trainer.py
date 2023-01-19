@@ -110,7 +110,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
             schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
         ],
     )
@@ -348,7 +348,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
-        ["gbdt", "rf", "dart", "goss"],
+        ["gbdt", "dart", "goss"],
         default="gbdt",
         description="Type of boosting algorithm to use with GBM trainer.",
     )
@@ -365,8 +365,8 @@ class GBMTrainerConfig(BaseTrainerConfig):
         default=82, description="Number of leaves to use in the tree with GBM trainer."
     )
 
-    min_data_in_leaf: int = schema_utils.PositiveInteger(
-        default=315, description="Minimum number of data points in a leaf with GBM trainer."
+    min_data_in_leaf: int = schema_utils.NonNegativeInteger(
+        default=20, description="Minimum number of data points in a leaf with GBM trainer."
     )
 
     min_sum_hessian_in_leaf: float = schema_utils.NonNegativeFloat(
@@ -525,6 +525,11 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # LightGBM IO params
     max_bin: int = schema_utils.PositiveInteger(
         default=255, description="Maximum number of bins to use for discretizing features with GBM trainer."
+    )
+
+    feature_pre_filter: bool = schema_utils.Boolean(
+        default=True,
+        description="Whether to ignore features that are unsplittable based on min_data_in_leaf in the GBM trainer.",
     )
 
 

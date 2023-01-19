@@ -1,4 +1,11 @@
-ALBERTEncoder:
+ALBERT:
+    type:
+        short_description:
+            Similar to BERT with lower memory footprint and faster training.
+        long_description:
+            The albert encoder loads a pretrained ALBERT (default albert-base-v2) model using the Hugging
+            Face transformers package. Albert is similar to BERT, with significantly lower memory usage and
+            somewhat faster training time.
     attention_probs_dropout_prob:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -272,7 +279,17 @@ ALBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-AutoTransformerEncoder:
+AutoTransformer:
+    type:
+        short_description:
+            Automatically retrieves the architecture from the provided model name/path.
+        long_description:
+            The auto_transformer encoder automatically instantiates the model architecture for the specified
+            pretrained_model_name_or_path. Unlike the other HF encoders available, auto_transformer does not
+            provide a default value for pretrained_model_name_or_path, this is its only mandatory parameter.
+            See the Hugging Face AutoModels documentation for more details.
+        literature_references:
+            - https://huggingface.co/docs/transformers/model_doc/auto
     max_sequence_length:
         default_value_reasoning:
             Sets the maximum sequence length of the expected
@@ -302,7 +319,17 @@ AutoTransformerEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-BERTEncoder:
+BERT:
+    type:
+        short_description:
+            Bidirectional transformer great for language modeling.
+        long_description:
+            The bert encoder loads a pretrained BERT (default bert-base-uncased) model using the Hugging
+            Face transformers package. BERT is a bidirectional transformer pretrained using a combination of
+            masked language modeling objective and next sentence prediction on a large corpus comprising the
+            Toronto Book Corpus and Wikipedia.
+        literature_references:
+            - https://arxiv.org/abs/1810.04805
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -498,7 +525,16 @@ BERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-BagEmbedWeightedEncoder:
+BagEmbedWeighted:
+    type:
+        short_description:
+            Transforms feature to vector, maps to sparse or dense embeddings, then aggregates.
+        long_description:
+            The embed weighted encoder first transforms the element frequency vector to sparse integer
+            lists, which are then mapped to either dense or sparse embeddings (one-hot encodings). Lastly,
+            embeddings are aggregated as a weighted sum where each embedding is multiplied by its respective
+            element's frequency. Inputs are of size b while outputs are of size b x h where b is the batch
+            size and h is the dimensionality of the embeddings.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -873,7 +909,17 @@ BagEmbedWeightedEncoder:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-CTRLEncoder:
+CTRL:
+    type:
+        short_description:
+            Language model trained to condition on control codes that govern style, content and task-specific behavior.
+        long_description:
+            The ctrl encoder loads a pretrained CTRL (default ctrl) model using the Hugging Face
+            transformers package. CTRL is a causal (unidirectional) transformer pre-trained using language
+            modeling on a very large corpus of ~140 GB of text data with the first token reserved as a
+            control code (such as Links, Books, Wikipedia etc.).
+        literature_references:
+            - https://arxiv.org/abs/1909.05858
     attn_pdrop:
         ui_display_name: null
     dff:
@@ -957,7 +1003,15 @@ CTRLEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-CamemBERTEncoder:
+CamemBERT:
+    type:
+        short_description:
+            Language model trained on large French text corpus.
+        long_description:
+            The camembert encoder loads a pretrained CamemBERT (default jplu/tf-camembert-base) model using
+            the Hugging Face transformers package. CamemBERT is pre-trained on 138GB of French text.
+        literature_references:
+            - https://arxiv.org/abs/1911.03894
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -1152,7 +1206,13 @@ CamemBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-CategoricalEmbedEncoder:
+CategoricalEmbed:
+    type:
+        short_description:
+            Maps the categorical feature to a dense embedding.
+        long_description:
+            The dense encoder maps to a dense embedding and is returned as outputs of size `b x h`,
+            where `b` is the batch size and `h` is the dimensionality of the embeddings.
     dropout:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -1258,7 +1318,13 @@ CategoricalEmbedEncoder:
         expected_impact: 2
         internal_only: true
         ui_display_name: Not Displayed
-CategoricalSparseEncoder:
+CategoricalSparse:
+    type:
+        short_description:
+            Maps the categorical feature to a sparse embedding.
+        long_description:
+            The sparse encoder maps to a sparse embedding (one-hot encodings) and is returned as outputs of
+            size `b x h`, where `b` is the batch size and `h` is the dimensionality of the embeddings.
     dropout:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -1365,6 +1431,13 @@ CategoricalSparseEncoder:
         internal_only: true
         ui_display_name: Not Displayed
 DateEmbed:
+    type:
+        short_description:
+            Embeds the date elements passes them through fully connected layers.
+        long_description:
+            The Embed encoder passes the year through a fully connected layer of one neuron and embeds all
+            other elements for the date, concatenates them and passes the concatenated representation
+            through fully connected layers.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -1672,6 +1745,14 @@ DateEmbed:
             most tasks.
         ui_display_name: Layer Weights Initializer
 DateWave:
+    type:
+        short_description:
+            Embeds the date elements by taking the cosine of their value before passing through fully connected layers.
+        long_description:
+            The Wave encoder passes the year through a fully connected layer of one neuron and represents
+            all other elements for the date by taking the cosine of their value with a different period (12
+            for months, 31 for days, etc.), concatenates them and passes the concatenated representation
+            through fully connected layers.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -1930,6 +2011,12 @@ DateWave:
             most tasks.
         ui_display_name: Layer Weights Initializer
 DenseEncoder:
+    type:
+        short_description:
+            Passes the raw numerical values through fully connected layers.
+        long_description:
+            The dense encoder passes the raw numerical values through fully connected layers. In this case
+            the inputs of size `b` are transformed to size `b x h`.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -2138,7 +2225,16 @@ DenseEncoder:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-DistilBERTEncoder:
+DistilBERT:
+    type:
+        short_description:
+            A distilled version of BERT base that is 40% smaller and 60% faster with 95% of performance preserved.
+        long_description:
+            The distilbert encoder loads a pretrained DistilBERT (default distilbert-base-uncased) model
+            using the Hugging Face transformers package. DistilBERT is a small, fast, cheap and light
+            Transformer model trained by distilling BERT base. It has 40% less parameters than
+            bert-base-uncased, runs 60% faster while preserving over 95% of BERT’s performances as measured
+            on the GLUE language understanding benchmark.
     activation:
         default_value_reasoning:
             This is the default activation function used in the
@@ -2344,7 +2440,18 @@ DistilBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-ELECTRAEncoder:
+ELECTRA:
+    type:
+        short_description:
+                Transformer encoder that can be used to encode a sequence of tokens with little compute
+        long_description:
+              The electra encoder loads a pretrained ELECTRA model using the Hugging Face transformers package.
+              ELECTRA is a new pretraining approach which trains two transformer models the generator and the
+              discriminator. The generator’s role is to replace tokens in a sequence, and is therefore trained
+              as a masked language model. The discriminator, which is the model we’re interested in, tries to
+              identify which tokens were replaced by the generator in the sequence.
+        literature_references:
+            - https://openreview.net/pdf?id=r1xMH1BtvB
     attention_probs_dropout_prob:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -2569,7 +2676,16 @@ ELECTRAEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-FlauBERTEncoder:
+FlauBERT:
+    type:
+        short_description:
+            Language model with BERT related architecture trained on large French text corpus.
+        long_description:
+            The flaubert encoder loads a pretrained FlauBERT (default jplu/tf-flaubert-base-uncased) model
+            using the Hugging Face transformers package. FlauBERT has an architecture similar to BERT and is
+            pre-trained on a large French language corpus.
+        literature_references:
+            - https://arxiv.org/abs/1912.05372
     asm:
         ui_display_name: null
     attention_dropout:
@@ -2730,7 +2846,16 @@ FlauBERTEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-GPT2Encoder:
+GPT2:
+    type:
+        short_description:
+            GPT-2 is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
+        long_description:
+            The gpt2 encoder loads a pretrained GPT-2 (default gpt2) model using the Hugging Face
+            transformers package. GPT-2 is a causal (unidirectional) transformer pretrained using language
+            modeling on a very large corpus of ~40 GB of text data.
+        literature_references:
+            - https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
     activation_function:
         ui_display_name: null
     attn_pdrop:
@@ -2801,7 +2926,16 @@ GPT2Encoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-GPTEncoder:
+GPT:
+    type:
+        short_description:
+            GPT is a pre-trained language model used for NLP tasks like generation, summarization, and translation.
+        long_description:
+            The gpt encoder loads a pretrained GPT (default openai-gpt) model using the Hugging Face "
+            "transformers package. GPT is a causal (unidirectional) transformer pre-trained using language "
+            "modeling on a large corpus with long range dependencies, the Toronto Book Corpus.
+        literature_references:
+            - https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf
     afn:
         ui_display_name: null
     attn_pdrop:
@@ -2886,6 +3020,14 @@ GPTEncoder:
         internal_only: true
         ui_display_name: Not displayed
 H3Embed:
+    type:
+        short_description:
+            Encodes each H3 component with embeddings then takes a sum and passes them through fully connected layers.
+        long_description:
+            The Embed encoder encodes each component of the H3 representation (mode, edge, resolution,
+            base cell and children cells) with embeddings. Children cells with value 0 will be masked out.
+            After the embedding, all embeddings are summed and optionally passed through a stack of fully
+            connected layers.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -3194,6 +3336,15 @@ H3Embed:
             most tasks.
         ui_display_name: Layer Weights Initializer
 H3RNN:
+    type:
+        short_description:
+            Encodes each H3 component with embeddings then passes them through an RNN encoder.
+        long_description:
+            The RNN encoder encodes each component of the H3 representation (mode, edge, resolution,
+            base cell and children cells) with embeddings. Children cells with value 0 will be masked out.
+            After the embedding, all embeddings are passed through an RNN encoder. The intuition behind this
+            is that, starting from the base cell, the sequence of children cells can be seen as a sequence
+            encoding the path in the tree of all H3 hexes.
     activation:
         ui_display_name: null
     bias_initializer:
@@ -3448,6 +3599,14 @@ H3RNN:
             most tasks.
         ui_display_name: Layer Weights Initializer
 H3WeightedSum:
+    type:
+        short_description:
+            Encodes each H3 component with embeddings then takes a weighted sum.
+        long_description:
+            The Weighted Sum encoder encodes each component of the H3 representation (mode, edge,
+            resolution, base cell and children cells) with embeddings. Children cells with value 0 will be
+            masked out. After the embedding, all embeddings are summed with a weighted sum (with learned
+            weights) and optionally passed through a stack of fully connected layers.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -3732,7 +3891,16 @@ H3WeightedSum:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-LongformerEncoder:
+Longformer:
+    type:
+        short_description:
+            Transformer optimized for longer text inputs.
+        long_description:
+            The longformer encoder loads a pretrained Longformer (default allenai/longformer-base-4096)
+            model using the Hugging Face transformers package. Longformer is a good choice for longer text,
+            as it supports sequences up to 4096 tokens long.
+        literature_references:
+            - https://arxiv.org/pdf/2004.05150.pdf
     attention_window:
         ui_display_name: null
     max_sequence_length:
@@ -3787,7 +3955,14 @@ LongformerEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-MLPMixerEncoder:
+MLPMixer:
+    type:
+        short_description:
+            Image encoder which applies fully connected layers to different patches of the image.
+        long_description:
+            MLP-Mixer divides the image into equal-sized patches, applying fully connected layers to each
+            patch to compute per-patch representations (tokens) and combining the representations with
+            fully-connected mixer layers.
     avg_pool:
         ui_display_name: null
     channel_dim:
@@ -3871,7 +4046,13 @@ MLPMixerEncoder:
     width:
         internal_only: true
         ui_display_name: null
-MT5Encoder:
+MT5:
+    type:
+        short_description:
+            MT5 is a multilingual variant of T5 useful for multilingual NLP use cases.
+        long_description:
+            The mt5 encoder loads a pretrained MT5 (default google/mt5-base) model using the Hugging Face
+            transformers package. MT5 is a multilingual variant of T5 trained on a dataset of 101 languages.
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
         description_implications:
@@ -4027,6 +4208,17 @@ MT5Encoder:
         internal_only: true
         ui_display_name: Not displayed
 ParallelCNN:
+    type:
+        short_description:
+            Default option for processing sequence, audio, and text data types.
+        long_description:
+            The Parallel CNN works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a number of parallel 1d convolutional layers with different filter size (by
+            default 4 layers with filter size 2, 3, 4 and 5), followed by max pooling and concatenation.
+            This single vector concatenating the outputs of the parallel convolutional layers is then passed
+            through a stack of fully connected layers and returned as a b x h tensor where h is the output
+            size of the last fully connected layer.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -4397,12 +4589,52 @@ ParallelCNN:
             most tasks.
         ui_display_name: Layer Weights Initializer
 PassthroughEncoder:
+    type:
+        short_description:
+            Passes the raw input through to the combiner.
+        long_description:
+            The passthrough encoder simply returns the raw numerical values coming from the input
+            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
+            the batch size.
     input_size:
         other_information: Internal Only
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
-ResNetEncoder:
+BinaryPassthroughEncoder:
+    type:
+        short_description:
+            Passes the raw input through to the combiner.
+        long_description:
+            The passthrough encoder simply returns the raw numerical values coming from the input
+            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
+            the batch size.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+CategoricalPassthroughEncoder:
+    type:
+        short_description:
+            Passes the raw input through to the combiner.
+        long_description:
+            The passthrough encoder simply returns the raw numerical values coming from the input
+            placeholders as outputs. Inputs are of size `b` while outputs are of size `b x 1` where `b` is
+            the batch size.
+    input_size:
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+ResNet:
+    type:
+        short_description:
+            Residual network achieving very high performance on computer vision tasks.
+        long_description:
+            ResNet - short for residual network is part of a family of extremely deep architectures showing
+            compelling accuracy and nice convergence behaviors for computer vision applications. It is a type
+            of CNN architecture designed to support hundreds or thousands of convolutional layers.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -4660,7 +4892,17 @@ ResNetEncoder:
     width:
         internal_only: true
         ui_display_name: null
-RoBERTaEncoder:
+RoBERTa:
+    type:
+        short_description:
+            BERT based model that has higher accuracy and is easier parallelize due to larger mini-batches.
+        long_description:
+            The roberta encoder loads a pretrained RoBERTa (default roberta-base) model using the Hugging
+            Face transformers package. RoBERTa builds on BERT and modifies key hyperparameters, removing the
+            next-sentence pretraining objective and training with much larger mini-batches and learning
+            rates.
+        literature_references:
+            - https://arxiv.org/abs/1907.11692
     bos_token_id:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         ui_display_name: Beginning-of-Sentence Token Id
@@ -4720,7 +4962,15 @@ RoBERTaEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-SequenceEmbedEncoder:
+SequenceEmbed:
+    type:
+        short_description:
+            Maps each element of the sequence to an embedding.
+        long_description:
+            The embed encoder simply maps each integer in the sequence to an embedding, creating a `b x s x h`
+            tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding
+            size. The tensor is reduced along the `s` dimension to obtain a single vector of size `h` for each
+            element of the batch.
     dropout:
         default_value_reasoning:
             Dropout can cause training to become less stable.
@@ -4848,7 +5098,15 @@ SequenceEmbedEncoder:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-SequencePassthroughEncoder:
+SequencePassthrough:
+    type:
+        short_description:
+            Transforms sequence values to a floats then reduces to obtain a vector for each element.
+        long_description:
+            The passthrough encoder simply transforms each input value into a float value and adds a
+            dimension to the input tensor, creating a b x s x 1 tensor where b is the batch size and s is
+            the length of the sequence. The tensor is reduced along the s dimension to obtain a single
+            vector of size h for each element of the batch.
     encoding_size:
         default_value_reasoning:
             The default `reduce_output` method does not use this
@@ -4872,6 +5130,15 @@ SequencePassthroughEncoder:
     reduce_output:
         ui_display_name: null
 SetSparseEncoder:
+    type:
+        short_description:
+            Maps raw values to sparse integer lists, then maps to dense/sparse embeddings, then reduces to final vector.
+        long_description:
+            The Embed encoder takes the raw binary values coming from the input placeholders and transforms
+            them to sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot
+            encodings), finally they are reduced on the sequence dimension and returned as an aggregated
+            embedding vector. Inputs are of size b while outputs are of size b x h where b is the batch size
+            and h is the dimensionality of the embeddings.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -5196,6 +5463,12 @@ SetSparseEncoder:
             most tasks.
         ui_display_name: Layer Weights Initializer
 Stacked2DCNN:
+    type:
+        short_description:
+            Stack of 2D convolutional layers followed by an optional stack of fully connected layers.
+        long_description:
+            Stack of 2D convolutional layers with optional normalization, dropout, and down-sampling
+            pooling layers, followed by an optional stack of fully connected layers.
     conv_activation:
         expected_impact: 1
         ui_display_name: Convolutional Activation
@@ -5553,6 +5826,17 @@ Stacked2DCNN:
         internal_only: true
         ui_display_name: NOT DISPLAYED
 StackedCNN:
+    type:
+        short_description:
+            Maps inputs to embeddings then passes them through a stack of 1d convolutional layers.
+        long_description:
+            The Stacked CNN works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a stack of 1d convolutional layers with different filter size (by default 6
+            layers with filter size 7, 7, 3, 3, 3 and 3), followed by an optional final pool and by a
+            flatten operation. This single flatten vector is then passed through a stack of fully connected
+            layers and returned as a b x h tensor where h is the output size of the last fully connected
+            layer.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -5959,6 +6243,15 @@ StackedCNN:
             most tasks.
         ui_display_name: Layer Weights Initializer
 StackedCNNRNN:
+    type:
+        short_description:
+            Maps inputs to embeddings, passes them through convolutional layer stack, then recurrent layer stack.
+        long_description:
+            The cnnrnn encoder works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a stack of convolutional layers (by default 2), that is followed by a stack of
+            recurrent layers (by default 1), followed by a reduce operation that by default only returns the
+            last output, but can perform other reduce functions.
     activation:
         ui_display_name: null
     bias_initializer:
@@ -6525,6 +6818,18 @@ StackedCNNRNN:
             most tasks.
         ui_display_name: Layer Weights Initializer
 StackedParallelCNN:
+    type:
+        short_description:
+            Combination of Parallel CNN and Stacked CNN encoders utilizing a stack of parallel convolutional layers.
+        long_description:
+            The stacked parallel cnn encoder is a combination of the Parallel CNN and the Stacked CNN
+            encoders where each layer of the stack is composed of parallel convolutional layers. It works by
+            first mapping the input integer sequence b x s (where b is the batch size and s is the length of
+            the sequence) into a sequence of embeddings, then it passes the embedding through a stack of
+            several parallel 1d convolutional layers with different filter size, followed by an optional
+            final pool and by a flatten operation. This single flattened vector is then passed through a
+            stack of fully connected layers and returned as a b x h tensor where h is the output size of the
+            last fully connected layer.
     activation:
         default_value_reasoning:
             The Rectified Linear Units (ReLU) function is the
@@ -6880,6 +7185,14 @@ StackedParallelCNN:
             most tasks.
         ui_display_name: Layer Weights Initializer
 StackedRNN:
+    type:
+        short_description:
+            Utilizes a stack of recurrent layers followed by a reduce operation.
+        long_description:
+            The rnn encoder works by first mapping the input integer sequence b x s (where b is the batch
+            size and s is the length of the sequence) into a sequence of embeddings, then it passes the
+            embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce
+            operation that by default only returns the last output, but can perform other reduce functions.
     activation:
         ui_display_name: null
     bias_initializer:
@@ -7321,6 +7634,15 @@ StackedRNN:
             most tasks.
         ui_display_name: Layer Weights Initializer
 StackedTransformer:
+    type:
+        short_description:
+            Stack of transformer blocks with optional stack of fully connected layers.
+        long_description:
+            The transformer encoder implements a stack of transformer blocks, replicating the architecture
+            introduced in the Attention is all you need paper, and adds am optional stack of fully connected
+            layers at the end.
+        literature_references:
+            - https://arxiv.org/abs/1706.03762
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -7569,8 +7891,6 @@ StackedTransformer:
         expected_impact: 1
         literature_references:
             - "For BatchNorm2d: https://arxiv.org/abs/1502.03167
-
-
               For LayerNorm: https://arxiv.org/abs/1607.06450"
         related_parameters:
             - "`norm`"
@@ -7748,7 +8068,14 @@ StackedTransformer:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-T5Encoder:
+T5:
+    type:
+        short_description:
+            Text-to-text approach transformer with good transfer performance on multiple tasks.
+        long_description:
+            The T5 encoder loads a pretrained T5 (default t5-small) model using the Hugging Face transformers
+            package. T5 (Text-to-Text Transfer Transformer) is pre-trained on a huge text dataset crawled
+            from the web and shows good transfer performance on multiple tasks.
     d_ff:
         default_value_reasoning: Default value matches the pre-trained encoder.
         description_implications:
@@ -7863,7 +8190,16 @@ T5Encoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-TransformerXLEncoder:
+TransformerXL:
+    type:
+        short_description:
+            Transformer architecture that introduces the notion of recurrence to the deep self-attention network.
+        long_description:
+            The transformer_xl encoder loads a pretrained Transformer-XL (default transfo-xl-wt103) model
+            using the Hugging Face transformers package. Transformer-XL is a causal (uni-directional)
+            transformer with relative positioning (sinusoïdal) embeddings which can reuse previously
+            computed hidden-states to attend to longer context (memory). This model also uses adaptive
+            softmax inputs and outputs (tied).
     adaptive:
         default_value_reasoning: Huggingface default.
         description_implications:
@@ -7990,7 +8326,172 @@ TransformerXLEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-ViTEncoder:
+TVAlexNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVBaseEncoder:
+    model_cache_dir:
+        ui_display_name: Model Cache Directory
+    saved_weights_in_checkpoint:
+        default_value_reasoning:
+            The weights of the encoder are not necessarily saved
+            in the checkpoint. The user has to save them first.
+        description_implications:
+            The memory footprint for some of these encoders
+            can be large.
+        expected_impact: 1
+        related_parameters:
+            - skip_save_model
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            Some of these encoders are large, so it might
+            be better to load them as needed, especially if 1. they're not used frequently
+            2. the user doesn't have a lot of storage.
+        ui_display_name: Saved Weights in Checkpoint
+    trainable:
+        default_value_reasoning: By default, model components are trainable.
+        description_implications:
+            The tradeoff when using `trainable` is between speed
+            and flexibility. If False, less weights are subject to change and the
+            model will therefore train faster. However, the representations output
+            by this component are fixed for each input.
+        expected_impact: 2
+        literature_references:
+            - "https://www.ibm.com/cloud/learn/overfitting
+
+
+              http://d2l.ai/chapter_computer-vision/fine-tuning.html"
+        related_parameters:
+            - use_pretrained, pretrained_model, saved_weights_in_checkpoint
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            Freezing the weights (i.e. `trainable = False`)
+            is only worth trying if you are loading in pretrained weights. In that
+            case, check to see if your model is overfitting. If so, freezing the weights
+            (and therefore reducing model complexity) may be beneficial.
+        ui_display_name: Trainable
+    use_pretrained:
+        default_value_reasoning:
+            By default, the model is initialized as a pretrained
+            model.
+        description_implications:
+            Pretrained models have typically already learned
+            features that are difficult to learn from scratch. They are particularly
+            beneficial when training on small amounts of data.
+        expected_impact: 3
+        literature_references:
+            - https://machinelearningmastery.com/transfer-learning-for-deep-learning/
+        related_parameters:
+            - trainable, pretrained_model_name, pretrained_model_name_or_path, pretrained_kwargs
+        suggested_values:
+            - false
+        suggested_values_reasoning:
+            If you have a large amount of data and/or you
+            have data that differs from the typical distribution, then it might be
+            worth training the model from scratch.
+        ui_display_name: Use pretrained model
+TVConvNeXtEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVDenseNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVEfficientNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVGoogLeNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVInceptionV3Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMaxVitEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMNASNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMobileNetV2Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVMobileNetV3Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVRegNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVResNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVResNeXtEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVShuffleNetV2Encoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVSqueezeNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVSwinTransformerEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVViTEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVVGGEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+TVWideResNetEncoder:
+    model_variant:
+        ui_display_name: Model Variant
+    type:
+        ui_display_name: Type
+ViT:
+    type:
+        short_description:
+            ViT encoder divides images into patches, performs a linear transformation, and then applies a transformer.
+        long_description:
+            ViT, short for Vision Transformer, divides the image into equal-sized patches, uses a linear
+            transformation to encode each flattened patch, then applies a deep transformer architecture to
+            the sequence of encoded patches.
     attention_probs_dropout_prob:
         default_value_reasoning: Taken from literature (https://arxiv.org/abs/2010.11929).
         description_implications:
@@ -8217,7 +8718,13 @@ ViTEncoder:
     width:
         internal_only: true
         ui_display_name: null
-XLMEncoder:
+XLM:
+    type:
+        short_description:
+            XLM is pre-trained by cross-language modeling.
+        long_description:
+            The xlm encoder loads a pretrained XLM (default xlm-mlm-en-2048) model using the Hugging Face
+            transformers package. XLM is pre-trained by cross-language modeling.
     asm:
         ui_display_name: null
     attention_dropout:
@@ -8383,7 +8890,15 @@ XLMEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-XLMRoBERTaEncoder:
+XLMRoBERTa:
+    type:
+        short_description:
+            XLM-RoBERTa a large multi-lingual language model trained on 2.5TB of filtered CommonCrawl data.
+        long_description:
+            The xlmroberta encoder loads a pretrained XLM-RoBERTa (default jplu/tf-xlm-reoberta-base) model
+            using the Hugging Face transformers package. XLM-RoBERTa is based on Facebook’s RoBERTa model
+            released in 2019. It is a large multi-lingual language model, trained on 2.5TB of filtered
+            CommonCrawl data.
     add_pooling_layer:
         ui_display_name: null
     bos_token_id:
@@ -8442,7 +8957,16 @@ XLMRoBERTaEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-XLNetEncoder:
+XLNet:
+    type:
+        short_description:
+            XLNet is a transformer that outperforms BERT on a variety of benchmarks.
+        long_description:
+            The xlnet encoder loads a pretrained XLNet (default xlnet-base-cased) model using the Hugging
+            Face transformers package. XLnet is an extension of the Transformer-XL model pre-trained using
+            an autoregressive method to learn bidirectional contexts by maximizing the expected likelihood
+            over all permutations of the input sequence factorization order. XLNet outperforms BERT on a
+            variety of benchmarks.
     attn_type:
         ui_display_name: null
     bi_data:
@@ -8601,38 +9125,3 @@ XLNetEncoder:
     vocab_size:
         internal_only: true
         ui_display_name: Not displayed
-encoder:
-    fc_layers:
-        default_value_reasoning:
-            By default the stack is built by using num_fc_layers,
-            output_size, use_bias, weights_initializer, bias_initializer, norm, norm_params,
-            activation, dropout. When a list of dictionaries is provided, the stack
-            is built following the parameters of each dict for building each layer.
-        description_implications:
-            The more layers that are specified the deeper and
-            higher capacity the model will be. This makes it possible to potentially
-            achieve better performance when a big anough amount of data is provided,
-            but also makes the model more computationally expensive and potentially
-            more prone to overfitting.
-        example_value:
-            - dropout: 0.1
-              output_size: 128
-            - norm: layer
-              output_size: 64
-        expected_impact: 1
-        related_parameters:
-            - output_size
-            - use_bias
-            - weights_initializer
-            - bias_initializer
-            - norm
-            - norm_params
-            - activation
-            - dropout
-        suggested_values_reasoning:
-            It is easier to define a stack of fully connected
-            layers by just specifying num_fc_layers, output_size and the other individual
-            parameters. It will create a stack of layers with identical properties.
-            Use this parameter only if you need a fine grained level of control of
-            each individual layer in the stack.
-        ui_display_name: Fully Connected Layers

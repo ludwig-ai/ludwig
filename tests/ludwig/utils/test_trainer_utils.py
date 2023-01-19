@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 import pytest
 
-from ludwig.constants import COMBINED, LOSS
+from ludwig.constants import BATCH_SIZE, COMBINED, LOSS
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.schema.features.category_feature import CategoryOutputFeatureConfig
@@ -152,7 +152,7 @@ def test_progress_tracker():
 def test_full_progress_tracker():
     progress_tracker = trainer_utils.ProgressTracker(
         **{
-            "batch_size": 128,
+            BATCH_SIZE: 128,
             "best_eval_metric_checkpoint_number": 7,
             "best_eval_metric_epoch": 6,
             "best_eval_metric_steps": 35,
@@ -253,7 +253,7 @@ def test_full_progress_tracker():
     )
 
     assert progress_tracker.log_metrics() == {
-        "batch_size": 128,
+        BATCH_SIZE: 128,
         "best.train_metrics.Survived.accuracy": 0.682,
         "best.train_metrics.Survived.loss": 4.006,
         "best.train_metrics.Survived.roc_auc": 0.634,

@@ -3,6 +3,7 @@ from jsonschema.exceptions import ValidationError
 
 from ludwig.constants import (
     ACTIVE,
+    BACKEND,
     CATEGORY,
     COLUMN,
     DECODER,
@@ -20,6 +21,7 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.schema import get_schema, validate_config
+from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig
 from ludwig.schema.features.preprocessing.bag import BagPreprocessingConfig
@@ -34,6 +36,7 @@ from ludwig.schema.features.preprocessing.set import SetPreprocessingConfig
 from ludwig.schema.features.preprocessing.text import TextPreprocessingConfig
 from ludwig.schema.features.preprocessing.timeseries import TimeseriesPreprocessingConfig
 from ludwig.schema.features.preprocessing.vector import VectorPreprocessingConfig
+from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.model_config import ModelConfig
 from tests.integration_tests.utils import (
     audio_feature,
@@ -119,7 +122,7 @@ def test_config_encoders():
         validate_config(config)
 
 
-def test_config_tabnet():
+def test_config_with_backend():
     config = {
         "input_features": [
             category_feature(encoder={"type": "dense", "vocab_size": 2}, reduce_input="sum"),
@@ -152,6 +155,7 @@ def test_config_tabnet():
             "regularization_type": "l2",
             "validation_field": "label",
         },
+        BACKEND: {"type": "ray", "trainer": {"num_workers": 2}},
     }
     validate_config(config)
 
@@ -390,3 +394,31 @@ def test_ludwig_schema_serialization(model_type):
         raise TypeError(
             f"Ludwig schema of type `{model_type}` cannot be represented by valid JSON. See further details: {e}"
         )
+
+
+def test_encoder_descriptions():
+    """This test tests that each encoder in the enum for each feature type has a description."""
+    schema = get_input_feature_jsonschema(MODEL_ECD)
+
+    for feature_schema in schema["items"]["allOf"]:
+        type_data = feature_schema["then"]["properties"]["encoder"]["properties"]["type"]
+        assert len(set(type_data["enumDescriptions"].keys())) > 0
+        assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
+
+
+def test_combiner_descriptions():
+    """This test tests that each combiner in the enum for available combiners has a description."""
+    combiner_json_schema = get_combiner_jsonschema()
+    type_data = combiner_json_schema["properties"]["type"]
+    assert len(set(type_data["enumDescriptions"].keys())) > 0
+    assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))
+
+
+def test_decoder_descriptions():
+    """This test tests that each decoder in the enum for each feature type has a description."""
+    schema = get_output_feature_jsonschema(MODEL_ECD)
+
+    for feature_schema in schema["items"]["allOf"]:
+        type_data = feature_schema["then"]["properties"]["decoder"]["properties"]["type"]
+        assert len(type_data["enumDescriptions"].keys()) > 0
+        assert set(type_data["enumDescriptions"].keys()).issubset(set(type_data["enum"]))

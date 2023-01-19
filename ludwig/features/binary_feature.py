@@ -142,7 +142,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend
+        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         if column.dtype != object:
             return {}
@@ -248,8 +248,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    metric_functions = BinaryOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[BinaryOutputFeatureConfig, Dict],

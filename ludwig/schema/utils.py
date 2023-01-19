@@ -4,8 +4,9 @@ from dataclasses import field
 from typing import Any
 from typing import Dict as TDict
 from typing import List as TList
-from typing import Optional, Tuple, Type, Union
+from typing import Optional, Set, Tuple, Type, Union
 
+import marshmallow_dataclass
 import yaml
 from marshmallow import EXCLUDE, fields, schema, validate, ValidationError
 from marshmallow_dataclass import dataclass as m_dataclass
@@ -146,6 +147,11 @@ class BaseMarshmallowConfig(ABC):
         Returns: dict for this dataclass
         """
         return convert_submodules(self.__dict__)
+
+    @classmethod
+    def get_valid_field_names(cls) -> Set[str]:
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return set(schema.fields.keys())
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
@@ -801,7 +807,7 @@ def InitializerOrDict(
                             "type": {"type": "string", "enum": initializers},
                         },
                         "required": ["type"],
-                        "title": "initializer_custom_option",
+                        "title": f"{self.name}_custom_option",
                         "additionalProperties": True,
                         "description": "Customize an existing initializer.",
                     },
@@ -809,7 +815,7 @@ def InitializerOrDict(
                         "type": "string",
                         "enum": initializers,
                         "default": default,
-                        "title": "initializer_preconfigured_option",
+                        "title": f"{self.name}_preconfigured_option",
                         "description": "Pick a preconfigured initializer.",
                     },
                 ],

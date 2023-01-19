@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DECODER, TRAINER
+from ludwig.constants import BATCH_SIZE, DECODER, TRAINER
 from ludwig.serve import server
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import (
@@ -62,7 +62,7 @@ def train_and_predict_model(input_features, output_features, data_csv, output_di
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
     model = LudwigModel(config, backend=LocalTestBackend())
     model.train(
@@ -82,7 +82,7 @@ def train_and_predict_model_with_stratified_split(input_features, output_feature
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         "preprocessing": {
             "split": {"column": output_features[0]["column"], "probabilities": [0.7, 0.1, 0.2], "type": "stratify"},
         },
@@ -150,7 +150,7 @@ def test_server_integration_with_images(tmpdir):
         image_feature(
             folder=image_dest_folder,
             encoder={"output_size": 16, "num_filters": 8},
-            preprocessing={"in_memory": True, "height": 8, "width": 8, "num_channels": 3},
+            preprocessing={"in_memory": True, "height": 32, "width": 32, "num_channels": 3},
         ),
         text_feature(encoder={"type": "embed", "min_len": 1}),
         number_feature(normalization="zscore"),

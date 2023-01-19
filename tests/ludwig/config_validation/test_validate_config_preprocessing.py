@@ -1,6 +1,6 @@
 # import pytest
 
-from ludwig.schema import validate_config
+from ludwig.config_validation.validation import validate_config
 from tests.integration_tests.utils import binary_feature, category_feature
 
 

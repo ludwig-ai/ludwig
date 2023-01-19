@@ -24,7 +24,7 @@ from typing import List, Set
 import pytest
 import yaml
 
-from ludwig.constants import COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
+from ludwig.constants import BATCH_SIZE, COMBINER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, TRAINER
 from ludwig.types import FeatureConfigDict
 from ludwig.utils.data_utils import load_yaml
 from tests.integration_tests.utils import category_feature, generate_data, number_feature, sequence_feature
@@ -64,7 +64,7 @@ def _prepare_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     with open(config_filename, "w") as f:
@@ -86,7 +86,7 @@ def _prepare_hyperopt_data(csv_filename, config_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 4},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         "hyperopt": {
             "parameters": {
                 "trainer.learning_rate": {
