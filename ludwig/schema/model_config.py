@@ -47,7 +47,6 @@ from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.decoders.utils import get_decoder_cls
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
-from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import (
     get_input_feature_cls,
@@ -173,9 +172,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
-                    if feature_cls.type == BINARY:
-                        feature_cls.encoder = BinaryPassthroughEncoderConfig()
-                    elif feature_cls.type in [CATEGORY, NUMBER]:
+                    if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                         feature_cls.encoder = PassthroughEncoderConfig()
                     else:
                         raise ValidationError(
@@ -454,9 +451,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         for feature in self.input_features.to_dict().keys():
             feature_cls = getattr(self.input_features, feature)
-            if feature_cls.type == BINARY:
-                feature_cls.encoder = BinaryPassthroughEncoderConfig()
-            elif feature_cls.type in [CATEGORY, NUMBER]:
+            if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                 feature_cls.encoder = PassthroughEncoderConfig()
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
