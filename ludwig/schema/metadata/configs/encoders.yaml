@@ -394,6 +394,7 @@ BERT:
         ui_display_name: classifier_dropout
     gradient_checkpointing:
         ui_display_name: null
+        expected_impact: 1
     hidden_act:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -462,8 +463,10 @@ BERT:
         ui_display_name: null
     intermediate_size:
         ui_display_name: null
+        expected_impact: 1
     layer_norm_eps:
         ui_display_name: null
+        expected_impact: 1
     max_position_embeddings:
         default_value_reasoning: Taken from huggingface.
         description_implications:
@@ -491,14 +494,19 @@ BERT:
         ui_display_name: null
     num_attention_heads:
         ui_display_name: null
+        expected_impact: 1
     num_hidden_layers:
         ui_display_name: null
+        expected_impact: 1
     pad_token_id:
         ui_display_name: null
+        expected_impact: 1
     position_embedding_type:
         ui_display_name: null
+        expected_impact: 1
     pretrained_kwargs:
         ui_display_name: null
+        expected_impact: 1
     pretrained_model_name_or_path:
         ui_display_name: null
         expected_impact: 3
@@ -527,6 +535,7 @@ BERT:
         ui_display_name: null
     type_vocab_size:
         ui_display_name: null
+        expected_impact: 1
     use_pretrained:
         ui_display_name: null
         expected_impact: 2

@@ -34,12 +34,14 @@ Classifier:
         ui_display_name: Bias Initializer
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
     num_classes:
         other_information: Internal Only
         ui_display_name: Not Displayed
+        expected_impact: 3
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -80,7 +82,7 @@ Classifier:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -105,7 +107,7 @@ Projector:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -139,8 +141,10 @@ Projector:
         ui_display_name: Bias Initializer
     clip:
         ui_display_name: null
+        expected_impact: 1
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
@@ -153,7 +157,7 @@ Projector:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -207,7 +211,7 @@ Projector:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -228,6 +232,7 @@ Regressor:
             projection to a single number.
     activation:
         ui_display_name: null
+        expected_impact: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -257,6 +262,7 @@ Regressor:
         ui_display_name: Bias Initializer
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
@@ -300,7 +306,7 @@ Regressor:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -320,6 +326,7 @@ PassthroughDecoder:
             The passthrough decoder simply returns the raw output coming from the combiner.
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
@@ -344,13 +351,15 @@ SequenceGeneratorDecoder:
             during model building.
     cell_type:
         ui_display_name: null
+        expected_impact: 3
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
     max_sequence_length:
-        expected_impact: 1
+        expected_impact: 3
         ui_display_name: null
     num_layers:
         default_value_reasoning:
@@ -361,7 +370,7 @@ SequenceGeneratorDecoder:
             performance for longer sequences or more complex tasks.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         suggested_values: 1-3
         suggested_values_reasoning:
             Increasing the number of layers may improve encoder
@@ -410,16 +419,19 @@ SequenceTaggerDecoder:
         ui_display_name: Attention Embedding Size
     attention_num_heads:
         ui_display_name: null
+        expected_impact: 1
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
     max_sequence_length:
-        expected_impact: 1
+        expected_impact: 3
         ui_display_name: null
     use_attention:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -448,3 +460,4 @@ SequenceTaggerDecoder:
         ui_display_name: Use Bias
     vocab_size:
         ui_display_name: Not displayed
+        internal_only: true
