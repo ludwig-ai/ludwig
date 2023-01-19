@@ -24,54 +24,54 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
         default=None,
         description="List of dictionaries containing the parameters for each fully connected layer.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_layers"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_layers"],
     )
 
     num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
         description="Number of fully-connected layers if fc_layers not specified.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["num_fc_layers"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["num_fc_layers"],
     )
 
     fc_output_size: int = schema_utils.PositiveInteger(
         default=256,
         description="Output size of fully connected stack.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_output_size"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_output_size"],
     )
 
     fc_use_bias: bool = schema_utils.Boolean(
         default=True,
         description="Whether the layer uses a bias vector in the fc_stack.",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_use_bias"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_use_bias"],
     )
 
     fc_weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="xavier_uniform",
         description="The weights initializer to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
     )
 
     fc_bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
         default="zeros",
         description="The bias initializer to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
     )
 
     fc_norm: str = schema_utils.StringOptions(
         ["batch", "layer"],
         description="The normalization to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"],
     )
 
     fc_norm_params: dict = schema_utils.Dict(
         description="The additional parameters for the normalization in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm_params"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm_params"],
     )
 
     fc_activation: str = schema_utils.ActivationOptions(
         default="relu",
         description="The activation to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_activation"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_activation"],
     )
 
     fc_dropout: float = schema_utils.FloatRange(
@@ -79,7 +79,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
         min=0,
         max=1,
         description="The dropout rate to use for the layers in the fc_stack",
-        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_dropout"]
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_dropout"],
     )
 
 
@@ -97,7 +97,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
         "passthrough",
         description="The passthrough decoder simply returns the raw numerical values coming from the combiner as "
         "outputs",
-        parameter_metadata=DECODER_METADATA["PassthroughDecoder"]["type"]
+        parameter_metadata=DECODER_METADATA["PassthroughDecoder"]["type"],
     )
 
     input_size: int = schema_utils.PositiveInteger(
