@@ -148,21 +148,6 @@ evaluate_training_set:
         so it will still be easy to spot signs of overfitting like when the training-validation
         loss curves diverge.
     ui_display_name: Evaluate Training Set
-gradient_clipping:
-    default_value_reasoning:
-        A conservative cap on the maximum gradient size to apply
-        over a single training step.
-    description_implications:
-        Gradient clipping is a technique to prevent exploding
-        gradients in very deep networks. Increasing gradient clipping can help with
-        model training loss curve stability, but it can also make training less efficient
-        as weight at each training step is capped.
-    expected_impact: 1
-    suggested_values_reasoning:
-        It's usually sensible to have some conservative notion
-        of gradient clipping to make modeling robust to a particularly bad or noisy
-        batch of examples.
-    ui_display_name: Gradient Clipping
 increase_batch_size_eval_metric:
     expected_impact: 1
     ui_display_name: "Batch Size Increase: Evaluation Metric"
