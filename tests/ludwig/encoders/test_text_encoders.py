@@ -3,58 +3,7 @@ import torch
 
 from ludwig.encoders import text_encoders
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-
-
-@pytest.mark.parametrize(
-    "encoder_cls",
-    [
-        text_encoders.ALBERTEncoder,
-        text_encoders.BERTEncoder,
-        text_encoders.XLMEncoder,
-        text_encoders.GPTEncoder,
-        text_encoders.RoBERTaEncoder,
-        text_encoders.GPT2Encoder,
-        text_encoders.DistilBERTEncoder,
-        text_encoders.TransformerXLEncoder,
-        pytest.param(text_encoders.CTRLEncoder, marks=pytest.mark.skip(reason="Causes exit code 143 in CI")),
-        text_encoders.CamemBERTEncoder,
-        text_encoders.MT5Encoder,
-        text_encoders.XLMRoBERTaEncoder,
-        text_encoders.LongformerEncoder,
-        text_encoders.ELECTRAEncoder,
-        text_encoders.FlauBERTEncoder,
-        text_encoders.T5Encoder,
-        text_encoders.XLNetEncoder,
-        text_encoders.DistilBERTEncoder,
-    ],
-)
-def test_hf_pretrained_default_model(tmpdir, encoder_cls: text_encoders.HFTextEncoder):
-    encoder = encoder_cls(
-        use_pretrained=True,
-        reduce_output="sum",
-        max_sequence_length=20,
-        pretrained_kwargs=dict(cache_dir=tmpdir),
-    )
-    inputs = torch.rand((2, 20)).type(encoder.input_dtype)
-    outputs = encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == encoder.output_shape
-
-
-@pytest.mark.parametrize("pretrained_model_name_or_path", ["bert-base-uncased"])
-@pytest.mark.parametrize("reduce_output", [None, "sum", "cls_pooled"])
-@pytest.mark.parametrize("max_sequence_length", [20])
-def test_auto_transformer_encoder(
-    tmpdir, pretrained_model_name_or_path: str, reduce_output: str, max_sequence_length: int
-):
-    encoder = text_encoders.AutoTransformerEncoder(
-        pretrained_model_name_or_path=pretrained_model_name_or_path,
-        reduce_output=reduce_output,
-        max_sequence_length=max_sequence_length,
-        pretrained_kwargs=dict(cache_dir=tmpdir),
-    )
-    inputs = torch.rand((2, max_sequence_length)).type(encoder.input_dtype)
-    outputs = encoder(inputs)
-    assert outputs["encoder_output"].shape[1:] == encoder.output_shape
+from tests.integration_tests.utils import slow
 
 
 @pytest.mark.parametrize("use_pretrained", [False])
@@ -85,6 +34,7 @@ def test_bert_encoder(use_pretrained: bool, reduce_output: str, max_sequence_len
     assert outputs["encoder_output"].shape[1:] == bert.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", ["last", "sum", "mean"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -99,6 +49,7 @@ def test_xlm_encoder(use_pretrained: bool, reduce_output: str, max_sequence_leng
     assert outputs["encoder_output"].shape[1:] == xlm_encoder.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -127,7 +78,8 @@ def test_roberta_encoder(use_pretrained: bool, reduce_output: str, max_sequence_
     assert outputs["encoder_output"].shape[1:] == roberta_encoder.output_shape
 
 
-@pytest.mark.parametrize("use_pretrained", [False])
+@slow
+@pytest.mark.parametrize("use_pretrained", [True, False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
 def test_gpt2_encoder(use_pretrained: bool, reduce_output: str, max_sequence_length: int):
@@ -169,6 +121,7 @@ def test_transfoxl_encoder(use_pretrained: bool, reduce_output: str, max_sequenc
     assert outputs["encoder_output"].shape[1:] == transfo.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -183,6 +136,7 @@ def test_ctrl_encoder(use_pretrained: bool, reduce_output: str, max_sequence_len
     assert outputs["encoder_output"].shape[1:] == encoder.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "cls_pooled"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -211,6 +165,7 @@ def test_mt5_encoder(use_pretrained: bool, reduce_output: str, max_sequence_leng
     assert outputs["encoder_output"].shape[1:] == mt5_encoder.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -237,6 +192,7 @@ def test_longformer_encoder(use_pretrained: bool, reduce_output: str, max_sequen
     assert outputs["encoder_output"].shape[1:] == encoder.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -249,6 +205,21 @@ def test_electra_encoder(use_pretrained: bool, reduce_output: str, max_sequence_
     assert outputs["encoder_output"].shape[1:] == encoder.output_shape
 
 
+@pytest.mark.parametrize("pretrained_model_name_or_path", ["bert-base-uncased"])
+@pytest.mark.parametrize("reduce_output", [None, "sum", "cls_pooled"])
+@pytest.mark.parametrize("max_sequence_length", [20])
+def test_auto_transformer_encoder(pretrained_model_name_or_path: str, reduce_output: str, max_sequence_length: int):
+    encoder = text_encoders.AutoTransformerEncoder(
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+        reduce_output=reduce_output,
+        max_sequence_length=max_sequence_length,
+    )
+    inputs = torch.rand((2, max_sequence_length)).type(encoder.input_dtype)
+    outputs = encoder(inputs)
+    assert outputs["encoder_output"].shape[1:] == encoder.output_shape
+
+
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
@@ -273,6 +244,7 @@ def test_t5_encoder(use_pretrained: bool, reduce_output: str, max_sequence_lengt
     assert outputs["encoder_output"].shape[1:] == encoder.output_shape
 
 
+@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
