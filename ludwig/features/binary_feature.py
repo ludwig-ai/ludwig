@@ -181,6 +181,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input: bool,
+        is_input_feature: bool,
     ) -> None:
         column = input_df[feature_config[COLUMN]]
 
@@ -192,7 +193,11 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 # No predefined mapping from string to bool, so compute it directly
                 column = backend.df_engine.map_objects(column, strings_utils.str2bool)
 
-        proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_)
+        if is_input_feature:
+            proc_df[feature_config[PROC_COLUMN]] = column.astype(np.float32)
+        else:
+            proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool)
+
         return proc_df
 
 
@@ -237,7 +242,8 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
         return BinaryInputFeatureConfig
 
     def create_sample_input(self, batch_size: int = 2):
-        return torch.rand([batch_size]) > 0.5
+        bool_tensor = torch.rand([batch_size]) > 0.5
+        return bool_tensor.to(torch.float32)
 
     @classmethod
     def get_preproc_input_dtype(cls, metadata: TrainingSetMetadataDict) -> str:

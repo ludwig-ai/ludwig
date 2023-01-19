@@ -98,6 +98,7 @@ class VectorFeatureMixin:
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
+        is_input_feature: bool,
     ):
         """Expects all the vectors to be of the same size.
 

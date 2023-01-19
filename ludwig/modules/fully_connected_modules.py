@@ -92,12 +92,6 @@ class FCLayer(LudwigModule):
             self.layers.append(Dropout(dropout))
 
     def forward(self, inputs, mask=None):
-        # Inputs to the binary encoder could be of dtype torch.bool. Linear layer
-        # weights are of dtype torch.float32. The inputs and the weights need to
-        # be of the same dtype.
-        if inputs.dtype == torch.bool:
-            inputs = inputs.to(torch.float32)
-
         hidden = inputs
         for layer in self.layers:
             hidden = layer(hidden)

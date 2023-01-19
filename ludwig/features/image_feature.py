@@ -504,6 +504,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
+        is_input_feature: bool,
     ):
         set_default_value(feature_config[PREPROCESSING], "in_memory", preprocessing_parameters["in_memory"])
 

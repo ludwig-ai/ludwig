@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-@register_encoder("passthrough", [NUMBER, VECTOR])
+@register_encoder("passthrough", [BINARY, NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
     def __init__(self, input_size=1, encoder_config=None, **kwargs):
         super().__init__()
@@ -102,6 +102,12 @@ class DenseEncoder(Encoder):
         :param inputs: The inputs fed into the encoder.
                Shape: [batch x 1], type tf.float32
         """
+        # Inputs to the binary encoder could be of dtype torch.bool. Linear layer
+        # weights are of dtype torch.float32. The inputs and the weights need to
+        # be of the same dtype.
+        # if inputs.dtype == torch.bool:
+        #     inputs = inputs.to(torch.float32)
+
         return {"encoder_output": self.fc_stack(inputs)}
 
     @staticmethod

@@ -165,6 +165,7 @@ class TextFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
+        is_input_feature: bool,
     ):
         proc_df[feature_config[PROC_COLUMN]] = TextFeatureMixin.feature_data(
             input_df[feature_config[COLUMN]],

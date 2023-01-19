@@ -282,6 +282,7 @@ class NumberFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
+        is_input_feature: bool,
     ):
         # Had to replace normalize() function due to issue #1911
         # this comment is to provide context for the change.

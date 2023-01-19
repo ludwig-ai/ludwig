@@ -1,7 +1,7 @@
 from contextlib import nullcontext as no_error_raised
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import BINARY, TRAINER
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data
 
 
@@ -36,13 +36,13 @@ def test_category_passthrough_encoder(csv_filename):
     generate_data_and_train(config, csv_filename)
 
 
-def test_binary_dense_encoder(csv_filename):
-    input_features = [binary_feature(), binary_feature()]
-    output_features = [binary_feature(output_feature=True)]
+def test_binary_encoders(csv_filename):
     config = {
-        "input_features": input_features,
-        "output_features": output_features,
+        "input_features": [
+            {"name": "binary1", "type": BINARY, "encoder": {"type": "passthrough"}},
+            {"name": "binary2", "type": BINARY, "encoder": {"type": "dense"}},
+        ],
+        "output_features": [binary_feature(output_feature=True)],
         TRAINER: {"train_steps": 1},
-        "defaults": {"binary": {"encoder": {"type": "dense"}}},
     }
     generate_data_and_train(config, csv_filename)
