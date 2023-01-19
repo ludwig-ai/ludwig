@@ -66,24 +66,16 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.SGD.html#torch.optim.SGD :
     momentum: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Momentum factor.",
-        parameter_metadata=OPTIMIZER_METADATA["momentum"]
+        default=0.0, description="Momentum factor.", parameter_metadata=OPTIMIZER_METADATA["momentum"]
     )
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
     dampening: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Dampening for momentum.",
-        parameter_metadata=OPTIMIZER_METADATA["dampening"]
+        default=0.0, description="Dampening for momentum.", parameter_metadata=OPTIMIZER_METADATA["dampening"]
     )
     nesterov: bool = schema_utils.Boolean(
-        default=False,
-        description="Enables Nesterov momentum.",
-        parameter_metadata=OPTIMIZER_METADATA["nesterov"]
+        default=False, description="Enables Nesterov momentum.", parameter_metadata=OPTIMIZER_METADATA["nesterov"]
     )
 
 
@@ -104,39 +96,37 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
     max_iter: int = schema_utils.Integer(
         default=20,
         description="Maximum number of iterations per optimization step.",
-        parameter_metadata=OPTIMIZER_METADATA["max_iter"]
+        parameter_metadata=OPTIMIZER_METADATA["max_iter"],
     )
 
     max_eval: int = schema_utils.Integer(
         default=None,
         allow_none=True,
         description="Maximum number of function evaluations per optimization step. Default: `max_iter` * 1.25.",
-        parameter_metadata=OPTIMIZER_METADATA["max_eval"]
+        parameter_metadata=OPTIMIZER_METADATA["max_eval"],
     )
 
     tolerance_grad: float = schema_utils.NonNegativeFloat(
         default=1e-07,
         description="Termination tolerance on first order optimality.",
-        parameter_metadata=OPTIMIZER_METADATA["tolerance_grad"]
+        parameter_metadata=OPTIMIZER_METADATA["tolerance_grad"],
     )
 
     tolerance_change: float = schema_utils.NonNegativeFloat(
         default=1e-09,
         description="Termination tolerance on function value/parameter changes.",
-        parameter_metadata=OPTIMIZER_METADATA["tolerance_change"]
+        parameter_metadata=OPTIMIZER_METADATA["tolerance_change"],
     )
 
     history_size: int = schema_utils.Integer(
-        default=100,
-        description="Update history size.",
-        parameter_metadata=OPTIMIZER_METADATA["history_size"]
+        default=100, description="Update history size.", parameter_metadata=OPTIMIZER_METADATA["history_size"]
     )
 
     line_search_fn: str = schema_utils.StringOptions(
         ["strong_wolfe"],
         default=None,
         description="Line search function to use.",
-        parameter_metadata=OPTIMIZER_METADATA["line_search_fn"]
+        parameter_metadata=OPTIMIZER_METADATA["line_search_fn"],
     )
 
 
@@ -157,26 +147,24 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
     betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
-        parameter_metadata=OPTIMIZER_METADATA["betas"]
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
     )
 
     eps: float = schema_utils.NonNegativeFloat(
         default=1e-08,
         description="Term added to the denominator to improve numerical stability.",
-        parameter_metadata=OPTIMIZER_METADATA["eps"]
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay (L2 penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0, description="Weight decay (L2 penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
     amsgrad: bool = schema_utils.Boolean(
         default=False,
         description="Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam "
-                    "and Beyond'.",
-        parameter_metadata=OPTIMIZER_METADATA["amsgrad"]
+        "and Beyond'.",
+        parameter_metadata=OPTIMIZER_METADATA["amsgrad"],
     )
 
 
@@ -197,26 +185,24 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
     betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
-        parameter_metadata=OPTIMIZER_METADATA["betas"]
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
     )
 
     eps: float = schema_utils.NonNegativeFloat(
         default=1e-08,
         description="Term added to the denominator to improve numerical stability.",
-        parameter_metadata=OPTIMIZER_METADATA["eps"]
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
     amsgrad: bool = schema_utils.Boolean(
         default=False,
         description="Whether to use the AMSGrad variant of this algorithm from the paper 'On the Convergence of Adam "
-                    "and Beyond'. ",
-        parameter_metadata=OPTIMIZER_METADATA["amsgrad"]
+        "and Beyond'. ",
+        parameter_metadata=OPTIMIZER_METADATA["amsgrad"],
     )
 
 
@@ -239,19 +225,17 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
         min=0,
         max=1,
         description="Coefficient used for computing a running average of squared gradients.",
-        parameter_metadata=OPTIMIZER_METADATA["rho"]
+        parameter_metadata=OPTIMIZER_METADATA["rho"],
     )
 
     eps: float = schema_utils.NonNegativeFloat(
         default=1e-06,
         description="Term added to the denominator to improve numerical stability.",
-        parameter_metadata=OPTIMIZER_METADATA["eps"]
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
 
@@ -271,27 +255,21 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 
     # Defaults taken from https://pytorch.org/docs/stable/generated/torch.optim.Adagrad.html#torch.optim.Adagrad :
     initial_accumulator_value: float = schema_utils.NonNegativeFloat(
-        default=0,
-        description="",
-        parameter_metadata=OPTIMIZER_METADATA["initial_accumulator_value"]
+        default=0, description="", parameter_metadata=OPTIMIZER_METADATA["initial_accumulator_value"]
     )
 
     lr_decay: float = schema_utils.FloatRange(
-        default=0,
-        description="Learning rate decay.",
-        parameter_metadata=OPTIMIZER_METADATA["lr_decay"]
+        default=0, description="Learning rate decay.", parameter_metadata=OPTIMIZER_METADATA["lr_decay"]
     )
 
     weight_decay: float = schema_utils.FloatRange(
-        default=0,
-        description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
     eps: float = schema_utils.FloatRange(
         default=1e-10,
         description="Term added to the denominator to improve numerical stability.",
-        parameter_metadata=OPTIMIZER_METADATA["eps"]
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
     )
 
 
@@ -312,19 +290,17 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
     betas: Tuple[float, float] = schema_utils.FloatRangeTupleDataclassField(
         default=(0.9, 0.999),
         description="Coefficients used for computing running averages of gradient and its square.",
-        parameter_metadata=OPTIMIZER_METADATA["betas"]
+        parameter_metadata=OPTIMIZER_METADATA["betas"],
     )
 
     eps: float = schema_utils.NonNegativeFloat(
         default=1e-08,
         description="Term added to the denominator to improve numerical stability.",
-        parameter_metadata=OPTIMIZER_METADATA["eps"]
+        parameter_metadata=OPTIMIZER_METADATA["eps"],
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
 
@@ -337,24 +313,19 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
     type: str = schema_utils.ProtectedString("ftrl")
 
     learning_rate_power: float = schema_utils.FloatRange(
-        default=-0.5,
-        max=0,
-        parameter_metadata=OPTIMIZER_METADATA["learning_rate_power"]
+        default=-0.5, max=0, parameter_metadata=OPTIMIZER_METADATA["learning_rate_power"]
     )
 
     initial_accumulator_value: float = schema_utils.NonNegativeFloat(
-        default=0.1,
-        parameter_metadata=OPTIMIZER_METADATA["initial_accumulator_value"]
+        default=0.1, parameter_metadata=OPTIMIZER_METADATA["initial_accumulator_value"]
     )
 
     l1_regularization_strength: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        parameter_metadata=OPTIMIZER_METADATA["l1_regularization_strength"]
+        default=0.0, parameter_metadata=OPTIMIZER_METADATA["l1_regularization_strength"]
     )
 
     l2_regularization_strength: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        parameter_metadata=OPTIMIZER_METADATA["l2_regularization_strength"]
+        default=0.0, parameter_metadata=OPTIMIZER_METADATA["l2_regularization_strength"]
     )
 
 
@@ -382,15 +353,11 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
     )
 
     weight_decay: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Weight decay ($L2$ penalty).",
-        parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
+        default=0.0, description="Weight decay ($L2$ penalty).", parameter_metadata=OPTIMIZER_METADATA["weight_decay"]
     )
 
     momentum_decay: float = schema_utils.NonNegativeFloat(
-        default=4e-3,
-        description="Momentum decay.",
-        parameter_metadata=OPTIMIZER_METADATA["momentum_decay"]
+        default=4e-3, description="Momentum decay.", parameter_metadata=OPTIMIZER_METADATA["momentum_decay"]
     )
 
 
@@ -429,7 +396,7 @@ class RMSPropOptimizerConfig(BaseOptimizerConfig):
     centered: bool = schema_utils.Boolean(
         default=False,
         description="If True, computes the centered RMSProp, and the gradient is normalized by an estimation of its "
-                    "variance.",
+        "variance.",
         parameter_metadata=OPTIMIZER_METADATA["centered"],
     )
 
@@ -535,24 +502,15 @@ class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
     clipglobalnorm: Optional[float] = schema_utils.FloatRange(
-        default=0.5,
-        allow_none=True,
-        description="",
-        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=0.5, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
     )
 
     clipnorm: Optional[float] = schema_utils.FloatRange(
-        default=None,
-        allow_none=True,
-        description="",
-        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=None, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
     )
 
     clipvalue: Optional[float] = schema_utils.FloatRange(
-        default=None,
-        allow_none=True,
-        description="",
-        parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
+        default=None, allow_none=True, description="", parameter_metadata=OPTIMIZER_METADATA["gradient_clipping"]
     )
 
 
