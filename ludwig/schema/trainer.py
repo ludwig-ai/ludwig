@@ -60,7 +60,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     epochs: int = schema_utils.PositiveInteger(
         default=100,
-        description="Number of epochs the algorithm is intended to be run over. Overridden by `train_steps` if set",
+        description="Number of epochs the algorithm is intended to be run over. Overridden if `train_steps` is set",
         parameter_metadata=TRAINER_METADATA["epochs"],
     )
 
