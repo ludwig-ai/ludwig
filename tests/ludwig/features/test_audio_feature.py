@@ -91,6 +91,7 @@ def test_add_feature_data(feature_type, tmpdir):
         preprocessing_parameters=preprocessing_params,
         backend=LOCAL_BACKEND,
         skip_save_processed_input=False,
+        is_input_feature=True,
     )
 
     assert len(proc_df[audio_feature_config[PROC_COLUMN]]) == 10

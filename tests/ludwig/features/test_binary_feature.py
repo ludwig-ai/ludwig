@@ -22,7 +22,7 @@ def binary_config():
     }
 
 
-@pytest.mark.parametrize("encoder", ["passthrough"])
+@pytest.mark.parametrize("encoder", ["passthrough", "dense"])
 def test_binary_input_feature(binary_config: Dict, encoder: str):
     binary_config.update({ENCODER: {"type": encoder}})
     binary_config, _ = load_config_with_kwargs(BinaryInputFeatureConfig, binary_config)
@@ -30,7 +30,7 @@ def test_binary_input_feature(binary_config: Dict, encoder: str):
 
     binary_tensor = binary_input_feature.create_sample_input(batch_size=BATCH_SIZE)
     assert binary_tensor.shape == torch.Size([BATCH_SIZE])
-    assert binary_tensor.dtype == torch.bool
+    assert binary_tensor.dtype == torch.float32
 
     encoder_output = binary_input_feature(binary_tensor)
 
