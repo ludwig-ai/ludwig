@@ -570,7 +570,7 @@ set:
                 may perform worse when rare tokens appear in the data
             example_value:
                 - 10000
-            expected_impact: 3
+            expected_impact: 2
             other_information: Specifying a vocab_file overrides this parameter
             related_parameters:
                 - vocab_file, pretrained_embeddings
@@ -585,6 +585,7 @@ set:
             ui_display_name: Most common (vocabulary size)
         tokenizer:
             ui_display_name: null
+            expected_impact: 3
 text:
     preprocessing:
         computed_fill_value:
