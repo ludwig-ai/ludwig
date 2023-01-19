@@ -107,7 +107,6 @@ def test_distil_bert(use_pretrained: bool, reduce_output: str, max_sequence_leng
     assert outputs["encoder_output"].shape[1:] == distil_bert_encoder.output_shape
 
 
-@slow
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
