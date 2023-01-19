@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 import pytest
 
+from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
     BATCH_SIZE,
     BFILL,
@@ -23,7 +24,6 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.schema import validate_config
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
