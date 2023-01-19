@@ -331,13 +331,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     ):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
-            print("\n\nMETADATA", metadata)
 
             def idx2str(pred_set):
-                for i, pred in enumerate(pred_set):
-                    if pred:
-                        print(i, pred)
-
                 return [metadata["idx2str"][i] for i, pred in enumerate(pred_set) if pred]
 
             result[predictions_col] = result[predictions_col].map(idx2str)

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import math
 import re
 import unicodedata
 from collections import Counter
@@ -295,7 +296,7 @@ def create_vocabulary(
     line_length_99ptile = processor.compute(processed_lines.map(len).quantile(0.99))
 
     if not most_common:
-        most_common = int(len(unit_counts) * most_common_percentile)
+        most_common = math.ceil(len(unit_counts) * most_common_percentile)
 
     if vocab is None:
         vocab = [unit for unit, count in unit_counts.most_common(most_common)]
@@ -354,7 +355,7 @@ def create_vocabulary_single_token(
     # Only add unknown symbol if num most frequent tokens is less than total number of unique tokens
 
     if not most_common:
-        most_common = int(len(full_vocab) * most_common_percentile)
+        most_common = math.ceil(len(full_vocab) * most_common_percentile)
 
     if most_common < len(full_vocab):
         vocab = [unknown_symbol] + full_vocab[:most_common]

@@ -116,7 +116,6 @@ def update_config_with_metadata(config_obj, training_set_metadata):
     # populate output features fields depending on data
     for output_feature in config_obj.output_features.to_list():
         feature = get_from_registry(output_feature[TYPE], get_output_type_registry())
-        print()
         feature.update_config_with_metadata(
             getattr(config_obj.output_features, output_feature[NAME]),
             training_set_metadata[output_feature[NAME]],

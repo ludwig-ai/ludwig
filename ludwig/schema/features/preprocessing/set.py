@@ -61,7 +61,7 @@ class SetPreprocessingConfig(BasePreprocessingConfig):
     )
 
     most_common_percentile: int = schema_utils.FloatRange(
-        default=0.95,
+        default=1,
         min=0.0,
         max=1.0,
         min_inclusive=False,

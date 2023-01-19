@@ -177,7 +177,7 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
         assert np.allclose(prob_0, 1 - prob_1)
 
 
-@pytest.mark.parametrize("pct_positive", [1.0])  # , 0.5, 0.0])
+@pytest.mark.parametrize("pct_positive", [1.0, 0.5, 0.0])
 def test_set_feature_saving(tmpdir, pct_positive):
     backend = "local"
     input_features = [
