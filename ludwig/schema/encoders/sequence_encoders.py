@@ -168,7 +168,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
     )
 
     num_conv_layers: int = schema_utils.PositiveInteger(
-        default=1,
+        default=None,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["ParallelCNN"]["num_conv_layers"],
     )
@@ -336,7 +336,7 @@ class StackedCNNConfig(BaseEncoderConfig):
     )
 
     num_conv_layers: int = schema_utils.PositiveInteger(
-        default=1,
+        default=None,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNN"]["num_conv_layers"],
     )
@@ -1063,7 +1063,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
     )
 
     num_conv_layers: int = schema_utils.PositiveInteger(
-        default=1,
+        default=None,
         description="Number of parallel convolutional layers to use.",
         parameter_metadata=ENCODER_METADATA["StackedCNNRNN"]["num_conv_layers"],
     )
