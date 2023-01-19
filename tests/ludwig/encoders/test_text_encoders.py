@@ -1,5 +1,3 @@
-import os
-
 import pytest
 import torch
 
@@ -11,23 +9,23 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
     "encoder_cls",
     [
         text_encoders.ALBERTEncoder,
-        # text_encoders.BERTEncoder,
-        # text_encoders.XLMEncoder,
-        # text_encoders.GPTEncoder,
-        # text_encoders.RoBERTaEncoder,
-        # text_encoders.GPT2Encoder,
-        # text_encoders.DistilBERTEncoder,
-        # text_encoders.TransformerXLEncoder,
-        # text_encoders.CTRLEncoder,
-        # text_encoders.CamemBERTEncoder,
-        # text_encoders.MT5Encoder,
-        # text_encoders.XLMRoBERTaEncoder,
-        # text_encoders.LongformerEncoder,
-        # text_encoders.ELECTRAEncoder,
-        # text_encoders.FlauBERTEncoder,
-        # text_encoders.T5Encoder,
-        # text_encoders.XLNetEncoder,
-        # text_encoders.DistilBERTEncoder,
+        text_encoders.BERTEncoder,
+        text_encoders.XLMEncoder,
+        text_encoders.GPTEncoder,
+        text_encoders.RoBERTaEncoder,
+        text_encoders.GPT2Encoder,
+        text_encoders.DistilBERTEncoder,
+        text_encoders.TransformerXLEncoder,
+        text_encoders.CTRLEncoder,
+        text_encoders.CamemBERTEncoder,
+        text_encoders.MT5Encoder,
+        text_encoders.XLMRoBERTaEncoder,
+        text_encoders.LongformerEncoder,
+        text_encoders.ELECTRAEncoder,
+        text_encoders.FlauBERTEncoder,
+        text_encoders.T5Encoder,
+        text_encoders.XLNetEncoder,
+        text_encoders.DistilBERTEncoder,
     ],
 )
 def test_hf_pretrained_default_model(tmpdir, encoder_cls):
