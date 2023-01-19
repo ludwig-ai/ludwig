@@ -58,7 +58,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
         ],
     )
 
-    epochs: int = schema_utils.PositiveInteger(
+    epochs: int = schema_utils.NonNegativeInteger(
         default=100,
         description="Number of epochs the algorithm is intended to be run over.",
         parameter_metadata=TRAINER_METADATA["epochs"],
