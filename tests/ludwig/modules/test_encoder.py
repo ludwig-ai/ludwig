@@ -20,7 +20,7 @@ import torch
 
 from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.encoders.base import Encoder
-from ludwig.encoders.image_encoders import MLPMixerEncoder, ResNetEncoder, Stacked2DCNN
+from ludwig.encoders.image.base import MLPMixerEncoder, Stacked2DCNN
 from ludwig.encoders.sequence_encoders import (
     ParallelCNN,
     SequenceEmbedEncoder,
@@ -97,54 +97,6 @@ def encoder_test(
     if output_data is not None:
         # todo the hidden output is actually a tensor. May need modification
         assert np.allclose(hidden, output_data)
-
-
-def test_image_encoders_resnet():
-    # make repeatable
-    np.random.seed(RANDOM_SEED)
-    torch.manual_seed(RANDOM_SEED)
-
-    # Test the resnet encoder for images
-    encoder_kwargs = {"resnet_size": 8, "num_filters": 8, "output_size": 28, "dropout": DROPOUT}
-    image_size = (3, 10, 10)
-
-    output_shape = [1, 28]
-    input_image = generate_images(image_size, 1)
-
-    encoder = create_encoder(ResNetEncoder, height=image_size[1], width=image_size[2], **encoder_kwargs)
-    encoder_test(
-        encoder=encoder, input_data=input_image, output_dtype=torch.float32, output_shape=output_shape, output_data=None
-    )
-
-    output_shape = [5, 28]
-    input_images = generate_images(image_size, 5)
-
-    encoder_test(
-        encoder=encoder,
-        input_data=input_images,
-        output_dtype=torch.float32,
-        output_shape=output_shape,
-        output_data=None,
-    )
-
-    assert encoder is not None
-    assert encoder.resnet.__class__.__name__ == "ResNet"
-    assert list(encoder.resnet.output_shape) == [64, 3, 3]
-    assert len(encoder.fc_stack.layers) == 1
-    assert encoder.fc_stack.layers[0]["output_size"] == 28
-    assert encoder.fc_stack.layers[0]["activation"] == "relu"
-
-    # test for parameter updates
-    # generate tensors for parameter update test
-    target = torch.rand(output_shape)
-    image_tensor = torch.rand(input_image.shape)
-
-    # check for parameter updates
-    fpc, tpc, upc, not_updated = check_module_parameters_updated(encoder, (image_tensor,), target)
-    assert upc == tpc, (
-        f"Not all trainable parameters updated.  Parameters not updated: {not_updated}."
-        f"  Module structure\n{encoder}"
-    )
 
 
 def test_image_encoders_stacked_2dcnn():

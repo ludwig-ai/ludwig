@@ -6,6 +6,8 @@ from marshmallow import fields, ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
 from ludwig.utils.registry import Registry
 
 encoder_config_registry = Registry()
@@ -34,6 +36,33 @@ def get_encoder_cls(feature: str, name: str):
 @DeveloperAPI
 def get_encoder_classes(feature: str):
     return encoder_config_registry[feature]
+
+
+@DeveloperAPI
+def get_encoder_descriptions(feature_type: str):
+    """This function returns a dictionary of encoder descriptions available at the type selection.
+
+    The process works as follows - 1) Get a dictionary of valid encoders from the encoder config registry,
+    but inverse the key/value pairs since we need to index `valid_encoders` later with an altered version
+    of the encoder config class name. 2) Loop through Encoder Metadata entries, if a metadata entry has an
+    encoder name that matches a valid encoder, add the description metadata to the output dictionary.
+
+    Args:
+        feature_type (str): The feature type to get encoder descriptions for
+    Returns:
+         dict: A dictionary mapping encoder registered names to their respective description metadata.
+    """
+    output = {}
+    valid_encoders = {
+        cls.module_name() if hasattr(cls, "module_name") else None: registered_name
+        for registered_name, cls in get_encoder_classes(feature_type).items()
+    }
+
+    for k, v in ENCODER_METADATA.items():
+        if k in valid_encoders.keys():
+            output[valid_encoders[k]] = convert_metadata_to_json(v[TYPE])
+
+    return output
 
 
 @DeveloperAPI
@@ -87,7 +116,12 @@ def EncoderDataclassField(feature_type: str, default: str):
             return {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string", "enum": encoder_classes, "default": default},
+                    "type": {
+                        "type": "string",
+                        "enum": encoder_classes,
+                        "enumDescriptions": get_encoder_descriptions(feature_type),
+                        "default": default,
+                    },
                 },
                 "title": "encoder_options",
                 "allOf": get_encoder_conds(feature_type),

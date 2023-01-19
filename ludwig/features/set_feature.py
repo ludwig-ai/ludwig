@@ -32,7 +32,7 @@ from ludwig.types import (
 from ludwig.utils import output_feature_utils
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 from ludwig.utils.tokenizers import get_tokenizer_from_registry, TORCHSCRIPT_COMPATIBLE_TOKENIZERS
-from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +151,7 @@ class SetFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: Series, preprocessing_parameters: PreprocessingConfigDict, backend
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq, max_size, _, _, _, _ = create_vocabulary(
             data=column,
@@ -243,8 +243,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
 
 class SetOutputFeature(SetFeatureMixin, OutputFeature):
-    metric_functions = SetOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[SetOutputFeatureConfig, Dict],
@@ -334,6 +332,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         predictions_col = f"{self.feature_name}_{PREDICTIONS}"
         if predictions_col in result:
             print("\n\nMETADATA", metadata)
+
             def idx2str(pred_set):
                 for i, pred in enumerate(pred_set):
                     if pred:

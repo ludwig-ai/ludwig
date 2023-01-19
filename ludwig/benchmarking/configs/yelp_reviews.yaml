@@ -13,7 +13,8 @@ trainer:
   learning_rate: 0.00002
   checkpoints_per_epoch: 2
   evaluate_training_set: False
-  learning_rate_warmup_epochs: 0
+  learning_rate_scheduler:
+    warmup_evaluations: 0
   optimizer:
     type: adamw
   validation_field: label

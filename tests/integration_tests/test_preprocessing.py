@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import random
@@ -9,7 +10,7 @@ import pytest
 from PIL import Image
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
@@ -210,7 +211,7 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     data_csv = generate_data(
@@ -437,7 +438,11 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -470,7 +475,11 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -483,3 +492,51 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
 
     # Check that a warning is logged.
     assert "unconventional boolean value" in caplog.text
+
+
+@pytest.mark.parametrize("feature_type", ["input_feature", "output_feature"], ids=["input_feature", "output_feature"])
+def test_category_feature_vocab_size_1(feature_type, tmpdir) -> None:
+    data_csv_path = os.path.join(tmpdir, "data.csv")
+
+    input_feature = [category_feature(encoder={"vocab_size": 1})]
+    output_feature = [binary_feature()]
+
+    if feature_type == "output_feature":
+        input_feature = output_feature
+        output_feature = [category_feature(decoder={"vocab_size": 1})]
+
+    config = {"input_features": input_feature, "output_features": output_feature, "training": {"epochs": 1}}
+
+    training_data_csv_path = generate_data(config["input_features"], config["output_features"], data_csv_path)
+
+    ludwig_model = LudwigModel(config)
+    with pytest.raises(RuntimeError) if feature_type == "output_feature" else contextlib.nullcontext():
+        ludwig_model.train(dataset=training_data_csv_path)
+
+
+@pytest.mark.parametrize("use_pretrained", [False, True], ids=["false", "true"])
+def test_vit_encoder_different_dimension_image(tmpdir, csv_filename, use_pretrained: bool):
+    input_features = [
+        image_feature(
+            os.path.join(tmpdir, "generated_output"),
+            preprocessing={"in_memory": True, "height": 224, "width": 206, "num_channels": 3},
+            encoder={"type": "_vit_legacy", "use_pretrained": use_pretrained},
+        )
+    ]
+    output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
+
+    data_csv = generate_data(
+        input_features, output_features, os.path.join(tmpdir, csv_filename), num_examples=NUM_EXAMPLES
+    )
+
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        "trainer": {"train_steps": 1},
+    }
+
+    model = LudwigModel(config)
+
+    # Failure happens post preprocessing but before training during the ECD model creation phase
+    # so make sure the model can be created properly and training can proceed
+    model.train(dataset=data_csv)

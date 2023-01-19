@@ -14,15 +14,15 @@ packages to support these capabilities
 
 ## Repositories
 
-These three repositories contain a version of Ludwig with full features built
+These four repositories contain a version of Ludwig with full features built
 from the project's `master` branch.
 
 - `ludwigai/ludwig` Ludwig packaged with PyTorch
 - `ludwigai/ludwig-gpu` Ludwig packaged with gpu-enabled version of PyTorch
 - `ludwigai/ludwig-ray` Ludwig packaged with PyTorch
-  and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
+  and Ray 2.0.0 (https://github.com/ray-project/ray)
 - `ludwigai/ludwig-ray-gpu` Ludwig packaged with gpu-enabled versions of PyTorch
-  and [nightly build of ray-project/ray](https://github.com/ray-project/ray)
+  and Ray 2.0.0 (https://github.com/ray-project/ray)
 
 ## Image Tags
 
@@ -67,8 +67,7 @@ docker run -v ${parent_path}/data:/data  \
         --output_directory /src/results
 ```
 
-Experiment results can be found in host
-directory `/top/level/directory/path/src/results`
+Experiment results can be found in host directory `/top/level/directory/path/src/results`
 
 ### Run Python program using Ludwig APIs
 
@@ -112,3 +111,11 @@ docker run  -v ${parent_path}/src:/src \
 ```
 
 Point browser to `http://localhost:6006` to see Tensorboard dashboard.
+
+### Devcontainer
+
+If you want to contribute to Ludwig, you can setup a Docker container with all the dependencies
+installed as a full featured development environment. This can be done using devcontainers with VS Code:
+https://code.visualstudio.com/docs/devcontainers/containers
+
+You can find the `devcontainer.json` file within the top level `.devcontainer` folder.

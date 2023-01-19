@@ -16,7 +16,6 @@ def write_json_files():
             dataset=dataset,
             target=[],
             time_limit_s=3600,
-            tune_for_memory=False,
         )
 
         golden_types_path = get_dataset_golden_types_path(dataset_name)

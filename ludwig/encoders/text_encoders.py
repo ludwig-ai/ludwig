@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import TEXT
+from ludwig.constants import TEXT, TYPE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
@@ -43,6 +43,7 @@ from ludwig.schema.encoders.text_encoders import (
     XLMRoBERTaConfig,
     XLNetConfig,
 )
+from ludwig.utils.hf_utils import load_pretrained_hf_model
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -54,23 +55,37 @@ def _cls_pooled_error_message(encoder: str):
     raise ValueError(f"reduce_output cannot be cls_pooled for {encoder}")
 
 
-@DeveloperAPI
-@register_encoder("albert", TEXT, is_pretrained=True)
-class ALBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
+class HFTextEncoder(Encoder):
+    DEFAULT_MODEL_NAME: str
 
-    default_params = {
-        "pretrained_model_name_or_path": "albert-base-v2",
-    }
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+        model_name = encoder_params.get("pretrained_model_name_or_path", cls.DEFAULT_MODEL_NAME)
+        if model_name is None:
+            # no default model name, so model name is required by the subclass
+            raise ValueError(
+                f"Missing required parameter for `{encoder_params[TYPE]}` encoder: `pretrained_model_name_or_path`"
+            )
+        return {
+            "tokenizer": "hf_tokenizer",
+            "pretrained_model_name_or_path": model_name,
+        }
+
+    @classmethod
+    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
+        return encoder_params.get("use_pretrained", True)
+
+
+@DeveloperAPI
+@register_encoder("albert", TEXT)
+class ALBERTEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "albert-base-v2"
 
     def __init__(
         self,
         max_sequence_length,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "albert-base-v2",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "cls_pooled",
@@ -105,7 +120,7 @@ class ALBERTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = AlbertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(AlbertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = AlbertConfig(
                 vocab_size=vocab_size,
@@ -180,22 +195,15 @@ class ALBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("mt5", TEXT, is_pretrained=True)
-class MT5Encoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "google/mt5-base",
-    }
+@register_encoder("mt5", TEXT)
+class MT5Encoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "google/mt5-base"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "google/mt5-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "sum",
@@ -229,7 +237,7 @@ class MT5Encoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = MT5EncoderModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(MT5EncoderModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = MT5Config(
                 vocab_size=vocab_size,
@@ -299,22 +307,15 @@ class MT5Encoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("xlmroberta", TEXT, is_pretrained=True)
-class XLMRoBERTaEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "xlm-roberta-base",
-    }
+@register_encoder("xlmroberta", TEXT)
+class XLMRoBERTaEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "xlm-roberta-base"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlm-roberta-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
@@ -334,7 +335,7 @@ class XLMRoBERTaEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = XLMRobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(XLMRobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLMRobertaConfig(
                 pad_token_id=pad_token_id,
@@ -393,23 +394,15 @@ class XLMRoBERTaEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("bert", TEXT, is_pretrained=True)
-class BERTEncoder(Encoder):
-    # TODO(justin): Use official class properties.
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "bert-base-uncased",
-    }
+@register_encoder("bert", TEXT)
+class BERTEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "bert-base-uncased"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "bert-base-uncased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "cls_pooled",
@@ -440,7 +433,7 @@ class BERTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = BertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(BertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = BertConfig(
                 vocab_size=vocab_size,
@@ -514,22 +507,15 @@ class BERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("xlm", TEXT, is_pretrained=True)
-class XLMEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "xlm-mlm-en-2048",
-    }
+@register_encoder("xlm", TEXT)
+class XLMEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "xlm-mlm-en-2048"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlm-mlm-en-2048",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         reduce_output: str = "sum",
@@ -572,7 +558,7 @@ class XLMEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = XLMModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(XLMModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLMConfig(
                 vocab_size=vocab_size,
@@ -653,23 +639,16 @@ class XLMEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("gpt", TEXT, is_pretrained=True)
-class GPTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "openai-gpt",
-    }
+@register_encoder("gpt", TEXT)
+class GPTEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "openai-gpt"
 
     def __init__(
         self,
         max_sequence_length: int,
         reduce_output: str = "sum",
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "openai-gpt",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         trainable: bool = False,
         vocab_size: int = 30522,
@@ -695,7 +674,7 @@ class GPTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = OpenAIGPTModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(OpenAIGPTModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = OpenAIGPTConfig(
                 vocab_size=vocab_size,
@@ -753,22 +732,15 @@ class GPTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("gpt2", TEXT, is_pretrained=True)
-class GPT2Encoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "gpt2",
-    }
+@register_encoder("gpt2", TEXT)
+class GPT2Encoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "gpt2"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "gpt2",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         reduce_output: str = "sum",
         trainable: bool = False,
         vocab_size: int = 50257,
@@ -796,7 +768,7 @@ class GPT2Encoder(Encoder):
 
         if use_pretrained:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = GPT2Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(GPT2Model, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = GPT2Config(
                 vocab_size=vocab_size,
@@ -856,22 +828,15 @@ class GPT2Encoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("roberta", TEXT, is_pretrained=True)
-class RoBERTaEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "roberta-base",
-    }
+@register_encoder("roberta", TEXT)
+class RoBERTaEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "roberta-base"
 
     def __init__(
         self,
         max_sequence_length,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "roberta-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls_pooled",
         trainable: bool = False,
@@ -890,7 +855,7 @@ class RoBERTaEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = RobertaModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(RobertaModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = RobertaConfig(
                 pad_token_id=pad_token_id,
@@ -940,22 +905,15 @@ class RoBERTaEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("transformer_xl", TEXT, is_pretrained=True)
-class TransformerXLEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "transfo-xl-wt103",
-    }
+@register_encoder("transformer_xl", TEXT)
+class TransformerXLEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "transfo-xl-wt103"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "transfo-xl-wt103",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -996,7 +954,7 @@ class TransformerXLEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = TransfoXLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(TransfoXLModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = TransfoXLConfig(
                 vocab_size=vocab_size,
@@ -1061,22 +1019,15 @@ class TransformerXLEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("xlnet", TEXT, is_pretrained=True)
-class XLNetEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "xlnet-base-cased",
-    }
+@register_encoder("xlnet", TEXT)
+class XLNetEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "xlnet-base-cased"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "xlnet-base-cased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1118,7 +1069,7 @@ class XLNetEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = XLNetModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(XLNetModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = XLNetConfig(
                 vocab_size=vocab_size,
@@ -1191,21 +1142,14 @@ class XLNetEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("distilbert", TEXT, is_pretrained=True)
-class DistilBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "distilbert-base-uncased",
-    }
+@register_encoder("distilbert", TEXT)
+class DistilBERTEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "distilbert-base-uncased"
 
     def __init__(
         self,
         max_sequence_length: int,
-        pretrained_model_name_or_path: str = "distilbert-base-uncased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1234,7 +1178,7 @@ class DistilBERTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = DistilBertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(DistilBertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = DistilBertConfig(
                 vocab_size=vocab_size,
@@ -1298,22 +1242,15 @@ class DistilBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("ctrl", TEXT, is_pretrained=True)
-class CTRLEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "ctrl",
-    }
+@register_encoder("ctrl", TEXT)
+class CTRLEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "ctrl"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "ctrl",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1340,7 +1277,7 @@ class CTRLEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = CTRLModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(CTRLModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = CTRLConfig(
                 vocab_size=vocab_size,
@@ -1399,22 +1336,15 @@ class CTRLEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("camembert", TEXT, is_pretrained=True)
-class CamemBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "jplu/camembert-base",
-    }
+@register_encoder("camembert", TEXT)
+class CamemBERTEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "jplu/camembert-base"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "jplu/camembert-base",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "cls-pooled",
         trainable: bool = False,
@@ -1445,7 +1375,7 @@ class CamemBERTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = CamembertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = CamembertConfig(
                 vocab_size=vocab_size,
@@ -1516,22 +1446,15 @@ class CamemBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("t5", TEXT, is_pretrained=True)
-class T5Encoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "t5-small",
-    }
+@register_encoder("t5", TEXT)
+class T5Encoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "t5-small"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "t5-small",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1558,7 +1481,7 @@ class T5Encoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = T5Model.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(T5Model, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = T5Config(
                 vocab_size=vocab_size,
@@ -1622,22 +1545,15 @@ class T5Encoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("flaubert", TEXT, is_pretrained=True)
-class FlauBERTEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "flaubert/flaubert_small_cased",
-    }
+@register_encoder("flaubert", TEXT)
+class FlauBERTEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "flaubert/flaubert_small_cased"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool,
-        pretrained_model_name_or_path: str = "flaubert/flaubert_small_cased",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1678,7 +1594,7 @@ class FlauBERTEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = FlaubertModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(FlaubertModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = FlaubertConfig(
                 vocab_size=vocab_size,
@@ -1756,22 +1672,15 @@ class FlauBERTEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("electra", TEXT, is_pretrained=True)
-class ELECTRAEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "google/electra-small-discriminator",
-    }
+@register_encoder("electra", TEXT)
+class ELECTRAEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "google/electra-small-discriminator"
 
     def __init__(
         self,
         max_sequence_length: int,
         use_pretrained: bool = True,
-        pretrained_model_name_or_path: str = "google/electra-small-discriminator",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: str = "sum",
         trainable: bool = False,
@@ -1801,7 +1710,7 @@ class ELECTRAEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = ElectraModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+            transformer = load_pretrained_hf_model(ElectraModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = ElectraConfig(
                 vocab_size=vocab_size,
@@ -1868,16 +1777,9 @@ class ELECTRAEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("longformer", TEXT, is_pretrained=True)
-class LongformerEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
-
-    default_params = {
-        "pretrained_model_name_or_path": "allenai/longformer-base-4096",
-    }
+@register_encoder("longformer", TEXT)
+class LongformerEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = "allenai/longformer-base-4096"
 
     def __init__(
         self,
@@ -1885,7 +1787,7 @@ class LongformerEncoder(Encoder):
         use_pretrained: bool = True,
         attention_window: Union[List[int], int] = 512,
         sep_token_id: int = 2,
-        pretrained_model_name_or_path: str = "allenai/longformer-base-4096",
+        pretrained_model_name_or_path: str = DEFAULT_MODEL_NAME,
         saved_weights_in_checkpoint: bool = False,
         reduce_output: Optional[str] = "cls_pooled",
         trainable: bool = False,
@@ -1901,7 +1803,7 @@ class LongformerEncoder(Encoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = LongformerModel.from_pretrained(pretrained_model_name_or_path, pretrained_kwargs)
+            transformer = load_pretrained_hf_model(LongformerModel, pretrained_model_name_or_path, pretrained_kwargs)
         else:
             config = LongformerConfig(attention_window, sep_token_id, **kwargs)
             transformer = LongformerModel(config)
@@ -1953,12 +1855,9 @@ class LongformerEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("auto_transformer", TEXT, is_pretrained=True)
-class AutoTransformerEncoder(Encoder):
-    fixed_preprocessing_parameters = {
-        "tokenizer": "hf_tokenizer",
-        "pretrained_model_name_or_path": "feature.pretrained_model_name_or_path",
-    }
+@register_encoder("auto_transformer", TEXT)
+class AutoTransformerEncoder(HFTextEncoder):
+    DEFAULT_MODEL_NAME = None
 
     def __init__(
         self,
@@ -1977,7 +1876,7 @@ class AutoTransformerEncoder(Encoder):
         from transformers import AutoModel
 
         pretrained_kwargs = pretrained_kwargs or {}
-        transformer = AutoModel.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+        transformer = load_pretrained_hf_model(AutoModel, pretrained_model_name_or_path, **pretrained_kwargs)
         self.reduce_output = reduce_output
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)

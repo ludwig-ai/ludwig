@@ -23,7 +23,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.callbacks import Callback
-from ludwig.constants import ENCODER, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.models.inference import InferenceModule
 from ludwig.utils.data_utils import read_csv
@@ -51,7 +51,7 @@ def run_api_experiment_separated_datasets(input_features, output_features, data_
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)
@@ -185,7 +185,7 @@ def test_api_train_online(csv_filename):
     }
     model = LudwigModel(config)
 
-    for i in range(2):
+    for _ in range(2):
         model.train_online(dataset=data_csv)
     model.predict(dataset=data_csv)
 
@@ -221,6 +221,7 @@ def test_api_training_determinism(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
+        "trainer": {BATCH_SIZE: 128},  # batch size must be fixed for determinism
     }
 
     # Train the model 3 times:
@@ -286,7 +287,7 @@ def run_api_commands(
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)
@@ -445,7 +446,12 @@ def test_api_callbacks(tmpdir, csv_filename, epochs, batch_size, num_examples, s
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": epochs, "batch_size": batch_size, "steps_per_checkpoint": steps_per_checkpoint},
+        TRAINER: {
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "steps_per_checkpoint": steps_per_checkpoint,
+            "early_stop": 0,  # Disable early stopping.
+        },
     }
     model = LudwigModel(config, callbacks=[mock_callback])
 
@@ -494,7 +500,12 @@ def test_api_callbacks_checkpoints_per_epoch(
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": epochs, "batch_size": batch_size, "checkpoints_per_epoch": checkpoints_per_epoch},
+        TRAINER: {
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "checkpoints_per_epoch": checkpoints_per_epoch,
+            "early_stop": 0,  # Disable early stopping.
+        },
     }
     model = LudwigModel(config, callbacks=[mock_callback])
 
@@ -647,7 +658,10 @@ def test_api_save_torchscript(tmpdir):
 
 def test_saved_weights_in_checkpoint(tmpdir):
     image_dest_folder = os.path.join(tmpdir, "generated_images")
-    input_features = [text_feature(), image_feature(image_dest_folder)]
+    input_features = [
+        text_feature(),
+        image_feature(image_dest_folder),
+    ]
     output_features = [category_feature(name="class", output_feature=True)]
 
     data_csv = generate_data(input_features, output_features, os.path.join(tmpdir, "dataset.csv"))
@@ -657,6 +671,7 @@ def test_saved_weights_in_checkpoint(tmpdir):
     config = {
         "input_features": input_features,
         "output_features": output_features,
+        TRAINER: {BATCH_SIZE: 128},
     }
     model = LudwigModel(config)
     _, _, output_dir = model.train(

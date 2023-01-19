@@ -44,7 +44,7 @@ from ludwig.utils import calibration, output_feature_utils
 from ludwig.utils.eval_utils import ConfusionMatrix
 from ludwig.utils.math_utils import int_type, softmax
 from ludwig.utils.strings_utils import create_vocabulary_single_token, UNKNOWN_SYMBOL
-from ludwig.utils.types import Series, TorchscriptPreprocessingInput
+from ludwig.utils.types import TorchscriptPreprocessingInput
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class CategoryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: Series, preprocessing_parameters: PreprocessingConfigDict, backend
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         idx2str, str2idx, str2freq = create_vocabulary_single_token(
             data=column,
@@ -131,9 +131,22 @@ class CategoryFeatureMixin(BaseFeatureMixin):
             processor=backend.df_engine,
         )
         vocab_size = len(str2idx)
-        if vocab_size <= 1:
+        if not is_input_feature and vocab_size <= 1:
+            # Category output feature with vocab size 1
             raise InputDataError(
-                column.name, CATEGORY, f"At least 2 distinct values are required, column only contains {str(idx2str)}"
+                column.name,
+                CATEGORY,
+                f"""
+                At least 2 distinct values are required for category output features, but column
+                only contains {str(idx2str)}.
+                """,
+            )
+        if vocab_size <= 1:
+            # Category input feature with vocab size 1
+            logger.info(
+                f"Input feature '{column.name}' contains only 1 distinct value {str(idx2str)}. This is not useful"
+                " for machine learning models because this feature has zero variance. Consider removing this feature"
+                " from your input features."
             )
         return {"idx2str": idx2str, "str2idx": str2idx, "str2freq": str2freq, "vocab_size": vocab_size}
 
@@ -252,8 +265,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
-    metric_functions = CategoryOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[CategoryOutputFeatureConfig, Dict],

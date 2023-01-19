@@ -3,7 +3,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RANDOM
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.metadata.preprocessing_metadata import PREPROCESSING_METADATA
+from ludwig.schema.metadata import PREPROCESSING_METADATA
 from ludwig.schema.split import BaseSplitConfig, SplitDataclassField
 
 

@@ -28,7 +28,6 @@ from packaging import version
 from pyarrow.fs import FSSpecHandler, PyFileSystem
 from ray.data import read_parquet
 from ray.data.dataset_pipeline import DatasetPipeline
-from ray.data.extensions import TensorDtype
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.backend.base import Backend
@@ -37,31 +36,16 @@ from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP
-from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_proc_features
-from ludwig.utils.types import DataFrame, Series
+from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
 _ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
-_ray_nightly = version.parse(ray.__version__) > version.parse("1.13")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
-
-# https://github.com/ray-project/ray/issues/27031
-# TODO(geoffrey): remove this once Ray > 1.13 in our CI.
-if _ray_nightly:
-    from ray.data.extensions import TensorArray
-
-    def cast_as_tensor_dtype(series: Series) -> Series:
-        return TensorArray(series)
-
-else:
-
-    def cast_as_tensor_dtype(series: Series) -> Series:
-        return series.astype(TensorDtype())
 
 
 @DeveloperAPI
@@ -97,27 +81,11 @@ class RayDataset(Dataset):
         self._processed_data_fp = df if isinstance(df, str) else None
         self.auto_window = auto_window
 
-        # TODO ray 1.8: convert to Tensors before shuffle
-        # def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-        #     for c in features.keys():
-        #         df[c] = df[c].astype(TensorDtype())
-        #     return df
-        # self.ds = self.ds.map_batches(to_tensors, batch_format="pandas")
+    def get_window_size_bytes(self, window_size_bytes: Optional[int] = None) -> int:
+        # If user has specified a window size, use it as is
+        if window_size_bytes:
+            return window_size_bytes
 
-    def pipeline(
-        self,
-        shuffle: bool = True,
-        fully_executed: bool = True,
-        window_size_bytes: Optional[int] = None,
-        shuffle_seed: int = default_random_seed,
-    ) -> DatasetPipeline:
-        """
-        Args:
-            shuffle: If true, the entire dataset is shuffled in memory before batching.
-            fully_executed: If true, force full evaluation of the Ray Dataset by loading all blocks into memory.
-            window_size_bytes: If not None, windowing is enabled and this parameter specifies the window size in bytes
-                    for the dataset. If None and the dataset is large, set to the window size determined at init.
-        """
         # If the user does not supply a window size and the dataset is large,
         # set the window size to `<available memory> // 5`.
         if self.auto_window and window_size_bytes is None:
@@ -128,26 +96,12 @@ class RayDataset(Dataset):
                 logger.info(
                     "In-memory dataset size is greater than 20%% of object store memory. "
                     "Enabling windowed shuffling of data to prevent chances of OOMs. "
-                    # "Read more here:"
                 )
                 window_size_bytes = int(cluster_memory_size // 5)
-
-        if fully_executed:
-            if _ray113:
-                # Workaround for: https://github.com/ray-project/ray/issues/25643
-                # TODO(travis): remove after 1.13.1
-                self.ds = self.ds.map_batches(lambda x: x, batch_size=None)
-
-            # set instance state so calls to __len__ will also use the fully_executed version
-            self.ds = self.ds.fully_executed()
-
-        if window_size_bytes is None:
-            pipe = self.ds.repeat()
-        else:
-            pipe = self.ds.window(bytes_per_window=window_size_bytes).repeat()
-        if shuffle:
-            pipe = pipe.random_shuffle_each_window(seed=shuffle_seed)
-        return pipe
+                return window_size_bytes
+        # By default, set to -1 so that an infinite window size
+        # will be used which effectively results in bulk data ingestion
+        return -1
 
     @contextlib.contextmanager
     def initialize_batcher(
@@ -156,7 +110,7 @@ class RayDataset(Dataset):
         should_shuffle=True,
         seed=0,
         ignore_last=False,
-        horovod=None,
+        distributed=None,
     ):
         yield RayDatasetBatcher(
             self.ds.repeat().iter_datasets(),
@@ -250,10 +204,21 @@ class RayDatasetShard(Dataset):
         self.dataset_shard = dataset_shard
         self.features = features
         self.training_set_metadata = training_set_metadata
-        self.epoch_iter = dataset_shard.iter_epochs()
+        self.create_epoch_iter()
+
+    def create_epoch_iter(self) -> None:
+        if isinstance(self.dataset_shard, DatasetPipeline):
+            # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
+            # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
+            self.epoch_iter = self.dataset_shard.iter_epochs()
+        else:
+            # Dataset shard is a Ray Dataset object during auto batch size tuning or learning rate tuning
+            # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
+            # In this scenario, there is no need to worry about windowing, shuffling etc.
+            self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager
-    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, horovod=None):
+    def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
         yield RayDatasetBatcher(
             self.epoch_iter,
             self.features,
@@ -362,22 +327,6 @@ class RayDatasetBatcher(Batcher):
         except StopIteration:
             self._last_batch = True
 
-    def _to_tensors_fn(self):
-        columns = self.columns
-        features = self.features
-
-        def to_tensors(df: pd.DataFrame) -> pd.DataFrame:
-            for c in columns:
-                # do not convert scalar columns: https://github.com/ray-project/ray/issues/20825
-                if features[c][TYPE] not in _SCALAR_TYPES:
-                    df[c] = cast_as_tensor_dtype(df[c])
-                elif features[c][TYPE] == BINARY:
-                    # TODO(travis): figure out why Ray is converting these into object types by default
-                    df[c] = df[c].astype(np.bool_)
-            return df
-
-        return to_tensors
-
     def _prepare_batch(self, batch: pd.DataFrame) -> Dict[str, np.ndarray]:
         res = {}
         for c in self.columns:
@@ -394,12 +343,8 @@ class RayDatasetBatcher(Batcher):
         return res
 
     def _create_sync_reader(self, pipeline: DatasetPipeline):
-        to_tensors = self._to_tensors_fn()
-
         def sync_read():
-            for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"
-            ):
+            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=self.batch_size, batch_format="pandas"):
                 yield self._prepare_batch(batch)
 
         return sync_read()
@@ -407,12 +352,9 @@ class RayDatasetBatcher(Batcher):
     def _create_async_reader(self, pipeline: DatasetPipeline):
         q = queue.Queue(maxsize=100)
         batch_size = self.batch_size
-        to_tensors = self._to_tensors_fn()
 
         def producer():
-            for batch in pipeline.map_batches(to_tensors, batch_format="pandas").iter_batches(
-                prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"
-            ):
+            for batch in pipeline.iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)
@@ -434,15 +376,10 @@ class RayDatasetBatcher(Batcher):
 
         batch_size = self.batch_size
 
-        to_tensors = self._to_tensors_fn()
         splits = pipeline.split(n=num_threads)
 
         def producer(i):
-            for batch in (
-                splits[i]
-                .map_batches(to_tensors, batch_format="pandas")
-                .iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas")
-            ):
+            for batch in splits[i].iter_batches(prefetch_blocks=0, batch_size=batch_size, batch_format="pandas"):
                 res = self._prepare_batch(batch)
                 q.put(res)
             q.put(None)

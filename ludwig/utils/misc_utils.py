@@ -26,7 +26,7 @@ import numpy
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import ENCODER, NAME, PROC_COLUMN
+from ludwig.constants import NAME, PROC_COLUMN
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.fs_utils import find_non_existing_dir_by_adding_suffix
@@ -77,23 +77,6 @@ def sum_dicts(dicts, dict_type=dict):
             else:
                 summed_dict[key] = value
     return summed_dict
-
-
-@DeveloperAPI
-def resolve_pointers(dict1, dict2, dict2_name):
-    resolved_dict = copy.deepcopy(dict1)
-    for key in dict1:
-        value = dict1[key]
-        if value.startswith(dict2_name):
-            key_in_dict2 = value[len(dict2_name) :]
-            if key_in_dict2 in dict2.keys():
-                value = dict2[key_in_dict2]
-                resolved_dict[key] = value
-            if ENCODER in dict2.keys():  # TODO(Connor): Temporary fix, remove this during preproc refactor
-                if key_in_dict2 in dict2[ENCODER].keys():
-                    value = dict2[ENCODER][key_in_dict2]
-                    resolved_dict[key] = value
-    return resolved_dict
 
 
 @DeveloperAPI

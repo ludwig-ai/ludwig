@@ -5,7 +5,7 @@ from ludwig.constants import AUDIO, BFILL, MISSING_VALUE_STRATEGY_OPTIONS, PREPR
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata.feature_metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA
 
 
 @DeveloperAPI

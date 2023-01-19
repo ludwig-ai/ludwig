@@ -42,6 +42,9 @@ INFER_IMAGE_MAX_WIDTH = "infer_image_max_width"
 INFER_IMAGE_SAMPLE_SIZE = "infer_image_sample_size"
 NUM_CLASSES = "num_classes"
 NUM_CHANNELS = "num_channels"
+REQUIRES_EQUAL_DIMENSIONS = "requires_equal_dimensions"
+USE_PRETRAINED = "use_pretrained"
+TRAINABLE = "trainable"
 CLASS_WEIGHTS = "class_weights"
 LOSS = "loss"
 ROC_AUC = "roc_auc"
@@ -67,6 +70,8 @@ R2 = "r2"
 EDIT_DISTANCE = "edit_distance"
 PERPLEXITY = "perplexity"
 JACCARD = "jaccard"
+PRECISION = "precision"
+RECALL = "recall"
 PREDICTIONS = "predictions"
 TOP_K = "top_k"
 TOP_K_PREDICTIONS = "top_k_predictions"
@@ -120,6 +125,7 @@ HIDDEN = "hidden"
 LAST_HIDDEN = "last_hidden"
 ENCODER_OUTPUT_STATE = "encoder_output_state"
 PROJECTION_INPUT = "projection_input"
+LEARNING_RATE_SCHEDULER = "learning_rate_scheduler"
 
 RANDOM = "random"
 SUM = "sum"
@@ -179,7 +185,7 @@ EARLY_STOP = "early_stop"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
-DEFAULT_BATCH_SIZE = 128
+DEFAULT_BATCH_SIZE = "auto"
 MAX_POSSIBLE_BATCH_SIZE = (
     1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
 )
@@ -260,9 +266,11 @@ CACHE = "cache"
 # retrieve torch ops for the tagged code blocks/functions.
 LUDWIG_TAG = "[ludwig]"
 
-
 # Retry constants
 TRIES = 5
 DELAY = 1
 BACKOFF = 2
 JITTER = (0, 1)
+
+# image support constants
+IMAGENET1K = "imagenet1k"

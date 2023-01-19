@@ -13,13 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 import json
+import logging
 
 import numpy as np
 import pandas as pd
 import pytest
 from fsspec.config import conf
 
+from ludwig.api import LudwigModel
 from ludwig.data.cache.types import CacheableDataframe
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset_df
 from ludwig.utils.data_utils import (
     add_sequence_feature_column,
     figure_data_format_dataset,
@@ -155,3 +158,14 @@ def test_numpy_encoder():
         assert json.dumps(x, cls=NumpyEncoder) == "[0.0, 1.0, 2.0, 3.0, 4.0]"
         for i in x:
             assert json.dumps(i, cls=NumpyEncoder) == f"{i}"
+
+
+def test_dataset_synthesizer_output_feature_decoder():
+    config = {
+        "input_features": [{"name": "sentence", "type": "text"}],
+        "output_features": [{"name": "product", "type": "category"}],
+        "trainer": {"epochs": 5},
+        "model_type": "ecd",
+    }
+    build_synthetic_dataset_df(dataset_size=100, config=config)
+    LudwigModel(config=config, logging_level=logging.INFO)

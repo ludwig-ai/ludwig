@@ -122,12 +122,12 @@ class BucketedBatcher(Batcher):
 # todo future: reintroduce the bucketed batcher
 # def initialize_batcher(dataset, batch_size=128, bucketing_field=None,
 #                        input_features=None, preprocessing=None,
-#                        should_shuffle=True, ignore_last=False, horovod=None):
-#     if horovod:
+#                        should_shuffle=True, ignore_last=False, distributed=None):
+#     if distributed:
 #         batcher = DistributedBatcher(
 #             dataset,
-#             horovod.rank(),
-#             horovod,
+#             distributed.rank(),
+#             distributed,
 #             batch_size,
 #             should_shuffle=should_shuffle,
 #             ignore_last=ignore_last

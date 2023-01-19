@@ -8,7 +8,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import EncoderDataclassField
-from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
+from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
@@ -16,9 +16,13 @@ from ludwig.schema.metadata.combiner_metadata import COMBINER_METADATA
 class SequenceCombinerConfig(BaseCombinerConfig):
     """Parameters for sequence combiner."""
 
+    @staticmethod
+    def module_name():
+        return "SequenceCombiner"
+
     type: str = schema_utils.ProtectedString(
         "sequence",
-        description="Type of combiner.",
+        description=COMBINER_METADATA["SequenceCombiner"]["type"].long_description,
     )
 
     main_sequence_feature: Optional[str] = schema_utils.String(

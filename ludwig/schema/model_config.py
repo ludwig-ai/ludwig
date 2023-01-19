@@ -49,7 +49,12 @@ from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
-from ludwig.schema.features.utils import get_input_feature_cls, get_output_feature_cls, input_config_registry
+from ludwig.schema.features.utils import (
+    get_input_feature_cls,
+    get_output_feature_cls,
+    input_config_registry,
+    output_config_registry,
+)
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -57,6 +62,7 @@ from ludwig.schema.trainer import BaseTrainerConfig, ECDTrainerConfig, GBMTraine
 from ludwig.schema.utils import BaseMarshmallowConfig, convert_submodules, RECURSION_STOP_ENUM
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
+from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.utils.misc_utils import set_default_value
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
@@ -127,6 +133,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
 
+        # ===== Save the original (upgraded) user config =====
+        self._user_config_dict = upgraded_config_dict
+
         # ===== Initialize Top Level Config Sections =====
 
         # Since 'ecd' is the default model type, we set it initially here.
@@ -196,11 +205,17 @@ class ModelConfig(BaseMarshmallowConfig):
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
         self._set_hyperopt_defaults()
 
+        # Set up default validation metric, which is used for plateau metrics and early stopping.
+        self._set_validation_parameters()
+
         # ===== Validate Config =====
         if self.model_type == MODEL_GBM:
             self.combiner = None
 
         self._validate_config(self.to_dict())
+
+    def get_user_config(self) -> ModelConfigDict:
+        return self._user_config_dict
 
     def __repr__(self):
         config_repr = self.to_dict()
@@ -446,6 +461,46 @@ class ModelConfig(BaseMarshmallowConfig):
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
 
+    def _set_validation_parameters(self):
+        """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
+        output_features = list(self.output_features.to_dict().values())
+
+        # The user has explicitly set validation_field. Don't override any validation parameters.
+        if TRAINER in self._user_config_dict and "validation_field" in self._user_config_dict[TRAINER]:
+            # TODO(Justin): Validate that validation_field is valid.
+            return
+
+        # The user has explicitly set the validation_metric.
+        if TRAINER in self._user_config_dict and "validation_metric" in self._user_config_dict[TRAINER]:
+            # Loss is valid for all features.
+            if self._user_config_dict[TRAINER]["validation_metric"] == LOSS:
+                return
+
+            # Determine the proper validation field for the user, like if the user specifies "accuracy" but forgets to
+            # change the validation field from "combined" to the name of the feature that produces accuracy metrics.
+            feature_to_metric_names_map = get_feature_to_metric_names_map(output_features)
+            validation_field = None
+            for feature_name, metric_names in feature_to_metric_names_map.items():
+                if self.trainer.validation_metric in metric_names:
+                    if validation_field is None:
+                        validation_field = feature_name
+                    else:
+                        raise ValidationError(
+                            f"The validation_metric: '{self.trainer.validation_metric}' corresponds to multiple "
+                            f"possible validation_fields, '{validation_field}' and '{feature_name}'. Please explicitly "
+                            "specify the validation_field that should be used with the validation_metric "
+                            f"'{self.trainer.validation_metric}'."
+                        )
+            if validation_field is None:
+                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
+            self.trainer.validation_field = validation_field
+            return
+
+        # The user has not explicitly set any validation fields.
+        # Default to using the first output feature's default validation metric.
+        self.trainer.validation_field = output_features[0]["name"]
+        self.trainer.validation_metric = output_config_registry[output_features[0]["type"]].default_validation_metric
+
     def _set_hyperopt_defaults(self):
         """This function was migrated from defaults.py with the intention of setting some hyperopt defaults while
         the hyperopt section of the config object is not fully complete.
@@ -472,19 +527,21 @@ class ModelConfig(BaseMarshmallowConfig):
 
         max_t = scheduler.get("max_t")
         time_attr = scheduler.get("time_attr")
-        epochs = self.trainer.to_dict().get("epochs", None)
+        epochs_key = "epochs" if self.model_type == MODEL_ECD else "num_boost_round"
+        epochs = self.trainer.to_dict().get(epochs_key, None)
         if max_t is not None:
             if time_attr == "time_total_s":
                 if epochs is None:
-                    setattr(self.trainer, "epochs", sys.maxsize)  # continue training until time limit hit
+                    setattr(self.trainer, epochs_key, sys.maxsize)  # continue training until time limit hit
                 # else continue training until either time or trainer epochs limit hit
             elif epochs is not None and epochs != max_t:
                 raise ValueError(
-                    "Cannot set trainer `epochs` when using hyperopt scheduler w/different training_iteration `max_t`. "
+                    f"Cannot set trainer `{epochs_key}` when using hyperopt scheduler w/ "
+                    "different training_iteration `max_t`. "
                     "Unset one of these parameters in your config or make sure their values match."
                 )
             else:
-                setattr(self.trainer, "epochs", max_t)  # run trainer until scheduler epochs limit hit
+                setattr(self.trainer, epochs_key, max_t)  # run trainer until scheduler epochs limit hit
         elif epochs is not None:
             scheduler["max_t"] = epochs  # run scheduler until trainer epochs limit hit
 

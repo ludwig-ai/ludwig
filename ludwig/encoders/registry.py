@@ -5,18 +5,12 @@ from ludwig.encoders.base import Encoder
 from ludwig.utils.registry import Registry
 
 _encoder_registry = Registry()
-_pretrained_encoder_registry = Registry()
 _sequence_encoder_registry = Registry()
 
 
 @DeveloperAPI
 def get_encoder_registry() -> Registry:
     return _encoder_registry
-
-
-@DeveloperAPI
-def get_pretrained_encoder_registry() -> Registry:
-    return _pretrained_encoder_registry
 
 
 @DeveloperAPI
@@ -32,7 +26,7 @@ def register_sequence_encoder(name: str):
     return wrap
 
 
-def register_encoder(name: str, features: Union[str, List[str]], is_pretrained=False):
+def register_encoder(name: str, features: Union[str, List[str]]):
     if isinstance(features, str):
         features = [features]
 
@@ -44,8 +38,6 @@ def register_encoder(name: str, features: Union[str, List[str]], is_pretrained=F
     def wrap(cls):
         for feature in features:
             update_registry(get_encoder_registry, cls, feature)
-            if is_pretrained:
-                update_registry(get_pretrained_encoder_registry, cls, feature)
         return cls
 
     return wrap

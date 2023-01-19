@@ -15,21 +15,22 @@
 import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any, Callable, Generator, Optional
+from typing import Any, Callable, Generator, Optional, Type
 
 import torch
 import torchmetrics.functional as metrics_F
 from torch import Tensor, tensor
 from torchmetrics import Accuracy as _Accuracy
-from torchmetrics import MeanAbsoluteError
+from torchmetrics import AUROC, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric
+from torchmetrics import MeanSquaredError, Metric, Precision, Recall
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
 
 from ludwig.constants import (
     ACCURACY,
     BINARY,
+    BINARY_WEIGHTED_CROSS_ENTROPY,
     CATEGORY,
     HITS_AT_K,
     JACCARD,
@@ -40,9 +41,11 @@ from ludwig.constants import (
     MEAN_SQUARED_ERROR,
     MINIMIZE,
     NUMBER,
+    PRECISION,
     PREDICTIONS,
     PROBABILITIES,
     R2,
+    RECALL,
     ROC_AUC,
     ROOT_MEAN_SQUARED_ERROR,
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -52,19 +55,23 @@ from ludwig.constants import (
     TOKEN_ACCURACY,
     VECTOR,
 )
+from ludwig.distributed import get_current_dist_strategy
 from ludwig.modules.loss_modules import (
     BWCEWLoss,
     SequenceSoftmaxCrossEntropyLoss,
     SigmoidCrossEntropyLoss,
     SoftmaxCrossEntropyLoss,
 )
-from ludwig.modules.metric_registry import metric_registry, register_metric
-from ludwig.utils.horovod_utils import gather_all_tensors, is_distributed_available
+from ludwig.modules.metric_registry import get_metric_registry, register_metric
 from ludwig.utils.loss_utils import rmspe_loss
 from ludwig.utils.metric_utils import masked_correct_predictions
 from ludwig.utils.torch_utils import sequence_length_2D
 
 logger = logging.getLogger(__name__)
+
+
+def _gather_all_tensors_fn() -> Optional[Callable]:
+    get_current_dist_strategy().gather_all_tensors_fn()
 
 
 class LudwigMetric(Metric, ABC):
@@ -95,12 +102,13 @@ class LudwigMetric(Metric, ABC):
         should_unsync: bool = True,
         distributed_available: Optional[Callable] = jit_distributed_available,
     ) -> Generator:
-        """Override the behavior of this in the base class to support Horovod."""
+        """Override the behavior of this in the base class to support custom distributed strategies."""
+        dist_strategy = get_current_dist_strategy()
         self.sync(
-            dist_sync_fn=gather_all_tensors,
+            dist_sync_fn=dist_strategy.gather_all_tensors_fn(),
             process_group=process_group,
             should_sync=should_sync,
-            distributed_available=is_distributed_available,
+            distributed_available=dist_strategy.is_available,
         )
 
         yield
@@ -113,7 +121,7 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
     """Root mean squared error metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(squared=False, dist_sync_fn=gather_all_tensors, **kwargs)
+        super().__init__(squared=False, dist_sync_fn=_gather_all_tensors_fn(), **kwargs)
 
     @classmethod
     def get_objective(cls):
@@ -124,75 +132,48 @@ class RMSEMetric(MeanSquaredError, LudwigMetric):
         return PREDICTIONS
 
 
+@register_metric(PRECISION, [BINARY])
+class PrecisionMetric(Precision, LudwigMetric):
+    """Precision metric."""
+
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
+
+
+@register_metric(RECALL, [BINARY])
+class RecallMetric(Recall, LudwigMetric):
+    """Recall metric."""
+
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
+
+
+# TODO(Justin): Re-register metric for CATEGORY features when aggregation using Ray/Horovod is clearer.
+# As is, registering this metric produces the following error:
+# "Argument `num_classes` was set to X in metric `precision_recall_curve` but detected Y number of classes from
+# predictions.", where Y >> X.
 @register_metric(ROC_AUC, [BINARY])
-class ROCAUCMetric(LudwigMetric):
-    """Fast implementation of metric for area under ROC curve."""
+class AUROCMetric(AUROC, LudwigMetric):
+    """Area under the receiver operating curve."""
 
-    def __init__(
-        self,
-        num_thresholds: int = 201,
-        epsilon: float = 1e-7,
-        **kwargs,
-    ) -> None:
-        super().__init__(dist_sync_fn=gather_all_tensors)
-        self.num_thresholds = num_thresholds
-        self.epsilon = epsilon
-        self.add_state("summary_stats", torch.zeros(num_thresholds, 4), dist_reduce_fx="sum")
-
-    def _get_thresholds(self, device, dtype) -> Tensor:
-        thresholds = torch.linspace(0, 1, self.num_thresholds, device=device, dtype=dtype)
-        thresholds[0] -= self.epsilon
-        thresholds[-1] += self.epsilon
-        return thresholds
-
-    def update(self, preds: Tensor, target: Tensor) -> None:
-        # Currently only supported for binary tasks.
-        if preds.ndim > 1 or target.ndim > 1:
-            raise RuntimeError(
-                f"Only binary tasks supported, but received input of "
-                f"{max(preds.ndim, target.ndim)} dimensions while expecting"
-                f"1-dimensional input."
-            )
-
-        if torch.min(preds) < 0 or torch.max(preds) > 1:
-            raise RuntimeError(
-                f"Only binary tasks supported, but received predictions in range "
-                f"({torch.min(preds)}, {torch.max(preds)})."
-            )
-
-        thresholds = self._get_thresholds(preds.device, preds.dtype)
-        target = target.to(bool).type(preds.dtype)
-
-        preds = preds.unsqueeze(1)
-        target = target.unsqueeze(1)
-
-        # Compute correct predictions at each threshold.
-        correct_predictions = ((preds >= thresholds) == target).to(int)
-
-        # Compute true positives, false positives, true negatives, false negatives.
-        # overall_predictions is a tensor where each cell represents the type of prediction:
-        # 0: false positive
-        # 1: true negative
-        # 2: false negative
-        # 3: true positive
-        overall_predictions = correct_predictions + (2 * target)
-
-        # Sum up the number of true positives, false positives, true negatives, false negatives at each threshold.
-        self.summary_stats += torch.eye(4, device=preds.device)[overall_predictions.T.long()].sum(dim=1, keepdim=False)
-
-    def compute(self) -> Tensor:
-        # Compute true positives, false positives, true negatives, false negatives.
-        self.summary_stats = self.summary_stats.squeeze()
-        false_positives = self.summary_stats[:, 0]
-        true_negatives = self.summary_stats[:, 1]
-        false_negatives = self.summary_stats[:, 2]
-        true_positives = self.summary_stats[:, 3]
-
-        true_positive_rate = true_positives / (true_positives + false_negatives)
-        false_positive_rate = false_positives / (false_positives + true_negatives)
-
-        # Compute area under ROC curve. Multiply by -1 because tpr and fpr are computed from the opposite direction.
-        return -1 * torch.trapz(true_positive_rate, false_positive_rate)
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
     def get_objective(cls):
@@ -207,7 +188,7 @@ class MeanMetric(LudwigMetric):
     """Abstract class for computing mean of metrics."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
         self.avg = _MeanMetric()
 
     def update(self, preds: Tensor, target: Tensor) -> None:
@@ -228,7 +209,7 @@ class MeanMetric(LudwigMetric):
 @register_metric(ROOT_MEAN_SQUARED_PERCENTAGE_ERROR, [NUMBER])
 class RMSPEMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     """ Root mean squared percentage error metric. """
 
@@ -335,7 +316,7 @@ class LossMetric(MeanMetric, ABC):
         return False
 
 
-@register_metric("binary_weighted_cross_entropy", [BINARY])
+@register_metric(BINARY_WEIGHTED_CROSS_ENTROPY, [BINARY])
 class BWCEWLMetric(LossMetric):
     """Binary Weighted Cross Entropy Weighted Logits Score Metric."""
 
@@ -391,7 +372,7 @@ class SigmoidCrossEntropyMetric(LossMetric):
 @register_metric(TOKEN_ACCURACY, [SEQUENCE, TEXT])
 class TokenAccuracyMetric(MeanMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
         target = target.type(preds.dtype)
@@ -413,7 +394,7 @@ class Accuracy(_Accuracy, LudwigMetric):
     """R-squared metric."""
 
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     @classmethod
     def get_objective(cls):
@@ -427,7 +408,7 @@ class Accuracy(_Accuracy, LudwigMetric):
 @register_metric(ACCURACY, [CATEGORY])
 class CategoryAccuracy(_Accuracy, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         # make sure y_true is tf.int64
@@ -446,7 +427,7 @@ class CategoryAccuracy(_Accuracy, LudwigMetric):
 @register_metric(HITS_AT_K, [CATEGORY])
 class HitsAtKMetric(_Accuracy, LudwigMetric):
     def __init__(self, top_k: int = 3, **kwargs):
-        super().__init__(top_k=top_k, dist_sync_fn=gather_all_tensors)
+        super().__init__(top_k=top_k, dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -467,7 +448,7 @@ class HitsAtKMetric(_Accuracy, LudwigMetric):
 @register_metric(MEAN_ABSOLUTE_ERROR, [NUMBER, VECTOR])
 class MAEMetric(MeanAbsoluteError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds.detach(), target)
@@ -484,7 +465,7 @@ class MAEMetric(MeanAbsoluteError, LudwigMetric):
 @register_metric(MEAN_SQUARED_ERROR, [NUMBER, VECTOR])
 class MSEMetric(MeanSquaredError, LudwigMetric):
     def __init__(self, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
 
     def update(self, preds: Tensor, target: Tensor) -> None:
         super().update(preds, target)
@@ -501,7 +482,7 @@ class MSEMetric(MeanSquaredError, LudwigMetric):
 @register_metric(JACCARD, [SET])
 class JaccardMetric(MeanMetric):
     def __init__(self, threshold: float = 0.5, **kwargs):
-        super().__init__(dist_sync_fn=gather_all_tensors)
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
         self.threshold = threshold
 
     def get_current_value(self, preds: Tensor, target: Tensor) -> Tensor:
@@ -525,22 +506,26 @@ class JaccardMetric(MeanMetric):
         return PROBABILITIES
 
 
-def get_improved_fun(metric: str) -> Callable:
-    if metric_registry[metric].get_objective() == MINIMIZE:
+def get_metric_cls(metric_name: str) -> Type[LudwigMetric]:
+    return get_metric_registry()[metric_name]
+
+
+def get_improved_fn(metric: str) -> Callable:
+    if get_metric_registry()[metric].get_objective() == MINIMIZE:
         return lambda x, y: x < y
     else:
         return lambda x, y: x > y
 
 
 def get_initial_validation_value(metric: str) -> float:
-    if metric_registry[metric].get_objective() == MINIMIZE:
+    if get_metric_registry()[metric].get_objective() == MINIMIZE:
         return float("inf")
     else:
         return float("-inf")
 
 
 def get_best_function(metric: str) -> Callable:
-    if metric_registry[metric].get_objective() == MINIMIZE:
+    if get_metric_registry()[metric].get_objective() == MINIMIZE:
         return min
     else:
         return max

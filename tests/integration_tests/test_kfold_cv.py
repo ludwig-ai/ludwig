@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 from ludwig.api import kfold_cross_validate
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.experiment import kfold_cross_validate_cli
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import (
@@ -106,7 +106,7 @@ def test_kfold_cv_cli(tmpdir, features_to_use: FeaturesToUse):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     with open(config_fp, "w") as f:
@@ -159,7 +159,7 @@ def test_kfold_cv_api_from_file(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     with open(config_fp, "w") as f:
@@ -197,7 +197,7 @@ def test_kfold_cv_api_in_memory(tmpdir):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # test kfold_cross_validate api with config in-memory
@@ -251,7 +251,7 @@ def test_kfold_cv_dataset_formats(tmpdir, data_format):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     # test kfold_cross_validate api with config in-memory

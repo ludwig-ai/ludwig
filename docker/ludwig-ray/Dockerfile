@@ -11,6 +11,10 @@
 
 FROM rayproject/ray:2.0.0-py38
 
+# https://github.com/kubernetes/release/issues/1982
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+	sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
+
 RUN sudo apt-get update && DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
 	build-essential \
 	wget \
@@ -25,8 +29,7 @@ RUN pip install -U pip
 
 WORKDIR /ludwig
 
-# TODO(travis): remove this once we fix CUDA 11.6 NCCL version in base image
-RUN pip install torch==1.12.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install torch==1.13.1 torchtext torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 RUN HOROVOD_WITH_PYTORCH=1 \

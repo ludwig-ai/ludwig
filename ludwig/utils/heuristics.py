@@ -1,8 +1,8 @@
-from ludwig.types import ModelConfigDict
+from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.config_utils import has_pretrained_encoder, has_trainable_encoder, has_unstructured_input_feature
 
 
-def get_auto_learning_rate(config_dict: ModelConfigDict) -> float:
+def get_auto_learning_rate(config: ModelConfig) -> float:
     """Uses config heuristics to determine an appropriate learning rate.
 
     The main idea behind the following heuristics is that smaller learning rates are more
@@ -12,14 +12,15 @@ def get_auto_learning_rate(config_dict: ModelConfigDict) -> float:
     size, dataset size, batch size, number of features, etc.
 
     Args:
-        config_dict: Ludwig config used to train the model.
+        config: Ludwig config used to train the model.
     """
-    if not has_unstructured_input_feature(config_dict):
+    if not has_unstructured_input_feature(config):
         return 0.001
 
-    if not has_pretrained_encoder(config_dict):
+    if not has_pretrained_encoder(config):
         return 0.0001
 
-    if has_trainable_encoder(config_dict):
+    if has_trainable_encoder(config):
         return 0.00001
+
     return 0.00002

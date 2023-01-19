@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import pytest
 
-from ludwig.utils.fs_utils import get_fs_and_path
+from ludwig.utils.fs_utils import get_fs_and_path, safe_move_directory
 
 logger = logging.getLogger(__name__)
 
@@ -73,3 +73,22 @@ def test_get_fs_and_path_invalid_windows():
         url = f"http://a/{quote(c)}"
         with pytest.raises(e):
             create_file(url)
+
+
+@pytest.mark.filesystem
+def test_safe_move_directory(tmpdir):
+    src_dir = os.path.join(tmpdir, "src")
+    dst_dir = os.path.join(tmpdir, "dst")
+
+    os.mkdir(src_dir)
+    os.mkdir(dst_dir)
+
+    with open(os.path.join(src_dir, "file.txt"), "w") as f:
+        f.write("test")
+
+    safe_move_directory(src_dir, dst_dir)
+
+    assert not os.path.exists(src_dir)
+    assert os.path.exists(os.path.join(dst_dir, "file.txt"))
+    with open(os.path.join(dst_dir, "file.txt")) as f:
+        assert f.read() == "test"

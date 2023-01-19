@@ -19,26 +19,52 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import IMAGE
+from ludwig.constants import HEIGHT, IMAGE, REQUIRES_EQUAL_DIMENSIONS, TRAINABLE, USE_PRETRAINED, WIDTH
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import (
-    MLPMixerEncoderConfig,
-    ResNetEncoderConfig,
-    Stacked2DCNNEncoderConfig,
-    ViTEncoderConfig,
-)
+from ludwig.schema.encoders.image.base import MLPMixerConfig, ResNetConfig, Stacked2DCNNConfig, ViTConfig
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
+class ImageEncoder(Encoder):
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        """If the encoder requires images of equal width and height."""
+        return False
+
+    @classmethod
+    def required_width(cls) -> Optional[int]:
+        """Required image width for the pretrained encoder."""
+        return None
+
+    @classmethod
+    def required_height(cls) -> Optional[int]:
+        """Required image height for the pretrained encoder."""
+        return None
+
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+        """If the encoder is not in trainable mode, override the image width and height to be compatible with the
+        pretrained encoder image dimension requirements."""
+        if cls.requires_equal_dimensions() and cls.required_width() != cls.required_height():
+            raise ValueError("Invalid definition. required_width and required_height are not equal")
+        preprocessing_parameters = {REQUIRES_EQUAL_DIMENSIONS: cls.requires_equal_dimensions()}
+        if not encoder_params.get(TRAINABLE, False) or encoder_params.get(USE_PRETRAINED, False):
+            preprocessing_parameters[HEIGHT] = cls.required_height()
+            preprocessing_parameters[WIDTH] = cls.required_width()
+            return preprocessing_parameters
+        return preprocessing_parameters
+
+
+@DeveloperAPI
 @register_encoder("stacked_cnn", IMAGE)
-class Stacked2DCNN(Encoder):
+class Stacked2DCNN(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -150,7 +176,7 @@ class Stacked2DCNN(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return Stacked2DCNNEncoderConfig
+        return Stacked2DCNNConfig
 
     @property
     def output_shape(self) -> torch.Size:
@@ -162,8 +188,8 @@ class Stacked2DCNN(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("resnet", IMAGE)
-class ResNetEncoder(Encoder):
+@register_encoder("_resnet_legacy", IMAGE)
+class ResNetEncoder(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -241,7 +267,7 @@ class ResNetEncoder(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return ResNetEncoderConfig
+        return ResNetConfig
 
     @property
     def output_shape(self) -> torch.Size:
@@ -254,7 +280,7 @@ class ResNetEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("mlp_mixer", IMAGE)
-class MLPMixerEncoder(Encoder):
+class MLPMixerEncoder(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -306,7 +332,7 @@ class MLPMixerEncoder(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return MLPMixerEncoderConfig
+        return MLPMixerConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -318,8 +344,8 @@ class MLPMixerEncoder(Encoder):
 
 
 @DeveloperAPI
-@register_encoder("vit", IMAGE, is_pretrained=True)
-class ViTEncoder(Encoder):
+@register_encoder("_vit_legacy", IMAGE)
+class ViTEncoder(ImageEncoder):
     def __init__(
         self,
         height: int,
@@ -408,7 +434,7 @@ class ViTEncoder(Encoder):
 
     @staticmethod
     def get_schema_cls():
-        return ViTEncoderConfig
+        return ViTConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -417,3 +443,19 @@ class ViTEncoder(Encoder):
     @property
     def output_shape(self) -> torch.Size:
         return torch.Size(self._output_shape)
+
+    @classmethod
+    def requires_equal_dimensions(cls) -> bool:
+        return True
+
+    @classmethod
+    def required_width(cls) -> Optional[int]:
+        return 224
+
+    @classmethod
+    def required_height(cls) -> Optional[int]:
+        return 224
+
+    @classmethod
+    def is_pretrained(cls, encoder_params: Dict[str, Any]) -> bool:
+        return encoder_params.get("use_pretrained", True)

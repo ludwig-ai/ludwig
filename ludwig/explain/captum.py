@@ -79,6 +79,10 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
 
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
+    # Ignore sample_ratio from the model config, since we want to explain all the data.
+    sample_ratio_bak = model.config_obj.preprocessing.sample_ratio
+    model.config_obj.preprocessing.sample_ratio = 1.0
+
     # Convert raw input data into preprocessed tensor data
     dataset, _ = preprocess_for_prediction(
         model.config_obj.to_dict(),
@@ -90,6 +94,14 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
         backend=model.backend,
         callbacks=model.callbacks,
     )
+
+    # Restore sample_ratio
+    model.config_obj.preprocessing.sample_ratio = sample_ratio_bak
+
+    # Make sure the number of rows in the preprocessed dataset matches the number of rows in the input data
+    assert (
+        dataset.to_df().shape[0] == input_set.shape[0]
+    ), f"Expected {input_set.shape[0]} rows in preprocessed dataset, but got {dataset.to_df().shape[0]}"
 
     # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
     inputs = {
@@ -199,7 +211,7 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
     for sample_input, (name, feature) in zip(sample_encoded, input_features.items()):
         metadata = model.training_set_metadata[name]
         if feature.type() == TEXT:
-            PAD_IND = metadata["pad_idx"]
+            PAD_IND = metadata.get("pad_idx", metadata.get("word_pad_idx"))
             token_reference = TokenReferenceBase(reference_token_idx=PAD_IND)
             baseline = token_reference.generate_reference(sequence_length=sample_input.shape[1], device=DEVICE)
         elif feature.type() == CATEGORY:
@@ -284,17 +296,17 @@ def get_total_attribution(
             a_reduced = a.detach().cpu()
             if a.ndim > 1:
                 # Convert to token-level attributions by summing over the embedding dimension.
-                a_reduced = a.sum(dim=-1).squeeze(0)
+                a_reduced = a.sum(dim=-1)
             if a_reduced.ndim == 2:
                 # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
                 # norm of the sequence.
                 a_reduced = a_reduced / torch.norm(a_reduced)
             attributions_reduced.append(a_reduced)
 
-        for inputs, attrs, feat_name in zip(input_batch, attributions_reduced, input_features.keys()):
-            if attrs.ndim == 2:
-                tok_attrs = get_token_attributions(model, feat_name, inputs, attrs)
-                feat_to_token_attributions[feat_name].append(tok_attrs)
+        for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
+            if feat.type() == TEXT:
+                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
         attribution = [a.sum(dim=-1) if a.ndim == 2 else a for a in attributions_reduced]
@@ -349,7 +361,8 @@ def get_token_attributions(
     )
 
     # map input ids to input tokens via the vocabulary
-    vocab = model.training_set_metadata[feature_name]["idx2str"]
+    feature = model.training_set_metadata[feature_name]
+    vocab = feature.get("idx2str", feature.get("word_idx2str"))
     idx2str = np.vectorize(lambda idx: vocab[idx])
     input_tokens = idx2str(input_ids)
 

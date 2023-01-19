@@ -142,7 +142,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend
+        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         if column.dtype != object:
             return {}
@@ -248,8 +248,6 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
-    metric_functions = BinaryOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[BinaryOutputFeatureConfig, Dict],
@@ -369,8 +367,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
                     prob_col: np.where(
                         result[probabilities_col] > 0.5, result[probabilities_col], 1 - result[probabilities_col]
                     ),
-                    probabilities_col: result.apply(lambda x: [1 - x[probabilities_col], x[probabilities_col]], axis=1),
-                }
+                    probabilities_col: result[probabilities_col].map(lambda x: [1 - x, x]),
+                },
             )
 
         return result
