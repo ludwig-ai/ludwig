@@ -4,7 +4,7 @@ from threading import Lock
 from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
-from ludwig.api_annotations import Deprecated, DeveloperAPI
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     BACKEND,
     COMBINER,
@@ -74,6 +74,7 @@ def get_schema(model_type: str = MODEL_ECD):
     return schema
 
 
+@DeveloperAPI
 @lru_cache(maxsize=2)
 def get_validator():
     # Manually add support for tuples (pending upstream changes: https://github.com/Julian/jsonschema/issues/148):
@@ -86,6 +87,7 @@ def get_validator():
     return extend(Draft7Validator, type_checker=type_checker)
 
 
+@DeveloperAPI
 def validate_upgraded_config(updated_config):
     from ludwig.data.split import get_splitter
 
@@ -98,7 +100,7 @@ def validate_upgraded_config(updated_config):
         validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
 
 
-@Deprecated(message="Use 'from ludwig.config_validation.validations import validate_config' instead.")
+@DeveloperAPI
 def validate_config(config):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import

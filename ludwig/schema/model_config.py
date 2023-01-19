@@ -8,6 +8,7 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -40,7 +41,6 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.schema import validate_config
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
