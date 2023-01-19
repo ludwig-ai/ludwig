@@ -1039,7 +1039,7 @@ CamemBERT:
         short_description:
             Language model trained on large French text corpus.
         long_description:
-            The camembert encoder loads a pretrained CamemBERT (default jplu/tf-camembert-base) model using
+            The camembert encoder loads a pretrained CamemBERT (default camembert-base) model using
             the Hugging Face transformers package. CamemBERT is pre-trained on 138GB of French text.
         literature_references:
             - https://arxiv.org/abs/1911.03894

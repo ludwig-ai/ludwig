@@ -1338,7 +1338,7 @@ class CTRLEncoder(HFTextEncoder):
 @DeveloperAPI
 @register_encoder("camembert", TEXT)
 class CamemBERTEncoder(HFTextEncoder):
-    DEFAULT_MODEL_NAME = "jplu/camembert-base"
+    DEFAULT_MODEL_NAME = "camembert-base"
 
     def __init__(
         self,
