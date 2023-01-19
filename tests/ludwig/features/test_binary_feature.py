@@ -30,7 +30,7 @@ def test_binary_input_feature(binary_config: Dict, encoder: str):
 
     binary_tensor = binary_input_feature.create_sample_input(batch_size=BATCH_SIZE)
     assert binary_tensor.shape == torch.Size([BATCH_SIZE])
-    assert binary_tensor.dtype == torch.float32
+    assert binary_tensor.dtype == torch.bool
 
     encoder_output = binary_input_feature(binary_tensor)
 

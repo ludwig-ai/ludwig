@@ -98,7 +98,6 @@ class DateFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
-        is_input_feature: bool,
     ) -> None:
         datetime_format = preprocessing_parameters["datetime_format"]
         proc_df[feature_config[PROC_COLUMN]] = backend.df_engine.map_objects(

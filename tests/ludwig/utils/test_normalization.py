@@ -55,7 +55,6 @@ def test_norm():
         preprocessing_parameters={"normalization": "zscore"},
         backend=LOCAL_BACKEND,
         skip_save_processed_input=False,
-        is_input_feature=True,
     )
     assert np.allclose(
         np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-1.26491106, -0.63245553, 0, 0.63245553, 1.26491106])
@@ -69,7 +68,6 @@ def test_norm():
         preprocessing_parameters={"normalization": "minmax"},
         backend=LOCAL_BACKEND,
         skip_save_processed_input=False,
-        is_input_feature=True,
     )
     assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([0, 0.25, 0.5, 0.75, 1]))
 
@@ -81,6 +79,5 @@ def test_norm():
         preprocessing_parameters={"normalization": "iq"},
         backend=LOCAL_BACKEND,
         skip_save_processed_input=False,
-        is_input_feature=True,
     )
     assert np.allclose(np.array(proc_df[num_feature[PROC_COLUMN]]), np.array([-1, -0.5, 0, 0.5, 1]))

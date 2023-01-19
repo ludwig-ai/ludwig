@@ -82,7 +82,6 @@ class BaseFeatureMixin(ABC):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,  # Union[Backend, str]
         skip_save_processed_input: bool,
-        is_input_feature: bool,
     ) -> None:
         """Runs preprocessing on the input_df and stores results in the proc_df and metadata dictionaries.
 

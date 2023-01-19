@@ -1370,7 +1370,6 @@ def build_data(
             preprocessing_parameters,
             backend,
             skip_save_processed_input,
-            is_input_feature(feature_config),
         )
 
     return proc_cols

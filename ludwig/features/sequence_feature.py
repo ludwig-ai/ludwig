@@ -246,7 +246,6 @@ class SequenceFeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
-        is_input_feature: bool,
     ):
         sequence_data = SequenceInputFeature.feature_data(
             input_df[feature_config[COLUMN]],

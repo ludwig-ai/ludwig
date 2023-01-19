@@ -100,7 +100,6 @@ class H3FeatureMixin(BaseFeatureMixin):
         preprocessing_parameters: PreprocessingConfigDict,
         backend,
         skip_save_processed_input,
-        is_input_feature: bool,
     ):
         column = input_df[feature_config[COLUMN]]
         if column.dtype == object:
