@@ -1803,7 +1803,7 @@ class LongformerEncoder(HFTextEncoder):
 
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
-            transformer = load_pretrained_hf_model(LongformerModel, pretrained_model_name_or_path, pretrained_kwargs)
+            transformer = load_pretrained_hf_model(LongformerModel, pretrained_model_name_or_path, **pretrained_kwargs)
         else:
             config = LongformerConfig(attention_window, sep_token_id, **kwargs)
             transformer = LongformerModel(config)
