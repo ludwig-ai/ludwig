@@ -2125,8 +2125,9 @@ DenseEncoder:
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
-    layers:
+    fc_layers:
         ui_display_name: null
+        expected_impact: 1
     norm:
         default_value_reasoning:
             While batch normalization and layer normalization
@@ -2234,6 +2235,7 @@ DenseEncoder:
         ui_display_name: Output Size
     use_bias:
         ui_display_name: null
+        expected_impact: 1
     weights_initializer:
         default_value_reasoning: Taken from [this paper](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf).
         description_implications:
