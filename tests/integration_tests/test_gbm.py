@@ -359,3 +359,11 @@ def test_goss_deactivate_bagging(tmpdir, local_backend):
     output_features = [binary_feature()]
 
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)
+
+
+def test_dart_boosting_type(tmpdir, local_backend):
+    """Test that DART does not error during eval due to progress tracking."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="dart")
