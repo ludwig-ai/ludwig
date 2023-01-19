@@ -1,6 +1,5 @@
-import requests
-
 import pytest
+import requests
 import torch
 
 from ludwig.encoders import text_encoders
