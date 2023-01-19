@@ -511,7 +511,7 @@ class ModelConfig(BaseMarshmallowConfig):
         if not self.hyperopt:
             return
 
-        scheduler = self.hyperopt.get("executor", {}).get("scheduler")
+        scheduler = self.hyperopt.get("executor", {}).get("scheduler", {})
         if not scheduler:
             return
 
