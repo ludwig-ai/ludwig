@@ -56,6 +56,10 @@ def test_hf_pretrained_default_exists(tmpdir, encoder_cls: text_encoders.HFTextE
 def test_auto_transformer_encoder(
     tmpdir, pretrained_model_name_or_path: str, reduce_output: str, max_sequence_length: int
 ):
+    """Tests that loading an auto-transformer encoder works end-to-end.
+
+    This has a separate test because AutoTransformerEncoder.DEFAULT_MODEL_NAME is None.
+    """
     encoder = text_encoders.AutoTransformerEncoder(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
         reduce_output=reduce_output,
