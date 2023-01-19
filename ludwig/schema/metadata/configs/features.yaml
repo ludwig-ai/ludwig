@@ -201,6 +201,16 @@ binary:
                 - fill_value
             ui_display_name: Missing Value Strategy
             expected_impact: 3
+    calibration:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    threshold:
+        expected_impact: 3
 category:
     preprocessing:
         computed_fill_value:
@@ -252,6 +262,16 @@ category:
                 will leave out only very rare tokens that should not influence performance
                 substantially
             ui_display_name: Most common (vocabulary size)
+    calibration:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    top_k:
+        expected_impact: 3
 date:
     preprocessing:
         computed_fill_value:
@@ -434,6 +454,14 @@ number:
                 \ std = 1. It\u2019s useful when there are a few outliers, but not\
                 \ so extreme that you need clipping."
             ui_display_name: Normalization
+    clip:
+        expected_impact: 2
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 sequence:
     preprocessing:
         computed_fill_value:
@@ -533,6 +561,12 @@ sequence:
                 rather than treated as an unknown.
             expected_impact: 0
             ui_display_name: Vocab File
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 set:
     preprocessing:
         computed_fill_value:
@@ -586,6 +620,14 @@ set:
         tokenizer:
             ui_display_name: null
             expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    threshold:
+        expected_impact: 3
 text:
     preprocessing:
         computed_fill_value:
@@ -753,6 +795,14 @@ text:
                 rather than treated as an unknown.
             expected_impact: 0
             ui_display_name: Vocab File
+    class_similarities:
+        expected_impact: 1
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
 timeseries:
     preprocessing:
         computed_fill_value:
@@ -814,3 +864,13 @@ vector:
         vector_size:
             ui_display_name: null
             expected_impact: 3
+    dependencies:
+        expected_impact: 1
+    reduce_dependencies:
+        expected_impact: 1
+    reduce_input:
+        expected_impact: 1
+    softmax:
+        expected_impact: 3
+    vector_size:
+        expected_impact: 3

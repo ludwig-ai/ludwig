@@ -19,6 +19,7 @@ from ludwig.schema.features.utils import (
     output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -80,6 +81,7 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[SET]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
@@ -87,12 +89,14 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[SET]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[SET]["reduce_input"],
     )
 
     threshold: float = schema_utils.FloatRange(
@@ -101,4 +105,5 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
         max=1,
         description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
         "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
+        parameter_metadata=FEATURE_METADATA[SET]["threshold"],
     )

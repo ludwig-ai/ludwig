@@ -19,6 +19,7 @@ from ludwig.schema.features.utils import (
     output_mixin_registry,
 )
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.utils import BaseMarshmallowConfig
 
 
@@ -82,6 +83,7 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="sequence_output")
@@ -89,10 +91,12 @@ class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeature
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE]["reduce_input"],
     )
