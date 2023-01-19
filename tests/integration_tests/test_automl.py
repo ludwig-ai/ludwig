@@ -8,8 +8,8 @@ import pandas as pd
 import pytest
 
 from ludwig.api import LudwigModel
+from ludwig.config_validation.validation import validate_upgraded_config
 from ludwig.constants import COLUMN, ENCODER, INPUT_FEATURES, NAME, OUTPUT_FEATURES, PREPROCESSING, SPLIT, TYPE
-from ludwig.schema import validate_upgraded_config
 from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (

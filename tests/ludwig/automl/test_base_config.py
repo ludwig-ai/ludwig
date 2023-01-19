@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.schema import validate_upgraded_config
+from ludwig.config_validation.validation import validate_upgraded_config
 
 ray = pytest.importorskip("ray")  # noqa
 

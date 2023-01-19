@@ -225,7 +225,7 @@ def test_xlmroberta_encoder(use_pretrained: bool, reduce_output: str, max_sequen
     assert outputs["encoder_output"].shape[1:] == xlmroberta_encoder.output_shape
 
 
-@pytest.mark.parametrize("use_pretrained", [False])
+@pytest.mark.parametrize("use_pretrained", [False, True])
 @pytest.mark.parametrize("reduce_output", [None, "cls_pooled"])
 @pytest.mark.parametrize("max_sequence_length", [20])
 def test_longformer_encoder(use_pretrained: bool, reduce_output: str, max_sequence_length: int):
