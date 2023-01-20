@@ -23,7 +23,7 @@ import pytest
 import torch
 
 from ludwig.api import LudwigModel
-from ludwig.constants import DECODER, NAME, TRAINER
+from ludwig.constants import BATCH_SIZE, DECODER, NAME, TRAINER
 from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
@@ -82,7 +82,11 @@ def test_binary_predictions(tmpdir, backend, distinct_values, ray_cluster_2cpu):
     data_df[feature[NAME]] = data_df[feature[NAME]].map(lambda x: true_value if x else false_value)
     data_df.to_csv(data_csv_path, index=False)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
+    }
 
     patch_args = (
         "ludwig.features.binary_feature.BinaryOutputFeature.logits",
@@ -141,7 +145,11 @@ def test_binary_predictions_with_number_dtype(tmpdir, backend, distinct_values, 
     data_df[feature[NAME]] = data_df[feature[NAME]].map(lambda x: true_value if x else false_value)
     data_df.to_csv(data_csv_path, index=False)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
+    }
 
     patch_args = (
         "ludwig.features.binary_feature.BinaryOutputFeature.logits",
@@ -189,7 +197,11 @@ def test_set_feature_saving(tmpdir, pct_positive):
     )
     data_df = pd.read_csv(data_csv_path)
 
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 1}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
+    }
 
     patch_args = (
         "ludwig.features.set_feature.SetOutputFeature.logits",

@@ -20,28 +20,33 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import DeveloperAPI, PublicAPI
-from ludwig.automl.auto_tune_config import memory_tune_config
 from ludwig.automl.base_config import (
-    _create_default_config,
     allocate_experiment_resources,
+    create_default_config,
     DatasetInfo,
     get_dataset_info,
     get_default_automl_hyperopt,
+    get_features_config,
     get_reference_configs,
     get_resource_aware_hyperopt_config,
 )
 from ludwig.backend import Backend, initialize_backend
 from ludwig.constants import (
+    AUTO,
     AUTOML_DEFAULT_IMAGE_ENCODER,
     AUTOML_DEFAULT_TABULAR_MODEL,
     AUTOML_DEFAULT_TEXT_ENCODER,
+    BINARY,
+    CATEGORY,
     ENCODER,
     HYPEROPT,
     IMAGE,
     INPUT_FEATURES,
+    NUMBER,
     OUTPUT_FEATURES,
     TABULAR,
     TEXT,
+    TRAINER,
     TYPE,
 )
 from ludwig.contrib import add_contrib_callback_args
@@ -54,18 +59,20 @@ from ludwig.profiling.dataset_profile import (
     get_dataset_profile_view,
 )
 from ludwig.profiling.type_inference import get_ludwig_type_map_from_column_profile_summaries
+from ludwig.schema.model_config import ModelConfig
+from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.ray_utils import _ray_init
 from ludwig.utils.automl.utils import _add_transfer_config, get_model_type, set_output_feature_metric
 from ludwig.utils.data_utils import load_dataset, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import open_file
+from ludwig.utils.heuristics import get_auto_learning_rate
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.types import DataFrame
 
 try:
     import dask.dataframe as dd
-    import ray
     from ray.tune import ExperimentAnalysis
 except ImportError as e:
     raise RuntimeError("ray is not installed. In order to use auto_train please run pip install ludwig[ray]") from e
@@ -74,6 +81,7 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = "."
+TABULAR_TYPES = {CATEGORY, NUMBER, BINARY}
 
 
 class AutoTrainResults:
@@ -199,6 +207,8 @@ def create_auto_config_with_dataset_profile(
             automl_config[INPUT_FEATURES].append({"name": feature_name, "type": ludwig_type})
 
     # Set the combiner to tabnet, by default.
+    # TODO(travis): consolidate this logic with `create_auto_config` to reduce duplication and make the
+    # switch easier
     automl_config.get("combiner", {})[TYPE] = "tabnet"
 
     # Add hyperopt, if desired.
@@ -222,13 +232,13 @@ def create_auto_config(
     dataset: Union[str, pd.DataFrame, dd.core.DataFrame, DatasetInfo],
     target: Union[str, List[str]],
     time_limit_s: Union[int, float],
-    tune_for_memory: bool,
+    tune_for_memory: bool = False,
     user_config: Dict = None,
     random_seed: int = default_random_seed,
     imbalance_threshold: float = 0.9,
     use_reference_config: bool = False,
     backend: Union[Backend, str] = None,
-) -> dict:
+) -> ModelConfigDict:
     """Returns an auto-generated Ludwig config with the intent of training the best model on given given dataset /
     target in the given time limit.
 
@@ -237,7 +247,7 @@ def create_auto_config(
     :param target: (str, List[str]) name of target feature
     :param time_limit_s: (int, float) total time allocated to auto_train. acts
                          as the stopping parameter
-    :param tune_for_memory: (bool) refine hyperopt search space for available
+    :param tune_for_memory: (bool) DEPRECATED refine hyperopt search space for available
                             host / GPU memory
     :param user_config: (dict) override automatic selection of specified config items
     :param random_seed: (int, default: `42`) a random seed that will be used anywhere
@@ -257,30 +267,50 @@ def create_auto_config(
         dataset = load_dataset(dataset, df_lib=backend.df_engine.df_lib)
 
     dataset_info = get_dataset_info(dataset) if not isinstance(dataset, DatasetInfo) else dataset
-    default_configs = _create_default_config(
-        dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
+    features_config = create_features_config(dataset_info, target)
+    return create_automl_config_for_features(
+        features_config,
+        dataset_info,
+        target,
+        time_limit_s=time_limit_s,
+        user_config=user_config,
+        random_seed=random_seed,
+        imbalance_threshold=imbalance_threshold,
+        use_reference_config=use_reference_config,
+        backend=backend,
     )
-    model_config, model_category, row_count = _model_select(
-        dataset_info, default_configs, user_config, use_reference_config
+
+
+@PublicAPI
+def create_automl_config_for_features(
+    features_config: ModelConfigDict,
+    dataset_info: DatasetInfo,
+    target: Union[str, List[str]],
+    time_limit_s: Union[int, float],
+    tune_for_memory: bool = False,
+    user_config: Dict = None,
+    random_seed: int = default_random_seed,
+    imbalance_threshold: float = 0.9,
+    use_reference_config: bool = False,
+    backend: Union[Backend, str] = None,
+) -> ModelConfigDict:
+    default_configs = create_default_config(
+        features_config, dataset_info, target, time_limit_s, random_seed, imbalance_threshold, backend
     )
+    model_config, _, _ = _model_select(dataset_info, default_configs, user_config, use_reference_config)
+
     if tune_for_memory:
-        args = (model_config, dataset, model_category, row_count, backend)
-        if ray.is_initialized():
-            resources = backend.get_available_resources()  # check if cluster has GPUS
-            if resources.gpus > 0:
-                model_config, fits_in_memory = ray.get(
-                    ray.remote(num_gpus=1, num_cpus=1, max_calls=1)(memory_tune_config).remote(*args)
-                )
-            else:
-                model_config, fits_in_memory = ray.get(ray.remote(num_cpus=1)(memory_tune_config).remote(*args))
-        else:
-            model_config, fits_in_memory = memory_tune_config(*args)
-        if not fits_in_memory:
-            warnings.warn(
-                "AutoML with tune_for_memory enabled did not return estimation that model will fit in memory. "
-                "If out-of-memory occurs, consider setting AutoML user_config to reduce model memory footprint. "
-            )
+        warnings.warn("`tune_for_memory=True` is deprecated, `batch_size=auto` will be used instead")
+
     return model_config
+
+
+@PublicAPI
+def create_features_config(
+    dataset_info: DatasetInfo,
+    target_name: Union[str, List[str]] = None,
+) -> ModelConfigDict:
+    return get_features_config(dataset_info.fields, dataset_info.row_count, target_name)
 
 
 @PublicAPI
@@ -350,8 +380,10 @@ def _model_select(
     base_config = copy.deepcopy(default_configs["base_config"])
     model_category = None
 
+    input_features = default_configs["base_config"]["input_features"]
+
     # tabular dataset heuristics
-    if len(fields) > 3:
+    if len(fields) > 3 and all(f[TYPE] in TABULAR_TYPES for f in input_features):
         model_category = TABULAR
         base_config = merge_dict(base_config, default_configs["combiner"][AUTOML_DEFAULT_TABULAR_MODEL])
 
@@ -362,7 +394,6 @@ def _model_select(
                 base_config = merge_dict(base_config, default_configs["combiner"][model_type])
     else:
         # text heuristics
-        input_features = default_configs["base_config"]["input_features"]
         for i, input_feature in enumerate(input_features):
             base_config_input_feature = base_config["input_features"][i]
             # default text encoder is bert
@@ -386,6 +417,17 @@ def _model_select(
 
         # Merge combiner config
         base_config = merge_dict(base_config, default_configs["combiner"]["concat"])
+
+    # Adjust learning rate based on other config settings
+    if base_config[TRAINER]["learning_rate"] == AUTO:
+        # Add a fake output feature to ensure we can load the ModelConfig, as we expect there to be at least
+        # one output feature in all cases
+        # TODO(travis): less hacky way to do this, we should probably allow ModelConfig to be created without output
+        # features
+        load_config = copy.deepcopy(base_config)
+        if not load_config.get(OUTPUT_FEATURES):
+            load_config[OUTPUT_FEATURES] = [{"name": "fake", "type": "binary"}]
+        base_config[TRAINER]["learning_rate"] = get_auto_learning_rate(ModelConfig.from_dict(load_config))
 
     # override and constrain automl config based on user specified values
     if user_config is not None:
@@ -436,7 +478,7 @@ def init_config(
     dataset: str,
     target: Union[str, List[str]],
     time_limit_s: Union[int, float],
-    tune_for_memory: bool,
+    tune_for_memory: bool = False,
     hyperopt: bool = False,
     output: str = None,
     random_seed: int = default_random_seed,
@@ -447,9 +489,9 @@ def init_config(
         dataset=dataset,
         target=target,
         time_limit_s=time_limit_s,
-        tune_for_memory=tune_for_memory,
         random_seed=random_seed,
         use_reference_config=use_reference_config,
+        tune_for_memory=tune_for_memory,
     )
 
     if HYPEROPT in config and not hyperopt:
@@ -486,13 +528,6 @@ def cli_init_config(sys_argv):
         "--time_limit_s",
         type=int,
         help="time limit to train the model in seconds when using hyperopt",
-        required=False,
-    )
-    parser.add_argument(
-        "--tune_for_memory",
-        type=bool,
-        help="refine hyperopt search space based on available host / GPU memory",
-        default=False,
         required=False,
     )
     parser.add_argument(

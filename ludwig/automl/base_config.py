@@ -26,8 +26,10 @@ from ludwig.backend import Backend
 from ludwig.constants import (
     COLUMN,
     COMBINER,
+    ENCODER,
     EXECUTOR,
     HYPEROPT,
+    INPUT_FEATURES,
     PREPROCESSING,
     SCHEDULER,
     SEARCH_ALG,
@@ -37,6 +39,7 @@ from ludwig.constants import (
 )
 from ludwig.profiling import dataset_profile_pb2
 from ludwig.profiling.dataset_profile import get_dataset_profile_proto, get_dataset_profile_view
+from ludwig.types import ModelConfigDict
 from ludwig.utils.automl.data_source import DataSource, wrap_data_source
 from ludwig.utils.automl.field_info import FieldConfig, FieldInfo, FieldMetadata
 from ludwig.utils.automl.type_inference import infer_type, should_exclude
@@ -154,7 +157,8 @@ def get_default_automl_hyperopt() -> Dict[str, Any]:
     )
 
 
-def _create_default_config(
+def create_default_config(
+    features_config: ModelConfigDict,
     dataset_info: DatasetInfo,
     target_name: Union[str, List[str]],
     time_limit_s: Union[int, float],
@@ -190,16 +194,21 @@ def _create_default_config(
     combiner types
     """
     base_automl_config = load_yaml(BASE_AUTOML_CONFIG)
+    base_automl_config.update(features_config)
 
+    targets = convert_targets(target_name)
+    features_metadata = get_field_metadata(dataset_info.fields, dataset_info.row_count, targets)
+
+    # Handle expensive features for CPU
     resources = backend.get_available_resources()
-
-    input_and_output_feature_config, features_metadata = get_features_config(
-        dataset_info.fields, dataset_info.row_count, resources, target_name
-    )
-    base_automl_config.update(input_and_output_feature_config)
+    for ifeature in base_automl_config[INPUT_FEATURES]:
+        if resources.gpus == 0:
+            if ifeature[TYPE] == TEXT:
+                # When no GPUs are available, default to the embed encoder, which is fast enough for CPU
+                ifeature[ENCODER] = {"type": "embed"}
 
     # create set of all feature types appearing in the dataset
-    feature_types = [[feat[TYPE] for feat in features] for features in input_and_output_feature_config.values()]
+    feature_types = [[feat[TYPE] for feat in features] for features in features_config.values()]
     feature_types = set(sum(feature_types, []))
 
     model_configs = {}
@@ -334,7 +343,6 @@ def get_dataset_info_from_source(source: DataSource) -> DatasetInfo:
 def get_features_config(
     fields: List[FieldInfo],
     row_count: int,
-    resources: Resources,
     target_name: Union[str, List[str]] = None,
 ) -> dict:
     """Constructs FieldInfo objects for each feature in dataset. These objects are used for downstream type
@@ -348,15 +356,18 @@ def get_features_config(
     # Return
     :return: (dict) section of auto_train config for input_features and output_features
     """
+    targets = convert_targets(target_name)
+    metadata = get_field_metadata(fields, row_count, targets)
+    return get_config_from_metadata(metadata, targets)
+
+
+def convert_targets(target_name: Union[str, List[str]] = None) -> Set[str]:
     targets = target_name
     if isinstance(targets, str):
         targets = [targets]
     if targets is None:
         targets = []
-    targets = set(targets)
-
-    metadata = get_field_metadata(fields, row_count, resources, targets)
-    return get_config_from_metadata(metadata, targets), metadata
+    return set(targets)
 
 
 def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = None) -> dict:
@@ -384,9 +395,7 @@ def get_config_from_metadata(metadata: List[FieldMetadata], targets: Set[str] = 
 
 
 @DeveloperAPI
-def get_field_metadata(
-    fields: List[FieldInfo], row_count: int, resources: Resources, targets: Set[str] = None
-) -> List[FieldMetadata]:
+def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str] = None) -> List[FieldMetadata]:
     """Computes metadata for each field in dataset.
 
     # Inputs
@@ -399,6 +408,7 @@ def get_field_metadata(
     """
 
     metadata = []
+    column_count = len(fields)
     for idx, field in enumerate(fields):
         missing_value_percent = 1 - float(field.nonnull_values) / row_count
         dtype = infer_type(field, missing_value_percent, row_count)
@@ -410,22 +420,12 @@ def get_field_metadata(
                     column=field.name,
                     type=dtype,
                 ),
-                excluded=should_exclude(idx, field, dtype, row_count, targets),
+                excluded=should_exclude(idx, field, dtype, column_count, row_count, targets),
                 mode=infer_mode(field, targets),
                 missing_values=missing_value_percent,
                 imbalance_ratio=field.distinct_values_balance,
             )
         )
-
-    # Count of number of initial non-text input features in the config, -1 for output
-    input_count = sum(not meta.excluded and meta.mode == "input" and meta.config.type != TEXT for meta in metadata) - 1
-
-    # Exclude text fields if no GPUs are available
-    if resources.gpus == 0:
-        for meta in metadata:
-            if input_count > 2 and meta.config.type == TEXT:
-                # By default, exclude text inputs when there are other candidate inputs
-                meta.excluded = True
 
     return metadata
 

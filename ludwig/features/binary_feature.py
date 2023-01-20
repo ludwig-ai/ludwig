@@ -142,7 +142,7 @@ class BinaryFeatureMixin(BaseFeatureMixin):
 
     @staticmethod
     def get_feature_meta(
-        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend
+        column: DataFrame, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
         if column.dtype != object:
             return {}
@@ -193,12 +193,14 @@ class BinaryFeatureMixin(BaseFeatureMixin):
                 column = backend.df_engine.map_objects(column, strings_utils.str2bool)
 
         proc_df[feature_config[PROC_COLUMN]] = column.astype(np.bool_)
+
         return proc_df
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     def __init__(self, input_feature_config: BinaryInputFeatureConfig, encoder_obj=None, **kwargs):
         super().__init__(input_feature_config, **kwargs)
+        input_feature_config.encoder.input_size = self.input_shape[-1]
 
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -212,8 +214,15 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         if len(inputs.shape) == 1:
             inputs = inputs[:, None]
+
+        # Inputs to the binary encoder could be of dtype torch.bool. Linear layer
+        # weights are of dtype torch.float32. The inputs and the weights need to
+        # be of the same dtype.
+        if inputs.dtype == torch.bool:
+            inputs = inputs.type(torch.float32)
+
         encoder_outputs = self.encoder_obj(inputs)
-        return {"encoder_output": encoder_outputs}
+        return encoder_outputs
 
     @property
     def input_dtype(self):
