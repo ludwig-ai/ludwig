@@ -2081,7 +2081,7 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="jplu/camembert-base",
+        default="camembert-base",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["pretrained_model_name_or_path"],
     )
