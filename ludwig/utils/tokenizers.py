@@ -1225,6 +1225,12 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
 
 def _get_bert_config(hf_name):
+    """Gets configs from BERT tokenizers in HuggingFace.
+
+    `vocab_file` is required for BERT tokenizers. `tokenizer_config.json` are optional keyword arguments used to
+    initialize the tokenizer object. If no `tokenizer_config.json` is found, then we instantiate the tokenizer with
+    default arguments.
+    """
     from transformers.utils.hub import cached_path, EntryNotFoundError
 
     vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
