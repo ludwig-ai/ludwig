@@ -1906,7 +1906,7 @@ class DistilBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("ctrl", TEXT)
+# @register_encoder_config("ctrl", TEXT)
 @dataclass(repr=False)
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
