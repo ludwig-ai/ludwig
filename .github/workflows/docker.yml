@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 10 * * *" # everyday at 10am
   push:
-    branches: ["master", "release-*"]
+    branches: ["master", "release-*", "test_docker_push"]
     tags: ["v*.*.*"]
 
 jobs:
