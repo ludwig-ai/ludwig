@@ -515,9 +515,9 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # Convert hyperopt config to hyperopt schema to populate with schema defaults
         # This fills in missing splits, executor config, search_alg, etc.
-        self.hyperopt = HyperoptConfig.Schema().load(self.hyperopt).to_dict()
+        self.hyperopt = HyperoptConfig.from_dict(self.hyperopt).to_dict()
 
-        scheduler = self.hyperopt.get("executor", {}).get("scheduler", {})
+        scheduler = self.hyperopt.get("executor", {}).get("scheduler")
         if not scheduler:
             return
 

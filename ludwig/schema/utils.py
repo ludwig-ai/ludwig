@@ -16,6 +16,7 @@ from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACTIVE, COLUMN, NAME, PROC_COLUMN, TYPE
 from ludwig.modules.reduction_modules import reduce_mode_registry
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json, ParameterMetadata
+from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
@@ -149,9 +150,20 @@ class BaseMarshmallowConfig(ABC):
         return convert_submodules(self.__dict__)
 
     @classmethod
+    def from_dict(cls, d: TDict[str, Any]):
+        schema = cls.get_class_schema()()
+        return schema.load(d)
+
+    @classmethod
+    @memoized_method(maxsize=1)
     def get_valid_field_names(cls) -> Set[str]:
-        schema = marshmallow_dataclass.class_schema(cls)()
+        schema = cls.get_class_schema()()
         return set(schema.fields.keys())
+
+    @classmethod
+    @memoized_method(maxsize=1)
+    def get_class_schema(cls):
+        return marshmallow_dataclass.class_schema(cls)
 
     def __repr__(self):
         return yaml.dump(self.to_dict(), sort_keys=False)
@@ -972,6 +984,7 @@ def OneOfOptionsField(
                 try:
                     if value is None and mfield_meta.allow_none:
                         return None
+                    print(option, value)
                     mfield_meta.validate(value)
                     return mfield_meta._serialize(value, attr, obj, **kwargs)
                 except Exception:
