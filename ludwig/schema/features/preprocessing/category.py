@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import CATEGORY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
+from ludwig.constants import CATEGORY, DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING, SHARED
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -50,7 +50,7 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
         allow_none=True,
         description="The maximum number of most common tokens to be considered. if the data contains more than this "
         "amount, the most infrequent tokens will be treated as unknown.",
-        parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["most_common"],
+        parameter_metadata=FEATURE_METADATA[SHARED][PREPROCESSING]["most_common"],
     )
 
     most_common_percentile: int = schema_utils.FloatRange(
@@ -61,7 +61,7 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         description="The percentage of most common tokens to be considered. if the data contains more than this "
         "amount, the most infrequent tokens will be treated as unknown.",
-        parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["most_common_percentile"],
+        parameter_metadata=FEATURE_METADATA[SHARED][PREPROCESSING]["most_common_percentile"],
     )
 
 
