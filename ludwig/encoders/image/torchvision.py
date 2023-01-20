@@ -95,7 +95,11 @@ class TVBaseEncoder(ImageEncoder):
         transforms_obj = torchvision_model_registry[self.torchvision_model_type][
             self.model_variant
         ].model_weights.DEFAULT.transforms()
+
+        # capture key attributes from torchvision transform for later use
         self.num_channels = len(transforms_obj.mean)
+        self.normalize_mean = transforms_obj.mean
+        self.normalize_std = transforms_obj.std
         self.crop_size = transforms_obj.crop_size
 
         logger.debug(f"  {self.torchvision_model_type}")

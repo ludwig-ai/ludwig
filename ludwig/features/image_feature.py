@@ -28,7 +28,6 @@ from torchvision.transforms.functional import normalize
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
-    AUGMENTATION,
     CHECKSUM,
     COLUMN,
     ENCODER,
@@ -69,6 +68,10 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.registry import Registry
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
+# constants used for Ludwig image preprocessing
+IMAGENET1K_MEAN = [0.485, 0.456, 0.406]
+IMAGENET1K_STD = [0.229, 0.224, 0.225]
+
 logger = logging.getLogger(__name__)
 
 _augmentation_op_registry = Registry()
@@ -95,26 +98,6 @@ def register_augmentation_op(name: str, features: Union[str, List[str]]):
 
 def get_augmentation_op(feature_type: str, op_name: str):
     return get_augmentation_op_registry()[feature_type][op_name]
-
-
-# function to partially undo the TorchVision ImageClassification transformation.
-#  back out the normalization step and convert from float32 to uint8 dtype
-#  to make the tensor displayable as an image
-#  crop size remains the same
-def _convert_back_to_uint8(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
-    mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
-    std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
-    return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
-
-
-# function to redo part of the TorchVision ImageClassification transformation.
-#  convert uint8 to float32
-#  apply the imagenet1k normalization
-def _renormalize_image(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
-    mean = torch.as_tensor(mean, dtype=torch.float32).view(-1, 1, 1)
-    std = torch.as_tensor(std, dtype=torch.float32).view(-1, 1, 1)
-    img = images.type(torch.float32).div(255.0)
-    return img.sub(mean).div(std)
 
 
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
@@ -206,11 +189,19 @@ class RandomBlur(torch.nn.Module):
 
 
 class ImageAugmentation(torch.nn.Module):
-    def __init__(self, augmentation_list: List[Dict]):
+    def __init__(
+        self,
+        augmentation_list: List[Dict],
+        normalize_mean: Optional[List[float]] = None,
+        normalize_std: Optional[List[float]] = None,
+    ):
         super().__init__()
 
         # TODO: change to debug level before merging
         logger.info(f"Creating Augmentation pipline: {augmentation_list}")
+
+        self.normalize_mean = normalize_mean
+        self.normalize_std = normalize_std
 
         if self.training:
             self.augmentation_steps = torch.nn.Sequential()
@@ -228,7 +219,7 @@ class ImageAugmentation(torch.nn.Module):
     def forward(self, imgs):
         # TODO: determine if we can avoid this step by refactoring image preprocessing
         # convert from float to uint8 values
-        imgs = _convert_back_to_uint8(imgs)
+        imgs = self._convert_back_to_uint8(imgs)
 
         if self.augmentation_steps:
             # TODO: change to debug level message after development
@@ -237,9 +228,32 @@ class ImageAugmentation(torch.nn.Module):
 
         # TODO: determine if we can avoid this step by refactoring image preprocessing
         # convert back to float32 values
-        imgs = _renormalize_image(imgs)
+        imgs = self._renormalize_image(imgs)
 
         return imgs
+
+    # function to partially undo the TorchVision ImageClassification transformation.
+    #  back out the normalization step and convert from float32 to uint8 dtype
+    #  to make the tensor displayable as an image
+    #  crop size remains the same
+    def _convert_back_to_uint8(self, images):
+        if self.normalize_mean:
+            mean = torch.as_tensor(self.normalize_mean, dtype=torch.float32).view(-1, 1, 1)
+            std = torch.as_tensor(self.normalize_std, dtype=torch.float32).view(-1, 1, 1)
+            return images.mul(std).add(mean).mul(255.0).type(torch.uint8)
+        else:
+            return images.mul(255.0).type(torch.uint8)
+
+    # function to redo part of the TorchVision ImageClassification transformation.
+    #  convert uint8 to float32
+    #  apply the imagenet1k normalization
+    def _renormalize_image(self, images):
+        if self.normalize_mean:
+            mean = torch.as_tensor(self.normalize_mean, dtype=torch.float32).view(-1, 1, 1)
+            std = torch.as_tensor(self.normalize_std, dtype=torch.float32).view(-1, 1, 1)
+            return images.type(torch.float32).div(255.0).sub(mean).div(std)
+        else:
+            return images.type(torch.float32).div(255.0)
 
 
 # TODO: move to independent file
@@ -441,7 +455,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         img = img.type(torch.float32) / 255
 
         if standardize_image == IMAGENET1K:
-            img = normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            img = normalize(img, mean=IMAGENET1K_MEAN, std=IMAGENET1K_STD)
 
         return img.numpy()
 
@@ -835,7 +849,28 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
-        self.augmentation_pipeline = ImageAugmentation(input_feature_config.augmentation)
+        # set up for augmentation if specified
+        if input_feature_config.augmentation:
+            # assume no image normalize is required
+            normalize_mean = normalize_std = None
+
+            # determine if specified encoder is a torchvision model
+            if hasattr(self.encoder_obj, "torchvision_model_type"):
+                # encoder is a torchvision model
+                normalize_mean = self.encoder_obj.normalize_mean
+                normalize_std = self.encoder_obj.normalize_std
+            else:
+                # encoder is a Ludwig encoder, determine if standardize_image is set to IMAGENET1K
+                if input_feature_config.preprocessing.standardize_image == IMAGENET1K:
+                    normalize_mean = IMAGENET1K_MEAN
+                    normalize_std = IMAGENET1K_STD
+
+            # create augmentation pipeline object
+            self.augmentation_pipeline = ImageAugmentation(
+                input_feature_config.augmentation,
+                normalize_mean,
+                normalize_std,
+            )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
