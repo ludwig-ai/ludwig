@@ -527,9 +527,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # Disable early stopping when using a scheduler. We achieve this by setting the parameter
         # to -1, which ensures the condition to apply early stopping is never met.
         early_stop = self.trainer.early_stop
-        if early_stop is not None and early_stop != -1:
+        if early_stop is not None and early_stop != -1 and scheduler.get("type", {}) != "fifo":
             warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
-        self.trainer.early_stop = -1
+            self.trainer.early_stop = -1
 
         max_t = scheduler.get("max_t")
         time_attr = scheduler.get("time_attr")
