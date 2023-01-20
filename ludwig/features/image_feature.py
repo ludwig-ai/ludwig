@@ -28,6 +28,7 @@ from torchvision.transforms.functional import normalize
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
+    AUGMENTATION,
     CHECKSUM,
     COLUMN,
     ENCODER,
@@ -204,8 +205,7 @@ class RandomBlur(torch.nn.Module):
         return imgs
 
 
-# TODO: move to feature independent module?
-class AugmentationPipeline(torch.nn.Module):
+class ImageAugmentation(torch.nn.Module):
     def __init__(self, augmentation_list: List[Dict]):
         super().__init__()
 
@@ -220,7 +220,6 @@ class AugmentationPipeline(torch.nn.Module):
                     aug_op = get_augmentation_op(IMAGE, aug_copy.pop(TYPE))
                     self.augmentation_steps.append(aug_op(**aug_copy))
                 except KeyError:
-                    # TODO: this try/except maybe be redundant with schema validation
                     raise ValueError(f"Invalid augmentation operation specification: {aug}")
         else:
             # TODO: should this raise an exception if not in training mode?
@@ -232,7 +231,8 @@ class AugmentationPipeline(torch.nn.Module):
         imgs = _convert_back_to_uint8(imgs)
 
         if self.augmentation_steps:
-            logger.debug(f"Executing augmentation pipeline steps: {self.augmentation_steps}")
+            # TODO: change to debug level message after development
+            logger.info(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
             imgs = self.augmentation_steps(imgs)
 
         # TODO: determine if we can avoid this step by refactoring image preprocessing
@@ -242,6 +242,7 @@ class AugmentationPipeline(torch.nn.Module):
         return imgs
 
 
+# TODO: move to independent file
 class AugmentationPipelines:
     """Container holding augmentation pipelines defined in the model."""
 
@@ -834,6 +835,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(input_feature_config.encoder)
 
+        self.augmentation_pipeline = ImageAugmentation(input_feature_config.augmentation)
+
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
         assert inputs.dtype in [torch.float32]
@@ -879,3 +882,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             tv_transforms = None
 
         return _ImagePreprocessing(metadata, tv_transforms=tv_transforms)
+
+    def get_augmentation_pipeline(self):
+        return self.augmentation_pipeline

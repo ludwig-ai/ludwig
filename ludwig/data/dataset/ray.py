@@ -35,7 +35,6 @@ from ludwig.backend.base import Backend
 from ludwig.constants import BINARY, CATEGORY, NAME, NUMBER, TYPE
 from ludwig.data.batcher.base import Batcher
 from ludwig.data.dataset.base import Dataset, DatasetManager
-from ludwig.features.image_feature import AugmentationPipeline
 from ludwig.types import FeatureConfigDict, ModelConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import DATA_TRAIN_HDF5_FP, DATA_TRAIN_PARQUET_FP, from_numpy_dataset, to_numpy_dataset
 from ludwig.utils.error_handling_utils import default_retry
@@ -261,7 +260,8 @@ class RayDatasetBatcher(Batcher):
         batch_size: int,
         samples_per_epoch: int,
         ignore_last: bool = False,
-        augmentation_pipeline: Optional[AugmentationPipeline] = None,
+        # TODO: figure out correct typing for augmentation_pipeline after refactoring is done
+        augmentation_pipeline=None,
     ):
         self.dataset_epoch_iterator = dataset_epoch_iterator
         self.batch_size = batch_size
