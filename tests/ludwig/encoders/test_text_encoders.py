@@ -3,33 +3,34 @@ import requests
 import torch
 
 from ludwig.encoders import text_encoders
+from ludwig.schema.encoders import text_encoders as text_encoders_configs
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
 
 
 @pytest.mark.parametrize(
-    "encoder_cls",
+    "encoder_config_cls",
     [
-        text_encoders.ALBERTEncoder,
-        text_encoders.BERTEncoder,
-        text_encoders.XLMEncoder,
-        text_encoders.GPTEncoder,
-        text_encoders.RoBERTaEncoder,
-        text_encoders.GPT2Encoder,
-        text_encoders.DistilBERTEncoder,
-        text_encoders.TransformerXLEncoder,
-        text_encoders.CTRLEncoder,
-        text_encoders.CamemBERTEncoder,
-        text_encoders.MT5Encoder,
-        text_encoders.XLMRoBERTaEncoder,
-        text_encoders.LongformerEncoder,
-        text_encoders.ELECTRAEncoder,
-        text_encoders.FlauBERTEncoder,
-        text_encoders.T5Encoder,
-        text_encoders.XLNetEncoder,
-        text_encoders.DistilBERTEncoder,
+        text_encoders_configs.ALBERTConfig,
+        text_encoders_configs.BERTConfig,
+        text_encoders_configs.XLMConfig,
+        text_encoders_configs.GPTConfig,
+        text_encoders_configs.RoBERTaConfig,
+        text_encoders_configs.GPT2Config,
+        text_encoders_configs.DistilBERTConfig,
+        text_encoders_configs.TransformerXLConfig,
+        text_encoders_configs.CTRLConfig,
+        text_encoders_configs.CamemBERTConfig,
+        text_encoders_configs.MT5Config,
+        text_encoders_configs.XLMRoBERTaConfig,
+        text_encoders_configs.LongformerConfig,
+        text_encoders_configs.ELECTRAConfig,
+        text_encoders_configs.FlauBERTConfig,
+        text_encoders_configs.T5Config,
+        text_encoders_configs.XLNetConfig,
+        text_encoders_configs.DistilBERTConfig,
     ],
 )
-def test_hf_pretrained_default_exists(tmpdir, encoder_cls: text_encoders.HFTextEncoder):
+def test_hf_pretrained_default_exists(encoder_config_cls: text_encoders_configs.BaseEncoderConfig):
     """Test that the default pretrained model exists on the HuggingFace Hub.
 
     This test merely checks that the default model name is valid. It does not check
@@ -40,13 +41,15 @@ def test_hf_pretrained_default_exists(tmpdir, encoder_cls: text_encoders.HFTextE
     """
     from huggingface_hub import HfApi
 
+    default_model = encoder_config_cls.pretrained_model_name_or_path
+
     try:
         hf_api = HfApi()
-        hf_api.model_info(encoder_cls.DEFAULT_MODEL_NAME)
+        hf_api.model_info(default_model)
     except requests.exceptions.HTTPError:
         assert (
             False
-        ), f"Unable to get model info for encoder '{encoder_cls}' with default '{encoder_cls.DEFAULT_MODEL_NAME}'."
+        ), f"Unable to find model info for the default model '{default_model}' of config '{encoder_config_cls}'."
 
 
 @pytest.mark.parametrize("pretrained_model_name_or_path", ["bert-base-uncased"])
