@@ -984,7 +984,6 @@ def OneOfOptionsField(
                 try:
                     if value is None and mfield_meta.allow_none:
                         return None
-                    print(option, value)
                     mfield_meta.validate(value)
                     return mfield_meta._serialize(value, attr, obj, **kwargs)
                 except Exception:
