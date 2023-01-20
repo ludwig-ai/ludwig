@@ -205,10 +205,6 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Hyperopt =====
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
 
-        # Convert hyperopt config to hyperopt schema to populate with schema defaults
-        # This fills in missing splits, executor config, search_alg, etc.
-        self.hyperopt = HyperoptConfig.Schema().load(self.hyperopt).to_dict()
-
         self._set_hyperopt_defaults()
 
         # Set up default validation metric, which is used for plateau metrics and early stopping.
@@ -516,6 +512,10 @@ class ModelConfig(BaseMarshmallowConfig):
         """
         if not self.hyperopt:
             return
+
+        # Convert hyperopt config to hyperopt schema to populate with schema defaults
+        # This fills in missing splits, executor config, search_alg, etc.
+        self.hyperopt = HyperoptConfig.Schema().load(self.hyperopt).to_dict()
 
         scheduler = self.hyperopt.get("executor", {}).get("scheduler", {})
         if not scheduler:
