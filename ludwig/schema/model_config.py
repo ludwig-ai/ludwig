@@ -55,6 +55,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     output_config_registry,
 )
+from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -203,6 +204,11 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # ===== Hyperopt =====
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
+
+        # Convert hyperopt config to hyperopt schema to populate with schema defaults
+        # This fills in missing splits, executor config, search_alg, etc.
+        self.hyperopt = HyperoptConfig.Schema().load(self.hyperopt).to_dict()
+
         self._set_hyperopt_defaults()
 
         # Set up default validation metric, which is used for plateau metrics and early stopping.

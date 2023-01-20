@@ -41,7 +41,6 @@ from ludwig.hyperopt.utils import (
     should_tune_preprocessing,
     update_hyperopt_params_with_defaults,
 )
-from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.dataset_utils import generate_dataset_statistics
@@ -223,11 +222,6 @@ def hyperopt(
     full_config = config_obj.to_dict()  # TODO (Connor): Refactor to use config object
 
     hyperopt_config = full_config[HYPEROPT]
-
-    # Convert hyperopt config to hyperopt schema to populate with schema defaults
-    # This fills in missing splits, executor config, search_alg, etc.
-    hyperopt_config_from_schema = HyperoptConfig.Schema().load(hyperopt_config)
-    hyperopt_config = hyperopt_config_from_schema.to_dict()
 
     # Explicitly default to a local backend to avoid picking up Ray or Horovod
     # backend from the environment.
