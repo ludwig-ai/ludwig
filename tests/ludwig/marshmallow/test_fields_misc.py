@@ -4,7 +4,7 @@ import pytest
 from marshmallow.exceptions import ValidationError as MarshmallowValidationError
 from marshmallow_dataclass import dataclass
 
-from ludwig.schema import get_validator
+from ludwig.config_validation.validation import get_validator
 from ludwig.schema import utils as schema_utils
 from ludwig.schema import validate
 

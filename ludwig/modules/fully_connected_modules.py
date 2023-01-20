@@ -61,7 +61,6 @@ class FCLayer(LudwigModule):
         self.output_size = output_size
 
         fc = Linear(in_features=input_size, out_features=output_size, bias=use_bias)
-
         self.layers.append(fc)
 
         weights_initializer = initializer_registry[weights_initializer]
@@ -94,7 +93,6 @@ class FCLayer(LudwigModule):
 
     def forward(self, inputs, mask=None):
         hidden = inputs
-
         for layer in self.layers:
             hidden = layer(hidden)
 
