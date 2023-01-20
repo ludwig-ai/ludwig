@@ -25,12 +25,7 @@ from ludwig.encoders.registry import register_encoder
 from ludwig.modules.convolutional_modules import Conv2DStack, ResNet
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.mlp_mixer_modules import MLPMixer
-from ludwig.schema.encoders.image_encoders import (
-    MLPMixerEncoderConfig,
-    ResNetEncoderConfig,
-    Stacked2DCNNEncoderConfig,
-    ViTEncoderConfig,
-)
+from ludwig.schema.encoders.image.base import MLPMixerConfig, ResNetConfig, Stacked2DCNNConfig, ViTConfig
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -181,7 +176,7 @@ class Stacked2DCNN(ImageEncoder):
 
     @staticmethod
     def get_schema_cls():
-        return Stacked2DCNNEncoderConfig
+        return Stacked2DCNNConfig
 
     @property
     def output_shape(self) -> torch.Size:
@@ -193,7 +188,7 @@ class Stacked2DCNN(ImageEncoder):
 
 
 @DeveloperAPI
-@register_encoder("resnet", IMAGE)
+@register_encoder("_resnet_legacy", IMAGE)
 class ResNetEncoder(ImageEncoder):
     def __init__(
         self,
@@ -272,7 +267,7 @@ class ResNetEncoder(ImageEncoder):
 
     @staticmethod
     def get_schema_cls():
-        return ResNetEncoderConfig
+        return ResNetConfig
 
     @property
     def output_shape(self) -> torch.Size:
@@ -337,7 +332,7 @@ class MLPMixerEncoder(ImageEncoder):
 
     @staticmethod
     def get_schema_cls():
-        return MLPMixerEncoderConfig
+        return MLPMixerConfig
 
     @property
     def input_shape(self) -> torch.Size:
@@ -349,7 +344,7 @@ class MLPMixerEncoder(ImageEncoder):
 
 
 @DeveloperAPI
-@register_encoder("vit", IMAGE)
+@register_encoder("_vit_legacy", IMAGE)
 class ViTEncoder(ImageEncoder):
     def __init__(
         self,
@@ -439,7 +434,7 @@ class ViTEncoder(ImageEncoder):
 
     @staticmethod
     def get_schema_cls():
-        return ViTEncoderConfig
+        return ViTConfig
 
     @property
     def input_shape(self) -> torch.Size:

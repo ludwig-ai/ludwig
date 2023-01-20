@@ -1,4 +1,34 @@
+BaseDecoder:
+    type:
+        expected_impact: 1
+    fc_layers:
+        expected_impact: 1
+    num_fc_layers:
+        expected_impact: 3
+    fc_output_size:
+        expected_impact: 3
+    fc_use_bias:
+        expected_impact: 1
+    fc_weights_initializer:
+        expected_impact: 1
+    fc_bias_initializer:
+        expected_impact: 1
+    fc_norm:
+        expected_impact: 2
+    fc_norm_params:
+        expected_impact: 1
+    fc_activation:
+        expected_impact: 2
+    fc_dropout:
+        expected_impact: 3
 Classifier:
+    type:
+        short_description:
+            Projects combiner output to a vector the size of the number of available classes.
+        long_description:
+            The classifier decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection into a vector of size of the number of available classes, followed by a sigmoid.
+        expected_impact: 0
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -28,12 +58,14 @@ Classifier:
         ui_display_name: Bias Initializer
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
     num_classes:
         other_information: Internal Only
         ui_display_name: Not Displayed
+        expected_impact: 3
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -74,7 +106,7 @@ Classifier:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -87,12 +119,20 @@ Classifier:
             most tasks.
         ui_display_name: Layer Weights Initializer
 Projector:
+    type:
+        short_description:
+            Projects combiner output into an output vector.
+        long_description:
+            The Projector decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection into a tensor of the vector size (optionally followed by a softmax in the case of
+            multi-class classification).
+        expected_impact: 0
     activation:
         description_implications:
             Changing the activation functions has an impact
             on the computational load of the model and might require further hypterparameter
             tuning
-        expected_impact: 1
+        expected_impact: 2
         suggested_values:
             The default value will work well in the majority of the
             cases
@@ -126,8 +166,10 @@ Projector:
         ui_display_name: Bias Initializer
     clip:
         ui_display_name: null
+        expected_impact: 1
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
@@ -140,7 +182,7 @@ Projector:
             and there's a higher risk of overfitting. If it seems like the model could
             use even more capacity, consider increasing the number of fully connected
             layers, or explore other architectures.
-        expected_impact: 2
+        expected_impact: 3
         other_information:
             If num_fc_layers=0 and fc_layers=None, and there are no
             fully connected layers defined on the module, then this parameter may
@@ -194,7 +236,7 @@ Projector:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -207,8 +249,16 @@ Projector:
             most tasks.
         ui_display_name: Layer Weights Initializer
 Regressor:
+    type:
+        short_description:
+            Projects combiner output to a single number.
+        long_description:
+            The regressor decoder is a (potentially empty) stack of fully connected layers, followed by a
+            projection to a single number.
+        expected_impact: 0
     activation:
         ui_display_name: null
+        expected_impact: 2
     bias_initializer:
         default_value_reasoning:
             It is possible and common to initialize the biases
@@ -238,6 +288,7 @@ Regressor:
         ui_display_name: Bias Initializer
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
@@ -281,7 +332,7 @@ Regressor:
             provides a few good options. See this nice discussion from [Weights and
             Biases](https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster.)
             for more information.
-        expected_impact: 3
+        expected_impact: 1
         literature_references:
             - "Weights and Biases blog post: https://wandb.ai/site/articles/the-effects-of-weight-initialization-on-neural-nets#:~:text=Studies%20have%20shown%20that%20initializing,net%20train%20better%20and%20faster."
             - "Xavier et al. paper: http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
@@ -293,16 +344,50 @@ Regressor:
             The default choice (`xavier_uniform`) is a suitable starting point for
             most tasks.
         ui_display_name: Layer Weights Initializer
-SequenceGeneratorDecoder:
-    cell_type:
-        ui_display_name: null
+PassthroughDecoder:
+    type:
+        short_description:
+            Provides the raw input from the combiner.
+        long_description:
+            The passthrough decoder simply returns the raw output coming from the combiner.
+        expected_impact: 0
     input_size:
         other_information: Internal Only
+        internal_only: true
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
+SequenceGeneratorDecoder:
+    type:
+        short_description:
+            Generates a sequence by sampling from the model.
+        long_description:
+            The generator decoder is a (potentially empty) stack of fully connected layers, followed by an
+            RNN that generates outputs feeding on its own previous predictions and generates a tensor of
+            size `b x s' x c`, where `b` is the batch size, `s'` is the length of the generated sequence and
+            `c` is the number of classes, followed by a softmax_cross_entropy. During training teacher
+            forcing is adopted, meaning the list of targets is provided as both inputs and outputs (shifted
+            by 1), while at evaluation time greedy decoding (generating one token at a time and feeding it
+            as input for the next step) is performed by beam search, using a beam of 1 by default. In
+            general a generator expects a `b x h` shaped input tensor, where `h` is a hidden dimension. The
+            `h` vectors are (after an optional stack of fully connected layers) fed into the rnn generator.
+            One exception is when the generator uses attention, as in that case the expected size of the
+            input tensor is `b x s x h`, which is the output of a sequence, text or time series input
+            feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input
+            is provided to a generator decoder using an RNN with attention instead, an error will be raised
+            during model building.
+        expected_impact: 0
+    cell_type:
+        ui_display_name: null
+        expected_impact: 3
+    input_size:
+        other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
     max_sequence_length:
-        expected_impact: 1
+        expected_impact: 3
         ui_display_name: null
     num_layers:
         default_value_reasoning:
@@ -313,7 +398,7 @@ SequenceGeneratorDecoder:
             performance for longer sequences or more complex tasks.
         example_value:
             - 1
-        expected_impact: 1
+        expected_impact: 3
         suggested_values: 1-3
         suggested_values_reasoning:
             Increasing the number of layers may improve encoder
@@ -337,6 +422,18 @@ SequenceGeneratorDecoder:
     vocab_size:
         ui_display_name: Not displayed
 SequenceTaggerDecoder:
+    type:
+        short_description:
+            Used for classifying each element of an input sequence.
+        long_description:
+            The tagger decoder is a (potentially empty) stack of fully connected layers,
+            followed by a projection into a tensor of size `b x s x c`, where `b` is the batch size,
+            `s` is the length of the sequence and `c` is the number of classes, followed by a
+            softmax_cross_entropy. This decoder requires its input to be shaped as `b x s x h`, where `h` is
+            a hidden dimension, which is the output of a sequence, text or time series input feature without
+            reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided
+            instead, an error will be raised during model building.
+        expected_impact: 0
     attention_embedding_size:
         default_value_reasoning: Not too big, not too small.
         description_implications:
@@ -351,16 +448,19 @@ SequenceTaggerDecoder:
         ui_display_name: Attention Embedding Size
     attention_num_heads:
         ui_display_name: null
+        expected_impact: 1
     input_size:
         other_information: Internal Only
+        internal_only: true
         related_parameters:
             - "No"
         ui_display_name: Not Displayed
     max_sequence_length:
-        expected_impact: 1
+        expected_impact: 3
         ui_display_name: null
     use_attention:
         ui_display_name: null
+        expected_impact: 1
     use_bias:
         default_value_reasoning:
             "Bias terms may improve model accuracy, and don't
@@ -389,3 +489,4 @@ SequenceTaggerDecoder:
         ui_display_name: Use Bias
     vocab_size:
         ui_display_name: Not displayed
+        internal_only: true

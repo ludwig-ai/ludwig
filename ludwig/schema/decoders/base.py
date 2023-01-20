@@ -15,44 +15,91 @@ from ludwig.schema.metadata import DECODER_METADATA
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for decoders."""
 
-    type: str
+    type: str = schema_utils.StringOptions(
+        ["regressor", "classifier", "projector", "generator", "tagger"],
+        description="The type of decoder to use.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["type"],
+    )
 
     fc_layers: List[Dict[str, Any]] = schema_utils.DictList(
-        default=None, description="List of dictionaries containing the parameters for each fully connected layer."
+        default=None,
+        description="List of dictionaries containing the parameters for each fully connected layer.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_layers"],
     )
 
     num_fc_layers: int = schema_utils.NonNegativeInteger(
-        default=0, description="Number of fully-connected layers if fc_layers not specified."
+        default=0,
+        description="Number of fully-connected layers if fc_layers not specified.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["num_fc_layers"],
     )
 
-    fc_output_size: int = schema_utils.PositiveInteger(default=256, description="Output size of fully connected stack.")
+    fc_output_size: int = schema_utils.PositiveInteger(
+        default=256,
+        description="Output size of fully connected stack.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_output_size"],
+    )
 
     fc_use_bias: bool = schema_utils.Boolean(
-        default=True, description="Whether the layer uses a bias vector in the fc_stack."
+        default=True,
+        description="Whether the layer uses a bias vector in the fc_stack.",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_use_bias"],
     )
 
-    fc_weights_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="xavier_uniform", description="The weights initializer to use for the layers in the fc_stack"
+    fc_weights_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+        default="xavier_uniform",
+        description="The weights initializer to use for the layers in the fc_stack",
+        field_options=[
+            schema_utils.InitializerOptions(
+                description="Preconfigured initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
+            ),
+            schema_utils.Dict(
+                description="Custom initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
+            ),
+        ],
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_weights_initializer"],
     )
 
-    fc_bias_initializer: Union[str, Dict] = schema_utils.InitializerOrDict(
-        default="zeros", description="The bias initializer to use for the layers in the fc_stack"
+    fc_bias_initializer: Union[str, Dict] = schema_utils.OneOfOptionsField(
+        default="zeros",
+        description="The bias initializer to use for the layers in the fc_stack",
+        field_options=[
+            schema_utils.InitializerOptions(
+                description="Preconfigured bias initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
+            ),
+            schema_utils.Dict(
+                description="Custom bias initializer to use for the layers in the fc_stack.",
+                parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
+            ),
+        ],
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_bias_initializer"],
     )
 
     fc_norm: str = schema_utils.StringOptions(
-        ["batch", "layer"], description="The normalization to use for the layers in the fc_stack"
+        ["batch", "layer"],
+        description="The normalization to use for the layers in the fc_stack",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm"],
     )
 
     fc_norm_params: dict = schema_utils.Dict(
-        description="The additional parameters for the normalization in the fc_stack"
+        description="The additional parameters for the normalization in the fc_stack",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_norm_params"],
     )
 
     fc_activation: str = schema_utils.ActivationOptions(
-        default="relu", description="The activation to use for the layers in the fc_stack"
+        default="relu",
+        description="The activation to use for the layers in the fc_stack",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_activation"],
     )
 
     fc_dropout: float = schema_utils.FloatRange(
-        default=0.0, min=0, max=1, description="The dropout rate to use for the layers in the fc_stack"
+        default=0.0,
+        min=0,
+        max=1,
+        description="The dropout rate to use for the layers in the fc_stack",
+        parameter_metadata=DECODER_METADATA["BaseDecoder"]["fc_dropout"],
     )
 
 
@@ -62,11 +109,21 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
-    type: str = schema_utils.ProtectedString("passthrough", description="Type of decoder.")
+    @classmethod
+    def module_name(cls):
+        return "PassthroughDecoder"
+
+    type: str = schema_utils.ProtectedString(
+        "passthrough",
+        description="The passthrough decoder simply returns the raw numerical values coming from the combiner as "
+        "outputs",
+        parameter_metadata=DECODER_METADATA["PassthroughDecoder"]["type"],
+    )
 
     input_size: int = schema_utils.PositiveInteger(
         default=1,
         description="Size of the input to the decoder.",
+        parameter_metadata=DECODER_METADATA["PassthroughDecoder"]["input_size"],
     )
 
 
@@ -76,9 +133,13 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
+    @classmethod
+    def module_name(cls):
+        return "Regressor"
+
     type: str = schema_utils.ProtectedString(
         "regressor",
-        description="Type of decoder.",
+        description=DECODER_METADATA["Regressor"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -111,9 +172,13 @@ class RegressorConfig(BaseDecoderConfig):
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
+    @classmethod
+    def module_name(cls):
+        return "Projector"
+
     type: str = schema_utils.ProtectedString(
         "projector",
-        description="Type of decoder.",
+        description=DECODER_METADATA["Projector"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(
@@ -166,9 +231,13 @@ class ProjectorConfig(BaseDecoderConfig):
 @register_decoder_config("classifier", [CATEGORY, SET])
 @dataclass(repr=False)
 class ClassifierConfig(BaseDecoderConfig):
+    @classmethod
+    def module_name(cls):
+        return "Classifier"
+
     type: str = schema_utils.ProtectedString(
         "classifier",
-        description="Type of decoder.",
+        description=DECODER_METADATA["Classifier"]["type"].long_description,
     )
 
     input_size: int = schema_utils.PositiveInteger(

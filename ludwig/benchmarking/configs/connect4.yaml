@@ -88,20 +88,21 @@ input_features:
     type: category
 combiner:
   type: tabnet
-  size: 128  # N_a
-  output_size: 16  # N_d
-  sparsity: 0.001  # lambda_sparse
-  bn_momentum: 0.8  # m_B
-  num_steps: 3  # N_steps
-  relaxation_factor: 1.2  # gamma
+  size: 128 # N_a
+  output_size: 16 # N_d
+  sparsity: 0.001 # lambda_sparse
+  bn_momentum: 0.8 # m_B
+  num_steps: 3 # N_steps
+  relaxation_factor: 1.2 # gamma
   use_keras_batch_norm: false
-  bn_virtual_bs: 256  # B_v
+  bn_virtual_bs: 256 # B_v
 trainer:
   batch_size: 4096 # B
   learning_rate: 0.005
-  decay: true
-  decay_steps: 2000
-  decay_rate: 0.95
+  learning_rate_scheduler:
+    decay: exponential
+    decay_steps: 2000
+    decay_rate: 0.95
 preprocessing:
   split:
     type: fixed

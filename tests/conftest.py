@@ -21,7 +21,17 @@ from unittest import mock
 
 import pytest
 
-from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
+from ludwig.constants import (
+    BATCH_SIZE,
+    COMBINER,
+    EPOCHS,
+    HYPEROPT,
+    INPUT_FEATURES,
+    NAME,
+    OUTPUT_FEATURES,
+    TRAINER,
+    TYPE,
+)
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -146,13 +156,6 @@ def ray_cluster_7cpu(request):
         yield
 
 
-@pytest.fixture(scope="module")
-def ray_cluster_small_object_store(request):
-    # Create a Ray cluster with the smallest possible object store.
-    with _ray_start(request, num_cpus=2, object_store_memory=78643200):
-        yield
-
-
 @contextlib.contextmanager
 def _ray_start(request, **kwargs):
     try:
@@ -168,7 +171,17 @@ def _ray_start(request, **kwargs):
 
     init_kwargs = _get_default_ray_kwargs()
     init_kwargs.update(kwargs)
-    res = ray.init(**init_kwargs)
+    # HACK(geoffrey): `hyperopt_resources` is a required resource for hyperopt to prevent deadlocks in Ludwig tests.
+    #   For context, if there are 4 hyperopt trials scheduled and 7 CPUs available, then the trial driver will require
+    #   some resource to run *in addition* to the resources required by the trainer downstream. If we use 1 CPU
+    #   (default trial driver request), then the trial will be scheduled on 1 CPU and the trainer will later request
+    #   an additional 1 CPU. Across all 4 trials, this will possibly consume >7 CPUs, causing a deadlock since
+    #   Ray Datasets will not be able to grab resources for data preprocessing.
+    #
+    #   By adding a `hyperopt_resources` resource, we can ensure that the trial driver will be scheduled without
+    #   consuming any CPU resources. This allows each trial's trainer to request 1 CPU without starving Ray Datasets.
+    # TODO(geoffrey): remove for Ray 2.2
+    res = ray.init(**init_kwargs, resources={"hyperopt_resources": 1000})
     try:
         yield res
     finally:
@@ -211,6 +224,6 @@ def _get_sample_config():
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001, BATCH_SIZE: 128},
     }
     return config, rel_path

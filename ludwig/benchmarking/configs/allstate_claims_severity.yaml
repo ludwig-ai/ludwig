@@ -408,9 +408,10 @@ trainer:
   learning_rate: 0.01
   optimizer:
     type: adam
-  decay: true
-  decay_steps: 10000
-  decay_rate: 0.9
+  learning_rate_scheduler:
+    decay: exponential
+    decay_steps: 10000
+    decay_rate: 0.9
   validation_metric: root_mean_squared_error
 preprocessing:
   split:

@@ -36,7 +36,7 @@ IMAGE_DIR = tempfile.mkdtemp()
             [number_feature()],
         ),
         ([image_feature(IMAGE_DIR, encoder={"type": "stacked_cnn"})], [number_feature()]),
-        ([image_feature(IMAGE_DIR, encoder={"type": "resnet"})], [category_feature(output_feature=True)]),
+        ([image_feature(IMAGE_DIR, encoder={"type": "stacked_cnn"})], [category_feature(output_feature=True)]),
         (
             [category_feature(encoder={"representation": "dense"})],
             [number_feature(decoder={"type": "regressor", "num_fc_layers": 5}, loss={"type": "mean_squared_error"})],
@@ -65,7 +65,12 @@ def test_regularizers(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2, "regularization_type": regularization_type, "regularization_lambda": 0.1},
+            TRAINER: {
+                "epochs": 2,
+                "regularization_type": regularization_type,
+                "regularization_lambda": 0.1,
+                "batch_size": BATCH_SIZE,  # fix the batch size to ensure deterministic results
+            },
         }
 
         backend = LocalTestBackend()

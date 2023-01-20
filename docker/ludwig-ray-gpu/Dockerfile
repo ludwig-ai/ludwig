@@ -18,14 +18,16 @@ RUN sudo apt-key del 7fa2af80 && \
     sudo rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/apt.conf.d/99allow_unauth cuda-keyring_1.0-1_all.deb && \
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC F60F4B3D7FA2AF80
 
+# https://github.com/kubernetes/release/issues/1982
+RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B53DC80D13EDEF05
+
 # Upgrade to GCC-9 from GCC-7.5
 # Required for libgcc-s1 which is a dependency for libnccl2
 RUN sudo apt-get update && sudo apt install -y software-properties-common && \
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test && \
     sudo apt update && \
-    sudo apt install -y gcc-9
-
-RUN DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
+    DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     build-essential \
     wget \
     git \
@@ -34,7 +36,8 @@ RUN DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y \
     cmake \
     tzdata \
     rsync \
-    vim
+    vim \
+    gcc-9
 RUN pip install -U pip
 
 WORKDIR /ludwig

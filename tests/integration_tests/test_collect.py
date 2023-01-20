@@ -20,7 +20,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights, print_model_summary
-from ludwig.constants import ENCODER, TRAINER, TYPE
+from ludwig.constants import BATCH_SIZE, ENCODER, TRAINER, TYPE
 from ludwig.utils.torch_utils import get_torch_device
 from tests.integration_tests.utils import category_feature, ENCODERS, generate_data, sequence_feature
 
@@ -44,7 +44,7 @@ def _train(input_features, output_features, data_csv, **kwargs):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)

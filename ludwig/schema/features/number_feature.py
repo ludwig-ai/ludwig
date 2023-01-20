@@ -3,15 +3,7 @@ from typing import List, Tuple, Union
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import (
-    LOSS,
-    MEAN_ABSOLUTE_ERROR,
-    MEAN_SQUARED_ERROR,
-    NUMBER,
-    R2,
-    ROOT_MEAN_SQUARED_ERROR,
-    ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
-)
+from ludwig.constants import MEAN_SQUARED_ERROR, NUMBER
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -28,6 +20,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
@@ -88,6 +81,7 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
         min=0,
         max=999999999,
         description="Clip the predicted output to the specified range.",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["clip"],
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -100,28 +94,20 @@ class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConf
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["dependencies"],
     )
 
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[NUMBER]["reduce_input"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="number_output")
-
-    @staticmethod
-    def get_output_metric_functions():
-        return {
-            LOSS: None,
-            MEAN_SQUARED_ERROR: None,
-            MEAN_ABSOLUTE_ERROR: None,
-            ROOT_MEAN_SQUARED_ERROR: None,
-            ROOT_MEAN_SQUARED_PERCENTAGE_ERROR: None,
-            R2: None,
-        }

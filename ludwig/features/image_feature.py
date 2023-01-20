@@ -18,11 +18,11 @@ import os
 import warnings
 from collections import Counter
 from functools import partial
-from typing import List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-import torchvision
+from torchvision.transforms.functional import normalize
 
 from ludwig.constants import (
     CHECKSUM,
@@ -30,6 +30,7 @@ from ludwig.constants import (
     ENCODER,
     HEIGHT,
     IMAGE,
+    IMAGENET1K,
     INFER_IMAGE_DIMENSIONS,
     INFER_IMAGE_MAX_HEIGHT,
     INFER_IMAGE_MAX_WIDTH,
@@ -47,7 +48,7 @@ from ludwig.constants import (
 from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
-from ludwig.types import PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -58,6 +59,7 @@ from ludwig.utils.image_utils import (
     read_image_from_bytes_obj,
     read_image_from_path,
     resize_image,
+    torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
@@ -65,26 +67,16 @@ from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 logger = logging.getLogger(__name__)
 
 
-# TODO(shreya): Confirm if it's ok to do per channel normalization
-# TODO(shreya): Also confirm if this is being used anywhere
-# TODO(shreya): Confirm if ok to use imagenet means and std devs
-image_scaling_registry = {
-    "pixel_normalization": lambda x: x * 1.0 / 255,
-    "pixel_standardization": partial(
-        torchvision.transforms.functional.normalize, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    ),
-}
-
-
 class _ImagePreprocessing(torch.nn.Module):
     """Torchscript-enabled version of preprocessing done by ImageFeatureMixin.add_feature_data."""
 
-    def __init__(self, metadata: TrainingSetMetadataDict):
+    def __init__(self, metadata: TrainingSetMetadataDict, tv_transforms: Optional[torch.nn.Module] = None):
         super().__init__()
         self.height = metadata["preprocessing"]["height"]
         self.width = metadata["preprocessing"]["width"]
         self.num_channels = metadata["preprocessing"]["num_channels"]
         self.resize_method = metadata["preprocessing"]["resize_method"]
+        self.tv_transforms = tv_transforms
 
     def forward(self, v: TorchscriptPreprocessingInput) -> torch.Tensor:
         """Takes a list of images and adjusts the size and number of channels as specified in the metadata.
@@ -96,30 +88,45 @@ class _ImagePreprocessing(torch.nn.Module):
             if not torch.jit.isinstance(v, torch.Tensor):
                 raise ValueError(f"Unsupported input: {v}")
 
-        if torch.jit.isinstance(v, List[torch.Tensor]):
-            imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
+        if self.tv_transforms is not None:
+            # perform pre-processing for torchvision pretrained model encoders
+            if torch.jit.isinstance(v, List[torch.Tensor]):
+                imgs = [self.tv_transforms(img) for img in v]
+            else:
+                # convert batch of image tensors to a list and then run torchvision pretrained
+                # model transforms on each image
+                imgs = [self.tv_transforms(img) for img in torch.unbind(v)]
+
+            # collect the list of images into a batch
             imgs_stacked = torch.stack(imgs)
         else:
-            imgs_stacked = v
-
-        _, num_channels, height, width = imgs_stacked.shape
-
-        # Ensure images are the size expected by the model
-        if height != self.height or width != self.width:
-            imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
-
-        # Ensures images have the number of channels expected by the model
-        if num_channels != self.num_channels:
-            if self.num_channels == 1:
-                imgs_stacked = grayscale(imgs_stacked)
-            elif num_channels < self.num_channels:
-                extra_channels = self.num_channels - num_channels
-                imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, extra_channels])
+            # perform pre-processing for Ludwig defined image encoders
+            if torch.jit.isinstance(v, List[torch.Tensor]):
+                imgs = [resize_image(img, (self.height, self.width), self.resize_method) for img in v]
+                imgs_stacked = torch.stack(imgs)
             else:
-                raise ValueError(
-                    f"Number of channels cannot be reconciled. metadata.num_channels = "
-                    f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
-                )
+                imgs_stacked = v
+
+            _, num_channels, height, width = imgs_stacked.shape
+
+            # Ensure images are the size expected by the model
+            if height != self.height or width != self.width:
+                imgs_stacked = resize_image(imgs_stacked, (self.height, self.width), self.resize_method)
+
+            # Ensures images have the number of channels expected by the model
+            if num_channels != self.num_channels:
+                if self.num_channels == 1:
+                    imgs_stacked = grayscale(imgs_stacked)
+                elif num_channels < self.num_channels:
+                    extra_channels = self.num_channels - num_channels
+                    imgs_stacked = torch.nn.functional.pad(imgs_stacked, [0, 0, 0, 0, 0, extra_channels])
+                else:
+                    raise ValueError(
+                        f"Number of channels cannot be reconciled. metadata.num_channels = "
+                        f"{self.num_channels}, but imgs.shape[1] = {num_channels}"
+                    )
+
+            imgs_stacked = imgs_stacked.type(torch.float32) / 255
 
         return imgs_stacked
 
@@ -134,7 +141,9 @@ class ImageFeatureMixin(BaseFeatureMixin):
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend):
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         return {PREPROCESSING: preprocessing_parameters}
 
     @staticmethod
@@ -146,6 +155,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         num_channels: int,
         resize_method: str,
         user_specified_num_channels: bool,
+        standardize_image: str,
     ) -> Optional[np.ndarray]:
         """
         :param img_entry Union[bytes, torch.Tensor, np.ndarray]: if str file path to the
@@ -156,6 +166,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
         :param resize_method: type of resizing method
         :param num_channels: expected number of channels in the first image
         :param user_specified_num_channels: did the user specify num channels?
+        :param standardize_image: specifies whether to standarize image with imagenet1k specifications
         :return: image object as a numpy array
 
         Helper method to read and resize an image according to model definition.
@@ -227,6 +238,33 @@ class ImageFeatureMixin(BaseFeatureMixin):
                 "https://ludwig-ai.github.io/ludwig-docs/latest/configuration/features/image_features"
                 "#image-features-preprocessing".format([img_height, img_width, num_channels], img.shape)
             )
+
+        # casting and rescaling
+        img = img.type(torch.float32) / 255
+
+        if standardize_image == IMAGENET1K:
+            img = normalize(img, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+        return img.numpy()
+
+    @staticmethod
+    def _read_image_with_pretrained_transform(
+        img_entry: Union[bytes, torch.Tensor, np.ndarray],
+        transform_fn: Callable,
+    ) -> Optional[np.ndarray]:
+
+        if isinstance(img_entry, bytes):
+            img = read_image_from_bytes_obj(img_entry)
+        elif isinstance(img_entry, np.ndarray):
+            img = torch.from_numpy(img_entry).permute(2, 0, 1)
+        else:
+            img = img_entry
+
+        if not isinstance(img, torch.Tensor):
+            warnings.warn(f"Image with value {img} cannot be read")
+            return None
+
+        img = transform_fn(img)
 
         return img.numpy()
 
@@ -437,7 +475,25 @@ class ImageFeatureMixin(BaseFeatureMixin):
         assert isinstance(num_channels, int), ValueError("Number of image channels needs to be an integer")
 
         average_file_size = np.mean(sample_num_bytes) if sample_num_bytes else None
-        return (should_resize, width, height, num_channels, user_specified_num_channels, average_file_size)
+
+        standardize_image = preprocessing_parameters["standardize_image"]
+        if standardize_image == "imagenet1k" and num_channels != 3:
+            warnings.warn(
+                f"'standardize_image=imagenet1k' is defined only for 'num_channels=3' but "
+                f"detected 'num_channels={num_channels}'.  For this situation setting 'standardize_image=None'.",
+                RuntimeWarning,
+            )
+            standardize_image = None
+
+        return (
+            should_resize,
+            width,
+            height,
+            num_channels,
+            user_specified_num_channels,
+            average_file_size,
+            standardize_image,
+        )
 
     @staticmethod
     def add_feature_data(
@@ -463,33 +519,64 @@ class ImageFeatureMixin(BaseFeatureMixin):
             lambda row: get_abs_path(src_path, row) if isinstance(row, str) and not has_remote_protocol(row) else row,
         )
 
-        (
-            should_resize,
-            width,
-            height,
-            num_channels,
-            user_specified_num_channels,
-            average_file_size,
-        ) = ImageFeatureMixin._finalize_preprocessing_parameters(
-            preprocessing_parameters, encoder_type, abs_path_column
-        )
+        # determine if specified encoder is a torchvision model
+        model_type = feature_config[ENCODER].get("type", None)
+        model_variant = feature_config[ENCODER].get("model_variant")
+        if model_variant:
+            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+        else:
+            torchvision_parameters = None
 
-        metadata[name][PREPROCESSING]["height"] = height
-        metadata[name][PREPROCESSING]["width"] = width
-        metadata[name][PREPROCESSING]["num_channels"] = num_channels
+        if torchvision_parameters:
+            # torchvision_parameters is not None
+            # perform torchvision model transformations
+            read_image_if_bytes_obj_and_resize = partial(
+                ImageFeatureMixin._read_image_with_pretrained_transform,
+                transform_fn=torchvision_parameters.model_weights.DEFAULT.transforms(),
+            )
+            average_file_size = None
 
-        read_image_if_bytes_obj_and_resize = partial(
-            ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
-            img_width=width,
-            img_height=height,
-            should_resize=should_resize,
-            num_channels=num_channels,
-            resize_method=preprocessing_parameters["resize_method"],
-            user_specified_num_channels=user_specified_num_channels,
-        )
+            # save weight specification in preprocessing section
+            preprocessing_parameters[
+                "torchvision_model_default_weights"
+            ] = f"{torchvision_parameters.model_weights.DEFAULT}"
 
-        # TODO: alternatively use get_average_image() for unreachable images
-        default_image = get_gray_default_image(num_channels, height, width)
+            # add torchvision model id to preprocessing section for torchscript
+            preprocessing_parameters["torchvision_model_type"] = model_type
+            preprocessing_parameters["torchvision_model_variant"] = model_variant
+        else:
+            # torchvision_parameters is None
+            # perform Ludwig specified transformations
+            (
+                should_resize,
+                width,
+                height,
+                num_channels,
+                user_specified_num_channels,
+                average_file_size,
+                standardize_image,
+            ) = ImageFeatureMixin._finalize_preprocessing_parameters(
+                preprocessing_parameters, encoder_type, abs_path_column
+            )
+
+            metadata[name][PREPROCESSING]["height"] = height
+            metadata[name][PREPROCESSING]["width"] = width
+            metadata[name][PREPROCESSING]["num_channels"] = num_channels
+
+            read_image_if_bytes_obj_and_resize = partial(
+                ImageFeatureMixin._read_image_if_bytes_obj_and_resize,
+                img_width=width,
+                img_height=height,
+                should_resize=should_resize,
+                num_channels=num_channels,
+                resize_method=preprocessing_parameters["resize_method"],
+                user_specified_num_channels=user_specified_num_channels,
+                standardize_image=standardize_image,
+            )
+
+            # TODO: alternatively use get_average_image() for unreachable images
+            default_image = get_gray_default_image(num_channels, height, width)
+            metadata[name]["reshape"] = (num_channels, height, width)
 
         # check to see if the active backend can support lazy loading of
         # image features from the hdf5 cache.
@@ -497,7 +584,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
 
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
-            metadata[name]["reshape"] = (num_channels, height, width)
 
             proc_col = backend.read_binary_files(
                 abs_path_column, map_fn=read_image_if_bytes_obj_and_resize, file_size=average_file_size
@@ -520,7 +606,7 @@ class ImageFeatureMixin(BaseFeatureMixin):
             with upload_h5(data_fp) as h5_file:
                 # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
-                    feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.uint8
+                    feature_config[PROC_COLUMN] + "_data", (num_images, num_channels, height, width), dtype=np.float32
                 )
                 for i, img_entry in enumerate(abs_path_column):
                     res = read_image_if_bytes_obj_and_resize(img_entry)
@@ -553,10 +639,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         assert isinstance(inputs, torch.Tensor)
-        assert inputs.dtype in [torch.uint8, torch.int64]
-
-        # casting and rescaling
-        inputs = inputs.type(torch.float32) / 255
+        assert inputs.dtype in [torch.float32]
 
         inputs_encoded = self.encoder_obj(inputs)
 
@@ -564,13 +647,11 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @property
     def input_dtype(self):
-        return torch.uint8
+        return torch.float32
 
     @property
     def input_shape(self) -> torch.Size:
-        return torch.Size(
-            [self.encoder_obj.config.num_channels, self.encoder_obj.config.height, self.encoder_obj.config.width]
-        )
+        return torch.Size(self.encoder_obj.input_shape)
 
     @property
     def output_shape(self) -> torch.Size:
@@ -578,13 +659,26 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     @staticmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
-        for key in ["height", "width", "num_channels", "scaling"]:
-            setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
+        for key in ["height", "width", "num_channels", "standardize_image"]:
+            if hasattr(feature_config.encoder, key):
+                setattr(feature_config.encoder, key, feature_metadata[PREPROCESSING][key])
 
     @staticmethod
     def get_schema_cls():
         return ImageInputFeatureConfig
 
     @staticmethod
-    def create_preproc_module(metadata: TrainingSetMetadataDict) -> torch.nn.Module:
-        return _ImagePreprocessing(metadata)
+    def create_preproc_module(metadata: Dict[str, Any]) -> torch.nn.Module:
+        model_type = metadata["preprocessing"].get("torchvision_model_type")
+        model_variant = metadata["preprocessing"].get("torchvision_model_variant")
+        if model_variant:
+            torchvision_parameters = torchvision_model_registry.get(model_type).get(model_variant)
+        else:
+            torchvision_parameters = None
+
+        if torchvision_parameters:
+            tv_transforms = torchvision_parameters.model_weights.DEFAULT.transforms()
+        else:
+            tv_transforms = None
+
+        return _ImagePreprocessing(metadata, tv_transforms=tv_transforms)

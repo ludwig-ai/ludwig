@@ -84,7 +84,9 @@ class VectorFeatureMixin:
         return column
 
     @staticmethod
-    def get_feature_meta(column, preprocessing_parameters: PreprocessingConfigDict, backend) -> FeatureMetadataDict:
+    def get_feature_meta(
+        column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
+    ) -> FeatureMetadataDict:
         return {"preprocessing": preprocessing_parameters}
 
     @staticmethod
@@ -176,8 +178,6 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
-    metric_functions = VectorOutputFeatureConfig.get_output_metric_functions()
-
     def __init__(
         self,
         output_feature_config: Union[VectorOutputFeatureConfig, Dict],
