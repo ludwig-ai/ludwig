@@ -1225,10 +1225,17 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
 
 
 def _get_bert_config(hf_name):
-    from transformers.utils.hub import cached_path
+    from transformers.utils.hub import cached_path, EntryNotFoundError
 
     vocab_file = cached_path(f"https://huggingface.co/{hf_name}/resolve/main/vocab.txt")
-    tokenizer_config = load_json(cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json"))
+
+    try:
+        tokenizer_config = load_json(
+            cached_path(f"https://huggingface.co/{hf_name}/resolve/main/tokenizer_config.json")
+        )
+    except EntryNotFoundError:
+        tokenizer_config = {}
+
     return {"vocab_file": vocab_file, **tokenizer_config}
 
 
