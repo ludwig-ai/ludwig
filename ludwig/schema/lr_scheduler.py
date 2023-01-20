@@ -12,9 +12,35 @@ from ludwig.schema.metadata import TRAINER_METADATA
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
+
+    decay: Optional[str] = schema_utils.StringOptions(
+        ["linear", "exponential"],
+        description="Turn on decay of the learning rate.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
+    )
+
+    decay_rate: float = schema_utils.FloatRange(
+        default=0.96,
+        min=0,
+        max=1,
+        description="Decay per epoch (%): Factor to decrease the Learning rate.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
+    )
+
+    decay_steps: int = schema_utils.PositiveInteger(
+        default=10000,
+        description="The number of steps to take in the exponential learning rate decay.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
+    )
+
+    staircase: bool = schema_utils.Boolean(
+        default=False,
+        description="Decays the learning rate at discrete intervals.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["staircase"],
+    )
 
     warmup_evaluations: int = schema_utils.NonNegativeFloat(
         default=0,
@@ -26,32 +52,6 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         default=0.0,
         description="Fraction of total training steps to warmup the learning rate for.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
-    )
-
-    decay: Optional[str] = schema_utils.StringOptions(
-        ["linear", "exponential"],
-        description="Turn on decay of the learning rate.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
-    )
-
-    decay_steps: int = schema_utils.PositiveInteger(
-        default=10000,
-        description="The number of steps to take in the exponential learning rate decay.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
-    )
-
-    decay_rate: float = schema_utils.FloatRange(
-        default=0.96,
-        min=0,
-        max=1,
-        description="Decay per epoch (%): Factor to decrease the Learning rate.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
-    )
-
-    staircase: bool = schema_utils.Boolean(
-        default=False,
-        description="Decays the learning rate at discrete intervals.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["staircase"],
     )
 
     reduce_on_plateau: int = schema_utils.NonNegativeInteger(
