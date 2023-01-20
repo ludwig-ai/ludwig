@@ -19,7 +19,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_encoder_config("passthrough", [NUMBER, VECTOR])
+@register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR])
 @dataclass(order=True)
 class PassthroughEncoderConfig(BaseEncoderConfig):
     """PassthroughEncoderConfig is a dataclass that configures the parameters used for a passthrough encoder."""

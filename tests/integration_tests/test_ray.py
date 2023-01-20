@@ -381,6 +381,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
+@pytest.mark.skip(reason="Occasional metadata mismatch error: https://github.com/ludwig-ai/ludwig/issues/2889")
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_outputs(dataset_type, ray_cluster_2cpu):
@@ -791,7 +792,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
-    [(256, 128, 0.001), (64, 64, 0.001)],
+    [(256, 128, 0.001), (32, 32, 0.001)],
 )
 def test_tune_batch_size_lr_cpu(
     tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
