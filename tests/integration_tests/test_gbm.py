@@ -15,6 +15,9 @@ from ludwig.constants import COLUMN, INPUT_FEATURES, MODEL_TYPE, NAME, OUTPUT_FE
 from tests.integration_tests import synthetic_test_data
 from tests.integration_tests.utils import binary_feature, category_feature, generate_data, number_feature, text_feature
 
+BOOSTING_TYPES = ["gbdt", "goss", "dart"]
+TREE_LEARNERS = ["serial", "feature", "data", "voting"]
+
 
 @pytest.fixture(scope="module")
 def local_backend():
@@ -359,3 +362,33 @@ def test_goss_deactivate_bagging(tmpdir, local_backend):
     output_features = [binary_feature()]
 
     _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)
+
+
+@pytest.mark.parametrize("tree_learner", TREE_LEARNERS)
+def test_boosting_type_null_invalid(tree_learner, tmpdir, local_backend):
+    """Test that the null boosting type is disabled.
+
+    `boosting_type: null` defaults to "gbdt", and it was removed to avoid confusing GBM trainer settings.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(
+            input_features, output_features, tmpdir, local_backend, boosting_type=None, tree_learner=tree_learner
+        )
+
+
+@pytest.mark.parametrize("boosting_type", BOOSTING_TYPES)
+def test_tree_learner_null_invalid(boosting_type, tmpdir, local_backend):
+    """Test that the null tree learner is disabled.
+
+    `tree_learner: null` defaults to "serial", and it was removed to avoid confusing GBM trainer settings.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(
+            input_features, output_features, tmpdir, local_backend, boosting_type=boosting_type, tree_learner=None
+        )
