@@ -342,6 +342,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     tree_learner: str = schema_utils.StringOptions(
         ["serial", "feature", "data", "voting"],
+        allow_none=False,
         default="serial",
         description="Type of tree learner to use with GBM trainer.",
     )
@@ -349,6 +350,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
         ["gbdt", "dart", "goss"],
+        allow_none=False,
         default="gbdt",
         description="Type of boosting algorithm to use with GBM trainer.",
     )
