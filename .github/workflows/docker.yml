@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 10 * * *" # everyday at 10am
   push:
-    branches: ["master", "release-*"]
+    branches: ["master", "release-*", "disable-ludwig-gpu"]
     tags: ["v*.*.*"]
 
 jobs:
@@ -61,10 +61,10 @@ jobs:
       fail-fast: false
       matrix:
         docker-image:
-          - ludwig
+          # - ludwig
           - ludwig-gpu
-          - ludwig-ray
-          - ludwig-ray-gpu
+          # - ludwig-ray
+          # - ludwig-ray-gpu
 
     steps:
       - name: Checkout
