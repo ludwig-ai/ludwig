@@ -1906,7 +1906,7 @@ class DistilBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-# @register_encoder_config("ctrl", TEXT)
+# @register_encoder_config("ctrl", TEXT)  TODO: uncomment when CTRL bug has been fixed to add back in
 @dataclass(repr=False)
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
