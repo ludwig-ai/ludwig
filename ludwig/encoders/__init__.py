@@ -1,6 +1,5 @@
 # register all encoders
 import ludwig.encoders.bag_encoders
-import ludwig.encoders.binary_encoders
 import ludwig.encoders.category_encoders
 import ludwig.encoders.date_encoders
 import ludwig.encoders.generic_encoders

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @DeveloperAPI
-@register_encoder("passthrough", [NUMBER, VECTOR])
+@register_encoder("passthrough", [BINARY, NUMBER, VECTOR])
 class PassthroughEncoder(Encoder):
     def __init__(self, input_size=1, encoder_config=None, **kwargs):
         super().__init__()

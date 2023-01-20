@@ -18,6 +18,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
@@ -75,6 +76,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+        parameter_metadata=FEATURE_METADATA[TEXT]["class_similarities"],
     )
 
     default_validation_metric: str = schema_utils.StringOptions(
@@ -87,6 +89,7 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[TEXT]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="text_output")
@@ -94,10 +97,12 @@ class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMi
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[TEXT]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[TEXT]["reduce_input"],
     )

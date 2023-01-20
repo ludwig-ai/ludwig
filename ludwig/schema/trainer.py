@@ -60,8 +60,22 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
     epochs: int = schema_utils.PositiveInteger(
         default=100,
-        description="Number of epochs the algorithm is intended to be run over.",
+        description="Number of epochs the algorithm is intended to be run over. Overridden if `train_steps` is set",
         parameter_metadata=TRAINER_METADATA["epochs"],
+    )
+
+    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
+        default=DEFAULT_BATCH_SIZE,
+        allow_none=False,
+        description=(
+            "The number of training examples utilized in one training step of the model. If ’auto’, the "
+            "biggest batch size (power of 2) that can fit in memory will be used."
+        ),
+        parameter_metadata=TRAINER_METADATA["batch_size"],
+        field_options=[
+            schema_utils.PositiveInteger(default=128, description="", allow_none=False),
+            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
+        ],
     )
 
     checkpoints_per_epoch: int = schema_utils.NonNegativeInteger(
@@ -76,8 +90,8 @@ class ECDTrainerConfig(BaseTrainerConfig):
     train_steps: int = schema_utils.PositiveInteger(
         default=None,
         description=(
-            "Maximum number of training steps the algorithm is intended to be run over. "
-            + "If unset, then `epochs` is used to determine training length."
+            "Maximum number of training steps the algorithm is intended to be run over. Unset by default. "
+            "If set, will override `epochs` and if left unset then `epochs` is used to determine training length."
         ),
         parameter_metadata=TRAINER_METADATA["train_steps"],
     )
@@ -99,20 +113,6 @@ class ECDTrainerConfig(BaseTrainerConfig):
             "triggers training to stop. Can be set to -1, which disables early stopping entirely."
         ),
         parameter_metadata=TRAINER_METADATA["early_stop"],
-    )
-
-    batch_size: Union[int, str] = schema_utils.OneOfOptionsField(
-        default=DEFAULT_BATCH_SIZE,
-        allow_none=False,
-        description=(
-            "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "biggest batch size (power of 2) that can fit in memory will be used."
-        ),
-        parameter_metadata=TRAINER_METADATA["batch_size"],
-        field_options=[
-            schema_utils.PositiveInteger(default=DEFAULT_BATCH_SIZE, description="", allow_none=False),
-            schema_utils.StringOptions(options=["auto"], default="auto", allow_none=False),
-        ],
     )
 
     max_batch_size: int = schema_utils.PositiveInteger(

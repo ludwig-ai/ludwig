@@ -266,9 +266,12 @@ def String(
                 allow_none=allow_none,
                 load_default=default,
                 dump_default=default,
-                metadata={"description": description},
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             ),
-            "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+            # "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
         },
         default=default,
     )
@@ -810,6 +813,7 @@ def InitializerOrDict(
 
         def _jsonschema_type_mapping(self):
             initializers = list(initializer_registry.keys())
+            param_metadata = convert_metadata_to_json(parameter_metadata) if parameter_metadata else None
             return {
                 "oneOf": [
                     # Note: default not provided in the custom dict option:
@@ -822,6 +826,7 @@ def InitializerOrDict(
                         "title": f"{self.name}_custom_option",
                         "additionalProperties": True,
                         "description": "Customize an existing initializer.",
+                        "parameter_metadata": param_metadata,
                     },
                     {
                         "type": "string",
@@ -829,6 +834,7 @@ def InitializerOrDict(
                         "default": default,
                         "title": f"{self.name}_preconfigured_option",
                         "description": "Pick a preconfigured initializer.",
+                        "parameter_metadata": param_metadata,
                     },
                 ],
                 "title": self.name,
@@ -839,7 +845,13 @@ def InitializerOrDict(
     return field(
         metadata={
             "marshmallow_field": InitializerOptionsOrCustomDictField(
-                allow_none=False, load_default=default, dump_default=default, metadata={"description": description}
+                allow_none=False,
+                load_default=default,
+                dump_default=default,
+                metadata={
+                    "description": description,
+                    "parameter_metadata": convert_metadata_to_json(parameter_metadata) if parameter_metadata else None,
+                },
             )
         },
         default=default,

@@ -1,0 +1,59 @@
+gradient_clipping:
+    default_value_reasoning:
+        A conservative cap on the maximum gradient size to apply
+        over a single training step.
+    description_implications:
+        Gradient clipping is a technique to prevent exploding
+        gradients in very deep networks. Increasing gradient clipping can help with
+        model training loss curve stability, but it can also make training less efficient
+        as weight at each training step is capped.
+    expected_impact: 1
+    suggested_values_reasoning:
+        It's usually sensible to have some conservative notion
+        of gradient clipping to make modeling robust to a particularly bad or noisy
+        batch of examples.
+    ui_display_name: Gradient Clipping
+momentum:
+    expected_impact: 1
+weight_decay:
+    expected_impact: 1
+dampening:
+    expected_impact: 1
+nesterov:
+    expected_impact: 1
+max_iter:
+    expected_impact: 1
+max_eval:
+    expected_impact: 1
+tolerance_grad:
+    expected_impact: 1
+tolerance_change:
+    expected_impact: 1
+history_size:
+    expected_impact: 1
+line_search_fn:
+    expected_impact: 1
+betas:
+    expected_impact: 1
+amsgrad:
+    expected_impact: 1
+rho:
+    expected_impact: 1
+initial_accumulator_value:
+    expected_impact: 1
+lr_decay:
+    expected_impact: 1
+learning_rate_power:
+    expected_impact: 1
+l1_regularization_strength:
+    expected_impact: 1
+l2_regularization_strength:
+    expected_impact: 1
+momentum_decay:
+    expected_impact: 1
+alpha:
+    expected_impact: 1
+eps:
+    expected_impact: 1
+centered:
+    expected_impact: 1

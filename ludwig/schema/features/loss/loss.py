@@ -14,6 +14,7 @@ from ludwig.constants import (
     SOFTMAX_CROSS_ENTROPY,
 )
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.metadata import LOSS_METADATA
 
 
 @DeveloperAPI
@@ -37,6 +38,7 @@ class MSELossConfig(BaseLossConfig):
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MSELoss"]["weight"],
     )
 
 
@@ -51,6 +53,7 @@ class MAELossConfig(BaseLossConfig):
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["MAELoss"]["weight"],
     )
 
 
@@ -65,6 +68,7 @@ class RMSELossConfig(BaseLossConfig):
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["RMSELoss"]["weight"],
     )
 
 
@@ -79,6 +83,7 @@ class RMSPELossConfig(BaseLossConfig):
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["RMSPELoss"]["weight"],
     )
 
 
@@ -93,15 +98,25 @@ class BWCEWLossConfig(BaseLossConfig):
     positive_class_weight: int = schema_utils.NonNegativeInteger(
         default=None,
         description="Weight of the positive class.",
+        parameter_metadata=LOSS_METADATA["BWCEWLoss"]["positive_class_weight"],
     )
 
-    robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
+    robust_lambda: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["BWCEWLoss"]["robust_lambda"],
+    )
 
-    confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
+    confidence_penalty: float = schema_utils.NonNegativeFloat(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["BWCEWLoss"]["confidence_penalty"],
+    )
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["BWCEWLoss"]["weight"],
     )
 
 
@@ -117,24 +132,39 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
         list_type=float,
         default=None,
         description="Weights to apply to each class in the loss. If not specified, all classes are weighted equally.",
+        parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["class_weights"],
     )
 
-    robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
+    robust_lambda: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["robust_lambda"],
+    )
 
-    confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
+    confidence_penalty: float = schema_utils.NonNegativeFloat(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["confidence_penalty"],
+    )
 
     class_similarities: list = schema_utils.List(
         list,
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+        parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["class_similarities"],
     )
 
-    class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
+    class_similarities_temperature: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["class_similarities_temperature"],
+    )
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["SoftmaxCrossEntropyLoss"]["weight"],
     )
 
 
@@ -150,29 +180,45 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
         list_type=float,
         default=None,
         description="Weights to apply to each class in the loss. If not specified, all classes are weighted equally.",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["class_weights"],
     )
 
-    robust_lambda: int = schema_utils.NonNegativeInteger(default=0, description="")
+    robust_lambda: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["robust_lambda"],
+    )
 
-    confidence_penalty: float = schema_utils.NonNegativeFloat(default=0, description="")
+    confidence_penalty: float = schema_utils.NonNegativeFloat(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["confidence_penalty"],
+    )
 
     class_similarities: list = schema_utils.List(
         list,
         default=None,
         description="If not null this parameter is a c x c matrix in the form of a list of lists that contains the "
         "mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. ",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["class_similarities"],
     )
 
-    class_similarities_temperature: int = schema_utils.NonNegativeInteger(default=0, description="")
+    class_similarities_temperature: int = schema_utils.NonNegativeInteger(
+        default=0,
+        description="",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["class_similarities_temperature"],
+    )
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["weight"],
     )
 
     unique: bool = schema_utils.Boolean(
         default=False,
         description="If true, the loss is only computed for unique elements in the sequence.",
+        parameter_metadata=LOSS_METADATA["SequenceSoftmaxCrossEntropyLoss"]["unique"],
     )
 
 
@@ -188,9 +234,11 @@ class SigmoidCrossEntropyLossConfig(BaseLossConfig):
         list_type=float,
         default=None,
         description="Weights to apply to each class in the loss. If not specified, all classes are weighted equally.",
+        parameter_metadata=LOSS_METADATA["SigmoidCrossEntropyLoss"]["class_weights"],
     )
 
     weight: float = schema_utils.NonNegativeFloat(
         default=1.0,
         description="Weight of the loss.",
+        parameter_metadata=LOSS_METADATA["SigmoidCrossEntropyLoss"]["weight"],
     )

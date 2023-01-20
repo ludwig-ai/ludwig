@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 import comet_ml  # noqa
 
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.contribs.comet import CometCallback
 
 # Bad key will ensure Comet is initialized, but nothing is uploaded externally.
@@ -47,7 +47,7 @@ def run(csv_filename):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     callback = CometCallback()

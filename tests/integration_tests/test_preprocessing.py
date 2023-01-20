@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 
 from ludwig.api import LudwigModel
-from ludwig.constants import COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
+from ludwig.constants import BATCH_SIZE, COLUMN, DECODER, NAME, PROC_COLUMN, TRAINER
 from ludwig.data.concatenate_datasets import concatenate_df
 from tests.integration_tests.utils import (
     audio_feature,
@@ -211,7 +211,7 @@ def test_read_image_from_numpy_array(tmpdir, csv_filename):
     config = {
         "input_features": input_features,
         "output_features": output_features,
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     data_csv = generate_data(
@@ -438,7 +438,11 @@ def test_non_conventional_bool_with_fallback(binary_as_input, expected_preproces
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)
@@ -471,7 +475,11 @@ def test_non_conventional_bool_without_fallback_logs_warning(binary_as_input, ca
     else:
         input_features = [number_feature()]
         output_features = [bin_feature]
-    config = {"input_features": input_features, "output_features": output_features, TRAINER: {"epochs": 2}}
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
+    }
 
     data_csv_path = os.path.join(tmpdir, "data.csv")
     training_data_csv_path = generate_data(input_features, output_features, data_csv_path)

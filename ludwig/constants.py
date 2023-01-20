@@ -185,7 +185,7 @@ EARLY_STOP = "early_stop"
 EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
-DEFAULT_BATCH_SIZE = 128
+DEFAULT_BATCH_SIZE = "auto"
 MAX_POSSIBLE_BATCH_SIZE = (
     1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
 )

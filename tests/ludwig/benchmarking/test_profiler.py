@@ -7,7 +7,7 @@ import torch
 
 from ludwig.api import LudwigModel
 from ludwig.benchmarking.profiler import LudwigProfiler
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 
 
 def test_ludwig_profiler(tmpdir):
@@ -25,7 +25,7 @@ def test_ludwig_profiler(tmpdir):
         "input_features": [{"name": "input_1", "type": "number"}, {"name": "input_2", "type": "number"}],
         "output_features": [{"name": "output_1", "type": "number"}],
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 1},
+        TRAINER: {"epochs": 1, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config=config, backend="local")
