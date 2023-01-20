@@ -100,14 +100,14 @@ def test_create_vocabulary_word():
         pretrained_model_name_or_path=preprocessing_parameters["pretrained_model_name_or_path"],
     )
 
-    assert len(vocabulary_output[0]) == 18
+    assert len(vocabulary_output[0]) == 19
     assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
     assert vocabulary_output[0][strings_utils.SpecialSymbol.STOP.value] == strings_utils.STOP_SYMBOL
     assert vocabulary_output[0][strings_utils.SpecialSymbol.PADDING.value] == strings_utils.PADDING_SYMBOL
     assert vocabulary_output[0][strings_utils.SpecialSymbol.UNKNOWN.value] == strings_utils.UNKNOWN_SYMBOL
 
 
-@pytest.mark.parametrize("most_common_percentile,most_common,expected_vocab_size", [(0.5, None, 8), (0.9, 10, 11)])
+@pytest.mark.parametrize("most_common_percentile,most_common,expected_vocab_size", [(0.5, None, 9), (0.9, 10, 11)])
 def test_create_vocabulary_no_special_symbols(most_common_percentile, most_common, expected_vocab_size):
     data = pd.DataFrame(["Hello, I'm a single sentence!", "And another sentence", "And the very very last one"])
     column = data[0]
