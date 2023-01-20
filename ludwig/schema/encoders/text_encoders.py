@@ -1906,7 +1906,8 @@ class DistilBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-# @register_encoder_config("ctrl", TEXT)  TODO: uncomment when CTRL bug has been fixed to add back in
+# TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
+# @register_encoder_config("ctrl", TEXT)
 @dataclass(repr=False)
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
