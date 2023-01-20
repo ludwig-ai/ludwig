@@ -112,6 +112,7 @@ def test_xlm_encoder(use_pretrained: bool, reduce_output: str, max_sequence_leng
     assert outputs["encoder_output"].shape[1:] == xlm_encoder.output_shape
 
 
+@pytest.mark.skip(reason="Causes exit code 143 in CI")
 @pytest.mark.parametrize("use_pretrained", [False])
 @pytest.mark.parametrize("reduce_output", [None, "sum"])
 @pytest.mark.parametrize("max_sequence_length", [20])
