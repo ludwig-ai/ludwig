@@ -581,7 +581,7 @@ def test_hyperopt_without_config_defaults(csv_filename, tmpdir, ray_cluster_7cpu
             },
             "goal": "minimize",
             "output_feature": output_features[0]["name"],
-            "validation_metrics": "loss",
+            "metric": "loss",
         },
     }
 
