@@ -29,12 +29,12 @@ from ludwig.constants import (
     AUDIO,
     BAG,
     BALANCE_PERCENTAGE_TOLERANCE,
+    BATCH_SIZE,
     BFILL,
     BINARY,
     CATEGORY,
     COLUMN,
     DATE,
-    DEFAULT_BATCH_SIZE,
     H3,
     IMAGE,
     NAME,
@@ -381,6 +381,7 @@ def test_ray_read_binary_files(tmpdir, df_engine, ray_cluster_2cpu):
     assert proc_col.equals(proc_col_expected)
 
 
+@pytest.mark.skip(reason="Occasional metadata mismatch error: https://github.com/ludwig-ai/ludwig/issues/2889")
 @pytest.mark.parametrize("dataset_type", ["csv", "parquet"])
 @pytest.mark.distributed
 def test_ray_outputs(dataset_type, ray_cluster_2cpu):
@@ -791,7 +792,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
-    [(DEFAULT_BATCH_SIZE * 2, DEFAULT_BATCH_SIZE, 0.001), (64, 64, 0.001)],
+    [(256, 128, 0.001), (32, 32, 0.001)],
 )
 def test_tune_batch_size_lr_cpu(
     tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
@@ -998,7 +999,7 @@ class TestDatasetWindowAutosizing:
         config = {
             "input_features": [{"name": "in_column", "type": "binary"}],
             "output_features": [{"name": "out_column", "type": "binary"}],
-            TRAINER: {"epochs": 1, "batch_size": 128},
+            TRAINER: {"epochs": 1, BATCH_SIZE: 128},
         }
         backend_config = {**RAY_BACKEND_CONFIG}
         backend_config["preprocessor_kwargs"] = {"num_cpu": 1}

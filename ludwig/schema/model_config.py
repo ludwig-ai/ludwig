@@ -8,6 +8,7 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -40,14 +41,12 @@ from ludwig.constants import (
 )
 from ludwig.features.feature_utils import compute_feature_hash
 from ludwig.modules.loss_modules import get_loss_cls
-from ludwig.schema import validate_config
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.decoders.utils import get_decoder_cls
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
-from ludwig.schema.encoders.binary_encoders import BinaryPassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import (
     get_input_feature_cls,
@@ -173,9 +172,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
-                    if feature_cls.type == BINARY:
-                        feature_cls.encoder = BinaryPassthroughEncoderConfig()
-                    elif feature_cls.type in [CATEGORY, NUMBER]:
+                    if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                         feature_cls.encoder = PassthroughEncoderConfig()
                     else:
                         raise ValidationError(
@@ -458,9 +455,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         for feature in self.input_features.to_dict().keys():
             feature_cls = getattr(self.input_features, feature)
-            if feature_cls.type == BINARY:
-                feature_cls.encoder = BinaryPassthroughEncoderConfig()
-            elif feature_cls.type in [CATEGORY, NUMBER]:
+            if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                 feature_cls.encoder = PassthroughEncoderConfig()
             else:
                 raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")

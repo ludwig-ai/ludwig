@@ -41,7 +41,7 @@ def ray_backend():
     }
 
 
-def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config):
+def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config, **trainer_config):
     csv_filename = os.path.join(tmpdir, "training.csv")
     dataset_filename = generate_data(input_features, output_features, csv_filename, num_examples=100)
 
@@ -53,6 +53,9 @@ def _train_and_predict_gbm(input_features, output_features, tmpdir, backend_conf
         # see https://stackoverflow.com/a/66405983/5222402
         TRAINER: {"num_boost_round": 2, "feature_pre_filter": False},
     }
+
+    if trainer_config:
+        config[TRAINER].update(trainer_config)
 
     model = LudwigModel(config, backend=backend_config)
     _, _, output_directory = model.train(
@@ -276,7 +279,11 @@ def test_loss_decreases(tmpdir, local_backend):
         "output_features": output_features,
         # Disable feature filtering to avoid having no features due to small test dataset,
         # see https://stackoverflow.com/a/66405983/5222402
-        TRAINER: {"num_boost_round": 2, "boosting_rounds_per_checkpoint": 1, "feature_pre_filter": False},
+        TRAINER: {
+            "num_boost_round": 2,
+            "boosting_rounds_per_checkpoint": 1,
+            "feature_pre_filter": False,
+        },
     }
 
     generated_data = synthetic_test_data.get_generated_data_for_optimizer()
@@ -331,3 +338,32 @@ def test_lgbm_dataset_setup(tmpdir, local_backend):
             # Check that the intended ValueError was raised
             assert re.search("Some column names in the training set contain invalid characters", str(e))
             raise
+
+
+def test_boosting_type_rf_invalid(tmpdir, local_backend):
+    """Test that the Random Forest boosting type is not supported.
+
+    LightGBM does not support model checkpointing for `boosting_type=rf`. This test ensures that a schema validation
+    error is raised when trying to use random forests.
+    """
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    with pytest.raises(ValidationError):
+        _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
+
+
+def test_goss_deactivate_bagging(tmpdir, local_backend):
+    """Test that bagging is disabled for the GOSS boosting type."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="goss", bagging_freq=5)
+
+
+def test_dart_boosting_type(tmpdir, local_backend):
+    """Test that DART does not error during eval due to progress tracking."""
+    input_features = [number_feature()]
+    output_features = [binary_feature()]
+
+    _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="dart")

@@ -4,7 +4,9 @@ from typing import Any, Dict
 
 import pytest
 
+from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
+    BATCH_SIZE,
     BFILL,
     CLASS_WEIGHTS,
     DEFAULTS,
@@ -22,7 +24,6 @@ from ludwig.constants import (
     TRAINER,
     TYPE,
 )
-from ludwig.schema import validate_config
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.trainer import ECDTrainerConfig
 from ludwig.utils.backward_compatibility import (
@@ -670,7 +671,7 @@ def test_upgrade_model_progress():
 def test_upgrade_model_progress_already_valid():
     # Verify that we don't make changes to already-valid model progress dicts.
     valid_model_progress = {
-        "batch_size": 128,
+        BATCH_SIZE: 128,
         "best_eval_metric_checkpoint_number": 7,
         "best_eval_metric_epoch": 6,
         "best_eval_metric_steps": 35,

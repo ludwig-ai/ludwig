@@ -9,7 +9,7 @@
 #   model serving
 #
 
-FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-devel
+FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
 
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
 RUN sh -c 'echo "APT { Get { AllowUnauthenticated \"1\"; }; };" > /etc/apt/apt.conf.d/99allow_unauth' && \

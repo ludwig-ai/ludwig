@@ -12,6 +12,8 @@ TORCHTEXT_0_14_0_HF_NAMES = [
     "google/electra-small-discriminator",
     "dbmdz/bert-base-italian-cased",  # Community model
     "nreimers/MiniLM-L6-H384-uncased",  # Community model
+    "emilyalsentzer/Bio_ClinicalBERT",  # Community model
+    "bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12",  # Community model
 ]
 
 

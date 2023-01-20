@@ -5,7 +5,7 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.backend import initialize_backend
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 from ludwig.globals import DESCRIPTION_FILE_NAME
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import use_credentials
@@ -50,7 +50,7 @@ def test_remote_training_set(csv_filename, fs_protocol, bucket, creds, backend, 
                 "input_features": input_features,
                 "output_features": output_features,
                 "combiner": {"type": "concat", "output_size": 14},
-                TRAINER: {"epochs": 2},
+                TRAINER: {"epochs": 2, BATCH_SIZE: 128},
             }
 
             config_path = os.path.join(tmpdir, "config.yaml")
