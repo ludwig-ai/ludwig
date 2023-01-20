@@ -483,7 +483,7 @@ learning_rate_scheduler:
                 \ As a rule of thumb, compared to training without a schedule, you can use\
                 \ a slightly higher maximum learning rate. Since the learning rate changes\
                 \ over time, the whole training is not so sensitive to the value picked."
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
                 - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
         related_parameters:
