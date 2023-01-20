@@ -516,7 +516,9 @@ def test_early_stop_timeout(model_type, timeout_s, timeout_steps, should_timeout
             "feature_pre_filter": False,
         }
         if model_type == MODEL_GBM
-        else {}
+        else {
+            "batch_size": num_examples,
+        }
     )
     config = {
         "model_type": model_type,
