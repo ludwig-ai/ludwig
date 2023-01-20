@@ -11,6 +11,7 @@ from ludwig.constants import IMAGENET1K
 from ludwig.data.dataset_synthesizer import cli_synthesize_dataset
 from ludwig.features.image_feature import ImageAugmentation
 
+
 # define fixture for test  image augmentation
 @pytest.fixture(scope="module")
 def test_image():
@@ -86,8 +87,13 @@ def run_augmentation_training(
     config = {
         "input_features": test_input_features,
         "output_features": output_features,
-        "trainer": {"epochs": 2, "batch_size": 8, },
-        "backend": {"type": backend, },
+        "trainer": {
+            "epochs": 2,
+            "batch_size": 8,
+        },
+        "backend": {
+            "type": backend,
+        },
     }
 
     model = LudwigModel(config, logging_level=logging.INFO)
@@ -136,8 +142,16 @@ AUGMENTATION_ENCODER = [
 ]
 
 AUGMENTATION_PREPROCESSING = [
-    {"standardize_image": None, "width": 300, "height": 300, },
-    {"standardize_image": IMAGENET1K, "width": 300, "height": 300, },
+    {
+        "standardize_image": None,
+        "width": 300,
+        "height": 300,
+    },
+    {
+        "standardize_image": IMAGENET1K,
+        "width": 300,
+        "height": 300,
+    },
 ]
 
 

@@ -176,6 +176,7 @@ class ECD(BaseModel):
             if augmentation:
                 # use input feature proc_column as key because that is what is used in the Batcher
                 augmentation_pipelines[i_feat_config.get("proc_column")] = self.input_features[
-                    i_feat_name].get_augmentation_pipeline()
+                    i_feat_name
+                ].get_augmentation_pipeline()
 
         return AugmentationPipelines(augmentation_pipelines)
