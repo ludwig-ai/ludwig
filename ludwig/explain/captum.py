@@ -83,7 +83,7 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
     # Ignore sample_ratio from the model config, since we want to explain all the data.
     sample_ratio_bak = model.config_obj.preprocessing.sample_ratio
     model.config_obj.preprocessing.sample_ratio = 1.0
-    
+
     config = model.config_obj.to_dict()
     training_set_metadata = copy.deepcopy(model.training_set_metadata)
     for feature in config[INPUT_FEATURES]:
