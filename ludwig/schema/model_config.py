@@ -54,6 +54,7 @@ from ludwig.schema.features.utils import (
     input_config_registry,
     output_config_registry,
 )
+from ludwig.schema.hyperopt import HyperoptConfig
 from ludwig.schema.optimizers import get_optimizer_cls
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.schema.split import get_split_cls
@@ -200,6 +201,7 @@ class ModelConfig(BaseMarshmallowConfig):
 
         # ===== Hyperopt =====
         self.hyperopt = upgraded_config_dict.get(HYPEROPT, {})
+
         self._set_hyperopt_defaults()
 
         # Set up default validation metric, which is used for plateau metrics and early stopping.
@@ -506,6 +508,10 @@ class ModelConfig(BaseMarshmallowConfig):
         if not self.hyperopt:
             return
 
+        # Convert hyperopt config to hyperopt schema to populate with schema defaults
+        # This fills in missing splits, executor config, search_alg, etc.
+        self.hyperopt = HyperoptConfig.from_dict(self.hyperopt).to_dict()
+
         scheduler = self.hyperopt.get("executor", {}).get("scheduler")
         if not scheduler:
             return
@@ -516,9 +522,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # Disable early stopping when using a scheduler. We achieve this by setting the parameter
         # to -1, which ensures the condition to apply early stopping is never met.
         early_stop = self.trainer.early_stop
-        if early_stop is not None and early_stop != -1:
+        if early_stop is not None and early_stop != -1 and scheduler.get("type", {}) != "fifo":
             warnings.warn("Can't utilize `early_stop` while using a hyperopt scheduler. Setting early stop to -1.")
-        self.trainer.early_stop = -1
+            self.trainer.early_stop = -1
 
         max_t = scheduler.get("max_t")
         time_attr = scheduler.get("time_attr")
