@@ -208,7 +208,8 @@ class ALBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("mt5", TEXT)
+# TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
+# @register_encoder_config("mt5", TEXT)
 @dataclass(repr=False)
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
@@ -254,7 +255,7 @@ class MT5Config(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["MT5"]["reduce_output"],
     )
