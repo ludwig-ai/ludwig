@@ -254,7 +254,7 @@ class MT5Config(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["MT5"]["reduce_output"],
     )
