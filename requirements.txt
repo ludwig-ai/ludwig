@@ -38,9 +38,6 @@ retry
 # required for TransfoXLTokenizer when using transformer_xl
 sacremoses
 
-# required for MT5 Encoder
-sentencepiece
-
 # new data format support
 xlwt            # excel
 xlrd            # excel
