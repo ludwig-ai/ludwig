@@ -208,7 +208,8 @@ class ALBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("mt5", TEXT)
+# TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
+# @register_encoder_config("mt5", TEXT)
 @dataclass(repr=False)
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
