@@ -163,7 +163,6 @@ def test_local_model_training_with_augmentation_pipeline(
     encoder,
     preprocessing,
     augmentation_pipeline_ops,
-    ray_cluster_2cpu,
 ):
     run_augmentation_training(
         train_data,
