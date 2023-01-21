@@ -254,7 +254,7 @@ class MT5Config(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["MT5"]["reduce_output"],
     )
@@ -707,7 +707,7 @@ class XLMConfig(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["XLM"]["reduce_output"],
     )
@@ -2087,7 +2087,7 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls-pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["reduce_output"],
     )
@@ -2876,7 +2876,7 @@ class AutoTransformerConfig(BaseEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="xlm-roberta-base",
+        default="bert-base-uncased",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_model_name_or_path"],
     )
