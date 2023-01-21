@@ -5,6 +5,7 @@ from marshmallow import fields, ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
+from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.schema import utils as schema_utils
 from ludwig.utils.registry import Registry
 
@@ -83,7 +84,7 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
             augmentation_list = []
             for augmentation in default:
                 augmentation_op = augmentation[TYPE]
-                augmentation_cls = get_augmentation_cls(augmentation_op)
+                augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
                 pre = augmentation_cls()
                 try:
                     augmentation_list.append(pre.Schema().load(augmentation))
@@ -97,6 +98,10 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
                 load_default = dump_default = default
             else:
                 raise ValueError(f"'default' parameter should be a list, found to be {type(default)}.")
+
+        # augmentation_config = BaseAugmentationConfig
+        # load_default = augmentation_config.Schema().load(get_augmentation_jsonschema(feature_type))
+        # dump_default = augmentation_config.Schema().dump(get_augmentation_jsonschema(feature_type))
 
         return field(
             metadata={

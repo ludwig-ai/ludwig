@@ -29,7 +29,12 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: List[BaseAugmentationConfig] = AugmentationContainerDataclassField(feature_type=IMAGE, default=[])
+    augmentation: List[BaseAugmentationConfig] = AugmentationContainerDataclassField(
+        feature_type=IMAGE,
+        default=[
+            {"type": "random_horizontal_flip"},
+        ]
+    )
 
 
 @DeveloperAPI
