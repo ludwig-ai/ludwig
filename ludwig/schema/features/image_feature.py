@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from marshmallow_dataclass import dataclass
 
@@ -29,14 +29,23 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
         default="stacked_cnn",
     )
 
-    augmentation: List[BaseAugmentationConfig] = AugmentationContainerDataclassField(
-        feature_type=IMAGE,
-        default=[
-            {"type": "random_horizontal_flip"},
-            {"type": "random_rotate", "degree": 15},
+    augmentation: Union[bool, List[BaseAugmentationConfig]] = schema_utils.OneOfOptionsField(
+        default=False,
+        description="Augmentation configuration.",
+        field_options=[
+            schema_utils.Boolean(
+                default=False,
+                description="Whether to use augmentation or not.",
+            ),
+            AugmentationContainerDataclassField(
+                feature_type=IMAGE,
+                default=[
+                    {"type": "random_horizontal_flip"},
+                    {"type": "random_rotate", "degree": 15},
+                ]
+            )
         ]
     )
-
 
 @DeveloperAPI
 @input_config_registry.register(IMAGE)
