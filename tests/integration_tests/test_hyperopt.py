@@ -187,7 +187,7 @@ def test_hyperopt_search_alg(
     assert isinstance(results, HyperoptResults)
 
     with hyperopt_executor._get_best_model_path(
-        results.experiment_analysis.best_trial, results.experiment_analysis
+        results.experiment_analysis.best_trial, results.experiment_analysis, {}
     ) as path:
         assert path is not None
         assert isinstance(path, str)

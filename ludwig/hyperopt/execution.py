@@ -390,8 +390,6 @@ class RayTuneExecutor:
         backend,
         debug,
     ):
-        print("!!! Evaluating best model")
-        print("!!! Best model path: ", best_model_path)
         best_model = LudwigModel.load(
             os.path.join(best_model_path, "model"),
             backend=backend,
