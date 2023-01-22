@@ -359,24 +359,19 @@ class RayTuneExecutor:
 
     @contextlib.contextmanager
     def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
-        print("!!! Trial: ", trial_path)
-
         checkpoint = analysis.get_best_checkpoint(trial=trial_path)
         if checkpoint is None:
             logger.warning("No best model found")
             return None
 
         ckpt_type, ckpt_path = checkpoint.get_internal_representation()
-        print("!!! Checkpoint type: ", ckpt_type)
         if ckpt_type == "uri":
             # Read remote URIs using Ludwig's internal remote file loading APIs, as
             # Ray's do not handle custom credentials at the moment.
             with use_credentials(creds):
-                print("!!! Remote Checkpoint path: ", ckpt_path)
                 yield ckpt_path
         else:
             with checkpoint.as_directory() as ckpt_path:
-                print("!!! Local Checkpoint path: ", ckpt_path)
                 yield ckpt_path
 
     @staticmethod
