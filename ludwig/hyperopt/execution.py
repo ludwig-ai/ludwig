@@ -43,7 +43,7 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils import metric_utils
-from ludwig.utils.data_utils import hash_dict, NumpyEncoder
+from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
@@ -359,26 +359,25 @@ class RayTuneExecutor:
 
     @contextlib.contextmanager
     def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis) -> str:
-        remote_checkpoint_dir = self._get_remote_checkpoint_dir(Path(trial_path))
-        if remote_checkpoint_dir is not None:
-            self.sync_client.sync_down(remote_checkpoint_dir, trial_path)
-            self.sync_client.wait_or_retry()
-        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
+        print("!!! Trial: ", trial_path)
 
-        try:
-            checkpoint = analysis.get_best_checkpoint(trial_path.rstrip("/"))
-        except Exception:
-            logger.warning(
-                f"Cannot get best model path for {trial_path} due to exception below:\n{traceback.format_exc()}"
-            )
-            yield None
-            return
+        checkpoint = analysis.get_best_checkpoint(trial=trial_path)
+        if checkpoint is None:
+            logger.warning("No best model found")
+            return None
 
-        if checkpoint is not None:
-            with checkpoint.as_directory() as path:
-                yield path
+        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
+        print("!!! Checkpoint type: ", ckpt_type)
+        if ckpt_type == "uri":
+            # Read remote URIs using Ludwig's internal remote file loading APIs, as
+            # Ray's do not handle custom credentials at the moment.
+            with use_credentials(self._creds):
+                print("!!! Remote Checkpoint path: ", ckpt_path)
+                yield ckpt_path
         else:
-            yield checkpoint
+            with checkpoint.as_directory() as ckpt_path:
+                print("!!! Local Checkpoint path: ", ckpt_path)
+                yield ckpt_path
 
     @staticmethod
     def _evaluate_best_model(
@@ -396,6 +395,8 @@ class RayTuneExecutor:
         backend,
         debug,
     ):
+        print("!!! Evaluating best model")
+        print("!!! Best model path: ", best_model_path)
         best_model = LudwigModel.load(
             os.path.join(best_model_path, "model"),
             backend=backend,
@@ -1043,11 +1044,6 @@ def run_experiment(
     finally:
         for callback in callbacks or []:
             callback.on_hyperopt_trial_end(parameters)
-
-
-def _run_experiment_unary(kwargs):
-    """Unary function is needed by Fiber to map a list of args."""
-    return run_experiment(**kwargs)
 
 
 def _get_num_cpus_gpus(use_gpu: bool):
