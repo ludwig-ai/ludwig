@@ -358,7 +358,7 @@ class RayTuneExecutor:
                 os.remove(marker_path)
 
     @contextlib.contextmanager
-    def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis) -> str:
+    def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
         print("!!! Trial: ", trial_path)
 
         checkpoint = analysis.get_best_checkpoint(trial=trial_path)
@@ -371,7 +371,7 @@ class RayTuneExecutor:
         if ckpt_type == "uri":
             # Read remote URIs using Ludwig's internal remote file loading APIs, as
             # Ray's do not handle custom credentials at the moment.
-            with use_credentials(self._creds):
+            with use_credentials(creds):
                 print("!!! Remote Checkpoint path: ", ckpt_path)
                 yield ckpt_path
         else:
@@ -902,7 +902,9 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        with self._get_best_model_path(trial_path, analysis) as best_model_path:
+                        with self._get_best_model_path(
+                            trial_path, analysis, backend.storage.artifacts.credentials
+                        ) as best_model_path:
                             if best_model_path is not None:
                                 self._evaluate_best_model(
                                     trial,
