@@ -87,12 +87,12 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
                 augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
                 pre = augmentation_cls()
                 try:
-                    augmentation_list.append(pre.Schema().load(augmentation))
+                    pre.Schema().load(augmentation)
                 except (TypeError, ValidationError) as error:
                     raise ValidationError(
                         f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
                     )
-            load_default = dump_default = augmentation_list
+            load_default = dump_default = default
         else:
             if isinstance(default, list):
                 load_default = dump_default = default

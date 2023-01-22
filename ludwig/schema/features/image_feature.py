@@ -33,6 +33,7 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
         feature_type=IMAGE,
         default=[
             {"type": "random_horizontal_flip"},
+            {"type": "random_rotate", "degree": 15},
         ]
     )
 
