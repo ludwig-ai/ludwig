@@ -361,7 +361,7 @@ class RayTuneExecutor:
     def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
         # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
         # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
-        if trial_path[-1] == "/":
+        if isinstance(trial_path, str) and trial_path[-1] == "/":
             trial_path = trial_path[:-1]
 
         checkpoint = analysis.get_best_checkpoint(trial=trial_path)
