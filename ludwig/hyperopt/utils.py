@@ -5,8 +5,8 @@ import logging
 import os
 import warnings
 from typing import Any, Dict
-from ludwig.api_annotations import DeveloperAPI
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUTO,
     COMBINED,
