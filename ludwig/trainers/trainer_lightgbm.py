@@ -369,7 +369,6 @@ class LightGBMTrainer(BaseTrainer):
 
         progress_bar.update(self.boosting_rounds_per_checkpoint)
         progress_tracker.steps += self.boosting_rounds_per_checkpoint
-        progress_tracker.best_eval_metric_steps = self.model.lgbm_model.best_iteration_
 
         output_features = self.model.output_features
         metrics_names = get_metric_names(output_features)
@@ -428,7 +427,13 @@ class LightGBMTrainer(BaseTrainer):
 
             # Save the value, steps, epoch, and checkpoint number.
             progress_tracker.best_eval_metric_value = eval_metric_value
-            progress_tracker.best_eval_metric_steps = progress_tracker.steps
+
+            # Use LGBM fine-grained internal tracking if available, otherwise fall back to coarse-grained tracking
+            # every `boosting_rounds_per_checkpoint`.
+            if self.model.lgbm_model.best_iteration_ is not None:
+                progress_tracker.best_eval_metric_steps = self.model.lgbm_model.best_iteration_
+            else:
+                progress_tracker.best_eval_metric_steps = progress_tracker.steps
             progress_tracker.best_eval_metric_epoch = progress_tracker.epoch
             progress_tracker.best_eval_metric_checkpoint_number = progress_tracker.checkpoint_number
 
@@ -521,6 +526,12 @@ class LightGBMTrainer(BaseTrainer):
             else (lgb_train.label.size,)
         )
 
+        callbacks = [store_predictions(train_logits)]
+
+        # DART is not compatible with early stopping.
+        if self.boosting_type != "dart":
+            callbacks.append(lgb.early_stopping(boost_rounds_per_train_step))
+
         gbm = gbm_sklearn_cls(n_estimators=boost_rounds_per_train_step, **params).fit(
             X=lgb_train.get_data(),
             y=lgb_train.get_label(),
@@ -528,7 +539,7 @@ class LightGBMTrainer(BaseTrainer):
             eval_set=[(ds.get_data(), ds.get_label()) for ds in eval_sets],
             eval_names=eval_names,
             # add early stopping callback to populate best_iteration
-            callbacks=[lgb.early_stopping(boost_rounds_per_train_step), store_predictions(train_logits)],
+            callbacks=callbacks,
         )
         evals_result.update(gbm.evals_result_)
 

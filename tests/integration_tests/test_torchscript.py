@@ -220,13 +220,14 @@ def test_torchscript(tmpdir, csv_filename, should_load_model, model_type):
 def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     data_csv_path = os.path.join(tmpdir, csv_filename)
     # Configure features to be tested:
-    bin_str_feature = binary_feature()
+    bin_str_feature_input_feature = binary_feature()
+    bin_str_feature_output_feature = binary_feature(output_feature=True)
     transformed_number_features = [
         number_feature(preprocessing={"normalization": numeric_transformer})
         for numeric_transformer in numeric_transformation_registry.keys()
     ]
     input_features = [
-        bin_str_feature,
+        bin_str_feature_input_feature,
         binary_feature(),
         *transformed_number_features,
         category_feature(encoder={"vocab_size": 3}),
@@ -238,8 +239,8 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
         # h3_feature(),
     ]
     output_features = [
-        bin_str_feature,
-        binary_feature(),
+        bin_str_feature_output_feature,
+        binary_feature(output_feature=True),
         number_feature(),
         category_feature(decoder={"vocab_size": 3}),
         set_feature(decoder={"vocab_size": 3}),
@@ -260,7 +261,12 @@ def test_torchscript_e2e_tabular(csv_filename, tmpdir):
     # Convert bool values to strings, e.g., {'Yes', 'No'}
     df = pd.read_csv(training_data_csv_path)
     false_value, true_value = "No", "Yes"
-    df[bin_str_feature[NAME]] = df[bin_str_feature[NAME]].map(lambda x: true_value if x else false_value)
+    df[bin_str_feature_input_feature[NAME]] = df[bin_str_feature_input_feature[NAME]].map(
+        lambda x: true_value if x else false_value
+    )
+    df[bin_str_feature_output_feature[NAME]] = df[bin_str_feature_output_feature[NAME]].map(
+        lambda x: true_value if x else false_value
+    )
     df.to_csv(training_data_csv_path)
 
     validate_torchscript_outputs(tmpdir, config, backend, training_data_csv_path)
