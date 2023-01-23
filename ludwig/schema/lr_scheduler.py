@@ -42,18 +42,6 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["staircase"],
     )
 
-    warmup_evaluations: int = schema_utils.NonNegativeFloat(
-        default=0,
-        description="Number of evaluation steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
-    )
-
-    warmup_fraction: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Fraction of total training steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
-    )
-
     reduce_on_plateau: int = schema_utils.NonNegativeInteger(
         default=0,
         description=(
@@ -77,6 +65,18 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         max=1,
         description="Rate at which we reduce the learning rate when `reduce_on_plateau > 0`.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_on_plateau_rate"],
+    )
+
+    warmup_evaluations: int = schema_utils.NonNegativeFloat(
+        default=0,
+        description="Number of evaluation steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
+    )
+
+    warmup_fraction: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Fraction of total training steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
     )
 
     reduce_eval_metric: str = schema_utils.String(
