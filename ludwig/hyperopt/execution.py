@@ -357,8 +357,9 @@ class RayTuneExecutor:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
 
+    @staticmethod
     @contextlib.contextmanager
-    def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
+    def _get_best_model_path(trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
         # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
         # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
         if isinstance(trial_path, str) and trial_path[-1] == "/":

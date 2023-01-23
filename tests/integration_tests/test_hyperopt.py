@@ -58,7 +58,7 @@ from tests.integration_tests.utils import (
 
 ray = pytest.importorskip("ray")
 
-from ludwig.hyperopt.execution import get_build_hyperopt_executor  # noqa
+from ludwig.hyperopt.execution import RayTuneExecutor, get_build_hyperopt_executor  # noqa
 
 pytestmark = pytest.mark.distributed
 
@@ -343,6 +343,12 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
             assert fs_utils.path_exists(
                 os.path.join(tmpdir, experiment_name, f"trial_{trial.trial_id}"),
             )
+
+    with RayTuneExecutor._get_best_model_path(
+        hyperopt_results.experiment_analysis.best_trial, hyperopt_results.experiment_analysis, minio_test_creds()
+    ) as path:
+        assert path is not None
+        assert isinstance(path, str)
 
 
 @pytest.mark.parametrize("search_space", ["random", "grid"])
