@@ -62,6 +62,7 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
             assert isinstance(value, list), "Augmentation config must be a list."
 
             augmentation_list = []
+            serialized_augmentation_list = []
             for augmentation in value:
                 augmentation_op = augmentation[TYPE]
                 augmentation_cls = get_augmentation_cls(augmentation_op)
@@ -79,25 +80,22 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
             return get_augmentation_jsonschema(feature_type)
 
     try:
-        if default:
-            assert isinstance(default, list), "Augmentation config must be a list."
-            augmentation_list = []
-            for augmentation in default:
-                augmentation_op = augmentation[TYPE]
-                augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
-                pre = augmentation_cls()
-                try:
-                    pre.Schema().load(augmentation)
-                except (TypeError, ValidationError) as error:
-                    raise ValidationError(
-                        f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
-                    )
-            load_default = dump_default = default
-        else:
-            if isinstance(default, list):
-                load_default = dump_default = default
-            else:
-                raise ValueError(f"'default' parameter should be a list, found to be {type(default)}.")
+        assert isinstance(default, list), "Augmentation config must be a list."
+        load_augmentation_list = []
+        dump_augmentation_list = []
+        for augmentation in default:
+            augmentation_op = augmentation[TYPE]
+            augmentation_cls = get_augmentation_cls(feature_type, augmentation_op)
+            pre = augmentation_cls()
+            try:
+                load_augmentation_list.append(pre.Schema().load(augmentation))
+                dump_augmentation_list.append(pre.Schema().dump(augmentation))
+            except (TypeError, ValidationError) as error:
+                raise ValidationError(
+                    f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
+                )
+        load_default = load_augmentation_list
+        dump_default = dump_augmentation_list
 
         # augmentation_config = BaseAugmentationConfig
         # load_default = augmentation_config.Schema().load(get_augmentation_jsonschema(feature_type))
