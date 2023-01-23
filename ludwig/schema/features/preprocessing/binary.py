@@ -24,7 +24,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         description="What strategy to follow when there's a missing value in a binary column",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"],
     )
-    
+
     fallback_true_label: str = schema_utils.String(
         default=None,
         allow_none=True,
