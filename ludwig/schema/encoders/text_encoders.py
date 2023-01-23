@@ -13,7 +13,7 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 @DeveloperAPI
 @register_encoder_config("albert", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class ALBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
@@ -209,7 +209,7 @@ class ALBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("mt5", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
@@ -396,7 +396,7 @@ class MT5Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class XLMRoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
@@ -491,7 +491,7 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("bert", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
@@ -662,7 +662,7 @@ class BERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlm", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class XLMConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
@@ -909,7 +909,7 @@ class XLMConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class GPTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
@@ -1049,7 +1049,7 @@ class GPTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class GPT2Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
@@ -1200,7 +1200,7 @@ class GPT2Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("roberta", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class RoBERTaConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
@@ -1289,7 +1289,7 @@ class RoBERTaConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TransformerXLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
@@ -1516,7 +1516,7 @@ class TransformerXLConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class XLNetConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
@@ -1753,7 +1753,7 @@ class XLNetConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class DistilBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
@@ -1907,7 +1907,7 @@ class DistilBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("ctrl", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
@@ -2048,7 +2048,7 @@ class CTRLConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class CamemBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
@@ -2218,7 +2218,7 @@ class CamemBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("t5", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class T5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
@@ -2363,7 +2363,7 @@ class T5Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class FlauBERTConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
@@ -2602,7 +2602,7 @@ class FlauBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("electra", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class ELECTRAConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
@@ -2767,7 +2767,7 @@ class ELECTRAConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("longformer", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class LongformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
@@ -2862,7 +2862,7 @@ class LongformerConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class AutoTransformerConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
