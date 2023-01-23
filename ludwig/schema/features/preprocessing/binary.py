@@ -63,10 +63,19 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("binary_output")
 @dataclass(repr=False, order=True)
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
+
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary output feature",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    fallback_true_label: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The label to interpret as 1 (True) when the binary feature doesn't have a "
+        "conventional boolean value",
+        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
     )

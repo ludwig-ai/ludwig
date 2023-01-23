@@ -57,3 +57,11 @@ class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
         description="What strategy to follow when there's a missing value in a number output feature",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["missing_value_strategy"],
     )
+
+    normalization: str = schema_utils.StringOptions(
+        ["zscore", "minmax", "log1p", "iq"],
+        default=None,
+        allow_none=True,
+        description="Normalization strategy to use for this number feature.",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["normalization"],
+    )

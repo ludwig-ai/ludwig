@@ -58,10 +58,25 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("category_output")
 @dataclass(repr=False, order=True)
 class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
+
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a category output feature",
         parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    lowercase: bool = schema_utils.Boolean(
+        default=False,
+        description="Whether the string has to be lowercased before being handled by the tokenizer.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["lowercase"],
+    )
+
+    most_common: int = schema_utils.PositiveInteger(
+        default=10000,
+        allow_none=True,
+        description="The maximum number of most common tokens to be considered. if the data contains more than this "
+        "amount, the most infrequent tokens will be treated as unknown.",
+        parameter_metadata=FEATURE_METADATA[CATEGORY][PREPROCESSING]["most_common"],
     )

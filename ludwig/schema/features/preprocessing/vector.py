@@ -12,6 +12,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 @register_preprocessor(VECTOR)
 @dataclass(repr=False, order=True)
 class VectorPreprocessingConfig(BasePreprocessingConfig):
+
     vector_size: int = schema_utils.PositiveInteger(
         default=None,
         allow_none=True,
@@ -49,10 +50,18 @@ class VectorPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("vector_output")
 @dataclass(repr=False, order=True)
 class VectorOutputPreprocessingConfig(VectorPreprocessingConfig):
+
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
         allow_none=False,
         description="What strategy to follow when there's a missing value in a vector output feature",
         parameter_metadata=FEATURE_METADATA[VECTOR][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    vector_size: int = schema_utils.PositiveInteger(
+        default=None,
+        allow_none=True,
+        description="The size of the vector. If None, the vector size will be inferred from the data.",
+        parameter_metadata=FEATURE_METADATA[VECTOR][PREPROCESSING]["vector_size"],
     )
