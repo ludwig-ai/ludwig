@@ -1907,14 +1907,9 @@ class DistilBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-<<<<<<< HEAD
-@register_encoder_config("ctrl", TEXT)
-@dataclass(repr=False, order=True)
-=======
 # TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
 # @register_encoder_config("ctrl", TEXT)
-@dataclass(repr=False)
->>>>>>> 8f6a28135cae03e13884d08dd93c0c4fb10d1de4
+@dataclass(repr=False, order=True)
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
