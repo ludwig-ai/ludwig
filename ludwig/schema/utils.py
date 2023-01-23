@@ -390,6 +390,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
             "marshmallow_field": fields.Boolean(
                 truthy={True},
                 falsy={False},
+                validate=validate.OneOf([True, False]),
                 allow_none=False,
                 load_default=default,
                 dump_default=default,
@@ -984,7 +985,8 @@ def OneOfOptionsField(
                 try:
                     if value is None and mfield_meta.allow_none:
                         return None
-                    mfield_meta.validate(value)
+                    if mfield_meta.validate:
+                        mfield_meta.validate(value)
                     return mfield_meta._serialize(value, attr, obj, **kwargs)
                 except Exception:
                     continue
