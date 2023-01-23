@@ -12,7 +12,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 @DeveloperAPI
 @register_preprocessor(TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -118,7 +118,7 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("text_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,

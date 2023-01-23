@@ -11,7 +11,7 @@ from ludwig.schema.metadata import DECODER_METADATA
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for decoders."""
 
@@ -105,7 +105,7 @@ class BaseDecoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_decoder_config("passthrough", [BINARY, CATEGORY, NUMBER, SET, VECTOR, SEQUENCE, TEXT])
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class PassthroughDecoderConfig(BaseDecoderConfig):
     """PassthroughDecoderConfig is a dataclass that configures the parameters used for a passthrough decoder."""
 
@@ -129,7 +129,7 @@ class PassthroughDecoderConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("regressor", [BINARY, NUMBER])
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class RegressorConfig(BaseDecoderConfig):
     """RegressorConfig is a dataclass that configures the parameters used for a regressor decoder."""
 
@@ -168,7 +168,7 @@ class RegressorConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("projector", [VECTOR])
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class ProjectorConfig(BaseDecoderConfig):
     """ProjectorConfig is a dataclass that configures the parameters used for a projector decoder."""
 
@@ -229,7 +229,7 @@ class ProjectorConfig(BaseDecoderConfig):
 
 @DeveloperAPI
 @register_decoder_config("classifier", [CATEGORY, SET])
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class ClassifierConfig(BaseDecoderConfig):
     @classmethod
     def module_name(cls):

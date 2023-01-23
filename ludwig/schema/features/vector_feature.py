@@ -40,7 +40,7 @@ class VectorInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(VECTOR)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class VectorInputFeatureConfig(BaseInputFeatureConfig, VectorInputFeatureConfigMixin):
     """VectorInputFeatureConfig is a dataclass that configures the parameters used for a vector input feature."""
 
@@ -67,7 +67,7 @@ class VectorOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(VECTOR)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class VectorOutputFeatureConfig(BaseOutputFeatureConfig, VectorOutputFeatureConfigMixin):
     """VectorOutputFeatureConfig is a dataclass that configures the parameters used for a vector output feature."""
 

@@ -11,7 +11,7 @@ from ludwig.utils.tokenizers import tokenizer_registry
 
 @DeveloperAPI
 @register_preprocessor(TIMESERIES)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TimeseriesPreprocessingConfig(BasePreprocessingConfig):
     tokenizer: str = schema_utils.StringOptions(
         tokenizer_registry.keys(),

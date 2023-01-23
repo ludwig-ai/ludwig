@@ -40,7 +40,7 @@ class TextInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TextInputFeatureConfig(BaseInputFeatureConfig, TextInputFeatureConfigMixin):
     """TextInputFeatureConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -67,7 +67,7 @@ class TextOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TextOutputFeatureConfig(BaseOutputFeatureConfig, TextOutputFeatureConfigMixin):
     """TextOutputFeatureConfig is a dataclass that configures the parameters used for a text output feature."""
 

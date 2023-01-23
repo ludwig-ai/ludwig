@@ -13,7 +13,7 @@ from ludwig.utils import strings_utils
 
 @DeveloperAPI
 @register_preprocessor(BINARY)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BinaryPreprocessingConfig(BasePreprocessingConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -61,7 +61,7 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("binary_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],

@@ -11,7 +11,7 @@ from ludwig.utils import strings_utils
 
 @DeveloperAPI
 @register_preprocessor(SEQUENCE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequencePreprocessingConfig(BasePreprocessingConfig):
     tokenizer: str = schema_utils.String(
         default="space",
@@ -107,7 +107,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("sequence_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,

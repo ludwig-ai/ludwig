@@ -18,7 +18,7 @@ from ludwig.schema.metadata import LOSS_METADATA
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
     """Base class for feature configs."""
 
@@ -28,7 +28,7 @@ class BaseLossConfig(schema_utils.BaseMarshmallowConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class MSELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_SQUARED_ERROR,
@@ -43,7 +43,7 @@ class MSELossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class MAELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         MEAN_ABSOLUTE_ERROR,
@@ -58,7 +58,7 @@ class MAELossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class RMSELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_ERROR,
@@ -73,7 +73,7 @@ class RMSELossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class RMSPELossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
@@ -88,7 +88,7 @@ class RMSPELossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BWCEWLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         BINARY_WEIGHTED_CROSS_ENTROPY,
@@ -121,7 +121,7 @@ class BWCEWLossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SOFTMAX_CROSS_ENTROPY,
@@ -169,7 +169,7 @@ class SoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SEQUENCE_SOFTMAX_CROSS_ENTROPY,
@@ -223,7 +223,7 @@ class SequenceSoftmaxCrossEntropyLossConfig(BaseLossConfig):
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SigmoidCrossEntropyLossConfig(BaseLossConfig):
     type: str = schema_utils.ProtectedString(
         SIGMOID_CROSS_ENTROPY,

@@ -10,7 +10,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 
 @DeveloperAPI
 @register_preprocessor(H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3PreprocessingConfig(BasePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,

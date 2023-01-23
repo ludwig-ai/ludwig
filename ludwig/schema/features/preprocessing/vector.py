@@ -10,7 +10,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 
 @DeveloperAPI
 @register_preprocessor(VECTOR)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class VectorPreprocessingConfig(BasePreprocessingConfig):
     vector_size: int = schema_utils.PositiveInteger(
         default=None,
@@ -47,7 +47,7 @@ class VectorPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("vector_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class VectorOutputPreprocessingConfig(VectorPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
