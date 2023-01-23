@@ -43,8 +43,7 @@ from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
-from ludwig.utils import metric_utils
-from ludwig.utils import fs_utils
+from ludwig.utils import fs_utils, metric_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.error_handling_utils import default_retry
