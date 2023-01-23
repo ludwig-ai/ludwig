@@ -348,6 +348,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
     # LightGBM core parameters (https://lightgbm.readthedocs.io/en/latest/Parameters.html)
     boosting_type: str = schema_utils.StringOptions(
+        # TODO: Re-enable "goss" when supported: https://github.com/ludwig-ai/ludwig/issues/2988
         ["gbdt", "dart"],
         default="gbdt",
         description="Type of boosting algorithm to use with GBM trainer.",
