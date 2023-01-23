@@ -15,7 +15,7 @@
 import json
 import logging
 import os.path
-from typing import List
+from typing import Dict, List
 
 import mlflow
 import pandas as pd
@@ -90,7 +90,7 @@ SCENARIOS = [
 ]
 
 
-def _get_config(search_alg, executor):
+def _get_config(search_alg: Dict, executor: Dict, epochs: int):
     input_features = [
         text_feature(name="utterance", encoder={"cell_type": "lstm", "reduce_output": "sum"}),
         category_feature(encoder={"vocab_size": 2}, reduce_input="sum"),
@@ -102,7 +102,7 @@ def _get_config(search_alg, executor):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat"},
-        TRAINER: {"epochs": 2, "learning_rate": 0.001, BATCH_SIZE: 128},
+        TRAINER: {"epochs": epochs, "learning_rate": 0.001, BATCH_SIZE: 128},
         "hyperopt": {
             **HYPEROPT_CONFIG,
             "executor": executor,
@@ -154,13 +154,14 @@ class HyperoptTestCallback(TuneCallback):
 def run_hyperopt_executor(
     search_alg,
     executor,
+    epochs,
     csv_filename,
     tmpdir,
     validate_output_feature=False,
     validation_metric=None,
     use_split=True,
 ):
-    config = _get_config(search_alg, executor)
+    config = _get_config(search_alg, executor, epochs)
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)
 
     if not use_split:
@@ -207,7 +208,9 @@ def run_hyperopt_executor(
 def test_hyperopt_executor(scenario, csv_filename, tmpdir, ray_cluster_4cpu):
     search_alg = scenario["search_alg"]
     executor = scenario["executor"]
-    run_hyperopt_executor(search_alg, executor, csv_filename, tmpdir)
+    # When using the hb_bohb scheduler, num_epochs must equal max_t (which is 81 by default)
+    epochs = 2 if scenario["executor"].get("scheduler", {}).get("type", {}) != "hb_bohb" else 81
+    run_hyperopt_executor(search_alg, executor, epochs, csv_filename, tmpdir)
 
 
 @pytest.mark.distributed
@@ -216,6 +219,7 @@ def test_hyperopt_executor_with_metric(use_split, csv_filename, tmpdir, ray_clus
     run_hyperopt_executor(
         {"type": "variant_generator"},  # search_alg
         {"type": "ray", "num_samples": 2},  # executor
+        2,
         csv_filename,
         tmpdir,
         validate_output_feature=True,
@@ -304,7 +308,9 @@ def test_hyperopt_ray_mlflow(csv_filename, tmpdir, ray_cluster_4cpu):
 
     num_samples = 2
     config = _get_config(
-        {"type": "variant_generator"}, {"type": "ray", "num_samples": num_samples}  # search_alg  # executor
+        {"type": "variant_generator"},  # search_alg
+        {"type": "ray", "num_samples": num_samples},  # executor
+        2,  # epochs
     )
 
     rel_path = generate_data(config["input_features"], config["output_features"], csv_filename)

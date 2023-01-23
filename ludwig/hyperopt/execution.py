@@ -856,7 +856,7 @@ class RayTuneExecutor:
                         stop=CallbackStopper(callbacks),
                         callbacks=tune_callbacks,
                         failure_config=FailureConfig(
-                            max_failures=1,
+                            max_failures=0,
                         ),
                         sync_config=self.sync_config,
                         checkpoint_config=CheckpointConfig(

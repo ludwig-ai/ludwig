@@ -208,7 +208,8 @@ class ALBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
-@register_encoder_config("mt5", TEXT)
+# TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
+# @register_encoder_config("mt5", TEXT)
 @dataclass(repr=False, order=True)
 class MT5Config(BaseEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
@@ -254,7 +255,7 @@ class MT5Config(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["MT5"]["reduce_output"],
     )
@@ -707,7 +708,7 @@ class XLMConfig(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["XLM"]["reduce_output"],
     )
@@ -1906,8 +1907,14 @@ class DistilBERTConfig(BaseEncoderConfig):
 
 
 @DeveloperAPI
+<<<<<<< HEAD
 @register_encoder_config("ctrl", TEXT)
 @dataclass(repr=False, order=True)
+=======
+# TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
+# @register_encoder_config("ctrl", TEXT)
+@dataclass(repr=False)
+>>>>>>> 8f6a28135cae03e13884d08dd93c0c4fb10d1de4
 class CTRLConfig(BaseEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
@@ -2081,13 +2088,13 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="jplu/camembert-base",
+        default="camembert-base",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["pretrained_model_name_or_path"],
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls-pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["reduce_output"],
     )
