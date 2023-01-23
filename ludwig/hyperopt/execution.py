@@ -359,18 +359,20 @@ class RayTuneExecutor:
 
     @contextlib.contextmanager
     def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
+        # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
+        # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
+        if trial_path[-1] == "/":
+            trial_path = trial_path[:-1]
+
         checkpoint = analysis.get_best_checkpoint(trial=trial_path)
         if checkpoint is None:
             logger.warning("No best model found")
             return None
 
         ckpt_type, ckpt_path = checkpoint.get_internal_representation()
-        if ckpt_type == "uri":
-            # Read remote URIs using Ludwig's internal remote file loading APIs, as
-            # Ray's do not handle custom credentials at the moment.
-            with use_credentials(creds):
-                yield ckpt_path
-        else:
+        # Read remote URIs using Ludwig's internal remote file loading APIs, as
+        # Ray's do not handle custom credentials at the moment.
+        with use_credentials(creds) if ckpt_type == "uri" else contextlib.nullcontext():
             with checkpoint.as_directory() as ckpt_path:
                 yield ckpt_path
 
