@@ -24,6 +24,14 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         description="What strategy to follow when there's a missing value in a binary column",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"],
     )
+    
+    fallback_true_label: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The label to interpret as 1 (True) when the binary feature doesn't have a "
+        "conventional boolean value",
+        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
+    )
 
     fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
         default=None,
@@ -48,14 +56,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         description="The internally computed fill value to replace missing values with in case the "
         "missing_value_strategy is fill_with_mode or fill_with_mean",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["computed_fill_value"],
-    )
-
-    fallback_true_label: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="The label to interpret as 1 (True) when the binary feature doesn't have a "
-        "conventional boolean value",
-        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
     )
 
 
