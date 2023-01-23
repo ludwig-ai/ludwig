@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  benchmark-pytest:
+  success-pytest:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -35,10 +35,17 @@ jobs:
       TORCHSCRIPT_VERISON: ${{ matrix.torchscript-version }}
       RAY_VERSION: ${{ matrix.ray-version }}
 
-    name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
+    name: ${{ matrix.test-markers }}, py${{ matrix.python-version }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
 
     timeout-minutes: 90
     steps:
+      - name: Setup ludwigai/ludwig-ray container for local testing with act.
+        if: ${{ env.ACT }}
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          sudo mkdir -p /opt/hostedtoolcache/
+          sudo chmod 777 -R /opt/hostedtoolcache/
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -56,6 +63,7 @@ jobs:
           brew install libuv
 
       - name: pip cache
+        if: ${{ !env.ACT }}
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
@@ -83,6 +91,7 @@ jobs:
 
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          pip install six
           pip install ray==$RAY_VERSION
           ray_expected=$(python -c "import ray; print(ray.__version__)")
           torch_expected=$(python -c "import torch; print(torch.__version__)")
