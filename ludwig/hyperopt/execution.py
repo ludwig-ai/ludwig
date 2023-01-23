@@ -47,6 +47,7 @@ from ludwig.utils import metric_utils
 from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -84,6 +85,14 @@ def identity(x):
 
 def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
+
+
+@default_retry()
+def _download_local_tmpdir(ckpt_path: str, tmpdir: str, creds: Dict[str, Any]) -> str:
+    local_ckpt_path = os.path.join(tmpdir, uuid.uuid4().hex)
+    with use_credentials(creds):
+        fs_utils.download(ckpt_path, local_ckpt_path)
+    return local_ckpt_path
 
 
 # Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
@@ -377,10 +386,7 @@ class RayTuneExecutor:
             # Read remote URIs using Ludwig's internal remote file loading APIs, as
             # Ray's do not handle custom credentials at the moment.
             with tempfile.TemporaryDirectory() as tmpdir:
-                local_ckpt_path = os.path.join(tmpdir, "checkpoint")
-                with use_credentials(creds):
-                    fs_utils.download(ckpt_path, local_ckpt_path)
-                yield local_ckpt_path
+                yield _download_local_tmpdir(ckpt_path, tmpdir, creds)
         else:
             yield ckpt_path
 

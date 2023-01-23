@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import json
+import os
 import os.path
 import uuid
 from typing import Dict, Tuple
@@ -349,6 +350,7 @@ def _run_hyperopt_run_hyperopt(csv_filename, search_space, tmpdir, backend, ray_
     ) as path:
         assert path is not None
         assert isinstance(path, str)
+        assert "model" in os.listdir(path)
 
 
 @pytest.mark.parametrize("search_space", ["random", "grid"])
