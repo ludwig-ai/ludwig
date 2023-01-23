@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 import threading
 import time
 import traceback
@@ -43,6 +44,7 @@ from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
 from ludwig.utils import metric_utils
+from ludwig.utils import fs_utils
 from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
@@ -371,11 +373,16 @@ class RayTuneExecutor:
             return None
 
         ckpt_type, ckpt_path = checkpoint.get_internal_representation()
-        # Read remote URIs using Ludwig's internal remote file loading APIs, as
-        # Ray's do not handle custom credentials at the moment.
-        with use_credentials(creds) if ckpt_type == "uri" else contextlib.nullcontext():
-            with checkpoint.as_directory() as ckpt_path:
-                yield ckpt_path
+        if ckpt_type == "uri":
+            # Read remote URIs using Ludwig's internal remote file loading APIs, as
+            # Ray's do not handle custom credentials at the moment.
+            with tempfile.TemporaryDirectory() as tmpdir:
+                local_ckpt_path = os.path.join(tmpdir, "checkpoint")
+                with use_credentials(creds):
+                    fs_utils.download(ckpt_path, local_ckpt_path)
+                yield local_ckpt_path
+        else:
+            yield ckpt_path
 
     @staticmethod
     def _evaluate_best_model(
