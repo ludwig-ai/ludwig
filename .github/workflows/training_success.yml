@@ -1,16 +1,18 @@
 # This workflow will install Python dependencies, and run benchmarks on a few datasets
 # to test model performance regressions.
 
-name: benchmark
+name: success
 
 on:
   push:
+    branches: ["master", "release-*"]
+  pull_request:
     branches: ["master", "release-*"]
 
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
 concurrency:
-  group: benchmark-${{ github.head_ref || github.sha }}
+  group: success-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -20,8 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.8]
-        test-markers: ["benchmark"]
+        python-version: [3.9]
+        test-markers: ["number_feature", "category_feature", "binary_feature", "text_feature"]
         include:
           - python-version: "3.9"
             pytorch-version: 1.13.0
@@ -35,7 +37,7 @@ jobs:
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
 
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -95,7 +97,7 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
-          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests/regression_tests/benchmark
+          pytest -s -v -m "$MARKERS" --junitxml pytest.xml tests/training_success
 
       - name: Upload Unit Test Results
         if: always()
