@@ -58,7 +58,6 @@ class CategoryPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("category_output")
 @dataclass(repr=False, order=True)
 class CategoryOutputPreprocessingConfig(CategoryPreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,

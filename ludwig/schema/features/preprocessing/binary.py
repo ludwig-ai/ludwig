@@ -63,7 +63,6 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("binary_output")
 @dataclass(repr=False, order=True)
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],
         default=DROP_ROW,

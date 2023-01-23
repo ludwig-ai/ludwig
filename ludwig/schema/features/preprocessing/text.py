@@ -120,7 +120,6 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("text_output")
 @dataclass(repr=False, order=True)
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,

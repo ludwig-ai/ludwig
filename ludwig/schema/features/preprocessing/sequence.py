@@ -109,7 +109,6 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
 @register_preprocessor("sequence_output")
 @dataclass(repr=False, order=True)
 class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
-
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
         default=DROP_ROW,
