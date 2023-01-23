@@ -82,10 +82,12 @@ def test_grid_search_more_than_one_sample():
     with pytest.warns(RuntimeWarning):
         log_warning_if_all_grid_type_parameters(
             {
-                "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.1]},
-                "defaults.text.encoder.type": {"space": "grid_search", "values": ["parallel_cnn", "stacked_cnn"]},
-            },
-            num_samples=2,
+                "parameters": {
+                    "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.1]},
+                    "defaults.text.encoder.type": {"space": "grid_search", "values": ["parallel_cnn", "stacked_cnn"]},
+                },
+                "executor": {"num_samples": 2},
+            }
         )
 
 
