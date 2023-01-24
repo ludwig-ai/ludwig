@@ -37,6 +37,7 @@ jobs:
             pytorch-version: nightly
             torchscript-version: 1.10.2
             ray-version: 2.2.0 # TODO: Upgrade to nightly.
+    env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
