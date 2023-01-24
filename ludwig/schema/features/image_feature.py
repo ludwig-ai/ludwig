@@ -39,9 +39,11 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
             ),
             AugmentationContainerDataclassField(
                 feature_type=IMAGE,
-                description="Augmentation operation configuration.", ),
-        ]
+                description="Augmentation operation configuration.",
+            ),
+        ],
     )
+
 
 @DeveloperAPI
 @input_config_registry.register(IMAGE)

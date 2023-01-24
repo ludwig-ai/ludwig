@@ -6,6 +6,7 @@ from marshmallow import fields, ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
 
 _augmentation_config_registry = Registry()
@@ -89,9 +90,7 @@ def AugmentationContainerDataclassField(feature_type: str, default=[], descripti
                 load_augmentation_list.append(pre.Schema().load(augmentation))
                 dump_augmentation_list.append(pre.Schema().dump(augmentation))
             except (TypeError, ValidationError) as error:
-                raise ValidationError(
-                    f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}"
-                )
+                raise ValidationError(f"Invalid augmentation params: {default}, see `{pre}` definition. Error: {error}")
         load_default = load_augmentation_list
         dump_default = dump_augmentation_list
 
