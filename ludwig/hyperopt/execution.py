@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 import threading
 import time
 import traceback
@@ -42,9 +43,10 @@ from ludwig.hyperopt.utils import load_json_values, substitute_parameters
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.schema.model_config import ModelConfig
 from ludwig.types import ModelConfigDict
-from ludwig.utils import metric_utils
-from ludwig.utils.data_utils import hash_dict, NumpyEncoder
+from ludwig.utils import fs_utils, metric_utils
+from ludwig.utils.data_utils import hash_dict, NumpyEncoder, use_credentials
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.error_handling_utils import default_retry
 from ludwig.utils.fs_utils import has_remote_protocol, safe_move_file
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -82,6 +84,14 @@ def identity(x):
 
 def _get_relative_checkpoints_dir_parts(path: Path):
     return path.parts[-2:]
+
+
+@default_retry()
+def _download_local_tmpdir(ckpt_path: str, tmpdir: str, creds: Dict[str, Any]) -> str:
+    local_ckpt_path = os.path.join(tmpdir, uuid.uuid4().hex)
+    with use_credentials(creds):
+        fs_utils.download(ckpt_path, local_ckpt_path)
+    return local_ckpt_path
 
 
 # Follwing disabled at the moment, expect to be re-enabled pending https://github.com/ludwig-ai/ludwig/issues/2039
@@ -357,28 +367,26 @@ class RayTuneExecutor:
                 # Remove checkpoint marker on incomplete directory
                 os.remove(marker_path)
 
+    @staticmethod
     @contextlib.contextmanager
-    def _get_best_model_path(self, trial_path: str, analysis: ExperimentAnalysis) -> str:
-        remote_checkpoint_dir = self._get_remote_checkpoint_dir(Path(trial_path))
-        if remote_checkpoint_dir is not None:
-            self.sync_client.sync_down(remote_checkpoint_dir, trial_path)
-            self.sync_client.wait_or_retry()
-        self._remove_partial_checkpoints(trial_path)  # needed by get_best_checkpoint
+    def _get_best_model_path(trial_path: str, analysis: ExperimentAnalysis, creds: Dict[str, Any]) -> str:
+        # `trial_dir` returned by RayTune may have a leading slash, but get_best_checkpoint
+        # requires a path without a leading slash since it does a direct key lookup with analysis.trial_dataframes.
+        trial_path = trial_path.rstrip("/") if isinstance(trial_path, str) else trial_path
 
-        try:
-            checkpoint = analysis.get_best_checkpoint(trial_path.rstrip("/"))
-        except Exception:
-            logger.warning(
-                f"Cannot get best model path for {trial_path} due to exception below:\n{traceback.format_exc()}"
-            )
-            yield None
-            return
+        checkpoint = analysis.get_best_checkpoint(trial=trial_path)
+        if checkpoint is None:
+            logger.warning("No best model found")
+            return None
 
-        if checkpoint is not None:
-            with checkpoint.as_directory() as path:
-                yield path
+        ckpt_type, ckpt_path = checkpoint.get_internal_representation()
+        if ckpt_type == "uri":
+            # Read remote URIs using Ludwig's internal remote file loading APIs, as
+            # Ray's do not handle custom credentials at the moment.
+            with tempfile.TemporaryDirectory() as tmpdir:
+                yield _download_local_tmpdir(ckpt_path, tmpdir, creds)
         else:
-            yield checkpoint
+            yield ckpt_path
 
     @staticmethod
     def _evaluate_best_model(
@@ -901,7 +909,9 @@ class RayTuneExecutor:
                     # Evaluate the best model on the eval_split, which is validation_set
                     if validation_set is not None and validation_set.size > 0:
                         trial_path = trial["trial_dir"]
-                        with self._get_best_model_path(trial_path, analysis) as best_model_path:
+                        with self._get_best_model_path(
+                            trial_path, analysis, backend.storage.artifacts.credentials
+                        ) as best_model_path:
                             if best_model_path is not None:
                                 self._evaluate_best_model(
                                     trial,
@@ -1043,11 +1053,6 @@ def run_experiment(
     finally:
         for callback in callbacks or []:
             callback.on_hyperopt_trial_end(parameters)
-
-
-def _run_experiment_unary(kwargs):
-    """Unary function is needed by Fiber to map a list of args."""
-    return run_experiment(**kwargs)
 
 
 def _get_num_cpus_gpus(use_gpu: bool):
