@@ -16,8 +16,9 @@ from ludwig.schema.metadata import TRAINER_METADATA
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
-    decay: Optional[str] = schema_utils.StringOptions(
-        ["linear", "exponential"],
+    decay: str = schema_utils.StringOptions(
+        options=["linear", "exponential"],
+        default=None,
         description="Turn on decay of the learning rate.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
     )
