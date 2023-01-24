@@ -136,12 +136,12 @@ AUGMENTATION_PIPELINE_OPS = [
     [{"type": "random_blur"}, {"type": "random_rotate"}],
 ]
 
-AUGMENTATION_ENCODER = [
+IMAGE_ENCODER = [
     {"type": "stacked_cnn"},
     {"type": "alexnet", "model_cache_dir": os.path.join(os.getcwd(), "tv_cache")},
 ]
 
-AUGMENTATION_PREPROCESSING = [
+IMAGE_PREPROCESSING = [
     {
         "standardize_image": None,
         "width": 300,
@@ -156,8 +156,8 @@ AUGMENTATION_PREPROCESSING = [
 
 
 @pytest.mark.parametrize("augmentation_pipeline_ops", AUGMENTATION_PIPELINE_OPS)
-@pytest.mark.parametrize("encoder", AUGMENTATION_ENCODER)
-@pytest.mark.parametrize("preprocessing", AUGMENTATION_PREPROCESSING)
+@pytest.mark.parametrize("encoder", IMAGE_ENCODER)
+@pytest.mark.parametrize("preprocessing", IMAGE_PREPROCESSING)
 def test_local_model_training_with_augmentation_pipeline(
     train_data,
     encoder,
@@ -173,13 +173,13 @@ def test_local_model_training_with_augmentation_pipeline(
     )
 
 
+# due to the time it takes to run the tests, run only a subset of the tests
+# and focus on interaction of Ludwig encoder with image preprocessing and augmentation
 @pytest.mark.distributed
 @pytest.mark.parametrize("augmentation_pipeline_ops", AUGMENTATION_PIPELINE_OPS)
-@pytest.mark.parametrize("encoder", AUGMENTATION_ENCODER)
-@pytest.mark.parametrize("preprocessing", AUGMENTATION_PREPROCESSING)
+@pytest.mark.parametrize("preprocessing", IMAGE_PREPROCESSING)
 def test_ray_model_training_with_augmentation_pipeline(
     train_data,
-    encoder,
     preprocessing,
     augmentation_pipeline_ops,
     ray_cluster_2cpu,
@@ -187,7 +187,7 @@ def test_ray_model_training_with_augmentation_pipeline(
     run_augmentation_training(
         train_data,
         "ray",
-        encoder,
+        {"type": "stacked_cnn"},  # Ludwig encoder
         preprocessing,
         augmentation_pipeline_ops,
     )
