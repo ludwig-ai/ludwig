@@ -167,7 +167,11 @@ def test_hyperopt_config_gbm():
     ids=["all_grid_search", "mixed", "no_grid_search"],
 )
 def test_default_num_samples(parameters, expected_num_samples):
+    """This test ensures that the default number of samples is set correctly when the user does not specify the
+    number of samples in the hyperopt config."""
     config = _get_config()
+
+    # Override to set num_samples to None so we can test inference logic
     config["hyperopt"]["executor"]["num_samples"] = None
     config["hyperopt"]["parameters"] = parameters
 
