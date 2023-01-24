@@ -107,7 +107,6 @@ def run_augmentation_training(
 @pytest.mark.parametrize(
     "augmentation_pipeline_ops",
     [
-        [],
         [{"type": "random_horizontal_flip"}],
         [
             {"type": "random_vertical_flip"},
@@ -132,8 +131,9 @@ def test_image_augmentation(test_image, augmentation_pipeline_ops):
 
 
 AUGMENTATION_PIPELINE_OPS = [
-    None,
-    [{"type": "random_horizontal_flip"}, {"type": "random_rotate"}],
+    False,
+    True,
+    [{"type": "random_blur"}, {"type": "random_rotate"}],
 ]
 
 AUGMENTATION_ENCODER = [
