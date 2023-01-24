@@ -1387,7 +1387,6 @@ def balance_data(dataset_df: DataFrame, output_features: List[Dict], preprocessi
 
     Returns: An over-sampled or under-sampled training dataset.
     """
-
     if len(output_features) != 1:
         raise ValueError("Class balancing is only available for datasets with a single output feature")
     if output_features[0][TYPE] != BINARY:

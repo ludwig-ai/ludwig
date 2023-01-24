@@ -162,7 +162,8 @@ class LudwigFeatureDict(torch.nn.Module):
     This class is a simple wrapper around torch's ModuleDict that mitigates possible conflicts by using a key-suffixing
     protocol.
 
-    This is also tracked in Pytorch: https://github.com/pytorch/pytorch/issues/71203.
+    This is also tracked in Pytorch:
+    https://github.com/pytorch/pytorch/issues/71203.
     """
 
     def __init__(self):

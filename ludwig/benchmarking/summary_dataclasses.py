@@ -36,7 +36,6 @@ class MetricDiff:
 
     def __post_init__(self):
         """Add human-readable string representations to the field."""
-
         if "memory" in self.name:
             self.base_value_str = format_memory(self.base_value)
             self.experimental_value_str = format_memory(self.experimental_value)

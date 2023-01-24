@@ -56,7 +56,6 @@ def _sparsemax_threshold_and_support(X, dim=-1, k=None):
     support_size : torch LongTensor, shape like `tau`
         the number of nonzeros in each vector.
     """
-
     if k is None or k >= X.shape[dim]:  # do full sort
         topk, _ = torch.sort(X, dim=dim, descending=True)
     else:
@@ -107,7 +106,6 @@ def _entmax_threshold_and_support(X, dim=-1, k=None):
     support_size : torch LongTensor, shape like `tau`
         the number of nonzeros in each vector.
     """
-
     if k is None or k >= X.shape[dim]:  # do full sort
         Xsrt, _ = torch.sort(X, dim=dim, descending=True)
     else:

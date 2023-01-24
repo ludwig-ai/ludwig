@@ -406,7 +406,6 @@ def get_field_metadata(fields: List[FieldInfo], row_count: int, targets: Set[str
     # Return
     :return: (List[FieldMetadata]) list of objects containing metadata for each field
     """
-
     metadata = []
     column_count = len(fields)
     for idx, field in enumerate(fields):

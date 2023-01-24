@@ -27,7 +27,6 @@ def topological_sort(graph_unsorted):
     A node has all of its edges resolved and can be moved once all the nodes its edges point to, have been moved from
     the unsorted graph onto the sorted one.
     """
-
     # This is the list we'll return, that stores each node/edges pair
     # in topological order.
     graph_sorted = []

@@ -50,7 +50,6 @@ class Callback(ABC):
         :param training_set_metadata: Values inferred from the training set, including preprocessing settings,
                                       vocabularies, feature statistics, etc. Same as training_set_metadata.json.
         """
-
         pass
 
     def on_hyperopt_init(self, experiment_name: str):

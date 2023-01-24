@@ -167,7 +167,6 @@ class Stacked2DCNN(ImageEncoder):
         :param inputs: The inputs fed into the encoder.
                 Shape: [batch x channels x height x width], type torch.uint8
         """
-
         hidden = self.conv_stack_2d(inputs)
         hidden = self.flatten(hidden)
         outputs = self.fc_stack(hidden)
