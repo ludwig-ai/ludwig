@@ -842,7 +842,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             fs, _ = get_fs_and_path(sample_fname)
 
             read_datasource_fn_kwargs = {
-                "paths": list(zip(fnames, idxs)),
+                "path_and_idxs": list(zip(fnames, idxs)),
                 "filesystem": PyFileSystem(FSSpecHandler(fs)),
             }
             if self.df_engine.partitioned and file_size is not None:
