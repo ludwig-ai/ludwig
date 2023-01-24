@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import Dict, Optional
+from typing import Dict
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
