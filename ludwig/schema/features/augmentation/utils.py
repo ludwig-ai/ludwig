@@ -6,7 +6,6 @@ from marshmallow import fields, ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TYPE
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.features.augmentation.base import BaseAugmentationConfig
 from ludwig.utils.registry import Registry
 
 _augmentation_config_registry = Registry()
