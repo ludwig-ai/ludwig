@@ -875,7 +875,8 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
             self.augmentation_pipeline = ImageAugmentation(
                 (
                     # if augmentation is a list, use it, otherwise use the default augmentation operations
-                    input_feature_config.augmentation if isinstance(input_feature_config.augmentation, list)
+                    input_feature_config.augmentation
+                    if isinstance(input_feature_config.augmentation, list)
                     else AUGMENTATION_DEFAULT_OPERATIONS
                 ),
                 normalize_mean,
