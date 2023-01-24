@@ -132,13 +132,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
         @staticmethod
         def _jsonschema_type_mapping():
             return {
-                "oneOf": [
-                    {"type": "null", "title": "disabled", "description": "Disable learning rate scheduler."},
-                    {
-                        **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
-                        "title": "enabled_options",
-                    },
-                ],
+                **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
                 "title": "learning_rate_scheduler_options",
                 "description": description,
             }
