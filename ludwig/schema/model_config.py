@@ -519,7 +519,7 @@ class ModelConfig(BaseMarshmallowConfig):
         self.hyperopt = HyperoptConfig.from_dict(self.hyperopt).to_dict()
 
         # Set default num_samples based on search space if not set by user
-        if self.hyperopt.get(EXECUTOR).get(NUM_SAMPLES) is None:
+        if self.hyperopt[EXECUTOR].get(NUM_SAMPLES) is None:
             _contains_grid_search_params = contains_grid_search_parameters(self.hyperopt)
             if _contains_grid_search_params:
                 logger.info(
