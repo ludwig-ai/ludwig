@@ -125,7 +125,7 @@ jobs:
           if [ "$MARKERS" == "distributed" ]; then
             if [ "$RAY_VERSION" == "nightly" ]; then
               # NOTE: hardcoded for python 3.9 on Linux
-              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp39-cp39-manylinux2014_x86_64.whl
+              pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-3.0.0.dev0-cp310-cp310-manylinux2014_x86_64.whl
             else
               # installing `six` early resolves ModuleNotFound error in ray==2.1.0
               pip install six
