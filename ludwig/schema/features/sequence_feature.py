@@ -40,7 +40,7 @@ class SequenceInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(SEQUENCE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequenceInputFeatureConfig(BaseInputFeatureConfig, SequenceInputFeatureConfigMixin):
     """SequenceInputFeatureConfig is a dataclass that configures the parameters used for a sequence input
     feature."""
@@ -68,7 +68,7 @@ class SequenceOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(SEQUENCE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequenceOutputFeatureConfig(BaseOutputFeatureConfig, SequenceOutputFeatureConfigMixin):
     """SequenceOutputFeatureConfig is a dataclass that configures the parameters used for a sequence output
     feature."""

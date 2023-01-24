@@ -40,7 +40,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(SET)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
 
@@ -67,7 +67,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(SET)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 

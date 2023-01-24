@@ -12,7 +12,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("embed", H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3EmbedConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -108,7 +108,7 @@ class H3EmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("weighted_sum", H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3WeightedSumConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -204,7 +204,7 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("rnn", H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3RNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():

@@ -42,7 +42,7 @@ class NumberInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(NUMBER)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class NumberInputFeatureConfig(BaseInputFeatureConfig, NumberInputFeatureConfigMixin):
     """NumberInputFeatureConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -69,7 +69,7 @@ class NumberOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(NUMBER)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class NumberOutputFeatureConfig(BaseOutputFeatureConfig, NumberOutputFeatureConfigMixin):
     """NumberOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""
