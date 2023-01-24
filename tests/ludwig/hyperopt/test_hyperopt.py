@@ -10,6 +10,33 @@ BASE_CONFIG = {
 }
 
 
+def _get_config():
+    return {
+        "input_features": [{"name": "Date received", "type": "category"}],
+        "output_features": [{"name": "Product", "type": "category"}],
+        "hyperopt": {
+            "goal": "minimize",
+            "metric": "loss",
+            "executor": {
+                "type": "ray",
+                "scheduler": {
+                    "type": "async_hyperband",
+                    "max_t": 3600,
+                    "time_attr": "time_total_s",
+                    "grace_period": 72,
+                    "reduction_factor": 5,
+                },
+                "num_samples": 10,
+                "time_budget_s": 3600,
+                "cpu_resources_per_trial": 1,
+            },
+            "parameters": {"trainer.learning_rate": {"space": "choice", "categories": [0.005, 0.01, 0.02, 0.025]}},
+            "search_alg": {"type": "hyperopt", "random_state_seed": 42},
+            "output_feature": "Product",
+        },
+    }
+
+
 @pytest.mark.parametrize(
     "parameters, expected",
     [
@@ -98,31 +125,52 @@ def test_hyperopt_config_gbm():
 
     ```jsonschema.exceptions.ValidationError: Additional properties are not allowed ('epochs' was unexpected)```
     """
-    config = {
-        "input_features": [{"name": "Date received", "type": "category"}],
-        "output_features": [{"name": "Product", "type": "category"}],
-        "hyperopt": {
-            "goal": "minimize",
-            "metric": "loss",
-            "executor": {
-                "type": "ray",
-                "scheduler": {
-                    "type": "async_hyperband",
-                    "max_t": 3600,
-                    "time_attr": "time_total_s",
-                    "grace_period": 72,
-                    "reduction_factor": 5,
-                },
-                "num_samples": 10,
-                "time_budget_s": 3600,
-                "cpu_resources_per_trial": 1,
-            },
-            "parameters": {"trainer.learning_rate": {"space": "choice", "categories": [0.005, 0.01, 0.02, 0.025]}},
-            "search_alg": {"type": "hyperopt", "random_state_seed": 42},
-            "output_feature": "Product",
-        },
-        "model_type": "gbm",
-    }
+    config = _get_config()
+    config["model_type"] = "gbm"
 
     # Config should not raise an exception
     ModelConfig.from_dict(config)
+
+
+@pytest.mark.parametrize(
+    "parameters, expected_num_samples",
+    [
+        (
+            {
+                "trainer.learning_rate": {"space": "grid_search", "values": [0.001, 0.005, 0.1]},
+                "defaults.category.encoder.type": {"space": "grid_search", "values": ["dense", "sparse"]},
+            },
+            1,
+        ),
+        (
+            {
+                "trainer.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.0001,
+                    "upper": 0.01,
+                },
+                "defaults.category.encoder.type": {"space": "grid_search", "values": ["dense", "sparse"]},
+            },
+            1,
+        ),
+        (
+            {
+                "trainer.learning_rate": {
+                    "space": "loguniform",
+                    "lower": 0.0001,
+                    "upper": 0.01,
+                },
+            },
+            10,
+        ),
+    ],
+    ids=["all_grid_search", "mixed", "no_grid_search"],
+)
+def test_default_num_samples(parameters, expected_num_samples):
+    config = _get_config()
+    config["hyperopt"]["executor"]["num_samples"] = None
+    config["hyperopt"]["parameters"] = parameters
+
+    processed_config = ModelConfig.from_dict(config).to_dict()
+
+    assert processed_config["hyperopt"]["executor"]["num_samples"] == expected_num_samples

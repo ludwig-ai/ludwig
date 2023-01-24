@@ -1,4 +1,5 @@
 import copy
+import logging
 import sys
 import warnings
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ from ludwig.constants import (
     MODEL_GBM,
     MODEL_TYPE,
     NAME,
+    NUM_SAMPLES,
     NUMBER,
     OPTIMIZER,
     OUTPUT_FEATURES,
@@ -40,6 +42,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_utils import compute_feature_hash
+from ludwig.hyperopt.utils import contains_grid_search_parameters
 from ludwig.modules.loss_modules import get_loss_cls
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
@@ -64,6 +67,9 @@ from ludwig.types import FeatureConfigDict, ModelConfigDict
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 from ludwig.utils.misc_utils import set_default_value
+
+logger = logging.getLogger(__name__)
+
 
 DEFAULTS_MODULES = {NAME, COLUMN, PROC_COLUMN, TYPE, TIED, DEFAULT_VALIDATION_METRIC}
 
@@ -512,7 +518,20 @@ class ModelConfig(BaseMarshmallowConfig):
         # This fills in missing splits, executor config, search_alg, etc.
         self.hyperopt = HyperoptConfig.from_dict(self.hyperopt).to_dict()
 
-        scheduler = self.hyperopt.get("executor", {}).get("scheduler")
+        # Set default num_samples based on search space if not set by user
+        if self.hyperopt.get(EXECUTOR).get(NUM_SAMPLES) is None:
+            _contains_grid_search_params = contains_grid_search_parameters(self.hyperopt)
+            if _contains_grid_search_params:
+                logger.info(
+                    "Setting hyperopt num_samples to 1 to prevent duplicate trials from being run. Duplicate trials are"
+                    " created when there are hyperopt parameters that use the `grid_search` search space.",
+                )
+                self.hyperopt[EXECUTOR][NUM_SAMPLES] = 1
+            else:
+                logger.info("Setting hyperopt num_samples to 10.")
+                self.hyperopt[EXECUTOR][NUM_SAMPLES] = 10
+
+        scheduler = self.hyperopt.get(EXECUTOR, {}).get("scheduler")
         if not scheduler:
             return
 
