@@ -79,6 +79,8 @@ def test_substitute_parameters(parameters, expected):
 
 
 def test_grid_search_more_than_one_sample():
+    """Test logs a user warning indicating that duplicate trials will be created because all of the parameters in
+    the search space are of type grid_search and the number of samples is greater than 1."""
     with pytest.warns(RuntimeWarning):
         log_warning_if_all_grid_type_parameters(
             {
