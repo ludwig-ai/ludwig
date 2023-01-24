@@ -72,6 +72,12 @@ from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 IMAGENET1K_MEAN = [0.485, 0.456, 0.406]
 IMAGENET1K_STD = [0.229, 0.224, 0.225]
 
+# Augmentation operations when augmentation is set to True
+AUGMENTATION_DEFAULT_OPERATIONS = [
+    {"type": "random_horizontal_flip"},
+    {"type": "random_rotate", "degree": 15},
+]
+
 logger = logging.getLogger(__name__)
 
 _augmentation_op_registry = Registry()
@@ -867,7 +873,11 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
             # create augmentation pipeline object
             self.augmentation_pipeline = ImageAugmentation(
-                input_feature_config.augmentation,
+                (
+                    # if augmentation is a list, use it, otherwise use the default augmentation operations
+                    input_feature_config.augmentation if isinstance(input_feature_config.augmentation, list)
+                    else AUGMENTATION_DEFAULT_OPERATIONS
+                ),
                 normalize_mean,
                 normalize_std,
             )
