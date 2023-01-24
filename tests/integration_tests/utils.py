@@ -39,6 +39,7 @@ from ludwig.backend import LocalBackend
 from ludwig.constants import (
     AUDIO,
     BAG,
+    BATCH_SIZE,
     BINARY,
     CATEGORY,
     COLUMN,
@@ -371,10 +372,7 @@ def image_feature(folder, **kwargs):
         "type": IMAGE,
         "preprocessing": {"in_memory": True, "height": 12, "width": 12, "num_channels": 3},
         ENCODER: {
-            "type": "resnet",
-            "resnet_size": 8,
-            "num_filters": 8,
-            "output_size": 8,
+            "type": "stacked_cnn",
         },
         "destination_folder": folder,
     }
@@ -506,7 +504,7 @@ def run_experiment(
             "input_features": input_features,
             "output_features": output_features,
             "combiner": {"type": "concat", "output_size": 14},
-            TRAINER: {"epochs": 2},
+            TRAINER: {"epochs": 2, BATCH_SIZE: 128},
         }
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -667,7 +665,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)

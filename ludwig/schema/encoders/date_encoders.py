@@ -12,11 +12,15 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("embed", DATE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class DateEmbedConfig(BaseEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "DateEmbed"
+
     type: str = schema_utils.ProtectedString(
         "embed",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["DateEmbed"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -98,11 +102,15 @@ class DateEmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("wave", DATE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class DateWaveConfig(BaseEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "DateWave"
+
     type: str = schema_utils.ProtectedString(
         "wave",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["DateWave"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

@@ -1,7 +1,7 @@
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import JACCARD, LOSS, SET, SIGMOID_CROSS_ENTROPY
+from ludwig.constants import JACCARD, SET, SIGMOID_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.decoders.base import BaseDecoderConfig
 from ludwig.schema.decoders.utils import DecoderDataclassField
@@ -18,6 +18,7 @@ from ludwig.schema.features.utils import (
     output_config_registry,
     output_mixin_registry,
 )
+from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
 from ludwig.schema.utils import BaseMarshmallowConfig
 
@@ -39,7 +40,7 @@ class SetInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(SET)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SetInputFeatureConfig(BaseInputFeatureConfig, SetInputFeatureConfigMixin):
     """SetInputFeatureConfig is a dataclass that configures the parameters used for a set input feature."""
 
@@ -66,7 +67,7 @@ class SetOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(SET)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixin):
     """SetOutputFeatureConfig is a dataclass that configures the parameters used for a set output feature."""
 
@@ -80,6 +81,7 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     dependencies: list = schema_utils.List(
         default=[],
         description="List of input features that this feature depends on.",
+        parameter_metadata=FEATURE_METADATA[SET]["dependencies"],
     )
 
     preprocessing: BasePreprocessingConfig = PreprocessingDataclassField(feature_type="set_output")
@@ -87,12 +89,14 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
     reduce_dependencies: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce the dependencies of the output feature.",
+        parameter_metadata=FEATURE_METADATA[SET]["reduce_dependencies"],
     )
 
     reduce_input: str = schema_utils.ReductionOptions(
         default="sum",
         description="How to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first "
         "dimension (second if you count the batch dimension)",
+        parameter_metadata=FEATURE_METADATA[SET]["reduce_input"],
     )
 
     threshold: float = schema_utils.FloatRange(
@@ -101,8 +105,5 @@ class SetOutputFeatureConfig(BaseOutputFeatureConfig, SetOutputFeatureConfigMixi
         max=1,
         description="The threshold used to convert output probabilities to predictions. Tokens with predicted"
         "probabilities greater than or equal to threshold are predicted to be in the output set (True).",
+        parameter_metadata=FEATURE_METADATA[SET]["threshold"],
     )
-
-    @staticmethod
-    def get_output_metric_functions():
-        return {LOSS: None, JACCARD: None}

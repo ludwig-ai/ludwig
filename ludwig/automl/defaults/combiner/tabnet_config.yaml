@@ -4,9 +4,10 @@ combiner:
 trainer:
   batch_size: auto
   learning_rate_scaling: sqrt
-  decay: true
-  decay_steps: 20000
-  decay_rate: 0.8
+  learning_rate_scheduler:
+    decay: exponential
+    decay_steps: 20000
+    decay_rate: 0.8
   optimizer:
     type: adam
 

@@ -12,11 +12,15 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("embed", SET)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SetSparseEncoderConfig(BaseEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "SetSparseEncoder"
+
     type: str = schema_utils.ProtectedString(
         "embed",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["SetSparseEncoder"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

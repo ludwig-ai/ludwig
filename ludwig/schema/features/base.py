@@ -1,5 +1,4 @@
 import logging
-from abc import abstractmethod
 from typing import List
 
 from marshmallow_dataclass import dataclass
@@ -140,8 +139,3 @@ class BaseOutputFeatureConfig(BaseFeatureConfig):
         description="Size of the input to the decoder.",
         parameter_metadata=ParameterMetadata(internal_only=True),
     )
-
-    @staticmethod
-    @abstractmethod
-    def get_output_metric_functions():
-        pass

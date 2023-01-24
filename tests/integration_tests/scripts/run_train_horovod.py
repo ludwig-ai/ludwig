@@ -23,7 +23,7 @@ import torch
 
 import ludwig.utils.horovod_utils
 from ludwig.api import LudwigModel
-from ludwig.constants import TRAINER
+from ludwig.constants import BATCH_SIZE, TRAINER
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, "..", "..", "..")
@@ -41,7 +41,7 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         "input_features": input_features,
         "output_features": output_features,
         "combiner": {"type": "concat", "output_size": 14},
-        TRAINER: {"epochs": 2},
+        TRAINER: {"epochs": 2, BATCH_SIZE: 128},
     }
 
     model = LudwigModel(config)

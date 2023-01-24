@@ -12,21 +12,9 @@ from ludwig.schema.metadata import TRAINER_METADATA
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
-
-    warmup_evaluations: int = schema_utils.NonNegativeFloat(
-        default=0,
-        description="Number of evaluation steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
-    )
-
-    warmup_fraction: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Fraction of total training steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
-    )
 
     decay: Optional[str] = schema_utils.StringOptions(
         ["linear", "exponential"],
@@ -34,17 +22,17 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
     )
 
-    decay_steps: int = schema_utils.PositiveInteger(
-        default=10000,
-        description="The number of steps to take in the exponential learning rate decay.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
-    )
-
     decay_rate: float = schema_utils.FloatRange(
         default=0.96,
         min=0,
         max=1,
         description="Decay per epoch (%): Factor to decrease the Learning rate.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
+    )
+
+    decay_steps: int = schema_utils.PositiveInteger(
+        default=10000,
+        description="The number of steps to take in the exponential learning rate decay.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
     )
 
@@ -77,6 +65,18 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         max=1,
         description="Rate at which we reduce the learning rate when `reduce_on_plateau > 0`.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_on_plateau_rate"],
+    )
+
+    warmup_evaluations: int = schema_utils.NonNegativeFloat(
+        default=0,
+        description="Number of evaluation steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
+    )
+
+    warmup_fraction: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Fraction of total training steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
     )
 
     reduce_eval_metric: str = schema_utils.String(

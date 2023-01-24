@@ -79,6 +79,10 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
 
     :return: A list of variables, one for each input feature. Shape of each variable is [batch size, embedding size].
     """
+    # Ignore sample_ratio from the model config, since we want to explain all the data.
+    sample_ratio_bak = model.config_obj.preprocessing.sample_ratio
+    model.config_obj.preprocessing.sample_ratio = 1.0
+
     # Convert raw input data into preprocessed tensor data
     dataset, _ = preprocess_for_prediction(
         model.config_obj.to_dict(),
@@ -90,6 +94,14 @@ def get_input_tensors(model: LudwigModel, input_set: pd.DataFrame) -> List[torch
         backend=model.backend,
         callbacks=model.callbacks,
     )
+
+    # Restore sample_ratio
+    model.config_obj.preprocessing.sample_ratio = sample_ratio_bak
+
+    # Make sure the number of rows in the preprocessed dataset matches the number of rows in the input data
+    assert (
+        dataset.to_df().shape[0] == input_set.shape[0]
+    ), f"Expected {input_set.shape[0]} rows in preprocessed dataset, but got {dataset.to_df().shape[0]}"
 
     # Convert dataset into a dict of tensors, and split each tensor into batches to control GPU memory usage
     inputs = {
@@ -277,6 +289,8 @@ def get_total_attribution(
             tuple(input_batch),
             baselines=tuple(baseline),
             target=target_idx,
+            # https://captum.ai/docs/faq#i-am-facing-out-of-memory-oom-errors-when-using-captum-how-do-i-resolve-this
+            internal_batch_size=model.config_obj.trainer.batch_size,
         )
 
         attributions_reduced = []

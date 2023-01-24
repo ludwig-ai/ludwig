@@ -1,7 +1,9 @@
+from typing import Union
+
 from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import BFILL, IMAGE, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
+from ludwig.constants import BFILL, IMAGE, IMAGENET1K, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
@@ -10,7 +12,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 
 @DeveloperAPI
 @register_preprocessor(IMAGE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class ImagePreprocessingConfig(BasePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -110,12 +112,12 @@ class ImagePreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["infer_image_sample_size"],
     )
 
-    scaling: str = schema_utils.StringOptions(
-        ["pixel_normalization", "pixel_standardization"],
-        default="pixel_normalization",
-        allow_none=False,
-        description="The scaling strategy for pixel values in the image.",
-        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["scaling"],
+    standardize_image: Union[str, None] = schema_utils.StringOptions(
+        [IMAGENET1K],
+        default=None,
+        allow_none=True,
+        description="Standardize image by per channel mean centering and standard deviation scaling .",
+        parameter_metadata=FEATURE_METADATA[IMAGE][PREPROCESSING]["standardize_image"],
     )
 
     in_memory: bool = schema_utils.Boolean(

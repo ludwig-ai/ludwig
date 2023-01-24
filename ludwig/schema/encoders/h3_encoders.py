@@ -12,11 +12,15 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("embed", H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3EmbedConfig(BaseEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "H3Embed"
+
     type: str = schema_utils.ProtectedString(
         "embed",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["H3Embed"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -104,11 +108,15 @@ class H3EmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("weighted_sum", H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3WeightedSumConfig(BaseEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "H3WeightedSum"
+
     type: str = schema_utils.ProtectedString(
         "weighted_sum",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["H3WeightedSum"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -196,11 +204,15 @@ class H3WeightedSumConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("rnn", H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3RNNConfig(BaseEncoderConfig):
+    @staticmethod
+    def module_name():
+        return "H3RNN"
+
     type: str = schema_utils.ProtectedString(
         "rnn",
-        description="Type of encoder.",
+        description=ENCODER_METADATA["H3RNN"]["type"].long_description,
     )
 
     dropout: float = schema_utils.FloatRange(

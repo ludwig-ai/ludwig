@@ -21,7 +21,17 @@ from unittest import mock
 
 import pytest
 
-from ludwig.constants import COMBINER, EPOCHS, HYPEROPT, INPUT_FEATURES, NAME, OUTPUT_FEATURES, TRAINER, TYPE
+from ludwig.constants import (
+    BATCH_SIZE,
+    COMBINER,
+    EPOCHS,
+    HYPEROPT,
+    INPUT_FEATURES,
+    NAME,
+    OUTPUT_FEATURES,
+    TRAINER,
+    TYPE,
+)
 from ludwig.hyperopt.run import hyperopt
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
@@ -214,6 +224,6 @@ def _get_sample_config():
         INPUT_FEATURES: input_features,
         OUTPUT_FEATURES: output_features,
         COMBINER: {TYPE: "concat", "num_fc_layers": 2},
-        TRAINER: {EPOCHS: 2, "learning_rate": 0.001},
+        TRAINER: {EPOCHS: 2, "learning_rate": 0.001, BATCH_SIZE: 128},
     }
     return config, rel_path

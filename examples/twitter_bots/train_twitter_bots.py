@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+"""Trains model on Twitter Bots dataset using default settings."""
 import logging
 import os
 import shutil
@@ -13,16 +13,18 @@ from ludwig.visualize import confusion_matrix, learning_curves
 
 if __name__ == "__main__":
     # Cleans out prior results
-    shutil.rmtree("./results", ignore_errors=True)
-    shutil.rmtree(".visualizations", ignore_errors=True)
+    results_dir = os.path.join("outputs", "results")
+    visualizations_dir = os.path.join("outputs", "visualizations")
+    shutil.rmtree(results_dir, ignore_errors=True)
+    shutil.rmtree(visualizations_dir, ignore_errors=True)
 
     # Loads the dataset
-    twitter_bots_dataset = datasets.get_dataset("twitter_bots", cache_dir="./downloads")
+    twitter_bots_dataset = datasets.get_dataset("twitter_bots", cache_dir="downloads")
     training_set, val_set, test_set = twitter_bots_dataset.load(split=True)
 
     # Moves profile images into local directory, so relative paths in the dataset will be resolved.
-    if not os.path.exists("./profile_images"):
-        rename(os.path.join(twitter_bots_dataset.processed_dataset_path, "profile_images"), "./profile_images")
+    if not os.path.exists("profile_images"):
+        rename(os.path.join(twitter_bots_dataset.processed_dataset_dir, "profile_images"), "profile_images")
 
     config = yaml.safe_load(
         """
@@ -67,11 +69,11 @@ if __name__ == "__main__":
 
     model = LudwigModel(config, logging_level=logging.INFO)
 
-    train_stats, preprocessed_data, output_directory = model.train(dataset=training_set)
+    train_stats, preprocessed_data, output_directory = model.train(dataset=training_set, output_directory=results_dir)
 
     # Generates predictions and performance statistics for the test set.
     test_stats, predictions, output_directory = model.evaluate(
-        test_set, collect_predictions=True, collect_overall_stats=True
+        test_set, collect_predictions=True, collect_overall_stats=True, output_directory=results_dir
     )
 
     confusion_matrix(
@@ -81,11 +83,11 @@ if __name__ == "__main__":
         top_n_classes=[2],
         model_names=[""],
         normalize=True,
-        output_directory="./visualizations",
+        output_directory=visualizations_dir,
         file_format="png",
     )
 
     # Visualizes learning curves, which show how performance metrics changed over time during training.
     learning_curves(
-        train_stats, output_feature_name="account_type", output_directory="./visualizations", file_format="png"
+        train_stats, output_feature_name="account_type", output_directory=visualizations_dir, file_format="png"
     )

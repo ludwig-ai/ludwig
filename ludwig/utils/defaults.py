@@ -20,10 +20,10 @@ import logging
 import yaml
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation.validation import validate_config
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.schema import validate_config
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
 from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version

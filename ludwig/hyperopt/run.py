@@ -21,7 +21,6 @@ from ludwig.constants import (
     MAX_CONCURRENT_TRIALS,
     METRIC,
     NAME,
-    NUM_SAMPLES,
     OUTPUT_FEATURES,
     PARAMETERS,
     PREPROCESSING,
@@ -33,7 +32,6 @@ from ludwig.constants import (
     VALIDATION,
 )
 from ludwig.data.split import get_splitter
-from ludwig.features.feature_registries import get_output_type_registry
 from ludwig.hyperopt.results import HyperoptResults
 from ludwig.hyperopt.utils import (
     log_warning_if_all_grid_type_parameters,
@@ -47,7 +45,6 @@ from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_ve
 from ludwig.utils.dataset_utils import generate_dataset_statistics
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.fs_utils import makedirs, open_file
-from ludwig.utils.misc_utils import get_from_registry
 
 try:
     from ray.tune import Callback as TuneCallback
@@ -233,7 +230,7 @@ def hyperopt(
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     # Check if all features are grid type parameters and log UserWarning if needed
-    log_warning_if_all_grid_type_parameters(hyperopt_config[PARAMETERS], hyperopt_config[EXECUTOR].get(NUM_SAMPLES))
+    log_warning_if_all_grid_type_parameters(hyperopt_config)
 
     # Infer max concurrent trials
     if hyperopt_config[EXECUTOR].get(MAX_CONCURRENT_TRIALS) == AUTO:
@@ -295,23 +292,6 @@ def hyperopt(
                 'The output feature specified for hyperopt "{}" '
                 "cannot be found in the config. "
                 'Available ones are: {} and "combined"'.format(output_feature, output_feature_names)
-            )
-
-        output_feature_type = None
-        for of in full_config[OUTPUT_FEATURES]:
-            if of[NAME] == output_feature:
-                output_feature_type = of[TYPE]
-        feature_class = get_from_registry(output_feature_type, get_output_type_registry())
-        if metric not in feature_class.metric_functions:
-            # todo v0.4: allow users to specify also metrics from the overall
-            #  and per class metrics from the training stats and in general
-            #  and post-processed metric
-            raise ValueError(
-                'The specified metric for hyperopt "{}" is not a valid metric '
-                'for the specified output feature "{}" of type "{}". '
-                "Available metrics are: {}".format(
-                    metric, output_feature, output_feature_type, feature_class.metric_functions.keys()
-                )
             )
 
     hyperopt_executor = get_build_hyperopt_executor(executor[TYPE])(

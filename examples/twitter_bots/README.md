@@ -16,13 +16,19 @@ the dataset.
 
 ### Examples
 
-Run `python train_twitter_bots.py` to train a single model. This will download the Twitter Bots dataset into the current
+Run `python train_twitter_bots.py` to train a single model.
+
+For a faster, more lightweight model run `python train_twitter_bots_text_only.py`, which does not use image features.
+
+This will download the Twitter Bots dataset into the current
 directory, train a model, and write results into the following directories:
 
 ```
-./results/
+./outputs/results/
     api_experiment_run/
-./visualizations/
+./outputs/visualizations/
+    confusion_matrix__account_type_top2.png
+    confusion_matrix_entropy__account_type_top2.png
     learning_curves_account_type_accuracy.png
     learning_curves_account_type_loss.png
 ```

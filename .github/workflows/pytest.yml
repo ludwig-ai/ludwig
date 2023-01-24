@@ -22,22 +22,21 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.8", "3.9", "3.10"]
         test-markers: ["not distributed", "distributed"]
         include:
-          - python-version: 3.7
-            pytorch-version: 1.11.0
+          - python-version: "3.8"
+            pytorch-version: 1.13.0
             torchscript-version: 1.10.2
             ray-version: 2.0.0
-          - python-version: 3.8
-            pytorch-version: 1.12.1
+          - python-version: "3.9"
+            pytorch-version: 1.13.0
             torchscript-version: 1.10.2
             ray-version: 2.2.0 # Change to 2.1.0 after testing
-          - python-version: 3.9
+          - python-version: "3.10"
             pytorch-version: nightly
             torchscript-version: 1.10.2
-            ray-version: 2.2.0  # TODO: Upgrade to nightly.
-    env:
+            ray-version: 2.2.0 # TODO: Upgrade to nightly.
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
       NEUROPOD_BASE_DIR: "/usr/local/lib/neuropod"
@@ -58,7 +57,7 @@ jobs:
         ports:
           - 9000:9000
 
-    timeout-minutes: 80
+    timeout-minutes: 90
     steps:
       - name: Setup ludwigai/ludwig-ray container for local testing with act.
         if: ${{ env.ACT }}
@@ -172,7 +171,7 @@ jobs:
 
       - name: Tests
         run: |
-          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=3600 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest.xml tests
+          RUN_PRIVATE=1 LUDWIG_TEST_SUITE_TIMEOUT_S=4500 pytest -v --timeout 300 --durations 100 -m "($MARKERS) and (not $EXCLUDED_MARKERS)" --junitxml pytest.xml tests
 
       - name: Upload Unit Test Results
         if: ${{ always() && !env.ACT }}
