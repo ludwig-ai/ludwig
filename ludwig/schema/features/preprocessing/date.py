@@ -1,8 +1,7 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import DATE, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCESSING
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
 from ludwig.schema.metadata import FEATURE_METADATA
@@ -10,7 +9,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 
 @DeveloperAPI
 @register_preprocessor(DATE)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class DatePreprocessingConfig(BasePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,

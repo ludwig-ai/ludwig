@@ -1,15 +1,14 @@
 from typing import Any, Dict, List, Optional, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
 
 
 @DeveloperAPI
-@dataclass(order=True, repr=False)
+@ludwig_dataclass
 class ProjectAggregateCombinerConfig(BaseCombinerConfig):
     @staticmethod
     def module_name():

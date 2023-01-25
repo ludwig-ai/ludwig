@@ -1,10 +1,9 @@
 from typing import List
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
@@ -12,7 +11,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("embed", BAG)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BagEmbedWeightedConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():

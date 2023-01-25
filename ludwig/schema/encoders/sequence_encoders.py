@@ -1,10 +1,9 @@
 from typing import List
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import AUDIO, SEQUENCE, TEXT, TIMESERIES
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
@@ -12,7 +11,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("passthrough", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class SequencePassthroughConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -45,7 +44,7 @@ class SequencePassthroughConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("embed", [SEQUENCE, TEXT])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class SequenceEmbedConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -124,7 +123,7 @@ class SequenceEmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class ParallelCNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -292,7 +291,7 @@ class ParallelCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StackedCNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -492,7 +491,7 @@ class StackedCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StackedParallelCNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -678,7 +677,7 @@ class StackedParallelCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StackedRNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -893,7 +892,7 @@ class StackedRNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StackedCNNRNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -1189,7 +1188,7 @@ class StackedCNNRNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer", [SEQUENCE, TEXT, TIMESERIES])
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class StackedTransformerConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():

@@ -6,6 +6,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import COMBINED, DEFAULT_BATCH_SIZE, LOSS, MAX_POSSIBLE_BATCH_SIZE, MODEL_ECD, MODEL_GBM, TRAINING
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.lr_scheduler import LRSchedulerConfig, LRSchedulerDataclassField
 from ludwig.schema.metadata import TRAINER_METADATA
 from ludwig.schema.optimizers import (
@@ -29,7 +30,7 @@ def register_trainer_schema(model_type: str):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -265,7 +266,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 

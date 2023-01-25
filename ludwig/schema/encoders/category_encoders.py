@@ -1,10 +1,9 @@
 from typing import List
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import CATEGORY
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
@@ -12,7 +11,7 @@ from ludwig.schema.metadata import ENCODER_METADATA
 
 @DeveloperAPI
 @register_encoder_config("passthrough", CATEGORY)
-@dataclass(order=True)
+@ludwig_dataclass
 class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
     """CategoricalPassthroughEncoderConfig is a dataclass that configures the parameters used for a categorical
     passthrough encoder."""
@@ -29,7 +28,7 @@ class CategoricalPassthroughEncoderConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("dense", CATEGORY)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class CategoricalEmbedConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -120,7 +119,7 @@ class CategoricalEmbedConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("sparse", CATEGORY)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class CategoricalSparseConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
