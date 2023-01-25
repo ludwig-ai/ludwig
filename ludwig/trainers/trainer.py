@@ -393,8 +393,8 @@ class Trainer(BaseTrainer):
         logger.info("Tuning batch size...")
 
         def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than size of ds)
-            is_smaller_than_training_set = batch_size < len(training_set)
+            # make sure that batch size is valid (e.g. less than 20% of ds size and max_batch_Size)
+            is_smaller_than_training_set = batch_size <= 0.2 * len(training_set)
             is_under_max_batch_size = batch_size <= self.max_batch_size
             is_valid = is_smaller_than_training_set and is_under_max_batch_size
             if not is_valid:
