@@ -8,11 +8,11 @@ import torchmetrics
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import MODEL_ECD
-from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.models.base import BaseModel
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils import output_feature_utils
+from ludwig.utils.augmentation_utils import AugmentationPipelines
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.state_dict_backward_compatibility import update_state_dict
