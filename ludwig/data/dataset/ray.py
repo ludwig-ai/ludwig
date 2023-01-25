@@ -120,7 +120,6 @@ class RayDataset(Dataset):
             self.size,
             ignore_last,
         )
-        print()
 
     def __len__(self):
         return self.ds.count()
