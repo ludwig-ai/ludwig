@@ -2,16 +2,16 @@ from dataclasses import field
 from typing import Dict, Optional, Union
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RAY
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     """Basic executor settings."""
 
