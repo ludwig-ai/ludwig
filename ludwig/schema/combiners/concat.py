@@ -74,7 +74,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
     )
 
     norm: Optional[str] = schema_utils.StringOptions(
-        ["batch", "layer"],
+        ["batch", "layer", "ghost"],
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["norm"],
     )

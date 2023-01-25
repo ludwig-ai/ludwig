@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 
 import torch
 from torch.nn import BatchNorm1d, BatchNorm2d, Dropout, LayerNorm, Linear, ModuleList
+from ludwig.modules.normalization_modules import GhostBatchNormalization
 
 from ludwig.utils.torch_utils import activations, initializer_registry, LudwigModule
 
@@ -84,6 +85,8 @@ class FCLayer(LudwigModule):
                 )
         elif norm == "layer":
             self.layers.append(LayerNorm(output_size, **norm_params))
+        elif norm == "ghost":
+            self.layers.append(GhostBatchNormalization(output_size, **norm_params))
 
         # Dict for activation objects in pytorch?
         self.layers.append(activations[activation]())
