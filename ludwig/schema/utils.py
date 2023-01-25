@@ -390,6 +390,7 @@ def Boolean(default: bool, description: str, parameter_metadata: ParameterMetada
             "marshmallow_field": fields.Boolean(
                 truthy={True},
                 falsy={False},
+                # Necessary because marshmallow will otherwise cast any non-boolean value to a boolean:
                 validate=validate.OneOf([True, False]),
                 allow_none=False,
                 load_default=default,
@@ -985,6 +986,7 @@ def OneOfOptionsField(
                 try:
                     if value is None and mfield_meta.allow_none:
                         return None
+                    # Not every field (e.g. our custom dataclass fields) has a `validate` method:
                     if mfield_meta.validate:
                         mfield_meta.validate(value)
                     return mfield_meta._serialize(value, attr, obj, **kwargs)
@@ -998,6 +1000,7 @@ def OneOfOptionsField(
             for option in field_options:
                 mfield_meta = option.metadata["marshmallow_field"]
                 try:
+                    # Not every field (e.g. our custom dataclass fields) has a `validate` method:
                     if mfield_meta.validate:
                         mfield_meta.validate(value)
                     return mfield_meta._deserialize(value, attr, obj, **kwargs)
