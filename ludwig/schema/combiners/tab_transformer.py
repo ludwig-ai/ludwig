@@ -2,10 +2,10 @@ from typing import Optional, Union
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.common_transformer_options import CommonTransformerConfig
 from ludwig.schema.metadata import COMBINER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI

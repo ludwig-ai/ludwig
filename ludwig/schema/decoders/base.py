@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Tuple, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, CATEGORY, NUMBER, SEQUENCE, SET, TEXT, VECTOR
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.decoders.utils import register_decoder_config
 from ludwig.schema.metadata import DECODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI

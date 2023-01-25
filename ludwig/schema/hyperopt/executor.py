@@ -6,8 +6,8 @@ from marshmallow import fields, ValidationError
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import RAY
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.hyperopt.scheduler import BaseSchedulerConfig, SchedulerDataclassField
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI

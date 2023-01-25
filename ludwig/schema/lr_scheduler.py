@@ -5,10 +5,10 @@ from typing import Dict
 from marshmallow import fields, ValidationError
 
 import ludwig.schema.utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TRAINING
 from ludwig.schema.metadata import TRAINER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI

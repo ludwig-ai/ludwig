@@ -3,11 +3,11 @@ from typing import Callable, List, Union
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI

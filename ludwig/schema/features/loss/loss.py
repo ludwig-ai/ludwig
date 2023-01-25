@@ -12,8 +12,8 @@ from ludwig.constants import (
     SOFTMAX_CROSS_ENTROPY,
 )
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.metadata import LOSS_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
