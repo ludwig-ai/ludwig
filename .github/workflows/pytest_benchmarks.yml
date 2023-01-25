@@ -6,7 +6,8 @@ name: benchmark
 on:
   push:
     branches: ["master", "release-*"]
-
+  pull_request:
+    branches: ["master", "release-*"]
 # we want an ongoing run of this workflow to be canceled by a later commit
 # so that there is only one concurrent run of this workflow for each branch
 concurrency:
@@ -20,13 +21,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.8]
+        python-version: [3.9]
         test-markers: ["benchmark"]
         include:
-          - python-version: 3.8
-            pytorch-version: 1.13.1
+          - python-version: 3.9
+            pytorch-version: 1.13.0
             torchscript-version: 1.10.2
-            ray-version: 2.0.0
+            ray-version: 2.1.0
     env:
       PYTORCH: ${{ matrix.pytorch-version }}
       MARKERS: ${{ matrix.test-markers }}
@@ -81,6 +82,7 @@ jobs:
 
           extra_index_url=https://download.pytorch.org/whl/cpu
           pip install torch==$PYTORCH torchtext torchvision torchaudio --extra-index-url $extra_index_url
+          pip install six
           pip install ray==$RAY_VERSION
           ray_expected=$(python -c "import ray; print(ray.__version__)")
           torch_expected=$(python -c "import torch; print(torch.__version__)")
