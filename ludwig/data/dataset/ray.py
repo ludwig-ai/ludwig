@@ -43,7 +43,7 @@ from ludwig.utils.types import DataFrame
 
 logger = logging.getLogger(__name__)
 
-_ray113 = version.parse(ray.__version__) == version.parse("1.13.0")
+_ray_nightly = version.parse(ray.__version__) >= version.parse("3.0.0.dev0")
 
 _SCALAR_TYPES = {BINARY, CATEGORY, NUMBER}
 
@@ -81,14 +81,14 @@ class RayDataset(Dataset):
         self._processed_data_fp = df if isinstance(df, str) else None
         self.auto_window = auto_window
 
-    def get_window_size_bytes(self, window_size_bytes: Optional[int] = None) -> int:
+    def _get_window_size_bytes_ray_2_2(self, window_size: Optional[int] = None) -> int:
         # If user has specified a window size, use it as is
-        if window_size_bytes:
-            return window_size_bytes
+        if window_size:
+            return window_size
 
         # If the user does not supply a window size and the dataset is large,
         # set the window size to `<available memory> // 5`.
-        if self.auto_window and window_size_bytes is None:
+        if self.auto_window and window_size is None:
             ds_memory_size = self.in_memory_size_bytes
             cluster_memory_size = ray.cluster_resources()["object_store_memory"]
             if ds_memory_size > cluster_memory_size // 5:
@@ -99,9 +99,45 @@ class RayDataset(Dataset):
                 )
                 window_size_bytes = int(cluster_memory_size // 5)
                 return window_size_bytes
+
         # By default, set to -1 so that an infinite window size
         # will be used which effectively results in bulk data ingestion
         return -1
+
+    def _get_window_size_bytes_ray_2_3(self, window_size: Optional[int] = None) -> int:
+        # In Ray 2.3, we can't specify window sizes in terms of bytes, but it is
+        # instead expressed as a percentage of the object store memory.
+        if window_size:
+            # A value of > 1 will result in disk spillage, which is something we want
+            # to avoid and not encourage users to do.
+            if window_size > 1 or window_size < -1:
+                raise ValueError(
+                    "Window size must be a percentage of object store memory in Ray 2.3."
+                    "Please specify a value between 0 and 1. A good value is 0.2."
+                )
+            else:
+                return window_size
+
+        if self.auto_window and window_size is None:
+            ds_memory_size = self.in_memory_size_bytes
+            cluster_memory_size = ray.cluster_resources()["object_store_memory"]
+            if ds_memory_size > cluster_memory_size // 5:
+                logger.info(
+                    "In-memory dataset size is greater than 20%% of object store memory. "
+                    "Enabling windowed shuffling of data to prevent chances of OOMs. "
+                )
+                # Default to always using 20% of object store memory.
+                return 0.2
+
+        # By default, set to -1 so that an infinite window size
+        # will be used which effectively results in bulk data ingestion
+        return -1
+
+    def get_window_size_bytes(self, window_size: Optional[int] = None) -> int:
+        if _ray_nightly:
+            return self._get_window_size_bytes_ray_2_3(window_size)
+        else:
+            return self._get_window_size_bytes_ray_2_2(window_size)
 
     @contextlib.contextmanager
     def initialize_batcher(
@@ -207,15 +243,28 @@ class RayDatasetShard(Dataset):
         self.create_epoch_iter()
 
     def create_epoch_iter(self) -> None:
-        if isinstance(self.dataset_shard, DatasetPipeline):
-            # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
-            # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
-            self.epoch_iter = self.dataset_shard.iter_epochs()
+        if _ray_nightly:
+            # In Ray >= 2.3, session.get_dataset_shard() returns a DatasetIterator object.
+            if isinstance(self.dataset_shard, ray.data.DatasetIterator):
+                if hasattr(self.dataset_shard, "_base_dataset_pipeline"):
+                    # Dataset shard is a DatasetIterator that was created from a DatasetPipeline object.
+                    # Retrieve the base object that was used to create the DatasetIterator so that we can
+                    # create the iter_epochs() like in Ray <= 2.2.
+                    self.epoch_iter = self.dataset_shard._base_dataset_pipeline.iter_epochs()
+                    return
         else:
-            # Dataset shard is a Ray Dataset object during auto batch size tuning or learning rate tuning
-            # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
-            # In this scenario, there is no need to worry about windowing, shuffling etc.
-            self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
+            # In Ray <= 2.2, session.get_dataset_shard() returns a DatasetPipeline object.
+            if isinstance(self.dataset_shard, DatasetPipeline):
+                # Dataset shard is a DatasetPipeline during training. The Ray Dataset is converted to a
+                # DatasetPipeline by the DatasetConfig in the Trainer and is available in the train_fn
+                self.epoch_iter = self.dataset_shard.iter_epochs()
+                return
+
+        # Here, dataset shard is a RayDataset object during auto batch size tuning or learning rate tuning
+        # since it does not come from within the RayTrainer's train_fn.
+        # Convert Ray Dataset to a DatasetPipeline object before enabling epoch iteration
+        # In this scenario, there is no need to worry about windowing, shuffling etc.
+        self.epoch_iter = self.dataset_shard.repeat().iter_epochs()
 
     @contextlib.contextmanager
     def initialize_batcher(self, batch_size=128, should_shuffle=True, seed=0, ignore_last=False, distributed=None):
@@ -230,7 +279,6 @@ class RayDatasetShard(Dataset):
 
     @lru_cache(1)
     def __len__(self):
-        # TODO(travis): find way to avoid calling this, as it's expensive
         return next(self.epoch_iter).count()
 
     @property
