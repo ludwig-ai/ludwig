@@ -1,11 +1,8 @@
 import copy
-import os
 import random
 from collections import deque
-from pprint import pprint
 from typing import Any, Deque, Dict, Tuple, Union
 
-from ludwig.schema import get_schema
 from ludwig.utils.misc_utils import merge_dict
 
 
@@ -221,28 +218,3 @@ def create_nested_dict(flat_dict: Dict[str, Union[float, str]]) -> Dict[str, Any
     for key in flat_dict:
         config = merge_dict(config, to_nested_format(key, copy.deepcopy(flat_dict[key])))
     return config
-
-
-if __name__ == "__main__":
-    random.seed(1)
-    schema = get_schema()
-    feature_type, only_include = "text", "preprocessing"
-    properties = schema["properties"]["defaults"]["properties"][feature_type]["properties"]
-
-    raw_entry = deque([(dict(), False)])
-    explored = explore_properties(
-        properties, parent_key="defaults." + feature_type, dq=raw_entry, only_include=[only_include]
-    )
-
-    num_exported = 0
-    base_dir = os.path.join("test_all", feature_type, only_include)
-    os.makedirs(base_dir, exist_ok=True)
-    for item in explored:
-        for config in generate_possible_configs(config_options=item[0]):
-            # pprint(config)
-            # print()
-            nested_config = create_nested_dict(config)
-            pprint(nested_config)
-            # save_yaml(os.path.join(base_dir, str(num_exported) + ".yaml"), nested_config)
-            print()
-            num_exported += 1

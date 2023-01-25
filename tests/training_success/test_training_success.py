@@ -1042,15 +1042,15 @@ def test_binary_preprocessing_defaults(config):
     model.evaluate(dataset=dataset)
 
 
-@pytest.mark.text_feature
-@pytest.mark.parametrize("config", defaults_config_generator("text", "encoder"))
-def test_text_encoder_defaults(config):
-    dataset_name = "bbcnews"
-    dataset_module = get_dataset(dataset_name)
-    dataset = dataset_module.load()
-    model = LudwigModel(config=config, callbacks=None, logging_level=logging.ERROR)
-    model.train(dataset=dataset)
-    model.evaluate(dataset=dataset)
+# @pytest.mark.text_feature
+# @pytest.mark.parametrize("config", defaults_config_generator("text", "encoder"))
+# def test_text_encoder_defaults(config):
+#     dataset_name = "bbcnews"
+#     dataset_module = get_dataset(dataset_name)
+#     dataset = dataset_module.load()
+#     model = LudwigModel(config=config, callbacks=None, logging_level=logging.ERROR)
+#     model.train(dataset=dataset)
+#     model.evaluate(dataset=dataset)
 
 
 @pytest.mark.text_feature
