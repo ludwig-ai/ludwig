@@ -26,7 +26,6 @@ import torch
 from torchvision.transforms import functional as F
 from torchvision.transforms.functional import normalize
 
-from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     CHECKSUM,
     COLUMN,
@@ -52,6 +51,7 @@ from ludwig.data.cache.types import wrap
 from ludwig.features.base_feature import BaseFeatureMixin, InputFeature
 from ludwig.schema.features.image_feature import ImageInputFeatureConfig
 from ludwig.types import FeatureMetadataDict, PreprocessingConfigDict, TrainingSetMetadataDict
+from ludwig.utils.augmentation_utils import get_augmentation_op, register_augmentation_op
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.dataframe_utils import is_dask_series_or_df
 from ludwig.utils.fs_utils import has_remote_protocol, upload_h5
@@ -65,7 +65,6 @@ from ludwig.utils.image_utils import (
     torchvision_model_registry,
 )
 from ludwig.utils.misc_utils import set_default_value
-from ludwig.utils.registry import Registry
 from ludwig.utils.types import Series, TorchscriptPreprocessingInput
 
 # constants used for Ludwig image preprocessing
@@ -80,32 +79,10 @@ AUGMENTATION_DEFAULT_OPERATIONS = [
 
 logger = logging.getLogger(__name__)
 
-_augmentation_op_registry = Registry()
 
-
-@DeveloperAPI
-def get_augmentation_op_registry() -> Registry:
-    return _augmentation_op_registry
-
-
-def register_augmentation_op(name: str, features: Union[str, List[str]]):
-    if isinstance(features, str):
-        features = [features]
-
-    def wrap(cls):
-        for feature in features:
-            augmentation_op_registry = get_augmentation_op_registry().get(feature, {})
-            augmentation_op_registry[name] = cls
-            get_augmentation_op_registry()[feature] = augmentation_op_registry
-        return cls
-
-    return wrap
-
-
-def get_augmentation_op(feature_type: str, op_name: str):
-    return get_augmentation_op_registry()[feature_type][op_name]
-
-
+###
+# Image specific augmentation operations
+###
 @register_augmentation_op(name="random_vertical_flip", features=IMAGE)
 class RandomVFlip(torch.nn.Module):
     def __init__(
@@ -260,29 +237,6 @@ class ImageAugmentation(torch.nn.Module):
             return images.type(torch.float32).div(255.0).sub(mean).div(std)
         else:
             return images.type(torch.float32).div(255.0)
-
-
-# TODO: move to independent file
-class AugmentationPipelines:
-    """Container holding augmentation pipelines defined in the model."""
-
-    def __init__(self, augmentation_pipelines: Dict):
-        self.augmentation_pipelines = augmentation_pipelines
-
-    def __getitem__(self, key):
-        return self.augmentation_pipelines[key]
-
-    def __contains__(self, key):
-        return key in self.augmentation_pipelines
-
-    def __len__(self):
-        return len(self.augmentation_pipelines)
-
-    def __iter__(self):
-        return self.augmentation_pipelines.__iter__()
-
-    def items(self):
-        return self.augmentation_pipelines.items()
 
 
 class _ImagePreprocessing(torch.nn.Module):
