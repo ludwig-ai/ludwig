@@ -9,6 +9,7 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
+    MODEL_ECD,
     NUMBER,
     SEQUENCE,
     SET,
@@ -51,11 +52,21 @@ class DefaultsConfig(schema_utils.BaseMarshmallowConfig):
     vector: BaseFeatureConfig = DefaultsDataclassField(feature_type=VECTOR)
 
 
+@dataclass
+class GBMDefaultsConfig(schema_utils.BaseMarshmallowConfig):
+    binary: BaseFeatureConfig = DefaultsDataclassField(feature_type=BINARY)
+
+    category: BaseFeatureConfig = DefaultsDataclassField(feature_type=CATEGORY)
+
+    number: BaseFeatureConfig = DefaultsDataclassField(feature_type=NUMBER)
+
+
 @DeveloperAPI
-def get_defaults_jsonschema():
+def get_defaults_jsonschema(model_type: str = MODEL_ECD):
     """Returns a JSON schema structured to only require a `type` key and then conditionally apply a corresponding
     combiner's field constraints."""
-    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(DefaultsConfig)
+    cls = DefaultsConfig if model_type == MODEL_ECD else GBMDefaultsConfig
+    preproc_schema = schema_utils.unload_jsonschema_from_marshmallow_class(cls)
     props = preproc_schema["properties"]
     return {
         "type": "object",

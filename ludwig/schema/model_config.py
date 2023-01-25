@@ -45,7 +45,7 @@ from ludwig.schema.combiners.base import BaseCombinerConfig
 from ludwig.schema.combiners.concat import ConcatCombinerConfig
 from ludwig.schema.combiners.utils import combiner_registry
 from ludwig.schema.decoders.utils import get_decoder_cls
-from ludwig.schema.defaults.defaults import DefaultsConfig
+from ludwig.schema.defaults.defaults import DefaultsConfig, GBMDefaultsConfig
 from ludwig.schema.encoders.base import PassthroughEncoderConfig
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.schema.features.utils import (
@@ -146,7 +146,8 @@ class ModelConfig(BaseMarshmallowConfig):
         self.combiner: BaseCombinerConfig = ConcatCombinerConfig()
         self.trainer: BaseTrainerConfig = ECDTrainerConfig()
         self.preprocessing: PreprocessingConfig = PreprocessingConfig()
-        self.defaults: DefaultsConfig = copy.deepcopy(DefaultsConfig())
+        defaults_cls = GBMDefaultsConfig() if upgraded_config_dict.get(DEFAULTS, None) == MODEL_GBM else DefaultsConfig
+        self.defaults: DefaultsConfig = copy.deepcopy(defaults_cls())
 
         # ===== Set User Defined Global Defaults =====
         if DEFAULTS in upgraded_config_dict:
