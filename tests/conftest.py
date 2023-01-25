@@ -27,12 +27,15 @@ from ludwig.constants import (
     EPOCHS,
     HYPEROPT,
     INPUT_FEATURES,
+    MODEL_ECD,
+    MODEL_GBM,
     NAME,
     OUTPUT_FEATURES,
     TRAINER,
     TYPE,
 )
 from ludwig.hyperopt.run import hyperopt
+from ludwig.schema import get_schema
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
@@ -77,6 +80,18 @@ def yaml_filename():
     with tempfile.TemporaryDirectory() as tmpdir:
         yaml_filename = os.path.join(tmpdir, "model_def_" + uuid.uuid4().hex[:10].upper() + ".yaml")
         yield yaml_filename
+
+
+@pytest.fixture()
+def ecd_schema():
+    """Returns a copy of the ecd schema used for testing schema changes"""
+    return get_schema(MODEL_ECD)
+
+
+@pytest.fixture()
+def gbm_schema():
+    """Returns a copy of the gbm schema used for testing schema changes"""
+    return get_schema(MODEL_GBM)
 
 
 @pytest.fixture(scope="module")
