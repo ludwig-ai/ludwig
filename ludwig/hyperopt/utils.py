@@ -175,9 +175,9 @@ def substitute_parameters(
 
 
 @DeveloperAPI
-def contains_grid_search_parameters(config: ModelConfigDict) -> bool:
+def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
     """Returns True if any hyperopt parameter in the config is using the grid_search space."""
-    for _, param_info in config[PARAMETERS].items():
+    for _, param_info in hyperopt_config[PARAMETERS].items():
         if param_info.get(SPACE, None) == GRID_SEARCH:
             return True
     return False
