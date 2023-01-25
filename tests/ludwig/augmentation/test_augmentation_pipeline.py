@@ -248,7 +248,7 @@ def test_ray_model_training_with_augmentation_pipeline(
             {"type": "random_blur"},
             {"type": "random_contrast"},
         ],
-    ]
+    ],
 )
 def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
     train_data_gray_scale,
