@@ -109,8 +109,9 @@ class RayDataset(Dataset):
         # instead expressed as a percentage of the object store memory.
         if window_size:
             # A value of > 1 will result in disk spillage, which is something we want
-            # to avoid and not encourage users to do.
-            if window_size > 1 or window_size < -1:
+            # to avoid and not encourage users to do. It can be set to -1 to create an
+            # infinite pipeline. Values should be between 0 and 1.
+            if window_size > 1 or (window_size < 0 and window_size != -1):
                 raise ValueError(
                     "Window size must be a percentage of object store memory in Ray 2.3."
                     "Please specify a value between 0 and 1. A good value is 0.2."
