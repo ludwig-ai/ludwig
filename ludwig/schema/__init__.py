@@ -50,6 +50,9 @@ def get_backend_jsonschema():
 @DeveloperAPI
 @lru_cache(maxsize=2)
 def get_schema(model_type: str = MODEL_ECD):
+    # Force populate combiner registry:
+    import ludwig.combiners.combiners  # noqa: F401
+
     schema = {
         "type": "object",
         "properties": {
