@@ -35,7 +35,7 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.hyperopt.run import hyperopt
-from ludwig.schema import get_schema
+from ludwig.config_validation.validation import get_schema
 from tests.integration_tests.utils import category_feature, generate_data, text_feature
 
 TEST_SUITE_TIMEOUT_S = int(os.environ.get("LUDWIG_TEST_SUITE_TIMEOUT_S", 3600))
