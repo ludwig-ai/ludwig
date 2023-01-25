@@ -18,8 +18,8 @@ from typing import Dict, List, Optional
 
 import torch
 from torch.nn import BatchNorm1d, BatchNorm2d, Dropout, LayerNorm, Linear, ModuleList
-from ludwig.modules.normalization_modules import GhostBatchNormalization
 
+from ludwig.modules.normalization_modules import GhostBatchNormalization
 from ludwig.utils.torch_utils import activations, initializer_registry, LudwigModule
 
 logger = logging.getLogger(__name__)
