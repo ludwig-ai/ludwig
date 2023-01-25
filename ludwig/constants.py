@@ -283,4 +283,3 @@ THEN = "then"
 ALLOF = "allOf"
 ONEOF = "oneOf"
 ENUM = "enum"
-

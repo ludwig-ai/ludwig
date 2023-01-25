@@ -1,12 +1,4 @@
-from ludwig.constants import (
-    ENCODER,
-    ENUM,
-    INPUT_FEATURES,
-    ITEMS,
-    PROPERTIES,
-    THEN,
-    ALLOF,
-)
+from ludwig.constants import ALLOF, ENCODER, ENUM, INPUT_FEATURES, ITEMS, PROPERTIES, THEN
 
 
 def parse_schema(input_dict: dict, key_list: list):
@@ -33,5 +25,3 @@ def test_transformer_encoder_representations(ecd_schema):
     sequence_transformer_encoder_enum = parse_schema(sequence_transformer_encoder_schema, representation_key_path)
 
     assert text_transformer_encoder_enum == sequence_transformer_encoder_enum == ["dense", "sparse"]
-
-

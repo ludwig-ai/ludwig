@@ -84,13 +84,13 @@ def yaml_filename():
 
 @pytest.fixture()
 def ecd_schema():
-    """Returns a copy of the ecd schema used for testing schema changes"""
+    """Returns a copy of the ecd schema used for testing schema changes."""
     return get_schema(MODEL_ECD)
 
 
 @pytest.fixture()
 def gbm_schema():
-    """Returns a copy of the gbm schema used for testing schema changes"""
+    """Returns a copy of the gbm schema used for testing schema changes."""
     return get_schema(MODEL_GBM)
 
 
