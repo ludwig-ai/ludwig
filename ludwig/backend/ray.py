@@ -24,7 +24,6 @@ import dask
 import numpy as np
 import pandas as pd
 import ray
-import ray.train as rt
 import torch
 import tqdm
 from packaging import version
@@ -160,7 +159,7 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
         train_shard = RayDatasetShard(
@@ -237,7 +236,12 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    #
+    # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
+    # or a tune session. In Ludwig's current code implementation, batch size tuning doesn't get instantiated
+    # inside of a RayTrainer class, so we manually set the local_rank to 0 so that it picks up the right
+    # device to tune batch size on.
+    initialize_pytorch(local_rank=0, local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=True)()
     try:
         train_shard = RayDatasetShard(
@@ -521,7 +525,7 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
         eval_shard = RayDatasetShard(
@@ -843,7 +847,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             fs, _ = get_fs_and_path(sample_fname)
 
             read_datasource_fn_kwargs = {
-                "paths": list(zip(fnames, idxs)),
+                "path_and_idxs": list(zip(fnames, idxs)),
                 "filesystem": PyFileSystem(FSSpecHandler(fs)),
             }
             if self.df_engine.partitioned and file_size is not None:
