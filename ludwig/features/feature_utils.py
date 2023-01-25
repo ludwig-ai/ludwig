@@ -163,6 +163,7 @@ class LudwigFeatureDict(torch.nn.Module):
     protocol.
 
     This is also tracked in Pytorch:
+
     https://github.com/pytorch/pytorch/issues/71203.
     """
 

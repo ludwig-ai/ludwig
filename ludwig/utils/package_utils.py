@@ -9,6 +9,7 @@ class LazyLoader(types.ModuleType):
     needed, and this allows them to only be loaded when they are used.
 
     Copied from:
+
     https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/util/lazy_loader.py
     """
 
