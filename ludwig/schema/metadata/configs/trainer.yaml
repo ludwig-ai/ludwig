@@ -431,11 +431,11 @@ learning_rate_scheduler:
             "Learning rate warmup is most commonly used when training with large batch sizes / distributed
             training to avoid taking overly large steps at the beginning of training that might result in the
             process getting stuck in a local optimum. Conventional wisdom when training with large batch sizes is
-            to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learing
+            to use a larger learning rate (see: `learning_rate_scaling`) but gradually warm up to the larger learning
             rate over a few epochs of training in the beginning.
 
             Even when not training with large batch sizes, the randomness of how weights are initialized can result
-            in strange, noisy gradient updates during the begining of your training run. As such, it's generally
+            in strange, noisy gradient updates during the beginning of your training run. As such, it's generally
             recommended to use a small amount of warmup (e.g., 1 epoch / evaluation) even when the batch size is
             relatively small."
         description_implications:
@@ -483,7 +483,7 @@ learning_rate_scheduler:
                 \ As a rule of thumb, compared to training without a schedule, you can use\
                 \ a slightly higher maximum learning rate. Since the learning rate changes\
                 \ over time, the whole training is not so sensitive to the value picked."
-        expected_impact: 2
+        expected_impact: 3
         literature_references:
                 - "https://peltarion.com/knowledge-center/documentation/modeling-view/run-a-model/optimization-principles-(in-deep-learning)/learning-rate-schedule "
         related_parameters:
@@ -561,13 +561,13 @@ learning_rate_scheduler:
             but in specific tasks it might have a positive impact.
         ui_display_name: Staircase
     reduce_on_plateau:
-        expected_impact: 2
+        expected_impact: 3
         ui_display_name: Reduce On Plateau
     reduce_on_plateau_patience:
-        expected_impact: 1
+        expected_impact: 2
         ui_display_name: Reduce On Plateau Patience
     reduce_on_plateau_rate:
-        expected_impact: 1
+        expected_impact: 2
         ui_display_name: Reduce On Plateau Rate
     reduce_eval_metric:
         expected_impact: 1

@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import field
-from typing import Dict, Optional
+from typing import Dict
 
 from marshmallow import fields, ValidationError
 from marshmallow_dataclass import dataclass
@@ -16,8 +16,9 @@ from ludwig.schema.metadata import TRAINER_METADATA
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
-    decay: Optional[str] = schema_utils.StringOptions(
-        ["linear", "exponential"],
+    decay: str = schema_utils.StringOptions(
+        options=["linear", "exponential"],
+        default=None,
         description="Turn on decay of the learning rate.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
     )
@@ -132,13 +133,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
         @staticmethod
         def _jsonschema_type_mapping():
             return {
-                "oneOf": [
-                    {"type": "null", "title": "disabled", "description": "Disable learning rate scheduler."},
-                    {
-                        **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
-                        "title": "enabled_options",
-                    },
-                ],
+                **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
                 "title": "learning_rate_scheduler_options",
                 "description": description,
             }
