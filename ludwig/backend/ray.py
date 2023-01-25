@@ -236,6 +236,11 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
+    #
+    # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
+    # or a tune session. In Ludwig's current code implementation, batch size tuning doesn't get instantiated
+    # inside of a RayTrainer class, so we manually set the local_rank to 0 so that it picks up the right
+    # device to tune batch size on.
     initialize_pytorch(local_rank=0, local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=True)()
     try:
