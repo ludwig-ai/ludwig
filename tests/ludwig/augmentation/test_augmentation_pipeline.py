@@ -21,7 +21,7 @@ def test_image():
 
 # create training data for model training with augmentation pipeline
 @pytest.fixture(scope="module")
-def train_data():
+def train_data_rgb():
     with tempfile.TemporaryDirectory() as tmp_dir:
         # setup basic data description for training
         output_features = [
@@ -42,6 +42,47 @@ def train_data():
             {
                 "destination_folder": os.path.join(os.getcwd(), os.path.join(tmp_dir, "images")),
                 "preprocessing": {"height": 350, "width": 350, "num_channels": 3},
+            }
+        )
+        feature_list = input_features + output_features
+
+        # create synthetic data
+        data_dir = os.path.join(tmp_dir, "data")
+        os.makedirs(data_dir, exist_ok=True)
+        train_fp = os.path.join(tmp_dir, "train.csv")
+
+        cli_synthesize_dataset(16, feature_list, train_fp)
+
+        # remove unneeded data generation parameters
+        input_features[0].pop("destination_folder")
+
+        # return training data for testing
+        yield train_fp, input_features, output_features
+
+
+# create training data for model training with augmentation pipeline
+@pytest.fixture(scope="module")
+def train_data_gray_scale():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # setup basic data description for training
+        output_features = [
+            {
+                "name": "binary_output_feature",
+                "type": "binary",
+            },
+        ]
+        input_features = [
+            {
+                "name": "my_image",
+                "type": "image",
+            },
+        ]
+
+        # add parameters to generate images
+        input_features[0].update(
+            {
+                "destination_folder": os.path.join(os.getcwd(), os.path.join(tmp_dir, "images")),
+                "preprocessing": {"height": 350, "width": 350, "num_channels": 1},
             }
         )
         feature_list = input_features + output_features
@@ -159,13 +200,13 @@ IMAGE_PREPROCESSING = [
 @pytest.mark.parametrize("encoder", IMAGE_ENCODER)
 @pytest.mark.parametrize("preprocessing", IMAGE_PREPROCESSING)
 def test_local_model_training_with_augmentation_pipeline(
-    train_data,
+    train_data_rgb,
     encoder,
     preprocessing,
     augmentation_pipeline_ops,
 ):
     run_augmentation_training(
-        train_data,
+        train_data_rgb,
         "local",
         encoder,
         preprocessing,
@@ -179,15 +220,44 @@ def test_local_model_training_with_augmentation_pipeline(
 @pytest.mark.parametrize("augmentation_pipeline_ops", AUGMENTATION_PIPELINE_OPS)
 @pytest.mark.parametrize("preprocessing", IMAGE_PREPROCESSING)
 def test_ray_model_training_with_augmentation_pipeline(
-    train_data,
+    train_data_rgb,
     preprocessing,
     augmentation_pipeline_ops,
     ray_cluster_2cpu,
 ):
     run_augmentation_training(
-        train_data,
+        train_data_rgb,
         "ray",
         {"type": "stacked_cnn"},  # Ludwig encoder
         preprocessing,
+        augmentation_pipeline_ops,
+    )
+
+
+# this test gray-scale image augmentation pipeline
+@pytest.mark.parametrize(
+    "augmentation_pipeline_ops",
+    [
+        False,
+        True,
+        [
+            {"type": "random_horizontal_flip"},
+            {"type": "random_vertical_flip"},
+            {"type": "random_rotate"},
+            {"type": "random_brightness"},
+            {"type": "random_blur"},
+            {"type": "random_contrast"},
+        ],
+    ]
+)
+def test_ludwig_encoder_gray_scale_image_augmentation_pipeline(
+    train_data_gray_scale,
+    augmentation_pipeline_ops,
+):
+    run_augmentation_training(
+        train_data_gray_scale,
+        "local",
+        {"type": "stacked_cnn", "num_filters": 1},
+        {},
         augmentation_pipeline_ops,
     )
