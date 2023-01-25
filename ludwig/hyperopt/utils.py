@@ -175,16 +175,28 @@ def substitute_parameters(
 
 
 @DeveloperAPI
+def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
+    """Returns True if any hyperopt parameter in the config is using the grid_search space."""
+    for _, param_info in hyperopt_config[PARAMETERS].items():
+        if param_info.get(SPACE, None) == GRID_SEARCH:
+            return True
+    return False
+
+
+@DeveloperAPI
 def get_num_duplicate_trials(hyperopt_config: HyperoptConfigDict) -> int:
+    """Returns the number of duplicate trials that will be created.
+
+    Duplicate trials are only created when there are grid type parameters and num_samples > 1.
+    """
     num_samples = hyperopt_config[EXECUTOR].get(NUM_SAMPLES, 1)
     if num_samples == 1:
         return 0
 
     total_grid_search_trials = 1
     for _, param_info in hyperopt_config[PARAMETERS].items():
-        if param_info.get(SPACE, None) != GRID_SEARCH:
-            return 0
-        total_grid_search_trials *= len(param_info.get("values", []))
+        if param_info.get(SPACE, None) == GRID_SEARCH:
+            total_grid_search_trials *= len(param_info.get("values", []))
 
     num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
     return num_duplicate_trials
