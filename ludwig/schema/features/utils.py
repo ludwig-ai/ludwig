@@ -33,6 +33,7 @@ def prune_gbm_features(schema: Dict):
         if if_type in gbm_feature_types:
             pruned_all_of += [cond]
     schema["items"]["allOf"] = pruned_all_of
+    schema["items"]["properties"]["type"]["enum"] = gbm_feature_types
 
 
 @DeveloperAPI
@@ -68,6 +69,8 @@ def get_input_feature_jsonschema(model_type: str):
 
     if model_type == MODEL_GBM:
         prune_gbm_features(schema)
+
+    print(schema["items"]["properties"]["type"])
 
     return schema
 
