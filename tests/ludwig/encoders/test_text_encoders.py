@@ -30,7 +30,7 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
         configs.DistilBERTConfig,
     ],
 )
-def test_hf_pretrained_default_exists(encoder_config_cls: configs.BaseEncoderConfig):
+def test_hf_pretrained_default_exists(encoder_config_cls: configs.SequenceEncoderConfig):
     """Test that the default pretrained model exists on the HuggingFace Hub.
 
     This test merely checks that the default model name is valid. It does not check

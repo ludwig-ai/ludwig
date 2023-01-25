@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import time
-from typing import Union
+from typing import Type, Union
 
 import psutil
 import torch
@@ -28,6 +28,7 @@ from ludwig.models.base import BaseModel
 from ludwig.models.predictor import Predictor
 from ludwig.trainers.trainer import Trainer
 from ludwig.types import HyperoptConfigDict
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import initialize_pytorch
 
@@ -92,3 +93,7 @@ class HorovodBackend(LocalPreprocessingMixin, Backend):
     def max_concurrent_trials(self, hyperopt_config: HyperoptConfigDict) -> Union[int, None]:
         # Return None since there is no Ray component
         return None
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        evaluator = evaluator_cls()
+        return evaluator.select_best_batch_size(dataset_len)

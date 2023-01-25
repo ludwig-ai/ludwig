@@ -16,6 +16,8 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
     type: str
 
+    skip: bool = schema_utils.Boolean(False, "[internal] Whether to skip encoder and use input as output.")
+
 
 @DeveloperAPI
 @register_encoder_config("passthrough", [BINARY, NUMBER, VECTOR])

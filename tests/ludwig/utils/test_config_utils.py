@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional
+
 import pytest
 
 from ludwig.utils.config_utils import merge_fixed_preprocessing_params
@@ -27,3 +29,22 @@ def test_merge_fixed_preprocessing_params(pretrained_model_name_or_path: str):
         "lowercase": True,
         "pretrained_model_name_or_path": expected_model_name,
     }
+
+
+@pytest.mark.parametrize(
+    "encoder,expected",
+    [
+        ({"type": "parallel_cnn"}, False),
+        ({"type": "bert", "trainable": False}, None),
+        ({"type": "bert", "trainable": True}, False),
+    ],
+    ids=["parallel_cnn", "bert_fixed", "bert_trainable"],
+)
+def test_merge_fixed_preprocessing_params_cache_embeddings(encoder: Dict[str, Any], expected: Optional[bool]):
+    preprocessing = {
+        "tokenizer": "space",
+        "lowercase": True,
+    }
+
+    merged_params = merge_fixed_preprocessing_params("text", preprocessing, encoder)
+    assert merged_params.get("cache_encoder_embeddings") == expected

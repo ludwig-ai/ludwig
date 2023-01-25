@@ -4,7 +4,7 @@ from ludwig.schema import utils as schema_utils
 from ludwig.schema.utils import ludwig_dataclass
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
@@ -112,6 +112,12 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
+    )
+
+    cache_encoder_embeddings: bool = schema_utils.Boolean(
+        default=False,
+        description="Compute encoder embeddings in preprocessing, speeding up training time considerably.",
+        parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
     )
 
 
