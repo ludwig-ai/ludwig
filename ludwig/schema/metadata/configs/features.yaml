@@ -589,6 +589,7 @@ set:
                 Note that choosing to drop rows with missing values could result in
                 losing information, especially if there is a high proportion of missing
                 values in the dataset.
+            expected_impact: 3
             related_parameters:
                 - fill_value
             ui_display_name: Missing Value Strategy

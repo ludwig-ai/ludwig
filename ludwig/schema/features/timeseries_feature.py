@@ -28,7 +28,7 @@ class TimeseriesInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(TIMESERIES)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TimeseriesInputFeatureConfig(BaseInputFeatureConfig, TimeseriesInputFeatureConfigMixin):
     """TimeseriesInputFeatureConfig is a dataclass that configures the parameters used for a timeseries input
     feature."""

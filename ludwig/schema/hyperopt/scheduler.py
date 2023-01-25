@@ -384,9 +384,9 @@ class PopulationBasedBanditsSchedulerConfig(BaseSchedulerConfig, CommonScheduler
 @register_scheduler_config("hb_bohb")
 @dataclass
 class BOHBSchedulerConfig(BaseSchedulerConfig, CommonSchedulerOptions):
-    """Hyperband for BOHB scheduler settings."""
+    """Hyperband for BOHB (hb_bohb) scheduler settings."""
 
-    type: str = schema_utils.ProtectedString("bohb")
+    type: str = schema_utils.ProtectedString("hb_bohb")
 
     max_t: int = max_t_alias(default=81)
 

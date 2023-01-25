@@ -6,6 +6,7 @@ import os
 import warnings
 from typing import Any, Dict
 
+from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
     AUTO,
     COMBINED,
@@ -173,22 +174,42 @@ def substitute_parameters(
     return config
 
 
-def log_warning_if_all_grid_type_parameters(
-    hyperopt_parameter_config: HyperoptConfigDict, num_samples: int = 1
-) -> None:
-    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
-    duplicate trials being created."""
+@DeveloperAPI
+def contains_grid_search_parameters(hyperopt_config: HyperoptConfigDict) -> bool:
+    """Returns True if any hyperopt parameter in the config is using the grid_search space."""
+    for _, param_info in hyperopt_config[PARAMETERS].items():
+        if param_info.get(SPACE, None) == GRID_SEARCH:
+            return True
+    return False
+
+
+@DeveloperAPI
+def get_num_duplicate_trials(hyperopt_config: HyperoptConfigDict) -> int:
+    """Returns the number of duplicate trials that will be created.
+
+    Duplicate trials are only created when there are grid type parameters and num_samples > 1.
+    """
+    num_samples = hyperopt_config[EXECUTOR].get(NUM_SAMPLES, 1)
     if num_samples == 1:
-        return
+        return 0
 
     total_grid_search_trials = 1
-
-    for _, param_info in hyperopt_parameter_config.items():
-        if param_info.get(SPACE, None) != GRID_SEARCH:
-            return
-        total_grid_search_trials *= len(param_info.get("values", []))
+    for _, param_info in hyperopt_config[PARAMETERS].items():
+        if param_info.get(SPACE, None) == GRID_SEARCH:
+            total_grid_search_trials *= len(param_info.get("values", []))
 
     num_duplicate_trials = (total_grid_search_trials * num_samples) - total_grid_search_trials
+    return num_duplicate_trials
+
+
+def log_warning_if_all_grid_type_parameters(hyperopt_config: HyperoptConfigDict) -> None:
+    """Logs warning if all parameters have a grid type search space and num_samples > 1 since this will result in
+    duplicate trials being created."""
+    num_duplicate_trials = get_num_duplicate_trials(hyperopt_config)
+    if num_duplicate_trials == 0:
+        return
+
+    num_samples = hyperopt_config[EXECUTOR].get(NUM_SAMPLES, 1)
     warnings.warn(
         "All hyperopt parameters in Ludwig config are using grid_search space, but number of samples "
         f"({num_samples}) is greater than 1. This will result in {num_duplicate_trials} duplicate trials being "

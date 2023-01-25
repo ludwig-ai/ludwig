@@ -40,7 +40,7 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(CATEGORY)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -68,7 +68,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(CATEGORY)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeatureConfigMixin):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""

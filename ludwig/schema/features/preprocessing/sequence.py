@@ -11,7 +11,7 @@ from ludwig.utils import strings_utils
 
 @DeveloperAPI
 @register_preprocessor(SEQUENCE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequencePreprocessingConfig(BasePreprocessingConfig):
     tokenizer: str = schema_utils.String(
         default="space",
@@ -113,7 +113,7 @@ class SequencePreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("sequence_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -121,4 +121,40 @@ class SequenceOutputPreprocessingConfig(SequencePreprocessingConfig):
         allow_none=False,
         description="What strategy to follow when there's a missing value in a sequence output feature",
         parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=False,
+        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
+        "truncated, while texts that are shorter will be padded.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["max_sequence_length"],
+    )
+
+    tokenizer: str = schema_utils.String(
+        default="space",
+        allow_none=False,
+        description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["tokenizer"],
+    )
+
+    lowercase: bool = schema_utils.Boolean(
+        default=False,
+        description="If true, converts the string to lowercase before tokenizing.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["lowercase"],
+    )
+
+    most_common: int = schema_utils.PositiveInteger(
+        default=20000,
+        allow_none=False,
+        description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
+        "amount, the most infrequent symbols will be treated as unknown.",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["most_common"],
+    )
+
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[SEQUENCE][PREPROCESSING]["ngram_size"],
     )

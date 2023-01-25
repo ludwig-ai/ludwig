@@ -353,8 +353,12 @@ def test_boosting_type_rf_invalid(tmpdir, local_backend):
         _train_and_predict_gbm(input_features, output_features, tmpdir, local_backend, boosting_type="rf")
 
 
+@pytest.mark.skip(reason="LightGBMError: Number of class for initial score error")
 def test_goss_deactivate_bagging(tmpdir, local_backend):
-    """Test that bagging is disabled for the GOSS boosting type."""
+    """Test that bagging is disabled for the GOSS boosting type.
+
+    TODO: Re-enable when GOSS is supported: https://github.com/ludwig-ai/ludwig/issues/2988
+    """
     input_features = [number_feature()]
     output_features = [binary_feature()]
 

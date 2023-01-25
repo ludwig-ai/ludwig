@@ -13,7 +13,7 @@ from ludwig.utils import strings_utils
 
 @DeveloperAPI
 @register_preprocessor(BINARY)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BinaryPreprocessingConfig(BasePreprocessingConfig):
     """BinaryPreprocessingConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -23,6 +23,14 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary column",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    fallback_true_label: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The label to interpret as 1 (True) when the binary feature doesn't have a "
+        "conventional boolean value",
+        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
     )
 
     fill_value: Union[int, float, str] = schema_utils.OneOfOptionsField(
@@ -50,18 +58,10 @@ class BinaryPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["computed_fill_value"],
     )
 
-    fallback_true_label: str = schema_utils.String(
-        default=None,
-        allow_none=True,
-        description="The label to interpret as 1 (True) when the binary feature doesn't have a "
-        "conventional boolean value",
-        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
-    )
-
 
 @DeveloperAPI
 @register_preprocessor("binary_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS + ["fill_with_false"],
@@ -69,4 +69,12 @@ class BinaryOutputPreprocessingConfig(BinaryPreprocessingConfig):
         allow_none=False,
         description="What strategy to follow when there's a missing value in a binary output feature",
         parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    fallback_true_label: str = schema_utils.String(
+        default=None,
+        allow_none=True,
+        description="The label to interpret as 1 (True) when the binary feature doesn't have a "
+        "conventional boolean value",
+        parameter_metadata=FEATURE_METADATA[BINARY][PREPROCESSING]["fallback_true_label"],
     )

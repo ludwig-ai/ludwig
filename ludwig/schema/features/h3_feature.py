@@ -28,7 +28,7 @@ class H3InputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(H3)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class H3InputFeatureConfig(BaseInputFeatureConfig, H3InputFeatureConfigMixin):
     """H3InputFeatureConfig is a dataclass that configures the parameters used for an h3 input feature."""
 

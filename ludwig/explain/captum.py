@@ -301,6 +301,8 @@ def get_total_attribution(
             tuple(input_batch),
             baselines=tuple(baseline),
             target=target_idx,
+            # https://captum.ai/docs/faq#i-am-facing-out-of-memory-oom-errors-when-using-captum-how-do-i-resolve-this
+            internal_batch_size=model.config_obj.trainer.batch_size,
         )
 
         attributions_reduced = []
