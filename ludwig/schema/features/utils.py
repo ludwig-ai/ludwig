@@ -70,8 +70,6 @@ def get_input_feature_jsonschema(model_type: str):
     if model_type == MODEL_GBM:
         prune_gbm_features(schema)
 
-    print(schema["items"]["properties"]["type"])
-
     return schema
 
 

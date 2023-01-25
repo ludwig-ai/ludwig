@@ -77,9 +77,7 @@ def run_test_gbm_output_not_supported(tmpdir, backend_config):
     input_features = [number_feature(), category_feature(encoder={"reduce_output": "sum"})]
     output_features = [text_feature(output_feature=True)]
 
-    with pytest.raises(
-        ValueError, match="Model type GBM only supports numerical, categorical, or binary output " "features.*"
-    ):
+    with pytest.raises(ValidationError, match="Failed validating 'enum'.*"):
         _train_and_predict_gbm(input_features, output_features, tmpdir, backend_config)
 
 
