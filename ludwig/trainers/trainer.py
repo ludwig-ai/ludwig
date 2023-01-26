@@ -32,7 +32,7 @@ import psutil
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ludwig.constants import LOSS, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
+from ludwig.constants import LOSS, MAX_BATCH_SIZE_DATASET_FRACTION, MINIMIZE, MODEL_ECD, TEST, TRAIN, TRAINING, VALIDATION
 from ludwig.data.dataset.base import Dataset
 from ludwig.distributed.base import DistributedStrategy, LocalStrategy
 from ludwig.globals import (
@@ -394,13 +394,13 @@ class Trainer(BaseTrainer):
 
         def _is_valid_batch_size(batch_size):
             # make sure that batch size is valid (e.g. less than 20% of ds size and max_batch_Size)
-            is_smaller_than_training_set = batch_size <= 0.2 * len(training_set)
+            is_smaller_than_training_set = batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * len(training_set)
             is_under_max_batch_size = batch_size <= self.max_batch_size
             is_valid = is_smaller_than_training_set and is_under_max_batch_size
             if not is_valid:
                 logger.info(
-                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                    f"{len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
+                    f"Batch size {batch_size} is invalid, must be smaller than {MAX_BATCH_SIZE_DATASET_FRACTION * 100}% training set size "
+                    f"{MAX_BATCH_SIZE_DATASET_FRACTION * len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
                 )
             return is_valid
 
