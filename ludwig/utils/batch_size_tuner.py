@@ -6,6 +6,7 @@ from abc import ABC
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +25,16 @@ class BatchSizeEvaluator(ABC):
         max_batch_size = max_batch_size or dataset_len
 
         def _is_valid_batch_size(batch_size):
-            # make sure that batch size is valid (e.g. less than size of ds)
-            is_smaller_than_training_set = batch_size < dataset_len
+            # make sure that batch size is valid (e.g. less than 20% of ds size and max_batch_size)
+            is_smaller_than_training_set = batch_size <= MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len
             is_under_max_batch_size = batch_size <= max_batch_size
             is_valid = is_smaller_than_training_set and is_under_max_batch_size
             if not is_valid:
                 logger.info(
-                    f"Batch size {batch_size} is invalid, must be smaller than training set size "
-                    f"{dataset_len} and less than or equal to max batch size {max_batch_size}"
+                    f"Batch size {batch_size} is invalid, must be less than or equal to "
+                    f"{MAX_BATCH_SIZE_DATASET_FRACTION * 100}% dataset size "
+                    f"({int(MAX_BATCH_SIZE_DATASET_FRACTION * dataset_len)} samples "
+                    f"of {dataset_len}) and less than or equal to max batch size {max_batch_size}"
                 )
             return is_valid
 
