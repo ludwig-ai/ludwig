@@ -1021,7 +1021,7 @@ class TestDatasetWindowAutosizing:
             split=False,
             transform=False,
             use_stream_api=True,
-            stream_window_size=ds.get_window_size_bytes(window_size_bytes=window_size_bytes),
+            stream_window_size=ds.get_window_size_bytes(window_size=window_size_bytes),
             global_shuffle=False,
         )
         spec = DataParallelIngestSpec({"train": dataset_config})
