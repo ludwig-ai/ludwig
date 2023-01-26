@@ -1,7 +1,8 @@
 from os import PathLike
 from typing import Optional, Type, Union
 
-from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+from transformers import AutoConfig
+from transformers.modeling_utils import PreTrainedModel
 
 from ludwig.utils.error_handling_utils import default_retry
 
@@ -9,7 +10,7 @@ from ludwig.utils.error_handling_utils import default_retry
 @default_retry()
 def load_pretrained_hf_model(
     modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
-) -> PreTrainedTokenizerBase:
+) -> PreTrainedModel:
     """Download a HuggingFace model.
 
     Downloads a model from the HuggingFace zoo with retry on failure.
@@ -19,3 +20,15 @@ def load_pretrained_hf_model(
         The pretrained model object.
     """
     return modelClass.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
+
+
+@default_retry()
+def load_pretrained_hf_config(
+    configClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
+) -> AutoConfig:
+    """Downloads a HuggingFace model config.
+    
+    This is useful for instantiating a HF model architecture without loading its weights. Primarily used for
+    loading an existing LudwigModel from a checkpoint.
+    """
+    return configClass.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)

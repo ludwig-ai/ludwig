@@ -2160,7 +2160,7 @@ class CamemBERTConfig(SequenceEncoderConfig):
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
-        default=514,
+        default=512,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
         "something large just in case (e.g., 512 or 1024 or 2048).",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["max_position_embeddings"],

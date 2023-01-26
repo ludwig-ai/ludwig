@@ -3983,6 +3983,27 @@ Longformer:
         ui_display_name: null
     num_tokens:
         ui_display_name: null
+    max_position_embeddings:
+        default_value_reasoning: Taken from huggingface.
+        description_implications:
+            "An embedding is a relatively low-dimensional space
+            that is used to translate high-dimensional vectors like words or positions,
+            which can have a large vocbulary size. Ideally, after an embedding is
+            trained, it captures some of the semantics of the input by placing semantically
+            similar inputs close together in the embedding space.
+
+
+            Increasing the embedding size may cause the model to train more slowly,
+            but the higher dimensionality can also improve overall quality."
+        expected_impact: 2
+        suggested_values: 512
+        suggested_values_reasoning:
+            Out of the box value based on published literature.
+            Try models with smaller or larger embedding sizes to observe relative
+            impact.
+        ui_display_name: Max Position Embeddings
+    type_vocab_size:
+        ui_display_name: null
     pretrained_kwargs:
         ui_display_name: null
     pretrained_model_name_or_path:
