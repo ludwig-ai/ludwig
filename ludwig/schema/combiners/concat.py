@@ -85,6 +85,7 @@ class ConcatCombinerConfig(BaseCombinerConfig):
 
     num_fc_layers: int = schema_utils.NonNegativeInteger(
         default=0,
+        allow_none=False,
         description="",
         parameter_metadata=COMBINER_METADATA["ConcatCombiner"]["num_fc_layers"],
     )
