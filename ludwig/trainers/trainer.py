@@ -399,8 +399,10 @@ class Trainer(BaseTrainer):
             is_valid = is_smaller_than_training_set and is_under_max_batch_size
             if not is_valid:
                 logger.info(
-                    f"Batch size {batch_size} is invalid, must be smaller than {MAX_BATCH_SIZE_DATASET_FRACTION * 100}% training set size "
-                    f"{MAX_BATCH_SIZE_DATASET_FRACTION * len(training_set)} and less than or equal to max batch size {self.max_batch_size}"
+                    f"Batch size {batch_size} is invalid, must be less than or equal to "
+                    f"{MAX_BATCH_SIZE_DATASET_FRACTION * 100}% training set size "
+                    f"({int(MAX_BATCH_SIZE_DATASET_FRACTION * len(training_set))} samples "
+                    f"of {len(training_set)}) and less than or equal to max batch size {self.max_batch_size}"
                 )
             return is_valid
 
