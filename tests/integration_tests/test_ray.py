@@ -822,17 +822,19 @@ def test_tune_batch_size_lr_cpu(
 
     num_samples = 200
     csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=num_samples)
+    dataset_csv = generate_data(
+        config["input_features"], config["output_features"], csv_filename, num_examples=num_samples
+    )
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-    
+
     if expected_final_batch_size is not None:
         assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
     else:
         # If we don't specify a batch size, we should validate the batch size against the training dataset size
         num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
         assert 2 < model.config[TRAINER]["batch_size"] <= MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples
-        
+
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
