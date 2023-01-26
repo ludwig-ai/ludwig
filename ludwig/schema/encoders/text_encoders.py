@@ -2854,7 +2854,7 @@ class LongformerConfig(SequenceEncoderConfig):
         description="Number of tokens",
         parameter_metadata=ENCODER_METADATA["Longformer"]["num_tokens"],
     )
-    
+
     max_position_embeddings: int = schema_utils.PositiveInteger(
         default=4098,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
