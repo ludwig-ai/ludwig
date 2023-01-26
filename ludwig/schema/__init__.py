@@ -59,7 +59,7 @@ def get_schema(model_type: str = MODEL_ECD):
             TRAINER: get_trainer_jsonschema(model_type),
             PREPROCESSING: get_preprocessing_jsonschema(),
             HYPEROPT: get_hyperopt_jsonschema(),
-            DEFAULTS: get_defaults_jsonschema(),
+            DEFAULTS: get_defaults_jsonschema(model_type),
             LUDWIG_VERSION: get_ludwig_version_jsonschema(),
             BACKEND: get_backend_jsonschema(),
         },
