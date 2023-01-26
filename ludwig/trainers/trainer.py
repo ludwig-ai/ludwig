@@ -69,6 +69,8 @@ from ludwig.utils.trainer_utils import (
     ProgressTracker,
 )
 
+MAX_CPU_BATCH_SIZE = 128
+
 logger = logging.getLogger(__name__)
 
 
@@ -372,11 +374,16 @@ class Trainer(BaseTrainer):
         self.skip_save_progress = True
         self.skip_save_log = True
 
+        # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
+        # parallelization within a batch. As such, to increase changes of stable training, we cap the maximum
+        # batch size at MAX_CPU_BATCH_SIZE
+        max_batch_size = self.max_batch_size if torch.cuda.is_available() else MAX_CPU_BATCH_SIZE
+
         self.dist_model.train()  # Sets model training mode.
 
         evaluator = self._create_batch_size_evaluator()
         try:
-            return evaluator.select_best_batch_size(len(training_set), self.max_batch_size, max_trials)
+            return evaluator.select_best_batch_size(len(training_set), max_batch_size, max_trials)
         finally:
             # Restore original parameters to defaults
             self.skip_save_model = skip_save_model
