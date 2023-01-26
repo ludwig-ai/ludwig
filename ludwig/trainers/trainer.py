@@ -377,7 +377,9 @@ class Trainer(BaseTrainer):
         # When training on CPU, larger batch sizes offer limited benefits due to lack of effective
         # parallelization within a batch. As such, to increase changes of stable training, we cap the maximum
         # batch size at MAX_CPU_BATCH_SIZE
-        max_batch_size = self.max_batch_size if torch.cuda.is_available() else MAX_CPU_BATCH_SIZE
+        max_batch_size = (
+            self.max_batch_size if torch.cuda.is_available() else min(self.max_batch_size, MAX_CPU_BATCH_SIZE)
+        )
 
         self.dist_model.train()  # Sets model training mode.
 
