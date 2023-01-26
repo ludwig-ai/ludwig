@@ -52,6 +52,7 @@ from ludwig.constants import (
 from ludwig.data.preprocessing import balance_data
 from ludwig.data.split import DEFAULT_PROBABILITIES
 from ludwig.utils.data_utils import read_parquet
+from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
     audio_feature,
     augment_dataset_with_none,
@@ -300,6 +301,7 @@ def run_test_with_features(
     last_row_none=False,
     nan_cols=None,
     required_metrics=None,
+    backend_kwargs=None,
 ):
     preprocessing = preprocessing or {}
     config = {
@@ -311,7 +313,8 @@ def run_test_with_features(
     if preprocessing:
         config[PREPROCESSING] = preprocessing
 
-    backend_config = {**RAY_BACKEND_CONFIG}
+    backend_kwargs = copy.deepcopy(backend_kwargs or {})
+    backend_config = merge_dict(RAY_BACKEND_CONFIG, backend_kwargs)
     if df_engine:
         backend_config["processor"]["type"] = df_engine
 

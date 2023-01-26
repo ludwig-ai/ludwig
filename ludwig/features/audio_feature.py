@@ -95,7 +95,7 @@ class AudioFeatureMixin(BaseFeatureMixin):
     def get_feature_meta(
         column, preprocessing_parameters: PreprocessingConfigDict, backend, is_input_feature: bool
     ) -> FeatureMetadataDict:
-        first_audio_file_path = column.head(1)[0]
+        first_audio_file_path = column.head(1).iloc[0]
         _, sampling_rate_in_hz = torchaudio.load(first_audio_file_path)
 
         feature_dim = AudioFeatureMixin._get_feature_dim(preprocessing_parameters, sampling_rate_in_hz)

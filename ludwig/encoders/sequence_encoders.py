@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import torch
 from torch import nn
@@ -43,9 +43,15 @@ from ludwig.schema.encoders.sequence_encoders import (
 logger = logging.getLogger(__name__)
 
 
+class SequenceEncoder(Encoder):
+    @classmethod
+    def get_fixed_preprocessing_params(cls, encoder_params: Dict[str, Any]) -> Dict[str, Any]:
+        return {"cache_encoder_embeddings": False}
+
+
 @DeveloperAPI
 @register_encoder("passthrough", [SEQUENCE, TEXT, TIMESERIES])
-class SequencePassthroughEncoder(Encoder):
+class SequencePassthroughEncoder(SequenceEncoder):
     def __init__(
         self,
         reduce_output: str = None,
@@ -101,7 +107,7 @@ class SequencePassthroughEncoder(Encoder):
 
 @DeveloperAPI
 @register_encoder("embed", [SEQUENCE, TEXT])
-class SequenceEmbedEncoder(Encoder):
+class SequenceEmbedEncoder(SequenceEncoder):
     def __init__(
         self,
         vocab,
@@ -240,7 +246,7 @@ class SequenceEmbedEncoder(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("parallel_cnn")
 @register_encoder("parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class ParallelCNN(Encoder):
+class ParallelCNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -541,7 +547,7 @@ class ParallelCNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("stacked_cnn")
 @register_encoder("stacked_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedCNN(Encoder):
+class StackedCNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -879,7 +885,7 @@ class StackedCNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("stacked_parallel_cnn")
 @register_encoder("stacked_parallel_cnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedParallelCNN(Encoder):
+class StackedParallelCNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -1192,7 +1198,7 @@ class StackedParallelCNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("rnn")
 @register_encoder("rnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedRNN(Encoder):
+class StackedRNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -1466,7 +1472,7 @@ class StackedRNN(Encoder):
 @DeveloperAPI
 @register_sequence_encoder("cnnrnn")
 @register_encoder("cnnrnn", [AUDIO, SEQUENCE, TEXT, TIMESERIES])
-class StackedCNNRNN(Encoder):
+class StackedCNNRNN(SequenceEncoder):
     def __init__(
         self,
         should_embed=True,
@@ -1755,7 +1761,7 @@ class StackedCNNRNN(Encoder):
 
 @DeveloperAPI
 @register_encoder("transformer", [SEQUENCE, TEXT, TIMESERIES])
-class StackedTransformer(Encoder):
+class StackedTransformer(SequenceEncoder):
     def __init__(
         self,
         max_sequence_length,
