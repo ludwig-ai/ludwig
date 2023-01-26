@@ -102,7 +102,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "biggest batch size (power of 2) that can fit in memory will be used."
+            "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
+            "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
+            "a GPU."
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
