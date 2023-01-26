@@ -8,7 +8,14 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.explain.captum import get_baseline, get_input_tensors, get_total_attribution, IntegratedGradientsExplainer
+from ludwig.explain.captum import (
+    ExplanationRunConfig,
+    get_baseline,
+    get_input_tensors,
+    get_total_attribution,
+    IntegratedGradientsExplainer,
+    retry_on_cuda_oom,
+)
 from ludwig.explain.explanation import Explanation
 from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.utils.torch_utils import get_torch_device
@@ -37,13 +44,14 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
         self.model.model.cpu()
         input_features: LudwigFeatureDict = self.model.model.input_features
         model_ref = ray.put(self.model)
+        run_config = ExplanationRunConfig(batch_size=self.model.config_obj.trainer.batch_size)
 
         # Convert input data into embedding tensors from the output of the model encoders.
-        inputs_encoded_ref = get_input_tensors_task.options(**self.resources_per_task).remote(
-            model_ref, ray.put(self.inputs_df)
+        inputs_encoded_ref, run_config = get_input_tensors_task.options(**self.resources_per_task).remote(
+            model_ref, ray.put(self.inputs_df), run_config
         )
-        sample_encoded_ref = get_input_tensors_task.options(**self.resources_per_task).remote(
-            model_ref, ray.put(self.sample_df)
+        sample_encoded_ref, run_config = get_input_tensors_task.options(**self.resources_per_task).remote(
+            model_ref, ray.put(self.sample_df), run_config
         )
 
         inputs_encoded = ray.get(inputs_encoded_ref)
@@ -75,6 +83,7 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
                 baseline_ref,
                 self.use_global,
                 len(self.inputs_df),
+                run_config,
             )
             attrs_refs.append(attrs_ref)
 
@@ -114,11 +123,14 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
 
 
 @ray.remote(max_calls=1)
-def get_input_tensors_task(model: LudwigModel, df: pd.DataFrame) -> List[Variable]:
+def get_input_tensors_task(
+    model: LudwigModel, df: pd.DataFrame, run_config: ExplanationRunConfig
+) -> Tuple[List[Variable], ExplanationRunConfig]:
     model.model.unskip()
     model.model.to(get_torch_device())
     try:
-        return get_input_tensors(model, df)
+        get_total_attribution_with_retry = retry_on_cuda_oom(run_config)(get_input_tensors)
+        return get_total_attribution_with_retry(model, df), run_config
     finally:
         model.model.cpu()
 
@@ -132,12 +144,14 @@ def get_total_attribution_task(
     baseline: List[Variable],
     use_global: bool,
     nsamples: int,
+    run_config: ExplanationRunConfig,
 ) -> List[np.array]:
     model.model.unskip()
     model.model.to(get_torch_device())
     try:
+        get_total_attribution_with_retry = retry_on_cuda_oom(run_config)(get_total_attribution)
         return [
-            get_total_attribution(
+            get_total_attribution_with_retry(
                 model=model,
                 target_feature_name=target_feature_name,
                 target_idx=target_idx,
