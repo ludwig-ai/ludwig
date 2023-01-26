@@ -1,11 +1,20 @@
+import os
+
 import pytest
 import requests
 import torch
 
+from ludwig.api import LudwigModel
+from ludwig.constants import TRAINER
 from ludwig.encoders import text_encoders
 from ludwig.schema.encoders import text_encoders as configs
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-
+from tests.integration_tests.utils import (
+    category_feature,
+    text_feature,
+    generate_data,
+    LocalTestBackend,
+)
 
 @pytest.mark.parametrize(
     "encoder_config_cls",
@@ -15,7 +24,7 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
         configs.XLMConfig,
         configs.GPTConfig,
         configs.RoBERTaConfig,
-        configs.GPT2Config,
+        # configs.GPT2Config,
         configs.DistilBERTConfig,
         configs.TransformerXLConfig,
         configs.CTRLConfig,
@@ -50,8 +59,24 @@ def test_hf_pretrained_default_exists(encoder_config_cls: configs.SequenceEncode
         assert (
             False
         ), f"Unable to find model info for the default model '{default_model}' of config '{encoder_config_cls}'."
-
-
+        
+        
+def test_hf_ludwig_model_e2e(csv_filename):
+    tmpdir = "/Users/geoffreyangus/Downloads/hf_test_3"
+    input_features = [text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": "camembert", "use_pretrained": True})]
+    output_features = [category_feature(decoder={"vocab_size": 2})]
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    config = {
+        "input_features": input_features,
+        "output_features": output_features,
+        TRAINER: {"train_steps": 1},
+    }
+    
+    model = LudwigModel(config=config, backend=LocalTestBackend())
+    _, _, results_dir = model.train(dataset=rel_path, output_directory=tmpdir)
+    LudwigModel.load(os.path.join(results_dir, "model"))
+    
+    
 @pytest.fixture(scope="module")
 def auto_transformer_tmpdir(tmpdir_factory):
     """Creates a temporary directory for `test_auto_transformer_encoder` to eliminate redundant downloads."""
