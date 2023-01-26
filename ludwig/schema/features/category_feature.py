@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import ACCURACY, CATEGORY, SOFTMAX_CROSS_ENTROPY
 from ludwig.schema import utils as schema_utils
@@ -20,12 +18,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(CATEGORY)
-@dataclass
+@ludwig_dataclass
 class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     input feature and the category global defaults section of the Ludwig Config."""
@@ -40,7 +38,7 @@ class CategoryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(CATEGORY)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureConfigMixin):
     """CategoryInputFeatureConfig is a dataclass that configures the parameters used for a category input
     feature."""
@@ -50,7 +48,7 @@ class CategoryInputFeatureConfig(BaseInputFeatureConfig, CategoryInputFeatureCon
 
 @DeveloperAPI
 @output_mixin_registry.register(CATEGORY)
-@dataclass
+@ludwig_dataclass
 class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """CategoryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the category
     output feature and the category global defaults section of the Ludwig Config."""
@@ -68,7 +66,7 @@ class CategoryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(CATEGORY)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class CategoryOutputFeatureConfig(BaseOutputFeatureConfig, CategoryOutputFeatureConfigMixin):
     """CategoryOutputFeatureConfig is a dataclass that configures the parameters used for a category output
     feature."""

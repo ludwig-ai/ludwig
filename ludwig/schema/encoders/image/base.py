@@ -1,19 +1,18 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import IMAGE
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.encoders.base import BaseEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.torch_utils import initializer_registry
 
 
 @DeveloperAPI
 @register_encoder_config("stacked_cnn", IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class Stacked2DCNNConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -289,7 +288,7 @@ class Stacked2DCNNConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("_resnet_legacy", IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class ResNetConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -464,7 +463,7 @@ class ResNetConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("mlp_mixer", IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class MLPMixerConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():
@@ -543,7 +542,7 @@ class MLPMixerConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("_vit_legacy", IMAGE)
-@dataclass(repr=False)
+@ludwig_dataclass
 class ViTConfig(BaseEncoderConfig):
     @staticmethod
     def module_name():

@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BINARY, BINARY_WEIGHTED_CROSS_ENTROPY, ROC_AUC
 from ludwig.schema import utils as schema_utils
@@ -20,12 +18,12 @@ from ludwig.schema.features.utils import (
 )
 from ludwig.schema.metadata import FEATURE_METADATA
 from ludwig.schema.metadata.parameter_metadata import INTERNAL_ONLY
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(BINARY)
-@dataclass
+@ludwig_dataclass
 class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryInputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary input
     feature and the binary global defaults section of the Ludwig Config."""
@@ -40,7 +38,7 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(BINARY)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -49,7 +47,7 @@ class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigM
 
 @DeveloperAPI
 @output_mixin_registry.register(BINARY)
-@dataclass
+@ludwig_dataclass
 class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
     """BinaryOutputFeatureConfigMixin is a dataclass that configures the parameters used in both the binary output
     feature and the binary global defaults section of the Ludwig Config."""
@@ -67,7 +65,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(BINARY)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConfigMixin):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 

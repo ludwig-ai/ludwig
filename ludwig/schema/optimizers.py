@@ -4,12 +4,12 @@ from typing import ClassVar, Dict, Optional, Tuple
 
 import torch
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.schema.metadata import OPTIMIZER_METADATA
 from ludwig.schema.metadata.parameter_metadata import convert_metadata_to_json
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 optimizer_registry = Registry()
@@ -31,7 +31,7 @@ def get_optimizer_cls(name: str):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
 
@@ -53,7 +53,7 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_optimizer(name="sgd")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
@@ -81,7 +81,7 @@ class SGDOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="lbfgs")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class LBFGSOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
@@ -132,7 +132,7 @@ class LBFGSOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adam")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class AdamOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adam optimization."""
 
@@ -170,7 +170,7 @@ class AdamOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adamw")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class AdamWOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamw optimization."""
 
@@ -208,7 +208,7 @@ class AdamWOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adadelta")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class AdadeltaOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adadelta optimization."""
 
@@ -241,7 +241,7 @@ class AdadeltaOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adagrad")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class AdagradOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adagrad optimization."""
 
@@ -275,7 +275,7 @@ class AdagradOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="adamax")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class AdamaxOptimizerConfig(BaseOptimizerConfig):
     """Parameters for adamax optimization."""
 
@@ -307,7 +307,7 @@ class AdamaxOptimizerConfig(BaseOptimizerConfig):
 # NOTE: keep ftrl and nadam optimizers out of registry:
 # @register_optimizer(name="ftrl")
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class FtrlOptimizerConfig(BaseOptimizerConfig):
     # optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.Ftrl
     type: str = schema_utils.ProtectedString("ftrl")
@@ -331,7 +331,7 @@ class FtrlOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="nadam")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class NadamOptimizerConfig(BaseOptimizerConfig):
     optimizer_class: ClassVar[torch.optim.Optimizer] = torch.optim.NAdam
     """Points to `torch.optim.NAdam`."""
@@ -363,7 +363,7 @@ class NadamOptimizerConfig(BaseOptimizerConfig):
 
 @DeveloperAPI
 @register_optimizer(name="rmsprop")
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class RMSPropOptimizerConfig(BaseOptimizerConfig):
     """Parameters for rmsprop optimization."""
 
@@ -497,7 +497,7 @@ def OptimizerDataclassField(default={"type": "adam"}, description="TODO"):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class GradientClippingConfig(schema_utils.BaseMarshmallowConfig):
     """Dataclass that holds gradient clipping parameters."""
 
