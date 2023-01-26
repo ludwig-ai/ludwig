@@ -31,7 +31,7 @@ def get_optimizer_cls(name: str):
 
 
 @DeveloperAPI
-@ludwig_dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Base class for optimizers. Not meant to be used directly.
 
@@ -53,7 +53,7 @@ class BaseOptimizerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 @DeveloperAPI
 @register_optimizer(name="sgd")
-@ludwig_dataclass(repr=False, order=True)
+@ludwig_dataclass
 class SGDOptimizerConfig(BaseOptimizerConfig):
     """Parameters for stochastic gradient descent."""
 
