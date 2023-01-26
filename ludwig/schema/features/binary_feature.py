@@ -40,7 +40,7 @@ class BinaryInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(BINARY)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BinaryInputFeatureConfig(BaseInputFeatureConfig, BinaryInputFeatureConfigMixin):
     """BinaryInputFeatureConfig is a dataclass that configures the parameters used for a binary input feature."""
 
@@ -67,7 +67,7 @@ class BinaryOutputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @output_config_registry.register(BINARY)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BinaryOutputFeatureConfig(BaseOutputFeatureConfig, BinaryOutputFeatureConfigMixin):
     """BinaryOutputFeatureConfig is a dataclass that configures the parameters used for a binary output feature."""
 

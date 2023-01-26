@@ -28,7 +28,7 @@ class DateInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(DATE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class DateInputFeatureConfig(BaseInputFeatureConfig, DateInputFeatureConfigMixin):
     """DateInputFeature is a dataclass that configures the parameters used for a date input feature."""
 

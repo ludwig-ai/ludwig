@@ -115,6 +115,7 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
 
 @ray.remote(max_calls=1)
 def get_input_tensors_task(model: LudwigModel, df: pd.DataFrame) -> List[Variable]:
+    model.model.unskip()
     model.model.to(get_torch_device())
     try:
         return get_input_tensors(model, df)
@@ -132,6 +133,7 @@ def get_total_attribution_task(
     use_global: bool,
     nsamples: int,
 ) -> List[np.array]:
+    model.model.unskip()
     model.model.to(get_torch_device())
     try:
         return [

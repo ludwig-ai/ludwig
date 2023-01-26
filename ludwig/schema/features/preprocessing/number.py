@@ -10,7 +10,7 @@ from ludwig.schema.metadata import FEATURE_METADATA
 
 @DeveloperAPI
 @register_preprocessor(NUMBER)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class NumberPreprocessingConfig(BasePreprocessingConfig):
     """NumberPreprocessingConfig is a dataclass that configures the parameters used for a number input feature."""
 
@@ -48,7 +48,7 @@ class NumberPreprocessingConfig(BasePreprocessingConfig):
 
 @DeveloperAPI
 @register_preprocessor("number_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -56,4 +56,12 @@ class NumberOutputPreprocessingConfig(NumberPreprocessingConfig):
         allow_none=False,
         description="What strategy to follow when there's a missing value in a number output feature",
         parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    normalization: str = schema_utils.StringOptions(
+        ["zscore", "minmax", "log1p", "iq"],
+        default=None,
+        allow_none=True,
+        description="Normalization strategy to use for this number feature.",
+        parameter_metadata=FEATURE_METADATA[NUMBER][PREPROCESSING]["normalization"],
     )

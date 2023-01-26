@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import logging
 import warnings
 from typing import Any, Callable, Dict, List, Union
 
@@ -62,7 +63,7 @@ from ludwig.constants import (
     USE_BIAS,
     WIDTH,
 )
-from ludwig.features.feature_registries import get_base_type_registry
+from ludwig.features.feature_registries import get_base_type_registry, get_input_type_registry, get_output_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.encoders.utils import get_encoder_cls
 from ludwig.types import (
@@ -74,7 +75,7 @@ from ludwig.types import (
     TrainingSetMetadataDict,
 )
 from ludwig.utils.metric_utils import TrainerMetric
-from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import get_from_registry, merge_dict
 from ludwig.utils.version_transformation import VersionTransformation, VersionTransformationRegistry
 
 config_transformation_registry = VersionTransformationRegistry()
@@ -362,43 +363,24 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         feature (Dict): Feature to nest encoder/decoder params for.
         input_feature (Bool): Whether this feature is an input feature or not.
     """
-    input_feature_keys = [
-        # Encoder-external parameters.
-        "name",
-        "type",
-        "encoder",
-        "tied",
-        "augmentation",  # TODO: is this the correct way to introduce this new parameter?
-        # Internal-only parameters.
-        "column",
-        "proc_column",
-        "preprocessing",
-        "vector_size",
-        "active",
-    ]
+    if TYPE not in feature:
+        return feature
 
-    output_feature_keys = [
-        # Decoder-external parameters.
-        "name",
-        "type",
-        "calibration",
-        "decoder",
-        # Internal-only parameters.
-        "preprocessing",
-        "loss",
-        "column",
-        "proc_column",
-        "num_classes",
-        "reduce_input",
-        "dependencies",
-        "reduce_dependencies",
-        "top_k",
-        "vector_size",
-        "active",
-        "default_validation_metric",
-        "input_size",
-    ]
+    try:
+        if input_feature:
+            module_type = ENCODER
+            feature_cls = get_from_registry(feature[TYPE], get_input_type_registry())
+        else:
+            module_type = DECODER
+            feature_cls = get_from_registry(feature[TYPE], get_output_type_registry())
+    except ValueError:
+        logging.exception("Failed to obtain encoder / decoder from registry")
+        return feature
 
+    feature_schema_cls = feature_cls.get_schema_cls()
+    feature_keys = feature_schema_cls.get_valid_field_names()
+
+    # These keys have been renamed from the form below to `fc_<key>` in the new config
     fc_layer_keys = [
         "fc_layers",
         "output_size",
@@ -411,17 +393,9 @@ def _upgrade_encoder_decoder_params(feature: FeatureConfigDict, input_feature: b
         "dropout",
     ]
 
-    warn = False
-    if input_feature:
-        module_type = ENCODER
-    else:
-        module_type = DECODER
-
     module = feature.get(module_type, {})
 
-    # List of keys to keep in the output feature.
-    feature_keys = input_feature_keys if module_type == ENCODER else output_feature_keys
-
+    warn = False
     if isinstance(module, str):
         module = {TYPE: module}
         feature[module_type] = module

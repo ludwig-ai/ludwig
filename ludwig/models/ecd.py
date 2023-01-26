@@ -142,6 +142,10 @@ class ECD(BaseModel):
         combiner_outputs = self.combine(encoder_outputs)
         return self.decode(combiner_outputs, targets, mask)
 
+    def unskip(self):
+        for k in self.input_features.keys():
+            self.input_features[k] = self.input_features[k].unskip()
+
     def save(self, save_path):
         """Saves the model to the given path."""
         weights_save_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)

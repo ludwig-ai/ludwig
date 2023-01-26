@@ -22,6 +22,11 @@ from tests.integration_tests.utils import (
     vector_feature,
 )
 
+try:
+    from ludwig.explain.captum_ray import RayIntegratedGradientsExplainer
+except ImportError:
+    RayIntegratedGradientsExplainer = None
+
 
 def test_explanation_dataclass():
     explanation = Explanation(target="target")
@@ -94,22 +99,48 @@ def test_explainer_api_ray(use_global, output_feature, tmpdir, ray_cluster_2cpu)
     )
 
 
+@pytest.mark.parametrize("cache_encoder_embeddings", [True, False])
+@pytest.mark.parametrize(
+    "explainer_class,model_type",
+    [
+        pytest.param(IntegratedGradientsExplainer, MODEL_ECD, id="ecd_local"),
+        pytest.param(RayIntegratedGradientsExplainer, MODEL_ECD, id="ecd_ray", marks=pytest.mark.distributed),
+        # TODO(travis): once we support GBM text features
+        # pytest.param((GBMExplainer, MODEL_GBM), id="gbm_local"),
+    ],
+)
+def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings, tmpdir, ray_cluster_2cpu):
+    input_features = [
+        text_feature(
+            encoder={
+                "type": "auto_transformer",
+                "pretrained_model_name_or_path": "hf-internal-testing/tiny-bert-for-token-classification",
+            },
+            preprocessing={"cache_encoder_embeddings": cache_encoder_embeddings},
+        )
+    ]
+    run_test_explainer_api(
+        explainer_class, model_type, [binary_feature()], {}, False, tmpdir, input_features=input_features
+    )
+
+
 def run_test_explainer_api(
-    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, **kwargs
+    explainer_class, model_type, output_features, additional_config, use_global, tmpdir, input_features=None, **kwargs
 ):
-    input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
-    if model_type == MODEL_ECD:
-        input_features += [
-            text_feature(encoder={"vocab_size": 3}),
-            vector_feature(),
-            timeseries_feature(),
-            # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
-            # sequence_feature(encoder={"vocab_size": 3}),
-            # date_feature(),
-            # h3_feature(),
-            # set_feature(encoder={"vocab_size": 3}),
-            # bag_feature(encoder={"vocab_size": 3}),
-        ]
+    if input_features is None:
+        input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
+        if model_type == MODEL_ECD:
+            input_features += [
+                text_feature(encoder={"vocab_size": 3}),
+                vector_feature(),
+                timeseries_feature(),
+                # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
+                # sequence_feature(encoder={"vocab_size": 3}),
+                # date_feature(),
+                # h3_feature(),
+                # set_feature(encoder={"vocab_size": 3}),
+                # bag_feature(encoder={"vocab_size": 3}),
+            ]
 
     # Generate data
     csv_filename = os.path.join(tmpdir, "training.csv")

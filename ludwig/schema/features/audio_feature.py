@@ -28,7 +28,7 @@ class AudioInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(AUDIO)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class AudioInputFeatureConfig(BaseInputFeatureConfig, AudioInputFeatureConfigMixin):
     """AudioInputFeatureConfig is a dataclass that configures the parameters used for an audio input feature."""
 

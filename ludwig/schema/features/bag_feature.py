@@ -28,7 +28,7 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(BAG)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class BagInputFeatureConfig(BaseInputFeatureConfig, BagInputFeatureConfigMixin):
     """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
 

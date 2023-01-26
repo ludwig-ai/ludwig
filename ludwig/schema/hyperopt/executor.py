@@ -18,10 +18,11 @@ class ExecutorConfig(schema_utils.BaseMarshmallowConfig):
     type: str = schema_utils.ProtectedString(RAY)
 
     num_samples: int = schema_utils.PositiveInteger(
-        default=10,
+        default=None,
+        allow_none=True,
         description=(
             "This parameter, along with the space specifications in the parameters section, controls how many "
-            "trials are generated "
+            "trials are generated."
         ),
     )
 

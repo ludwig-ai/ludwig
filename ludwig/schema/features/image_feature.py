@@ -47,7 +47,7 @@ class ImageInputFeatureConfigMixin(schema_utils.BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(IMAGE)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class ImageInputFeatureConfig(BaseInputFeatureConfig, ImageInputFeatureConfigMixin):
     """ImageInputFeatureConfig is a dataclass that configures the parameters used for an image input feature."""
 

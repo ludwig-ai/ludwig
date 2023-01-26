@@ -5,7 +5,7 @@ from marshmallow_dataclass import dataclass
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import TEXT
 from ludwig.schema import utils as schema_utils
-from ludwig.schema.encoders.base import BaseEncoderConfig
+from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.utils import register_encoder_config
 from ludwig.schema.metadata import ENCODER_METADATA
 from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
@@ -13,8 +13,8 @@ from ludwig.schema.metadata.parameter_metadata import ParameterMetadata
 
 @DeveloperAPI
 @register_encoder_config("albert", TEXT)
-@dataclass(repr=False)
-class ALBERTConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class ALBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an ALBERT encoder."""
 
     @staticmethod
@@ -207,10 +207,11 @@ class ALBERTConfig(BaseEncoderConfig):
     )
 
 
+# TODO: uncomment when sentencepiece doesn't cause segfaults: https://github.com/ludwig-ai/ludwig/issues/2983
+# @register_encoder_config("mt5", TEXT)
 @DeveloperAPI
-@register_encoder_config("mt5", TEXT)
-@dataclass(repr=False)
-class MT5Config(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class MT5Config(SequenceEncoderConfig):
     """This dataclass configures the schema used for an MT5 encoder."""
 
     @staticmethod
@@ -254,7 +255,7 @@ class MT5Config(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls_pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["MT5"]["reduce_output"],
     )
@@ -396,8 +397,8 @@ class MT5Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlmroberta", TEXT)
-@dataclass(repr=False)
-class XLMRoBERTaConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class XLMRoBERTaConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an XLMRoBERTa encoder."""
 
     @staticmethod
@@ -491,8 +492,8 @@ class XLMRoBERTaConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("bert", TEXT)
-@dataclass(repr=False)
-class BERTConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class BERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an BERT encoder."""
 
     @staticmethod
@@ -662,8 +663,8 @@ class BERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlm", TEXT)
-@dataclass(repr=False)
-class XLMConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class XLMConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an XLM encoder."""
 
     @staticmethod
@@ -909,8 +910,8 @@ class XLMConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt", TEXT)
-@dataclass(repr=False)
-class GPTConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class GPTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an GPT encoder."""
 
     @staticmethod
@@ -1049,8 +1050,8 @@ class GPTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("gpt2", TEXT)
-@dataclass(repr=False)
-class GPT2Config(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class GPT2Config(SequenceEncoderConfig):
     """This dataclass configures the schema used for an GPT2 encoder."""
 
     @staticmethod
@@ -1200,8 +1201,8 @@ class GPT2Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("roberta", TEXT)
-@dataclass(repr=False)
-class RoBERTaConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class RoBERTaConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an RoBERTa encoder."""
 
     @staticmethod
@@ -1289,8 +1290,8 @@ class RoBERTaConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("transformer_xl", TEXT)
-@dataclass(repr=False)
-class TransformerXLConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class TransformerXLConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an TransformerXL encoder."""
 
     @staticmethod
@@ -1516,8 +1517,8 @@ class TransformerXLConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("xlnet", TEXT)
-@dataclass(repr=False)
-class XLNetConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class XLNetConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an XLNet encoder."""
 
     @staticmethod
@@ -1753,8 +1754,8 @@ class XLNetConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("distilbert", TEXT)
-@dataclass(repr=False)
-class DistilBERTConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class DistilBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an DistilBERT encoder."""
 
     @staticmethod
@@ -1905,10 +1906,11 @@ class DistilBERTConfig(BaseEncoderConfig):
     )
 
 
+# TODO: uncomment when CTRL bug (https://github.com/ludwig-ai/ludwig/issues/2977) has been fixed to add back in
+# @register_encoder_config("ctrl", TEXT)
 @DeveloperAPI
-@register_encoder_config("ctrl", TEXT)
-@dataclass(repr=False)
-class CTRLConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class CTRLConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an CTRL encoder."""
 
     @staticmethod
@@ -2048,8 +2050,8 @@ class CTRLConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("camembert", TEXT)
-@dataclass(repr=False)
-class CamemBERTConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class CamemBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an CamemBERT encoder."""
 
     @staticmethod
@@ -2087,7 +2089,7 @@ class CamemBERTConfig(BaseEncoderConfig):
     )
 
     reduce_output: str = schema_utils.String(
-        default="cls-pooled",
+        default="sum",
         description="The method used to reduce a sequence of tensors down to a single tensor.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["reduce_output"],
     )
@@ -2218,8 +2220,8 @@ class CamemBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("t5", TEXT)
-@dataclass(repr=False)
-class T5Config(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class T5Config(SequenceEncoderConfig):
     """This dataclass configures the schema used for an T5 encoder."""
 
     @staticmethod
@@ -2363,8 +2365,8 @@ class T5Config(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("flaubert", TEXT)
-@dataclass(repr=False)
-class FlauBERTConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class FlauBERTConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an FlauBERT encoder."""
 
     @staticmethod
@@ -2602,8 +2604,8 @@ class FlauBERTConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("electra", TEXT)
-@dataclass(repr=False)
-class ELECTRAConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class ELECTRAConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an ELECTRA encoder."""
 
     @staticmethod
@@ -2767,8 +2769,8 @@ class ELECTRAConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("longformer", TEXT)
-@dataclass(repr=False)
-class LongformerConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class LongformerConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for a Longformer encoder."""
 
     @staticmethod
@@ -2862,8 +2864,8 @@ class LongformerConfig(BaseEncoderConfig):
 
 @DeveloperAPI
 @register_encoder_config("auto_transformer", TEXT)
-@dataclass(repr=False)
-class AutoTransformerConfig(BaseEncoderConfig):
+@dataclass(repr=False, order=True)
+class AutoTransformerConfig(SequenceEncoderConfig):
     """This dataclass configures the schema used for an AutoTransformer encoder."""
 
     @staticmethod
@@ -2876,7 +2878,7 @@ class AutoTransformerConfig(BaseEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="xlm-roberta-base",
+        default="bert-base-uncased",
         description="Name or path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["AutoTransformer"]["pretrained_model_name_or_path"],
     )

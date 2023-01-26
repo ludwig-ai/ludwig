@@ -5,14 +5,14 @@ from ludwig.constants import DROP_ROW, MISSING_VALUE_STRATEGY_OPTIONS, PREPROCES
 from ludwig.schema import utils as schema_utils
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import register_preprocessor
-from ludwig.schema.metadata import FEATURE_METADATA
+from ludwig.schema.metadata import FEATURE_METADATA, PREPROCESSING_METADATA
 from ludwig.utils import strings_utils
 from ludwig.utils.tokenizers import tokenizer_registry
 
 
 @DeveloperAPI
 @register_preprocessor(TEXT)
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TextPreprocessingConfig(BasePreprocessingConfig):
     """TextPreprocessingConfig is a dataclass that configures the parameters used for a text input feature."""
 
@@ -115,10 +115,16 @@ class TextPreprocessingConfig(BasePreprocessingConfig):
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
     )
 
+    cache_encoder_embeddings: bool = schema_utils.Boolean(
+        default=False,
+        description="Compute encoder embeddings in preprocessing, speeding up training time considerably.",
+        parameter_metadata=PREPROCESSING_METADATA["cache_encoder_embeddings"],
+    )
+
 
 @DeveloperAPI
 @register_preprocessor("text_output")
-@dataclass(repr=False)
+@dataclass(repr=False, order=True)
 class TextOutputPreprocessingConfig(TextPreprocessingConfig):
     missing_value_strategy: str = schema_utils.StringOptions(
         MISSING_VALUE_STRATEGY_OPTIONS,
@@ -126,4 +132,41 @@ class TextOutputPreprocessingConfig(TextPreprocessingConfig):
         allow_none=False,
         description="What strategy to follow when there's a missing value in a text output feature",
         parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["missing_value_strategy"],
+    )
+
+    max_sequence_length: int = schema_utils.PositiveInteger(
+        default=256,
+        allow_none=False,
+        description="The maximum length (number of tokens) of the text. Texts that are longer than this value will be "
+        "truncated, while texts that are shorter will be padded.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["max_sequence_length"],
+    )
+
+    tokenizer: str = schema_utils.StringOptions(
+        tokenizer_registry.keys(),
+        default="space_punct",
+        allow_none=False,
+        description="Defines how to map from the raw string content of the dataset column to a sequence of elements.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["tokenizer"],
+    )
+
+    lowercase: bool = schema_utils.Boolean(
+        default=True,
+        description="If true, converts the string to lowercase before tokenizing.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["lowercase"],
+    )
+
+    most_common: int = schema_utils.PositiveInteger(
+        default=20000,
+        allow_none=False,
+        description="The maximum number of most common tokens in the vocabulary. If the data contains more than this "
+        "amount, the most infrequent symbols will be treated as unknown.",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["most_common"],
+    )
+
+    ngram_size: int = schema_utils.PositiveInteger(
+        default=2,
+        allow_none=False,
+        description="The size of the ngram when using the `ngram` tokenizer (e.g, 2 = bigram, 3 = trigram, etc.).",
+        parameter_metadata=FEATURE_METADATA[TEXT][PREPROCESSING]["ngram_size"],
     )
