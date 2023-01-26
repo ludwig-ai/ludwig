@@ -37,7 +37,7 @@ def test_sample_ratio(backend, tmpdir, ray_cluster_2cpu):
     num_examples = 100
     sample_ratio = 0.25
 
-    input_features = [sequence_feature(encoder={"reduce_output": "sum"})]
+    input_features = [sequence_feature(encoder={"reduce_output": "sum"}), audio_feature(folder=tmpdir)]
     output_features = [category_feature(decoder={"vocab_size": 5}, reduce_input="sum")]
     data_csv = generate_data(
         input_features, output_features, os.path.join(tmpdir, "dataset.csv"), num_examples=num_examples
