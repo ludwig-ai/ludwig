@@ -37,7 +37,6 @@ class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
 
 
 @DeveloperAPI
-@register_trainer_schema("ecd_ray_legacy")
 @register_trainer_schema(MODEL_ECD)
 @dataclass(order=True)
 class ECDTrainerConfig(BaseTrainerConfig):
@@ -535,7 +534,7 @@ class GBMTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 def get_model_type_jsonschema(model_type: str = MODEL_ECD):
-    enum = [MODEL_ECD, "ecd_ray_legacy"]
+    enum = [MODEL_ECD]
     if model_type == MODEL_GBM:
         enum = [MODEL_GBM]
 
