@@ -32,7 +32,6 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ludwig.constants import (
     LOSS,
-    MAX_BATCH_SIZE_DATASET_FRACTION,
     MINIMIZE,
     MODEL_ECD,
     TEST,
