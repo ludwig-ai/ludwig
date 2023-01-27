@@ -47,15 +47,15 @@ class RayIntegratedGradientsExplainer(IntegratedGradientsExplainer):
         run_config = ExplanationRunConfig(batch_size=self.model.config_obj.trainer.batch_size)
 
         # Convert input data into embedding tensors from the output of the model encoders.
-        inputs_encoded_ref, run_config = get_input_tensors_task.options(**self.resources_per_task).remote(
+        inputs_encoded_ref = get_input_tensors_task.options(**self.resources_per_task).remote(
             model_ref, ray.put(self.inputs_df), run_config
         )
-        sample_encoded_ref, run_config = get_input_tensors_task.options(**self.resources_per_task).remote(
+        sample_encoded_ref = get_input_tensors_task.options(**self.resources_per_task).remote(
             model_ref, ray.put(self.sample_df), run_config
         )
 
-        inputs_encoded = ray.get(inputs_encoded_ref)
-        sample_encoded = ray.get(sample_encoded_ref)
+        inputs_encoded, run_config = ray.get(inputs_encoded_ref)
+        sample_encoded, run_config = ray.get(sample_encoded_ref)
         baseline = get_baseline(self.model, sample_encoded)
 
         inputs_encoded_ref = ray.put(inputs_encoded)
@@ -130,7 +130,7 @@ def get_input_tensors_task(
     model.model.to(get_torch_device())
     try:
         get_total_attribution_with_retry = retry_on_cuda_oom(run_config)(get_input_tensors)
-        return get_total_attribution_with_retry(model, df), run_config
+        return get_total_attribution_with_retry(model, df, run_config), run_config
     finally:
         model.model.cpu()
 
@@ -159,6 +159,7 @@ def get_total_attribution_task(
                 baseline=baseline,
                 use_global=use_global,
                 nsamples=nsamples,
+                run_config=run_config,
             )
             for target_idx in tqdm(target_indices, desc="Explain")
         ]
