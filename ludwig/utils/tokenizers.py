@@ -22,7 +22,7 @@ import torch
 
 from ludwig.constants import PADDING_SYMBOL, UNKNOWN_SYMBOL
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.hf_utils import load_pretrained_hf_model
+from ludwig.utils.hf_utils import load_pretrained_hf_tokenizer
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 logger = logging.getLogger(__name__)
@@ -789,12 +789,7 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 class HFTokenizer(BaseTokenizer):
     def __init__(self, pretrained_model_name_or_path, **kwargs):
         super().__init__()
-        from transformers import AutoTokenizer
-
-        self.tokenizer = load_pretrained_hf_model(
-            AutoTokenizer,
-            pretrained_model_name_or_path,
-        )
+        self.tokenizer = load_pretrained_hf_tokenizer(pretrained_model_name_or_path)
 
     def __call__(self, text):
         return self.tokenizer.encode(text, truncation=True)
@@ -1177,12 +1172,12 @@ def get_hf_tokenizer(pretrained_model_name_or_path, **kwargs):
     Returns:
         A torchscript-able HF tokenizer if it is available. Else, returns vanilla HF tokenizer.
     """
-    from transformers import AutoTokenizer, BertTokenizer
+    from transformers import BertTokenizer
 
     hf_name = pretrained_model_name_or_path
     # use_fast=False to leverage python class inheritance
     # cannot tokenize HF tokenizers directly because HF lacks strict typing and List[str] cannot be traced
-    hf_tokenizer = load_pretrained_hf_model(AutoTokenizer, hf_name, use_fast=False)
+    hf_tokenizer = load_pretrained_hf_tokenizer(hf_name, use_fast=False)
 
     torchtext_tokenizer = None
     if "bert" in TORCHSCRIPT_COMPATIBLE_TOKENIZERS and isinstance(hf_tokenizer, BertTokenizer):

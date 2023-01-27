@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Optional, Type, Union
 
 import pytest
@@ -16,13 +17,63 @@ from tests.integration_tests.parameter_update_utils import check_module_paramete
 from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, text_feature
 
 
+def _load_pretrained_hf_model_no_weights(
+    modelClass: Type,
+    pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
+    **pretrained_kwargs,
+):
+    """Loads a HF model architecture without loading the weights."""
+    from transformers import AutoConfig, AutoModel
+
+    config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+    return AutoModel.from_config(config)
+
+
+@pytest.fixture
+def mock_load_encoder_from_hf_hub(monkeypatch):
+    """Mocks encoder downloads from HuggingFace Hub.
+    
+    With this mock, only encoder configs are downloaded, not the encoder weights.
+    """
+    monkeypatch.setattr(text_encoders, "load_pretrained_hf_model", _load_pretrained_hf_model_no_weights)
+
+
+def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
+    saved_config_dict = load_json(os.path.join(ludwig_results_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
+    saved_config_obj = ModelConfig.from_dict(saved_config_dict)
+    
+    mismatches = []
+    for input_feature_config in saved_config_obj.input_features.to_list():
+        feature_name = input_feature_config[NAME]
+        encoder_config_from_file = input_feature_config[ENCODER]
+        encoder_config_from_model = ludwig_model.model.input_features[feature_name].encoder_obj.config.to_dict()
+        for k, v in encoder_config_from_model.items():
+            # Skip saved_weights_in_checkpoint because this value is not yet set when the global config
+            # is modified with the final encoder config.
+            if k == "saved_weights_in_checkpoint":
+                continue
+            
+            if encoder_config_from_file[k] != v:
+                mismatch = {
+                    "feature_name": feature_name,
+                    "param_name": k,
+                    "val_from_file": encoder_config_from_file[k],
+                    "val_from_model": v,
+                }
+                mismatches.append(mismatch)
+    return mismatches
+
+
 @pytest.mark.parametrize(
     "encoder_config_cls",
     [
+        configs.AutoTransformerConfig,
         configs.ALBERTConfig,
         configs.BERTConfig,
         configs.XLMConfig,
-        configs.GPTConfig,
+        pytest.param(
+            config.GPTConfig, marks=pytest.mark.skip("Causes exit code 143 in CI")
+        ),
         configs.RoBERTaConfig,
         configs.GPT2Config,
         configs.DistilBERTConfig,
@@ -39,92 +90,42 @@ from tests.integration_tests.utils import category_feature, generate_data, Local
         configs.DistilBERTConfig,
     ],
 )
-def test_hf_pretrained_default_exists(encoder_config_cls: configs.SequenceEncoderConfig):
-    """Test that the default pretrained model exists on the HuggingFace Hub.
-
-    This test merely checks that the default model name is valid. It does not check
-    the model end-to-end, as that would require downloading the model weights, which
-    can cause problems in the CI due to memory/runtime constraints.
-
-    TODO: add an end-to-end test for pretrained HF encoders.
+def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_config_cls):
+    """Tests HuggingFace encoders end-to-end.
+    
+    This test validates the following:
+        1. Encoder config defaults are compatible with Ludwig training.
+        2. Ludwig correctly updates the encoder config with the parameters introduced by the HF encoder.
+        3. Ludwig correctly loads checkpoints containing HF encoder weights.
     """
-    from huggingface_hub import HfApi
-
-    default_model = encoder_config_cls.pretrained_model_name_or_path
-
-    try:
-        hf_api = HfApi()
-        hf_api.model_info(default_model)
-    except requests.exceptions.HTTPError:
-        assert (
-            False
-        ), f"Unable to find model info for the default model '{default_model}' of config '{encoder_config_cls}'."
-
-
-@pytest.mark.parametrize(
-    "encoder_config_cls",
-    [
-        # configs.ALBERTConfig,
-        # configs.BERTConfig,
-        # configs.XLMConfig,
-        # configs.GPTConfig,
-        # configs.RoBERTaConfig,
-        # configs.GPT2Config,
-        # configs.DistilBERTConfig,
-        # configs.TransformerXLConfig,
-        # configs.CTRLConfig,
-        configs.CamemBERTConfig,
-        # configs.MT5Config,
-        # configs.XLMRoBERTaConfig,
-        # configs.LongformerConfig,
-        # configs.ELECTRAConfig,
-        # configs.FlauBERTConfig,
-        # configs.T5Config,
-        # configs.XLNetConfig,
-        # configs.DistilBERTConfig,
-    ],
-)
-def test_hf_ludwig_model_e2e(tmpdir, csv_filename, monkeypatch, encoder_config_cls):
-    def load_pretrained_hf_model_no_weights(
-        modelClass: Type,
-        pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
-        **pretrained_kwargs,
-    ):
-        """Loads a HF model architecture without loading the weights."""
-        print("ASDFASDF inside load_pretrained_hf_model_no_weights!")
-
-        from transformers import AutoConfig
-
-        config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
-        return modelClass.from_config(config)
-
-    monkeypatch.setattr("ludwig.utils.hf_utils.load_pretrained_hf_model", load_pretrained_hf_model_no_weights)
-
     input_features = [
-        text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder_config_cls.type, "use_pretrained": True})
+        text_feature(encoder={
+            "vocab_size": 30, 
+            "min_len": 1, 
+            "type": encoder_config_cls.type, 
+            "use_pretrained": True,
+        })
     ]
     output_features = [category_feature(decoder={"vocab_size": 2})]
     rel_path = generate_data(input_features, output_features, csv_filename)
+
     config = {
         "input_features": input_features,
         "output_features": output_features,
         TRAINER: {"train_steps": 1},
     }
-
     model = LudwigModel(config=config, backend=LocalTestBackend())
+
+    # Validates that the defaults associated with the encoder are compatible with Ludwig training.
     _, _, results_dir = model.train(dataset=rel_path, output_directory=tmpdir)
 
-    # Validate that the model config reflects the parameters introduced by the HF encoder.
+    # Validate that the saved config reflects the parameters introduced by the HF encoder.
     # This ensures that the config updates after initializing the encoder.
-    rendered_config_dict = load_json(os.path.join(results_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
-    rendered_config_obj = ModelConfig.from_dict(rendered_config_dict)
-    for input_feature_config in rendered_config_obj.input_features.to_list():
-        input_feature_name = input_feature_config[NAME]
-        encoder_obj_config = model.model.input_features[input_feature_name].encoder_obj.config.to_dict()
-        for k, v in encoder_obj_config.items():
-            assert (
-                input_feature_config[ENCODER][k] == v
-            ), f"Encoder config mismatch for {k} in {input_feature_name}. Expected {v}, got {encoder_obj_config[k]}."
+    mismatched_config_params = get_mismatched_config_params(results_dir, model)
+    if len(mismatched_config_params) > 0:
+        raise AssertionError(
+            f"Config parameters mismatched with encoder parameters: {json.dumps(mismatched_config_params, indent=4)}"
+        )
 
     # Validate the model can be loaded.
     # This ensures that the config reflects the internal architecture of the encoder.

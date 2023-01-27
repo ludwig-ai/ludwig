@@ -585,7 +585,7 @@ class LudwigModel:
                 update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
-                update_config_with_model(self.config_obj, self.model)
+                # update_config_with_model(self.config_obj, self.model)
                 set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             # auto tune learning rate
