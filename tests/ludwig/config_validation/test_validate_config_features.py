@@ -2,6 +2,7 @@ import pytest
 from jsonschema.exceptions import ValidationError
 
 from ludwig.config_validation.validation import validate_config
+from ludwig.error import ConfigValidationError
 from tests.integration_tests.utils import binary_feature, category_feature, number_feature, text_feature
 
 
@@ -49,8 +50,8 @@ def test_incorrect_input_features_config():
     }
     del config["input_features"][0]["type"]
 
-    # Incorrect type for padding_symbol preprocessing param
-    with pytest.raises(ValidationError):
+    # No type
+    with pytest.raises(ConfigValidationError):
         validate_config(config)
 
 

@@ -9,7 +9,6 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -171,20 +170,9 @@ class ModelConfig(BaseMarshmallowConfig):
             if upgraded_config_dict[MODEL_TYPE] == MODEL_GBM:
                 self.model_type = MODEL_GBM
                 self.trainer = GBMTrainerConfig()
-                if (
-                    TYPE in upgraded_config_dict.get(TRAINER, {})
-                    and upgraded_config_dict[TRAINER][TYPE] != "lightgbm_trainer"
-                ):
-                    raise ValidationError("GBM Model trainer must be of type: 'lightgbm_trainer'")
-
                 for feature in self.input_features.to_dict().keys():
                     feature_cls = getattr(self.input_features, feature)
-                    if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
-                        feature_cls.encoder = PassthroughEncoderConfig()
-                    else:
-                        raise ValidationError(
-                            "GBM Models currently only support Binary, Category, and Number " "features"
-                        )
+                    feature_cls.encoder = PassthroughEncoderConfig()
 
         # ===== Combiner =====
         if COMBINER in upgraded_config_dict:
@@ -216,8 +204,6 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Validate Config =====
         if self.model_type == MODEL_GBM:
             self.combiner = None
-
-        self._validate_config(self.to_dict())
 
     def get_user_config(self) -> ModelConfigDict:
         return self._user_config_dict
@@ -263,14 +249,14 @@ class ModelConfig(BaseMarshmallowConfig):
         """
         return upgrade_config_dict_to_latest_version(config_dict)
 
-    @staticmethod
-    def _validate_config(config_dict: ModelConfigDict) -> None:
-        """Helper function used to validate the config using the Ludwig Schema.
+    # @staticmethod
+    # def _validate_config(config_dict: ModelConfigDict) -> None:
+    #     """Helper function used to validate the config using the Ludwig Schema.
 
-        Args:
-            config_dict: Config Dictionary
-        """
-        validate_config(config_dict)
+    #     Args:
+    #         config_dict: Config Dictionary
+    #     """
+    #     validate_config(config_dict)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
@@ -454,15 +440,11 @@ class ModelConfig(BaseMarshmallowConfig):
         """
         self.model_type = MODEL_GBM
         self.trainer = GBMTrainerConfig()
-        if TYPE in config_dict.get(TRAINER, {}) and config_dict[TRAINER][TYPE] != "lightgbm_trainer":
-            raise ValidationError("GBM Model trainer must be of type: 'lightgbm_trainer'")
 
         for feature in self.input_features.to_dict().keys():
             feature_cls = getattr(self.input_features, feature)
             if feature_cls.type in [BINARY, CATEGORY, NUMBER]:
                 feature_cls.encoder = PassthroughEncoderConfig()
-            else:
-                raise ValidationError("GBM Models currently only support Binary, Category, and Number " "features")
 
     def _set_validation_parameters(self):
         """Sets validation-related parameters used for early stopping, determining the best hyperopt trial, etc."""
@@ -494,8 +476,6 @@ class ModelConfig(BaseMarshmallowConfig):
                             "specify the validation_field that should be used with the validation_metric "
                             f"'{self.trainer.validation_metric}'."
                         )
-            if validation_field is None:
-                raise ValidationError("User-specified trainer.validation_metric is not valid for any output feature.")
             self.trainer.validation_field = validation_field
             return
 

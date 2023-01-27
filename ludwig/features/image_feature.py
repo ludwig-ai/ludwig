@@ -578,10 +578,6 @@ class ImageFeatureMixin(BaseFeatureMixin):
             default_image = get_gray_default_image(num_channels, height, width)
             metadata[name]["reshape"] = (num_channels, height, width)
 
-        # check to see if the active backend can support lazy loading of
-        # image features from the hdf5 cache.
-        backend.check_lazy_load_supported(feature_config)
-
         in_memory = feature_config[PREPROCESSING]["in_memory"]
         if in_memory or skip_save_processed_input:
 

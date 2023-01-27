@@ -171,6 +171,7 @@ TYPE = "type"
 ACTIVE = "active"
 
 RAY = "ray"
+IN_MEMORY = "in_memory"
 
 PROC_COLUMN = "proc_column"
 

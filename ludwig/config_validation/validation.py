@@ -5,6 +5,7 @@ from jsonschema import Draft7Validator, validate
 from jsonschema.validators import extend
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation import pre_checks
 from ludwig.constants import (
     BACKEND,
     COMBINER,
@@ -16,15 +17,16 @@ from ludwig.constants import (
     MODEL_TYPE,
     OUTPUT_FEATURES,
     PREPROCESSING,
-    SPLIT,
     TRAINER,
 )
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import get_defaults_jsonschema
 from ludwig.schema.features.utils import get_input_feature_jsonschema, get_output_feature_jsonschema
 from ludwig.schema.hyperopt import get_hyperopt_jsonschema
+from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.preprocessing import get_preprocessing_jsonschema
 from ludwig.schema.trainer import get_model_type_jsonschema, get_trainer_jsonschema
+from ludwig.types import ModelConfigDict
 
 VALIDATION_LOCK = Lock()
 
@@ -92,23 +94,40 @@ def get_validator():
 
 @DeveloperAPI
 def validate_upgraded_config(updated_config):
-    from ludwig.data.split import get_splitter
-
     model_type = updated_config.get(MODEL_TYPE, MODEL_ECD)
-
-    splitter = get_splitter(**updated_config.get(PREPROCESSING, {}).get(SPLIT, {}))
-    splitter.validate(updated_config)
-
     with VALIDATION_LOCK:
         validate(instance=updated_config, schema=get_schema(model_type=model_type), cls=get_validator())
 
 
 @DeveloperAPI
-def validate_config(config):
+def validate_config(config: ModelConfigDict):
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     # NOTE: import here to prevent circular import
     from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 
     # Update config from previous versions to check that backwards compatibility will enable a valid config
     updated_config = upgrade_config_dict_to_latest_version(config)
+
+    pre_checks.check_all_features_have_names_and_types(updated_config)
+
+    # Schema validation.
     validate_upgraded_config(updated_config)
+
+    comprehensive_config = ModelConfig(updated_config).to_dict()
+
+    # Pre-checks.
+    pre_checks.check_feature_names_unique(comprehensive_config)
+    pre_checks.check_tied_features_are_valid(comprehensive_config)
+    pre_checks.check_training_runway(comprehensive_config)
+    pre_checks.check_dependent_features(comprehensive_config)
+    pre_checks.check_gbm_horovod_incompatibility(comprehensive_config)
+    pre_checks.check_gbm_single_output_feature(comprehensive_config)
+    pre_checks.check_gbm_feature_types(comprehensive_config)
+    pre_checks.check_gbm_trainer_type(comprehensive_config)
+    pre_checks.check_ray_backend_in_memory_preprocessing(comprehensive_config)
+    pre_checks.check_sequence_concat_combiner_requirements(comprehensive_config)
+    pre_checks.check_comparator_combiner_requirements(comprehensive_config)
+    pre_checks.check_class_balance_preprocessing(comprehensive_config)
+    pre_checks.check_sampling_exclusivity(comprehensive_config)
+    pre_checks.check_validation_metric_exists(comprehensive_config)
+    pre_checks.check_splitter(comprehensive_config)

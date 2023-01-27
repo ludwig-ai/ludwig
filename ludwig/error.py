@@ -47,3 +47,18 @@ class InputDataError(LudwigError, ValueError):
 
     def __reduce__(self):
         return type(self), (self.column_name, self.feature_type, self.message)
+
+
+@PublicAPI
+class ConfigValidationError(LudwigError, ValueError):
+    """Exception raised for errors in the Ludwig configuration.
+
+    Appropriate for bad configuration values, missing required configuration values, etc...
+
+    Attributes:
+        message - An error message describing the situation.
+    """
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
