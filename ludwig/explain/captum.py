@@ -310,18 +310,13 @@ def get_total_attribution(
         attributions_reduced = []
         for a in attribution:
             a_reduced = a.detach().cpu()
-            if a_reduced.ndim == 2:
-                # Reduce category-level attributions of shape [batch_size, embedding_dim] by summing over the
+            if a_reduced.ndim == 2 or a_reduced.ndim == 3:
+                # Reduces category-level attributions of shape [batch_size, embedding_dim] by summing over the
                 # embedding dimension to get attributions of shape [batch_size].
+                # Reduces token-level attributions of shape [batch_size, sequence_length, embedding_dim] by summing
+                # over the embedding dimension to get attributions of shape [batch_size, sequence_length]. We keep
+                # the sequence dimension so we can map the attributions to the tokens.
                 a_reduced = a_reduced.sum(dim=-1)
-            elif a_reduced.ndim == 3:
-                # Reduce token-level attributions of shape [batch_size, sequence_length, embedding_dim] by summing
-                # over the embedding dimension to get attributions of shape [batch_size, sequence_length].
-                a_reduced = a_reduced.sum(dim=-1)
-                # TODO: normalize in get_token_attributions, not here.
-                # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
-                # norm of the sequence.
-                a_reduced = a_reduced / torch.norm(a_reduced)
             elif a_reduced.ndim == 4:
                 # Reduce pixel-level attributions of shape [batch_size, num_channels, height, width] by summing
                 # over the channel and spatial dimensions to get attributions of shape [batch_size].
@@ -384,6 +379,9 @@ def get_token_attributions(
         or input_ids.dtype == torch.int32
         or input_ids.dtype == torch.int64
     )
+
+    # Normalize token-level attributions to visualize the relative importance of each token.
+    token_attributions = token_attributions / torch.norm(token_attributions)
 
     # map input ids to input tokens via the vocabulary
     feature = model.training_set_metadata[feature_name]
