@@ -6,7 +6,7 @@ from abc import ABC
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION
+from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION, MIN_POSSIBLE_BATCH_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class BatchSizeEvaluator(ABC):
                     # Not a CUDA error
                     raise
                 break
-        
+
         # Ensure that some batch size is found.
         # `best_batch_size` can be None if the first batch size is invalid.
         if best_batch_size == None:
