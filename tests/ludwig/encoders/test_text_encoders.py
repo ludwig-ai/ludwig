@@ -3,7 +3,7 @@ import os
 import pytest
 import requests
 import torch
-from unittest.mock import patch
+from typing import Optional, Type, Union
 
 from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, NAME, TRAINER
@@ -64,22 +64,6 @@ def test_hf_pretrained_default_exists(encoder_config_cls: configs.SequenceEncode
             False
         ), f"Unable to find model info for the default model '{default_model}' of config '{encoder_config_cls}'."
 
-
-def load_pretrained_hf_model_no_weights(
-    modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
-) -> PreTrainedModel:
-    """Download a HuggingFace model.
-    Downloads a model from the HuggingFace zoo with retry on failure.
-    Args:
-        model: Class of the model to download.
-    Returns:
-        The pretrained model object.
-    """
-    from transformers import AutoConfig
-    config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
-    return modelClass.from_config(config)
-
-
 @pytest.mark.parametrize(
     "encoder_config_cls",
     [
@@ -103,8 +87,20 @@ def load_pretrained_hf_model_no_weights(
         # configs.DistilBERTConfig,
     ],
 )
-def test_hf_ludwig_model_e2e(csv_filename, encoder_config_cls):
-    tmpdir = "/Users/geoffreyangus/Downloads/hf_test_3"
+def test_hf_ludwig_model_e2e(tmpdir,  csv_filename, monkeypatch, encoder_config_cls):
+    def load_pretrained_hf_model_no_weights(
+        modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **pretrained_kwargs,
+    ):
+        """Loads a HF model architecture without loading the weights."""
+        print("ASDFASDF inside load_pretrained_hf_model_no_weights!")
+        
+        from transformers import AutoConfig
+        
+        config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+        return modelClass.from_config(config)
+
+    monkeypatch.setattr("ludwig.utils.hf_utils.load_pretrained_hf_model", load_pretrained_hf_model_no_weights)
+    
     input_features = [text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder_config_cls.type, "use_pretrained": True})]
     output_features = [category_feature(decoder={"vocab_size": 2})]
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -114,10 +110,8 @@ def test_hf_ludwig_model_e2e(csv_filename, encoder_config_cls):
         TRAINER: {"train_steps": 1},
     }
     
-    with patch("ludwig.utils.hf_utils.load_pretrained_hf_model", wraps=load_pretrained_hf_model_no_weights) as load_pretrained_hf_model_mock:
-        model = LudwigModel(config=config, backend=LocalTestBackend())
-        _, _, results_dir = model.train(dataset=rel_path, output_directory=tmpdir)
-        assert load_pretrained_hf_model_mock.assert_called_once()
+    model = LudwigModel(config=config, backend=LocalTestBackend())
+    _, _, results_dir = model.train(dataset=rel_path, output_directory=tmpdir)
     
     # Validate that the model config reflects the parameters introduced by the HF encoder.
     # This ensures that the config updates after initializing the encoder.

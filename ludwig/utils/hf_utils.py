@@ -19,6 +19,8 @@ def load_pretrained_hf_model(
     Returns:
         The pretrained model object.
     """
+    print("ASDFASDF using real function :/")
+    exit(1)
     return modelClass.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
 
 
