@@ -1,5 +1,3 @@
-from marshmallow_dataclass import dataclass
-
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import BAG
 from ludwig.schema.encoders.base import BaseEncoderConfig
@@ -8,12 +6,12 @@ from ludwig.schema.features.base import BaseInputFeatureConfig
 from ludwig.schema.features.preprocessing.base import BasePreprocessingConfig
 from ludwig.schema.features.preprocessing.utils import PreprocessingDataclassField
 from ludwig.schema.features.utils import input_config_registry, input_mixin_registry
-from ludwig.schema.utils import BaseMarshmallowConfig
+from ludwig.schema.utils import BaseMarshmallowConfig, ludwig_dataclass
 
 
 @DeveloperAPI
 @input_mixin_registry.register(BAG)
-@dataclass
+@ludwig_dataclass
 class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
     """BagInputFeatureConfigMixin is a dataclass that configures the parameters used in both the bag input feature
     and the bag global defaults section of the Ludwig Config."""
@@ -28,7 +26,7 @@ class BagInputFeatureConfigMixin(BaseMarshmallowConfig):
 
 @DeveloperAPI
 @input_config_registry.register(BAG)
-@dataclass(repr=False)
+@ludwig_dataclass
 class BagInputFeatureConfig(BaseInputFeatureConfig, BagInputFeatureConfigMixin):
     """BagInputFeatureConfig is a dataclass that configures the parameters used for a bag input feature."""
 

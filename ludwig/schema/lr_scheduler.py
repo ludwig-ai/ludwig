@@ -1,43 +1,26 @@
 from abc import ABC
 from dataclasses import field
-from typing import Dict, Optional
+from typing import Dict
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 import ludwig.schema.utils as schema_utils
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import LOSS, TRAINING
 from ludwig.schema.metadata import TRAINER_METADATA
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass(repr=False)
+@ludwig_dataclass
 class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Configuration for learning rate scheduler parameters."""
 
-    warmup_evaluations: int = schema_utils.NonNegativeFloat(
-        default=0,
-        description="Number of evaluation steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
-    )
-
-    warmup_fraction: float = schema_utils.NonNegativeFloat(
-        default=0.0,
-        description="Fraction of total training steps to warmup the learning rate for.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
-    )
-
-    decay: Optional[str] = schema_utils.StringOptions(
-        ["linear", "exponential"],
+    decay: str = schema_utils.StringOptions(
+        options=["linear", "exponential"],
+        default=None,
         description="Turn on decay of the learning rate.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay"],
-    )
-
-    decay_steps: int = schema_utils.PositiveInteger(
-        default=10000,
-        description="The number of steps to take in the exponential learning rate decay.",
-        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
     )
 
     decay_rate: float = schema_utils.FloatRange(
@@ -45,6 +28,12 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         min=0,
         max=1,
         description="Decay per epoch (%): Factor to decrease the Learning rate.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
+    )
+
+    decay_steps: int = schema_utils.PositiveInteger(
+        default=10000,
+        description="The number of steps to take in the exponential learning rate decay.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["decay_steps"],
     )
 
@@ -77,6 +66,18 @@ class LRSchedulerConfig(schema_utils.BaseMarshmallowConfig, ABC):
         max=1,
         description="Rate at which we reduce the learning rate when `reduce_on_plateau > 0`.",
         parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["reduce_on_plateau_rate"],
+    )
+
+    warmup_evaluations: int = schema_utils.NonNegativeFloat(
+        default=0,
+        description="Number of evaluation steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_evaluations"],
+    )
+
+    warmup_fraction: float = schema_utils.NonNegativeFloat(
+        default=0.0,
+        description="Fraction of total training steps to warmup the learning rate for.",
+        parameter_metadata=TRAINER_METADATA["learning_rate_scheduler"]["warmup_fraction"],
     )
 
     reduce_eval_metric: str = schema_utils.String(
@@ -132,13 +133,7 @@ def LRSchedulerDataclassField(description: str, default: Dict = None):
         @staticmethod
         def _jsonschema_type_mapping():
             return {
-                "oneOf": [
-                    {"type": "null", "title": "disabled", "description": "Disable learning rate scheduler."},
-                    {
-                        **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
-                        "title": "enabled_options",
-                    },
-                ],
+                **schema_utils.unload_jsonschema_from_marshmallow_class(LRSchedulerConfig),
                 "title": "learning_rate_scheduler_options",
                 "description": description,
             }

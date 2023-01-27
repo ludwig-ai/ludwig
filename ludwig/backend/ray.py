@@ -18,13 +18,12 @@ import contextlib
 import copy
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TYPE_CHECKING, Union
 
 import dask
 import numpy as np
 import pandas as pd
 import ray
-import ray.train as rt
 import torch
 import tqdm
 from packaging import version
@@ -39,6 +38,7 @@ from ray.util.dask import ray_dask_get
 from ray.util.placement_group import placement_group, remove_placement_group
 
 from ludwig.distributed import get_current_dist_strategy, get_dist_strategy
+from ludwig.utils.batch_size_tuner import BatchSizeEvaluator
 
 if TYPE_CHECKING:
     from ludwig.api import LudwigModel
@@ -62,7 +62,7 @@ from ludwig.utils.fs_utils import get_fs_and_path
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.system_utils import Resources
 from ludwig.utils.torch_utils import get_torch_device, initialize_pytorch
-from ludwig.utils.types import Series
+from ludwig.utils.types import DataFrame, Series
 
 _ray220 = version.parse(ray.__version__) >= version.parse("2.2.0")
 
@@ -160,7 +160,7 @@ def train_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
         train_shard = RayDatasetShard(
@@ -237,7 +237,12 @@ def tune_batch_size_fn(
     **kwargs,
 ) -> int:
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    #
+    # As of Ray >= 2.1, to use ray.air.session.get_local_rank(), you need to be inside a train session
+    # or a tune session. In Ludwig's current code implementation, batch size tuning doesn't get instantiated
+    # inside of a RayTrainer class, so we manually set the local_rank to 0 so that it picks up the right
+    # device to tune batch size on.
+    initialize_pytorch(local_rank=0, local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=True)()
     try:
         train_shard = RayDatasetShard(
@@ -353,7 +358,7 @@ class RayAirRunner:
             datasets=dataset,
             scaling_config=self.scaling_config,
             dataset_config=self._get_dataset_configs(dataset, stream_window_size, data_loader_kwargs),
-            run_config=RunConfig(callbacks=callbacks),
+            run_config=RunConfig(callbacks=callbacks, verbose=1),
         )
         return trainer.fit()
 
@@ -521,7 +526,7 @@ def eval_fn(
     **kwargs,
 ):
     # Pin GPU before loading the model to prevent memory leaking onto other devices
-    initialize_pytorch(local_rank=rt.local_rank(), local_size=_local_size())
+    initialize_pytorch(local_rank=session.get_local_rank(), local_size=_local_size())
     distributed = get_current_dist_strategy(allow_local=False)()
     try:
         eval_shard = RayDatasetShard(
@@ -843,7 +848,7 @@ class RayBackend(RemoteTrainingMixin, Backend):
             fs, _ = get_fs_and_path(sample_fname)
 
             read_datasource_fn_kwargs = {
-                "paths": list(zip(fnames, idxs)),
+                "path_and_idxs": list(zip(fnames, idxs)),
                 "filesystem": PyFileSystem(FSSpecHandler(fs)),
             }
             if self.df_engine.partitioned and file_size is not None:
@@ -915,6 +920,34 @@ class RayBackend(RemoteTrainingMixin, Backend):
             return None
 
         return max_possible_trials
+
+    def tune_batch_size(self, evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+        return ray.get(
+            _tune_batch_size_fn.options(**self._get_transform_kwargs()).remote(
+                evaluator_cls,
+                dataset_len,
+            )
+        )
+
+    def batch_transform(self, df: DataFrame, batch_size: int, transform_fn: Callable) -> DataFrame:
+        ds = self.df_engine.to_ray_dataset(df)
+        ds = ds.map_batches(
+            transform_fn, batch_size=batch_size, compute="actors", batch_format="pandas", **self._get_transform_kwargs()
+        )
+        return self.df_engine.from_ray_dataset(ds)
+
+    def _get_transform_kwargs(self) -> Dict[str, Any]:
+        trainer_kwargs = get_trainer_kwargs(**self._horovod_kwargs)
+        resources_per_worker = trainer_kwargs.get("resources_per_worker", {})
+        num_gpus = resources_per_worker.get("GPU", 0)
+        num_cpus = resources_per_worker.get("CPU", (1 if num_gpus == 0 else 0))
+        return dict(num_cpus=num_cpus, num_gpus=num_gpus)
+
+
+@ray.remote(max_calls=1)
+def _tune_batch_size_fn(evaluator_cls: Type[BatchSizeEvaluator], dataset_len: int) -> int:
+    evaluator = evaluator_cls()
+    return evaluator.select_best_batch_size(dataset_len)
 
 
 def initialize_ray():

@@ -2,15 +2,15 @@ from dataclasses import field
 from typing import Dict
 
 from marshmallow import fields, ValidationError
-from marshmallow_dataclass import dataclass
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.hyperopt.registry import search_algorithm_registry  # Double-check this implicit import.
 from ludwig.schema import utils as schema_utils
+from ludwig.schema.utils import ludwig_dataclass
 
 
 @DeveloperAPI
-@dataclass
+@ludwig_dataclass
 class BaseSearchAlgorithmConfig(schema_utils.BaseMarshmallowConfig):
     """Basic search algorithm settings."""
 

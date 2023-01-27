@@ -876,6 +876,7 @@ def train_with_backend(
 
         if dataset is None:
             dataset = training_set
+
         if predict:
             preds, _ = model.predict(
                 dataset=dataset, skip_save_predictions=skip_save_predictions, output_directory=output_directory
