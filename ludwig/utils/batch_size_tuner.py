@@ -5,6 +5,8 @@ import time
 from abc import ABC
 from typing import Optional
 
+import torch
+
 from ludwig.api_annotations import DeveloperAPI
 
 logger = logging.getLogger(__name__)
@@ -62,7 +64,7 @@ class BatchSizeEvaluator(ABC):
             except RuntimeError as e:
                 # PyTorch only generates Runtime errors for CUDA OOM.
                 gc.collect()
-                if "CUDA out of memory" in str(e):
+                if "CUDA out of memory" in str(e) or isinstance(e, torch.cuda.OutOfMemoryError):
                     logger.info(f"OOM at batch_size={batch_size}")
                 else:
                     # Not a CUDA error
