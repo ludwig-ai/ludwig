@@ -1,8 +1,8 @@
 import copy
 import gc
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
-import logging
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -26,7 +26,6 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +33,8 @@ logger = logging.getLogger(__name__)
 class ExplanationRunConfig:
     """Mutable state containing runtime configuration for explanation process.
 
-    This is useful for updating the batch size used during explanation so it can be propagated
-    across calls to `get_total_attribution`.
+    This is useful for updating the batch size used during explanation so it can be propagated across calls to
+    `get_total_attribution`.
     """
 
     batch_size: int
