@@ -49,7 +49,7 @@ from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeatur
 
 if TYPE_CHECKING:
     from ludwig.schema.model_config import ModelConfig
-    
+
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -131,18 +131,18 @@ def update_config_with_metadata(config_obj: "ModelConfig", training_set_metadata
 
 def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
     """Updates the config with the final input feature params given a model.
-    
-    This function should only be called to update the config after the model is initialized. Currently only implemented 
-    for input features because it is only relevant for HuggingFace text encoders. HuggingFace text encoders only know 
-    their final config after class initialization. 
-    """    
+
+    This function should only be called to update the config after the model is initialized. Currently only implemented
+    for input features because it is only relevant for HuggingFace text encoders. HuggingFace text encoders only know
+    their final config after class initialization.
+    """
     for feature_config in config_obj.input_features.to_list():
         model_input_feature = model.input_features[feature_config[NAME]]
         model_input_feature.update_config_after_module_init(
             getattr(config_obj.input_features, feature_config[NAME]),
         )
         feature_config.update(config_obj.input_features.to_dict()[feature_config[NAME]])
-        
+
     # for feature_config in config_obj.output_features.to_list():
     #     model_output_feature = model.output_features[feature_config[NAME]]
     #     model_output_feature.update_config_after_module_init(

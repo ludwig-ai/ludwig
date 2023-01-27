@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from os import PathLike
 import logging
+from os import PathLike
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import torch
@@ -52,11 +52,10 @@ from ludwig.utils.torch_utils import FreezeModule
 logger = logging.getLogger(__name__)
 
 PARAMETERS_USED_IF_HF_USE_PRETRAINED = [
-    "max_sequence_length", 
-    "pretrained_model_name_or_path"
-    "trainable",
-    "vocab_size",  
-    "reduce_output", 
+    "max_sequence_length",
+    "pretrained_model_name_or_path" "trainable",
+    "vocab_size",
+    "reduce_output",
 ]
 
 
@@ -68,19 +67,19 @@ def _cls_pooled_error_message(encoder: str):
 
 class HFTextEncoder(Encoder):
     DEFAULT_MODEL_NAME: str
-    
+
     def __init__(
-        self, 
-        max_sequence_length: int, 
-        use_pretrained: bool, 
+        self,
+        max_sequence_length: int,
+        use_pretrained: bool,
         pretrained_model_name_or_path: Union[str, PathLike],
-        saved_weights_in_checkpoint: bool, 
-        hf_encoder_cls: Type, 
-        hf_encoder_config_cls: Type, 
+        saved_weights_in_checkpoint: bool,
+        hf_encoder_cls: Type,
+        hf_encoder_config_cls: Type,
         hf_encoder_params: Dict[str, Any],
-        trainable: bool, 
-        vocab_size: int, 
-        reduce_output: str, 
+        trainable: bool,
+        vocab_size: int,
+        reduce_output: str,
         encoder_config: SequenceEncoderConfig,
     ):
         super().__init__()
@@ -99,7 +98,7 @@ class HFTextEncoder(Encoder):
 
         self.reduce_output = reduce_output
         self.reduce_sequence = self._init_reduce_sequence()
-        
+
         # Update the encoder config here to reflect the actual encoder config
         # Used downstream to update the broader config
         final_hf_encoder_params = {k: v for k, v in self.transformer_config.items() if k in hf_encoder_params.keys()}
@@ -108,12 +107,12 @@ class HFTextEncoder(Encoder):
         self.config = self.get_schema_cls().from_dict(encoder_config_dict)
 
     def _init_transformer(
-        self, 
-        use_pretrained: bool, 
+        self,
+        use_pretrained: bool,
         pretrained_model_name_or_path: Union[str, PathLike],
-        saved_weights_in_checkpoint: bool, 
-        hf_encoder_cls: Type, 
-        hf_encoder_config_cls: Type, 
+        saved_weights_in_checkpoint: bool,
+        hf_encoder_cls: Type,
+        hf_encoder_config_cls: Type,
         hf_encoder_params: Dict[str, Any],
         vocab_size: int,
     ):
@@ -125,7 +124,7 @@ class HFTextEncoder(Encoder):
             saved_weights_in_checkpoint: Whether the weights are saved in the checkpoint.
             hf_encoder_cls: The HuggingFace encoder class.
             hf_encoder_config_cls: The HuggingFace encoder config class.
-            hf_encoder_params: Keyword arguments to pass to the HuggingFace encoder. NOTE: Only used if the 
+            hf_encoder_params: Keyword arguments to pass to the HuggingFace encoder. NOTE: Only used if the
                 model is trained from scratch.
             trainable: Whether the encoder is trainable.
             vocab_size: The size of the vocabulary.
@@ -133,9 +132,11 @@ class HFTextEncoder(Encoder):
             A transformer encoder.
         """
         if use_pretrained and not saved_weights_in_checkpoint:
-            logger.warning(f"`use_pretrained` set to True for HuggingFace model. Encoder parameters"
-                           f"{PARAMETERS_USED_IF_HF_USE_PRETRAINED} will be respected. All other encoder "
-                           f"parameters will be set to the values specified by '{pretrained_model_name_or_path}'.")
+            logger.warning(
+                f"`use_pretrained` set to True for HuggingFace model. Encoder parameters"
+                f"{PARAMETERS_USED_IF_HF_USE_PRETRAINED} will be respected. All other encoder "
+                f"parameters will be set to the values specified by '{pretrained_model_name_or_path}'."
+            )
             transformer = load_pretrained_hf_model(hf_encoder_cls, pretrained_model_name_or_path)
         else:
             config = hf_encoder_config_cls(**hf_encoder_params)
@@ -143,7 +144,7 @@ class HFTextEncoder(Encoder):
             if transformer.config.vocab_size != vocab_size:
                 transformer.resize_token_embeddings(vocab_size)
         return transformer
-    
+
     def _init_reduce_sequence(self):
         """Initialize the sequence reducer module.
 
@@ -1476,7 +1477,7 @@ class CamemBERTEncoder(HFTextEncoder):
         **kwargs,
     ):
         from transformers import CamembertConfig, CamembertModel
-        
+
         super().__init__(
             max_sequence_length=max_sequence_length,
             use_pretrained=use_pretrained,
@@ -1905,7 +1906,6 @@ class LongformerEncoder(HFTextEncoder):
         **kwargs,
     ):
         super().__init__()
-        
 
         from transformers import LongformerConfig, LongformerModel
 

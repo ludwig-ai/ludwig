@@ -1,9 +1,9 @@
 import os
+from typing import Optional, Type, Union
 
 import pytest
 import requests
 import torch
-from typing import Optional, Type, Union
 
 from ludwig.api import LudwigModel
 from ludwig.constants import ENCODER, NAME, TRAINER
@@ -13,12 +13,8 @@ from ludwig.schema.encoders import text_encoders as configs
 from ludwig.schema.model_config import ModelConfig
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.parameter_update_utils import check_module_parameters_updated
-from tests.integration_tests.utils import (
-    category_feature,
-    text_feature,
-    generate_data,
-    LocalTestBackend,
-)
+from tests.integration_tests.utils import category_feature, generate_data, LocalTestBackend, text_feature
+
 
 @pytest.mark.parametrize(
     "encoder_config_cls",
@@ -64,6 +60,7 @@ def test_hf_pretrained_default_exists(encoder_config_cls: configs.SequenceEncode
             False
         ), f"Unable to find model info for the default model '{default_model}' of config '{encoder_config_cls}'."
 
+
 @pytest.mark.parametrize(
     "encoder_config_cls",
     [
@@ -87,21 +84,25 @@ def test_hf_pretrained_default_exists(encoder_config_cls: configs.SequenceEncode
         # configs.DistilBERTConfig,
     ],
 )
-def test_hf_ludwig_model_e2e(tmpdir,  csv_filename, monkeypatch, encoder_config_cls):
+def test_hf_ludwig_model_e2e(tmpdir, csv_filename, monkeypatch, encoder_config_cls):
     def load_pretrained_hf_model_no_weights(
-        modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **pretrained_kwargs,
+        modelClass: Type,
+        pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
+        **pretrained_kwargs,
     ):
         """Loads a HF model architecture without loading the weights."""
         print("ASDFASDF inside load_pretrained_hf_model_no_weights!")
-        
+
         from transformers import AutoConfig
-        
+
         config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
         return modelClass.from_config(config)
 
     monkeypatch.setattr("ludwig.utils.hf_utils.load_pretrained_hf_model", load_pretrained_hf_model_no_weights)
-    
-    input_features = [text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder_config_cls.type, "use_pretrained": True})]
+
+    input_features = [
+        text_feature(encoder={"vocab_size": 30, "min_len": 1, "type": encoder_config_cls.type, "use_pretrained": True})
+    ]
     output_features = [category_feature(decoder={"vocab_size": 2})]
     rel_path = generate_data(input_features, output_features, csv_filename)
     config = {
@@ -109,10 +110,10 @@ def test_hf_ludwig_model_e2e(tmpdir,  csv_filename, monkeypatch, encoder_config_
         "output_features": output_features,
         TRAINER: {"train_steps": 1},
     }
-    
+
     model = LudwigModel(config=config, backend=LocalTestBackend())
     _, _, results_dir = model.train(dataset=rel_path, output_directory=tmpdir)
-    
+
     # Validate that the model config reflects the parameters introduced by the HF encoder.
     # This ensures that the config updates after initializing the encoder.
     rendered_config_dict = load_json(os.path.join(results_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
@@ -121,14 +122,15 @@ def test_hf_ludwig_model_e2e(tmpdir,  csv_filename, monkeypatch, encoder_config_
         input_feature_name = input_feature_config[NAME]
         encoder_obj_config = model.model.input_features[input_feature_name].encoder_obj.config.to_dict()
         for k, v in encoder_obj_config.items():
-            assert input_feature_config[ENCODER][k] == v, (
-                f"Encoder config mismatch for {k} in {input_feature_name}. Expected {v}, got {encoder_obj_config[k]}.")
-    
+            assert (
+                input_feature_config[ENCODER][k] == v
+            ), f"Encoder config mismatch for {k} in {input_feature_name}. Expected {v}, got {encoder_obj_config[k]}."
+
     # Validate the model can be loaded.
     # This ensures that the config reflects the internal architecture of the encoder.
     LudwigModel.load(os.path.join(results_dir, "model"))
-    
-    
+
+
 @pytest.fixture(scope="module")
 def auto_transformer_tmpdir(tmpdir_factory):
     """Creates a temporary directory for `test_auto_transformer_encoder` to eliminate redundant downloads."""
