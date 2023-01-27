@@ -20,6 +20,7 @@ from ludwig.utils.misc_utils import memoized_method
 from ludwig.utils.torch_utils import activations, initializer_registry
 
 RECURSION_STOP_ENUM = {"weights_initializer", "bias_initializer", "norm_params"}
+ludwig_dataclass = m_dataclass(repr=False, order=True)
 
 
 @DeveloperAPI

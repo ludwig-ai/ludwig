@@ -310,7 +310,7 @@ def get_total_attribution(
             a_reduced = a.detach().cpu()
             if a.ndim > 1:
                 # Convert to token-level attributions by summing over the embedding dimension.
-                a_reduced = a.sum(dim=-1)
+                a_reduced = a_reduced.sum(dim=-1)
             if a_reduced.ndim == 2:
                 # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
                 # norm of the sequence.

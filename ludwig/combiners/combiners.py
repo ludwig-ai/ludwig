@@ -108,28 +108,27 @@ class ConcatCombiner(Combiner):
 
         # todo future: this may be redundant, check
         fc_layers = config.fc_layers
-        if fc_layers is None and config.num_fc_layers is not None:
+        if fc_layers is None:
             fc_layers = []
             for i in range(config.num_fc_layers):
                 fc_layers.append({"output_size": config.output_size})
-
         self.fc_layers = fc_layers
-        if self.fc_layers is not None:
-            logger.debug("  FCStack")
-            self.fc_stack = FCStack(
-                first_layer_input_size=self.concatenated_shape[-1],
-                layers=config.fc_layers,
-                num_layers=config.num_fc_layers,
-                default_output_size=config.output_size,
-                default_use_bias=config.use_bias,
-                default_weights_initializer=config.weights_initializer,
-                default_bias_initializer=config.bias_initializer,
-                default_norm=config.norm,
-                default_norm_params=config.norm_params,
-                default_activation=config.activation,
-                default_dropout=config.dropout,
-                residual=config.residual,
-            )
+
+        logger.debug("  FCStack")
+        self.fc_stack = FCStack(
+            first_layer_input_size=self.concatenated_shape[-1],
+            layers=config.fc_layers,
+            num_layers=config.num_fc_layers,
+            default_output_size=config.output_size,
+            default_use_bias=config.use_bias,
+            default_weights_initializer=config.weights_initializer,
+            default_bias_initializer=config.bias_initializer,
+            default_norm=config.norm,
+            default_norm_params=config.norm_params,
+            default_activation=config.activation,
+            default_dropout=config.dropout,
+            residual=config.residual,
+        )
 
         if input_features and len(input_features) == 1 and self.fc_layers is None:
             self.supports_masking = True
@@ -149,8 +148,7 @@ class ConcatCombiner(Combiner):
             hidden = list(encoder_outputs)[0]
 
         # ================ Fully Connected ================
-        if self.fc_stack is not None:
-            hidden = self.fc_stack(hidden)
+        hidden = self.fc_stack(hidden)
 
         return_data = {"combiner_output": hidden}
 

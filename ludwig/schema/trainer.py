@@ -14,6 +14,7 @@ from ludwig.schema.optimizers import (
     GradientClippingDataclassField,
     OptimizerDataclassField,
 )
+from ludwig.schema.utils import ludwig_dataclass
 from ludwig.utils.registry import Registry
 
 trainer_schema_registry = Registry()
@@ -29,7 +30,7 @@ def register_trainer_schema(model_type: str):
 
 
 @DeveloperAPI
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class BaseTrainerConfig(schema_utils.BaseMarshmallowConfig, ABC):
     """Common trainer parameter values."""
 
@@ -101,7 +102,9 @@ class ECDTrainerConfig(BaseTrainerConfig):
         allow_none=False,
         description=(
             "The number of training examples utilized in one training step of the model. If ’auto’, the "
-            "biggest batch size (power of 2) that can fit in memory will be used."
+            "batch size that maximized training throughput (samples / sec) will be used. For CPU training, the "
+            "tuned batch size is capped at 128 as throughput benefits of large batch sizes are less noticeable without "
+            "a GPU."
         ),
         parameter_metadata=TRAINER_METADATA["batch_size"],
         field_options=[
@@ -265,7 +268,7 @@ class ECDTrainerConfig(BaseTrainerConfig):
 
 @DeveloperAPI
 @register_trainer_schema(MODEL_GBM)
-@dataclass(repr=False, order=True)
+@ludwig_dataclass
 class GBMTrainerConfig(BaseTrainerConfig):
     """Dataclass that configures most of the hyperparameters used for GBM model training."""
 
