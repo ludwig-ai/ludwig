@@ -852,11 +852,11 @@ class RayTuneExecutor:
                         scheduler=self.scheduler,
                         num_samples=self.num_samples,
                         time_budget_s=self.time_budget_s,
-                        # For GPU training, setting reuse_actors to True can result in GPU memory
-                        # leaks if we're not careful.
-                        # TODO (Arnav): Remove in Ray 2.2 since this was fixed upstream in Ray
-                        # https://github.com/ray-project/ray/issues/29624
-                        reuse_actors=not use_gpu,
+                        # Explicitly prevent reuse actors since it causes issues with
+                        # concurrency when using MLFlow where trials are started without
+                        # run IDs due to a race condition.
+                        # TODO(Arnav): Re-enable in Ray 2.3
+                        reuse_actors=False,
                     ),
                     run_config=RunConfig(
                         name=experiment_name,
