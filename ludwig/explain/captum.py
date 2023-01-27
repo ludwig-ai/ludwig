@@ -57,7 +57,7 @@ def retry_on_cuda_oom(run_config: ExplanationRunConfig):
                         # Not a CUDA error
                         raise
 
-            raise RuntimeError("Minimum support batch size 2 still resulted in CUDA OOM during explanation")
+            raise RuntimeError("CUDA OOM raised during explanation, but batch size cannot be reduced any further")
 
         return retry_on_cuda_oom_wrapper
 
@@ -248,6 +248,8 @@ def get_input_tensors(
     data_to_predict = [v for _, v in preproc_inputs.items()]
     tensors = []
     for t in data_to_predict:
+        # TODO(travis): Consider changing to `if not torch.is_floating_point(t.dtype)` to simplify, then handle bool
+        # case in this block.
         if t.dtype == torch.int8 or t.dtype == torch.int16 or t.dtype == torch.int32 or t.dtype == torch.int64:
             # Don't wrap input into a variable if it's an integer type, since it will be used as an index into the
             # embedding table. We explain the output of the embedding table, not the input to the embedding table using
