@@ -15,6 +15,7 @@ from tests.integration_tests.utils import (
     binary_feature,
     category_feature,
     generate_data,
+    image_feature,
     LocalTestBackend,
     number_feature,
     text_feature,
@@ -127,6 +128,8 @@ def test_explainer_text_hf(explainer_class, model_type, cache_encoder_embeddings
 def run_test_explainer_api(
     explainer_class, model_type, output_features, additional_config, use_global, tmpdir, input_features=None, **kwargs
 ):
+    image_dest_folder = os.path.join(tmpdir, "generated_images")
+
     if input_features is None:
         input_features = [binary_feature(), number_feature(), category_feature(encoder={"reduce_output": "sum"})]
         if model_type == MODEL_ECD:
@@ -134,6 +137,7 @@ def run_test_explainer_api(
                 text_feature(encoder={"vocab_size": 3}),
                 vector_feature(),
                 timeseries_feature(),
+                image_feature(folder=image_dest_folder),
                 # audio_feature(os.path.join(tmpdir, "generated_audio")), # NOTE: works but takes a long time
                 # sequence_feature(encoder={"vocab_size": 3}),
                 # date_feature(),

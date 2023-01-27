@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from ludwig.api import LudwigModel
 from ludwig.api_annotations import PublicAPI
-from ludwig.constants import CATEGORY, DATE, INPUT_FEATURES, NAME, PREPROCESSING, TEXT, UNKNOWN_SYMBOL
+from ludwig.constants import CATEGORY, DATE, IMAGE, INPUT_FEATURES, NAME, PREPROCESSING, TEXT, UNKNOWN_SYMBOL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.explain.explainer import Explainer
 from ludwig.explain.explanation import Explanation
@@ -233,6 +233,8 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
             # If an unknown is defined, use that as the baseline index, else use the most popular token
             baseline_tok_idx = metadata["str2idx"].get(UNKNOWN_SYMBOL, most_popular_tok_idx)
             baseline = torch.tensor(baseline_tok_idx, device=DEVICE)
+        elif feature.type() == IMAGE:
+            baseline = torch.zeros_like(sample_input[0], device=DEVICE)
         else:
             # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
             # TODO(joppe): now that we don't have embeddings, we should re-evaluate this.
@@ -308,13 +310,22 @@ def get_total_attribution(
         attributions_reduced = []
         for a in attribution:
             a_reduced = a.detach().cpu()
-            if a.ndim > 1:
-                # Convert to token-level attributions by summing over the embedding dimension.
-                a_reduced = a_reduced.sum(dim=-1)
             if a_reduced.ndim == 2:
+                # Reduce category-level attributions of shape [batch_size, embedding_dim] by summing over the
+                # embedding dimension to get attributions of shape [batch_size].
+                a_reduced = a_reduced.sum(dim=-1)
+            elif a_reduced.ndim == 3:
+                # Reduce token-level attributions of shape [batch_size, sequence_length, embedding_dim] by summing
+                # over the embedding dimension to get attributions of shape [batch_size, sequence_length].
+                a_reduced = a_reduced.sum(dim=-1)
+                # TODO: normalize in get_token_attributions, not here.
                 # Normalize token-level attributions of shape [batch_size, sequence_length] by dividing by the
                 # norm of the sequence.
                 a_reduced = a_reduced / torch.norm(a_reduced)
+            elif a_reduced.ndim == 4:
+                # Reduce pixel-level attributions of shape [batch_size, num_channels, height, width] by summing
+                # over the channel and spatial dimensions to get attributions of shape [batch_size].
+                a_reduced = a_reduced.sum(dim=(1, 2, 3))
             attributions_reduced.append(a_reduced)
 
         for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
