@@ -366,7 +366,7 @@ def get_total_attribution(
 
         for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
             if feat.type() == TEXT:
-                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                tok_attrs = get_token_attributions(model, name, inputs.detach().cpu(), attrs)
                 feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
@@ -425,7 +425,7 @@ def get_token_attributions(
     feature = model.training_set_metadata[feature_name]
     vocab = feature.get("idx2str", feature.get("word_idx2str"))
     idx2str = np.vectorize(lambda idx: vocab[idx])
-    input_tokens = idx2str(input_ids.cpu())
+    input_tokens = idx2str(input_ids)
 
     # add attribution to the input tokens
     tok_attrs = [
