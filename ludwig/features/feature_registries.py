@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
 from ludwig.api_annotations import DeveloperAPI
 from ludwig.constants import (
@@ -46,6 +46,10 @@ from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOut
 from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
 from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
+
+if TYPE_CHECKING:
+    from ludwig.schema.model_config import ModelConfig
+    
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -100,7 +104,7 @@ def get_output_type_registry() -> Dict:
     }
 
 
-def update_config_with_metadata(config_obj, training_set_metadata):
+def update_config_with_metadata(config_obj: "ModelConfig", training_set_metadata):
     # populate input features fields depending on data
     # config = merge_with_defaults(config)
     for input_feature in config_obj.input_features.to_list():
@@ -123,3 +127,25 @@ def update_config_with_metadata(config_obj, training_set_metadata):
 
         output_feature.update(config_obj.output_features.to_dict()[output_feature[NAME]])
         output_feature[PREPROCESSING] = training_set_metadata[output_feature[NAME]][PREPROCESSING]
+
+
+def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
+    """Updates the config with the final input feature params given a model.
+    
+    This function should only be called to update the config after the model is initialized. Currently only implemented 
+    for input features because it is only relevant for HuggingFace text encoders. HuggingFace text encoders only know 
+    their final config after class initialization. 
+    """    
+    for feature_config in config_obj.input_features.to_list():
+        model_input_feature = model.input_features[feature_config[NAME]]
+        model_input_feature.update_config_after_module_init(
+            getattr(config_obj.input_features, feature_config[NAME]),
+        )
+        feature_config.update(config_obj.input_features.to_dict()[feature_config[NAME]])
+        
+    # for feature_config in config_obj.output_features.to_list():
+    #     model_output_feature = model.output_features[feature_config[NAME]]
+    #     model_output_feature.update_config_after_module_init(
+    #         getattr(config_obj.output_features, feature_config[NAME]),
+    #     )
+    #     feature_config.update(config_obj.output_features.to_dict()[feature_config[NAME]])

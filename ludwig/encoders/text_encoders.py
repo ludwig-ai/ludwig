@@ -25,6 +25,7 @@ from ludwig.constants import TEXT, TYPE
 from ludwig.encoders.base import Encoder
 from ludwig.encoders.registry import register_encoder
 from ludwig.modules.reduction_modules import SequenceReducer
+from ludwig.schema.encoders.sequence_encoders import SequenceEncoderConfig
 from ludwig.schema.encoders.text_encoders import (
     ALBERTConfig,
     AutoTransformerConfig,
@@ -45,7 +46,7 @@ from ludwig.schema.encoders.text_encoders import (
     XLMRoBERTaConfig,
     XLNetConfig,
 )
-from ludwig.utils.hf_utils import load_pretrained_hf_model, load_pretrained_hf_config
+from ludwig.utils.hf_utils import load_pretrained_hf_model
 from ludwig.utils.torch_utils import FreezeModule
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class HFTextEncoder(Encoder):
         trainable: bool, 
         vocab_size: int, 
         reduce_output: str, 
-        encoder_config: Dict[str, Any],
+        encoder_config: SequenceEncoderConfig,
     ):
         super().__init__()
         self.max_sequence_length = max_sequence_length
@@ -91,17 +92,20 @@ class HFTextEncoder(Encoder):
             hf_encoder_cls,
             hf_encoder_config_cls,
             hf_encoder_params,
+            vocab_size,
         )
         self.transformer = FreezeModule(transformer, frozen=not trainable)
-        # TODO(geoffrey): what is the interaction between frozen weights and resized token embeddings? 
-        # Are the token embeddings still usable if resized and not trainable? Why assign this to `transformer`
-        # and not `self.transformer`?
-        transformer.resize_token_embeddings(vocab_size)
+        self.transformer_config = self.transformer.module.config.to_dict()
 
         self.reduce_output = reduce_output
         self.reduce_sequence = self._init_reduce_sequence()
-        # full feature encoder config from schema
-        self.config = encoder_config
+        
+        # Update the encoder config here to reflect the actual encoder config
+        # Used downstream to update the broader config
+        final_hf_encoder_params = {k: v for k, v in self.transformer_config.items() if k in hf_encoder_params.keys()}
+        encoder_config_dict = encoder_config.to_dict()
+        encoder_config_dict.update(final_hf_encoder_params)
+        self.config = self.get_schema_cls().from_dict(encoder_config_dict)
 
     def _init_transformer(
         self, 
@@ -111,36 +115,33 @@ class HFTextEncoder(Encoder):
         hf_encoder_cls: Type, 
         hf_encoder_config_cls: Type, 
         hf_encoder_params: Dict[str, Any],
+        vocab_size: int,
     ):
         """Initializes the transformer encoder.
 
         Args:
             use_pretrained: Whether to use a pretrained model.
+            pretrained_model_name_or_path: The name or path of the pretrained model.
+            saved_weights_in_checkpoint: Whether the weights are saved in the checkpoint.
             hf_encoder_cls: The HuggingFace encoder class.
             hf_encoder_config_cls: The HuggingFace encoder config class.
-            pretrained_model_name_or_path: The name or path of the pretrained model.
-            trainable: Whether the encoder is trainable.
-            vocab_size: The size of the vocabulary.
-            saved_weights_in_checkpoint: Whether the weights are saved in the checkpoint.
             hf_encoder_params: Keyword arguments to pass to the HuggingFace encoder. NOTE: Only used if the 
                 model is trained from scratch.
+            trainable: Whether the encoder is trainable.
+            vocab_size: The size of the vocabulary.
         Returns:
             A transformer encoder.
         """
-        if use_pretrained:
-            logger.warning(f"use_pretrained set to True for HuggingFace model. Encoder parameters"
+        if use_pretrained and not saved_weights_in_checkpoint:
+            logger.warning(f"`use_pretrained` set to True for HuggingFace model. Encoder parameters"
                            f"{PARAMETERS_USED_IF_HF_USE_PRETRAINED} will be respected. All other encoder "
-                           f"parameters will be ignored.")
-            if saved_weights_in_checkpoint:
-                # If we are loading from a checkpoint, do not load HF weights. Instead, simply instantiate
-                # a new model using the pretrained config (weights will be loaded later by LudwigModel.load).
-                config = load_pretrained_hf_config(hf_encoder_config_cls, pretrained_model_name_or_path)
-                transformer = hf_encoder_cls(config)
-            else:
-                transformer = load_pretrained_hf_model(hf_encoder_cls, pretrained_model_name_or_path)
+                           f"parameters will be set to the values specified by '{pretrained_model_name_or_path}'.")
+            transformer = load_pretrained_hf_model(hf_encoder_cls, pretrained_model_name_or_path)
         else:
             config = hf_encoder_config_cls(**hf_encoder_params)
             transformer = hf_encoder_cls(config)
+            if transformer.config.vocab_size != vocab_size:
+                transformer.resize_token_embeddings(vocab_size)
         return transformer
     
     def _init_reduce_sequence(self):
@@ -1472,6 +1473,7 @@ class CamemBERTEncoder(HFTextEncoder):
         position_embedding_type: str = "absolute",
         classifier_dropout: float = None,
         encoder_config=None,
+        **kwargs,
     ):
         from transformers import CamembertConfig, CamembertModel
         

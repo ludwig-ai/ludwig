@@ -55,7 +55,7 @@ from ludwig.constants import (
 from ludwig.data.dataset.base import Dataset
 from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_prediction, preprocess_for_training
-from ludwig.features.feature_registries import update_config_with_metadata
+from ludwig.features.feature_registries import update_config_with_metadata, update_config_with_model
 from ludwig.globals import (
     LUDWIG_VERSION,
     MODEL_HYPERPARAMETERS_FILE_NAME,
@@ -585,6 +585,7 @@ class LudwigModel:
                 update_config_with_metadata(self.config_obj, training_set_metadata)
                 logger.info("Warnings and other logs:")
                 self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+                update_config_with_model(self.config_obj, self.model)
                 set_saved_weights_in_checkpoint_flag(self.config_obj)
 
             # auto tune learning rate
@@ -776,6 +777,7 @@ class LudwigModel:
         if not self.model:
             update_config_with_metadata(self.config_obj, training_set_metadata)
             self.model = LudwigModel.create_model(self.config_obj, random_seed=random_seed)
+            update_config_with_model(self.config_obj, self.model)
             set_saved_weights_in_checkpoint_flag(self.config_obj)
 
         if not self._online_trainer:
