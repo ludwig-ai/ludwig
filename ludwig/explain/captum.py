@@ -43,7 +43,7 @@ class ExplanationRunConfig:
 
 def retry_on_cuda_oom(run_config: ExplanationRunConfig):
     def retry_on_cuda_oom_fn(fn):
-        def wrapper(*args, **kwargs):
+        def retry_on_cuda_oom_wrapper(*args, **kwargs):
             while run_config.batch_size >= 2:
                 try:
                     return fn(*args, **kwargs)
@@ -59,7 +59,7 @@ def retry_on_cuda_oom(run_config: ExplanationRunConfig):
 
             raise RuntimeError("Minimum support batch size 2 still resulted in CUDA OOM during explanation")
 
-        return wrapper
+        return retry_on_cuda_oom_wrapper
 
     return retry_on_cuda_oom_fn
 
@@ -426,7 +426,7 @@ def get_token_attributions(
     feature = model.training_set_metadata[feature_name]
     vocab = feature.get("idx2str", feature.get("word_idx2str"))
     idx2str = np.vectorize(lambda idx: vocab[idx])
-    input_tokens = idx2str(input_ids)
+    input_tokens = idx2str(input_ids.cpu())
 
     # add attribution to the input tokens
     tok_attrs = [
