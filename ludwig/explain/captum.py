@@ -319,7 +319,7 @@ def get_total_attribution(
 
         for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
             if feat.type() == TEXT:
-                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                tok_attrs = get_token_attributions(model, name, inputs.detach().cpu(), attrs)
                 feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
