@@ -6,7 +6,7 @@ from abc import ABC
 from typing import Optional
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.constants import MAX_BATCH_SIZE_DATASET_FRACTION
+from ludwig.constants import MIN_POSSIBLE_BATCH_SIZE, MAX_BATCH_SIZE_DATASET_FRACTION
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class BatchSizeEvaluator(ABC):
             return is_valid
 
         # Set 2 as the minimum batch size to account for batch norm.
-        batch_size = 2
+        batch_size = MIN_POSSIBLE_BATCH_SIZE
 
         best_samples_per_sec = 0
         best_batch_size = None
@@ -71,6 +71,12 @@ class BatchSizeEvaluator(ABC):
                     # Not a CUDA error
                     raise
                 break
+        
+        # Ensure that some batch size is found.
+        # `best_batch_size` can be None if the first batch size is invalid.
+        if best_batch_size == None:
+            logger.info(f"Could not tune batch size, using minimum batch size of 2")
+            best_batch_size = MIN_POSSIBLE_BATCH_SIZE
 
         logger.info(f"Selected batch_size={best_batch_size}")
         return best_batch_size

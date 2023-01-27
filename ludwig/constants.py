@@ -186,10 +186,12 @@ EPOCHS = "epochs"
 BATCH_SIZE = "batch_size"
 EVAL_BATCH_SIZE = "eval_batch_size"
 DEFAULT_BATCH_SIZE = "auto"
-MAX_POSSIBLE_BATCH_SIZE = (
-    1099511627776  # 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
-)
-MAX_BATCH_SIZE_DATASET_FRACTION = 0.2  # max batch size for dataset is 20% of dataset size
+# 2^40. Used for `max_batch_size` config param. Not a hard constraint for `batch_size` config param.
+MAX_POSSIBLE_BATCH_SIZE = 1099511627776  
+# min batch size. Used as a floor for batch size tuning. Not a hard constraint for `batch_size` config params.
+MIN_POSSIBLE_BATCH_SIZE = 2  
+# max batch size for dataset is 20% of dataset size
+MAX_BATCH_SIZE_DATASET_FRACTION = 0.2
 LEARNING_RATE = "learning_rate"
 INPUT_SIZE = "input_size"
 USE_BIAS = "use_bias"
