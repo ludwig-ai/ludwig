@@ -150,7 +150,7 @@ class InputFeature(BaseFeature, LudwigModule, ABC):
     @abstractmethod
     def update_config_with_metadata(feature_config, feature_metadata, *args, **kwargs):
         pass
-    
+
     def update_config_after_module_init(self, feature_config):
         """Updates the config after the torch.nn.Module objects have been initialized."""
         pass

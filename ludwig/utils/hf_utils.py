@@ -29,8 +29,8 @@ def load_pretrained_hf_config(
     configClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
 ) -> AutoConfig:
     """Downloads a HuggingFace model config.
-    
-    This is useful for instantiating a HF model architecture without loading its weights. Primarily used for
-    loading an existing LudwigModel from a checkpoint.
+
+    This is useful for instantiating a HF model architecture without loading its weights. Primarily used for loading an
+    existing LudwigModel from a checkpoint.
     """
     return configClass.from_pretrained(pretrained_model_name_or_path, **pretrained_kwargs)
