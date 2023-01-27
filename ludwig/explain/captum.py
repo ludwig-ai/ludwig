@@ -1,8 +1,8 @@
 import copy
 import gc
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
-import logging
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -26,7 +26,6 @@ from ludwig.features.feature_utils import LudwigFeatureDict
 from ludwig.models.ecd import ECD
 from ludwig.utils.torch_utils import DEVICE
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +33,8 @@ logger = logging.getLogger(__name__)
 class ExplanationRunConfig:
     """Mutable state containing runtime configuration for explanation process.
 
-    This is useful for updating the batch size used during explanation so it can be propagated
-    across calls to `get_total_attribution`.
+    This is useful for updating the batch size used during explanation so it can be propagated across calls to
+    `get_total_attribution`.
     """
 
     batch_size: int
@@ -369,7 +368,7 @@ def get_total_attribution(
 
         for inputs, attrs, (name, feat) in zip(input_batch, attributions_reduced, input_features.items()):
             if feat.type() == TEXT:
-                tok_attrs = get_token_attributions(model, name, inputs, attrs)
+                tok_attrs = get_token_attributions(model, name, inputs.detach().cpu(), attrs)
                 feat_to_token_attributions[name].append(tok_attrs)
 
         # Reduce attribution to [num_input_features, batch_size] by summing over the sequence dimension (if present).
@@ -428,7 +427,7 @@ def get_token_attributions(
     feature = model.training_set_metadata[feature_name]
     vocab = feature.get("idx2str", feature.get("word_idx2str"))
     idx2str = np.vectorize(lambda idx: vocab[idx])
-    input_tokens = idx2str(input_ids.cpu())
+    input_tokens = idx2str(input_ids)
 
     # add attribution to the input tokens
     tok_attrs = [
