@@ -200,7 +200,6 @@ class ImageAugmentation(torch.nn.Module):
             self.augmentation_steps = None
 
     def forward(self, imgs):
-
         if self.augmentation_steps:
             # convert from float to uint8 values - this is required for the augmentation
             imgs = self._convert_back_to_uint8(imgs)
