@@ -39,12 +39,12 @@ class DistributedSampler:
         self.num_samples = int(math.ceil(self.dataset_size * 1.0 / self.num_replicas))
         self.total_size = self.num_samples * self.num_replicas
         self.shuffle = shuffle
-        self.seed = random_seed
+        self.random_seed = random_seed
 
     def __iter__(self):
         if self.shuffle:
             # deterministically shuffle based on epoch and seed
-            indices = np.random.RandomState(seed=self.seed + self.epoch).permutation(self.dataset_size).tolist()
+            indices = np.random.RandomState(seed=self.random_seed + self.epoch).permutation(self.dataset_size).tolist()
         else:
             indices = list(range(self.dataset_size))
 
