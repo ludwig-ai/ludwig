@@ -200,18 +200,17 @@ class ImageAugmentation(torch.nn.Module):
             self.augmentation_steps = None
 
     def forward(self, imgs):
-        # TODO: determine if we can avoid this step by refactoring image preprocessing
-        # convert from float to uint8 values
-        imgs = self._convert_back_to_uint8(imgs)
 
         if self.augmentation_steps:
+            # convert from float to uint8 values - this is required for the augmentation
+            imgs = self._convert_back_to_uint8(imgs)
+
             # TODO: change to debug level message after development
             logger.info(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
             imgs = self.augmentation_steps(imgs)
 
-        # TODO: determine if we can avoid this step by refactoring image preprocessing
-        # convert back to float32 values
-        imgs = self._renormalize_image(imgs)
+            # convert back to float32 values and renormalize after
+            imgs = self._renormalize_image(imgs)
 
         return imgs
 
