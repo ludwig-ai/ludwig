@@ -18,11 +18,20 @@ import math
 
 import numpy as np
 
+from ludwig.distributed import DistributedStrategy
+from ludwig.utils.defaults import default_random_seed
+
 
 class DistributedSampler:
     """Adapted from `torch.utils.data.distributed.DistributedSampler`."""
 
-    def __init__(self, dataset_size, shuffle=True, seed=0, distributed=None):
+    def __init__(
+        self,
+        dataset_size: int,
+        shuffle: bool = True,
+        random_seed: int = default_random_seed,
+        distributed: DistributedStrategy = None,
+    ):
         self.dataset_size = dataset_size
         self.num_replicas = distributed.size() if distributed else 1
         self.rank = distributed.rank() if distributed else 0
@@ -30,7 +39,7 @@ class DistributedSampler:
         self.num_samples = int(math.ceil(self.dataset_size * 1.0 / self.num_replicas))
         self.total_size = self.num_samples * self.num_replicas
         self.shuffle = shuffle
-        self.seed = seed
+        self.seed = random_seed
 
     def __iter__(self):
         if self.shuffle:

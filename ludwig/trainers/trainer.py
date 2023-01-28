@@ -654,7 +654,7 @@ class Trainer(BaseTrainer):
             with training_set.initialize_batcher(
                 batch_size=self.batch_size,
                 should_shuffle=self.should_shuffle,
-                seed=self.random_seed,
+                random_seed=self.random_seed,
                 distributed=self.distributed,
                 ignore_last=True,
             ) as batcher:
