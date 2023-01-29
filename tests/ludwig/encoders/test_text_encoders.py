@@ -72,22 +72,25 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
         configs.BERTConfig,
         configs.XLMConfig,
         pytest.param(
-            config.GPTConfig, marks=pytest.mark.skip("Causes exit code 143 in CI")
+            configs.GPTConfig, marks=pytest.mark.skip("Causes exit code 143 in CI")
         ),
         configs.RoBERTaConfig,
         configs.GPT2Config,
         configs.DistilBERTConfig,
         configs.TransformerXLConfig,
-        configs.CTRLConfig,
+        pytest.param(
+            configs.CTRLConfig, marks=pytest.mark.skip("Disabled in the schema")
+        ),
         configs.CamemBERTConfig,
-        configs.MT5Config,
+        pytest.param(
+            configs.MT5Config, marks=pytest.mark.skip("Disabled in the schema")
+        ),
         configs.XLMRoBERTaConfig,
         configs.LongformerConfig,
         configs.ELECTRAConfig,
         configs.FlauBERTConfig,
         configs.T5Config,
         configs.XLNetConfig,
-        configs.DistilBERTConfig,
     ],
 )
 def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_config_cls):

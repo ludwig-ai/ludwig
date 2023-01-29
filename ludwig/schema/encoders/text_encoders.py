@@ -2391,8 +2391,8 @@ class FlauBERTConfig(SequenceEncoderConfig):
     )
 
     pretrained_model_name_or_path: str = schema_utils.String(
-        default="t5-small",
-        description="flaubert/flaubert_small_cased",
+        default="flaubert/flaubert_small_cased",
+        description="Name of path of the pretrained model.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["pretrained_model_name_or_path"],
     )
 
@@ -2450,16 +2450,16 @@ class FlauBERTConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["emb_dim"],
     )
 
-    n_layer: int = schema_utils.PositiveInteger(
+    n_layers: int = schema_utils.PositiveInteger(
         default=12,
         description="Number of hidden layers in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layer"],
+        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layers"],
     )
 
-    n_head: int = schema_utils.PositiveInteger(
+    n_heads: int = schema_utils.PositiveInteger(
         default=16,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
-        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_head"],
+        parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_heads"],
     )
 
     dropout: float = schema_utils.FloatRange(
@@ -2532,8 +2532,8 @@ class FlauBERTConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["embed_init_std"],
     )
 
-    init_std: int = schema_utils.PositiveInteger(
-        default=50257,
+    init_std: int = schema_utils.NonNegativeFloat(
+        default=0.02,
         description="The standard deviation of the truncated_normal_initializer for initializing all weight matrices "
         "except the embedding matrices.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["init_std"],
@@ -2844,11 +2844,13 @@ class LongformerConfig(SequenceEncoderConfig):
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
-        default=None,
+        default=50265,
         description="Vocabulary size of the Longformer model.",
         parameter_metadata=ENCODER_METADATA["Longformer"]["vocab_size"],
     )
 
+    # TODO(geoffrey): Remove this from the schema– it's not used 
+    # anywhere nor is it clear what it's supposed to do.
     num_tokens: int = schema_utils.PositiveInteger(
         default=None,
         description="Number of tokens",

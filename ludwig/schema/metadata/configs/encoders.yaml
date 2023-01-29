@@ -2837,14 +2837,14 @@ FlauBERT:
             inputs, so input/output shapes are computed accurately.
         internal_only: true
         ui_display_name: null
-    n_head:
+    n_heads:
         ui_display_name: null
         expected_impact: 1
     n_langs:
         default_value_reasoning: Default value used in pre-trained HF encoder.
         expected_impact: 1
         ui_display_name: Number of Languages
-    n_layer:
+    n_layers:
         ui_display_name: null
         expected_impact: 1
     pad_index:
