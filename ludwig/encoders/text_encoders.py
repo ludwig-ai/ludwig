@@ -59,13 +59,13 @@ def _cls_pooled_error_message(encoder: str):
 
 class HFTextEncoder(Encoder):
     DEFAULT_MODEL_NAME: str
-    
+
     def _init_config(self, transformer, schema_keys: List[str], encoder_config: SequenceEncoderConfig):
         """Creates a config object for the encoder using the transformer model and the passed-in encoder config.
-        
-        The transformer's config is only known after it is instantiated, so we must update the 
+
+        The transformer's config is only known after it is instantiated, so we must update the
         encoder config with the values from the transformer config.
-        
+
         Args:
             transformer: The transformer model.
             schema_keys: The keys in the encoder config schema. We only want to update the encoder config
@@ -81,14 +81,14 @@ class HFTextEncoder(Encoder):
         encoder_config_dict = encoder_config.to_dict()
         encoder_config_dict.update(final_hf_config_params)
         return self.get_schema_cls().from_dict(encoder_config_dict)
-    
+
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: int):
         """Resizes the token embeddings if the vocab size is different from the transformer's vocab size.
-        
-        This should only happen if we are instantiating a model from scratch (i.e. not loading from a pretrained model 
-        or checkpoint). Pretrained models update the vocab size stored in the config. This means if we are loading a 
+
+        This should only happen if we are instantiating a model from scratch (i.e. not loading from a pretrained model
+        or checkpoint). Pretrained models update the vocab size stored in the config. This means if we are loading a
         pretrained model from a checkpoint, the config vocab size should match the model's vocab size.
-        
+
         Args:
             transformer: The transformer model.
             vocab_size: The vocab size of the dataset.
@@ -168,7 +168,7 @@ class ALBERTEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import AlbertConfig, AlbertModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             embedding_size=embedding_size,
@@ -199,7 +199,7 @@ class ALBERTEncoder(HFTextEncoder):
             config = AlbertConfig(**hf_config_params)
             transformer = AlbertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.reduce_output = reduce_output
@@ -288,7 +288,7 @@ class MT5Encoder(HFTextEncoder):
         super().__init__()
 
         from transformers import MT5Config, MT5EncoderModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             d_model=d_model,
@@ -318,9 +318,9 @@ class MT5Encoder(HFTextEncoder):
             config = MT5Config(**hf_config_params)
             transformer = MT5EncoderModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-        
+
         self.reduce_output = reduce_output
         if reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
@@ -389,13 +389,13 @@ class XLMRoBERTaEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import XLMRobertaConfig, XLMRobertaModel
-        
+
         hf_config_params = dict(
             pad_token_id=pad_token_id,
             bos_token_id=bos_token_id,
             eos_token_id=eos_token_id,
             max_position_embeddings=514,  # TODO(geoffrey): refactor this to be a part of the schema
-            type_vocab_size=1
+            type_vocab_size=1,
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
@@ -405,7 +405,7 @@ class XLMRoBERTaEncoder(HFTextEncoder):
             config = XLMRobertaConfig(**hf_config_params)
             transformer = XLMRobertaModel(config, add_pooling_layer)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.reduce_output = reduce_output
@@ -489,9 +489,9 @@ class BERTEncoder(HFTextEncoder):
         **kwargs,
     ):
         super().__init__()
-        
+
         from transformers import BertConfig, BertModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             hidden_size=hidden_size,
@@ -518,7 +518,7 @@ class BERTEncoder(HFTextEncoder):
             config = BertConfig(**hf_config_params)
             transformer = BertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.reduce_output = reduce_output
@@ -619,7 +619,7 @@ class XLMEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import XLMConfig, XLMModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             emb_dim=emb_dim,
@@ -658,7 +658,7 @@ class XLMEncoder(HFTextEncoder):
             config = XLMConfig(**hf_config_params)
             transformer = XLMModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params, encoder_config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
@@ -738,7 +738,7 @@ class GPTEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import OpenAIGPTConfig, OpenAIGPTModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             n_positions=n_positions,
@@ -761,7 +761,7 @@ class GPTEncoder(HFTextEncoder):
             config = OpenAIGPTConfig(**hf_config_params)
             transformer = OpenAIGPTModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.reduce_output = reduce_output
@@ -835,7 +835,7 @@ class GPT2Encoder(HFTextEncoder):
         super().__init__()
 
         from transformers import GPT2Config, GPT2Model
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             n_positions=n_positions,
@@ -860,7 +860,7 @@ class GPT2Encoder(HFTextEncoder):
             config = GPT2Config(**hf_config_params)
             transformer = GPT2Model(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
@@ -925,13 +925,13 @@ class RoBERTaEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import RobertaConfig, RobertaModel
-        
+
         hf_config_params = dict(
             pad_token_id=pad_token_id,
             bos_token_id=bos_token_id,
             eos_token_id=eos_token_id,
             max_position_embeddings=514,  # TODO(geoffrey): refactor this to be a part of the schema
-            type_vocab_size=1
+            type_vocab_size=1,
         )
 
         if use_pretrained and not saved_weights_in_checkpoint:
@@ -941,9 +941,9 @@ class RoBERTaEncoder(HFTextEncoder):
             config = RobertaConfig(**hf_config_params)
             transformer = RobertaModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-            
+
         self.transformer = FreezeModule(transformer, frozen=not trainable)
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
@@ -1030,7 +1030,7 @@ class TransformerXLEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import TransfoXLConfig, TransfoXLModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             cutoffs=cutoffs,
@@ -1066,9 +1066,9 @@ class TransformerXLEncoder(HFTextEncoder):
         else:
             config = TransfoXLConfig(**hf_config_params)
             transformer = TransfoXLModel(config)
-        
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-            
+
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
             _cls_pooled_error_message(self.__class__.__name__)
@@ -1149,7 +1149,7 @@ class XLNetEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import XLNetConfig, XLNetModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             d_model=d_model,
@@ -1187,9 +1187,9 @@ class XLNetEncoder(HFTextEncoder):
             config = XLNetConfig(**hf_config_params)
             transformer = XLNetModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-            
+
         self.max_sequence_length = max_sequence_length
         self.reduce_output = reduce_output
         if self.reduce_output == "cls_pooled":
@@ -1262,7 +1262,7 @@ class DistilBERTEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import DistilBertConfig, DistilBertModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             max_position_embeddings=max_position_embeddings,
@@ -1286,7 +1286,7 @@ class DistilBERTEncoder(HFTextEncoder):
             config = DistilBertConfig(**hf_config_params)
             transformer = DistilBertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-        
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
@@ -1364,7 +1364,7 @@ class CTRLEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import CTRLConfig, CTRLModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             n_positions=n_positions,
@@ -1389,7 +1389,7 @@ class CTRLEncoder(HFTextEncoder):
             transformer = CTRLModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
             self.vocab_size = vocab_size
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.max_sequence_length = max_sequence_length
@@ -1485,7 +1485,7 @@ class CamemBERTEncoder(HFTextEncoder):
             position_embedding_type=position_embedding_type,
             classifier_dropout=classifier_dropout,
         )
-        
+
         if use_pretrained and not saved_weights_in_checkpoint:
             pretrained_kwargs = pretrained_kwargs or {}
             transformer = load_pretrained_hf_model(CamembertModel, pretrained_model_name_or_path, **pretrained_kwargs)
@@ -1493,7 +1493,7 @@ class CamemBERTEncoder(HFTextEncoder):
             config = CamembertConfig(**hf_config_params)
             transformer = CamembertModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
@@ -1575,7 +1575,7 @@ class T5Encoder(HFTextEncoder):
         super().__init__()
 
         from transformers import T5Config, T5Model
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             d_model=d_model,
@@ -1598,7 +1598,7 @@ class T5Encoder(HFTextEncoder):
             config = T5Config(**hf_config_params)
             transformer = T5Model(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.max_sequence_length = max_sequence_length
@@ -1691,7 +1691,7 @@ class FlauBERTEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import FlaubertConfig, FlaubertModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             pre_norm=pre_norm,
@@ -1810,7 +1810,7 @@ class ELECTRAEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import ElectraConfig, ElectraModel
-        
+
         hf_config_params = dict(
             vocab_size=vocab_size,
             embedding_size=embedding_size,
@@ -1836,7 +1836,7 @@ class ELECTRAEncoder(HFTextEncoder):
             config = ElectraConfig(**hf_config_params)
             transformer = ElectraModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
 
         self.max_sequence_length = max_sequence_length
@@ -1907,10 +1907,10 @@ class LongformerEncoder(HFTextEncoder):
         super().__init__()
 
         from transformers import LongformerConfig, LongformerModel
-        
+
         hf_config_params = dict(
-            attention_window=attention_window, 
-            sep_token_id=sep_token_id, 
+            attention_window=attention_window,
+            sep_token_id=sep_token_id,
             vocab_size=vocab_size,
             **kwargs,
         )
@@ -1922,9 +1922,9 @@ class LongformerEncoder(HFTextEncoder):
             config = LongformerConfig(**hf_config_params)
             transformer = LongformerModel(config)
             self._maybe_resize_token_embeddings(transformer, vocab_size)
-            
+
         self.config = self._init_config(transformer, hf_config_params.keys(), encoder_config)
-            
+
         self.reduce_output = reduce_output
         if not self.reduce_output == "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
@@ -1994,7 +1994,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         pretrained_kwargs = pretrained_kwargs or {}
         transformer = load_pretrained_hf_model(AutoModel, pretrained_model_name_or_path, **pretrained_kwargs)
         self._maybe_resize_token_embeddings(transformer, vocab_size)
-        
+
         self.config = self._init_config(transformer, [], encoder_config)
 
         self.transformer = FreezeModule(transformer, frozen=not trainable)
@@ -2002,7 +2002,7 @@ class AutoTransformerEncoder(HFTextEncoder):
         if self.reduce_output != "cls_pooled":
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.max_sequence_length = max_sequence_length
-        
+
     def _maybe_resize_token_embeddings(self, transformer, vocab_size: Optional[int] = None):
         """Overridden because AutoModel should use its own vocab size unless vocab size is explicitly specified."""
         if vocab_size is not None:

@@ -2849,7 +2849,7 @@ class LongformerConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["Longformer"]["vocab_size"],
     )
 
-    # TODO(geoffrey): Remove this from the schema– it's not used 
+    # TODO(geoffrey): Remove this from the schema– it's not used
     # anywhere nor is it clear what it's supposed to do.
     num_tokens: int = schema_utils.PositiveInteger(
         default=None,

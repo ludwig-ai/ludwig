@@ -262,9 +262,11 @@ def create_vocabulary(
             vocab = tokenizer.get_vocab()
             vocab = list(vocab.keys())
         except NotImplementedError:
-            logger.warning("HuggingFace tokenizer does not have a get_vocab() method. " +
-                           "Using tokenizer.tokenizer.vocab_size and tokenizer.tokenizer._convert_id_to_token " +
-                           "to build the vocabulary.")
+            logger.warning(
+                "HuggingFace tokenizer does not have a get_vocab() method. "
+                + "Using tokenizer.tokenizer.vocab_size and tokenizer.tokenizer._convert_id_to_token "
+                + "to build the vocabulary."
+            )
             vocab = []
             for idx in range(tokenizer.tokenizer.vocab_size):
                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
@@ -275,9 +277,9 @@ def create_vocabulary(
 
         if unk_token is None:
             logger.warning(
-                "No unknown token found in HuggingFace tokenizer. Adding one. " +
-                "NOTE: This will change the vocabulary size and may affect model "+
-                "performance, particularly if the model weights are frozen."
+                "No unknown token found in HuggingFace tokenizer. Adding one. "
+                + "NOTE: This will change the vocabulary size and may affect model "
+                + "performance, particularly if the model weights are frozen."
             )
             vocab = [unknown_symbol] + vocab
         else:
@@ -285,9 +287,9 @@ def create_vocabulary(
 
         if pad_token is None and add_special_symbols:
             logger.warning(
-                "No padding token found in HuggingFace tokenizer. Adding one. " +
-                "NOTE: This will change the vocabulary size and may affect model "+
-                "performance, particularly if the model weights are frozen."
+                "No padding token found in HuggingFace tokenizer. Adding one. "
+                + "NOTE: This will change the vocabulary size and may affect model "
+                + "performance, particularly if the model weights are frozen."
             )
             vocab = [padding_symbol] + vocab
         else:
