@@ -3,7 +3,6 @@ import json
 from typing import Optional, Type, Union
 
 import pytest
-import requests
 import torch
 
 from ludwig.api import LudwigModel
