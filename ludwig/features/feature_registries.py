@@ -143,10 +143,3 @@ def update_config_with_model(config_obj: "ModelConfig", model: "BaseModel"):
             getattr(config_obj.input_features, feature_config[NAME]),
         )
         feature_config.update(config_obj.input_features.to_dict()[feature_config[NAME]])
-
-    # for feature_config in config_obj.output_features.to_list():
-    #     model_output_feature = model.output_features[feature_config[NAME]]
-    #     model_output_feature.update_config_after_module_init(
-    #         getattr(config_obj.output_features, feature_config[NAME]),
-    #     )
-    #     feature_config.update(config_obj.output_features.to_dict()[feature_config[NAME]])
