@@ -204,11 +204,10 @@ class ImageAugmentation(torch.nn.Module):
             # convert from float to uint8 values - this is required for the augmentation
             imgs = self._convert_back_to_uint8(imgs)
 
-            # TODO: change to debug level message after development
-            logger.info(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
+            logger.debug(f"Executing augmentation pipeline steps:\n{self.augmentation_steps}")
             imgs = self.augmentation_steps(imgs)
 
-            # convert back to float32 values and renormalize after
+            # convert back to float32 values and renormalize if needed
             imgs = self._renormalize_image(imgs)
 
         return imgs
