@@ -10,7 +10,9 @@ from ludwig.utils.error_handling_utils import default_retry
 
 @default_retry()
 def load_pretrained_hf_model(
-    modelClass: Type, pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs,
+    modelClass: Type,
+    pretrained_model_name_or_path: Optional[Union[str, PathLike]],
+    **pretrained_kwargs,
 ) -> PreTrainedModel:
     """Download a HuggingFace model.
 
@@ -30,7 +32,7 @@ def load_pretrained_hf_tokenizer(
     pretrained_model_name_or_path: Optional[Union[str, PathLike]], **pretrained_kwargs
 ) -> PreTrainedTokenizer:
     """Download a HuggingFace tokenizer.
-    
+
     Args:
         pretrained_model_name_or_path: Name of the tokenizer to download.
         pretrained_kwargs: Additional arguments to pass to the tokenizer constructor.

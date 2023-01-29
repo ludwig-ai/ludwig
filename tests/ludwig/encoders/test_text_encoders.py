@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from typing import Optional, Type, Union
 
 import pytest
@@ -31,7 +31,7 @@ def _load_pretrained_hf_model_no_weights(
 @pytest.fixture
 def mock_load_encoder_from_hf_hub(monkeypatch):
     """Mocks encoder downloads from HuggingFace Hub.
-    
+
     With this mock, only encoder configs are downloaded, not the encoder weights.
     """
     monkeypatch.setattr(text_encoders, "load_pretrained_hf_model", _load_pretrained_hf_model_no_weights)
@@ -40,7 +40,7 @@ def mock_load_encoder_from_hf_hub(monkeypatch):
 def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
     saved_config_dict = load_json(os.path.join(ludwig_results_dir, "model", MODEL_HYPERPARAMETERS_FILE_NAME))
     saved_config_obj = ModelConfig.from_dict(saved_config_dict)
-    
+
     mismatches = []
     for input_feature_config in saved_config_obj.input_features.to_list():
         feature_name = input_feature_config[NAME]
@@ -51,7 +51,7 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
             # is modified with the final encoder config.
             if k == "saved_weights_in_checkpoint":
                 continue
-            
+
             if encoder_config_from_file[k] != v:
                 mismatch = {
                     "feature_name": feature_name,
@@ -70,20 +70,14 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
         configs.ALBERTConfig,
         configs.BERTConfig,
         configs.XLMConfig,
-        pytest.param(
-            configs.GPTConfig, marks=pytest.mark.skip("Causes exit code 143 in CI")
-        ),
+        pytest.param(configs.GPTConfig, marks=pytest.mark.skip("Causes exit code 143 in CI")),
         configs.RoBERTaConfig,
         configs.GPT2Config,
         configs.DistilBERTConfig,
         configs.TransformerXLConfig,
-        pytest.param(
-            configs.CTRLConfig, marks=pytest.mark.skip("Disabled in the schema")
-        ),
+        pytest.param(configs.CTRLConfig, marks=pytest.mark.skip("Disabled in the schema")),
         configs.CamemBERTConfig,
-        pytest.param(
-            configs.MT5Config, marks=pytest.mark.skip("Disabled in the schema")
-        ),
+        pytest.param(configs.MT5Config, marks=pytest.mark.skip("Disabled in the schema")),
         configs.XLMRoBERTaConfig,
         configs.LongformerConfig,
         configs.ELECTRAConfig,
@@ -94,19 +88,21 @@ def get_mismatched_config_params(ludwig_results_dir, ludwig_model):
 )
 def test_hf_ludwig_model_e2e(tmpdir, csv_filename, mock_load_encoder_from_hf_hub, encoder_config_cls):
     """Tests HuggingFace encoders end-to-end.
-    
+
     This test validates the following:
         1. Encoder config defaults are compatible with Ludwig training.
         2. Ludwig correctly updates the encoder config with the parameters introduced by the HF encoder.
         3. Ludwig correctly loads checkpoints containing HF encoder weights.
     """
     input_features = [
-        text_feature(encoder={
-            "vocab_size": 30, 
-            "min_len": 1, 
-            "type": encoder_config_cls.type, 
-            "use_pretrained": True,
-        })
+        text_feature(
+            encoder={
+                "vocab_size": 30,
+                "min_len": 1,
+                "type": encoder_config_cls.type,
+                "use_pretrained": True,
+            }
+        )
     ]
     output_features = [category_feature(decoder={"vocab_size": 2})]
     rel_path = generate_data(input_features, output_features, csv_filename)
