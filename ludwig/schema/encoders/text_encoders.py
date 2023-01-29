@@ -732,12 +732,14 @@ class XLMConfig(SequenceEncoderConfig):
         parameter_metadata=ENCODER_METADATA["XLM"]["emb_dim"],
     )
 
+    # TODO(geoffrey): Ensure that `n_layer``is deprecated in favor of this parameter.
     n_layers: int = schema_utils.PositiveInteger(
         default=12,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLM"]["n_layers"],
     )
 
+    # TODO(geoffrey): Ensure that `n_head``is deprecated in favor of this parameter.
     n_heads: int = schema_utils.PositiveInteger(
         default=16,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
