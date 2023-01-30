@@ -1,3 +1,10 @@
+BaseEncoder:
+    skip:
+        internal_only: true
+        other_information: Internal Only
+        related_parameters:
+            - "No"
+        ui_display_name: Not Displayed
 ALBERT:
     type:
         short_description:

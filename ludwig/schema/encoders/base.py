@@ -19,7 +19,7 @@ class BaseEncoderConfig(schema_utils.BaseMarshmallowConfig, ABC):
     skip: bool = schema_utils.Boolean(
         False,
         "[internal] Whether to skip encoder and use input as output.",
-        parameter_metadata={"internal_only": True},
+        parameter_metadata=ENCODER_METADATA["BaseEncoder"]["skip"],
     )
 
 
