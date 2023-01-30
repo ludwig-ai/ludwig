@@ -37,6 +37,7 @@ from ludwig.constants import (
     DATE,
     H3,
     IMAGE,
+    MAX_BATCH_SIZE_DATASET_FRACTION,
     NAME,
     NUMBER,
     PREPROCESSING,
@@ -49,6 +50,7 @@ from ludwig.constants import (
     VECTOR,
 )
 from ludwig.data.preprocessing import balance_data
+from ludwig.data.split import DEFAULT_PROBABILITIES
 from ludwig.utils.data_utils import read_parquet
 from ludwig.utils.misc_utils import merge_dict
 from tests.integration_tests.utils import (
@@ -795,7 +797,7 @@ def _run_train_gpu_load_cpu(config, data_parquet):
 @pytest.mark.distributed
 @pytest.mark.parametrize(
     ("max_batch_size", "expected_final_batch_size", "expected_final_learning_rate"),
-    [(256, 128, 0.001), (32, 32, 0.001)],
+    [(256, None, 0.001), (8, 8, 0.001)],
 )
 def test_tune_batch_size_lr_cpu(
     tmpdir, ray_cluster_2cpu, max_batch_size, expected_final_batch_size, expected_final_learning_rate
@@ -818,11 +820,21 @@ def test_tune_batch_size_lr_cpu(
 
     backend_config = {**RAY_BACKEND_CONFIG}
 
+    num_samples = 200
     csv_filename = os.path.join(tmpdir, "dataset.csv")
-    dataset_csv = generate_data(config["input_features"], config["output_features"], csv_filename, num_examples=200)
+    dataset_csv = generate_data(
+        config["input_features"], config["output_features"], csv_filename, num_examples=num_samples
+    )
     dataset_parquet = create_data_set_to_use("parquet", dataset_csv)
     model = run_api_experiment(config, dataset=dataset_parquet, backend_config=backend_config)
-    assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
+
+    if expected_final_batch_size is not None:
+        assert model.config[TRAINER]["batch_size"] == expected_final_batch_size
+    else:
+        # If we don't specify a batch size, we should validate the batch size against the training dataset size
+        num_train_samples = num_samples * DEFAULT_PROBABILITIES[0]
+        assert 2 < model.config[TRAINER]["batch_size"] <= MAX_BATCH_SIZE_DATASET_FRACTION * num_train_samples
+
     assert model.config[TRAINER]["learning_rate"] == expected_final_learning_rate
 
 
