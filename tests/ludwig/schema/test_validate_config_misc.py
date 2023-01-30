@@ -1,6 +1,7 @@
 import pytest
 from jsonschema.exceptions import ValidationError
 
+from ludwig.config_validation.validation import get_schema
 from ludwig.constants import (
     ACTIVE,
     BACKEND,
@@ -20,7 +21,6 @@ from ludwig.constants import (
     TYPE,
 )
 from ludwig.features.feature_registries import get_output_type_registry
-from ludwig.schema import get_schema
 from ludwig.schema.combiners.utils import get_combiner_jsonschema
 from ludwig.schema.defaults.defaults import DefaultsConfig
 from ludwig.schema.features.preprocessing.audio import AudioPreprocessingConfig

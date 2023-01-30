@@ -4,7 +4,6 @@ from typing import Any, Dict
 
 import pytest
 
-from ludwig.config_validation.validation import validate_config
 from ludwig.constants import (
     BATCH_SIZE,
     BFILL,
@@ -369,7 +368,7 @@ def test_deprecated_field_aliases():
     assert "num_samples" in updated_config[HYPEROPT]["executor"]
     assert "scheduler" in updated_config[HYPEROPT]["executor"]
 
-    validate_config(updated_config)
+    ModelConfig(updated_config)
 
 
 @pytest.mark.parametrize("force_split", [None, False, True])
@@ -492,10 +491,10 @@ def test_validate_old_model_config():
         ],
     }
 
-    validate_config(old_valid_config)
+    ModelConfig(old_valid_config)
 
     with pytest.raises(Exception):
-        validate_config(old_invalid_config)
+        ModelConfig(old_invalid_config)
 
 
 @pytest.mark.parametrize("missing_value_strategy", ["backfill", "pad"])

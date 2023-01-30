@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ludwig.config_validation.validation import validate_upgraded_config
+from ludwig.schema.model_config import ModelConfig
 
 ray = pytest.importorskip("ray")  # noqa
 
@@ -104,4 +104,4 @@ def test_reference_configs():
         config = dataset["config"]
 
         # Ensure config is valid with the latest Ludwig schema
-        validate_upgraded_config(config)
+        ModelConfig(config)
