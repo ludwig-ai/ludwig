@@ -8,8 +8,44 @@ on:
     branches: ["master", "release-*"]
 
 jobs:
-  slow-pytest:
+  start-runner:
+    name: Start self-hosted EC2 runner
+    if: >
+      github.event_name == 'schedule' && github.repository == 'ludwig-ai/ludwig' ||
+      github.event_name == 'push' && github.repository == 'ludwig-ai/ludwig' ||
+      github.event_name == 'pull_request' && github.event.pull_request.base.repo.full_name == 'ludwig-ai/ludwig' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2.3.2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0759580dedc953d1f
+          ec2-instance-type: r5.large
+          subnet-id: subnet-0983be43
+          security-group-id: sg-4cba0d08
+          aws-resource-tags: >
+            [
+              {"Key": "Name", "Value": "ludwig-github-${{ github.head_ref || github.sha }}"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"},
+              {"Key": "GitHubHeadRef", "Value": "${{ github.head_ref }}"},
+              {"Key": "GitHubSHA", "Value": "${{ github.sha }}"}
+            ]
+
+  slow-pytest:
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +64,10 @@ jobs:
       RAY_VERSION: ${{ matrix.ray-version }}
 
     name: py${{ matrix.python-version  }}, torch-${{ matrix.pytorch-version }}, backend-ray-${{ matrix.ray-version }}
-
+    if: needs.start-runner.result != 'skipped'
+    needs: start-runner # required to start the main job when the runner is ready
+    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runners
+    
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v2
