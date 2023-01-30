@@ -262,8 +262,8 @@ class ModelConfig(BaseMarshmallowConfig):
         Args:
             config_dict: Config Dictionary
         """
-        for config_check in get_config_check_registry().values():
-            config_check.check(comprehensive_config)
+        for config_check_cls in get_config_check_registry().values():
+            config_check_cls.check(comprehensive_config)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:
