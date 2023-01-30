@@ -284,8 +284,7 @@ def get_baseline(model: LudwigModel, sample_encoded: List[Variable]) -> List[tor
         elif feature.type() == IMAGE:
             baseline = torch.zeros_like(sample_input[0], device=DEVICE)
         else:
-            # For a robust baseline, we take the mean of all embeddings in the sample from the training data.
-            # TODO(joppe): now that we don't have embeddings, we should re-evaluate this.
+            # For a robust baseline, we take the mean of all samples from the training data.
             baseline = torch.mean(sample_input.float(), dim=0)
         baselines.append(baseline.unsqueeze(0))
 
