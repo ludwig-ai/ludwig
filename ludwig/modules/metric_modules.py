@@ -23,7 +23,7 @@ from torch import Tensor, tensor
 from torchmetrics import Accuracy as _Accuracy
 from torchmetrics import AUROC, MeanAbsoluteError
 from torchmetrics import MeanMetric as _MeanMetric
-from torchmetrics import MeanSquaredError, Metric, Precision, Recall
+from torchmetrics import MeanSquaredError, Metric, Precision, Recall, Specificity
 from torchmetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from torchmetrics.metric import jit_distributed_available
 
@@ -51,6 +51,7 @@ from ludwig.constants import (
     ROOT_MEAN_SQUARED_PERCENTAGE_ERROR,
     SEQUENCE,
     SET,
+    SPECIFICITY,
     TEXT,
     TOKEN_ACCURACY,
     VECTOR,
@@ -171,6 +172,22 @@ class RecallMetric(Recall, LudwigMetric):
 @register_metric(ROC_AUC, [BINARY])
 class AUROCMetric(AUROC, LudwigMetric):
     """Area under the receiver operating curve."""
+
+    def __init__(self, **kwargs):
+        super().__init__(dist_sync_fn=_gather_all_tensors_fn())
+
+    @classmethod
+    def get_objective(cls):
+        return MAXIMIZE
+
+    @classmethod
+    def get_inputs(cls):
+        return PROBABILITIES
+
+
+@register_metric(SPECIFICITY, [BINARY])
+class SpecificityMetric(Specificity, LudwigMetric):
+    """Specificity metric."""
 
     def __init__(self, **kwargs):
         super().__init__(dist_sync_fn=_gather_all_tensors_fn())
