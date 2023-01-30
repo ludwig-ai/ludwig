@@ -88,6 +88,12 @@ class HFTextEncoder(Encoder):
         This should only happen if we are instantiating a model from scratch (i.e. not loading from a pretrained model
         or checkpoint). Pretrained models update the vocab size stored in the config. This means if we are loading a
         pretrained model from a checkpoint, the config vocab size should match the model's vocab size.
+        
+        It is important that pretrained models update the vocab size stored in the config because sometimes the 
+        pretrained models will have an embeddings table that is a different size than the vocab size. Examples:
+        
+        CamemBERT:  https://github.com/huggingface/tokenizers/issues/900#issue-1122256698
+        T5:         https://github.com/huggingface/transformers/issues/4875#issue-635471552
 
         Args:
             transformer: The transformer model.
