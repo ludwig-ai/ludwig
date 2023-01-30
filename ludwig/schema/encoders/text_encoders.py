@@ -83,7 +83,7 @@ class ALBERTConfig(SequenceEncoderConfig):
     )
 
     hidden_size: int = schema_utils.PositiveInteger(
-        default=4096,
+        default=768,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["hidden_size"],
     )
@@ -101,13 +101,13 @@ class ALBERTConfig(SequenceEncoderConfig):
     )
 
     num_attention_heads: int = schema_utils.PositiveInteger(
-        default=64,
+        default=12,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["num_attention_heads"],
     )
 
     intermediate_size: int = schema_utils.PositiveInteger(
-        default=16384,
+        default=3072,
         description="The dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer "
         "encoder.",
         parameter_metadata=ENCODER_METADATA["ALBERT"]["intermediate_size"],
@@ -1147,7 +1147,7 @@ class GPT2Config(SequenceEncoderConfig):
 
     activation_function: str = schema_utils.StringOptions(
         ["relu", "silu", "gelu", "tanh", "gelu_new"],
-        default="gelu",
+        default="gelu_new",
         description="Activation function, to be selected in the list ['relu', 'silu', 'gelu', 'tanh', 'gelu_new'].",
         parameter_metadata=ENCODER_METADATA["GPT2"]["activation_function"],
     )
@@ -1583,25 +1583,25 @@ class XLNetConfig(SequenceEncoderConfig):
     )
 
     d_model: int = schema_utils.PositiveInteger(
-        default=1024,
+        default=768,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["d_model"],
     )
 
     n_layer: int = schema_utils.PositiveInteger(
-        default=24,
+        default=12,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["n_layer"],
     )
 
     n_head: int = schema_utils.PositiveInteger(
-        default=16,
+        default=12,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["n_head"],
     )
 
     d_inner: int = schema_utils.PositiveInteger(
-        default=4096,
+        default=3072,
         description="Dimensionality of the “intermediate” (often named feed-forward) layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["XLNet"]["d_inner"],
     )
@@ -1646,7 +1646,7 @@ class XLNetConfig(SequenceEncoderConfig):
     )
 
     mem_len: int = schema_utils.PositiveInteger(
-        default=512,
+        default=None,
         description="The number of tokens to cache. The key/value pairs that have already been pre-computed in a "
         "previous forward pass won’t be re-computed. ",
         parameter_metadata=ENCODER_METADATA["XLNet"]["mem_len"],
@@ -2109,7 +2109,7 @@ class CamemBERTConfig(SequenceEncoderConfig):
     )
 
     vocab_size: int = schema_utils.PositiveInteger(
-        default=30522,
+        default=32005,
         description="Vocabulary size of the CamemBERT model.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["vocab_size"],
     )
@@ -2162,7 +2162,7 @@ class CamemBERTConfig(SequenceEncoderConfig):
     )
 
     max_position_embeddings: int = schema_utils.PositiveInteger(
-        default=512,
+        default=514,
         description="The maximum sequence length that this model might ever be used with. Typically set this to "
         "something large just in case (e.g., 512 or 1024 or 2048).",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["max_position_embeddings"],
@@ -2181,13 +2181,13 @@ class CamemBERTConfig(SequenceEncoderConfig):
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
+        default=1e-05,
         description="The epsilon used by the layer normalization layers.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["layer_norm_eps"],
     )
 
     pad_token_id: int = schema_utils.Integer(
-        default=0,
+        default=1,
         description="The ID of the token to use as padding.",
         parameter_metadata=ENCODER_METADATA["CamemBERT"]["pad_token_id"],
     )
@@ -2311,7 +2311,7 @@ class T5Config(SequenceEncoderConfig):
     )
 
     num_decoder_layers: int = schema_utils.PositiveInteger(
-        default=None,
+        default=6,
         description="Number of hidden layers in the Transformer decoder. Will use the same value as num_layers if not "
         "set.",
         parameter_metadata=ENCODER_METADATA["T5"]["num_decoder_layers"],
@@ -2431,14 +2431,14 @@ class FlauBERTConfig(SequenceEncoderConfig):
     )
 
     pre_norm: bool = schema_utils.Boolean(
-        default=False,
+        default=True,
         description="Whether to apply the layer normalization before or after the feed forward layer following the "
         "attention in each layer (Vaswani et al., Tensor2Tensor for Neural Machine Translation. 2018)",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["pre_norm"],
     )
 
     layerdrop: float = schema_utils.FloatRange(
-        default=0.0,
+        default=0.2,
         min=0,
         max=1,
         description="Probability to drop layers during training (Fan et al., Reducing Transformer Depth on Demand "
@@ -2447,19 +2447,19 @@ class FlauBERTConfig(SequenceEncoderConfig):
     )
 
     emb_dim: int = schema_utils.PositiveInteger(
-        default=2048,
+        default=512,
         description="Dimensionality of the encoder layers and the pooler layer.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["emb_dim"],
     )
 
     n_layers: int = schema_utils.PositiveInteger(
-        default=12,
+        default=6,
         description="Number of hidden layers in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_layers"],
     )
 
     n_heads: int = schema_utils.PositiveInteger(
-        default=16,
+        default=8,
         description="Number of attention heads for each attention layer in the Transformer encoder.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["n_heads"],
     )
@@ -2542,7 +2542,7 @@ class FlauBERTConfig(SequenceEncoderConfig):
     )
 
     layer_norm_eps: float = schema_utils.NonNegativeFloat(
-        default=1e-12,
+        default=1e-06,
         description="The epsilon used by the layer normalization layers.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["layer_norm_eps"],
     )
@@ -2591,7 +2591,7 @@ class FlauBERTConfig(SequenceEncoderConfig):
     )
 
     lang_id: int = schema_utils.Integer(
-        default=1,
+        default=0,
         description="The ID of the language used by the model. This parameter is used when generating text in a given "
         "language.",
         parameter_metadata=ENCODER_METADATA["FlauBERT"]["lang_id"],
