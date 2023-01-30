@@ -35,20 +35,6 @@ from ludwig.utils.metric_utils import get_feature_to_metric_names_map
 SEQUENCE_OUTPUT_FEATURE_TYPES = {SEQUENCE, TEXT, SET, VECTOR}
 
 
-def check_all_features_have_names_and_types(config: ModelConfigDict) -> None:
-    """Checks that all features have names and types."""
-    for input_feature in config[INPUT_FEATURES]:
-        if NAME not in input_feature:
-            raise ConfigValidationError("All input features must have a name.")
-        if TYPE not in input_feature:
-            raise ConfigValidationError(f"Input feature {input_feature[NAME]} must have a type.")
-    for output_feature in config[OUTPUT_FEATURES]:
-        if NAME not in output_feature:
-            raise ConfigValidationError("All output features must have a name.")
-        if TYPE not in output_feature:
-            raise ConfigValidationError(f"Output feature {output_feature[NAME]} must have a type.")
-
-
 def check_feature_names_unique(config: ModelConfigDict) -> None:
     """Checks that all feature names are unique."""
     input_features = config[INPUT_FEATURES]
@@ -107,8 +93,8 @@ def check_gbm_single_output_feature(config: ModelConfigDict) -> None:
 
 
 def check_gbm_feature_types(config: ModelConfigDict) -> None:
-    model_type = config[MODEL_TYPE]
-    if model_type == MODEL_GBM:
+    """Checks that all input features for GBMs are of supported types."""
+    if config[MODEL_TYPE] == MODEL_GBM:
         for input_feature in config[INPUT_FEATURES]:
             if input_feature[TYPE] not in {BINARY, CATEGORY, NUMBER}:
                 raise ConfigValidationError("GBM Models currently only support Binary, Category, and Number features")
@@ -206,6 +192,7 @@ def check_validation_metric_exists(config: ModelConfigDict) -> None:
 
 
 def check_splitter(config: ModelConfigDict) -> None:
+    """Checks the validity of the splitter configuration."""
     from ludwig.data.split import get_splitter
 
     splitter = get_splitter(**config[PREPROCESSING][SPLIT])
