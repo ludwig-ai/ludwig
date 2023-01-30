@@ -20,13 +20,11 @@ import logging
 import yaml
 
 from ludwig.api_annotations import DeveloperAPI
-from ludwig.config_validation.validation import validate_config
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.features.feature_registries import get_input_type_registry
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.schema.model_config import ModelConfig
 from ludwig.schema.preprocessing import PreprocessingConfig
-from ludwig.utils.backward_compatibility import upgrade_config_dict_to_latest_version
 from ludwig.utils.data_utils import load_config_from_str, load_yaml
 from ludwig.utils.fs_utils import open_file
 from ludwig.utils.print_utils import print_ludwig
@@ -47,9 +45,7 @@ default_preprocessing_parameters.update(PreprocessingConfig().to_dict())
 
 @DeveloperAPI
 def render_config(config=None, output=None, **kwargs):
-    upgraded_config = upgrade_config_dict_to_latest_version(config)
-    output_config = ModelConfig.from_dict(upgraded_config).to_dict()
-    validate_config(output_config)
+    output_config = ModelConfig(config).to_dict()
 
     if output is None:
         print(yaml.safe_dump(output_config, None, sort_keys=False))

@@ -9,6 +9,8 @@ import yaml
 from marshmallow import ValidationError
 
 from ludwig.api_annotations import DeveloperAPI
+from ludwig.config_validation import auxiliary_checks
+from ludwig.config_validation.validation import check_schema
 from ludwig.constants import (
     ACTIVE,
     BINARY,
@@ -138,6 +140,9 @@ class ModelConfig(BaseMarshmallowConfig):
         # ===== Backwards Compatibility =====
         upgraded_config_dict = self._upgrade_config(config_dict)
 
+        # Schema validation.
+        check_schema(upgraded_config_dict)
+
         # ===== Save the original (upgraded) user config =====
         self._user_config_dict = upgraded_config_dict
 
@@ -205,6 +210,8 @@ class ModelConfig(BaseMarshmallowConfig):
         if self.model_type == MODEL_GBM:
             self.combiner = None
 
+        self._validate_config(self.to_dict())
+
     def get_user_config(self) -> ModelConfigDict:
         return self._user_config_dict
 
@@ -249,14 +256,31 @@ class ModelConfig(BaseMarshmallowConfig):
         """
         return upgrade_config_dict_to_latest_version(config_dict)
 
-    # @staticmethod
-    # def _validate_config(config_dict: ModelConfigDict) -> None:
-    #     """Helper function used to validate the config using the Ludwig Schema.
+    @staticmethod
+    def _validate_config(comprehensive_config: ModelConfigDict) -> None:
+        """Helper function used to validate the config using the Ludwig Schema and additional checks.
 
-    #     Args:
-    #         config_dict: Config Dictionary
-    #     """
-    #     validate_config(config_dict)
+        Args:
+            config_dict: Config Dictionary
+        """
+        # Schema validation.
+        check_schema(comprehensive_config)
+
+        # Pre-checks.
+        auxiliary_checks.check_feature_names_unique(comprehensive_config)
+        auxiliary_checks.check_tied_features_are_valid(comprehensive_config)
+        auxiliary_checks.check_training_runway(comprehensive_config)
+        auxiliary_checks.check_dependent_features(comprehensive_config)
+        auxiliary_checks.check_gbm_horovod_incompatibility(comprehensive_config)
+        auxiliary_checks.check_gbm_single_output_feature(comprehensive_config)
+        auxiliary_checks.check_gbm_feature_types(comprehensive_config)
+        auxiliary_checks.check_ray_backend_in_memory_preprocessing(comprehensive_config)
+        auxiliary_checks.check_sequence_concat_combiner_requirements(comprehensive_config)
+        auxiliary_checks.check_comparator_combiner_requirements(comprehensive_config)
+        auxiliary_checks.check_class_balance_preprocessing(comprehensive_config)
+        auxiliary_checks.check_sampling_exclusivity(comprehensive_config)
+        auxiliary_checks.check_validation_metric_exists(comprehensive_config)
+        auxiliary_checks.check_splitter(comprehensive_config)
 
     @staticmethod
     def _get_config_nested_cls(section: str, section_type: str, feature_type: str) -> BaseMarshmallowConfig:

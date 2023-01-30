@@ -77,12 +77,13 @@ def check_tied_features_are_valid(config: ModelConfigDict) -> None:
 
 def check_training_runway(config: ModelConfigDict) -> None:
     """Checks that checkpoints_per_epoch and steps_per_checkpoint aren't simultaneously defined."""
-    if config[TRAINER]["checkpoints_per_epoch"] != 0 and config[TRAINER]["steps_per_checkpoint"] != 0:
-        raise ConfigValidationError(
-            "It is invalid to specify both trainer.checkpoints_per_epoch AND "
-            "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to checkpoint/eval "
-            "the model every epoch."
-        )
+    if config[MODEL_TYPE] == MODEL_ECD:
+        if config[TRAINER]["checkpoints_per_epoch"] != 0 and config[TRAINER]["steps_per_checkpoint"] != 0:
+            raise ConfigValidationError(
+                "It is invalid to specify both trainer.checkpoints_per_epoch AND "
+                "trainer.steps_per_checkpoint. Please specify one or the other, or specify neither to checkpoint/eval "
+                "the model every epoch."
+            )
 
 
 def check_dependent_features(config: ModelConfigDict) -> None:
@@ -101,22 +102,17 @@ def check_gbm_horovod_incompatibility(config: ModelConfigDict) -> None:
 def check_gbm_single_output_feature(config: ModelConfigDict) -> None:
     """GBM models only support a single output feature."""
     model_type = config[MODEL_TYPE]
-    if model_type != MODEL_ECD:
+    if model_type == MODEL_GBM:
         if len(config[OUTPUT_FEATURES]) != 1:
             raise ConfigValidationError("GBM models only support a single output feature.")
 
 
 def check_gbm_feature_types(config: ModelConfigDict) -> None:
-    for input_feature in config[INPUT_FEATURES]:
-        if input_feature[TYPE] not in {BINARY, CATEGORY, NUMBER}:
-            raise ConfigValidationError("GBM Models currently only support Binary, Category, and Number features")
-
-
-def check_gbm_trainer_type(config: ModelConfigDict) -> None:
-    if config[MODEL_TYPE] == MODEL_GBM and config[TRAINER][TYPE] != "lightgbm_trainer":
-        raise ConfigValidationError(
-            "GBM Model trainer must be of type: 'lightgbm_trainer'. Don't set trainer.type manually."
-        )
+    model_type = config[MODEL_TYPE]
+    if model_type == MODEL_GBM:
+        for input_feature in config[INPUT_FEATURES]:
+            if input_feature[TYPE] not in {BINARY, CATEGORY, NUMBER}:
+                raise ConfigValidationError("GBM Models currently only support Binary, Category, and Number features")
 
 
 def check_ray_backend_in_memory_preprocessing(config: ModelConfigDict) -> None:
@@ -141,6 +137,8 @@ def check_ray_backend_in_memory_preprocessing(config: ModelConfigDict) -> None:
 
 def check_sequence_concat_combiner_requirements(config: ModelConfigDict) -> None:
     """Checks that sequence concat combiner has at least one input feature that's sequential."""
+    if config[MODEL_TYPE] != MODEL_ECD:
+        return
     if config[COMBINER] != "sequence_concat":
         return
     has_sequence_input = False
@@ -159,6 +157,8 @@ def check_comparator_combiner_requirements(config: ModelConfigDict) -> None:
 
     All of the feature names for entity_1 and entity_2 are valid features.
     """
+    if config[MODEL_TYPE] != MODEL_ECD:
+        return
     if config[COMBINER] != "comparator":
         return
 

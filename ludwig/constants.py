@@ -116,7 +116,6 @@ PADDING_SYMBOL = "<PAD>"
 UNKNOWN_SYMBOL = "<UNK>"
 
 TRAINER = "trainer"
-LIGHTGBM_TRAINER = "lightgbm_trainer"
 OPTIMIZER = "optimizer"
 METRIC = "metric"
 PREDICTION = "prediction"
